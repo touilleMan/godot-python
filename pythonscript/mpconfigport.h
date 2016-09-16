@@ -1,0 +1,1 @@
+micropython/examples/embedding/mpconfigport_minimal.h

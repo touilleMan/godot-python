@@ -1,0 +1,3 @@
+[submodule "pythonscript/micropython"]
+	path = pythonscript/micropython
+	url = git@github.com:micropython/micropython.git
