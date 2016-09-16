@@ -1,0 +1,8 @@
+### Ignore all files created by make
+#
+*.a
+*.o
+*.so
+*.so.*
+*.pyc
+build
