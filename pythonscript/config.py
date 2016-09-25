@@ -2,8 +2,8 @@ from os import path
 import subprocess
 
 
-TOP = path.dirname(path.abspath(__file__))
-MPTOP = TOP + "/micropython"
+MP_DIR = path.dirname(path.abspath(__file__)) + '/micropython'
+MP_TARGET = MP_DIR + "/libmicropython.a"
 
 
 def can_build(platform):
@@ -11,4 +11,7 @@ def can_build(platform):
 
 
 def configure(env):
-	subprocess.call("make -f {MPTOP}/examples/embedding/Makefile.upylib MPTOP={MPTOP}".format(MPTOP=MPTOP).split(), cwd=TOP)
+    if not path.isfile(MP_TARGET):
+        print('Building libmicropython.a...')
+        subprocess.call(["make"], cwd=MP_DIR)
+        print('libmicropython.a successfully built !')
