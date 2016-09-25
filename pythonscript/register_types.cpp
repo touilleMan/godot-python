@@ -1,37 +1,34 @@
-/*************************************************************************/
-/*  register_types.cpp                                                   */
-/*************************************************************************/
-/*                       This file is part of:                           */
-/*                           GODOT ENGINE                                */
-/*                    http://www.godotengine.org                         */
-/*************************************************************************/
-/* Copyright (c) 2007-2016 Juan Linietsky, Ariel Manzur.                 */
-/*                                                                       */
-/* Permission is hereby granted, free of charge, to any person obtaining */
-/* a copy of this software and associated documentation files (the       */
-/* "Software"), to deal in the Software without restriction, including   */
-/* without limitation the rights to use, copy, modify, merge, publish,   */
-/* distribute, sublicense, and/or sell copies of the Software, and to    */
-/* permit persons to whom the Software is furnished to do so, subject to */
-/* the following conditions:                                             */
-/*                                                                       */
-/* The above copyright notice and this permission notice shall be        */
-/* included in all copies or substantial portions of the Software.       */
-/*                                                                       */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
-/*************************************************************************/
 #include "register_types.h"
+#include "py_script_language.h"
 
 
-void register_pycript_types() {
+PyScriptLanguage *script_language_py = NULL;
+// ResourceFormatLoaderPyScript *resource_loader_py = NULL;
+// ResourceFormatSaverPyScript *resource_saver_py = NULL;
+
+
+void register_pythonscript_types() {
+
+    // ObjectTypeDB::register_type<PyScript>();
+    // ObjectTypeDB::register_virtual_type<PyFunctionState>();
+
+    script_language_py = memnew(PyScriptLanguage);
+    //script_language_py->init();
+    ScriptServer::register_language(script_language_py);
+    // resource_loader_py = memnew(ResourceFormatLoaderPyScript);
+    // ResourceLoader::add_resource_format_loader(resource_loader_py);
+    // resource_saver_py = memnew(ResourceFormatSaverPyScript);
+    // ResourceSaver::add_resource_format_saver(resource_saver_py);
 }
 
 
-void unregister_pycript_types() {
+void unregister_pythonscript_types() {
+    ScriptServer::unregister_language(script_language_py);
+
+    if (script_language_py)
+        memdelete(script_language_py);
+    // if (resource_loader_py)
+    //     memdelete(resource_loader_py);
+    // if (resource_saver_py)
+    //     memdelete(resource_saver_py);
 }

@@ -10,6 +10,7 @@ module_env.add_source_files(env.modules_sources,"py_editor.cpp")
 module_env.add_source_files(env.modules_sources,"py_debug.cpp")
 
 module_env.Append(CXXFLAGS='-I ' + Dir('micropython').path)
-module_env.Append(CXXFLAGS='-I ' + Dir('build').path)
+module_env.Append(CXXFLAGS='-I ' + Dir('micropython/micropython').path)
+module_env.Append(CXXFLAGS='-I ' + Dir('micropython/build').path)
 
-env.Append(LIBS=File("./libmicropython.a"))
+env.Append(LIBS=File("micropython/libmicropython.a"))
