@@ -83,6 +83,7 @@
 #define MICROPY_PY_UHEAPQ           (0)
 #define MICROPY_PY_UHASHLIB         (0)
 #define MICROPY_PY_UBINASCII        (0)
+#define MICROPY_USE_INTERNAL_PRINTF (0)
 
 extern const struct _mp_obj_module_t mp_module_os;
 
