@@ -1,11 +1,20 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 #include "micropython/py/lexer.h"
 
 /* Needed by mycropython */
 
-mp_import_stat_t mp_import_stat(const char *path) {
+uint mp_import_stat(const char *path) {
+    struct stat st;
+    if (stat(path, &st) == 0) {
+        if (S_ISDIR(st.st_mode)) {
+            return MP_IMPORT_STAT_DIR;
+        } else if (S_ISREG(st.st_mode)) {
+            return MP_IMPORT_STAT_FILE;
+        }
+    }
     return MP_IMPORT_STAT_NO_EXIST;
 }
 
