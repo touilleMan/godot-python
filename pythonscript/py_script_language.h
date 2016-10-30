@@ -21,6 +21,7 @@ class PyScriptLanguage : public ScriptLanguage {
 
 public:
     String get_name() const;
+    _FORCE_INLINE_ static PyScriptLanguage *get_singleton() { return singleton; }
 
     /* LANGUAGE FUNCTIONS */
     void init();

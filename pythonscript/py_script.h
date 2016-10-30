@@ -2,6 +2,7 @@
 #define PY_SCRIPT_H
 
 
+#include "micropython.h"
 #include "script_language.h"
 
 #include "py_script_instance.h"
@@ -75,7 +76,8 @@ public:
     void get_script_property_list(List<PropertyInfo> *p_list) const;
 
 
-    PyScript() {}
+    PyScript();
+    ~PyScript();
 };
 
 

@@ -28,7 +28,7 @@ bool PyScript::can_instance() const {
 
 
 Ref<Script> PyScript::get_base_script() const {
-    if (this->_base) {
+    if (this->base.ptr()) {
         return Ref<PyScript>(this->base);
     } else {
         return Ref<Script>();
@@ -37,8 +37,8 @@ Ref<Script> PyScript::get_base_script() const {
 
 
 StringName PyScript::get_instance_base_type() const {
-    if (this->native.is_valid())
-        return this->native->get_name();
+    // if (this->native.is_valid())
+    //     return this->native->get_name();
     if (this->base.is_valid())
         return this->base->get_instance_base_type();
     return StringName();
@@ -58,7 +58,7 @@ ScriptInstance* PyScript::instance_create(Object *p_this) {
         PlaceHolderScriptInstance *si = memnew(PlaceHolderScriptInstance(PyScriptLanguage::get_singleton(), Ref<Script>(this), p_this));
         placeholders.insert(si);
         //_update_placeholder(si);
-        _update_exports();
+        // _update_exports();
         return si;
 #else
         return NULL;
@@ -66,20 +66,22 @@ ScriptInstance* PyScript::instance_create(Object *p_this) {
     }
 
     PyScript *top = this;
-    while(top->_base)
-        top = top->_base;
+    while(top->base.ptr())
+        top = top->base.ptr();
 
-    if (top->native.is_valid()) {
-        if (!ObjectTypeDB::is_type(p_this->get_type_name(),top->native->get_name())) {
-            if (ScriptDebugger::get_singleton()) {
-                GDScriptLanguage::get_singleton()->debug_break_parse(get_path(),0,"Script inherits from native type '"+String(top->native->get_name())+"', so it can't be instanced in object of type: '"+p_this->get_type()+"'");
-            }
-            ERR_EXPLAIN("Script inherits from native type '"+String(top->native->get_name())+"', so it can't be instanced in object of type: '"+p_this->get_type()+"'");
-            ERR_FAIL_V(NULL);
-        }
-    }
-    Variant::CallError unchecked_error;
-    return _create_instance(NULL,0,p_this,p_this->cast_to<Reference>(),unchecked_error);
+    // if (top->native.is_valid()) {
+    //     if (!ObjectTypeDB::is_type(p_this->get_type_name(),top->native->get_name())) {
+    //         if (ScriptDebugger::get_singleton()) {
+    //             PyScriptLanguage::get_singleton()->debug_break_parse(get_path(),0,"Script inherits from native type '"+String(top->native->get_name())+"', so it can't be instanced in object of type: '"+p_this->get_type()+"'");
+    //         }
+    //         ERR_EXPLAIN("Script inherits from native type '"+String(top->native->get_name())+"', so it can't be instanced in object of type: '"+p_this->get_type()+"'");
+    //         ERR_FAIL_V(NULL);
+    //     }
+    // }
+    // Variant::CallError unchecked_error;
+    // return _create_instance(NULL,0,p_this,p_this->cast_to<Reference>(),unchecked_error);
+    // TODO !!!!
+    return NULL;
 }
 
 
@@ -109,7 +111,7 @@ void PyScript::set_source_code(const String& p_code) {
 }
 
 
-Error GDScript::reload(bool p_keep_state) {
+Error PyScript::reload(bool p_keep_state) {
     ERR_FAIL_COND_V(!p_keep_state && instances.size(), ERR_ALREADY_IN_USE);
 
     String basedir = path;
@@ -122,42 +124,42 @@ Error GDScript::reload(bool p_keep_state) {
 
     // TODO: load the module and retrieve exposed class here
 
-    valid=false;
-    GDParser parser;
-    Error err = parser.parse(source,basedir,false,path);
-    if (err) {
-        if (ScriptDebugger::get_singleton()) {
-            GDScriptLanguage::get_singleton()->debug_break_parse(get_path(),parser.get_error_line(),"Parser Error: "+parser.get_error());
-        }
-        _err_print_error("GDScript::reload",path.empty()?"built-in":(const char*)path.utf8().get_data(),parser.get_error_line(),("Parse Error: "+parser.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
-        ERR_FAIL_V(ERR_PARSE_ERROR);
-    }
+    // valid=false;
+    // GDParser parser;
+    // Error err = parser.parse(source,basedir,false,path);
+    // if (err) {
+    //     if (ScriptDebugger::get_singleton()) {
+    //         PyScriptLanguage::get_singleton()->debug_break_parse(get_path(),parser.get_error_line(),"Parser Error: "+parser.get_error());
+    //     }
+    //     _err_print_error("PyScript::reload",path.empty()?"built-in":(const char*)path.utf8().get_data(),parser.get_error_line(),("Parse Error: "+parser.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
+    //     ERR_FAIL_V(ERR_PARSE_ERROR);
+    // }
 
 
-    bool can_run = ScriptServer::is_scripting_enabled() || parser.is_tool_script();
+    // bool can_run = ScriptServer::is_scripting_enabled() || parser.is_tool_script();
 
-    GDCompiler compiler;
-    err = compiler.compile(&parser,this,p_keep_state);
+    // GDCompiler compiler;
+    // err = compiler.compile(&parser,this,p_keep_state);
 
-    if (err) {
+    // if (err) {
 
-        if (can_run) {
-            if (ScriptDebugger::get_singleton()) {
-                GDScriptLanguage::get_singleton()->debug_break_parse(get_path(),compiler.get_error_line(),"Parser Error: "+compiler.get_error());
-            }
-            _err_print_error("GDScript::reload",path.empty()?"built-in":(const char*)path.utf8().get_data(),compiler.get_error_line(),("Compile Error: "+compiler.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
-            ERR_FAIL_V(ERR_COMPILATION_FAILED);
-        } else {
-            return err;
-        }
-    }
+    //     if (can_run) {
+    //         if (ScriptDebugger::get_singleton()) {
+    //             PyScriptLanguage::get_singleton()->debug_break_parse(get_path(),compiler.get_error_line(),"Parser Error: "+compiler.get_error());
+    //         }
+    //         _err_print_error("PyScript::reload",path.empty()?"built-in":(const char*)path.utf8().get_data(),compiler.get_error_line(),("Compile Error: "+compiler.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
+    //         ERR_FAIL_V(ERR_COMPILATION_FAILED);
+    //     } else {
+    //         return err;
+    //     }
+    // }
 
-    valid=true;
+    // valid=true;
 
-    for(Map<StringName,Ref<GDScript> >::Element *E=subclasses.front();E;E=E->next()) {
+    // for(Map<StringName,Ref<PyScript> >::Element *E=subclasses.front();E;E=E->next()) {
 
-        _set_subclass_path(E->get(),path);
-    }
+    //     _set_subclass_path(E->get(),path);
+    // }
 
 #ifdef TOOLS_ENABLED
     /*for (Set<PlaceHolderScriptInstance*>::Element *E=placeholders.front();E;E=E->next()) {
@@ -171,16 +173,16 @@ Error GDScript::reload(bool p_keep_state) {
 
 #if 0
 
-struct _GDScriptMemberSort {
+struct _PyScriptMemberSort {
 
     int index;
     StringName name;
-    _FORCE_INLINE_ bool operator<(const _GDScriptMemberSort& p_member) const { return index < p_member.index; }
+    _FORCE_INLINE_ bool operator<(const _PyScriptMemberSort& p_member) const { return index < p_member.index; }
 
 };
 
 
-void GDScript::get_script_method_list(List<MethodInfo> *p_list) const {
+void PyScript::get_script_method_list(List<MethodInfo> *p_list) const {
 
     for (const Map<StringName,GDFunction*>::Element *E=member_functions.front();E;E=E->next()) {
         MethodInfo mi;
@@ -197,17 +199,17 @@ void GDScript::get_script_method_list(List<MethodInfo> *p_list) const {
     }
 }
 
-void GDScript::get_script_property_list(List<PropertyInfo> *p_list) const {
+void PyScript::get_script_property_list(List<PropertyInfo> *p_list) const {
 
-    const GDScript *sptr=this;
+    const PyScript *sptr=this;
     List<PropertyInfo> props;
 
     while(sptr) {
 
-        Vector<_GDScriptMemberSort> msort;
+        Vector<_PyScriptMemberSort> msort;
         for(Map<StringName,PropertyInfo>::Element *E=sptr->member_info.front();E;E=E->next()) {
 
-            _GDScriptMemberSort ms;
+            _PyScriptMemberSort ms;
             ERR_CONTINUE(!sptr->member_indices.has(E->key()));
             ms.index=sptr->member_indices[E->key()].index;
             ms.name=E->key();
@@ -232,12 +234,12 @@ void GDScript::get_script_property_list(List<PropertyInfo> *p_list) const {
 
 }
 
-bool GDScript::has_method(const StringName& p_method) const {
+bool PyScript::has_method(const StringName& p_method) const {
 
     return member_functions.has(p_method);
 }
 
-MethodInfo GDScript::get_method_info(const StringName& p_method) const {
+MethodInfo PyScript::get_method_info(const StringName& p_method) const {
 
     const Map<StringName,GDFunction*>::Element *E=member_functions.find(p_method);
     if (!E)
@@ -258,7 +260,7 @@ MethodInfo GDScript::get_method_info(const StringName& p_method) const {
 }
 
 
-bool GDScript::get_property_default_value(const StringName& p_property, Variant &r_value) const {
+bool PyScript::get_property_default_value(const StringName& p_property, Variant &r_value) const {
 
 #ifdef TOOLS_ENABLED
 
@@ -282,7 +284,7 @@ bool GDScript::get_property_default_value(const StringName& p_property, Variant 
 
 
 #ifdef TOOLS_ENABLED
-void GDScript::_update_exports_values(Map<StringName,Variant>& values, List<PropertyInfo> &propnames) {
+void PyScript::_update_exports_values(Map<StringName,Variant>& values, List<PropertyInfo> &propnames) {
 
     if (base_cache.is_valid()) {
         base_cache->_update_exports_values(values,propnames);
@@ -299,7 +301,7 @@ void GDScript::_update_exports_values(Map<StringName,Variant>& values, List<Prop
 }
 #endif
 
-bool GDScript::_update_exports() {
+bool PyScript::_update_exports() {
 
 #ifdef TOOLS_ENABLED
 
@@ -330,7 +332,7 @@ bool GDScript::_update_exports() {
 
             if (base_cache.is_valid()) {
                 base_cache->inheriters_cache.erase(get_instance_ID());
-                base_cache=Ref<GDScript>();
+                base_cache=Ref<PyScript>();
             }
 
 
@@ -350,7 +352,7 @@ bool GDScript::_update_exports() {
 
                 if (path!=get_path()) {
 
-                    Ref<GDScript> bf = ResourceLoader::load(path);
+                    Ref<PyScript> bf = ResourceLoader::load(path);
 
                     if (bf.is_valid()) {
 
@@ -416,7 +418,7 @@ bool GDScript::_update_exports() {
     return false;
 }
 
-void GDScript::update_exports() {
+void PyScript::update_exports() {
 
 #ifdef TOOLS_ENABLED
 
@@ -429,7 +431,7 @@ void GDScript::update_exports() {
         Object *id=ObjectDB::get_instance(E->get());
         if (!id)
             continue;
-        GDScript *s=id->cast_to<GDScript>();
+        PyScript *s=id->cast_to<PyScript>();
         if (!s)
             continue;
         s->update_exports();
@@ -438,31 +440,31 @@ void GDScript::update_exports() {
 #endif
 }
 
-void GDScript::_set_subclass_path(Ref<GDScript>& p_sc,const String& p_path) {
+void PyScript::_set_subclass_path(Ref<PyScript>& p_sc,const String& p_path) {
 
     p_sc->path=p_path;
-    for(Map<StringName,Ref<GDScript> >::Element *E=p_sc->subclasses.front();E;E=E->next()) {
+    for(Map<StringName,Ref<PyScript> >::Element *E=p_sc->subclasses.front();E;E=E->next()) {
 
         _set_subclass_path(E->get(),p_path);
     }
 }
 
 
-String GDScript::get_node_type() const {
+String PyScript::get_node_type() const {
 
     return ""; // ?
 }
 
-ScriptLanguage *GDScript::get_language() const {
+ScriptLanguage *PyScript::get_language() const {
 
-    return GDScriptLanguage::get_singleton();
+    return PyScriptLanguage::get_singleton();
 }
 
 
-Variant GDScript::call(const StringName& p_method,const Variant** p_args,int p_argcount,Variant::CallError &r_error) {
+Variant PyScript::call(const StringName& p_method,const Variant** p_args,int p_argcount,Variant::CallError &r_error) {
 
 
-    GDScript *top=this;
+    PyScript *top=this;
     while(top) {
 
         Map<StringName,GDFunction*>::Element *E=top->member_functions.find(p_method);
@@ -483,12 +485,12 @@ Variant GDScript::call(const StringName& p_method,const Variant** p_args,int p_a
 
 }
 
-bool GDScript::_get(const StringName& p_name,Variant &r_ret) const {
+bool PyScript::_get(const StringName& p_name,Variant &r_ret) const {
 
     {
 
 
-        const GDScript *top=this;
+        const PyScript *top=this;
         while(top) {
 
             {
@@ -501,7 +503,7 @@ bool GDScript::_get(const StringName& p_name,Variant &r_ret) const {
             }
 
             {
-                const Map<StringName,Ref<GDScript> >::Element *E=subclasses.find(p_name);
+                const Map<StringName,Ref<PyScript> >::Element *E=subclasses.find(p_name);
                 if (E) {
 
                     r_ret=E->get();
@@ -511,7 +513,7 @@ bool GDScript::_get(const StringName& p_name,Variant &r_ret) const {
             top=top->_base;
         }
 
-        if (p_name==GDScriptLanguage::get_singleton()->strings._script_source) {
+        if (p_name==PyScriptLanguage::get_singleton()->strings._script_source) {
 
             r_ret=get_source_code();
             return true;
@@ -523,9 +525,9 @@ bool GDScript::_get(const StringName& p_name,Variant &r_ret) const {
     return false;
 
 }
-bool GDScript::_set(const StringName& p_name, const Variant& p_value) {
+bool PyScript::_set(const StringName& p_name, const Variant& p_value) {
 
-    if (p_name==GDScriptLanguage::get_singleton()->strings._script_source) {
+    if (p_name==PyScriptLanguage::get_singleton()->strings._script_source) {
 
         set_source_code(p_value);
         reload();
@@ -535,21 +537,21 @@ bool GDScript::_set(const StringName& p_name, const Variant& p_value) {
     return true;
 }
 
-void GDScript::_get_property_list(List<PropertyInfo> *p_properties) const {
+void PyScript::_get_property_list(List<PropertyInfo> *p_properties) const {
 
     p_properties->push_back( PropertyInfo(Variant::STRING,"script/source",PROPERTY_HINT_NONE,"",PROPERTY_USAGE_NOEDITOR) );
 }
 
 
 
-Vector<uint8_t> GDScript::get_as_byte_code() const {
+Vector<uint8_t> PyScript::get_as_byte_code() const {
 
     GDTokenizerBuffer tokenizer;
     return tokenizer.parse_code_string(source);
 };
 
 
-Error GDScript::load_byte_code(const String& p_path) {
+Error PyScript::load_byte_code(const String& p_path) {
 
     Vector<uint8_t> bytecode;
 
@@ -588,7 +590,7 @@ Error GDScript::load_byte_code(const String& p_path) {
     GDParser parser;
     Error err = parser.parse_bytecode(bytecode,basedir,get_path());
     if (err) {
-        _err_print_error("GDScript::load_byte_code",path.empty()?"built-in":(const char*)path.utf8().get_data(),parser.get_error_line(),("Parse Error: "+parser.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
+        _err_print_error("PyScript::load_byte_code",path.empty()?"built-in":(const char*)path.utf8().get_data(),parser.get_error_line(),("Parse Error: "+parser.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
         ERR_FAIL_V(ERR_PARSE_ERROR);
     }
 
@@ -596,13 +598,13 @@ Error GDScript::load_byte_code(const String& p_path) {
     err = compiler.compile(&parser,this);
 
     if (err) {
-        _err_print_error("GDScript::load_byte_code",path.empty()?"built-in":(const char*)path.utf8().get_data(),compiler.get_error_line(),("Compile Error: "+compiler.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
+        _err_print_error("PyScript::load_byte_code",path.empty()?"built-in":(const char*)path.utf8().get_data(),compiler.get_error_line(),("Compile Error: "+compiler.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
         ERR_FAIL_V(ERR_COMPILATION_FAILED);
     }
 
     valid=true;
 
-    for(Map<StringName,Ref<GDScript> >::Element *E=subclasses.front();E;E=E->next()) {
+    for(Map<StringName,Ref<PyScript> >::Element *E=subclasses.front();E;E=E->next()) {
 
         _set_subclass_path(E->get(),path);
     }
@@ -611,7 +613,7 @@ Error GDScript::load_byte_code(const String& p_path) {
 }
 
 
-Error GDScript::load_source_code(const String& p_path) {
+Error PyScript::load_source_code(const String& p_path) {
 
 
     DVector<uint8_t> sourcef;
@@ -649,14 +651,14 @@ Error GDScript::load_source_code(const String& p_path) {
 }
 
 
-const Map<StringName,GDFunction*>& GDScript::debug_get_member_functions() const {
+const Map<StringName,GDFunction*>& PyScript::debug_get_member_functions() const {
 
     return member_functions;
 }
 
 
 
-StringName GDScript::debug_get_member_by_index(int p_idx) const {
+StringName PyScript::debug_get_member_by_index(int p_idx) const {
 
 
     for(const Map<StringName,MemberInfo>::Element *E=member_indices.front();E;E=E->next()) {
@@ -669,12 +671,12 @@ StringName GDScript::debug_get_member_by_index(int p_idx) const {
 }
 
 
-Ref<GDScript> GDScript::get_base() const {
+Ref<PyScript> PyScript::get_base() const {
 
     return base;
 }
 
-bool GDScript::has_script_signal(const StringName& p_signal) const {
+bool PyScript::has_script_signal(const StringName& p_signal) const {
     if (_signals.has(p_signal))
         return true;
     if (base.is_valid()) {
@@ -688,7 +690,7 @@ bool GDScript::has_script_signal(const StringName& p_signal) const {
 #endif
     return false;
 }
-void GDScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
+void PyScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
 
     for(const Map<StringName,Vector<StringName> >::Element *E=_signals.front();E;E=E->next()) {
 
@@ -719,41 +721,41 @@ PyScript::PyScript() {
 
     tool=false;
     valid=false;
-    _mp_exposed_mp_class = NULL;
-    _mp_module = NULL;
-    base = NULL;
+    // _mp_exposed_mp_class = NULL;
+    // _mp_module = NULL;
+    // base = NULL;
 
 #ifdef DEBUG_ENABLED
-    if (PyScriptLanguage::get_singleton()->lock) {
-        PyScriptLanguage::get_singleton()->lock->lock();
-    }
-    PyScriptLanguage::get_singleton()->script_list.add(&script_list);
+    // if (PyScriptLanguage::get_singleton()->lock) {
+    //     PyScriptLanguage::get_singleton()->lock->lock();
+    // }
+    // PyScriptLanguage::get_singleton()->script_list.add(&script_list);
 
-    if (PyScriptLanguage::get_singleton()->lock) {
-        PyScriptLanguage::get_singleton()->lock->unlock();
-    }
+    // if (PyScriptLanguage::get_singleton()->lock) {
+    //     PyScriptLanguage::get_singleton()->lock->unlock();
+    // }
 #endif
 }
 
 
 PyScript::~PyScript() {
-    for (Map<StringName,GDFunction*>::Element *E=member_functions.front();E;E=E->next()) {
-        memdelete( E->get() );
-    }
+    // for (Map<StringName,GDFunction*>::Element *E=member_functions.front();E;E=E->next()) {
+    //     memdelete( E->get() );
+    // }
 
-    for (Map<StringName,Ref<PyScript> >::Element *E=subclasses.front();E;E=E->next()) {
-        E->get()->_owner=NULL; //bye, you are no longer owned cause I died
-    }
+    // for (Map<StringName,Ref<PyScript> >::Element *E=subclasses.front();E;E=E->next()) {
+    //     E->get()->_owner=NULL; //bye, you are no longer owned cause I died
+    // }
 
 #ifdef DEBUG_ENABLED
-    if (PyScriptLanguage::get_singleton()->lock) {
-        PyScriptLanguage::get_singleton()->lock->lock();
-    }
-    PyScriptLanguage::get_singleton()->script_list.remove(&script_list);
+    // if (PyScriptLanguage::get_singleton()->lock) {
+    //     PyScriptLanguage::get_singleton()->lock->lock();
+    // }
+    // PyScriptLanguage::get_singleton()->script_list.remove(&script_list);
 
-    if (PyScriptLanguage::get_singleton()->lock) {
-        PyScriptLanguage::get_singleton()->lock->unlock();
-    }
+    // if (PyScriptLanguage::get_singleton()->lock) {
+    //     PyScriptLanguage::get_singleton()->lock->unlock();
+    // }
 #endif
 }
 
