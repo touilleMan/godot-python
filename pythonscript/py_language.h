@@ -11,17 +11,17 @@ class PyScript;
 class PyInstance;
 
 
-class PyScriptLanguage : public ScriptLanguage {
+class PyLanguage : public ScriptLanguage {
     friend class PyScript;
     friend class PyInstance;
 
     Mutex *lock;
-    static PyScriptLanguage *singleton;
+    static PyLanguage *singleton;
     SelfList<PyScript>::List script_list;
 
 public:
     String get_name() const;
-    _FORCE_INLINE_ static PyScriptLanguage *get_singleton() { return singleton; }
+    _FORCE_INLINE_ static PyLanguage *get_singleton() { return singleton; }
 
     /* LANGUAGE FUNCTIONS */
     void init();
@@ -81,17 +81,17 @@ public:
 
     void frame();
 
-    ~PyScriptLanguage();
-    PyScriptLanguage();
+    ~PyLanguage();
+    PyLanguage();
 };
 
 
 
 
 #if 0
-class PyScriptLanguage : public ScriptLanguage {
+class PyLanguage : public ScriptLanguage {
 
-    static PyScriptLanguage *singleton;
+    static PyLanguage *singleton;
 
     Variant* _global_array;
     Vector<Variant> global_array;
@@ -210,7 +210,7 @@ public:
     _FORCE_INLINE_ Variant* get_global_array() { return _global_array; }
     _FORCE_INLINE_ const Map<StringName,int>& get_global_map() { return globals; }
 
-    _FORCE_INLINE_ static PyScriptLanguage *get_singleton() { return singleton; }
+    _FORCE_INLINE_ static PyLanguage *get_singleton() { return singleton; }
 
     virtual String get_name() const;
 
@@ -266,8 +266,8 @@ public:
 
     virtual void get_recognized_extensions(List<String> *p_extensions) const;
 
-    PyScriptLanguage();
-    ~PyScriptLanguage();
+    PyLanguage();
+    ~PyLanguage();
 };
 #endif
 

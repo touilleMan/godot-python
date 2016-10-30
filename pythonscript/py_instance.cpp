@@ -1,6 +1,6 @@
-#include "py_script_language.h"
+#include "py_language.h"
 #include "py_script.h"
-#include "py_script_instance.h"
+#include "py_instance.h"
 
 #if 0
 class ScriptInstance {
@@ -77,7 +77,7 @@ bool PyInstance::set(const StringName& p_name, const Variant& p_value) {
     while(sptr) {
 
 
-        Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyScriptLanguage::get_singleton()->strings._set);
+        Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyLanguage::get_singleton()->strings._set);
         if (E) {
 
             Variant name=p_name;
@@ -132,7 +132,7 @@ bool PyInstance::get(const StringName& p_name, Variant &r_ret) const {
         }
 
         {
-            const Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyScriptLanguage::get_singleton()->strings._get);
+            const Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyLanguage::get_singleton()->strings._get);
             if (E) {
 
                 Variant name=p_name;
@@ -162,5 +162,5 @@ Ref<Script> PyInstance::get_script() const {
 
 ScriptLanguage *PyInstance::get_language() {
 
-    return PyScriptLanguage::get_singleton();
+    return PyLanguage::get_singleton();
 }

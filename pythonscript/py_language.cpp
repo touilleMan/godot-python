@@ -1,4 +1,4 @@
-#include "py_script_language.h"
+#include "py_language.h"
 // #include "py_script.h"
 
 #include "micropython.h"
@@ -13,10 +13,10 @@
 
 // TODO: Allocate this dynamically ?
 static char MICROPYTHON_HEAP[16384];
-PyScriptLanguage *PyScriptLanguage::singleton = NULL;
+PyLanguage *PyLanguage::singleton = NULL;
 
 
-String PyScriptLanguage::get_name() const {
+String PyLanguage::get_name() const {
 
     return "Python";
 }
@@ -25,7 +25,7 @@ String PyScriptLanguage::get_name() const {
 /* LANGUAGE FUNCTIONS */
 
 
-void PyScriptLanguage::init() {
+void PyLanguage::init() {
     // MicroPython init
 
     // Initialized stack limit
@@ -74,25 +74,25 @@ void PyScriptLanguage::init() {
 }
 
 
-String PyScriptLanguage::get_type() const {
+String PyLanguage::get_type() const {
 
     return "Python";
 }
 
 
-String PyScriptLanguage::get_extension() const {
+String PyLanguage::get_extension() const {
 
     return "py";
 }
 
 
-Error PyScriptLanguage::execute_file(const String& p_path)  {
+Error PyLanguage::execute_file(const String& p_path)  {
     // ??
     return OK;
 }
 
 
-void PyScriptLanguage::finish()  {
+void PyLanguage::finish()  {
     mp_deinit();
 }
 
@@ -103,7 +103,7 @@ void PyScriptLanguage::finish()  {
 /* DEBUGGER FUNCTIONS */
 
 
-PyScriptLanguage::~PyScriptLanguage() {
+PyLanguage::~PyLanguage() {
     singleton = NULL;
     if (lock) {
         memdelete(lock);
@@ -134,7 +134,7 @@ struct PyScriptDepSort {
     }
 };
 
-void PyScriptLanguage::reload_all_scripts() {
+void PyLanguage::reload_all_scripts() {
 
 
 
@@ -173,7 +173,7 @@ void PyScriptLanguage::reload_all_scripts() {
 }
 
 
-void PyScriptLanguage::reload_tool_script(const Ref<Script>& p_script,bool p_soft_reload) {
+void PyLanguage::reload_tool_script(const Ref<Script>& p_script,bool p_soft_reload) {
 
 
 #ifdef DEBUG_ENABLED
@@ -295,7 +295,7 @@ void PyScriptLanguage::reload_tool_script(const Ref<Script>& p_script,bool p_sof
 
 
 /* EDITOR FUNCTIONS */
-void PyScriptLanguage::get_reserved_words(List<String> *p_words) const  {
+void PyLanguage::get_reserved_words(List<String> *p_words) const  {
 
     static const char *_reserved_words[]={
         0};
@@ -317,7 +317,7 @@ void PyScriptLanguage::get_reserved_words(List<String> *p_words) const  {
 }
 
 #endif // if 0
-PyScriptLanguage::PyScriptLanguage() {
+PyLanguage::PyLanguage() {
     ERR_FAIL_COND(singleton);
     singleton=this;
 

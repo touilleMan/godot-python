@@ -5,7 +5,7 @@
 #include "micropython.h"
 #include "script_language.h"
 
-#include "py_script_language.h"
+#include "py_language.h"
 
 
 class PyInstance;
@@ -16,7 +16,7 @@ class PyScript : public Script {
     OBJ_TYPE(PyScript, Script);
 
 friend class PyInstance;
-friend class PyScriptLanguage;
+friend class PyLanguage;
 
     bool tool;
     bool valid;

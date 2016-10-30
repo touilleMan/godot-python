@@ -57,7 +57,7 @@ ScriptInstance* PyScript::instance_create(Object *p_this) {
         for(List<PropertyInfo>::Element *E=plist.front();E;E=E->next()) {
             print_line(E->get().name);
         }*/
-        PlaceHolderScriptInstance *si = memnew(PlaceHolderScriptInstance(PyScriptLanguage::get_singleton(), Ref<Script>(this), p_this));
+        PlaceHolderScriptInstance *si = memnew(PlaceHolderScriptInstance(PyLanguage::get_singleton(), Ref<Script>(this), p_this));
         placeholders.insert(si);
         //_update_placeholder(si);
         // _update_exports();
@@ -74,7 +74,7 @@ ScriptInstance* PyScript::instance_create(Object *p_this) {
     // if (top->native.is_valid()) {
     //     if (!ObjectTypeDB::is_type(p_this->get_type_name(),top->native->get_name())) {
     //         if (ScriptDebugger::get_singleton()) {
-    //             PyScriptLanguage::get_singleton()->debug_break_parse(get_path(),0,"Script inherits from native type '"+String(top->native->get_name())+"', so it can't be instanced in object of type: '"+p_this->get_type()+"'");
+    //             PyLanguage::get_singleton()->debug_break_parse(get_path(),0,"Script inherits from native type '"+String(top->native->get_name())+"', so it can't be instanced in object of type: '"+p_this->get_type()+"'");
     //         }
     //         ERR_EXPLAIN("Script inherits from native type '"+String(top->native->get_name())+"', so it can't be instanced in object of type: '"+p_this->get_type()+"'");
     //         ERR_FAIL_V(NULL);
@@ -131,7 +131,7 @@ Error PyScript::reload(bool p_keep_state) {
     // Error err = parser.parse(source,basedir,false,path);
     // if (err) {
     //     if (ScriptDebugger::get_singleton()) {
-    //         PyScriptLanguage::get_singleton()->debug_break_parse(get_path(),parser.get_error_line(),"Parser Error: "+parser.get_error());
+    //         PyLanguage::get_singleton()->debug_break_parse(get_path(),parser.get_error_line(),"Parser Error: "+parser.get_error());
     //     }
     //     _err_print_error("PyScript::reload",path.empty()?"built-in":(const char*)path.utf8().get_data(),parser.get_error_line(),("Parse Error: "+parser.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
     //     ERR_FAIL_V(ERR_PARSE_ERROR);
@@ -147,7 +147,7 @@ Error PyScript::reload(bool p_keep_state) {
 
     //     if (can_run) {
     //         if (ScriptDebugger::get_singleton()) {
-    //             PyScriptLanguage::get_singleton()->debug_break_parse(get_path(),compiler.get_error_line(),"Parser Error: "+compiler.get_error());
+    //             PyLanguage::get_singleton()->debug_break_parse(get_path(),compiler.get_error_line(),"Parser Error: "+compiler.get_error());
     //         }
     //         _err_print_error("PyScript::reload",path.empty()?"built-in":(const char*)path.utf8().get_data(),compiler.get_error_line(),("Compile Error: "+compiler.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
     //         ERR_FAIL_V(ERR_COMPILATION_FAILED);
@@ -459,7 +459,7 @@ String PyScript::get_node_type() const {
 
 ScriptLanguage *PyScript::get_language() const {
 
-    return PyScriptLanguage::get_singleton();
+    return PyLanguage::get_singleton();
 }
 
 
@@ -515,7 +515,7 @@ bool PyScript::_get(const StringName& p_name,Variant &r_ret) const {
             top=top->_base;
         }
 
-        if (p_name==PyScriptLanguage::get_singleton()->strings._script_source) {
+        if (p_name==PyLanguage::get_singleton()->strings._script_source) {
 
             r_ret=get_source_code();
             return true;
@@ -529,7 +529,7 @@ bool PyScript::_get(const StringName& p_name,Variant &r_ret) const {
 }
 bool PyScript::_set(const StringName& p_name, const Variant& p_value) {
 
-    if (p_name==PyScriptLanguage::get_singleton()->strings._script_source) {
+    if (p_name==PyLanguage::get_singleton()->strings._script_source) {
 
         set_source_code(p_value);
         reload();
@@ -731,13 +731,13 @@ PyScript::PyScript() {
     // base = NULL;
 
 #ifdef DEBUG_ENABLED
-    // if (PyScriptLanguage::get_singleton()->lock) {
-    //     PyScriptLanguage::get_singleton()->lock->lock();
+    // if (PyLanguage::get_singleton()->lock) {
+    //     PyLanguage::get_singleton()->lock->lock();
     // }
-    // PyScriptLanguage::get_singleton()->script_list.add(&script_list);
+    // PyLanguage::get_singleton()->script_list.add(&script_list);
 
-    // if (PyScriptLanguage::get_singleton()->lock) {
-    //     PyScriptLanguage::get_singleton()->lock->unlock();
+    // if (PyLanguage::get_singleton()->lock) {
+    //     PyLanguage::get_singleton()->lock->unlock();
     // }
 #endif
 }
@@ -753,13 +753,13 @@ PyScript::~PyScript() {
     // }
 
 #ifdef DEBUG_ENABLED
-    // if (PyScriptLanguage::get_singleton()->lock) {
-    //     PyScriptLanguage::get_singleton()->lock->lock();
+    // if (PyLanguage::get_singleton()->lock) {
+    //     PyLanguage::get_singleton()->lock->lock();
     // }
-    // PyScriptLanguage::get_singleton()->script_list.remove(&script_list);
+    // PyLanguage::get_singleton()->script_list.remove(&script_list);
 
-    // if (PyScriptLanguage::get_singleton()->lock) {
-    //     PyScriptLanguage::get_singleton()->lock->unlock();
+    // if (PyLanguage::get_singleton()->lock) {
+    //     PyLanguage::get_singleton()->lock->unlock();
     // }
 #endif
 }

@@ -1,9 +1,9 @@
 #include "register_types.h"
-#include "py_script_language.h"
+#include "py_language.h"
 #include "py_loader.h"
 
 
-PyScriptLanguage *script_language_py = NULL;
+PyLanguage *script_language_py = NULL;
 ResourceFormatLoaderPyScript *resource_loader_py = NULL;
 ResourceFormatSaverPyScript *resource_saver_py = NULL;
 
@@ -13,7 +13,7 @@ void register_pythonscript_types() {
     // ObjectTypeDB::register_type<PyScript>();
     // ObjectTypeDB::register_virtual_type<PyFunctionState>();
 
-    script_language_py = memnew(PyScriptLanguage);
+    script_language_py = memnew(PyLanguage);
     script_language_py->init();  // TODO: do that in constructor ?
     ScriptServer::register_language(script_language_py);
     // resource_loader_py = memnew(ResourceFormatLoaderPyScript);
