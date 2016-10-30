@@ -66,6 +66,7 @@ public:
     String get_source_code() const;
     void set_source_code(const String& p_code);
     Error reload(bool p_keep_state=false);
+    Error load_source_code(const String& p_path);
 
     bool has_method(const StringName& p_method) const;
     MethodInfo get_method_info(const StringName& p_method) const;

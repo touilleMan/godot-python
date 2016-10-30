@@ -1,3 +1,5 @@
+#include "os/file_access.h"
+
 #include "py_script.h"
 
 
@@ -612,6 +614,8 @@ Error PyScript::load_byte_code(const String& p_path) {
     return OK;
 }
 
+#endif // if 0
+
 
 Error PyScript::load_source_code(const String& p_path) {
 
@@ -642,7 +646,7 @@ Error PyScript::load_source_code(const String& p_path) {
 
     source=s;
 #ifdef TOOLS_ENABLED
-    source_changed_cache=true;
+    // source_changed_cache=true;
 #endif
     //print_line("LSC :"+get_path());
     path=p_path;
@@ -651,6 +655,7 @@ Error PyScript::load_source_code(const String& p_path) {
 }
 
 
+#if 0
 const Map<StringName,GDFunction*>& PyScript::debug_get_member_functions() const {
 
     return member_functions;

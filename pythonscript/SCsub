@@ -3,14 +3,13 @@ Import('env')
 
 module_env = env.Clone()
 
-# module_env.add_source_files(env.modules_sources,"*.cpp")
 module_env.add_source_files(env.modules_sources,"register_types.cpp")
 module_env.add_source_files(env.modules_sources,"py_script_language.cpp")
 module_env.add_source_files(env.modules_sources,"py_editor.cpp")
 module_env.add_source_files(env.modules_sources,"py_debug.cpp")
 module_env.add_source_files(env.modules_sources,"py_script.cpp")
 module_env.add_source_files(env.modules_sources,"py_script_instance.cpp")
-# module_env.add_source_files(env.modules_sources,"py_loader.cpp")
+module_env.add_source_files(env.modules_sources,"py_loader.cpp")
 
 module_env.Append(CXXFLAGS='-I ' + Dir('micropython').path)
 module_env.Append(CXXFLAGS='-I ' + Dir('micropython/micropython').path)
