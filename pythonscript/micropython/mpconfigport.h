@@ -28,7 +28,7 @@
 
 #define MICROPY_ALLOC_PATH_MAX      (PATH_MAX)
 #define MICROPY_ENABLE_GC           (1)
-#define MICROPY_ENABLE_FINALISER    (0)
+#define MICROPY_ENABLE_FINALISER    (1)
 #define MICROPY_STACK_CHECK         (0)  // TODO: disable on release ?
 #define MICROPY_COMP_CONST          (0)
 #define MICROPY_MEM_STATS           (0)
