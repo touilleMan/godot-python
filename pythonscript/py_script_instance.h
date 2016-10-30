@@ -1,16 +1,16 @@
 #ifndef PY_SCRIPT_INSTANCE_H
 #define PY_SCRIPT_INSTANCE_H
 
+#include "py_script.h"
+
+
 class PyInstance : public ScriptInstance {
     Vector<Variant> members;
-#if 0
-friend class GDScript;
-friend class GDFunction;
-friend class GDFunctions;
-friend class GDCompiler;
+friend class PyScript;
 
     Object *owner;
-    Ref<GDScript> script;
+    Ref<PyScript> script;
+#if 0
 #ifdef DEBUG_ENABLED
     Map<StringName,int> member_indices_cache; //used only for hot script reloading
 #endif
@@ -18,7 +18,7 @@ friend class GDCompiler;
     bool base_ref;
 
 
-    void _ml_call_reversed(GDScript *sptr,const StringName& p_method,const Variant** p_args,int p_argcount);
+    void _ml_call_reversed(PyScript *sptr,const StringName& p_method,const Variant** p_args,int p_argcount);
 
 public:
 

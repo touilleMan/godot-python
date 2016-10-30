@@ -5,8 +5,10 @@
 #include "micropython.h"
 #include "script_language.h"
 
-#include "py_script_instance.h"
 #include "py_script_language.h"
+
+
+class PyInstance;
 
 
 class PyScript : public Script {
@@ -18,6 +20,14 @@ friend class PyScriptLanguage;
 
     bool tool;
     bool valid;
+
+    struct MemberInfo {
+        int index;
+        StringName setter;
+        StringName getter;
+        ScriptInstance::RPCMode rpc_mode;
+
+    };
 
     mp_obj_t _exposed_mp_class;
     mp_obj_t _mp_module;

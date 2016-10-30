@@ -1,7 +1,8 @@
 #include "py_script_language.h"
+#include "py_script.h"
 #include "py_script_instance.h"
 
-
+#if 0
 class ScriptInstance {
 public:
 
@@ -48,11 +49,12 @@ public:
     virtual ~ScriptInstance();
 };
 
-
+#endif
 
 
 bool PyInstance::set(const StringName& p_name, const Variant& p_value) {
 
+#if 0
     //member
     {
         const Map<StringName,PyScript::MemberInfo>::Element *E = script->member_indices.find(p_name);
@@ -88,13 +90,14 @@ bool PyInstance::set(const StringName& p_name, const Variant& p_value) {
         }
         sptr = sptr->_base;
     }
-
+#endif
     return false;
 }
 
 
 bool PyInstance::get(const StringName& p_name, Variant &r_ret) const {
 
+#if 0
     const PyScript *sptr=script.ptr();
     while(sptr) {
 
@@ -145,7 +148,7 @@ bool PyInstance::get(const StringName& p_name, Variant &r_ret) const {
         }
         sptr = sptr->_base;
     }
-
+#endif
     return false;
 
 }
