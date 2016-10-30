@@ -168,7 +168,6 @@ void PyScriptLanguage::auto_indent_code(String& p_code,int p_from_line,int p_to_
 
 void PyScriptLanguage::add_global_constant(const StringName& p_variable,const Variant& p_value) {
 
-    _add_global(p_variable,p_value);
 }
 
 

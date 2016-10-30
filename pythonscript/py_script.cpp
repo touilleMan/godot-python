@@ -2,8 +2,9 @@
 
 
 void PyScript::_bind_methods() {
-    ObjectTypeDB::bind_native_method(METHOD_FLAGS_DEFAULT, "new", &PyScript::_new, MethodInfo(Variant::OBJECT, "new"));
-    ObjectTypeDB::bind_method(_MD("get_as_byte_code"), &PyScript::get_as_byte_code);
+    // TODO: bind class methods here
+    // ObjectTypeDB::bind_native_method(METHOD_FLAGS_DEFAULT, "new", &PyScript::_new, MethodInfo(Variant::OBJECT, "new"));
+    // ObjectTypeDB::bind_method(_MD("get_as_byte_code"), &PyScript::get_as_byte_code);
 }
 
 
@@ -14,62 +15,21 @@ void PyScript::_placeholder_erased(PlaceHolderScriptInstance *p_placeholder) {
     placeholders.erase(p_placeholder);
 }
 
-
-/*
-void PyScript::_update_placeholder(PlaceHolderScriptInstance *p_placeholder) {
-
-
-    List<PropertyInfo> plist;
-    GDScript *scr=this;
-
-    Map<StringName,Variant> default_values;
-    while(scr) {
-
-        Vector<_GDScriptMemberSort> msort;
-        for(Map<StringName,PropertyInfo>::Element *E=scr->member_info.front();E;E=E->next()) {
-
-            _GDScriptMemberSort ms;
-            ERR_CONTINUE(!scr->member_indices.has(E->key()));
-            ms.index=scr->member_indices[E->key()].index;
-            ms.name=E->key();
-
-            msort.push_back(ms);
-
-        }
-
-        msort.sort();
-        msort.invert();
-        for(int i=0;i<msort.size();i++) {
-
-            plist.push_front(scr->member_info[msort[i].name]);
-            if (scr->member_default_values.has(msort[i].name))
-                default_values[msort[i].name]=scr->member_default_values[msort[i].name];
-            else {
-                Variant::CallError err;
-                default_values[msort[i].name]=Variant::construct(scr->member_info[msort[i].name].type,NULL,0,err);
-            }
-        }
-
-        scr=scr->_base;
-    }
-
-
-    p_placeholder->update(plist,default_values);
-
-}*/
 #endif
 
 
 bool PyScript::can_instance() const {
     // TODO: think about it...
-    //return valid; //any script in GDscript can instance
-    return this->valid || (!this->tool && !ScriptServer::is_scripting_enabled());
+    // Only script file defining an exposed class can be instanciated
+    return this->valid && this->_exposed_mp_class != NULL;
+    // return valid; //script can instance
+    // return this->valid || (!this->tool && !ScriptServer::is_scripting_enabled());
 }
 
 
 Ref<Script> PyScript::get_base_script() const {
     if (this->_base) {
-        return Ref<PyScript>(this->_base);
+        return Ref<PyScript>(this->base);
     } else {
         return Ref<Script>();
     }
@@ -142,17 +102,74 @@ void PyScript::set_source_code(const String& p_code) {
     if (source == p_code)
         return;
     source = p_code;
-#ifdef TOOLS_ENABLED
-    source_changed_cache = true;
-    //print_line("SC CHANGED "+get_path());
-#endif
+// #ifdef TOOLS_ENABLED
+//     source_changed_cache = true;
+//     //print_line("SC CHANGED "+get_path());
+// #endif
 }
 
 
+Error GDScript::reload(bool p_keep_state) {
+    ERR_FAIL_COND_V(!p_keep_state && instances.size(), ERR_ALREADY_IN_USE);
+
+    String basedir = path;
+
+    if (basedir=="")
+        basedir=get_path();
+
+    if (basedir!="")
+        basedir=basedir.get_base_dir();
+
+    // TODO: load the module and retrieve exposed class here
+
+    valid=false;
+    GDParser parser;
+    Error err = parser.parse(source,basedir,false,path);
+    if (err) {
+        if (ScriptDebugger::get_singleton()) {
+            GDScriptLanguage::get_singleton()->debug_break_parse(get_path(),parser.get_error_line(),"Parser Error: "+parser.get_error());
+        }
+        _err_print_error("GDScript::reload",path.empty()?"built-in":(const char*)path.utf8().get_data(),parser.get_error_line(),("Parse Error: "+parser.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
+        ERR_FAIL_V(ERR_PARSE_ERROR);
+    }
 
 
+    bool can_run = ScriptServer::is_scripting_enabled() || parser.is_tool_script();
+
+    GDCompiler compiler;
+    err = compiler.compile(&parser,this,p_keep_state);
+
+    if (err) {
+
+        if (can_run) {
+            if (ScriptDebugger::get_singleton()) {
+                GDScriptLanguage::get_singleton()->debug_break_parse(get_path(),compiler.get_error_line(),"Parser Error: "+compiler.get_error());
+            }
+            _err_print_error("GDScript::reload",path.empty()?"built-in":(const char*)path.utf8().get_data(),compiler.get_error_line(),("Compile Error: "+compiler.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
+            ERR_FAIL_V(ERR_COMPILATION_FAILED);
+        } else {
+            return err;
+        }
+    }
+
+    valid=true;
+
+    for(Map<StringName,Ref<GDScript> >::Element *E=subclasses.front();E;E=E->next()) {
+
+        _set_subclass_path(E->get(),path);
+    }
+
+#ifdef TOOLS_ENABLED
+    /*for (Set<PlaceHolderScriptInstance*>::Element *E=placeholders.front();E;E=E->next()) {
+
+        _update_placeholder(E->get());
+    }*/
+#endif
+    return OK;
+}
 
 
+#if 0
 
 struct _GDScriptMemberSort {
 
@@ -430,67 +447,6 @@ void GDScript::_set_subclass_path(Ref<GDScript>& p_sc,const String& p_path) {
     }
 }
 
-Error GDScript::reload(bool p_keep_state) {
-
-
-    ERR_FAIL_COND_V(!p_keep_state && instances.size(),ERR_ALREADY_IN_USE);
-
-    String basedir=path;
-
-    if (basedir=="")
-        basedir=get_path();
-
-    if (basedir!="")
-        basedir=basedir.get_base_dir();
-
-
-
-
-    valid=false;
-    GDParser parser;
-    Error err = parser.parse(source,basedir,false,path);
-    if (err) {
-        if (ScriptDebugger::get_singleton()) {
-            GDScriptLanguage::get_singleton()->debug_break_parse(get_path(),parser.get_error_line(),"Parser Error: "+parser.get_error());
-        }
-        _err_print_error("GDScript::reload",path.empty()?"built-in":(const char*)path.utf8().get_data(),parser.get_error_line(),("Parse Error: "+parser.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
-        ERR_FAIL_V(ERR_PARSE_ERROR);
-    }
-
-
-    bool can_run = ScriptServer::is_scripting_enabled() || parser.is_tool_script();
-
-    GDCompiler compiler;
-    err = compiler.compile(&parser,this,p_keep_state);
-
-    if (err) {
-
-        if (can_run) {
-            if (ScriptDebugger::get_singleton()) {
-                GDScriptLanguage::get_singleton()->debug_break_parse(get_path(),compiler.get_error_line(),"Parser Error: "+compiler.get_error());
-            }
-            _err_print_error("GDScript::reload",path.empty()?"built-in":(const char*)path.utf8().get_data(),compiler.get_error_line(),("Compile Error: "+compiler.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
-            ERR_FAIL_V(ERR_COMPILATION_FAILED);
-        } else {
-            return err;
-        }
-    }
-
-    valid=true;
-
-    for(Map<StringName,Ref<GDScript> >::Element *E=subclasses.front();E;E=E->next()) {
-
-        _set_subclass_path(E->get(),path);
-    }
-
-#ifdef TOOLS_ENABLED
-    /*for (Set<PlaceHolderScriptInstance*>::Element *E=placeholders.front();E;E=E->next()) {
-
-        _update_placeholder(E->get());
-    }*/
-#endif
-    return OK;
-}
 
 String GDScript::get_node_type() const {
 
@@ -757,51 +713,46 @@ void GDScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
 #endif
 
 }
+#endif // if 0
 
+PyScript::PyScript() {
 
-GDScript::GDScript() : script_list(this) {
-
-
-    _static_ref=this;
-    valid=false;
-    subclass_count=0;
-    initializer=NULL;
-    _base=NULL;
-    _owner=NULL;
     tool=false;
-#ifdef TOOLS_ENABLED
-    source_changed_cache=false;
-#endif
+    valid=false;
+    _mp_exposed_mp_class = NULL;
+    _mp_module = NULL;
+    base = NULL;
 
 #ifdef DEBUG_ENABLED
-    if (GDScriptLanguage::get_singleton()->lock) {
-        GDScriptLanguage::get_singleton()->lock->lock();
+    if (PyScriptLanguage::get_singleton()->lock) {
+        PyScriptLanguage::get_singleton()->lock->lock();
     }
-    GDScriptLanguage::get_singleton()->script_list.add(&script_list);
+    PyScriptLanguage::get_singleton()->script_list.add(&script_list);
 
-    if (GDScriptLanguage::get_singleton()->lock) {
-        GDScriptLanguage::get_singleton()->lock->unlock();
+    if (PyScriptLanguage::get_singleton()->lock) {
+        PyScriptLanguage::get_singleton()->lock->unlock();
     }
 #endif
 }
 
-GDScript::~GDScript() {
+
+PyScript::~PyScript() {
     for (Map<StringName,GDFunction*>::Element *E=member_functions.front();E;E=E->next()) {
         memdelete( E->get() );
     }
 
-    for (Map<StringName,Ref<GDScript> >::Element *E=subclasses.front();E;E=E->next()) {
+    for (Map<StringName,Ref<PyScript> >::Element *E=subclasses.front();E;E=E->next()) {
         E->get()->_owner=NULL; //bye, you are no longer owned cause I died
     }
 
 #ifdef DEBUG_ENABLED
-    if (GDScriptLanguage::get_singleton()->lock) {
-        GDScriptLanguage::get_singleton()->lock->lock();
+    if (PyScriptLanguage::get_singleton()->lock) {
+        PyScriptLanguage::get_singleton()->lock->lock();
     }
-    GDScriptLanguage::get_singleton()->script_list.remove(&script_list);
+    PyScriptLanguage::get_singleton()->script_list.remove(&script_list);
 
-    if (GDScriptLanguage::get_singleton()->lock) {
-        GDScriptLanguage::get_singleton()->lock->unlock();
+    if (PyScriptLanguage::get_singleton()->lock) {
+        PyScriptLanguage::get_singleton()->lock->unlock();
     }
 #endif
 }

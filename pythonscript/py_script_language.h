@@ -2,22 +2,24 @@
 #define PY_SCRIPT_LANGUAGE_H
 
 #include "script_language.h"
+#include "self_list.h"
 #include "io/resource_loader.h"
 #include "io/resource_saver.h"
 
 
+class PyScript;
+class PyInstance;
+
+
 class PyScriptLanguage : public ScriptLanguage {
-public:
-    static PyScriptLanguage *singleton;
-
-    Variant* _global_array;
-    Vector<Variant> global_array;
-    Map<StringName,int> globals;
-
-    void _add_global(const StringName& p_name,const Variant& p_value);
+    friend class PyScript;
+    friend class PyInstance;
 
     Mutex *lock;
+    static PyScriptLanguage *singleton;
+    SelfList<PyScript>::List script_list;
 
+public:
     String get_name() const;
 
     /* LANGUAGE FUNCTIONS */
@@ -79,6 +81,7 @@ public:
     void frame();
 
     ~PyScriptLanguage();
+    PyScriptLanguage();
 };
 
 

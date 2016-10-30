@@ -11,6 +11,7 @@
 /************* SCRIPT LANGUAGE **************/
 
 
+// TODO: Allocate this dynamically ?
 static char MICROPYTHON_HEAP[16384];
 PyScriptLanguage *PyScriptLanguage::singleton = NULL;
 
@@ -22,21 +23,6 @@ String PyScriptLanguage::get_name() const {
 
 
 /* LANGUAGE FUNCTIONS */
-
-
-void PyScriptLanguage::_add_global(const StringName& p_name,const Variant& p_value) {
-
-
-    if (globals.has(p_name)) {
-        //overwrite existing
-        global_array[globals[p_name]] = p_value;
-        return;
-    }
-    globals[p_name] = global_array.size();
-    global_array.push_back(p_value);
-    _global_array = global_array.ptr();
-}
-
 
 
 void PyScriptLanguage::init() {
@@ -118,16 +104,11 @@ void PyScriptLanguage::finish()  {
 
 
 PyScriptLanguage::~PyScriptLanguage() {
-
-
+    singleton = NULL;
     if (lock) {
         memdelete(lock);
-        lock = NULL;
+        lock=NULL;
     }
-    // if (_call_stack)  {
-    //     memdelete_arr(_call_stack);
-    // }
-    singleton = NULL;
 }
 
 
@@ -335,12 +316,19 @@ void PyScriptLanguage::get_reserved_words(List<String> *p_words) const  {
 
 }
 
-
+#endif // if 0
 PyScriptLanguage::PyScriptLanguage() {
-
-    calls=0;
     ERR_FAIL_COND(singleton);
     singleton=this;
+
+#ifdef NO_THREADS
+    lock=NULL;
+#else
+    lock = Mutex::create();
+#endif
+
+#if 0
+    calls=0;
     strings._init = StaticCString::create("_init");
     strings._notification = StaticCString::create("_notification");
     strings._set = StaticCString::create("_set");
@@ -373,6 +361,6 @@ PyScriptLanguage::PyScriptLanguage() {
         _call_stack = NULL;
     }
 
+#endif // if 0
 }
 
-#endif // if 0

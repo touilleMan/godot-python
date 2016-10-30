@@ -10,23 +10,30 @@
 
 class PyScript : public Script {
 
-    OBJ_TYPE(PyScript,Script);
-
-    bool tool;
-    bool valid;
-
-    Variant _static_ref; //used for static call
-    Ref<PyNativeClass> native;
-    Ref<PyScript> base;
-    PyScript *_base; //fast pointer access
-    PyScript *_owner; //for subclasses
+    OBJ_TYPE(PyScript, Script);
 
 friend class PyInstance;
 friend class PyScriptLanguage;
 
+    bool tool;
+    bool valid;
+
+    mp_obj_t _exposed_mp_class;
+    mp_obj_t _mp_module;
+
+    // Ref<PyNativeClass> native;
+    Ref<PyScript> base;
+    // PyScript *_base; //fast pointer access
+    // PyScript *_owner; //for subclasses
+
+    Set<Object*> instances;
+    //exported members
+    String source;
+    String path;
+    String name;
+
 protected:
 
-    bool editor_can_reload_from_file() { return false; } // this is handled by editor better
     static void _bind_methods();
 
 #ifdef TOOLS_ENABLED
