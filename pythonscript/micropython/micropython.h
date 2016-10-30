@@ -9,6 +9,10 @@ extern "C" {
 #include "py/gc.h"
 #include "py/stackctrl.h"
 
+// Bonus functions !
+mp_obj_t mp_execute_from_lexer(mp_lexer_t *lex);
+mp_obj_t mp_execute_str(const char *str);
+
 }
 
 
