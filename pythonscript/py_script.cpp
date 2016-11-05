@@ -183,107 +183,119 @@ struct _PyScriptMemberSort {
 
 };
 
+#endif
+
 
 void PyScript::get_script_method_list(List<MethodInfo> *p_list) const {
+    // TODO
+    return;
 
-    for (const Map<StringName,GDFunction*>::Element *E=member_functions.front();E;E=E->next()) {
-        MethodInfo mi;
-        mi.name=E->key();
-        for(int i=0;i<E->get()->get_argument_count();i++) {
-            PropertyInfo arg;
-            arg.type=Variant::NIL; //variant
-            arg.name=E->get()->get_argument_name(i);
-            mi.arguments.push_back(arg);
-        }
+    // for (const Map<StringName,GDFunction*>::Element *E=member_functions.front();E;E=E->next()) {
+    //     MethodInfo mi;
+    //     mi.name=E->key();
+    //     for(int i=0;i<E->get()->get_argument_count();i++) {
+    //         PropertyInfo arg;
+    //         arg.type=Variant::NIL; //variant
+    //         arg.name=E->get()->get_argument_name(i);
+    //         mi.arguments.push_back(arg);
+    //     }
 
-        mi.return_val.name="Variant";
-        p_list->push_back(mi);
-    }
+    //     mi.return_val.name="Variant";
+    //     p_list->push_back(mi);
+    // }
 }
+
 
 void PyScript::get_script_property_list(List<PropertyInfo> *p_list) const {
+    // TODO
+    return;
 
-    const PyScript *sptr=this;
-    List<PropertyInfo> props;
+    // const PyScript *sptr=this;
+    // List<PropertyInfo> props;
 
-    while(sptr) {
+    // while(sptr) {
 
-        Vector<_PyScriptMemberSort> msort;
-        for(Map<StringName,PropertyInfo>::Element *E=sptr->member_info.front();E;E=E->next()) {
+    //     Vector<_PyScriptMemberSort> msort;
+    //     for(Map<StringName,PropertyInfo>::Element *E=sptr->member_info.front();E;E=E->next()) {
 
-            _PyScriptMemberSort ms;
-            ERR_CONTINUE(!sptr->member_indices.has(E->key()));
-            ms.index=sptr->member_indices[E->key()].index;
-            ms.name=E->key();
-            msort.push_back(ms);
+    //         _PyScriptMemberSort ms;
+    //         ERR_CONTINUE(!sptr->member_indices.has(E->key()));
+    //         ms.index=sptr->member_indices[E->key()].index;
+    //         ms.name=E->key();
+    //         msort.push_back(ms);
 
-        }
+    //     }
 
-        msort.sort();
-        msort.invert();
-        for(int i=0;i<msort.size();i++) {
+    //     msort.sort();
+    //     msort.invert();
+    //     for(int i=0;i<msort.size();i++) {
 
-            props.push_front(sptr->member_info[msort[i].name]);
+    //         props.push_front(sptr->member_info[msort[i].name]);
 
-        }
+    //     }
 
-        sptr = sptr->_base;
-    }
+    //     sptr = sptr->_base;
+    // }
 
-    for (List<PropertyInfo>::Element *E=props.front();E;E=E->next()) {
-        p_list->push_back(E->get());
-    }
+    // for (List<PropertyInfo>::Element *E=props.front();E;E=E->next()) {
+    //     p_list->push_back(E->get());
+    // }
 
 }
+
 
 bool PyScript::has_method(const StringName& p_method) const {
-
-    return member_functions.has(p_method);
+    // TODO !
+    return false;
+    // return member_functions.has(p_method);
 }
 
+
 MethodInfo PyScript::get_method_info(const StringName& p_method) const {
+    // TODO !
+    return MethodInfo();
+    // const Map<StringName,GDFunction*>::Element *E=member_functions.find(p_method);
+    // if (!E)
+    //     return MethodInfo();
 
-    const Map<StringName,GDFunction*>::Element *E=member_functions.find(p_method);
-    if (!E)
-        return MethodInfo();
+    // MethodInfo mi;
+    // mi.name=E->key();
+    // for(int i=0;i<E->get()->get_argument_count();i++) {
+    //     PropertyInfo arg;
+    //     arg.type=Variant::NIL; //variant
+    //     arg.name=E->get()->get_argument_name(i);
+    //     mi.arguments.push_back(arg);
+    // }
 
-    MethodInfo mi;
-    mi.name=E->key();
-    for(int i=0;i<E->get()->get_argument_count();i++) {
-        PropertyInfo arg;
-        arg.type=Variant::NIL; //variant
-        arg.name=E->get()->get_argument_name(i);
-        mi.arguments.push_back(arg);
-    }
-
-    mi.return_val.name="Variant";
-    return mi;
+    // mi.return_val.name="Variant";
+    // return mi;
 
 }
 
 
 bool PyScript::get_property_default_value(const StringName& p_property, Variant &r_value) const {
+    // TODO
+// #ifdef TOOLS_ENABLED
 
-#ifdef TOOLS_ENABLED
+//     //for (const Map<StringName,Variant>::Element *I=member_default_values.front();I;I=I->next()) {
+//     //  print_line("\t"+String(String(I->key())+":"+String(I->get())));
+//     //}
+//     const Map<StringName,Variant>::Element *E=member_default_values_cache.find(p_property);
+//     if (E) {
+//         r_value=E->get();
+//         return true;
+//     }
 
-    //for (const Map<StringName,Variant>::Element *I=member_default_values.front();I;I=I->next()) {
-    //  print_line("\t"+String(String(I->key())+":"+String(I->get())));
-    //}
-    const Map<StringName,Variant>::Element *E=member_default_values_cache.find(p_property);
-    if (E) {
-        r_value=E->get();
-        return true;
-    }
-
-    if (base_cache.is_valid()) {
-        return base_cache->get_property_default_value(p_property,r_value);
-    }
-#endif
+//     if (base_cache.is_valid()) {
+//         return base_cache->get_property_default_value(p_property,r_value);
+//     }
+// #endif
     return false;
 
 }
 
 
+#if 0
 
 #ifdef TOOLS_ENABLED
 void PyScript::_update_exports_values(Map<StringName,Variant>& values, List<PropertyInfo> &propnames) {
@@ -450,18 +462,22 @@ void PyScript::_set_subclass_path(Ref<PyScript>& p_sc,const String& p_path) {
         _set_subclass_path(E->get(),p_path);
     }
 }
+#endif
 
 
 String PyScript::get_node_type() const {
-
+    // Even GDscript doesn't know what to put here !
     return ""; // ?
 }
+
 
 ScriptLanguage *PyScript::get_language() const {
 
     return PyLanguage::get_singleton();
 }
 
+
+#if 0
 
 Variant PyScript::call(const StringName& p_method,const Variant** p_args,int p_argcount,Variant::CallError &r_error) {
 
@@ -680,47 +696,54 @@ Ref<PyScript> PyScript::get_base() const {
 
     return base;
 }
+#endif
+
 
 bool PyScript::has_script_signal(const StringName& p_signal) const {
-    if (_signals.has(p_signal))
-        return true;
-    if (base.is_valid()) {
-        return base->has_script_signal(p_signal);
-    }
-#ifdef TOOLS_ENABLED
-    else if (base_cache.is_valid()){
-        return base_cache->has_script_signal(p_signal);
-    }
+    // TODO
+//     if (_signals.has(p_signal))
+//         return true;
+//     if (base.is_valid()) {
+//         return base->has_script_signal(p_signal);
+//     }
+// #ifdef TOOLS_ENABLED
+//     else if (base_cache.is_valid()){
+//         return base_cache->has_script_signal(p_signal);
+//     }
 
-#endif
+// #endif
     return false;
 }
+
+
 void PyScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
+    // TODO
+    return;
 
-    for(const Map<StringName,Vector<StringName> >::Element *E=_signals.front();E;E=E->next()) {
+//     for(const Map<StringName,Vector<StringName> >::Element *E=_signals.front();E;E=E->next()) {
 
-        MethodInfo mi;
-        mi.name=E->key();
-        for(int i=0;i<E->get().size();i++) {
-            PropertyInfo arg;
-            arg.name=E->get()[i];
-            mi.arguments.push_back(arg);
-        }
-        r_signals->push_back(mi);
-    }
+//         MethodInfo mi;
+//         mi.name=E->key();
+//         for(int i=0;i<E->get().size();i++) {
+//             PropertyInfo arg;
+//             arg.name=E->get()[i];
+//             mi.arguments.push_back(arg);
+//         }
+//         r_signals->push_back(mi);
+//     }
 
-    if (base.is_valid()) {
-        base->get_script_signal_list(r_signals);
-    }
-#ifdef TOOLS_ENABLED
-    else if (base_cache.is_valid()){
-        base_cache->get_script_signal_list(r_signals);
-    }
+//     if (base.is_valid()) {
+//         base->get_script_signal_list(r_signals);
+//     }
+// #ifdef TOOLS_ENABLED
+//     else if (base_cache.is_valid()){
+//         base_cache->get_script_signal_list(r_signals);
+//     }
 
-#endif
+// #endif
 
 }
-#endif // if 0
+
 
 PyScript::PyScript() {
 

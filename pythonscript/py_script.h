@@ -71,7 +71,7 @@ public:
     bool has_method(const StringName& p_method) const;
     MethodInfo get_method_info(const StringName& p_method) const;
 
-    bool is_tool() const;
+    bool is_tool() const { return tool; }
 
     String get_node_type() const;
 

@@ -2,7 +2,7 @@
 #include "os/file_access.h"
 
 #include "py_language.h"
-// #include "py_script.h"
+#include "py_script.h"
 
 
 /* EDITOR FUNCTIONS */
@@ -90,25 +90,31 @@ void PyLanguage::get_string_delimiters(List<String> *p_delimiters) const {
 
 
 Ref<Script> PyLanguage::get_template(const String& p_class_name, const String& p_base_class_name) const {
-// TODO update me !
     String _template = String()+
-    "\nextends %BASE%\n\n"+
-    "# member variables here, example:\n"+
-    "# var a=2\n"+
-    "# var b=\"textvar\"\n\n"+
-    "func _ready():\n"+
-    "\t# Called every time the node is added to the scene.\n"+
-    "\t# Initialization here\n"+
-    "\tpass\n"+
-    "\n"+
-    "\n";
+    "from godot import *\n" +
+    "\n\n" +
+    "class %CLS%(%BASE%):\n" +
+    "\n" +
+    "    # member variables here, example:\n" +
+    "    a = export(int)\n" +
+    "    b = export(str)\n" +
+    "\n" +
+    "    def _ready(self):\n" +
+    "        \"\"\"\n" +
+    "        Called every time the node is added to the scene.\n" +
+    "        Initialization here.\n" +
+    "        \"\"\"\n" +
+    "        pass\n";
 
-    _template = _template.replace("%BASE%",p_base_class_name);
+    _template = _template.replace("%BASE%", p_base_class_name);
+    if (p_class_name != "")
+        _template = _template.replace("%CLS%", p_class_name);
+    else
+        _template = _template.replace("%CLS%", String("MyExportedCls"));
 
-    // Ref<PyScript> script;
-    // script.instance();
-    // script->set_source_code(_template);
-    Ref<Script> script;
+    Ref<PyScript> script;
+    script.instance();
+    script->set_source_code(_template);
 
     return script;
 
@@ -121,8 +127,7 @@ bool PyLanguage::validate(const String& p_script, int &r_line_error,int &r_col_e
 
 
 Script *PyLanguage::create_script() const {
-    // return memnew(PyScript);
-    return NULL;
+    return memnew(PyScript);
 }
 
 
