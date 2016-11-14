@@ -9,55 +9,40 @@
 
 
 void PyLanguage::get_reserved_words(List<String> *p_words) const  {
-// TODO update me !
-#if 0
     static const char *_reserved_words[]={
-        // operators
+        "False",
+        "None",
+        "True",
         "and",
-        "in",
-        "not",
-        "or",
-        // types and values
-        "false",
-        "float",
-        "int",
-        "bool",
-        "null",
-        "PI",
-        "self",
-        "true",
-        // functions
+        "as",
         "assert",
-        "breakpoint",
-        "class",
-        "extends",
-        "func",
-        "preload",
-        "setget",
-        "signal",
-        "tool",
-        "yield",
-        // var
-        "const",
-        "enum",
-        "export",
-        "onready",
-        "static",
-        "var",
-        // control flow
         "break",
+        "class",
         "continue",
-        "if",
+        "def",
+        "del",
         "elif",
         "else",
+        "except",
+        "finally",
         "for",
+        "from",
+        "global",
+        "if",
+        "import",
+        "in",
+        "is",
+        "lambda",
+        "nonlocal",
+        "not",
+        "or",
         "pass",
+        "raise",
         "return",
+        "try",
         "while",
-        "remote",
-        "sync",
-        "master",
-        "slave",
+        "with",
+        "yield",
         0};
 
 
@@ -70,10 +55,10 @@ void PyLanguage::get_reserved_words(List<String> *p_words) const  {
         w++;
     }
 
-    for(int i=0;i<PyFunctions::FUNC_MAX;i++) {
-        p_words->push_back(PyFunctions::get_func_name(PyFunctions::Function(i)));
-    }
-#endif
+    // TODO update me !
+    // for(int i=0;i<PyFunctions::FUNC_MAX;i++) {
+    //     p_words->push_back(PyFunctions::get_func_name(PyFunctions::Function(i)));
+    // }
 }
 
 

@@ -36,6 +36,10 @@ void PyLanguage::init() {
     // Initialize interpreter
     mp_init();
 
+    // Init sys.path and argv
+    mp_obj_list_init(static_cast<struct _mp_obj_list_t *>(MP_OBJ_TO_PTR(mp_sys_path)), 0);
+    mp_obj_list_init(static_cast<struct _mp_obj_list_t *>(MP_OBJ_TO_PTR(mp_sys_argv)), 0);
+
 #if 0
     //populate global constants
     int gcc=GlobalConstants::get_global_constant_count();
