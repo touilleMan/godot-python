@@ -13,6 +13,7 @@ Roadmap
 - [ ] Load Python module as `Script`
 - [ ] Instanciate Python class as `ScriptInstance`
 - [ ] Connect Godot's `Variant` and basetypes with Python ones
+- [ ] Expose Python `Script` through `ObjectTypeDB`
 - [ ] Generate binding code to work with Godot's `MethodBind` & `ObjectTypeDB`
 - [ ] Have a "HelloWorld" script working
 
