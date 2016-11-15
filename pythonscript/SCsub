@@ -17,11 +17,13 @@ sources = [
 	"py_loader.cpp"
 ]
 
-if ARGUMENTS.get('PYTHONSCRIPT_USE_SHARED'):
+if ARGUMENTS.get('PYTHONSCRIPT_SHARED', 'no') == 'yes':
 	shared_module_env = module_env.Clone()
 	shared_module_env['LIBS'] = []
 	shared_module_env.Append(CXXFLAGS='-fPIC')
 	shared_lib = shared_module_env.SharedLibrary(target='#bin/pythonscript', source=sources)
+	# Scons needs the name of the lib with custom suffix (e.g. ".x11.tools.64")
+	# but without the final ".so"
 	shared_lib_shim = shared_lib[0].name.rsplit('.', 1)[0]
 	env.Append(LIBS=[shared_lib_shim, micropython_lib])
 	env.Append(LIBPATH=['#bin'])
