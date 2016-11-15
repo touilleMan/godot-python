@@ -34,8 +34,9 @@ friend class PyLanguage;
 
     // Ref<PyNativeClass> native;
     Ref<PyScript> base;
-    // PyScript *_base; //fast pointer access
+    PyScript *_base; //fast pointer access
     // PyScript *_owner; //for subclasses
+    Map<StringName,PropertyInfo> member_info;
 
     Set<Object*> instances;
     //exported members

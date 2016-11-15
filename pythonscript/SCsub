@@ -1,12 +1,14 @@
 Import('env')
 
+micropython_lib = File("micropython/libmicropython.a")
+
 module_env = env.Clone()
 module_env.Append(CXXFLAGS='-I ' + Dir('micropython').path)
 module_env.Append(CXXFLAGS='-I ' + Dir('micropython/micropython').path)
 module_env.Append(CXXFLAGS='-I ' + Dir('micropython/build').path)
-module_env.Append(LIBS=File("micropython/libmicropython.a"))
 
 sources = [
+	"register_types.cpp",
 	"py_language.cpp",
 	"py_editor.cpp",
 	"py_debug.cpp",
@@ -19,15 +21,11 @@ if ARGUMENTS.get('PYTHONSCRIPT_USE_SHARED'):
 	shared_module_env = module_env.Clone()
 	shared_module_env['LIBS'] = []
 	shared_module_env.Append(CXXFLAGS='-fPIC')
-	sources.append("register_types_shared.cpp")
-	shared_lib = shared_module_env.SharedLibrary(target='pythonscript', source=sources)
-
-	module_env.Append(CXXFLAGS='-DPYTHONSCRIPT_USE_SHARED')
-	module_env.Append(CXXFLAGS='-DPYTHONSCRIPT_SHARED_LIB=libpythonscript.x11.tools.64.llvm.so')
-	module_env.add_source_files(env.modules_sources, "register_types.cpp")
-	module_env.Prepend(LIBS=[shared_lib])
+	shared_lib = shared_module_env.SharedLibrary(target='#bin/pythonscript', source=sources)
+	shared_lib_shim = shared_lib[0].name.rsplit('.', 1)[0]
+	env.Append(LIBS=[shared_lib_shim, micropython_lib])
+	env.Append(LIBPATH=['#bin'])
 else:
-	sources.append("register_types.cpp")
+	module_env.Append(LIBS=micropython_lib)
 	for src in sources:
 		module_env.add_source_files(env.modules_sources, src)
-	# env.Append(LIBS=File("micropython/libmicropython.a"))

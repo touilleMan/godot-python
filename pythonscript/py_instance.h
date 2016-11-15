@@ -10,6 +10,7 @@ friend class PyScript;
 
     Object *owner;
     Ref<PyScript> script;
+
 #if 0
 #ifdef DEBUG_ENABLED
     Map<StringName,int> member_indices_cache; //used only for hot script reloading
