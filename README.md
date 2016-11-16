@@ -24,8 +24,11 @@ Pros:
   manually protected of course)
 - It should be easy to tweak MicroPython in the future to allow multiple
   independent interpreters within the same application
-- Code emitter allows compilation to native code of some parts of the script
-  for speedup boost
+- [Code emitter](http://docs.micropython.org/en/latest/wipy/reference/speed_python.html#the-native-code-emitter)
+  allows compilation to native code of some parts of the script for speedup boost
+- Unlike CPython reference counting, MicroPython make use of a garbage collector
+  which allows can be manually triggered (i.g. to run it in parallel with
+  rendering [given game logic is not run at this time](https://godotengine.org/article/why-does-godot-use-servers-and-rids))
 
 Cons:
 - Less support & documentation about MicroPython internals
