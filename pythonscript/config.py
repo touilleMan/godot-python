@@ -13,5 +13,8 @@ def can_build(platform):
 def configure(env):
     if not path.isfile(MP_TARGET):
         print('Building libmicropython.a...')
-        subprocess.call(["make"], cwd=MP_DIR)
+        cmd = ['make']
+        if env["target"] == "debug":
+            cmd.append('DEBUG=y')
+        subprocess.call(cmd, cwd=MP_DIR)
         print('libmicropython.a successfully built !')
