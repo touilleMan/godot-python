@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=1]
+
+[ext_resource path="res://main.gd" type="Script" id=1]
+[ext_resource path="res://test.py" type="Script" id=2]
+
+[node name="Node" type="Node"]
+
+script/script = ExtResource( 1 )
+
+[node name="Node2D" type="Node2D" parent="."]
+
+script/script = ExtResource( 2 )
+
+
