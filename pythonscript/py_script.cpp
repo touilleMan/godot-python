@@ -4,6 +4,7 @@
 
 
 void PyScript::_bind_methods() {
+    DEBUG_TRACE();
     // TODO: bind class methods here
     // ObjectTypeDB::bind_native_method(METHOD_FLAGS_DEFAULT, "new", &PyScript::_new, MethodInfo(Variant::OBJECT, "new"));
     // ObjectTypeDB::bind_method(_MD("get_as_byte_code"), &PyScript::get_as_byte_code);
@@ -14,6 +15,7 @@ void PyScript::_bind_methods() {
 
 
 void PyScript::_placeholder_erased(PlaceHolderScriptInstance *p_placeholder) {
+    DEBUG_TRACE_METHOD();
     placeholders.erase(p_placeholder);
 }
 
@@ -21,6 +23,7 @@ void PyScript::_placeholder_erased(PlaceHolderScriptInstance *p_placeholder) {
 
 
 bool PyScript::can_instance() const {
+    DEBUG_TRACE_METHOD_ARGS((this->valid && this->_exposed_mp_class != NULL ? " true" : " false"));
     // TODO: think about it...
     // Only script file defining an exposed class can be instanciated
     return this->valid && this->_exposed_mp_class != NULL;
@@ -30,6 +33,7 @@ bool PyScript::can_instance() const {
 
 
 Ref<Script> PyScript::get_base_script() const {
+    DEBUG_TRACE_METHOD();
     if (this->base.ptr()) {
         return Ref<PyScript>(this->base);
     } else {
@@ -39,6 +43,7 @@ Ref<Script> PyScript::get_base_script() const {
 
 
 StringName PyScript::get_instance_base_type() const {
+    DEBUG_TRACE_METHOD();
     // if (this->native.is_valid())
     //     return this->native->get_name();
     if (this->base.is_valid())
@@ -48,6 +53,7 @@ StringName PyScript::get_instance_base_type() const {
 
 
 ScriptInstance* PyScript::instance_create(Object *p_this) {
+    DEBUG_TRACE_METHOD();
     if (!this->tool && !ScriptServer::is_scripting_enabled()) {
 #ifdef TOOLS_ENABLED
         //instance a fake script for editing the values
@@ -88,24 +94,28 @@ ScriptInstance* PyScript::instance_create(Object *p_this) {
 
 
 bool PyScript::instance_has(const Object *p_this) const {
-    return instances.has((Object*)p_this);
+    DEBUG_TRACE_METHOD();
+    return this->instances.has((Object*)p_this);
 }
 
 
 bool PyScript::has_source_code() const {
-    return source != "";
+    DEBUG_TRACE_METHOD();
+    return this->source != "";
 }
 
 
 String PyScript::get_source_code() const {
-    return source;
+    DEBUG_TRACE_METHOD();
+    return this->source;
 }
 
 
 void PyScript::set_source_code(const String& p_code) {
-    if (source == p_code)
+    DEBUG_TRACE_METHOD();
+    if (this->source == p_code)
         return;
-    source = p_code;
+    this->source = p_code;
 // #ifdef TOOLS_ENABLED
 //     source_changed_cache = true;
 //     //print_line("SC CHANGED "+get_path());
@@ -113,17 +123,36 @@ void PyScript::set_source_code(const String& p_code) {
 }
 
 
-Error PyScript::reload(bool p_keep_state) {
-    ERR_FAIL_COND_V(!p_keep_state && instances.size(), ERR_ALREADY_IN_USE);
+static const String to_mp_module_path(const String &p_path) {
+    ERR_EXPLAIN("Bad python script path, must starts by `res://` and ends with `.py`");
+    ERR_FAIL_COND_V(!p_path.begins_with("res://") || !p_path.ends_with(".py"), String());
+    return p_path.substr(6, p_path.length() - 6 - 3).replace("/", ".");
+}
 
-    String basedir = path;
+
+Error PyScript::reload(bool p_keep_state) {
+    DEBUG_TRACE_METHOD();
+    ERR_FAIL_COND_V(!p_keep_state && this->instances.size(), ERR_ALREADY_IN_USE);
+
+    String basedir = this->path;
 
     if (basedir=="")
-        basedir=get_path();
+        basedir=this->get_path();
 
     if (basedir!="")
         basedir=basedir.get_base_dir();
 
+    // Retrieve the module path in python format from the ressource path
+    const String mp_module_path = to_mp_module_path(this->path);
+    ERR_FAIL_COND_V(!mp_module_path.length(), ERR_FILE_BAD_PATH);
+
+    // Load the module into micropython
+    // TODO: mp_execute_expr should return error with traceback ?
+    const mp_obj_t ret = mp_execute_expr((String("import ") + mp_module_path).ascii().get_data());
+    ERR_FAIL_COND_V(ret != mp_const_none, ERR_FILE_UNRECOGNIZED);
+    // mp_import_name(qstr_from_str(s_mp_module_path), mp_const_none, MP_OBJ_NEW_SMALL_INT(0));
+
+    // mp_execute_as_module(this->sources)
     // TODO: load the module and retrieve exposed class here
 
     // valid=false;
@@ -187,6 +216,7 @@ struct _PyScriptMemberSort {
 
 
 void PyScript::get_script_method_list(List<MethodInfo> *p_list) const {
+    DEBUG_TRACE_METHOD();
     // TODO
     return;
 
@@ -207,6 +237,7 @@ void PyScript::get_script_method_list(List<MethodInfo> *p_list) const {
 
 
 void PyScript::get_script_property_list(List<PropertyInfo> *p_list) const {
+    DEBUG_TRACE_METHOD();
     // TODO
     return;
 
@@ -245,6 +276,7 @@ void PyScript::get_script_property_list(List<PropertyInfo> *p_list) const {
 
 
 bool PyScript::has_method(const StringName& p_method) const {
+    DEBUG_TRACE_METHOD();
     // TODO !
     return false;
     // return member_functions.has(p_method);
@@ -252,6 +284,7 @@ bool PyScript::has_method(const StringName& p_method) const {
 
 
 MethodInfo PyScript::get_method_info(const StringName& p_method) const {
+    DEBUG_TRACE_METHOD();
     // TODO !
     return MethodInfo();
     // const Map<StringName,GDFunction*>::Element *E=member_functions.find(p_method);
@@ -274,6 +307,7 @@ MethodInfo PyScript::get_method_info(const StringName& p_method) const {
 
 
 bool PyScript::get_property_default_value(const StringName& p_property, Variant &r_value) const {
+    DEBUG_TRACE_METHOD();
     // TODO
 // #ifdef TOOLS_ENABLED
 
@@ -466,12 +500,14 @@ void PyScript::_set_subclass_path(Ref<PyScript>& p_sc,const String& p_path) {
 
 
 String PyScript::get_node_type() const {
+    DEBUG_TRACE_METHOD();
     // Even GDscript doesn't know what to put here !
     return ""; // ?
 }
 
 
 ScriptLanguage *PyScript::get_language() const {
+    DEBUG_TRACE_METHOD();
 
     return PyLanguage::get_singleton();
 }
@@ -635,7 +671,6 @@ Error PyScript::load_byte_code(const String& p_path) {
 
 Error PyScript::load_source_code(const String& p_path) {
 
-
     DVector<uint8_t> sourcef;
     Error err;
     FileAccess *f=FileAccess::open(p_path,FileAccess::READ,&err);
@@ -660,12 +695,12 @@ Error PyScript::load_source_code(const String& p_path) {
         ERR_FAIL_V(ERR_INVALID_DATA);
     }
 
-    source=s;
+    this->source=s;
 #ifdef TOOLS_ENABLED
     // source_changed_cache=true;
 #endif
     //print_line("LSC :"+get_path());
-    path=p_path;
+    this->path=p_path;
     return OK;
 
 }
@@ -700,6 +735,7 @@ Ref<PyScript> PyScript::get_base() const {
 
 
 bool PyScript::has_script_signal(const StringName& p_signal) const {
+    DEBUG_TRACE_METHOD();
     // TODO
 //     if (_signals.has(p_signal))
 //         return true;
@@ -717,6 +753,7 @@ bool PyScript::has_script_signal(const StringName& p_signal) const {
 
 
 void PyScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
+    DEBUG_TRACE_METHOD();
     // TODO
     return;
 
@@ -746,6 +783,7 @@ void PyScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
 
 
 PyScript::PyScript() {
+    DEBUG_TRACE_METHOD();
 
     tool=false;
     valid=false;
@@ -767,6 +805,7 @@ PyScript::PyScript() {
 
 
 PyScript::~PyScript() {
+    DEBUG_TRACE_METHOD();
     // for (Map<StringName,GDFunction*>::Element *E=member_functions.front();E;E=E->next()) {
     //     memdelete( E->get() );
     // }

@@ -1,5 +1,5 @@
 #include "py_language.h"
-// #include "py_script.h"
+#include "py_script.h"
 
 #include "micropython.h"
 
@@ -27,6 +27,7 @@ String PyLanguage::get_name() const {
 
 
 void PyLanguage::init() {
+    DEBUG_TRACE_METHOD();
     // MicroPython init
 
     // Initialized stack limit
@@ -39,6 +40,7 @@ void PyLanguage::init() {
     // Init sys.path and argv
     mp_obj_list_init(static_cast<struct _mp_obj_list_t *>(MP_OBJ_TO_PTR(mp_sys_path)), 0);
     mp_obj_list_init(static_cast<struct _mp_obj_list_t *>(MP_OBJ_TO_PTR(mp_sys_argv)), 0);
+    // TODO: add project dir to sys.path
 
 #if 0
     //populate global constants
@@ -80,7 +82,7 @@ void PyLanguage::init() {
 
 
 String PyLanguage::get_type() const {
-
+    DEBUG_TRACE_METHOD();
     return "Python";
 }
 
@@ -92,12 +94,14 @@ String PyLanguage::get_extension() const {
 
 
 Error PyLanguage::execute_file(const String& p_path)  {
+    DEBUG_TRACE_METHOD();
     // ??
     return OK;
 }
 
 
 void PyLanguage::finish()  {
+    DEBUG_TRACE_METHOD();
     mp_deinit();
 }
 
@@ -109,6 +113,7 @@ void PyLanguage::finish()  {
 
 
 PyLanguage::~PyLanguage() {
+    DEBUG_TRACE_METHOD();
     singleton = NULL;
     if (lock) {
         memdelete(lock);
@@ -323,6 +328,7 @@ void PyLanguage::get_reserved_words(List<String> *p_words) const  {
 
 #endif // if 0
 PyLanguage::PyLanguage() {
+    DEBUG_TRACE_METHOD();
     ERR_FAIL_COND(singleton);
     singleton=this;
 

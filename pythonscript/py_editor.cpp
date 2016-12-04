@@ -55,7 +55,7 @@ void PyLanguage::get_reserved_words(List<String> *p_words) const  {
         w++;
     }
 
-    // TODO update me !
+    // TODO add get_public_functions/get_public_constants ?
     // for(int i=0;i<PyFunctions::FUNC_MAX;i++) {
     //     p_words->push_back(PyFunctions::get_func_name(PyFunctions::Function(i)));
     // }
@@ -171,7 +171,8 @@ void PyLanguage::get_recognized_extensions(List<String> *p_extensions) const {
 
 
 void PyLanguage::get_public_functions(List<MethodInfo> *p_functions) const {
-// TODO: improve ?
+    // TODO: Display builtins module ?
+    // Seems to be only used for documentation (doc_data.cpp)
 #if 0
     for(int i=0;i<PyFunctions::FUNC_MAX;i++) {
 
@@ -206,11 +207,14 @@ void PyLanguage::get_public_functions(List<MethodInfo> *p_functions) const {
 
 
 void PyLanguage::get_public_constants(List<Pair<String,Variant> > *p_constants) const {
-// TODO: improve ?
+    // TODO: Display builtins module ?
+    // Seems to be only used for documentation (doc_data.cpp)
+#if 0
     Pair<String,Variant> pi;
     pi.first="PI";
     pi.second=Math_PI;
     p_constants->push_back(pi);
+#endif
 }
 
 

@@ -49,7 +49,6 @@ void register_pythonscript_types() {
     // ObjectTypeDB::register_virtual_type<PyFunctionState>();
 
     script_language_py = memnew(PyLanguage);
-    script_language_py->init();  // TODO: do that in constructor ?
     ScriptServer::register_language(script_language_py);
 
     resource_loader_py = memnew(ResourceFormatLoaderPyScript);
@@ -58,11 +57,11 @@ void register_pythonscript_types() {
     ResourceSaver::add_resource_format_saver(resource_saver_py);
 
     // Update sys path
+#if 0
     mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(qstr_from_str("/home/emmanuel/projects/godot-python/example")));
-
-    mp_execute_str("import godot");
-    mp_execute_str("import player");
-    mp_obj_t mp_player_cls = mp_execute_str("godot.get_exposed_class_per_module('player')");
+    mp_execute_expr("import godot");
+    mp_execute_expr("import player");
+    mp_obj_t mp_player_cls = mp_execute_expr("godot.get_exposed_class_per_module('player')");
     // mp_obj_print(mp_player_cls, PRINT_REPR);
 
     ERR_EXPLAIN("Module didn't defined an exported class.");
@@ -81,6 +80,7 @@ void register_pythonscript_types() {
     // const StringName inherits = StaticCString::create(qstr_str(MP_OBJ_QSTR_VALUE(p_mp_player_cls->base.type->name)));
     const StringName inherits = StaticCString::create("Object");
     ObjectTypeDB::_add_type2(type, inherits);
+#endif
 }
 
 

@@ -53,6 +53,7 @@ public:
 
 
 bool PyInstance::set(const StringName& p_name, const Variant& p_value) {
+    DEBUG_TRACE_METHOD();
 
 #if 0
     //member
@@ -96,6 +97,7 @@ bool PyInstance::set(const StringName& p_name, const Variant& p_value) {
 
 
 bool PyInstance::get(const StringName& p_name, Variant &r_ret) const {
+    DEBUG_TRACE_METHOD();
 
 #if 0
     const PyScript *sptr=script.ptr();
@@ -155,18 +157,21 @@ bool PyInstance::get(const StringName& p_name, Variant &r_ret) const {
 
 
 Ref<Script> PyInstance::get_script() const {
+    DEBUG_TRACE_METHOD();
 
     return script;
 }
 
 
 ScriptLanguage *PyInstance::get_language() {
+    DEBUG_TRACE_METHOD();
 
     return PyLanguage::get_singleton();
 }
 
 
 Variant::Type PyInstance::get_property_type(const StringName& p_name,bool *r_is_valid) const {
+    DEBUG_TRACE_METHOD();
 
 
 #if 0
@@ -188,6 +193,7 @@ Variant::Type PyInstance::get_property_type(const StringName& p_name,bool *r_is_
 }
 
 void PyInstance::get_property_list(List<PropertyInfo> *p_properties) const {
+    DEBUG_TRACE_METHOD();
 #if 0
     // exported members, not doen yet!
 
@@ -310,6 +316,7 @@ void PyInstance::get_property_list(List<PropertyInfo> *p_properties) const {
 }
 
 void PyInstance::get_method_list(List<MethodInfo> *p_list) const {
+    DEBUG_TRACE_METHOD();
 #if 0
 
     const PyScript *sptr=script.ptr();
@@ -331,6 +338,7 @@ void PyInstance::get_method_list(List<MethodInfo> *p_list) const {
 }
 
 bool PyInstance::has_method(const StringName& p_method) const {
+    DEBUG_TRACE_METHOD();
 #if 0
 
     const PyScript *sptr=script.ptr();
@@ -345,6 +353,7 @@ bool PyInstance::has_method(const StringName& p_method) const {
     return false;
 }
 Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p_argcount,Variant::CallError &r_error) {
+    DEBUG_TRACE_METHOD();
 #if 0
 
     //printf("calling %ls:%i method %ls\n", script->get_path().c_str(), -1, String(p_method).c_str());
@@ -363,6 +372,7 @@ Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p
 }
 
 void PyInstance::call_multilevel(const StringName& p_method,const Variant** p_args,int p_argcount) {
+    DEBUG_TRACE_METHOD();
 
 #if 0
     PyScript *sptr=script.ptr();
@@ -398,6 +408,7 @@ void PyInstance::_ml_call_reversed(PyScript *sptr,const StringName& p_method,con
 
 
 void PyInstance::call_multilevel_reversed(const StringName& p_method,const Variant** p_args,int p_argcount) {
+    DEBUG_TRACE_METHOD();
 
 #if 0
     if (script.ptr()) {
@@ -408,6 +419,7 @@ void PyInstance::call_multilevel_reversed(const StringName& p_method,const Varia
 
 
 void PyInstance::notification(int p_notification) {
+    DEBUG_TRACE_METHOD();
     // TODO
 
     // //notification is not virutal, it gets called at ALL levels just like in C.
@@ -432,6 +444,7 @@ void PyInstance::notification(int p_notification) {
 
 
 void PyInstance::reload_members() {
+    DEBUG_TRACE_METHOD();
     // TODO
 
 #ifdef DEBUG_ENABLED
@@ -466,6 +479,7 @@ void PyInstance::reload_members() {
 
 
 PyInstance::RPCMode PyInstance::get_rpc_mode(const StringName& p_method) const {
+    DEBUG_TRACE_METHOD();
     // TODO
 
     // const PyScript *cscript = script.ptr();
@@ -487,6 +501,7 @@ PyInstance::RPCMode PyInstance::get_rpc_mode(const StringName& p_method) const {
 
 
 PyInstance::RPCMode PyInstance::get_rset_mode(const StringName& p_variable) const {
+    DEBUG_TRACE_METHOD();
     // TODO
 
     // const PyScript *cscript = script.ptr();
@@ -508,10 +523,12 @@ PyInstance::RPCMode PyInstance::get_rset_mode(const StringName& p_variable) cons
 
 
 PyInstance::PyInstance() {
+    DEBUG_TRACE_METHOD();
 
 }
 
 
 PyInstance::~PyInstance() {
+    DEBUG_TRACE_METHOD();
 
 }
