@@ -11,7 +11,8 @@ extern "C" {
 
 // Bonus functions !
 mp_obj_t mp_execute_from_lexer(mp_lexer_t *lex);
-mp_obj_t mp_execute_str(const char *str);
+mp_obj_t mp_execute_as_module(const char *str);
+mp_obj_t mp_execute_expr(const char *str);
 
 }
 

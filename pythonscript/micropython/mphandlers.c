@@ -8,7 +8,7 @@
 #include "micropython/py/compile.h"
 
 
-/* Needed by mycropython */
+/* Needed by micropython */
 
 uint mp_import_stat(const char *path) {
     struct stat st;
@@ -29,11 +29,11 @@ void nlr_jump_fail(void *val) {
 }
 
 
-mp_obj_t mp_execute_from_lexer(mp_lexer_t *lex) {
+mp_obj_t mp_execute_from_lexer(mp_lexer_t *lex, mp_parse_input_kind_t input_kind, bool is_repl) {
     nlr_buf_t nlr;
     if (nlr_push(&nlr) == 0) {
-        mp_parse_tree_t pt = mp_parse(lex, MP_PARSE_FILE_INPUT);
-        mp_obj_t module_fun = mp_compile(&pt, lex->source_name, MP_EMIT_OPT_NONE, false);
+        mp_parse_tree_t pt = mp_parse(lex, input_kind);
+        mp_obj_t module_fun = mp_compile(&pt, lex->source_name, MP_EMIT_OPT_NONE, is_repl);
         mp_call_function_0(module_fun);
 
         // Handle exceptions
@@ -44,7 +44,7 @@ mp_obj_t mp_execute_from_lexer(mp_lexer_t *lex) {
         }
 
         nlr_pop();
-        return 0;
+        return mp_const_none;
     } else {
         mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
         // uncaught exception
@@ -53,7 +53,12 @@ mp_obj_t mp_execute_from_lexer(mp_lexer_t *lex) {
 }
 
 
-mp_obj_t mp_execute_str(const char *str) {
+mp_obj_t mp_execute_as_module(const char *str) {
     mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, str, strlen(str), false);
-    return mp_execute_from_lexer(lex);
+    return mp_execute_from_lexer(lex, MP_PARSE_FILE_INPUT, false);
+}
+
+mp_obj_t mp_execute_expr(const char *str) {
+    mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, str, strlen(str), false);
+    return mp_execute_from_lexer(lex, MP_PARSE_SINGLE_INPUT, true);
 }
