@@ -12,9 +12,17 @@ def exposed(cls):
     return cls
 
 
+def export(type):
+    return None
+
+
 def get_exposed_class_per_module(module_name):
     return __exposed_classes_per_module[module_name]
 
 
 class Node:
+    pass
+
+
+class Node2D(Node):
     pass

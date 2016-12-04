@@ -1,6 +1,7 @@
 from godot import *
 
 
+@exposed
 class MyExportedCls(Node2D):
 
     # member variables here, example:
