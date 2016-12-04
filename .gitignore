@@ -3,6 +3,7 @@
 *.a
 *.o
 *.so
+*.os
 *.so.*
 *.pyc
 build
