@@ -34,8 +34,8 @@ friend class PyLanguage;
 
     };
 
-    mp_obj_t _exposed_mp_class;
-    mp_obj_t _mp_module;
+    mp_obj_t _mpo_exposed_class;
+    mp_obj_t _mpo_module;
 
     // Ref<PyNativeClass> native;
     Ref<PyScript> base;

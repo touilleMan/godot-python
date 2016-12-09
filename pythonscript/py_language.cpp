@@ -2,6 +2,7 @@
 #include "py_script.h"
 
 #include "micropython.h"
+#include "micropython-wrap/util.h"
 
 
 /************* SCRIPT LANGUAGE **************/
@@ -25,6 +26,21 @@ String PyLanguage::get_name() const {
 
 /* LANGUAGE FUNCTIONS */
 
+mp_obj_t PyLanguage::get_mp_exposed_class_from_module(const qstr qstr_module_name) {
+    static mp_obj_t mpo_get_exposed_class_per_module = 0;
+    mp_obj_t mpo_exposed_cls = mp_const_none;
+    const auto import_module = [this, &qstr_module_name, &mpo_exposed_cls]() {
+        if (!mpo_get_exposed_class_per_module) {
+            mpo_get_exposed_class_per_module = mp_load_attr(
+                this->_mpo_godot_module, qstr_from_str("get_exposed_class_per_module"));
+        }
+        mpo_exposed_cls = mp_call_function_1(mpo_get_exposed_class_per_module, MP_OBJ_NEW_QSTR(qstr_module_name));
+    };
+    const auto handle_ex = [](mp_obj_t ex) {};
+    upywrap::WrapMicroPythonCall<decltype(import_module), decltype(handle_ex)>(import_module, handle_ex);
+    return mpo_exposed_cls;
+}
+
 
 void PyLanguage::init() {
     DEBUG_TRACE_METHOD();
@@ -41,6 +57,25 @@ void PyLanguage::init() {
     mp_obj_list_init(static_cast<struct _mp_obj_list_t *>(MP_OBJ_TO_PTR(mp_sys_path)), 0);
     mp_obj_list_init(static_cast<struct _mp_obj_list_t *>(MP_OBJ_TO_PTR(mp_sys_argv)), 0);
     // TODO: add project dir to sys.path
+
+
+    // Load godot python module and connect it to PyLanguage
+    mp_obj_t error = 0;
+    auto import_module = [this]() {
+        // Load the module into micropython
+        qstr qstr_module_path = qstr_from_str("godot");
+        this->_mpo_godot_module = mp_import_name(qstr_module_path, mp_const_none, MP_OBJ_NEW_SMALL_INT(0));
+        mp_store_global(qstr_module_path, this->_mpo_godot_module);
+        // // Retrieve module's exposed class
+        // this->_mpo_exposed_classes_per_module = mp_load_method(
+        //     mpo_godot_module, qstr_from_str("__exposed_classes_per_module"));
+    };
+    auto handle_ex = [&error](mp_obj_t ex) {
+        mp_obj_print_exception(&mp_plat_print, ex);
+        error = ex;
+    };
+    upywrap::WrapMicroPythonCall<decltype(import_module), decltype(handle_ex)>(import_module, handle_ex);
+    ERR_FAIL_COND(error);
 
 #if 0
     //populate global constants

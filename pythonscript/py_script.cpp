@@ -1,4 +1,6 @@
 #include "os/file_access.h"
+#include "micropython-wrap/util.h"
+#include "micropython-wrap/detail/micropython.h"
 
 #include "py_script.h"
 
@@ -23,10 +25,10 @@ void PyScript::_placeholder_erased(PlaceHolderScriptInstance *p_placeholder) {
 
 
 bool PyScript::can_instance() const {
-    DEBUG_TRACE_METHOD_ARGS((this->valid && this->_exposed_mp_class != NULL ? " true" : " false"));
+    DEBUG_TRACE_METHOD_ARGS((this->valid && this->_mpo_exposed_class != mp_const_none ? " true" : " false"));
     // TODO: think about it...
     // Only script file defining an exposed class can be instanciated
-    return this->valid && this->_exposed_mp_class != NULL;
+    return this->valid && this->_mpo_exposed_class != mp_const_none;
     // return valid; //script can instance
     // return this->valid || (!this->tool && !ScriptServer::is_scripting_enabled());
 }
@@ -123,7 +125,7 @@ void PyScript::set_source_code(const String& p_code) {
 }
 
 
-static const String to_mp_module_path(const String &p_path) {
+static const String _to_mp_module_path(const String &p_path) {
     ERR_EXPLAIN("Bad python script path, must starts by `res://` and ends with `.py`");
     ERR_FAIL_COND_V(!p_path.begins_with("res://") || !p_path.ends_with(".py"), String());
     return p_path.substr(6, p_path.length() - 6 - 3).replace("/", ".");
@@ -143,13 +145,30 @@ Error PyScript::reload(bool p_keep_state) {
         basedir=basedir.get_base_dir();
 
     // Retrieve the module path in python format from the ressource path
-    const String mp_module_path = to_mp_module_path(this->path);
+    const String mp_module_path = _to_mp_module_path(this->path);
     ERR_FAIL_COND_V(!mp_module_path.length(), ERR_FILE_BAD_PATH);
 
     // Load the module into micropython
     // TODO: mp_execute_expr should return error with traceback ?
-    const mp_obj_t ret = mp_execute_expr((String("import ") + mp_module_path).ascii().get_data());
-    ERR_FAIL_COND_V(ret != mp_const_none, ERR_FILE_UNRECOGNIZED);
+    // const mp_obj_t ret = mp_execute_expr((String("import ") + mp_module_path).ascii().get_data());
+    // ERR_FAIL_COND_V(ret != mp_const_none, ERR_FILE_UNRECOGNIZED);
+
+    mp_obj_t error = 0;
+    qstr qstr_module_path = qstr_from_str(mp_module_path.ascii().get_data());
+    auto import_module = [this, &qstr_module_path]() {
+        // TODO handle deep path for module (e.g. `import foo.bar`)
+        this->_mpo_module = mp_import_name(qstr_module_path, mp_const_none, MP_OBJ_NEW_SMALL_INT(0));
+        mp_store_global(qstr_module_path, this->_mpo_module);
+    };
+    auto handle_ex = [&error](mp_obj_t ex) {
+        mp_obj_print_exception(&mp_plat_print, ex);
+        error = ex;
+    };
+    ERR_FAIL_COND_V(error, ERR_FILE_BAD_PATH);
+    upywrap::WrapMicroPythonCall<decltype(import_module), decltype(handle_ex)>(import_module, handle_ex);
+
+    // Retrieve module's exposed class or set it to `mp_const_none` if not available
+    this->_mpo_exposed_class = PyLanguage::get_singleton()->get_mp_exposed_class_from_module(qstr_module_path);
     // mp_import_name(qstr_from_str(s_mp_module_path), mp_const_none, MP_OBJ_NEW_SMALL_INT(0));
 
     // mp_execute_as_module(this->sources)
