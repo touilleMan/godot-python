@@ -198,3 +198,7 @@ axtls: ../lib/axtls/README
 ../lib/axtls/README:
 	@echo "You cloned without --recursive, fetching submodules for you."
 	(cd ..; git submodule update --init --recursive)
+
+clean:
+	$(RM) $(LIBMICROPYTHON)
+	$(RM) -rf $(BUILD)
