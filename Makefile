@@ -16,10 +16,10 @@ endif
 OPTS ?= platform=x11 -j6 use_llvm=yes                  \
 CCFLAGS=-fcolor-diagnostics CFLAGS=-fcolor-diagnostics \
 target=debug module_pythonscript_enabled=yes           \
-PYTHONSCRIPT_SHARED=yes
+PYTHONSCRIPT_SHARED=yes $(EXTRA_OPTS)
 
 ifeq ($(TARGET), pythonscript)
-OPTS += $(GODOT_DIR)/bin/libpythonscript*.so
+OPTS += $(shell cd $(GODOT_DIR) && ls bin/libpythonscript*.so)
 else
 OPTS += $(TARGET)
 endif
