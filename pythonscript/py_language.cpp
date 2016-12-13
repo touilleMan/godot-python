@@ -3,6 +3,7 @@
 
 #include "micropython.h"
 #include "micropython-wrap/util.h"
+#include "bindings/godot_type_binder.h"
 
 
 /************* SCRIPT LANGUAGE **************/
@@ -75,6 +76,7 @@ void PyLanguage::init() {
         error = ex;
     };
     upywrap::WrapMicroPythonCall<decltype(import_module), decltype(handle_ex)>(import_module, handle_ex);
+    pythonscript::bindings::godot_binding_module_init();
     ERR_FAIL_COND(error);
 
 #if 0

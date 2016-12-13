@@ -62,7 +62,7 @@ mp_obj_t mp_execute_expr(const char *str) {
     mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, str, strlen(str), false);
     return mp_execute_from_lexer(lex, MP_PARSE_SINGLE_INPUT, true);
 }
-
+#if 0
 #define MP_EXEC_AS_EXPR(code) MP_EXEC_GENERIC(code, MP_PARSE_SINGLE_INPUT, true)
 
 #define MP_EXEC_GENERIC(code, input_kind, is_repl) \
@@ -78,3 +78,4 @@ mp_obj_t mp_execute_expr(const char *str) {
         error = ex;
     };
     upywrap::WrapMicroPythonCall<decltype(import_module), decltype(handle_ex)>(import_module, handle_ex);
+#endif

@@ -91,9 +91,48 @@ ScriptInstance* PyScript::instance_create(Object *p_this) {
     // Variant::CallError unchecked_error;
     // return _create_instance(NULL,0,p_this,p_this->cast_to<Reference>(),unchecked_error);
     // TODO !!!!
+    // return this->_create_instance(p_this):
     return NULL;
 }
 
+#if 0
+PyInstance* PyScript::_create_instance(const Variant** p_args, int p_argcount, Object *p_owner, bool p_isref) {
+
+_create_instance() {
+    /* STEP 1, CREATE */
+
+    GDInstance* instance = memnew( GDInstance );
+    instance->base_ref=p_isref;
+    instance->members.resize(member_indices.size());
+    instance->script=Ref<PyScript>(this);
+    instance->owner=p_owner;
+#ifdef DEBUG_ENABLED
+    //needed for hot reloading
+    for(Map<StringName,MemberInfo>::Element *E=member_indices.front();E;E=E->next()) {
+        instance->member_indices_cache[E->key()]=E->get().index;
+    }
+#endif
+    instance->owner->set_script_instance(instance);
+
+    /* STEP 2, INITIALIZE AND CONSRTUCT */
+
+    instances.insert(instance->owner);
+
+    initializer->call(instance,p_args,p_argcount,r_error);
+
+    if (r_error.error!=Variant::CallError::CALL_OK) {
+        instance->script=Ref<PyScript>();
+        instance->owner->set_script_instance(NULL);
+        instances.erase(p_owner);
+        ERR_FAIL_COND_V(r_error.error!=Variant::CallError::CALL_OK, NULL); //error constructing
+    }
+
+    //@TODO make thread safe
+    return instance;
+    PyScript *p_script = memnew(PyScript);
+    return p_script;
+}
+#endif
 
 bool PyScript::instance_has(const Object *p_this) const {
     DEBUG_TRACE_METHOD();
@@ -204,7 +243,7 @@ Error PyScript::reload(bool p_keep_state) {
     //     }
     // }
 
-    // valid=true;
+    this->valid = true;
 
     // for(Map<StringName,Ref<PyScript> >::Element *E=subclasses.front();E;E=E->next()) {
 

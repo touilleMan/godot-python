@@ -3,12 +3,16 @@ Import('env')
 micropython_lib = File("micropython/libmicropython.a")
 
 module_env = env.Clone()
+module_env.Append(CXXFLAGS='-I ' + Dir('.').path)
 module_env.Append(CXXFLAGS='-I ' + Dir('micropython').path)
 module_env.Append(CXXFLAGS='-I ' + Dir('micropython/micropython').path)
 module_env.Append(CXXFLAGS='-I ' + Dir('micropython/build').path)
 module_env.Append(CXXFLAGS='-std=c++11')
 
 sources = [
+#	"bindings/binder.cpp",
+	"bindings/load_bindings.cpp",
+	"bindings/converter.cpp",
 	"register_types.cpp",
 	"py_language.cpp",
 	"py_editor.cpp",
