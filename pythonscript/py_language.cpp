@@ -3,7 +3,7 @@
 
 #include "micropython.h"
 #include "micropython-wrap/util.h"
-#include "bindings/godot_type_binder.h"
+#include "bindings/dynamic_binder.h"
 
 
 /************* SCRIPT LANGUAGE **************/
@@ -14,7 +14,7 @@
 
 
 // TODO: Allocate this dynamically ?
-static char MICROPYTHON_HEAP[16384];
+static char MICROPYTHON_HEAP[16384000];
 PyLanguage *PyLanguage::singleton = NULL;
 
 
@@ -51,6 +51,8 @@ void PyLanguage::init() {
     mp_stack_set_limit(40000 * (BYTES_PER_WORD / 4));
     // Initialize heap
     gc_init(MICROPYTHON_HEAP, MICROPYTHON_HEAP + sizeof(MICROPYTHON_HEAP));
+    // Disable automatic garbage collection
+    MP_STATE_MEM(gc_auto_collect_enabled) = 0;
     // Initialize interpreter
     mp_init();
 
@@ -76,7 +78,7 @@ void PyLanguage::init() {
         error = ex;
     };
     upywrap::WrapMicroPythonCall<decltype(import_module), decltype(handle_ex)>(import_module, handle_ex);
-    pythonscript::bindings::godot_binding_module_init();
+    godot_binding_module_init();
     ERR_FAIL_COND(error);
 
 #if 0
@@ -140,6 +142,7 @@ Error PyLanguage::execute_file(const String& p_path)  {
 void PyLanguage::finish()  {
     DEBUG_TRACE_METHOD();
     mp_deinit();
+    godot_binding_module_destroy();
 }
 
 

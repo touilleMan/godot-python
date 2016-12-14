@@ -10,9 +10,7 @@ module_env.Append(CXXFLAGS='-I ' + Dir('micropython/build').path)
 module_env.Append(CXXFLAGS='-std=c++11')
 
 sources = [
-#	"bindings/binder.cpp",
-	"bindings/load_bindings.cpp",
-	"bindings/converter.cpp",
+	"bindings/dynamic_binder.cpp",
 	"register_types.cpp",
 	"py_language.cpp",
 	"py_editor.cpp",
