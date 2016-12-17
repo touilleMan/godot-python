@@ -9,8 +9,6 @@
 #endif
 
 
-namespace pythonscript { namespace bindings {
-
 #if USE_MICROPYTHON_WRAP
 Variant pyobj_to_variant(const mp_obj_t pyobj) {
     if (MP_OBJ_IS_SMALL_INT(pyobj)) {
@@ -139,6 +137,3 @@ mp_obj_t variant_to_pyobj(const Variant &p_variant) {
     ERR_EXPLAIN("Variant type `" + Variant::get_type_name(p_variant.get_type()) + "` not implemented yet");
     ERR_FAIL_V(mp_const_none);
 }
-
-
-} }  // namespaces

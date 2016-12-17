@@ -2,6 +2,7 @@
 
 // Lazy Fucker implementation
 #include "dynamic_binder.h"
+#include "converter.h"
 
 #include "micropython.h"
 
@@ -22,7 +23,7 @@ void GodotBindingsModule::init() {
     List<StringName> types;
     ObjectTypeDB::get_type_list(&types);
     for(auto E=types.front(); E; E=E->next()) {
-        WARN_PRINTS("Start building " + String(E->get()));
+        // WARN_PRINTS("Start building " + String(E->get()));
         auto binder = memnew(DynamicBinder(E->get()));
         const mp_obj_type_t *type = binder->get_mp_type();
         mp_store_attr(this->_mp_module, type->name, MP_OBJ_FROM_PTR(type));
@@ -116,20 +117,23 @@ static mp_obj_t _wrap_godot_method(StringName type_name, StringName method_name)
     auto caller_fun = m_new_obj(mp_obj_fun_builtin_var_t);
     caller_fun->base.type = &mp_type_fun_builtin_var;
     caller_fun->is_kw = false;
-    caller_fun->n_args_min = p_method_bind->get_argument_count();
-    caller_fun->n_args_max = p_method_bind->get_argument_count();
+    // Godot doesn't count self as an argument but python does
+    // we will also be passed `p_method_bind` by the trampoline caller
+    caller_fun->n_args_min = p_method_bind->get_argument_count() + 2;
+    caller_fun->n_args_max = p_method_bind->get_argument_count() + 2;
     caller_fun->fun.var = [](size_t n, const mp_obj_t *args) -> mp_obj_t {
         // First arg is the p_method_bind
         auto p_method_bind = static_cast<MethodBind *>(args[0]);
         auto self = static_cast<mp_godot_bind_t *>(args[1]);
-        // Godot doesn't count self as an argument and we didn't pass p_method_bind
+        // Remove self and also don't pass p_method_bind as argument
         const int godot_n = n - 2;
-        const Variant **godot_args = NULL;
-        // TODO: convert methods
-        // Variant *godot_args[godot_n];
-        // for (int i = 0; i < godot_n; ++i) {
-        //     godot_args[i] = pyobj_to_variant(args[i]);
-        // }
+        // TODO: convert argument
+        const Variant def_arg;
+        const Variant *godot_args[godot_n];
+        for (int i = 0; i < godot_n; ++i) {
+            // godot_args[i] = pyobj_to_variant(args[i]);
+            godot_args[i] = &def_arg;
+        }
         Variant::CallError err;
         Variant ret = p_method_bind->call(self->godot_obj, godot_args, godot_n, err);
         if (err.error != Variant::CallError::CALL_OK) {
@@ -138,8 +142,8 @@ static mp_obj_t _wrap_godot_method(StringName type_name, StringName method_name)
             nlr_raise(mp_obj_new_exception_msg(&mp_type_RuntimeError, "Tough shit dude..."));
         }
         // TODO: convert return
-        // return variant_to_pyobj(ret);
-        return mp_const_none;
+        return variant_to_pyobj(ret);
+        // return mp_const_none;
     };
 
     // Yes, p_method_bind is not an mp_obj_t... but it's only to pass to caller_fun

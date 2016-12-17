@@ -1,4 +1,8 @@
-from godot import *
+from godot import exposed, export
+from godot.bindings import Node2D, Object
+
+
+print("rn ==>", Node2D, Object().get_instance_ID())
 
 
 @exposed
