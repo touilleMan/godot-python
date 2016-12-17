@@ -1,6 +1,7 @@
+#include <cstring>
+
 // Lazy Fucker implementation
 #include "dynamic_binder.h"
-
 
 #include "micropython.h"
 
