@@ -6,6 +6,41 @@
 #include "micropython.h"
 
 
+GodotBindingsModule::GodotBindingsModule() {
+    // Module is created now to be able to reference it elsewhere,
+    // however it is really populated within `init()`
+    this->_mp_module = mp_obj_new_module(qstr_from_str("godot.bindings"));
+}
+
+
+void GodotBindingsModule::init() {
+    if (this->_initialized) {
+        return;
+    }
+    this->_initialized = true;
+    // Retrieve and create all the modules for freeeeeeeee !
+    List<StringName> types;
+    ObjectTypeDB::get_type_list(&types);
+    for(auto E=types.front(); E; E=E->next()) {
+        WARN_PRINTS("Start building " + String(E->get()));
+        auto binder = memnew(DynamicBinder(E->get()));
+        const mp_obj_type_t *type = binder->get_mp_type();
+        mp_store_attr(this->_mp_module, type->name, MP_OBJ_FROM_PTR(type));
+        this->_binders.push_back(binder);
+    }
+}
+
+
+GodotBindingsModule::~GodotBindingsModule() {
+    if (!this->_initialized) {
+        return;
+    }
+    for(auto E=this->_binders.front(); E; E=E->next()) {
+        memdelete(E->get());
+    }
+}
+
+
 // Generate a python function calling `callback` with data as first
 // parameter, usefull for dynamically create the binding functions
 static mp_obj_t _generate_custom_trampoline(mp_obj_t callback, mp_obj_t data) {
@@ -69,8 +104,8 @@ static mp_obj_t _wrap_godot_method(StringName type_name, StringName method_name)
     if (!p_method_bind) {
         WARN_PRINTS("--- Bad Binding " + String(type_name) + ":" + String(method_name));
         return mp_const_none;
-    } else {
-        WARN_PRINTS("+++ Good Binding " + String(type_name) + ":" + String(method_name));
+    // } else {
+    //     WARN_PRINTS("+++ Good Binding " + String(type_name) + ":" + String(method_name));
     }
 
     // Define the wrapper function that is responsible to:
@@ -199,22 +234,4 @@ DynamicBinder::DynamicBinder(StringName type_name) : _type_name(type_name) {
         .attr = _mp_type_attr,
         .protocol = static_cast<void *>(this)
     };   
-}
-
-
-static List<DynamicBinder*> __binders;
-void godot_binding_module_init() {
-    // Retrieve and create all the modules for freeeeeeeee !
-    List<StringName> types;
-    ObjectTypeDB::get_type_list(&types);
-    for(auto E=types.front(); E; E=E->next()) {
-        WARN_PRINTS("Start building " + String(E->get()));
-        __binders.push_back(memnew(DynamicBinder(E->get())));
-    }
-}
-
-void godot_binding_module_destroy() {
-    for(auto E=__binders.front(); E; E=E->next()) {
-        memdelete(E->get());
-    }
 }

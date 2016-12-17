@@ -11,6 +11,7 @@
 
 class PyScript;
 class PyInstance;
+class GodotBindingsModule;
 
 
 class PyLanguage : public ScriptLanguage {
@@ -20,7 +21,7 @@ class PyLanguage : public ScriptLanguage {
     Mutex *lock;
     static PyLanguage *singleton;
     SelfList<PyScript>::List script_list;
-
+    GodotBindingsModule *_bindings;
     mp_obj_t _mpo_godot_module;
 
 public:

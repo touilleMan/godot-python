@@ -61,7 +61,8 @@ void PyLanguage::init() {
     mp_obj_list_init(static_cast<struct _mp_obj_list_t *>(MP_OBJ_TO_PTR(mp_sys_argv)), 0);
     // TODO: add project dir to sys.path
 
-
+    // GodotBindingsModule needs upython to be initialized
+    this->_bindings = memnew(GodotBindingsModule);
     // Load godot python module and connect it to PyLanguage
     mp_obj_t error = 0;
     auto import_module = [this]() {
@@ -72,13 +73,17 @@ void PyLanguage::init() {
         // // Retrieve module's exposed class
         // this->_mpo_exposed_classes_per_module = mp_load_method(
         //     mpo_godot_module, qstr_from_str("__exposed_classes_per_module"));
+        // Build the bindings module and store into as part of the main godot module
+        // TODO: make the bindings creation lazy ?
+        this->_bindings->init();
+        mp_obj_dict_t *mod_globals = static_cast<mp_obj_module_t *>(MP_OBJ_TO_PTR(this->_mpo_godot_module))->globals;
+        mp_obj_dict_store(MP_OBJ_FROM_PTR(mod_globals), MP_OBJ_NEW_QSTR(qstr_from_str("bindings")), this->_bindings->get_mp_module());
     };
     auto handle_ex = [&error](mp_obj_t ex) {
         mp_obj_print_exception(&mp_plat_print, ex);
         error = ex;
     };
     upywrap::WrapMicroPythonCall<decltype(import_module), decltype(handle_ex)>(import_module, handle_ex);
-    godot_binding_module_init();
     ERR_FAIL_COND(error);
 
 #if 0
@@ -142,7 +147,7 @@ Error PyLanguage::execute_file(const String& p_path)  {
 void PyLanguage::finish()  {
     DEBUG_TRACE_METHOD();
     mp_deinit();
-    godot_binding_module_destroy();
+    memdelete(this->_bindings);
 }
 
 

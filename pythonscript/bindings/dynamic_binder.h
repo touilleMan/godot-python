@@ -8,6 +8,23 @@
 #include "core/map.h"
 
 
+class DynamicBinder;
+
+
+class GodotBindingsModule {
+private:
+    List<DynamicBinder*> _binders;
+    mp_obj_t _mp_module;
+    bool _initialized = false;
+public:
+    GodotBindingsModule();
+    virtual ~GodotBindingsModule();
+
+    void init();
+    mp_obj_t get_mp_module() const { return this->_mp_module; };
+};
+
+
 // Struture representing a single instance of a godot object in python
 typedef struct {
     mp_obj_base_t base;
@@ -27,15 +44,11 @@ private:
     mp_obj_type_t _mp_type;
 public:
 	DynamicBinder(StringName type_name);
-	inline StringName get_type_name() const { return _type_name; }
-	inline mp_obj_type_t get_mp_type() const { return _mp_type; }
+	inline StringName get_type_name() const { return this->_type_name; }
+    inline const mp_obj_type_t *get_mp_type() const { return &this->_mp_type; }
 	void get_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) const;
 
 };
-
-
-void godot_binding_module_init();
-void godot_binding_module_destroy();
 
 
 #endif  // BINDER_H
