@@ -45,3 +45,8 @@ compile:
 clean:
 	rm -f $(GODOT_DIR)/bin/godot*
 	rm -f $(GODOT_DIR)/bin/libpythonscript*
+
+
+rebuild_micropython:
+	cd pythonscript/micropython && make clean
+	cd pythonscript/micropython && make -j6 DEBUG=y
