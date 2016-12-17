@@ -24,8 +24,24 @@ else
 OPTS += $(TARGET)
 endif
 
+
+setup:
+ifndef GODOT_TARGET_DIR
+	echo "GODOT_TARGET_DIR must be set to Godot source directory" && exit 1
+else
+	ln -s $(GODOT_TARGET_DIR) $(GODOT_DIR)
+	ln -s $(BASEDIR)/pythonscript $(GODOT_TARGET_DIR)/modules/pythonscript
+endif
+
+
 run:
 	cd example && $(GODOT_CMD)
 
+
 compile:
 	cd $(GODOT_DIR) && scons $(OPTS)
+
+
+clean:
+	rm -f $(GODOT_DIR)/bin/godot*
+	rm -f $(GODOT_DIR)/bin/libpythonscript*
