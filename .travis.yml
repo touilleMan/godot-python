@@ -1,0 +1,38 @@
+language: cpp
+
+sudo: false
+
+compiler:
+  - gcc
+  - clang
+
+env:
+  global:
+    - GODOT_TAG=2.1.1-stable
+    - EXTRA_OPTS="-j4 openssl=builtin target=release module_pythonscript_enabled=yes"
+  matrix:
+    - GODOT_TARGET=x11
+    # nothing else yet...
+
+addons:
+  apt:
+    packages:
+      - build-essential
+      - scons
+      - pkg-config
+      - libx11-dev
+      - libxcursor-dev
+      - libasound2-dev
+      - libfreetype6-dev
+      - libgl1-mesa-dev
+      - libglu1-mesa-dev
+      - libssl-dev
+      - libxinerama-dev
+      - libxrandr-dev
+
+before_script:
+  - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 git@github.com:godotengine/godot.git testgodot
+  - ln -s `pwd` godot/modules/pythonscript
+
+script:
+  - make compile EXTRA_OPTS="$EXTRA_OPTS" OPTS="platform=$GODOT_TARGET use_llvm=`if [ "$CC" = "clang" ] ; then echo yes; else echo no; fi`"
