@@ -31,8 +31,8 @@ addons:
       - libxrandr-dev
 
 before_script:
-  - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 https://github.com/godotengine/godot.git testgodot
-  - ln -s `pwd` godot/modules/pythonscript
+  - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 https://github.com/godotengine/godot.git
+  - ln -s `pwd`/pythonscript godot/modules/pythonscript
 
 script:
   - make compile EXTRA_OPTS="$EXTRA_OPTS" OPTS="platform=$GODOT_TARGET use_llvm=`if [ "$CC" = "clang" ] ; then echo yes; else echo no; fi`"
