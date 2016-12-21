@@ -31,7 +31,7 @@ addons:
       - libxrandr-dev
 
 before_script:
-  - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 git@github.com:godotengine/godot.git testgodot
+  - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 https://github.com/godotengine/godot.git testgodot
   - ln -s `pwd` godot/modules/pythonscript
 
 script:
