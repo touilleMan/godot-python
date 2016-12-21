@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/touilleMan/godot-python.svg?branch=master)](https://travis-ci.org/touilleMan/godot-python)
+
 Python support for Godot
 ========================
 
@@ -52,7 +54,7 @@ Roadmap
 - [ ] Instantiate Python class as `ScriptInstance`
 - [ ] Connect Godot's `Variant` and basetypes with Python ones
 - [ ] Expose Python `Script` through `ObjectTypeDB`
-- [ ] Generate binding code to work with Godot's `MethodBind` & `ObjectTypeDB`
+- [X] Generate binding code to work with Godot's `MethodBind` & `ObjectTypeDB`
 - [ ] Have a "HelloWorld" script working
 
 
@@ -74,7 +76,8 @@ in python.
 example:
 
 ```python
-from godot import Node, exposed, export
+from godot import exposed, export
+from godot.bindings import Node
 
 
 @exposed
