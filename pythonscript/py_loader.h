@@ -1,8 +1,8 @@
 #ifndef PY_LOADER_H
 #define PY_LOADER_H
 
+// Godot imports
 #include "core/script_language.h"
-
 #include "io/resource_loader.h"
 #include "io/resource_saver.h"
 

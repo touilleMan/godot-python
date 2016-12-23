@@ -1,12 +1,12 @@
 #ifndef PY_SCRIPT_LANGUAGE_H
 #define PY_SCRIPT_LANGUAGE_H
 
+#include "micropython.h"
+// Godot imports
 #include "script_language.h"
 #include "self_list.h"
 #include "io/resource_loader.h"
 #include "io/resource_saver.h"
-
-#include "micropython-wrap/detail/micropython.h"
 
 
 class PyScript;
@@ -27,7 +27,7 @@ class PyLanguage : public ScriptLanguage {
 public:
     /* CUSTOM PYTHONSCRIPT FUNCTIONS */
     mp_obj_t get_mp_exposed_class_from_module(const qstr qstr_module_name);
-    mp_obj_t get_mp_exposed_class_from_module(const char *module_name) {return get_mp_exposed_class_from_module(qstr_from_str(module_name));}
+    _FORCE_INLINE_ mp_obj_t get_mp_exposed_class_from_module(const char *module_name) {return get_mp_exposed_class_from_module(qstr_from_str(module_name));}
 
     String get_name() const;
     _FORCE_INLINE_ static PyLanguage *get_singleton() { return singleton; }

@@ -1,8 +1,8 @@
+// Godot imports
 #include "os/file_access.h"
-#include "micropython-wrap/util.h"
-#include "micropython-wrap/detail/micropython.h"
-
+// Pythonscript imports
 #include "py_script.h"
+#include "tools.h"
 
 
 void PyScript::_bind_methods() {
@@ -203,8 +203,8 @@ Error PyScript::reload(bool p_keep_state) {
         mp_obj_print_exception(&mp_plat_print, ex);
         error = ex;
     };
+    MP_WRAP_CALL_EX(import_module, handle_ex);
     ERR_FAIL_COND_V(error, ERR_FILE_BAD_PATH);
-    upywrap::WrapMicroPythonCall<decltype(import_module), decltype(handle_ex)>(import_module, handle_ex);
 
     // Retrieve module's exposed class or set it to `mp_const_none` if not available
     this->_mpo_exposed_class = PyLanguage::get_singleton()->get_mp_exposed_class_from_module(qstr_module_path);

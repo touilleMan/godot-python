@@ -1,9 +1,10 @@
+#include "micropython.h"
+
+// Pythonscript imports
 #include "py_language.h"
 #include "py_script.h"
-
-#include "micropython.h"
-#include "micropython-wrap/util.h"
 #include "bindings/dynamic_binder.h"
+#include "tools.h"
 
 
 /************* SCRIPT LANGUAGE **************/
@@ -37,8 +38,7 @@ mp_obj_t PyLanguage::get_mp_exposed_class_from_module(const qstr qstr_module_nam
         }
         mpo_exposed_cls = mp_call_function_1(mpo_get_exposed_class_per_module, MP_OBJ_NEW_QSTR(qstr_module_name));
     };
-    const auto handle_ex = [](mp_obj_t ex) {};
-    upywrap::WrapMicroPythonCall<decltype(import_module), decltype(handle_ex)>(import_module, handle_ex);
+    MP_WRAP_CALL(import_module);
     return mpo_exposed_cls;
 }
 
@@ -57,8 +57,8 @@ void PyLanguage::init() {
     mp_init();
 
     // Init sys.path and argv
-    mp_obj_list_init(static_cast<struct _mp_obj_list_t *>(MP_OBJ_TO_PTR(mp_sys_path)), 0);
-    mp_obj_list_init(static_cast<struct _mp_obj_list_t *>(MP_OBJ_TO_PTR(mp_sys_argv)), 0);
+    mp_obj_list_init(static_cast<mp_obj_list_t *>(MP_OBJ_TO_PTR(mp_sys_path)), 0);
+    mp_obj_list_init(static_cast<mp_obj_list_t *>(MP_OBJ_TO_PTR(mp_sys_argv)), 0);
     // TODO: add project dir to sys.path
 
     // GodotBindingsModule needs upython to be initialized
@@ -83,7 +83,7 @@ void PyLanguage::init() {
         mp_obj_print_exception(&mp_plat_print, ex);
         error = ex;
     };
-    upywrap::WrapMicroPythonCall<decltype(import_module), decltype(handle_ex)>(import_module, handle_ex);
+    MP_WRAP_CALL_EX(import_module, handle_ex);
     ERR_FAIL_COND(error);
 
 #if 0

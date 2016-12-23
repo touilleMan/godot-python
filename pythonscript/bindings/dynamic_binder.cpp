@@ -1,10 +1,9 @@
 #include <cstring>
 
-// Lazy Fucker implementation
-#include "dynamic_binder.h"
-#include "converter.h"
-
 #include "micropython.h"
+// Pythonscript imports
+#include "bindings/dynamic_binder.h"
+#include "bindings/converter.h"
 
 
 GodotBindingsModule::GodotBindingsModule() {

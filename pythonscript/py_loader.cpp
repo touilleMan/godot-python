@@ -1,7 +1,8 @@
+// Godot imports
+#include "os/file_access.h"
+// Pythonscript imports
 #include "py_loader.h"
 #include "py_script.h"
-
-#include "os/file_access.h"
 
 
 RES ResourceFormatLoaderPyScript::load(const String &p_path, const String& p_original_path, Error *r_error)

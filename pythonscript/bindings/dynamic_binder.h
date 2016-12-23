@@ -22,6 +22,9 @@ public:
 
     void init();
     mp_obj_t get_mp_module() const { return this->_mp_module; };
+    // TODO implements this
+    // mp_obj_t variant_to_pyobj(const Variant &p_variant) const;
+    // Variant pyobj_to_variant(const mp_obj_t pyobj) const;
 };
 
 

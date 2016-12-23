@@ -1,38 +1,10 @@
-#include "converter.h"
-
 #include "micropython.h"
 // Godot imports
 #include "core/variant.h"
-
-#if USE_MICROPYTHON_WRAP
-#include "micropython-wrap/detail/frompyobj.h"
-#endif
+// Pythonscript imports
+#include "bindings/converter.h"
 
 
-#if USE_MICROPYTHON_WRAP
-Variant pyobj_to_variant(const mp_obj_t pyobj) {
-    if (MP_OBJ_IS_SMALL_INT(pyobj)) {
-        return Variant(upywrap::FromPyObj<int>::Convert(pyobj));
-    } else if (MP_OBJ_IS_QSTR(pyobj)) {
-        return Variant(qstr_str(MP_OBJ_QSTR_VALUE(pyobj)));
-    } else if (MP_OBJ_IS_TYPE(pyobj)) {
-
-    } else if (mp_obj_is_float(pyobj)) {
-        // TODO: use float for smaller numbers ?
-        // upywrap::FromPyObj<float>::Convert(pyobj);
-        return Variant(upywrap::FromPyObj<double>::Convert(pyobj));
-    } else if (MP_OBJ_IS_OBJ(pyobj)) {
-        upywrap::FromPyObj<>::Convert()
-        return Variant();
-    } else {
-        ERR_EXPLAIN("Unknown Python type (this should never happened !)");
-        ERR_FAIL_V(Variant());
-    }
-    // Not handled
-    ERR_EXPLAIN("python type not handled");
-    ERR_FAIL_V(Variant());
-}
-#else
 // This should be called from a micropython context (with nlr_push set)
 Variant pyobj_to_variant(const mp_obj_t pyobj) {
     if (MP_OBJ_IS_INT(pyobj)) {
@@ -43,14 +15,15 @@ Variant pyobj_to_variant(const mp_obj_t pyobj) {
         // TODO: use float for smaller numbers ?
         return Variant(mp_obj_get_float(pyobj));
     } else if (MP_OBJ_IS_OBJ(pyobj)) {
+        // pyobj should be a Godot Variant Object
         // TODOOOOO !
+        // MP_OBJ_TO_PTR(pyobj);
         return Variant();
     }
     // Not handled raise exception in python caller
     nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_TypeError,
         "Can't convert %s to Godot's Variant", mp_obj_get_type_str(pyobj)));
 }
-#endif
 
 
 mp_obj_t variant_to_pyobj(const Variant &p_variant) {

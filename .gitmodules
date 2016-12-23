@@ -1,6 +1,3 @@
 [submodule "pythonscript/micropython/micropython"]
 	path = pythonscript/micropython/micropython
 	url = https://github.com/micropython/micropython.git
-[submodule "pythonscript/micropython-wrap"]
-	path = pythonscript/micropython-wrap
-	url = https://github.com/stinos/micropython-wrap.git
