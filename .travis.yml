@@ -41,5 +41,5 @@ before_script:
   - if [[ "$CXX" == "g++" ]]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 
 script:
-  - if [[ "$CXX" == "g++" ]]; then make compile EXTRA_OPTS="$EXTRA_OPTS" OPTS="platform=$GODOT_TARGET; fi
-  - if [[ "$CXX" == "clang++" ]]; then make compile EXTRA_OPTS="$EXTRA_OPTS" OPTS="platform=$GODOT_TARGET use_llvm=yes; fi
+  - if [[ "$CXX" == "g++" ]]; then make compile EXTRA_OPTS="$EXTRA_OPTS" OPTS="platform=$GODOT_TARGET"; fi
+  - if [[ "$CXX" == "clang++" ]]; then make compile EXTRA_OPTS="$EXTRA_OPTS" OPTS="platform=$GODOT_TARGET use_llvm=yes"; fi
