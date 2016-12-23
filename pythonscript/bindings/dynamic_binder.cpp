@@ -231,10 +231,20 @@ DynamicBinder::DynamicBinder(StringName type_name) : _type_name(type_name) {
 
     const String s_name = String(this->_type_name);
     this->_mp_type = {
-        { &mp_type_type },
-        .name = qstr_from_str(s_name.utf8().get_data()),
-        .make_new = _mp_type_make_new,
-        .attr = _mp_type_attr,
-        .protocol = static_cast<void *>(this)
-    };   
+        { &mp_type_type },                        // base
+        qstr_from_str(s_name.utf8().get_data()),  // name
+        0,                                        // print
+        _mp_type_make_new,                        // make_new
+        0,                                        // call
+        0,                                        // unary_op
+        0,                                        // binary_op
+        _mp_type_attr,                            // attr
+        0,                                        // subscr
+        0,                                        // getiter
+        0,                                        // iternext
+        0,                                        // buffer_p
+        static_cast<void *>(this),                // protocol
+        0,                                        // bases_tuple
+        0                                         // locals_dict
+    };
 }
