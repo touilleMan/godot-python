@@ -38,8 +38,8 @@ before_script:
   - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 https://github.com/godotengine/godot.git
   - ln -s `pwd`/pythonscript godot/modules/pythonscript
   # See issue travis-ci/travis-ci#1379
-  - test "$CXX" = "g++" && export CXX="g++-4.8" CC="gcc-4.8"
+  - if [[ "$CXX" == "g++" ]]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 
 script:
-  - test "$CXX" = "g++" && make compile EXTRA_OPTS="$EXTRA_OPTS" OPTS="platform=$GODOT_TARGET use_llvm=no"
-  - test "$CXX" = "clang++" && make compile EXTRA_OPTS="$EXTRA_OPTS" OPTS="platform=$GODOT_TARGET use_llvm=yes"
+  - if [[ "$CXX" == "g++" ]]; then make compile EXTRA_OPTS="$EXTRA_OPTS" OPTS="platform=$GODOT_TARGET; fi
+  - if [[ "$CXX" == "clang++" ]]; then make compile EXTRA_OPTS="$EXTRA_OPTS" OPTS="platform=$GODOT_TARGET use_llvm=yes; fi
