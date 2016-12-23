@@ -16,6 +16,8 @@ env:
 
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
       - build-essential
       - scons
@@ -30,6 +32,7 @@ addons:
       - libxinerama-dev
       - libxrandr-dev
       - gcc-4.8
+      - g++-4.8
 
 before_script:
   - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 https://github.com/godotengine/godot.git
