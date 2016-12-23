@@ -32,6 +32,6 @@ if ARGUMENTS.get('PYTHONSCRIPT_SHARED', 'no') == 'yes':
 	env.Append(LIBS=[shared_lib_shim, micropython_lib])
 	env.Append(LIBPATH=['#bin'])
 else:
-	module_env.Append(LIBS=micropython_lib)
+	env.Append(LIBS=micropython_lib)
 	for src in sources:
 		module_env.add_source_files(env.modules_sources, src)
