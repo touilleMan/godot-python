@@ -29,14 +29,14 @@ addons:
       - libssl-dev
       - libxinerama-dev
       - libxrandr-dev
+      - gcc-4.8
 
 before_script:
   - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 https://github.com/godotengine/godot.git
   - ln -s `pwd`/pythonscript godot/modules/pythonscript
   # See issue travis-ci/travis-ci#1379
-  - [ "$CXX" = "g++" ] && sudo apt-get install -qq g++-4.8
-  - [ "$CXX" = "g++" ] && export CXX="g++-4.8" CC="gcc-4.8"
+  - test "$CXX" = "g++" && export CXX="g++-4.8" CC="gcc-4.8"
 
 script:
-  - [ "$CXX" = "g++" ] && make compile EXTRA_OPTS="$EXTRA_OPTS" OPTS="platform=$GODOT_TARGET use_llvm=no"
-  - [ "$CXX" = "clang++" ] && make compile EXTRA_OPTS="$EXTRA_OPTS" OPTS="platform=$GODOT_TARGET use_llvm=yes"
+  - test "$CXX" = "g++" && make compile EXTRA_OPTS="$EXTRA_OPTS" OPTS="platform=$GODOT_TARGET use_llvm=no"
+  - test "$CXX" = "clang++" && make compile EXTRA_OPTS="$EXTRA_OPTS" OPTS="platform=$GODOT_TARGET use_llvm=yes"
