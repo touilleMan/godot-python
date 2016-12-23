@@ -9,7 +9,7 @@ compiler:
 env:
   global:
     - GODOT_TAG=master # I like to living dangerously...
-    - EXTRA_OPTS="-j4 openssl=builtin target=release tools=no module_pythonscript_enabled=yes"
+    - EXTRA_OPTS="-j4 target=release tools=no module_pythonscript_enabled=yes"
   matrix:
     - GODOT_TARGET=x11
     # nothing else yet...
