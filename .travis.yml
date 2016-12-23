@@ -34,13 +34,13 @@ addons:
       - libxinerama-dev
       - libxrandr-dev
       # Need gcc > 4.6 for -std=c++11
-      - gcc-4.8
-      - g++-4.8
+      - gcc-5
+      - g++-5
 
 before_script:
   - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 https://github.com/godotengine/godot.git
   - ln -s `pwd`/pythonscript godot/modules/pythonscript
 
 script:
-  - if [[ "$CXX" == "g++" ]]; then make compile OPTS="platform=$GODOT_TARGET $EXTRA_OPTS CXX=g++-4.8 CC=gcc-4.8"; fi
+  - if [[ "$CXX" == "g++" ]]; then make compile OPTS="platform=$GODOT_TARGET $EXTRA_OPTS CXX=g++-5 CC=gcc-5"; fi
   - if [[ "$CXX" == "clang++" ]]; then make compile OPTS="platform=$GODOT_TARGET $EXTRA_OPTS use_llvm=yes"; fi
