@@ -4,7 +4,6 @@
 #include "py_language.h"
 #include "py_script.h"
 #include "bindings/dynamic_binder.h"
-#include "tools.h"
 
 
 /************* SCRIPT LANGUAGE **************/

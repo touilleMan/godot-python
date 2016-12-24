@@ -242,7 +242,7 @@ DynamicBinder::DynamicBinder(StringName type_name) : _type_name(type_name) {
         0,                                        // subscr
         0,                                        // getiter
         0,                                        // iternext
-        0,                                        // buffer_p
+        {0},                                      // buffer_p
         static_cast<void *>(this),                // protocol
         0,                                        // bases_tuple
         0                                         // locals_dict
