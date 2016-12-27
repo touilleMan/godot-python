@@ -30,7 +30,7 @@ Pros:
 - [Code emitter](http://docs.micropython.org/en/latest/wipy/reference/speed_python.html#the-native-code-emitter)
   allows compilation to native code of some parts of the script for speedup boost.
 - Unlike CPython reference counting, MicroPython make use of a garbage collector
-  which allows can be manually triggered (i.g. to run it in parallel with
+  which can be manually triggered (i.g. to run it in parallel with
   rendering [given game logic is not run at this time](https://godotengine.org/article/why-does-godot-use-servers-and-rids)).
 - Python's "everything is object" logic means CPython store each object on the heap and refer to it through pointer.
   On the other hand [MicroPython implements base types](https://github.com/micropython/micropython/blob/master/py/mpconfig.h#L54)
@@ -42,6 +42,9 @@ Cons:
 - MicroPython doesn't implement all Python so far (e.g. no metaclasses) which
   typically means not all libraries are compatible with it.
 - Incompatible with SWIG and Boost::Python so binding need to be done by hand.
+
+Note that this is an early work and it's possible we switch implementation
+to CPython if it reveals itself more suited in the end ;-)
 
 
 Roadmap
