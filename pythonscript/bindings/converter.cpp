@@ -3,6 +3,7 @@
 #include "core/variant.h"
 // Pythonscript imports
 #include "bindings/converter.h"
+#include "bindings/dynamic_binder.h"
 
 
 // This should be called from a micropython context (with nlr_push set)
@@ -15,10 +16,13 @@ Variant pyobj_to_variant(const mp_obj_t pyobj) {
         // TODO: use float for smaller numbers ?
         return Variant(mp_obj_get_float(pyobj));
     } else if (MP_OBJ_IS_OBJ(pyobj)) {
-        // pyobj should be a Godot Variant Object
-        // TODOOOOO !
-        // MP_OBJ_TO_PTR(pyobj);
-        return Variant();
+        // TODO: optimize this by using inheritance in binders
+        mp_obj_type_t *pyobj_type = mp_obj_get_type(pyobj);
+        auto binder = GodotBindingsModule::get_singleton()->get_binder(pyobj_type->name);
+        if (binder != NULL) {
+            auto p_obj = static_cast<mp_godot_bind_t *>(MP_OBJ_TO_PTR(pyobj));
+            return p_obj->godot_variant;
+        }
     }
     // Not handled raise exception in python caller
     nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_TypeError,
@@ -80,7 +84,13 @@ mp_obj_t variant_to_pyobj(const Variant &p_variant) {
     case Variant::Type::_RID:
         break;
     case Variant::Type::OBJECT:
-        break;
+    {
+        Object *obj = p_variant;
+        auto binder = GodotBindingsModule::get_singleton()->get_binder(obj->get_type_name());
+        if (binder) {
+            return binder->build_mpo_wrapper(obj);
+        }
+    } break;
     case Variant::Type::INPUT_EVENT:
         break;
     case Variant::Type::DICTIONARY:     // 20

@@ -6,7 +6,10 @@
 #include "bindings/converter.h"
 
 
-GodotBindingsModule::GodotBindingsModule() {
+GodotBindingsModule GodotBindingsModule::_singleton;
+
+
+void GodotBindingsModule::pre_init() {
     // Module is created now to be able to reference it elsewhere,
     // however it is really populated within `init()`
     this->_mp_module = mp_obj_new_module(qstr_from_str("godot.bindings"));
@@ -28,6 +31,28 @@ void GodotBindingsModule::init() {
         mp_store_attr(this->_mp_module, type->name, MP_OBJ_FROM_PTR(type));
         this->_binders.push_back(binder);
     }
+}
+
+
+const DynamicBinder *GodotBindingsModule::get_binder(const StringName &p_type) const {
+    // TODO: optimize this
+    for(auto E=this->_binders.front(); E; E=E->next()) {
+        if (E->get()->get_type_name() == p_type) {
+            return E->get();
+        }
+    }
+    return NULL;
+}
+
+
+const DynamicBinder *GodotBindingsModule::get_binder(const qstr type) const {
+    // TODO: optimize this
+    for(auto E=this->_binders.front(); E; E=E->next()) {
+        if (E->get()->get_type_qstr() == type) {
+            return E->get();
+        }
+    }
+    return NULL;
 }
 
 
@@ -159,6 +184,7 @@ static mp_obj_t _mp_type_make_new(const mp_obj_type_t *type, mp_uint_t n_args, m
     mp_godot_bind_t *obj = m_new_obj_with_finaliser(mp_godot_bind_t);
     obj->base.type = type;
     obj->godot_obj = godot_obj;
+    obj->godot_variant = Variant(godot_obj);
     return MP_OBJ_FROM_PTR(obj);
 }
 
@@ -208,6 +234,15 @@ void DynamicBinder::get_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) const 
 }
 
 
+mp_obj_t DynamicBinder::build_mpo_wrapper(Object *obj) const {
+    mp_godot_bind_t *py_obj = m_new_obj_with_finaliser(mp_godot_bind_t);
+    py_obj->base.type = this->get_mp_type();
+    py_obj->godot_obj = obj;
+    py_obj->godot_variant = Variant(obj);
+    return MP_OBJ_FROM_PTR(py_obj);
+}
+
+
 DynamicBinder::DynamicBinder(StringName type_name) : _type_name(type_name) {
     // Retrieve method&property from ObjectTypeDB and cook what can
     // be for faster runtime lookup
@@ -228,11 +263,14 @@ DynamicBinder::DynamicBinder(StringName type_name) : _type_name(type_name) {
             this->method_lookup.insert(qstr_name, mpo_method);
         }
     }
-
-    const String s_name = String(this->_type_name);
+    auto type_info = ObjectTypeDB::types[type_name];
+    // type_info.inherits
+    const String s_name = String(type_name);
+    this->_type_qstr = qstr_from_str(s_name.utf8().get_data());
+    // TODO: handle inheritance with bases_tuple
     this->_mp_type = {
         { &mp_type_type },                        // base
-        qstr_from_str(s_name.utf8().get_data()),  // name
+        this->_type_qstr,                         // name
         0,                                        // print
         _mp_type_make_new,                        // make_new
         0,                                        // call

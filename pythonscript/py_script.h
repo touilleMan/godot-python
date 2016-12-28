@@ -18,12 +18,20 @@
 class PyInstance;
 
 
+/**
+ * PyScript represents two things at the same time:
+ * 1) A Python script (e.g. `foo.py`) loaded into godot
+ * 2) A Python class defined into this script and flagged to
+ *    be exported (if available).
+ */
 class PyScript : public Script {
 
     OBJ_TYPE(PyScript, Script);
 
 friend class PyInstance;
 friend class PyLanguage;
+
+private:
 
     bool tool;
     bool valid;
@@ -45,11 +53,13 @@ friend class PyLanguage;
     // PyScript *_owner; //for subclasses
     Map<StringName,PropertyInfo> member_info;
 
-    Set<Object*> instances;
+    Set<Object*> _instances;
     //exported members
     String source;
     String path;
     String name;
+
+    PyInstance* _create_instance(const Variant** p_args, int p_argcount, Object *p_owner);
 
 protected:
 
@@ -93,7 +103,6 @@ public:
     virtual void update_exports() {} //editor tool
     void get_script_method_list(List<MethodInfo> *p_list) const;
     void get_script_property_list(List<PropertyInfo> *p_list) const;
-
 
     PyScript();
     ~PyScript();

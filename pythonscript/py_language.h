@@ -11,7 +11,6 @@
 
 class PyScript;
 class PyInstance;
-class GodotBindingsModule;
 
 
 class PyLanguage : public ScriptLanguage {
@@ -21,7 +20,6 @@ class PyLanguage : public ScriptLanguage {
     Mutex *lock;
     static PyLanguage *singleton;
     SelfList<PyScript>::List script_list;
-    GodotBindingsModule *_bindings;
     mp_obj_t _mpo_godot_module;
 
 public:
@@ -86,7 +84,6 @@ public:
 
     int profiling_get_accumulated_data(ProfilingInfo *p_info_arr,int p_info_max);
     int profiling_get_frame_data(ProfilingInfo *p_info_arr,int p_info_max);
-
 
     void frame();
 

@@ -2,7 +2,7 @@
 #include "os/file_access.h"
 // Pythonscript imports
 #include "py_script.h"
-#include "tools.h"
+#include "py_instance.h"
 
 
 void PyScript::_bind_methods() {
@@ -95,48 +95,38 @@ ScriptInstance* PyScript::instance_create(Object *p_this) {
     return NULL;
 }
 
-#if 0
-PyInstance* PyScript::_create_instance(const Variant** p_args, int p_argcount, Object *p_owner, bool p_isref) {
-
-_create_instance() {
+#if 1
+PyInstance* PyScript::_create_instance(const Variant** p_args, int p_argcount, Object *p_owner) {
     /* STEP 1, CREATE */
 
-    GDInstance* instance = memnew( GDInstance );
-    instance->base_ref=p_isref;
-    instance->members.resize(member_indices.size());
-    instance->script=Ref<PyScript>(this);
-    instance->owner=p_owner;
-#ifdef DEBUG_ENABLED
-    //needed for hot reloading
-    for(Map<StringName,MemberInfo>::Element *E=member_indices.front();E;E=E->next()) {
-        instance->member_indices_cache[E->key()]=E->get().index;
-    }
-#endif
-    instance->owner->set_script_instance(instance);
+    PyInstance* instance = memnew(PyInstance);
+    instance->_owner = p_owner;
+    instance->_script = Ref<PyScript>(this);
 
     /* STEP 2, INITIALIZE AND CONSRTUCT */
 
-    instances.insert(instance->owner);
+    this->_instances.insert(instance->_owner);
+    // Set owner responsible to destroy the instance
+    instance->_owner->set_script_instance(instance);
 
-    initializer->call(instance,p_args,p_argcount,r_error);
-
-    if (r_error.error!=Variant::CallError::CALL_OK) {
-        instance->script=Ref<PyScript>();
-        instance->owner->set_script_instance(NULL);
-        instances.erase(p_owner);
-        ERR_FAIL_COND_V(r_error.error!=Variant::CallError::CALL_OK, NULL); //error constructing
-    }
+    // TODO: call Python constructor
+    // Variant::CallError r_error;
+    // instance->mp_init(r_error);
+    // if (r_error.error!=Variant::CallError::CALL_OK) {
+    //     instance->_owner->set_script_instance(NULL);
+    //     this->_instances.erase(instance->_owner);
+    //     instance->_script=Ref<PyScript>();
+    //     ERR_FAIL_COND_V(r_error.error!=Variant::CallError::CALL_OK, NULL); //error constructing
+    // }
 
     //@TODO make thread safe
     return instance;
-    PyScript *p_script = memnew(PyScript);
-    return p_script;
 }
 #endif
 
 bool PyScript::instance_has(const Object *p_this) const {
     DEBUG_TRACE_METHOD();
-    return this->instances.has((Object*)p_this);
+    return this->_instances.has((Object*)p_this);
 }
 
 
@@ -173,7 +163,7 @@ static const String _to_mp_module_path(const String &p_path) {
 
 Error PyScript::reload(bool p_keep_state) {
     DEBUG_TRACE_METHOD();
-    ERR_FAIL_COND_V(!p_keep_state && this->instances.size(), ERR_ALREADY_IN_USE);
+    ERR_FAIL_COND_V(!p_keep_state && this->_instances.size(), ERR_ALREADY_IN_USE);
 
     String basedir = this->path;
 
@@ -840,11 +830,9 @@ void PyScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
 }
 
 
-PyScript::PyScript() {
+PyScript::PyScript() : tool(false), valid(false), _mpo_exposed_class(mp_const_none), _mpo_module(mp_const_none) {
     DEBUG_TRACE_METHOD();
 
-    tool=false;
-    valid=false;
     // _mp_exposed_mp_class = NULL;
     // _mp_module = NULL;
     // base = NULL;

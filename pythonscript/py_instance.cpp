@@ -160,7 +160,7 @@ bool PyInstance::get(const StringName& p_name, Variant &r_ret) const {
 Ref<Script> PyInstance::get_script() const {
     DEBUG_TRACE_METHOD();
 
-    return script;
+    return this->_script;
 }
 
 
