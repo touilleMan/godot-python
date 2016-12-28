@@ -2,18 +2,31 @@ __exposed_classes = {}
 __exposed_classes_per_module = {}
 
 
-# TODO provide `tool` parameter
-def exposed(cls):
-    print(cls, cls.__module__)
-    assert cls.__name__ not in __exposed_classes
-    assert cls.__module__ not in __exposed_classes_per_module
-    __exposed_classes[cls.__name__] = cls
-    __exposed_classes_per_module[cls.__module__] = cls
-    return cls
+class ExportedField:
+    def __init__(self, type, default):
+        self.type = type
+        self.default = default
 
 
-def export(type):
-    return None
+def exposed(cls=None, tool=False):
+
+    def wrapper(cls):
+        print("Exposing %s.%s Python class to Godot." % (cls.__module__, cls))
+        assert cls.__name__ not in __exposed_classes
+        assert cls.__module__ not in __exposed_classes_per_module
+        cls._tool = tool
+        __exposed_classes[cls.__name__] = cls
+        __exposed_classes_per_module[cls.__module__] = cls
+        return cls
+
+    if cls:
+        return wrapper(cls)
+    else:
+        return wrapper
+
+
+def export(type, default=None):
+    return ExportedField(type, default)
 
 
 def get_exposed_class_per_module(module_name):
