@@ -18,15 +18,18 @@ private:
     List<DynamicBinder*> _binders;
     mp_obj_t _mp_module = mp_const_none;
     bool _initialized = false;
-    static GodotBindingsModule _singleton;
+    static GodotBindingsModule *_singleton;
 
     GodotBindingsModule() {};
+    void _build_binders();
+
 public:
-    _FORCE_INLINE_ static GodotBindingsModule *get_singleton() { return &_singleton; };
+    _FORCE_INLINE_ static GodotBindingsModule *get_singleton() { return _singleton; };
+    void static init();
+    void static finish();
     virtual ~GodotBindingsModule();
 
-    void init();
-    void pre_init();
+    void boostrap();
     _FORCE_INLINE_ mp_obj_t get_mp_module() const { return this->_mp_module; };
     const DynamicBinder *get_binder(const StringName &p_type) const;
     const DynamicBinder *get_binder(const qstr type) const;

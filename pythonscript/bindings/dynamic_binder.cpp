@@ -6,21 +6,30 @@
 #include "bindings/converter.h"
 
 
-GodotBindingsModule GodotBindingsModule::_singleton;
-
-
-void GodotBindingsModule::pre_init() {
-    // Module is created now to be able to reference it elsewhere,
-    // however it is really populated within `init()`
-    this->_mp_module = mp_obj_new_module(qstr_from_str("godot.bindings"));
-}
+GodotBindingsModule *GodotBindingsModule::_singleton = NULL;
 
 
 void GodotBindingsModule::init() {
-    if (this->_initialized) {
-        return;
+    if (_singleton == NULL) {
+        _singleton = new GodotBindingsModule();
+        // Module is created now to be able to reference it elsewhere,
+        // however it is really populated within `init()`
+        // TODO: don't use micropython memory mangement for this
+        _singleton->_mp_module = mp_obj_new_module(qstr_from_str("godot.bindings"));
+        MP_WRAP_CALL(_singleton->_build_binders);
     }
-    this->_initialized = true;
+}
+
+
+void GodotBindingsModule::finish() {
+    if (_singleton != NULL) {
+        delete _singleton;
+        _singleton = NULL;
+    }
+}
+
+
+void GodotBindingsModule::_build_binders() {
     // Retrieve and create all the modules for freeeeeeeee !
     List<StringName> types;
     ObjectTypeDB::get_type_list(&types);
