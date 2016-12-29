@@ -48,6 +48,7 @@ public:
     virtual RPCMode get_rset_mode(const StringName& p_variable) const;
 
     PyInstance();
+    bool init(PyScript *p_script, Object *p_owner);
     ~PyInstance();
 
 };

@@ -66,9 +66,6 @@ const DynamicBinder *GodotBindingsModule::get_binder(const qstr type) const {
 
 
 GodotBindingsModule::~GodotBindingsModule() {
-    if (!this->_initialized) {
-        return;
-    }
     for(auto E=this->_binders.front(); E; E=E->next()) {
         memdelete(E->get());
     }

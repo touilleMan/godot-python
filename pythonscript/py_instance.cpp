@@ -525,7 +525,29 @@ PyInstance::RPCMode PyInstance::get_rset_mode(const StringName& p_variable) cons
 
 PyInstance::PyInstance() {
     DEBUG_TRACE_METHOD();
+}
 
+
+bool PyInstance::init(PyScript *p_script, Object *p_owner) {
+    DEBUG_TRACE_METHOD();
+    bool success = true;
+
+    this->_owner = p_owner;
+    this->_script = Ref<PyScript>(p_script);
+
+    auto init_instance = [this, p_script, p_owner]{
+        // Actually create an instance inside Python
+        const auto type = static_cast<mp_obj_type_t *>(p_script->get_mpo_exposed_class());
+        this->_mpo = mp_obj_instance_make_new(type, 0, 0, NULL);
+        // Set owner responsible to destroy the instance
+        p_owner->set_script_instance(this);
+    };
+    auto handle_ex = [&success](mp_obj_t ex) {
+        mp_obj_print_exception(&mp_plat_print, ex);
+        success = false;
+    };
+    MP_WRAP_CALL_EX(init_instance, handle_ex);
+    return success;
 }
 
 

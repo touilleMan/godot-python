@@ -54,6 +54,7 @@ StringName PyScript::get_instance_base_type() const {
 }
 
 
+// TODO: rename p_this "p_owner" ?
 ScriptInstance* PyScript::instance_create(Object *p_this) {
     DEBUG_TRACE_METHOD();
     if (!this->tool && !ScriptServer::is_scripting_enabled()) {
@@ -91,38 +92,18 @@ ScriptInstance* PyScript::instance_create(Object *p_this) {
     // Variant::CallError unchecked_error;
     // return _create_instance(NULL,0,p_this,p_this->cast_to<Reference>(),unchecked_error);
     // TODO !!!!
-    // return this->_create_instance(p_this):
-    return NULL;
-}
-
-#if 1
-PyInstance* PyScript::_create_instance(const Variant** p_args, int p_argcount, Object *p_owner) {
-    /* STEP 1, CREATE */
 
     PyInstance* instance = memnew(PyInstance);
-    instance->_owner = p_owner;
-    instance->_script = Ref<PyScript>(this);
-
-    /* STEP 2, INITIALIZE AND CONSRTUCT */
-
-    this->_instances.insert(instance->_owner);
-    // Set owner responsible to destroy the instance
-    instance->_owner->set_script_instance(instance);
-
-    // TODO: call Python constructor
-    // Variant::CallError r_error;
-    // instance->mp_init(r_error);
-    // if (r_error.error!=Variant::CallError::CALL_OK) {
-    //     instance->_owner->set_script_instance(NULL);
-    //     this->_instances.erase(instance->_owner);
-    //     instance->_script=Ref<PyScript>();
-    //     ERR_FAIL_COND_V(r_error.error!=Variant::CallError::CALL_OK, NULL); //error constructing
-    // }
-
-    //@TODO make thread safe
-    return instance;
+    const bool success = instance->init(this, p_this);
+    if (success) {
+        this->_instances.insert(instance->get_owner());
+        return instance;
+    } else {
+        memdelete(instance);
+        ERR_FAIL_V(NULL);
+    }
 }
-#endif
+
 
 bool PyScript::instance_has(const Object *p_this) const {
     DEBUG_TRACE_METHOD();
@@ -165,6 +146,7 @@ Error PyScript::reload(bool p_keep_state) {
     DEBUG_TRACE_METHOD();
     ERR_FAIL_COND_V(!p_keep_state && this->_instances.size(), ERR_ALREADY_IN_USE);
 
+    this->valid = false;
     String basedir = this->path;
 
     if (basedir=="")
@@ -188,17 +170,17 @@ Error PyScript::reload(bool p_keep_state) {
         // TODO handle deep path for module (e.g. `import foo.bar`)
         this->_mpo_module = mp_import_name(qstr_module_path, mp_const_none, MP_OBJ_NEW_SMALL_INT(0));
         mp_store_global(qstr_module_path, this->_mpo_module);
+        this->valid = true;
     };
     auto handle_ex = [&error](mp_obj_t ex) {
         mp_obj_print_exception(&mp_plat_print, ex);
         error = ex;
     };
     MP_WRAP_CALL_EX(import_module, handle_ex);
-    ERR_FAIL_COND_V(error, ERR_FILE_BAD_PATH);
+    ERR_FAIL_COND_V(error, ERR_COMPILATION_FAILED);
 
     // Retrieve module's exposed class or set it to `mp_const_none` if not available
     this->_mpo_exposed_class = PyLanguage::get_singleton()->get_mp_exposed_class_from_module(qstr_module_path);
-    // mp_import_name(qstr_from_str(s_mp_module_path), mp_const_none, MP_OBJ_NEW_SMALL_INT(0));
 
     // mp_execute_as_module(this->sources)
     // TODO: load the module and retrieve exposed class here
@@ -232,8 +214,6 @@ Error PyScript::reload(bool p_keep_state) {
     //         return err;
     //     }
     // }
-
-    this->valid = true;
 
     // for(Map<StringName,Ref<PyScript> >::Element *E=subclasses.front();E;E=E->next()) {
 

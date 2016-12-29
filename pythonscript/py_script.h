@@ -59,8 +59,6 @@ private:
     String path;
     String name;
 
-    PyInstance* _create_instance(const Variant** p_args, int p_argcount, Object *p_owner);
-
 protected:
 
     static void _bind_methods();
@@ -70,6 +68,10 @@ protected:
     virtual void _placeholder_erased(PlaceHolderScriptInstance *p_placeholder);
 #endif
 public:
+
+    _FORCE_INLINE_ mp_obj_t get_mpo_exposed_class() const { return this->_mpo_exposed_class; }
+    _FORCE_INLINE_ mp_obj_t get_mpo_module() const { return this->_mpo_module; }
+
 
     bool can_instance() const;
 
