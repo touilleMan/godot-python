@@ -354,7 +354,7 @@ bool PyInstance::has_method(const StringName& p_method) const {
     return false;
 }
 Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p_argcount,Variant::CallError &r_error) {
-    DEBUG_TRACE_METHOD();
+    DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
 #if 0
 
     //printf("calling %ls:%i method %ls\n", script->get_path().c_str(), -1, String(p_method).c_str());
@@ -373,7 +373,7 @@ Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p
 }
 
 void PyInstance::call_multilevel(const StringName& p_method,const Variant** p_args,int p_argcount) {
-    DEBUG_TRACE_METHOD();
+    DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
 
 #if 0
     PyScript *sptr=script.ptr();
@@ -409,7 +409,7 @@ void PyInstance::_ml_call_reversed(PyScript *sptr,const StringName& p_method,con
 
 
 void PyInstance::call_multilevel_reversed(const StringName& p_method,const Variant** p_args,int p_argcount) {
-    DEBUG_TRACE_METHOD();
+    DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
 
 #if 0
     if (script.ptr()) {
@@ -427,7 +427,7 @@ void PyInstance::notification(int p_notification) {
     // Variant value=p_notification;
     // const Variant *args[1]={&value };
 
-    // PyScript *sptr=script.ptr();
+    // PyScript *sptr = this->_script.ptr();
     // while(sptr) {
     //     Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyScriptLanguage::get_singleton()->strings._notification);
     //     if (E) {
