@@ -7,10 +7,10 @@ BASEDIR = $(shell pwd)
 GODOT_DIR ?= $(BASEDIR)/godot
 
 ifndef DEBUG
-GODOT_CMD = LD_LIBRARY_PATH="$(GODOT_DIR)/bin" $(GODOT_DIR)/bin/godot*
+GODOT_CMD = LD_LIBRARY_PATH="$(GODOT_DIR)/bin" $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
 else
 DEBUG ?= lldb
-GODOT_CMD = LD_LIBRARY_PATH="$(GODOT_DIR)/bin" $(DEBUG) $(GODOT_DIR)/bin/godot*
+GODOT_CMD = LD_LIBRARY_PATH="$(GODOT_DIR)/bin" $(DEBUG) $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
 endif
 
 OPTS ?= platform=x11 -j6 use_llvm=yes                  \
