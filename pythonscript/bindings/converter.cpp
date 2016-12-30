@@ -8,7 +8,9 @@
 
 // This should be called from a micropython context (with nlr_push set)
 Variant pyobj_to_variant(const mp_obj_t pyobj) {
-    if (MP_OBJ_IS_INT(pyobj)) {
+    if (pyobj == mp_const_none) {
+        return Variant();
+    } else if (MP_OBJ_IS_INT(pyobj)) {
         return Variant(mp_obj_get_int(pyobj));
     } else if (MP_OBJ_IS_STR(pyobj)) {
         return Variant(qstr_str(MP_OBJ_QSTR_VALUE(pyobj)));

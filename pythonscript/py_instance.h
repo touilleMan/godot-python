@@ -30,9 +30,15 @@ public:
 
     virtual void get_method_list(List<MethodInfo> *p_list) const;
     virtual bool has_method(const StringName& p_method) const;
+
     virtual Variant call(const StringName& p_method,const Variant** p_args,int p_argcount,Variant::CallError &r_error);
+    #if 0
+    // Rely on default implementations provided by ScriptInstance for the moment.
+    // Note that multilevel call could be removed in 3.0 release, so stay tunned
+    // (see https://godotengine.org/qa/9244/can-override-the-_ready-and-_process-functions-child-classes)
     virtual void call_multilevel(const StringName& p_method,const Variant** p_args,int p_argcount);
     virtual void call_multilevel_reversed(const StringName& p_method,const Variant** p_args,int p_argcount);
+    #endif
 
     virtual void notification(int p_notification);
 
@@ -41,8 +47,6 @@ public:
     virtual ScriptLanguage *get_language();
 
     void set_path(const String& p_path);
-
-    void reload_members();
 
     virtual RPCMode get_rpc_mode(const StringName& p_method) const;
     virtual RPCMode get_rset_mode(const StringName& p_variable) const;

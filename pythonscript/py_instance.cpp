@@ -2,6 +2,7 @@
 #include "py_language.h"
 #include "py_script.h"
 #include "py_instance.h"
+#include "bindings/converter.h"
 
 #if 0
 class ScriptInstance {
@@ -353,8 +354,28 @@ bool PyInstance::has_method(const StringName& p_method) const {
 #endif
     return false;
 }
+
+
 Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p_argcount,Variant::CallError &r_error) {
     DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
+
+    qstr method_name = qstr_from_str(String(p_method).utf8().get_data());
+    Variant ret;
+    auto call_method = [this, method_name, p_args, p_argcount, &ret]() {
+        mp_obj_t method_obj = mp_load_attr(this->_mpo, method_name);
+        mp_obj_t args[p_argcount];
+        for (int i = 0; i < p_argcount; ++i) {
+            args[i] = variant_to_pyobj(*p_args[i]);
+        }
+        mp_obj_t pyobj_ret = mp_call_function_n_kw(method_obj, p_argcount, 0, args);
+        ret = pyobj_to_variant(pyobj_ret);
+    };
+    auto handle_ex = [&r_error](mp_obj_t ex) {
+        mp_obj_print_exception(&mp_plat_print, ex);
+        r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
+    };
+    MP_WRAP_CALL_EX(call_method, handle_ex);
+    return ret;
 #if 0
 
     //printf("calling %ls:%i method %ls\n", script->get_path().c_str(), -1, String(p_method).c_str());
@@ -368,10 +389,11 @@ Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p
         sptr = sptr->_base;
     }
     r_error.error=Variant::CallError::CALL_ERROR_INVALID_METHOD;
-#endif
     return Variant();
+#endif
 }
 
+#if 0  // TODO: Don't rely on default implementations provided by ScriptInstance ?
 void PyInstance::call_multilevel(const StringName& p_method,const Variant** p_args,int p_argcount) {
     DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
 
@@ -417,6 +439,7 @@ void PyInstance::call_multilevel_reversed(const StringName& p_method,const Varia
     }
 #endif
 }
+#endif  // Multilevel stuff
 
 
 void PyInstance::notification(int p_notification) {
@@ -441,41 +464,6 @@ void PyInstance::notification(int p_notification) {
     //     sptr = sptr->_base;
     // }
 
-}
-
-
-void PyInstance::reload_members() {
-    DEBUG_TRACE_METHOD();
-    // TODO
-
-#ifdef DEBUG_ENABLED
-
-    // members.resize(script->member_indices.size()); //resize
-
-    // Vector<Variant> new_members;
-    // new_members.resize(script->member_indices.size());
-
-    // //pass the values to the new indices
-    // for(Map<StringName,PyScript::MemberInfo>::Element *E=script->member_indices.front();E;E=E->next()) {
-
-    //     if (member_indices_cache.has(E->key())) {
-    //         Variant value = members[member_indices_cache[E->key()]];
-    //         new_members[E->get().index]=value;
-    //     }
-
-    // }
-
-    // //apply
-    // members=new_members;
-
-    // //pass the values to the new indices
-    // member_indices_cache.clear();
-    // for(Map<StringName,PyScript::MemberInfo>::Element *E=script->member_indices.front();E;E=E->next()) {
-
-    //     member_indices_cache[E->key()]=E->get().index;
-    // }
-
-#endif
 }
 
 
@@ -535,9 +523,9 @@ bool PyInstance::init(PyScript *p_script, Object *p_owner) {
     this->_owner = p_owner;
     this->_script = Ref<PyScript>(p_script);
 
-    auto init_instance = [this, p_script, p_owner]{
+    auto init_instance = [this, p_script, p_owner] {
         // Actually create an instance inside Python
-        const auto type = static_cast<mp_obj_type_t *>(p_script->get_mpo_exposed_class());
+        auto type = static_cast<const mp_obj_type_t *>(p_script->get_mpo_exposed_class());
         this->_mpo = mp_obj_instance_make_new(type, 0, 0, NULL);
         // Set owner responsible to destroy the instance
         p_owner->set_script_instance(this);

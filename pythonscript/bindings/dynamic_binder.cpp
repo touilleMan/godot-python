@@ -12,8 +12,6 @@ GodotBindingsModule *GodotBindingsModule::_singleton = NULL;
 void GodotBindingsModule::init() {
     if (_singleton == NULL) {
         _singleton = new GodotBindingsModule();
-        // Module is created now to be able to reference it elsewhere,
-        // however it is really populated within `init()`
         // TODO: don't use micropython memory mangement for this
         _singleton->_mp_module = mp_obj_new_module(qstr_from_str("godot.bindings"));
         MP_WRAP_CALL(_singleton->_build_binders);
@@ -157,23 +155,22 @@ static mp_obj_t _wrap_godot_method(StringName type_name, StringName method_name)
         auto self = static_cast<mp_godot_bind_t *>(args[1]);
         // Remove self and also don't pass p_method_bind as argument
         const int godot_n = n - 2;
-        // TODO: convert argument
         const Variant def_arg;
         const Variant *godot_args[godot_n];
         for (int i = 0; i < godot_n; ++i) {
-            // godot_args[i] = pyobj_to_variant(args[i]);
-            godot_args[i] = &def_arg;
+            godot_args[i] = new Variant(pyobj_to_variant(args[i+2]));
         }
         Variant::CallError err;
         Variant ret = p_method_bind->call(self->godot_obj, godot_args, godot_n, err);
+        for (int i = 0; i < godot_n; ++i) {
+            delete godot_args[i];
+        }
         if (err.error != Variant::CallError::CALL_OK) {
             // Throw exception
             // TODO: improve error message...
             nlr_raise(mp_obj_new_exception_msg(&mp_type_RuntimeError, "Tough shit dude..."));
         }
-        // TODO: convert return
         return variant_to_pyobj(ret);
-        // return mp_const_none;
     };
 
     // Yes, p_method_bind is not an mp_obj_t... but it's only to pass to caller_fun
@@ -252,25 +249,43 @@ mp_obj_t DynamicBinder::build_mpo_wrapper(Object *obj) const {
 DynamicBinder::DynamicBinder(StringName type_name) : _type_name(type_name) {
     // Retrieve method&property from ObjectTypeDB and cook what can
     // be for faster runtime lookup
-    // TODO: get inherited properties/methods as well ?
     List<PropertyInfo> properties;
+    List<MethodInfo> methods;
+
+    // TODO: bypass micropython memory allocation
     ObjectTypeDB::get_property_list(type_name, &properties, true);
+    ObjectTypeDB::get_method_list(type_name, &methods, true);
+    mp_obj_t locals_dict = mp_obj_new_dict(methods.size() + properties.size());
+
+    // TODO: get inherited properties/methods as well ?
     for(List<PropertyInfo>::Element *E=properties.front();E;E=E->next()) {
         const PropertyInfo info = E->get();
-        this->property_lookup.insert(qstr_from_str(info.name.utf8().get_data()), info);
+        const auto qstr_name = qstr_from_str(info.name.utf8().get_data());
+        this->property_lookup.insert(qstr_name, info);
+        // TODO: use Python @property ?
+        // mp_obj_dict_store(locals_dict, MP_OBJ_NEW_QSTR(qstr_name), mpo_method);
     }
-    List<MethodInfo> methods;
-    ObjectTypeDB::get_method_list(type_name, &methods, true);
     for(List<MethodInfo>::Element *E=methods.front();E;E=E->next()) {
         const MethodInfo info = E->get();
         const auto qstr_name = qstr_from_str(info.name.utf8().get_data());
         const auto mpo_method = _wrap_godot_method(type_name, info.name);
         if (mpo_method != mp_const_none) {
             this->method_lookup.insert(qstr_name, mpo_method);
+            mp_obj_dict_store(locals_dict, MP_OBJ_NEW_QSTR(qstr_name), mpo_method);
         }
     }
-    auto type_info = ObjectTypeDB::types[type_name];
-    // type_info.inherits
+
+    // Retrieve parent binding to create inheritance between bindings
+    mp_obj_t bases_tuple = 0;
+    const StringName parent_name = ObjectTypeDB::type_inherits_from(type_name);
+    const DynamicBinder *parent_binder = GodotBindingsModule::get_singleton()->get_binder(parent_name);
+    if (parent_binder != NULL) {
+        const mp_obj_t args[1] = {
+            MP_OBJ_FROM_PTR(parent_binder->get_mp_type()),
+        };
+        bases_tuple = mp_obj_new_tuple(1, args);
+        // WARN_PRINTS(String(type_name) + " inherits " + String(parent_name));
+    }
     const String s_name = String(type_name);
     this->_type_qstr = qstr_from_str(s_name.utf8().get_data());
     // TODO: handle inheritance with bases_tuple
@@ -282,13 +297,13 @@ DynamicBinder::DynamicBinder(StringName type_name) : _type_name(type_name) {
         0,                                        // call
         0,                                        // unary_op
         0,                                        // binary_op
-        _mp_type_attr,                            // attr
+        0,                                        // attr
         0,                                        // subscr
         0,                                        // getiter
         0,                                        // iternext
         {0},                                      // buffer_p
         static_cast<void *>(this),                // protocol
-        0,                                        // bases_tuple
-        0                                         // locals_dict
+        static_cast<mp_obj_tuple_t *>(MP_OBJ_TO_PTR(bases_tuple)),  // bases_tuple
+        static_cast<mp_obj_dict_t *>(MP_OBJ_TO_PTR(locals_dict))    // locals_dict
     };
 }
