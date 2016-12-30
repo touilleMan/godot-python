@@ -17,4 +17,7 @@ class MyExportedCls(Node2D):
         Called every time the node is added to the scene.
         Initialization here.
         """
-        pass
+        print("Hello World !")
+        print('OLD ROT:', self.get_rot())
+        self.rotate(50)
+        print('NEW ROT:', self.get_rot())
