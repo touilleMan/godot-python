@@ -88,9 +88,13 @@ mp_obj_t variant_to_pyobj(const Variant &p_variant) {
     case Variant::Type::OBJECT:
     {
         Object *obj = p_variant;
-        auto binder = GodotBindingsModule::get_singleton()->get_binder(obj->get_type_name());
-        if (binder) {
-            return binder->build_mpo_wrapper(obj);
+        if (obj != NULL) {
+            auto binder = GodotBindingsModule::get_singleton()->get_binder(obj->get_type_name());
+            if (binder) {
+                return binder->build_mpo_wrapper(obj);
+            }
+        } else {
+            return mp_const_none;
         }
     } break;
     case Variant::Type::INPUT_EVENT:

@@ -2,9 +2,6 @@ from godot import exposed, export
 from godot.bindings import Node2D, Object
 
 
-print("rn ==>", Node2D, Object().get_instance_ID())
-
-
 @exposed
 class MyExportedCls(Node2D):
 
@@ -19,5 +16,5 @@ class MyExportedCls(Node2D):
         """
         print("Hello World !")
         print('OLD ROT:', self.get_rot())
-        self.rotate(50)
+        self.rotate(1.5)
         print('NEW ROT:', self.get_rot())

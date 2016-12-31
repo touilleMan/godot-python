@@ -3,6 +3,7 @@
 #include "py_script.h"
 #include "py_instance.h"
 #include "bindings/converter.h"
+#include "bindings/dynamic_binder.h"
 
 #if 0
 class ScriptInstance {
@@ -526,7 +527,14 @@ bool PyInstance::init(PyScript *p_script, Object *p_owner) {
     auto init_instance = [this, p_script, p_owner] {
         // Actually create an instance inside Python
         auto type = static_cast<const mp_obj_type_t *>(p_script->get_mpo_exposed_class());
+        // TODO: use DynamicBinder::build_mpo_wrapper ?
         this->_mpo = mp_obj_instance_make_new(type, 0, 0, NULL);
+        // Script is not a "real" instance of the class is expend, instead it
+        // takes controle of the owner
+        mp_obj_instance_t *inst = static_cast<mp_obj_instance_t *>(MP_OBJ_TO_PTR(this->_mpo));
+        auto self = static_cast<mp_godot_bind_t *>(inst->subobj[0]);
+        self->godot_obj = p_owner;
+        self->godot_variant = Variant(p_owner);
         // Set owner responsible to destroy the instance
         p_owner->set_script_instance(this);
     };
@@ -535,6 +543,7 @@ bool PyInstance::init(PyScript *p_script, Object *p_owner) {
         success = false;
     };
     MP_WRAP_CALL_EX(init_instance, handle_ex);
+
     return success;
 }
 

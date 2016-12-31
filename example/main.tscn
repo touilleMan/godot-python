@@ -1,19 +1,46 @@
-[gd_scene load_steps=3 format=1]
+[gd_scene load_steps=4 format=1]
 
 [ext_resource path="res://main.gd" type="Script" id=1]
-[ext_resource path="res://test.py" type="Script" id=2]
+[ext_resource path="res://test.gd" type="Script" id=2]
+[ext_resource path="res://test.py" type="Script" id=3]
 
 [node name="Node" type="Node"]
 
 script/script = ExtResource( 1 )
 
-[node name="Node2D" type="Node2D" parent="."]
+[node name="Node2D-GD" type="Node2D" parent="."]
 
 transform/pos = Vector2( 484.862, 270.19 )
 transform/rot = 1.0
 script/script = ExtResource( 2 )
 
-[node name="Particles2D" type="Particles2D" parent="Node2D"]
+[node name="Particles2D" type="Particles2D" parent="Node2D-GD"]
+
+config/amount = 32
+config/lifetime = 2.0
+params/direction = 0.0
+params/spread = 10.0
+params/linear_velocity = 20.0
+params/spin_velocity = 0.0
+params/orbit_velocity = 0.0
+params/gravity_direction = 0.0
+params/gravity_strength = 9.8
+params/radial_accel = 0.0
+params/tangential_accel = 0.0
+params/damping = 0.0
+params/initial_angle = 0.0
+params/initial_size = 1.0
+params/final_size = 1.0
+params/hue_variation = 0.0
+params/anim_speed_scale = 1.0
+params/anim_initial_pos = 0.0
+
+[node name="Node2D-Python" type="Node2D" parent="."]
+
+transform/pos = Vector2( 712.488, 140.647 )
+script/script = ExtResource( 3 )
+
+[node name="Particles2D" type="Particles2D" parent="Node2D-Python"]
 
 config/amount = 32
 config/lifetime = 2.0
