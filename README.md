@@ -3,7 +3,7 @@
 Python support for Godot
 ========================
 
-/!\ nothing working so far, move along /!\
+/!\ Not ready to play with, move along /!\
 
 
 Overview
@@ -53,12 +53,12 @@ Roadmap
 - [X] Integrate Micropython within Godot compilation toolchain
 - [X] Create minimal compiling Godot module implementing `ScriptLanguage`, `Script` and `ScriptInstance`
 - [X] Define Python API within Godot
-- [ ] Load Python module as `Script`
-- [ ] Instantiate Python class as `ScriptInstance`
+- [X] Load Python module as `Script`
+- [X] Instantiate Python class as `ScriptInstance`
 - [ ] Connect Godot's `Variant` and basetypes with Python ones
 - [ ] Expose Python `Script` through `ObjectTypeDB`
 - [X] Generate binding code to work with Godot's `MethodBind` & `ObjectTypeDB`
-- [ ] Have a "HelloWorld" script working
+- [X] Have a "HelloWorld" script working
 
 
 API (work in progress)
