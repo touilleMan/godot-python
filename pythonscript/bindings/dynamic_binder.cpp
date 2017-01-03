@@ -6,70 +6,6 @@
 #include "bindings/converter.h"
 
 
-GodotBindingsModule *GodotBindingsModule::_singleton = NULL;
-
-
-void GodotBindingsModule::init() {
-    if (_singleton == NULL) {
-        _singleton = new GodotBindingsModule();
-        // TODO: don't use micropython memory mangement for this
-        _singleton->_mp_module = mp_obj_new_module(qstr_from_str("godot.bindings"));
-        MP_WRAP_CALL(_singleton->_build_binders);
-    }
-}
-
-
-void GodotBindingsModule::finish() {
-    if (_singleton != NULL) {
-        delete _singleton;
-        _singleton = NULL;
-    }
-}
-
-
-void GodotBindingsModule::_build_binders() {
-    // Retrieve and create all the modules for freeeeeeeee !
-    List<StringName> types;
-    ObjectTypeDB::get_type_list(&types);
-    for(auto E=types.front(); E; E=E->next()) {
-        // WARN_PRINTS("Start building " + String(E->get()));
-        auto binder = memnew(DynamicBinder(E->get()));
-        const mp_obj_type_t *type = binder->get_mp_type();
-        mp_store_attr(this->_mp_module, type->name, MP_OBJ_FROM_PTR(type));
-        this->_binders.push_back(binder);
-    }
-}
-
-
-const DynamicBinder *GodotBindingsModule::get_binder(const StringName &p_type) const {
-    // TODO: optimize this
-    for(auto E=this->_binders.front(); E; E=E->next()) {
-        if (E->get()->get_type_name() == p_type) {
-            return E->get();
-        }
-    }
-    return NULL;
-}
-
-
-const DynamicBinder *GodotBindingsModule::get_binder(const qstr type) const {
-    // TODO: optimize this
-    for(auto E=this->_binders.front(); E; E=E->next()) {
-        if (E->get()->get_type_qstr() == type) {
-            return E->get();
-        }
-    }
-    return NULL;
-}
-
-
-GodotBindingsModule::~GodotBindingsModule() {
-    for(auto E=this->_binders.front(); E; E=E->next()) {
-        memdelete(E->get());
-    }
-}
-
-
 // Generate a python function calling `callback` with data as first
 // parameter, usefull for dynamically create the binding functions
 static mp_obj_t _generate_custom_trampoline(mp_obj_t callback, mp_obj_t data) {
@@ -278,7 +214,7 @@ DynamicBinder::DynamicBinder(StringName type_name) : _type_name(type_name) {
     // Retrieve parent binding to create inheritance between bindings
     mp_obj_t bases_tuple = 0;
     const StringName parent_name = ObjectTypeDB::type_inherits_from(type_name);
-    const DynamicBinder *parent_binder = GodotBindingsModule::get_singleton()->get_binder(parent_name);
+    const BaseBinder *parent_binder = GodotBindingsModule::get_singleton()->get_binder(parent_name);
     if (parent_binder != NULL) {
         const mp_obj_t args[1] = {
             MP_OBJ_FROM_PTR(parent_binder->get_mp_type()),

@@ -1,42 +1,13 @@
-#ifndef BINDER_H
-#define BINDER_H
+#ifndef DYNAMIC_BINDER_H
+#define DYNAMIC_BINDER_H
 
 #include "micropython.h"
 // Godot imports
 #include "core/string_db.h"
 #include "core/object_type_db.h"
 #include "core/map.h"
-
-
-class DynamicBinder;
-
-// TODO: Currently Godot OS::singleton is destroyed too soon so
-// ~GodotBindingsModule cause segfault when releasing memory...
-// (see https://github.com/godotengine/godot/issues/1083)
-class GodotBindingsModule {
-private:
-    List<DynamicBinder*> _binders;
-    mp_obj_t _mp_module = mp_const_none;
-    bool _initialized = false;
-    static GodotBindingsModule *_singleton;
-
-    GodotBindingsModule() {};
-    void _build_binders();
-
-public:
-    _FORCE_INLINE_ static GodotBindingsModule *get_singleton() { return _singleton; };
-    void static init();
-    void static finish();
-    virtual ~GodotBindingsModule();
-
-    void boostrap();
-    _FORCE_INLINE_ mp_obj_t get_mp_module() const { return this->_mp_module; };
-    const DynamicBinder *get_binder(const StringName &p_type) const;
-    const DynamicBinder *get_binder(const qstr type) const;
-    // TODO implements this
-    // mp_obj_t variant_to_pyobj(const Variant &p_variant) const;
-    // Variant pyobj_to_variant(const mp_obj_t pyobj) const;
-};
+// Pythonscript imports
+#include "bindings/binder.h"
 
 
 // Struture representing a single instance of a godot object in python
@@ -48,8 +19,10 @@ typedef struct {
 } mp_godot_bind_t;
 
 
-class DynamicBinder {
+class DynamicBinder : public BaseBinder {
+
 private:
+
 	const StringName _type_name;
     qstr _type_qstr;
     // DynamicBinder *parent;  # TODO: useful ?
@@ -58,7 +31,9 @@ private:
 
     // Type object of this godot type in python
     mp_obj_type_t _mp_type;
+
 public:
+
 	DynamicBinder(StringName type_name);
     _FORCE_INLINE_ StringName get_type_name() const { return this->_type_name; }
     _FORCE_INLINE_ qstr get_type_qstr() const { return this->_type_qstr; }
@@ -69,4 +44,4 @@ public:
 };
 
 
-#endif  // BINDER_H
+#endif  // DYNAMIC_BINDER_H
