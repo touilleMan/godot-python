@@ -88,13 +88,14 @@ static mp_obj_t _wrap_godot_method(StringName type_name, StringName method_name)
     caller_fun->fun.var = [](size_t n, const mp_obj_t *args) -> mp_obj_t {
         // First arg is the p_method_bind
         auto p_method_bind = static_cast<MethodBind *>(args[0]);
-        auto self = static_cast<mp_godot_bind_t *>(args[1]);
+        auto self = static_cast<DynamicBinder::mp_godot_bind_t *>(args[1]);
         // Remove self and also don't pass p_method_bind as argument
         const int godot_n = n - 2;
         const Variant def_arg;
         const Variant *godot_args[godot_n];
+        auto bindings = GodotBindingsModule::get_singleton();
         for (int i = 0; i < godot_n; ++i) {
-            godot_args[i] = new Variant(pyobj_to_variant(args[i+2]));
+            godot_args[i] = new Variant(bindings->pyobj_to_variant(args[i+2]));
         }
         Variant::CallError err;
         Variant ret = p_method_bind->call(self->godot_obj, godot_args, godot_n, err);
@@ -106,7 +107,7 @@ static mp_obj_t _wrap_godot_method(StringName type_name, StringName method_name)
             // TODO: improve error message...
             nlr_raise(mp_obj_new_exception_msg(&mp_type_RuntimeError, "Tough shit dude..."));
         }
-        return variant_to_pyobj(ret);
+        return bindings->variant_to_pyobj(ret);
     };
 
     // Yes, p_method_bind is not an mp_obj_t... but it's only to pass to caller_fun
@@ -118,16 +119,17 @@ static mp_obj_t _wrap_godot_method(StringName type_name, StringName method_name)
 
 static mp_obj_t _mp_type_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     auto p_type_binder = static_cast<const DynamicBinder *>(type->protocol);
-    // TODO: optimize this by using TypeInfo::creation_func ?
+    // TODO: Optimize this by using TypeInfo::creation_func ?
+    // TODO: Handle constructor's parameters
     Object *godot_obj = ObjectTypeDB::instance(p_type_binder->get_type_name());
-    mp_godot_bind_t *obj = m_new_obj_with_finaliser(mp_godot_bind_t);
+    DynamicBinder::mp_godot_bind_t *obj = m_new_obj_with_finaliser(DynamicBinder::mp_godot_bind_t);
     obj->base.type = type;
     obj->godot_obj = godot_obj;
     obj->godot_variant = Variant(godot_obj);
     return MP_OBJ_FROM_PTR(obj);
 }
 
-
+#if 0
 static void _mp_type_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     auto obj = static_cast<mp_godot_bind_t *>(MP_OBJ_TO_PTR(self_in));
     auto p_type_binder = static_cast<const DynamicBinder *>(obj->base.type->protocol);
@@ -171,14 +173,41 @@ void DynamicBinder::get_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) const 
     }
     // All other cases fail (i.e. don't modify `dest`)   
 }
+#endif
 
 
-mp_obj_t DynamicBinder::build_mpo_wrapper(Object *obj) const {
+mp_obj_t DynamicBinder::build_pyobj() const {
+    return this->build_pyobj(NULL);
+}
+
+
+mp_obj_t DynamicBinder::build_pyobj(Object *obj) const {
     mp_godot_bind_t *py_obj = m_new_obj_with_finaliser(mp_godot_bind_t);
     py_obj->base.type = this->get_mp_type();
     py_obj->godot_obj = obj;
     py_obj->godot_variant = Variant(obj);
     return MP_OBJ_FROM_PTR(py_obj);
+}
+
+
+Variant DynamicBinder::pyobj_to_variant(mp_obj_t pyobj) const {
+    mp_obj_type_t *pyobj_type = mp_obj_get_type(pyobj);
+    if (pyobj_type->name == this->_type_qstr) {
+        auto p_obj = static_cast<mp_godot_bind_t *>(MP_OBJ_TO_PTR(pyobj));
+        return p_obj->godot_variant;
+    } else {
+        return Variant();
+    }
+}
+
+
+mp_obj_t DynamicBinder::variant_to_pyobj(const Variant &p_variant) const {
+    Object *obj = p_variant;
+    if (obj != NULL) {
+        return this->build_pyobj(obj);
+    } else {
+        return mp_const_none;
+    }
 }
 
 
@@ -223,11 +252,11 @@ DynamicBinder::DynamicBinder(StringName type_name) : _type_name(type_name) {
         // WARN_PRINTS(String(type_name) + " inherits " + String(parent_name));
     }
     const String s_name = String(type_name);
-    this->_type_qstr = qstr_from_str(s_name.utf8().get_data());
+    qstr name = qstr_from_str(s_name.utf8().get_data());
     // TODO: handle inheritance with bases_tuple
     this->_mp_type = {
         { &mp_type_type },                        // base
-        this->_type_qstr,                         // name
+        name,                                     // name
         0,                                        // print
         _mp_type_make_new,                        // make_new
         0,                                        // call
@@ -242,4 +271,5 @@ DynamicBinder::DynamicBinder(StringName type_name) : _type_name(type_name) {
         static_cast<mp_obj_tuple_t *>(MP_OBJ_TO_PTR(bases_tuple)),  // bases_tuple
         static_cast<mp_obj_dict_t *>(MP_OBJ_TO_PTR(locals_dict))    // locals_dict
     };
+    this->_p_mp_type = &this->_mp_type;
 }

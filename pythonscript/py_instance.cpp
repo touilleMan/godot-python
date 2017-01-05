@@ -2,7 +2,7 @@
 #include "py_language.h"
 #include "py_script.h"
 #include "py_instance.h"
-#include "bindings/converter.h"
+#include "bindings/binder.h"
 #include "bindings/dynamic_binder.h"
 
 #if 0
@@ -365,11 +365,12 @@ Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p
     auto call_method = [this, method_name, p_args, p_argcount, &ret]() {
         mp_obj_t method_obj = mp_load_attr(this->_mpo, method_name);
         mp_obj_t args[p_argcount];
+        auto bindings = GodotBindingsModule::get_singleton();
         for (int i = 0; i < p_argcount; ++i) {
-            args[i] = variant_to_pyobj(*p_args[i]);
+            args[i] = bindings->variant_to_pyobj(*p_args[i]);
         }
         mp_obj_t pyobj_ret = mp_call_function_n_kw(method_obj, p_argcount, 0, args);
-        ret = pyobj_to_variant(pyobj_ret);
+        ret = bindings->pyobj_to_variant(pyobj_ret);
     };
     auto handle_ex = [&r_error](mp_obj_t ex) {
         mp_obj_print_exception(&mp_plat_print, ex);
@@ -532,7 +533,7 @@ bool PyInstance::init(PyScript *p_script, Object *p_owner) {
         // Script is not a "real" instance of the class is expend, instead it
         // takes controle of the owner
         mp_obj_instance_t *inst = static_cast<mp_obj_instance_t *>(MP_OBJ_TO_PTR(this->_mpo));
-        auto self = static_cast<mp_godot_bind_t *>(inst->subobj[0]);
+        auto self = static_cast<DynamicBinder::mp_godot_bind_t *>(inst->subobj[0]);
         self->godot_obj = p_owner;
         self->godot_variant = Variant(p_owner);
         // Set owner responsible to destroy the instance

@@ -5,44 +5,46 @@
 // Godot imports
 #include "core/string_db.h"
 #include "core/list.h"
+// Pythonscript imports
+#include "bindings/tools.h"
 
 
 class BaseBinder {
+protected:
+    StringName _type_name;
+    const mp_obj_type_t *_p_mp_type;
+
 public:
-    virtual StringName get_type_name() const = 0;
-    virtual qstr get_type_qstr() const = 0;
-    virtual const mp_obj_type_t *get_mp_type() const = 0;
-    virtual void get_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) const = 0;
-    virtual mp_obj_t build_mpo_wrapper(Object *obj) const = 0;
+    _FORCE_INLINE_ StringName get_type_name() const { return this->_type_name; }
+    _FORCE_INLINE_ qstr get_type_qstr() const { return this->_p_mp_type->name; }
+    _FORCE_INLINE_ const mp_obj_type_t *get_mp_type() const { return this->_p_mp_type; }
+    _FORCE_INLINE_ bool is_type(mp_obj_t pyobj) { return MP_OBJ_IS_TYPE(pyobj, this->_p_mp_type); }
+
+    virtual mp_obj_t build_pyobj() const = 0;
+    virtual Variant pyobj_to_variant(mp_obj_t pyobj) const = 0;
+    virtual mp_obj_t variant_to_pyobj(const Variant &p_variant) const = 0;
 };
 
 
-// TODO: Currently Godot OS::singleton is destroyed too soon so
-// ~GodotBindingsModule cause segfault when releasing memory...
-// (see https://github.com/godotengine/godot/issues/1083)
-class GodotBindingsModule {
+class GodotBindingsModule : public Singleton<GodotBindingsModule> {
+    friend Singleton<GodotBindingsModule>;
+
 private:
     List<BaseBinder*> _binders;
     mp_obj_t _mp_module = mp_const_none;
-    bool _initialized = false;
-    static GodotBindingsModule *_singleton;
 
-    GodotBindingsModule() {};
-    void _build_binders();
-
-public:
-    _FORCE_INLINE_ static GodotBindingsModule *get_singleton() { return _singleton; };
-    void static init();
-    void static finish();
+protected:
+    GodotBindingsModule();
     virtual ~GodotBindingsModule();
 
-    void boostrap();
+public:
+    void build_binders();
     _FORCE_INLINE_ mp_obj_t get_mp_module() const { return this->_mp_module; };
     const BaseBinder *get_binder(const StringName &p_type) const;
     const BaseBinder *get_binder(const qstr type) const;
-    // TODO implements this
-    // mp_obj_t variant_to_pyobj(const Variant &p_variant) const;
-    // Variant pyobj_to_variant(const mp_obj_t pyobj) const;
+
+    mp_obj_t variant_to_pyobj(const Variant &p_variant) const;
+    Variant pyobj_to_variant(const mp_obj_t pyobj) const;
 };
 
 

@@ -61,6 +61,7 @@ void PyLanguage::init() {
     // TODO: add project dir to sys.path
     // Build the bindings module and store into as part of the main godot module
     GodotBindingsModule::init();
+    GodotBindingsModule::get_singleton()->build_binders();
     // Load godot python module and connect it to PyLanguage
     mp_obj_t error = 0;
     auto import_module = [this]() {

@@ -1,6 +1,10 @@
 from godot import exposed, export
-from godot.bindings import Node2D, Object
+from godot.bindings import Node2D, Object, Vector2
 
+
+print('A', Vector2())
+print('B', Vector2(1.122344))
+print('C', Vector2(1, 2))
 
 @exposed
 class MyExportedCls(Node2D):

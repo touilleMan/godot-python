@@ -12,7 +12,7 @@ module_env.Append(CXXFLAGS='-std=c++11')
 sources = [
 	"bindings/binder.cpp",
 	"bindings/dynamic_binder.cpp",
-	"bindings/converter.cpp",
+	"bindings/builtins_binder.cpp",
 	"register_types.cpp",
 	"py_language.cpp",
 	"py_editor.cpp",
