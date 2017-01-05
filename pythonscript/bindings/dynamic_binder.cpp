@@ -3,7 +3,6 @@
 #include "micropython.h"
 // Pythonscript imports
 #include "bindings/dynamic_binder.h"
-#include "bindings/converter.h"
 
 
 // Generate a python function calling `callback` with data as first
