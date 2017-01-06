@@ -8,6 +8,7 @@
 // Godot imports
 #include "core/variant.h"
 #include "core/object_type_db.h"
+#include "core/global_constants.h"
 
 
 void init_bindings() {
@@ -60,6 +61,16 @@ void GodotBindingsModule::build_binders() {
             auto binder = memnew(DynamicBinder(E->get()));
             STORE_BINDED_TYPE(binder);
         }
+
+        // Finally retrieve global constants
+        auto int_binder = IntBinder::get_singleton();
+        int count = GlobalConstants::get_global_constant_count();
+        for (int i = 0; i < count; ++i) {
+            qstr key = qstr_from_str(GlobalConstants::get_global_constant_name(i));
+            int v = GlobalConstants::get_global_constant_value(i);
+            mp_store_attr(this->_mp_module, key, int_binder->build_pyobj(v));
+        }
+
     });
 }
 

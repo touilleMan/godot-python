@@ -1,5 +1,5 @@
 from godot import exposed, export
-from godot.bindings import Node2D, Object, Vector2
+from godot.bindings import Node2D, Object, Vector2, KEY_F5
 
 
 print('A', Vector2())
@@ -7,7 +7,7 @@ print('B', Vector2(1.122344))
 print('C', Vector2(1, 2))
 v = Vector2(1, 2)
 print('floor', v.floor())
-print('angle_to', v.angle_to(Vector2(0, 3)))
+print('KEY_F5', KEY_F5)
 
 
 @exposed
