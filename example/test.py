@@ -5,6 +5,10 @@ from godot.bindings import Node2D, Object, Vector2
 print('A', Vector2())
 print('B', Vector2(1.122344))
 print('C', Vector2(1, 2))
+v = Vector2(1, 2)
+print('floor', v.floor())
+print('angle_to', v.angle_to(Vector2(0, 3)))
+
 
 @exposed
 class MyExportedCls(Node2D):

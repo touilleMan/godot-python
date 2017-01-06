@@ -60,8 +60,7 @@ void PyLanguage::init() {
     mp_obj_list_init(static_cast<mp_obj_list_t *>(MP_OBJ_TO_PTR(mp_sys_argv)), 0);
     // TODO: add project dir to sys.path
     // Build the bindings module and store into as part of the main godot module
-    GodotBindingsModule::init();
-    GodotBindingsModule::get_singleton()->build_binders();
+    init_bindings();
     // Load godot python module and connect it to PyLanguage
     mp_obj_t error = 0;
     auto import_module = [this]() {

@@ -9,12 +9,16 @@
 #include "bindings/tools.h"
 
 
+void init_bindings();
+
+
 class BaseBinder {
 protected:
     StringName _type_name;
     const mp_obj_type_t *_p_mp_type;
 
 public:
+    _FORCE_INLINE_ const char *get_type_str() const { return qstr_str(this->get_type_qstr()); }
     _FORCE_INLINE_ StringName get_type_name() const { return this->_type_name; }
     _FORCE_INLINE_ qstr get_type_qstr() const { return this->_p_mp_type->name; }
     _FORCE_INLINE_ const mp_obj_type_t *get_mp_type() const { return this->_p_mp_type; }

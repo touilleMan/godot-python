@@ -10,6 +10,19 @@
 #include "core/object_type_db.h"
 
 
+void init_bindings() {
+    GodotBindingsModule::init();
+    NilBinder::init();
+    BoolBinder::init();
+    IntBinder::init();
+    RealBinder::init();
+    StringBinder::init();
+    Vector2Binder::init();
+    // TODO: make this lazy ?
+    GodotBindingsModule::get_singleton()->build_binders();
+}
+
+
 GodotBindingsModule::GodotBindingsModule() {
     // TODO: don't use micropython memory mangement for this
     this->_mp_module = mp_obj_new_module(qstr_from_str("godot.bindings"));
@@ -33,24 +46,17 @@ void GodotBindingsModule::build_binders() {
             this->_binders.push_back(binder); \
     }
 
-        // First init and store builtins bindings
-        NilBinder::init();
+        // First store builtins bindings
         STORE_BINDED_TYPE(NilBinder::get_singleton());
-        BoolBinder::init();
         STORE_BINDED_TYPE(BoolBinder::get_singleton());
-        IntBinder::init();
         STORE_BINDED_TYPE(IntBinder::get_singleton());
-        RealBinder::init();
         STORE_BINDED_TYPE(RealBinder::get_singleton());
-        StringBinder::init();
         STORE_BINDED_TYPE(StringBinder::get_singleton());
-        Vector2Binder::init();
         STORE_BINDED_TYPE(Vector2Binder::get_singleton());
 
         // Retrieve and create all the modules for freeeeeeeee !
         ObjectTypeDB::get_type_list(&types);
         for(auto E=types.front(); E; E=E->next()) {
-            // WARN_PRINTS("Start building " + String(E->get()));
             auto binder = memnew(DynamicBinder(E->get()));
             STORE_BINDED_TYPE(binder);
         }
