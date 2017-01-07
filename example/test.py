@@ -1,5 +1,5 @@
 from godot import exposed, export
-from godot.bindings import Node2D, Object, Vector2, KEY_F5
+from godot.bindings import Node2D, Object, Vector2, KEY_F5, OS
 
 
 print('A', Vector2())
@@ -8,6 +8,7 @@ print('C', Vector2(1, 2))
 v = Vector2(1, 2)
 print('floor', v.floor())
 print('KEY_F5', KEY_F5)
+print('--->', OS.get_unix_time())
 
 
 @exposed

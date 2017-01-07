@@ -191,7 +191,7 @@ mp_obj_t DynamicBinder::build_pyobj(Object *obj) const {
 
 Variant DynamicBinder::pyobj_to_variant(mp_obj_t pyobj) const {
     mp_obj_type_t *pyobj_type = mp_obj_get_type(pyobj);
-    if (pyobj_type->name == this->_type_qstr) {
+    if (pyobj_type->name == this->get_type_qstr()) {
         auto p_obj = static_cast<mp_godot_bind_t *>(MP_OBJ_TO_PTR(pyobj));
         return p_obj->godot_variant;
     } else {
@@ -210,7 +210,8 @@ mp_obj_t DynamicBinder::variant_to_pyobj(const Variant &p_variant) const {
 }
 
 
-DynamicBinder::DynamicBinder(StringName type_name) : _type_name(type_name) {
+DynamicBinder::DynamicBinder(StringName type_name) {
+    this->_type_name = type_name;
     // Retrieve method&property from ObjectTypeDB and cook what can
     // be for faster runtime lookup
     List<PropertyInfo> properties;
@@ -242,13 +243,16 @@ DynamicBinder::DynamicBinder(StringName type_name) : _type_name(type_name) {
     // Retrieve parent binding to create inheritance between bindings
     mp_obj_t bases_tuple = 0;
     const StringName parent_name = ObjectTypeDB::type_inherits_from(type_name);
-    const BaseBinder *parent_binder = GodotBindingsModule::get_singleton()->get_binder(parent_name);
-    if (parent_binder != NULL) {
-        const mp_obj_t args[1] = {
-            MP_OBJ_FROM_PTR(parent_binder->get_mp_type()),
-        };
-        bases_tuple = mp_obj_new_tuple(1, args);
-        // WARN_PRINTS(String(type_name) + " inherits " + String(parent_name));
+    if (parent_name != StringName()) {
+        const BaseBinder *parent_binder = GodotBindingsModule::get_singleton()->get_binder(parent_name);
+        if (parent_binder != NULL) {
+            const mp_obj_t args[1] = {
+                MP_OBJ_FROM_PTR(parent_binder->get_mp_type()),
+            };
+            bases_tuple = mp_obj_new_tuple(1, args);
+        } else {
+            WARN_PRINTS("Cannot retrieve `" + String(type_name) + "`'s parent `" + String(parent_name) + "`");
+        }
     }
     const String s_name = String(type_name);
     qstr name = qstr_from_str(s_name.utf8().get_data());

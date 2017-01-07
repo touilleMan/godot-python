@@ -9,6 +9,7 @@
 #include "core/variant.h"
 #include "core/object_type_db.h"
 #include "core/global_constants.h"
+#include "core/globals.h"
 
 
 void init_bindings() {
@@ -41,28 +42,68 @@ void GodotBindingsModule::build_binders() {
     MP_WRAP_CALL([this]() {
         List<StringName> types;
 
-    #define STORE_BINDED_TYPE(binder) { \
-            const mp_obj_type_t *type = binder->get_mp_type(); \
-            mp_store_attr(this->_mp_module, type->name, MP_OBJ_FROM_PTR(type)); \
-            this->_binders.push_back(binder); \
-    }
+        #define STORE_BINDED_TYPE(binder) { \
+                const mp_obj_type_t *type = binder->get_mp_type(); \
+                mp_store_attr(this->_mp_module, type->name, MP_OBJ_FROM_PTR(type)); \
+                this->_binders.push_back(binder); \
+        }
 
-        // First store builtins bindings
+        // Bind builtins bindings
         STORE_BINDED_TYPE(NilBinder::get_singleton());
         STORE_BINDED_TYPE(BoolBinder::get_singleton());
         STORE_BINDED_TYPE(IntBinder::get_singleton());
         STORE_BINDED_TYPE(RealBinder::get_singleton());
         STORE_BINDED_TYPE(StringBinder::get_singleton());
         STORE_BINDED_TYPE(Vector2Binder::get_singleton());
+        // TODO: finish builtins
 
-        // Retrieve and create all the modules for freeeeeeeee !
+        // Dynamically bind modules registered through ObjectTypeDB
         ObjectTypeDB::get_type_list(&types);
         for(auto E=types.front(); E; E=E->next()) {
             auto binder = memnew(DynamicBinder(E->get()));
             STORE_BINDED_TYPE(binder);
         }
 
-        // Finally retrieve global constants
+        // Bind global singletons
+        #define STORE_GLOBAL_SINGLETON(NAME, STORE_NAME) { \
+            auto binder = static_cast<const DynamicBinder *>(this->get_binder("_"#NAME)); \
+            Object *singleton = Globals::get_singleton()->get_singleton_object(#NAME); \
+            if (!binder) { \
+                WARN_PRINTS("Cannot retrieve binding `_" #NAME "`"); \
+            } else if (!singleton) { \
+                WARN_PRINTS("Cannot retrieve global singleton `" #STORE_NAME "`"); \
+            } else { \
+                mp_obj_t pyobj = binder->build_pyobj(singleton); \
+                mp_store_attr(this->_mp_module, qstr_from_str(#STORE_NAME), MP_OBJ_FROM_PTR(pyobj)); \
+            } \
+        }
+        STORE_GLOBAL_SINGLETON(AudioServer, AS);
+        STORE_GLOBAL_SINGLETON(AudioServer, AudioServer);
+        STORE_GLOBAL_SINGLETON(Geometry, Geometry);
+        STORE_GLOBAL_SINGLETON(Globals, Globals);
+        STORE_GLOBAL_SINGLETON(IP, IP);
+        STORE_GLOBAL_SINGLETON(Input, Input);
+        STORE_GLOBAL_SINGLETON(InputMap, InputMap);
+        STORE_GLOBAL_SINGLETON(Marshalls, Marshalls);
+        STORE_GLOBAL_SINGLETON(OS, OS);
+        STORE_GLOBAL_SINGLETON(PhysicsServer, PS);
+        STORE_GLOBAL_SINGLETON(Physics2DServer, PS2D);
+        STORE_GLOBAL_SINGLETON(PathRemap, PathRemap);
+        STORE_GLOBAL_SINGLETON(Performance, Performance);
+        STORE_GLOBAL_SINGLETON(Physics2DServer, Physics2DServer);
+        STORE_GLOBAL_SINGLETON(PhysicsServer, PhysicsServer);
+        STORE_GLOBAL_SINGLETON(ResourceLoader, ResourceLoader);
+        STORE_GLOBAL_SINGLETON(ResourceSaver, ResourceSaver);
+        STORE_GLOBAL_SINGLETON(SpatialSoundServer, SS);
+        STORE_GLOBAL_SINGLETON(SpatialSound2DServer, SS2D);
+        STORE_GLOBAL_SINGLETON(SpatialSound2DServer, SpatialSound2DServer);
+        STORE_GLOBAL_SINGLETON(SpatialSoundServer, SpatialSoundServer);
+        STORE_GLOBAL_SINGLETON(TranslationServer, TS);
+        STORE_GLOBAL_SINGLETON(TranslationServer, TranslationServer);
+        STORE_GLOBAL_SINGLETON(VisualServer, VS);
+        STORE_GLOBAL_SINGLETON(VisualServer, VisualServer);
+
+        // Bind global constants
         auto int_binder = IntBinder::get_singleton();
         int count = GlobalConstants::get_global_constant_count();
         for (int i = 0; i < count; ++i) {

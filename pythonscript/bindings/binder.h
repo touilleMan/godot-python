@@ -47,6 +47,7 @@ public:
     const BaseBinder *get_binder(const StringName &p_type) const;
     const BaseBinder *get_binder(const qstr type) const;
 
+    mp_obj_t object_to_pyobj(const Object *p_obj) const;
     mp_obj_t variant_to_pyobj(const Variant &p_variant) const;
     Variant pyobj_to_variant(const mp_obj_t pyobj) const;
 };

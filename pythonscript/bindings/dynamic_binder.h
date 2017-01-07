@@ -13,9 +13,6 @@
 class DynamicBinder : public BaseBinder {
 
 private:
-
-    const StringName _type_name;
-    qstr _type_qstr;
     // DynamicBinder *parent;  # TODO: useful ?
     Map<qstr, mp_obj_t> method_lookup;
     Map<qstr, PropertyInfo> property_lookup;
