@@ -334,7 +334,7 @@ Vector2Binder::Vector2Binder() {
         0,                                        // call
         0,                                        // unary_op
         0,                                        // binary_op
-        _attr_with_locals_and_properties,         // attr
+        attr_with_locals_and_properties,          // attr
         0,                                        // subscr
         0,                                        // getiter
         0,                                        // iternext
