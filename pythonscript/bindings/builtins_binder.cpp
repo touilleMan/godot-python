@@ -1,6 +1,30 @@
 #include <stdio.h>
 
 #include "bindings/builtins_binder.h"
+#include "bindings/tools.h"
+
+
+#define BIND_PROPERTY_GET(NAME, GETTER) {\
+    auto o = m_new_obj(mp_obj_fun_builtin_fixed_t); \
+    o->base.type = &mp_type_fun_builtin_1; \
+    o->fun._1 = GETTER; \
+    mp_obj_t property = mp_call_function_1(MP_OBJ_FROM_PTR(&mp_type_property), o); \
+    auto n = MP_OBJ_NEW_QSTR(qstr_from_str(NAME)); \
+    mp_obj_dict_store(locals_dict, n, property); \
+}
+
+
+#define BIND_PROPERTY_GETSET(NAME, GETTER, SETTER) {\
+    auto g = m_new_obj(mp_obj_fun_builtin_fixed_t); \
+    g->base.type = &mp_type_fun_builtin_1; \
+    g->fun._1 = GETTER; \
+    auto s = m_new_obj(mp_obj_fun_builtin_fixed_t); \
+    s->base.type = &mp_type_fun_builtin_2; \
+    s->fun._2 = SETTER; \
+    mp_obj_t property = mp_call_function_2(MP_OBJ_FROM_PTR(&mp_type_property), g, s); \
+    auto n = MP_OBJ_NEW_QSTR(qstr_from_str(NAME)); \
+    mp_obj_dict_store(locals_dict, n, property); \
+}
 
 
 #define BIND_METHOD(NAME, CB) {\
@@ -221,6 +245,34 @@ mp_obj_t Vector2Binder::_generate_bind_locals_dict() {
         return Vector2Binder::get_singleton()->build_pyobj(vec);
     });
 
+    BIND_PROPERTY_GET("height", [](mp_obj_t self) -> mp_obj_t {
+        auto variant = static_cast<Vector2Binder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        const float height = variant->godot_vect2.height;
+        return RealBinder::get_singleton()->build_pyobj(height);
+    });
+    BIND_PROPERTY_GET("width", [](mp_obj_t self) -> mp_obj_t {
+        auto variant = static_cast<Vector2Binder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        const float width = variant->godot_vect2.width;
+        return RealBinder::get_singleton()->build_pyobj(width);
+    });
+    BIND_PROPERTY_GETSET("x",
+        [](mp_obj_t self) -> mp_obj_t {
+        auto variant = static_cast<Vector2Binder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        const float x = variant->godot_vect2.x;
+        return RealBinder::get_singleton()->build_pyobj(x);
+    },
+        [](mp_obj_t self, mp_obj_t pyval) -> mp_obj_t {
+        const float val = RETRIEVE_ARG(RealBinder::get_singleton(), pyval, "val");
+        auto variant = static_cast<Vector2Binder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        variant->godot_vect2.x = val;
+        return mp_const_none;
+    });
+    BIND_PROPERTY_GET("y", [](mp_obj_t self) -> mp_obj_t {
+        auto variant = static_cast<Vector2Binder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        const float y = variant->godot_vect2.y;
+        return RealBinder::get_singleton()->build_pyobj(y);
+    });
+
     return locals_dict;
 }
 
@@ -282,7 +334,7 @@ Vector2Binder::Vector2Binder() {
         0,                                        // call
         0,                                        // unary_op
         0,                                        // binary_op
-        0,                                        // attr
+        _attr_with_locals_and_properties,         // attr
         0,                                        // subscr
         0,                                        // getiter
         0,                                        // iternext

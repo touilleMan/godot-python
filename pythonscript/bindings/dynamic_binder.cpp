@@ -3,6 +3,7 @@
 #include "micropython.h"
 // Pythonscript imports
 #include "bindings/dynamic_binder.h"
+#include "bindings/tools.h"
 
 
 // Generate a python function calling `callback` with data as first
@@ -265,7 +266,7 @@ DynamicBinder::DynamicBinder(StringName type_name) {
         0,                                        // call
         0,                                        // unary_op
         0,                                        // binary_op
-        0,                                        // attr
+        _attr_with_locals_and_properties,         // attr
         0,                                        // subscr
         0,                                        // getiter
         0,                                        // iternext

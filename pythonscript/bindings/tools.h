@@ -28,4 +28,7 @@ template <class T>
 T *Singleton<T>::_singleton = NULL;
 
 
+void _attr_with_locals_and_properties(mp_obj_t self_in, qstr attr, mp_obj_t *dest);
+
+
 #endif
