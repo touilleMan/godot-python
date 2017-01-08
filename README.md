@@ -10,9 +10,9 @@ Overview
 --------
 
 The goal of this project is to provide Python language as scripting module for
-[Godot](godotengine.org) game engine.
+[Godot](http://godotengine.org) game engine.
 Instead of relying on CPython (default Python implementation), the choice has
-been to use the [MicroPython](micropython.org) alternative implementation.
+been to use the [MicroPython](http://micropython.org) alternative implementation.
 The reasons for this choice are:
 
 Pros:
