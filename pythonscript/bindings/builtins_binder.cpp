@@ -160,15 +160,6 @@ mp_obj_t Vector2Binder::_generate_bind_locals_dict() {
         return Vector2Binder::get_singleton()->build_pyobj(vec);
     });
 
-#if 0  // TODO: Not found in Vector2...
-    // Vector2 floorf ( )
-    BIND_METHOD("floorf", [](mp_obj_t self) -> mp_obj_t {
-        auto variant = static_cast<Vector2Binder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
-        Vector2 vec = variant->godot_vect2.floorf();
-        return Vector2Binder::get_singleton()->build_pyobj(vec);
-    });
-#endif
-
     // float   get_aspect ( )
     BIND_METHOD("get_aspect", [](mp_obj_t self) -> mp_obj_t {
         auto variant = static_cast<Vector2Binder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
@@ -321,6 +312,18 @@ static mp_obj_t _make_new_vector2(const mp_obj_type_t *type, size_t n_args, size
 }
 
 
+static mp_obj_t _binary_op_vector2(mp_uint_t op, mp_obj_t lhs_in, mp_obj_t rhs_in) {
+    auto self = static_cast<Vector2Binder::mp_godot_bind_t*>(MP_OBJ_TO_PTR(lhs_in));
+    if (op == MP_BINARY_OP_EQUAL && mp_obj_get_type(rhs_in) == Vector2Binder::get_singleton()->get_mp_type()) {
+        auto other = static_cast<Vector2Binder::mp_godot_bind_t*>(MP_OBJ_TO_PTR(rhs_in));
+        return mp_obj_new_bool(self->godot_vect2.x == other->godot_vect2.x &&
+                               self->godot_vect2.y == other->godot_vect2.y);
+    }
+    // op not supported
+    return MP_OBJ_NULL;
+}
+
+
 Vector2Binder::Vector2Binder() {
     const char *name = "Vector2";
     this->_type_name= StringName(name);
@@ -333,7 +336,7 @@ Vector2Binder::Vector2Binder() {
         _make_new_vector2,                        // make_new
         0,                                        // call
         0,                                        // unary_op
-        0,                                        // binary_op
+        _binary_op_vector2,                       // binary_op
         attr_with_locals_and_properties,          // attr
         0,                                        // subscr
         0,                                        // getiter

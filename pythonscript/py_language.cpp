@@ -1,9 +1,14 @@
-#include "micropython.h"
+#include <stdlib.h>
 
+#include "micropython.h"
 // Pythonscript imports
 #include "py_language.h"
 #include "py_script.h"
 #include "bindings/dynamic_binder.h"
+// Godot imports
+#include "core/globals.h"
+#include "core/os/os.h"
+#include "core/os/file_access.h"
 
 
 /************* SCRIPT LANGUAGE **************/
@@ -14,7 +19,6 @@
 
 
 // TODO: Allocate this dynamically ?
-static char MICROPYTHON_HEAP[16384000];
 PyLanguage *PyLanguage::singleton = NULL;
 
 
@@ -42,23 +46,58 @@ mp_obj_t PyLanguage::get_mp_exposed_class_from_module(const qstr qstr_module_nam
 }
 
 
+void _mp_init_sys_path_and_argv(String path) {
+    String resource_path = Globals::get_singleton()->get_resource_path();
+    String data_dir = OS::get_singleton()->get_data_dir();
+    printf("MITROPYTHON_PATH %s\n", path.utf8().get_data());
+
+    // Init sys.path list
+    auto pathes = path.split(";");
+    mp_uint_t path_num = pathes.size() + 1; // [0] is for current dir (or base dir of the script)
+    mp_obj_t *path_items;
+    mp_obj_list_init(static_cast<mp_obj_list_t*>(MP_OBJ_TO_PTR(mp_sys_path)), path_num);
+    mp_obj_list_get(mp_sys_path, &path_num, &path_items);
+    path_items[0] = MP_OBJ_NEW_QSTR(MP_QSTR_);
+    for (int i=0; i < pathes.size(); ++i) {
+        auto curr_path = pathes[i];
+        if (curr_path.begins_with("res://")) {
+            curr_path = curr_path.replace("res:/", resource_path);
+        }
+        else if (curr_path.begins_with("user://")) {
+            if (data_dir != "") {
+                curr_path = curr_path.replace("user:/", data_dir);
+            };
+            curr_path = curr_path.replace("user://", "");
+        }
+        printf("-> %s\n", curr_path.utf8().get_data());
+        path_items[i+1] = mp_obj_new_str(curr_path.utf8().get_data(), curr_path.length(), false);
+    }
+
+    // Init sys.argv
+    mp_obj_list_init(static_cast<mp_obj_list_t*>(MP_OBJ_TO_PTR(mp_sys_argv)), 0);
+}
+
+
 void PyLanguage::init() {
     DEBUG_TRACE_METHOD();
-    // MicroPython init
+    // Register configuration
+    auto globals = Globals::get_singleton();
+    GLOBAL_DEF("python_script/stack_size", 40 * 1024);
+    GLOBAL_DEF("python_script/heap_size", 128 * 1024 * 1024);
+    GLOBAL_DEF("python_script/path", "res://;res://lib");
 
+    // MicroPython init
     // Initialized stack limit
-    mp_stack_set_limit(40000 * (BYTES_PER_WORD / 4));
+    mp_stack_set_limit(globals->get("python_script/stack_size") * (BYTES_PER_WORD / 4));
     // Initialize heap
-    gc_init(MICROPYTHON_HEAP, MICROPYTHON_HEAP + sizeof(MICROPYTHON_HEAP));
+    int heap_size = globals->get("python_script/heap_size");
+    this->_mp_heap = static_cast<char*>(malloc(heap_size));
+    gc_init(this->_mp_heap, this->_mp_heap + heap_size);
     // Disable automatic garbage collection
     MP_STATE_MEM(gc_auto_collect_enabled) = 0;
     // Initialize interpreter
     mp_init();
-
-    // Init sys.path and argv
-    mp_obj_list_init(static_cast<mp_obj_list_t *>(MP_OBJ_TO_PTR(mp_sys_path)), 0);
-    mp_obj_list_init(static_cast<mp_obj_list_t *>(MP_OBJ_TO_PTR(mp_sys_argv)), 0);
-    // TODO: add project dir to sys.path
+    _mp_init_sys_path_and_argv(globals->get("python_script/path"));
     // Build the bindings module and store into as part of the main godot module
     init_bindings();
     // Load godot python module and connect it to PyLanguage
@@ -82,7 +121,6 @@ void PyLanguage::init() {
     };
     MP_WRAP_CALL_EX(import_module, handle_ex);
     ERR_FAIL_COND(error);
-
 #if 0
     //populate global constants
     int gcc=GlobalConstants::get_global_constant_count();
@@ -144,6 +182,7 @@ Error PyLanguage::execute_file(const String& p_path)  {
 void PyLanguage::finish()  {
     DEBUG_TRACE_METHOD();
     mp_deinit();
+    free(this->_mp_heap);
     GodotBindingsModule::finish();
 }
 

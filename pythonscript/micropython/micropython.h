@@ -6,6 +6,7 @@ extern "C" {
 
 #include "py/compile.h"
 #include "py/runtime.h"
+#include "py/runtime0.h"
 #include "py/gc.h"
 #include "py/stackctrl.h"
 #include "py/objmodule.h"

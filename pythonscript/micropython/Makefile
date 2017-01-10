@@ -200,5 +200,5 @@ axtls: ../lib/axtls/README
 	(cd ..; git submodule update --init --recursive)
 
 clean:
-	$(RM) $(LIBMICROPYTHON)
+	$(RM) -f $(LIBMICROPYTHON)
 	$(RM) -rf $(BUILD)

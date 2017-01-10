@@ -21,6 +21,7 @@ class PyLanguage : public ScriptLanguage {
     static PyLanguage *singleton;
     SelfList<PyScript>::List script_list;
     mp_obj_t _mpo_godot_module;
+    char *_mp_heap;
 
 public:
     /* CUSTOM PYTHONSCRIPT FUNCTIONS */

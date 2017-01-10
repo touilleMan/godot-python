@@ -30,7 +30,7 @@
 #define MICROPY_ENABLE_GC           (1)
 #define MICROPY_ENABLE_FINALISER    (1)
 #define MICROPY_STACK_CHECK         (0)  // TODO: disable on release ?
-#define MICROPY_COMP_CONST          (0)
+#define MICROPY_COMP_CONST          (1)
 #define MICROPY_MEM_STATS           (0)
 #define MICROPY_DEBUG_PRINTERS      (0)
 #define MICROPY_HELPER_REPL         (1)
@@ -47,45 +47,113 @@
 #define MICROPY_CAN_OVERRIDE_BUILTINS (1)
 #define MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG (1) // TODO: disable on release ?
 #define MICROPY_CPYTHON_COMPAT      (1)
-#define MICROPY_PY_BUILTINS_BYTEARRAY (1)
-#define MICROPY_PY_BUILTINS_MEMORYVIEW (1)
-#define MICROPY_PY_BUILTINS_COMPILE (1)
-#define MICROPY_PY_BUILTINS_ENUMERATE (1)
-#define MICROPY_PY_BUILTINS_FILTER  (1)
-#define MICROPY_PY_BUILTINS_FROZENSET (1)
-#define MICROPY_PY_BUILTINS_REVERSED (1)
-#define MICROPY_PY_BUILTINS_SET     (1)
-#define MICROPY_PY_BUILTINS_SLICE   (1)
+#define MICROPY_COMP_DOUBLE_TUPLE_ASSIGN (1)
+#define MICROPY_COMP_TRIPLE_TUPLE_ASSIGN (1)
+// Whether to implement attributes on functions
+#define MICROPY_PY_FUNCTION_ATTRS (1)
+// Whether to support descriptors (__get__ and __set__)
+// This costs some code size and makes all load attrs and store attrs slow
+#define MICROPY_PY_DESCRIPTORS (1)
+// Support for async/await/async for/async with
+#define MICROPY_PY_ASYNC_AWAIT (1)
+// Issue a warning when comparing str and bytes objects
+#define MICROPY_PY_STR_BYTES_CMP_WARN (1)
+// Whether str object is proper unicode
 #define MICROPY_PY_BUILTINS_STR_UNICODE (1)
+// Whether str.center() method provided
+#define MICROPY_PY_BUILTINS_STR_CENTER (1)
+// Whether str.partition()/str.rpartition() method provided
+#define MICROPY_PY_BUILTINS_STR_PARTITION (1)
+// Whether str.splitlines() method provided
+#define MICROPY_PY_BUILTINS_STR_SPLITLINES (1)
+// Whether to support bytearray object
+#define MICROPY_PY_BUILTINS_BYTEARRAY (1)
+// Whether to support memoryview object
+#define MICROPY_PY_BUILTINS_MEMORYVIEW (1)
+// Whether to support set object
+#define MICROPY_PY_BUILTINS_SET (1)
+// Whether to support slice subscript operators and slice object
+#define MICROPY_PY_BUILTINS_SLICE (1)
+// Whether to support slice attribute read access,
+// i.e. slice.start, slice.stop, slice.step
+#define MICROPY_PY_BUILTINS_SLICE_ATTRS (1)
+// Whether to support frozenset object
+#define MICROPY_PY_BUILTINS_FROZENSET (1)
+// Whether to support property object
 #define MICROPY_PY_BUILTINS_PROPERTY (1)
+// Whether to implement the start/stop/step attributes (readback) on
+// the "range" builtin type. Rarely used, and costs ~60 bytes (x86).
+#define MICROPY_PY_BUILTINS_RANGE_ATTRS (1)
+// Whether to support timeout exceptions (like socket.timeout)
+#define MICROPY_PY_BUILTINS_TIMEOUTERROR (1)
+// Whether to support complete set of special methods
+// for user classes, otherwise only the most used
+#define MICROPY_PY_ALL_SPECIAL_METHODS (1)
+// Whether to support compile function
+#define MICROPY_PY_BUILTINS_COMPILE (1)
+// Whether to support enumerate function(type)
+#define MICROPY_PY_BUILTINS_ENUMERATE (1)
+// Whether to support eval and exec functions
+// By default they are supported if the compiler is enabled
+// #define MICROPY_PY_BUILTINS_EVAL_EXEC (MICROPY_ENABLE_COMPILER)
+// Whether to support the Python 2 execfile function
+#define MICROPY_PY_BUILTINS_EXECFILE (1)
+// Whether to support filter function(type)
+#define MICROPY_PY_BUILTINS_FILTER (1)
+// Whether to support reversed function(type)
+#define MICROPY_PY_BUILTINS_REVERSED (1)
+// Whether to define "NotImplemented" special constant
+#define MICROPY_PY_BUILTINS_NOTIMPLEMENTED (1)
+// Whether to support min/max functions
 #define MICROPY_PY_BUILTINS_MIN_MAX (1)
+
 #define MICROPY_PY___FILE__         (1)
 #define MICROPY_PY_MICROPYTHON_MEM_INFO (0)
-#define MICROPY_PY_GC               (0)
+#define MICROPY_PY_GC               (1)
 #define MICROPY_PY_GC_COLLECT_RETVAL (0)
 #define MICROPY_PY_ARRAY            (1)
+#define MICROPY_PY_ARRAY_SLICE_ASSIGN (1)
 #define MICROPY_PY_COLLECTIONS      (1)
+#define MICROPY_PY_COLLECTIONS_ORDEREDDICT (1)
 #define MICROPY_PY_MATH             (1)
+#define MICROPY_PY_MATH_SPECIAL_FUNCTIONS (1)
 #define MICROPY_PY_CMATH            (1)
 #define MICROPY_PY_IO               (1)
 #define MICROPY_PY_IO_FILEIO        (1)
+#define MICROPY_PY_IO_BUFFEREDWRITER (1)
 #define MICROPY_PY_STRUCT           (1)
 #define MICROPY_PY_SYS              (1)
 #define MICROPY_PY_SYS_EXIT         (0)
 #define MICROPY_PY_SYS_PLATFORM     "linux"
 #define MICROPY_PY_SYS_MAXSIZE      (1)
-#define MICROPY_PY_SYS_STDFILES     (0)
-#define MICROPY_PY_CMATH            (1)
-#define MICROPY_PY_UCTYPES          (0)
-#define MICROPY_PY_UZLIB            (0)
-#define MICROPY_PY_UJSON            (0)
-#define MICROPY_PY_URE              (0)
-#define MICROPY_PY_UHEAPQ           (0)
-#define MICROPY_PY_UHASHLIB         (0)
-#define MICROPY_PY_UBINASCII        (0)
+#define MICROPY_PY_SYS_STDFILES     (1)
+#define MICROPY_PY_SYS_STDIO_BUFFER (1)
+#define MICROPY_PY_UERRNO           (1)
+#define MICROPY_PY_THREAD           (0)
+#define MICROPY_PY_UCTYPES          (1)
+#define MICROPY_PY_UZLIB            (1)
+#define MICROPY_PY_UJSON            (1)
+#define MICROPY_PY_URE              (1)
+#define MICROPY_PY_UHEAPQ           (1)
+#define MICROPY_PY_UTIMEQ           (1)
+// Conflicts with godot/core/io/sha256.c:sha256_init
+// #define MICROPY_PY_UHASHLIB         (0)
+#define MICROPY_PY_UBINASCII        (1)
+#define MICROPY_PY_UBINASCII_CRC32  (1)
+#define MICROPY_PY_URANDOM          (1)
+#define MICROPY_PY_URANDOM_EXTRA_FUNCS (1)
+// undefined reference to `mp_module_ussl'
+// #define MICROPY_PY_USSL             (0)
+#define MICROPY_PY_WEBSOCKET        (1)
+// undefined reference to `mp_module_btree'
+// #define MICROPY_PY_BTREE            (0)
 #define MICROPY_USE_INTERNAL_PRINTF (0)
 
 extern const struct _mp_obj_module_t mp_module_os;
+
+#define MICROPY_PORT_BUILTINS \
+    { MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mp_builtin_open_obj) }, \
+    // { MP_ROM_QSTR(MP_QSTR_input), MP_ROM_PTR(&mp_builtin_input_obj) },
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&mp_module_os }, \

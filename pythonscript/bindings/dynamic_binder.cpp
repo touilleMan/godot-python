@@ -3,6 +3,7 @@
 #include "micropython.h"
 // Pythonscript imports
 #include "bindings/dynamic_binder.h"
+#include "bindings/builtins_binder.h"
 #include "bindings/tools.h"
 
 
@@ -88,7 +89,7 @@ static mp_obj_t _wrap_godot_method(StringName type_name, StringName method_name)
     caller_fun->fun.var = [](size_t n, const mp_obj_t *args) -> mp_obj_t {
         // First arg is the p_method_bind
         auto p_method_bind = static_cast<MethodBind *>(args[0]);
-        auto self = static_cast<DynamicBinder::mp_godot_bind_t *>(args[1]);
+        auto self = static_cast<DynamicBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(args[1]));
         // Remove self and also don't pass p_method_bind as argument
         const int godot_n = n - 2;
         const Variant def_arg;
@@ -117,7 +118,7 @@ static mp_obj_t _wrap_godot_method(StringName type_name, StringName method_name)
 }
 
 
-static mp_obj_t _mp_type_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
+static mp_obj_t _type_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     auto p_type_binder = static_cast<const DynamicBinder *>(type->protocol);
     // TODO: Optimize this by using TypeInfo::creation_func ?
     // TODO: Handle constructor's parameters
@@ -128,6 +129,18 @@ static mp_obj_t _mp_type_make_new(const mp_obj_type_t *type, mp_uint_t n_args, m
     obj->godot_variant = Variant(godot_obj);
     return MP_OBJ_FROM_PTR(obj);
 }
+
+
+static mp_obj_t _binary_op(mp_uint_t op, mp_obj_t lhs_in, mp_obj_t rhs_in) {
+    const auto self = static_cast<DynamicBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(lhs_in));
+    if (op == MP_BINARY_OP_EQUAL && mp_obj_get_type(rhs_in) == self->base.type) {
+        const auto other = static_cast<DynamicBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(rhs_in));
+        return mp_obj_new_bool(self->godot_obj == other->godot_obj);
+    }
+    // op not supported
+    return MP_OBJ_NULL;
+}
+
 
 #if 0
 static void _mp_type_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
@@ -213,15 +226,17 @@ mp_obj_t DynamicBinder::variant_to_pyobj(const Variant &p_variant) const {
 
 DynamicBinder::DynamicBinder(StringName type_name) {
     this->_type_name = type_name;
-    // Retrieve method&property from ObjectTypeDB and cook what can
-    // be for faster runtime lookup
+    // Retrieve method, property & constants from ObjectTypeDB and cook what
+    // can be for faster runtime lookup
     List<PropertyInfo> properties;
     List<MethodInfo> methods;
+    List<String> constants;
 
     // TODO: bypass micropython memory allocation
     ObjectTypeDB::get_property_list(type_name, &properties, true);
     ObjectTypeDB::get_method_list(type_name, &methods, true);
-    mp_obj_t locals_dict = mp_obj_new_dict(methods.size() + properties.size());
+    ObjectTypeDB::get_integer_constant_list(type_name, &constants, true);
+    mp_obj_t locals_dict = mp_obj_new_dict(methods.size() + properties.size() + constants.size());
 
     // TODO: get inherited properties/methods as well ?
     for(List<PropertyInfo>::Element *E=properties.front();E;E=E->next()) {
@@ -239,6 +254,13 @@ DynamicBinder::DynamicBinder(StringName type_name) {
             this->method_lookup.insert(qstr_name, mpo_method);
             mp_obj_dict_store(locals_dict, MP_OBJ_NEW_QSTR(qstr_name), mpo_method);
         }
+    }
+    const auto int_binder = IntBinder::get_singleton();
+    for(List<String>::Element *E=constants.front();E;E=E->next()) {
+        const String name = E->get();
+        const auto qstr_name = qstr_from_str(name.utf8().get_data());
+        mp_obj_t val = int_binder->build_pyobj(ObjectTypeDB::get_integer_constant(type_name, name));
+        mp_obj_dict_store(locals_dict, MP_OBJ_NEW_QSTR(qstr_name), val);
     }
 
     // Retrieve parent binding to create inheritance between bindings
@@ -262,10 +284,10 @@ DynamicBinder::DynamicBinder(StringName type_name) {
         { &mp_type_type },                        // base
         name,                                     // name
         0,                                        // print
-        _mp_type_make_new,                        // make_new
+        _type_make_new,                           // make_new
         0,                                        // call
         0,                                        // unary_op
-        0,                                        // binary_op
+        _binary_op,                               // binary_op
         attr_with_locals_and_properties,          // attr
         0,                                        // subscr
         0,                                        // getiter
