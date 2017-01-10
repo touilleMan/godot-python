@@ -1,0 +1,7 @@
+[gd_scene load_steps=4 format=1]
+
+[ext_resource path="res://main.py" type="Script" id=1]
+
+[node name="Node" type="Node"]
+
+script/script = ExtResource( 1 )

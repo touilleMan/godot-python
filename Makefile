@@ -54,3 +54,6 @@ clean:
 rebuild_micropython:
 	cd pythonscript/micropython && make clean
 	cd pythonscript/micropython && make -j6 DEBUG=y
+
+test:
+	cd tests && $(GODOT_CMD)
