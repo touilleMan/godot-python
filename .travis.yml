@@ -12,7 +12,7 @@ env:
     - GODOT_TAG=master
     # Cannot use release given travis's glibc clash with -ffast-math with clang
     # other solution is to set `-D__extern_always_inline="extern __always_inline"`
-    - EXTRA_OPTS="-j4 target=debug tools=no module_pythonscript_enabled=yes"
+    - EXTRA_OPTS="-j4 target=debug tools=yes module_pythonscript_enabled=yes"
   matrix:
     - GODOT_TARGET=x11
     # nothing else yet...
