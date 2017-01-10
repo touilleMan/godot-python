@@ -40,6 +40,7 @@ addons:
 
 before_script:
   - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 https://github.com/godotengine/godot.git
+  - git --git-dir=godot/.git rev-parse HEAD
   - ln -s `pwd`/pythonscript godot/modules/pythonscript
 
 script:
