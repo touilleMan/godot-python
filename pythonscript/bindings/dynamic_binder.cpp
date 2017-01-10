@@ -65,7 +65,7 @@ static mp_obj_t _wrap_godot_method(StringName type_name, StringName method_name)
     // TODO: micropython doesn't allow to store a name for native functions
     // TODO: don't use `m_new_obj` but good old' `malloc` to avoid useless
     // python gc work on those stay-forever functions
-    auto p_method_bind = ObjectTypeDB::get_method(type_name, method_name);
+    auto p_method_bind = ClassDB::get_method(type_name, method_name);
     // It seems methods starting with "_" are considered private so ignore them
     if (!p_method_bind) {
         WARN_PRINTS("--- Bad Binding " + String(type_name) + ":" + String(method_name));
@@ -122,7 +122,7 @@ static mp_obj_t _type_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp_u
     auto p_type_binder = static_cast<const DynamicBinder *>(type->protocol);
     // TODO: Optimize this by using TypeInfo::creation_func ?
     // TODO: Handle constructor's parameters
-    Object *godot_obj = ObjectTypeDB::instance(p_type_binder->get_type_name());
+    Object *godot_obj = ClassDB::instance(p_type_binder->get_type_name());
     DynamicBinder::mp_godot_bind_t *obj = m_new_obj_with_finaliser(DynamicBinder::mp_godot_bind_t);
     obj->base.type = type;
     obj->godot_obj = godot_obj;
@@ -167,7 +167,7 @@ void DynamicBinder::get_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) const 
         if (dest[0] == MP_OBJ_NULL) {
             // do a load
             Variant r_value;
-            if (ObjectTypeDB::get_property(o->godot_obj->ptr(), attr_name, r_value)) {
+            if (ClassDB::get_property(o->godot_obj->ptr(), attr_name, r_value)) {
                 // attr was actually a property
                 // TODO:convert r_value to py object
                 dest[0] = mp_const_none;
@@ -177,7 +177,7 @@ void DynamicBinder::get_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) const 
             bool r_valid = false;
             // TODO: convert dest[1] to variant
             Variant value = Variant(true);
-            if (ObjectTypeDB::set_property(o->godot_obj->ptr(), attr_name, value, r_valid) && r_valid) {
+            if (ClassDB::set_property(o->godot_obj->ptr(), attr_name, value, r_valid) && r_valid) {
                 // attr was actually a property
                 dest[0] = MP_OBJ_NULL;
             }
@@ -226,16 +226,16 @@ mp_obj_t DynamicBinder::variant_to_pyobj(const Variant &p_variant) const {
 
 DynamicBinder::DynamicBinder(StringName type_name) {
     this->_type_name = type_name;
-    // Retrieve method, property & constants from ObjectTypeDB and cook what
+    // Retrieve method, property & constants from ClassDB and cook what
     // can be for faster runtime lookup
     List<PropertyInfo> properties;
     List<MethodInfo> methods;
     List<String> constants;
 
     // TODO: bypass micropython memory allocation
-    ObjectTypeDB::get_property_list(type_name, &properties, true);
-    ObjectTypeDB::get_method_list(type_name, &methods, true);
-    ObjectTypeDB::get_integer_constant_list(type_name, &constants, true);
+    ClassDB::get_property_list(type_name, &properties, true);
+    ClassDB::get_method_list(type_name, &methods, true);
+    ClassDB::get_integer_constant_list(type_name, &constants, true);
     mp_obj_t locals_dict = mp_obj_new_dict(methods.size() + properties.size() + constants.size());
 
     // TODO: get inherited properties/methods as well ?
@@ -259,13 +259,13 @@ DynamicBinder::DynamicBinder(StringName type_name) {
     for(List<String>::Element *E=constants.front();E;E=E->next()) {
         const String name = E->get();
         const auto qstr_name = qstr_from_str(name.utf8().get_data());
-        mp_obj_t val = int_binder->build_pyobj(ObjectTypeDB::get_integer_constant(type_name, name));
+        mp_obj_t val = int_binder->build_pyobj(ClassDB::get_integer_constant(type_name, name));
         mp_obj_dict_store(locals_dict, MP_OBJ_NEW_QSTR(qstr_name), val);
     }
 
     // Retrieve parent binding to create inheritance between bindings
     mp_obj_t bases_tuple = 0;
-    const StringName parent_name = ObjectTypeDB::type_inherits_from(type_name);
+    const StringName parent_name = ClassDB::get_parent_class(type_name);
     if (parent_name != StringName()) {
         const BaseBinder *parent_binder = GodotBindingsModule::get_singleton()->get_binder(parent_name);
         if (parent_binder != NULL) {

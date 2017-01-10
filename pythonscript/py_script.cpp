@@ -8,8 +8,8 @@
 void PyScript::_bind_methods() {
     DEBUG_TRACE();
     // TODO: bind class methods here
-    // ObjectTypeDB::bind_native_method(METHOD_FLAGS_DEFAULT, "new", &PyScript::_new, MethodInfo(Variant::OBJECT, "new"));
-    // ObjectTypeDB::bind_method(_MD("get_as_byte_code"), &PyScript::get_as_byte_code);
+    // ClassDB::bind_native_method(METHOD_FLAGS_DEFAULT, "new", &PyScript::_new, MethodInfo(Variant::OBJECT, "new"));
+    // ClassDB::bind_method(_MD("get_as_byte_code"), &PyScript::get_as_byte_code);
 }
 
 
@@ -81,7 +81,7 @@ ScriptInstance* PyScript::instance_create(Object *p_this) {
         top = top->base.ptr();
 
     // if (top->native.is_valid()) {
-    //     if (!ObjectTypeDB::is_type(p_this->get_type_name(),top->native->get_name())) {
+    //     if (!ClassDB::is_type(p_this->get_type_name(),top->native->get_name())) {
     //         if (ScriptDebugger::get_singleton()) {
     //             PyLanguage::get_singleton()->debug_break_parse(get_path(),0,"Script inherits from native type '"+String(top->native->get_name())+"', so it can't be instanced in object of type: '"+p_this->get_type()+"'");
     //         }
@@ -504,7 +504,7 @@ void PyScript::update_exports() {
 
     //print_line("update exports for "+get_path()+" ic: "+itos(copy.size()));
     for(Set<ObjectID>::Element *E=copy.front();E;E=E->next()) {
-        Object *id=ObjectDB::get_instance(E->get());
+        Object *id=ClassDB::get_instance(E->get());
         if (!id)
             continue;
         PyScript *s=id->cast_to<PyScript>();
@@ -699,7 +699,7 @@ Error PyScript::load_byte_code(const String& p_path) {
 
 Error PyScript::load_source_code(const String& p_path) {
 
-    DVector<uint8_t> sourcef;
+    PoolVector<uint8_t> sourcef;
     Error err;
     FileAccess *f=FileAccess::open(p_path,FileAccess::READ,&err);
     if (err) {
@@ -709,7 +709,7 @@ Error PyScript::load_source_code(const String& p_path) {
 
     int len = f->get_len();
     sourcef.resize(len+1);
-    DVector<uint8_t>::Write w = sourcef.write();
+    PoolVector<uint8_t>::Write w = sourcef.write();
     int r = f->get_buffer(w.ptr(),len);
     f->close();
     memdelete(f);

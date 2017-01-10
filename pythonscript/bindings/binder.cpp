@@ -40,7 +40,6 @@ GodotBindingsModule::~GodotBindingsModule() {
 
 void GodotBindingsModule::build_binders() {
     MP_WRAP_CALL([this]() {
-        List<StringName> types;
 
         #define STORE_BINDED_TYPE(binder) { \
                 const mp_obj_type_t *type = binder->get_mp_type(); \
@@ -57,9 +56,10 @@ void GodotBindingsModule::build_binders() {
         STORE_BINDED_TYPE(Vector2Binder::get_singleton());
         // TODO: finish builtins
 
-        // Dynamically bind modules registered through ObjectTypeDB
-        ObjectTypeDB::get_type_list(&types);
-        for(auto E=types.front(); E; E=E->next()) {
+        // Dynamically bind modules registered through ClassDB
+        List<StringName> classes;
+        ClassDB::get_class_list(&classes);
+        for(auto E=classes.front(); E; E=E->next()) {
             auto binder = memnew(DynamicBinder(E->get()));
             STORE_BINDED_TYPE(binder);
         }
@@ -67,7 +67,7 @@ void GodotBindingsModule::build_binders() {
         // Bind global singletons
         #define STORE_GLOBAL_SINGLETON(NAME, STORE_NAME) { \
             auto binder = static_cast<const DynamicBinder *>(this->get_binder("_"#NAME)); \
-            Object *singleton = Globals::get_singleton()->get_singleton_object(#NAME); \
+            Object *singleton = GlobalConfig::get_singleton()->get_singleton_object(#NAME); \
             if (!binder) { \
                 WARN_PRINTS("Cannot retrieve binding `_" #NAME "`"); \
             } else if (!singleton) { \
@@ -80,7 +80,7 @@ void GodotBindingsModule::build_binders() {
         STORE_GLOBAL_SINGLETON(AudioServer, AS);
         STORE_GLOBAL_SINGLETON(AudioServer, AudioServer);
         STORE_GLOBAL_SINGLETON(Geometry, Geometry);
-        STORE_GLOBAL_SINGLETON(Globals, Globals);
+        STORE_GLOBAL_SINGLETON(GlobalConfig, GlobalConfig);
         STORE_GLOBAL_SINGLETON(IP, IP);
         STORE_GLOBAL_SINGLETON(Input, Input);
         STORE_GLOBAL_SINGLETON(InputMap, InputMap);
@@ -199,7 +199,7 @@ mp_obj_t GodotBindingsModule::variant_to_pyobj(const Variant &p_variant) const {
     {
         Object *obj = p_variant;
         if (obj != NULL) {
-            auto binder = this->get_binder(obj->get_type_name());
+            auto binder = this->get_binder(obj->get_class_name());
             if (binder) {
                 return binder->variant_to_pyobj(p_variant);
             }

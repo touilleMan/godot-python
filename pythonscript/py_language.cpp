@@ -47,7 +47,7 @@ mp_obj_t PyLanguage::get_mp_exposed_class_from_module(const qstr qstr_module_nam
 
 
 void _mp_init_sys_path_and_argv(String path) {
-    String resource_path = Globals::get_singleton()->get_resource_path();
+    String resource_path = GlobalConfig::get_singleton()->get_resource_path();
     String data_dir = OS::get_singleton()->get_data_dir();
     printf("MITROPYTHON_PATH %s\n", path.utf8().get_data());
 
@@ -81,7 +81,7 @@ void _mp_init_sys_path_and_argv(String path) {
 void PyLanguage::init() {
     DEBUG_TRACE_METHOD();
     // Register configuration
-    auto globals = Globals::get_singleton();
+    auto globals = GlobalConfig::get_singleton();
     GLOBAL_DEF("python_script/stack_size", 40 * 1024);
     GLOBAL_DEF("python_script/heap_size", 128 * 1024 * 1024);
     GLOBAL_DEF("python_script/path", "res://;res://lib");
@@ -134,7 +134,7 @@ void PyLanguage::init() {
     //populate native classes
 
     List<StringName> class_list;
-    ObjectTypeDB::get_type_list(&class_list);
+    ClassDB::get_type_list(&class_list);
     for(List<StringName>::Element *E=class_list.front();E;E=E->next()) {
 
         StringName n = E->get();
@@ -150,9 +150,9 @@ void PyLanguage::init() {
 
     //populate singletons
 
-    List<Globals::Singleton> singletons;
-    Globals::get_singleton()->get_singletons(&singletons);
-    for(List<Globals::Singleton>::Element *E=singletons.front();E;E=E->next()) {
+    List<GlobalConfig::Singleton> singletons;
+    GlobalConfig::get_singleton()->get_singletons(&singletons);
+    for(List<GlobalConfig::Singleton>::Element *E=singletons.front();E;E=E->next()) {
 
         _add_global(E->get().name,E->get().ptr);
     }
@@ -353,7 +353,7 @@ void PyLanguage::reload_tool_script(const Ref<Script>& p_script,bool p_soft_relo
         //restore state if saved
         for (Map<ObjectID,List<Pair<StringName,Variant> > >::Element *F=E->get().front();F;F=F->next()) {
 
-            Object *obj = ObjectDB::get_instance(F->key());
+            Object *obj = ClassDB::get_instance(F->key());
             if (!obj)
                 continue;
 

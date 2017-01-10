@@ -26,7 +26,7 @@ class PyInstance;
  */
 class PyScript : public Script {
 
-    OBJ_TYPE(PyScript, Script);
+    GDCLASS(PyScript, Script);
 
 friend class PyInstance;
 friend class PyLanguage;
