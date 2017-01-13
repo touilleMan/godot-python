@@ -118,6 +118,43 @@ static mp_obj_t _wrap_godot_method(StringName type_name, StringName method_name)
 }
 
 
+static mp_obj_t _wrap_godot_property_getter(StringName property_name) {
+    auto caller_fun = m_new_obj(_mp_obj_fun_builtin_fixed_t);
+    caller_fun->base.type = &mp_type_fun_builtin_2;
+    caller_fun->fun._2 = [](mp_obj_t mp_name, mp_obj_t mp_self) -> mp_obj_t {
+        auto p_name = static_cast<StringName*>(mp_name);
+        auto self = static_cast<DynamicBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(mp_self));
+        bool valid;
+        Variant ret;
+        if (!ClassDB::get_property(self->godot_obj, *p_name, ret)) {
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_RuntimeError, "Tough shit dude..."));
+        }
+        return GodotBindingsModule::get_singleton()->variant_to_pyobj(ret);
+    };
+    auto trampoline = _generate_custom_trampoline(caller_fun, static_cast<mp_obj_t>(&property_name));
+    return trampoline;
+}
+
+
+static mp_obj_t _wrap_godot_property_setter(StringName property_name) {
+    auto caller_fun = m_new_obj(_mp_obj_fun_builtin_fixed_t);
+    caller_fun->base.type = &mp_type_fun_builtin_3;
+    caller_fun->fun._3 = [](mp_obj_t mp_name, mp_obj_t mp_self, mp_obj_t mp_value) -> mp_obj_t {
+        auto p_name = static_cast<StringName*>(mp_name);
+        auto self = static_cast<DynamicBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(mp_self));
+        auto value = GodotBindingsModule::get_singleton()->pyobj_to_variant(mp_value);
+        bool valid;
+        self->godot_obj->set(*p_name, value, &valid);
+        if (!valid) {
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_RuntimeError, "Tough shit dude..."));
+        }
+        return mp_const_none;
+    };
+    auto trampoline = _generate_custom_trampoline(caller_fun, static_cast<mp_obj_t>(&property_name));
+    return trampoline;
+}
+
+
 static mp_obj_t _type_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     auto p_type_binder = static_cast<const DynamicBinder *>(type->protocol);
     // TODO: Optimize this by using TypeInfo::creation_func ?
@@ -243,8 +280,10 @@ DynamicBinder::DynamicBinder(StringName type_name) {
         const PropertyInfo info = E->get();
         const auto qstr_name = qstr_from_str(info.name.utf8().get_data());
         this->property_lookup.insert(qstr_name, info);
-        // TODO: use Python @property ?
-        // mp_obj_dict_store(locals_dict, MP_OBJ_NEW_QSTR(qstr_name), mpo_method);
+        auto g = _wrap_godot_property_getter(info.name);
+        auto s = _wrap_godot_property_setter(info.name);
+        mp_obj_t property = mp_call_function_2(MP_OBJ_FROM_PTR(&mp_type_property), g, s);
+        mp_obj_dict_store(locals_dict, MP_OBJ_NEW_QSTR(qstr_name), property);
     }
     for(List<MethodInfo>::Element *E=methods.front();E;E=E->next()) {
         const MethodInfo info = E->get();

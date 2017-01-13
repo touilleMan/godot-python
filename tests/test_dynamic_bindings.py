@@ -49,7 +49,12 @@ class TestDynamicBindings(unittest.TestCase):
         pass
 
     def test_class_properties(self):
-        pass
+        self.assertTrue(hasattr(Viewport, 'own_world'))
+        v = Viewport()
+        self.assertTrue(hasattr(v.own_world, bool))
+        # self.assertTrue(v.own_world)
+        # v.own_world = False
+        # self.assertFalse(v.own_world)
 
 
 if __name__ == '__main__':

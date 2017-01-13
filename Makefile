@@ -56,4 +56,4 @@ rebuild_micropython:
 	cd pythonscript/micropython && make -j6 DEBUG=y
 
 test:
-	cd tests && $(GODOT_CMD)
+	cd tests && LIBGL_ALWAYS_SOFTWARE=1 $(GODOT_CMD)
