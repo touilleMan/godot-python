@@ -1,6 +1,7 @@
 import unittest
 
-from godot.bindings import Object, Node, Viewport, EditorPlugin, OS, _OS, KEY_ESCAPE, OK, FAILED, LineEdit
+from godot.bindings import (
+    Object, Node, Viewport, EditorPlugin, LineEdit, OS, _OS, KEY_ESCAPE, OK, FAILED)
 
 
 class TestDynamicBindings(unittest.TestCase):
@@ -43,7 +44,14 @@ class TestDynamicBindings(unittest.TestCase):
         self.assertTrue(issubclass(Viewport, Object))
 
     def test_class_methods(self):
-        pass
+        self.assertTrue(hasattr(LineEdit, 'is_secret'))
+        v = LineEdit()
+        self.assertTrue(callable(v.is_secret))
+        self.assertEqual(type(v.is_secret()), bool)
+        self.assertEqual(v.is_secret(), False)
+        self.assertTrue(callable(v.set_secret))
+        v.set_secret(True)
+        self.assertEqual(v.is_secret(), True)
 
     def test_class_signals(self):
         pass
