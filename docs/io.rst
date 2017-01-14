@@ -7,8 +7,8 @@ outside the interpretor) through numerous ways:
 - ``open`` and ``input`` builtin functions.
 - ``os`` module (e.g. ``os.open`` function)
 - ``stdout``, ``stderr`` and ``stdin`` files descriptors
-- ``__import__``&co
-- ``ctypes``& micropython's``ffi`` libraries
+- ``__import__`` & co
+- ``ctypes`` & micropython's ``ffi`` libraries
 - ...
 
 However those functions are no longer relevant when python is embedded
