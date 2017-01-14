@@ -86,6 +86,8 @@ void GodotBindingsModule::build_binders() {
         STORE_GLOBAL_SINGLETON(InputMap, InputMap);
         STORE_GLOBAL_SINGLETON(Marshalls, Marshalls);
         STORE_GLOBAL_SINGLETON(OS, OS);
+        STORE_GLOBAL_SINGLETON(Engine, Engine);
+        STORE_GLOBAL_SINGLETON(ClassDB, ClassDB);
         STORE_GLOBAL_SINGLETON(PhysicsServer, PS);
         STORE_GLOBAL_SINGLETON(Physics2DServer, PS2D);
         STORE_GLOBAL_SINGLETON(PathRemap, PathRemap);
@@ -173,15 +175,15 @@ mp_obj_t GodotBindingsModule::variant_to_pyobj(const Variant &p_variant) const {
         break;
     case Variant::Type::VECTOR3:
         break;
-    case Variant::Type::MATRIX32:
+    case Variant::Type::TRANSFORM2D:
         break;
     case Variant::Type::PLANE:
         break;
     case Variant::Type::QUAT:
         break;
-    case Variant::Type::_AABB:
+    case Variant::Type::RECT3:
         break;
-    case Variant::Type::MATRIX3:
+    case Variant::Type::BASIS:
         break;
     case Variant::Type::TRANSFORM:
         break;
@@ -215,19 +217,19 @@ mp_obj_t GodotBindingsModule::variant_to_pyobj(const Variant &p_variant) const {
         break;
 
     // arrays
-    case Variant::Type::RAW_ARRAY:
+    case Variant::Type::POOL_BYTE_ARRAY:
         break;
-    case Variant::Type::INT_ARRAY:
+    case Variant::Type::POOL_INT_ARRAY:
         break;
-    case Variant::Type::REAL_ARRAY:
+    case Variant::Type::POOL_REAL_ARRAY:
         break;
-    case Variant::Type::STRING_ARRAY:
+    case Variant::Type::POOL_STRING_ARRAY:
         break;
-    case Variant::Type::VECTOR2_ARRAY:
+    case Variant::Type::POOL_VECTOR2_ARRAY:
         break;
-    case Variant::Type::VECTOR3_ARRAY:
+    case Variant::Type::POOL_VECTOR3_ARRAY:
         break;
-    case Variant::Type::COLOR_ARRAY:
+    case Variant::Type::POOL_COLOR_ARRAY:
         break;
 
     default:

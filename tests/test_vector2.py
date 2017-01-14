@@ -46,7 +46,7 @@ class TestVector2(unittest.TestCase):
                 ['distance_to', float, (v2, )],
                 ['dot', float, (v2, )],
                 ['floor', Vector2, ()],
-                ['get_aspect', float, ()],
+                ['aspect', float, ()],
                 ['length', float, ()],
                 ['length_squared', float, ()],
                 ['linear_interpolate', Vector2, (v2, 0.5)],

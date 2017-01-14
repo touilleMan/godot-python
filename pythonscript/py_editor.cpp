@@ -127,7 +127,7 @@ int PyLanguage::find_function(const String& p_function,const String& p_code) con
 }
 
 
-String PyLanguage::make_function(const String& p_class,const String& p_name,const StringArray& p_args) const {
+String PyLanguage::make_function(const String& p_class,const String& p_name,const PoolStringArray& p_args) const {
 
     String s="def "+p_name+"(";
     if (p_args.size()) {

@@ -39,7 +39,7 @@ bool ResourceFormatLoaderPyScript::handles_type(const String& p_type) const
 
 String ResourceFormatLoaderPyScript::get_resource_type(const String &p_path) const
 {
-	String el = p_path.extension().to_lower();
+	String el = p_path.get_extension().to_lower();
 	if (el == "py")
 		return "PyScript";
 	return "";

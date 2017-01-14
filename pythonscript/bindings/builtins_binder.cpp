@@ -160,10 +160,10 @@ mp_obj_t Vector2Binder::_generate_bind_locals_dict() {
         return Vector2Binder::get_singleton()->build_pyobj(vec);
     });
 
-    // float   get_aspect ( )
-    BIND_METHOD("get_aspect", [](mp_obj_t self) -> mp_obj_t {
+    // float   aspect ( )
+    BIND_METHOD("aspect", [](mp_obj_t self) -> mp_obj_t {
         auto variant = static_cast<Vector2Binder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
-        float aspect = variant->godot_vect2.get_aspect();
+        float aspect = variant->godot_vect2.aspect();
         return RealBinder::get_singleton()->build_pyobj(aspect);
     });
 

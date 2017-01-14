@@ -1,15 +1,15 @@
 import unittest
 
 from godot.bindings import (
-    Object, Node, Viewport, EditorPlugin, LineEdit, OS, _OS, KEY_ESCAPE, OK, FAILED)
+    Object, Node, Viewport, EditorPlugin, LineEdit, Engine, _Engine, KEY_ESCAPE, OK, FAILED)
 
 
 class TestDynamicBindings(unittest.TestCase):
 
     def test_singletons(self):
-        self.assertEqual(type(OS), _OS)
-        self.assertTrue(callable(OS.get_main_loop))
-        ml = OS.get_main_loop()
+        self.assertEqual(type(Engine), _Engine)
+        self.assertTrue(callable(Engine.get_main_loop))
+        ml = Engine.get_main_loop()
         self.assertTrue(isinstance(ml, Object))
 
     def test_constants(self):
@@ -21,8 +21,8 @@ class TestDynamicBindings(unittest.TestCase):
         # Main loop object is a Godot Object, calling `get_main_loop` from
         # python returns a different python wrapper on the same object each time.
         # However those wrappers should feel like they are the same object.
-        ml = OS.get_main_loop()
-        ml2 = OS.get_main_loop()
+        ml = Engine.get_main_loop()
+        ml2 = Engine.get_main_loop()
         self.assertEqual(ml, ml2)
         # Of course different objects should be different and equality
         # should not crash with bad given types
