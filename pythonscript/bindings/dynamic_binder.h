@@ -15,7 +15,7 @@ class DynamicBinder : public BaseBinder {
 private:
     // DynamicBinder *parent;  # TODO: useful ?
     Map<qstr, mp_obj_t> method_lookup;
-    Map<qstr, PropertyInfo> property_lookup;
+    Map<qstr, StringName*> property_lookup;
 
     // Type object of this godot type in python
     mp_obj_type_t _mp_type;
@@ -31,6 +31,7 @@ public:
     } mp_godot_bind_t;
 
 	DynamicBinder(StringName type_name);
+    ~DynamicBinder();
 
     virtual mp_obj_t build_pyobj() const;
     mp_obj_t build_pyobj(Object *obj) const;

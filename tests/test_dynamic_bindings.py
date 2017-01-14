@@ -1,6 +1,6 @@
 import unittest
 
-from godot.bindings import Object, Node, Viewport, EditorPlugin, OS, _OS, KEY_ESCAPE, OK, FAILED
+from godot.bindings import Object, Node, Viewport, EditorPlugin, OS, _OS, KEY_ESCAPE, OK, FAILED, LineEdit
 
 
 class TestDynamicBindings(unittest.TestCase):
@@ -49,12 +49,12 @@ class TestDynamicBindings(unittest.TestCase):
         pass
 
     def test_class_properties(self):
-        self.assertTrue(hasattr(Viewport, 'own_world'))
-        v = Viewport()
-        self.assertTrue(hasattr(v.own_world, bool))
-        # self.assertTrue(v.own_world)
-        # v.own_world = False
-        # self.assertFalse(v.own_world)
+        self.assertTrue(hasattr(LineEdit, 'max_length'))
+        v = LineEdit()
+        self.assertTrue(type(v.max_length), int)
+        self.assertEqual(v.max_length, 0)
+        v.max_length = 42
+        self.assertEqual(v.max_length, 42)
 
 
 if __name__ == '__main__':
