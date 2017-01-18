@@ -4,7 +4,7 @@
 #include "micropython.h"
 // Godot imports
 #include "core/string_db.h"
-#include "core/object_type_db.h"
+#include "core/class_db.h"
 #include "core/map.h"
 // Pythonscript imports
 #include "bindings/binder.h"

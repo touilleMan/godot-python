@@ -7,7 +7,7 @@
 #include "bindings/builtins_binder.h"
 // Godot imports
 #include "core/variant.h"
-#include "core/object_type_db.h"
+#include "core/class_db.h"
 #include "core/global_constants.h"
 #include "core/globals.h"
 
