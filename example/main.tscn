@@ -1,8 +1,7 @@
 [gd_scene load_steps=4 format=1]
 
 [ext_resource path="res://main.gd" type="Script" id=1]
-[ext_resource path="res://test.gd" type="Script" id=2]
-[ext_resource path="res://test.py" type="Script" id=3]
+[ext_resource path="res://test.py" type="Script" id=2]
 
 [node name="Node" type="Node"]
 
@@ -38,7 +37,7 @@ params/anim_initial_pos = 0.0
 [node name="Node2D-Python" type="Node2D" parent="."]
 
 transform/pos = Vector2( 712.488, 140.647 )
-script/script = ExtResource( 3 )
+script/script = ExtResource( 2 )
 
 [node name="Particles2D" type="Particles2D" parent="Node2D-Python"]
 
