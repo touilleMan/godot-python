@@ -2,14 +2,13 @@ import unittest
 import sys
 
 from godot import exposed
-from godot.bindings import Node
+from godot.bindings import Node, OS
 
 
 @exposed
 class Node(Node):
 
     def _ready(self):
-        # TODO: use `OS.set_exit_code` when available here
         # os.listdir is not available, so list test modules by hand
         test_mods = (
             'test_vector2',
@@ -22,6 +21,6 @@ class Node(Node):
                 unittest.main(mod)
             except Exception as exc:
                 sys.print_exception(exc)
-                break
+                OS.set_exit_code(1)
         # Exit godot
         self.get_tree().quit()
