@@ -7,3 +7,4 @@
 *.so.*
 *.pyc
 build
+godot
