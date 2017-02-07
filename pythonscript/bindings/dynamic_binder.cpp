@@ -3,7 +3,7 @@
 #include "micropython.h"
 // Pythonscript imports
 #include "bindings/dynamic_binder.h"
-#include "bindings/builtins_binder.h"
+#include "bindings/builtins_binder/atomic.h"
 #include "bindings/tools.h"
 
 
@@ -224,7 +224,7 @@ void DynamicBinder::get_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) const 
         }
 #endif
     }
-    // All other cases fail (i.e. don't modify `dest`)   
+    // All other cases fail (i.e. don't modify `dest`)
 }
 #endif
 
