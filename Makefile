@@ -37,16 +37,19 @@ endif
 
 
 run:
-	cd example && $(GODOT_CMD)
+	$(GODOT_CMD)
 
+run_example:
+	cd example && $(GODOT_CMD)
 
 compile:
 	cd $(GODOT_DIR) && scons $(OPTS)
 
 
 clean:
-	rm -f pythonscript/*.os pythonscript/*.o
+	rm -f pythonscript/*.o  pythonscript/*.os
 	rm -f pythonscript/bindings/*.o pythonscript/bindings/*.os
+	rm -f pythonscript/bindings/builtins_binder/*.o pythonscript/bindings/builtins_binder/*.os
 	rm -f $(GODOT_DIR)/bin/godot*
 	rm -f $(GODOT_DIR)/bin/libpythonscript*
 
