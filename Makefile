@@ -47,9 +47,9 @@ compile:
 
 
 clean:
-	rm -f pythonscript/*.o  pythonscript/*.os
-	rm -f pythonscript/bindings/*.o pythonscript/bindings/*.os
-	rm -f pythonscript/bindings/builtins_binder/*.o pythonscript/bindings/builtins_binder/*.os
+	rm -f pythonscript/*.o  pythonscript/*.so
+	rm -f pythonscript/bindings/*.o pythonscript/bindings/*.so
+	rm -f pythonscript/bindings/builtins_binder/*.o pythonscript/bindings/builtins_binder/*.so
 	rm -f $(GODOT_DIR)/bin/godot*
 	rm -f $(GODOT_DIR)/bin/libpythonscript*
 
