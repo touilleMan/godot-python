@@ -1,14 +1,14 @@
 #include <stdlib.h>
-
-#include "micropython.h"
-// Pythonscript imports
-#include "py_language.h"
-#include "py_script.h"
-#include "bindings/dynamic_binder.h"
 // Godot imports
 #include "core/globals.h"
 #include "core/os/os.h"
 #include "core/os/file_access.h"
+// Microphython
+#include "micropython/micropython.h"
+// Pythonscript imports
+#include "py_language.h"
+#include "py_script.h"
+#include "bindings/dynamic_binder.h"
 
 
 /************* SCRIPT LANGUAGE **************/
@@ -455,4 +455,3 @@ PyLanguage::PyLanguage() : _mpo_godot_module(mp_const_none) {
 
 #endif // if 0
 }
-

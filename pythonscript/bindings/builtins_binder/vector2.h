@@ -1,9 +1,8 @@
 #ifndef VECTOR2_H
 #define VECTOR2_H
 
-#include "micropython.h"
-// Godot imports
-
+// Micropython
+#include "micropython/micropython.h"
 // Pythonscript imports
 #include "bindings/dynamic_binder.h"
 #include "bindings/tools.h"

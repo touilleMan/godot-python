@@ -1,12 +1,13 @@
 #ifndef PY_SCRIPT_LANGUAGE_H
 #define PY_SCRIPT_LANGUAGE_H
 
-#include "micropython.h"
+// Microphython
+#include "micropython/micropython.h"
 // Godot imports
-#include "script_language.h"
-#include "self_list.h"
-#include "io/resource_loader.h"
-#include "io/resource_saver.h"
+#include "core/script_language.h"
+#include "core/self_list.h"
+#include "core/io/resource_loader.h"
+#include "core/io/resource_saver.h"
 
 
 class PyScript;

@@ -1,6 +1,7 @@
 #include <cstring>
 
-#include "micropython.h"
+// Micropython
+#include "micropython/micropython.h"
 // Pythonscript imports
 #include "bindings/dynamic_binder.h"
 #include "bindings/builtins_binder/atomic.h"

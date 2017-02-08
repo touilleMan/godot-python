@@ -1,10 +1,11 @@
 #ifndef BINDER_H
 #define BINDER_H
 
-#include "micropython.h"
 // Godot imports
 #include "core/string_db.h"
 #include "core/list.h"
+// Micropython
+#include "micropython/micropython.h"
 // Pythonscript imports
 #include "bindings/tools.h"
 

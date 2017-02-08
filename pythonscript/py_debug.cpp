@@ -1,5 +1,5 @@
 // Godot imports
-#include "globals.h"
+#include "core/globals.h"
 // Pythonscript imports
 #include "py_language.h"
 

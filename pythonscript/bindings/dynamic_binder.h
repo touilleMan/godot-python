@@ -1,11 +1,12 @@
 #ifndef DYNAMIC_BINDER_H
 #define DYNAMIC_BINDER_H
 
-#include "micropython.h"
 // Godot imports
 #include "core/string_db.h"
 #include "core/class_db.h"
 #include "core/map.h"
+// Micropython
+#include "micropython/micropython.h"
 // Pythonscript imports
 #include "bindings/binder.h"
 

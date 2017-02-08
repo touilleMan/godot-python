@@ -1,8 +1,8 @@
 #ifndef ATOMIC_H
 #define ATOMIC_H
-#include "micropython.h"
-// Godot imports
 
+// Micropython
+#include "micropython/micropython.h"
 // Pythonscript imports
 #include "bindings/dynamic_binder.h"
 #include "bindings/tools.h"

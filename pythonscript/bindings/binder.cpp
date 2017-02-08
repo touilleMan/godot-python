@@ -1,16 +1,17 @@
 #include <cstring>
 
-#include "micropython.h"
-// Pythonscript imports
-#include "bindings/binder.h"
-#include "bindings/dynamic_binder.h"
-#include "bindings/builtins_binder/atomic.h"
-#include "bindings/builtins_binder/vector2.h"
 // Godot imports
 #include "core/variant.h"
 #include "core/class_db.h"
 #include "core/global_constants.h"
 #include "core/globals.h"
+// Micropython
+#include "micropython/micropython.h"
+// Pythonscript imports
+#include "bindings/binder.h"
+#include "bindings/dynamic_binder.h"
+#include "bindings/builtins_binder/atomic.h"
+#include "bindings/builtins_binder/vector2.h"
 
 
 void init_bindings() {

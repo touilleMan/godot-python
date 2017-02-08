@@ -1,10 +1,10 @@
 #ifndef TOOLS_H
 #define TOOLS_H
 
-#include "micropython.h"
-
 // Godot imports
 #include "core/typedefs.h"
+// Micropython
+#include "micropython/micropython.h"
 
 
 template<class T> class Singleton {

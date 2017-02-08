@@ -2,9 +2,10 @@
 #define PY_SCRIPT_H
 
 #include <iostream>
-#include "micropython.h"
+// Microphython
+#include "micropython/micropython.h"
 // Godot imports
-#include "script_language.h"
+#include "core/script_language.h"
 // Pythonscript imports
 #include "py_language.h"
 
