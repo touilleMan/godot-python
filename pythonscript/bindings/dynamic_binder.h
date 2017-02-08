@@ -5,7 +5,7 @@
 #include "core/string_db.h"
 #include "core/class_db.h"
 #include "core/map.h"
-// Micropython
+// Micropython imports
 #include "micropython/micropython.h"
 // Pythonscript imports
 #include "bindings/binder.h"

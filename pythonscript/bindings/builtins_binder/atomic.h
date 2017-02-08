@@ -1,7 +1,7 @@
 #ifndef ATOMIC_H
 #define ATOMIC_H
 
-// Micropython
+// Micropython imports
 #include "micropython/micropython.h"
 // Pythonscript imports
 #include "bindings/dynamic_binder.h"

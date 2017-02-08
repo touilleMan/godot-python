@@ -3,7 +3,7 @@
 
 // Godot imports
 #include "core/typedefs.h"
-// Micropython
+// Micropython imports
 #include "micropython/micropython.h"
 
 
