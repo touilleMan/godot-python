@@ -12,6 +12,7 @@ class Node(Node):
         # os.listdir is not available, so list test modules by hand
         test_mods = (
             'test_vector2',
+            'test_vector3',
             'test_dynamic_bindings',
         )
         # Run tests here

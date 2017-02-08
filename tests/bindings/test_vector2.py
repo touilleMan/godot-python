@@ -32,31 +32,30 @@ class TestVector2(unittest.TestCase):
         self.assertRaises(TypeError, Vector2, None, 2)
 
     def test_methods(self):
-        v2 = Vector2()
         v = Vector2()
         # Don't test methods' validity but bindings one
         for field, ret_type, params in (
                 ['abs', Vector2, ()],
                 ['angle', float, ()],
-                ['angle_to', float, (v2, )],
-                ['angle_to_point', float, (v2, )],
+                ['angle_to', float, (v, )],
+                ['angle_to_point', float, (v, )],
                 ['clamped', Vector2, (0.5, )],
-                ['cubic_interpolate', Vector2, (v2, v2, v2, 0.5)],
-                ['distance_squared_to', float, (v2, )],
-                ['distance_to', float, (v2, )],
-                ['dot', float, (v2, )],
+                ['cubic_interpolate', Vector2, (v, v, v, 0.5)],
+                ['distance_squared_to', float, (v, )],
+                ['distance_to', float, (v, )],
+                ['dot', float, (v, )],
                 ['floor', Vector2, ()],
                 ['aspect', float, ()],
                 ['length', float, ()],
                 ['length_squared', float, ()],
-                ['linear_interpolate', Vector2, (v2, 0.5)],
+                ['linear_interpolate', Vector2, (v, 0.5)],
                 ['normalized', Vector2, ()],
-                ['reflect', Vector2, (v2, )],
+                ['reflect', Vector2, (v, )],
                 ['rotated', Vector2, (0.5, )],
-                ['slide', Vector2, (v2, )],
-                ['snapped', Vector2, (v2, )],
+                ['slide', Vector2, (v, )],
+                ['snapped', Vector2, (v, )],
                 ['tangent', Vector2, ()]):
-            self.assertTrue(hasattr(v, field), msg='Vector2 has no method `%s`' % field)
+            self.assertTrue(hasattr(v, field), msg='`Vector2` has no method `%s`' % field)
             method = getattr(v, field)
             self.assertTrue(callable(method))
             ret = method(*params)
@@ -69,9 +68,13 @@ class TestVector2(unittest.TestCase):
                 ('width', float),
                 ('x', float),
                 ('y', float)):
-            self.assertTrue(hasattr(v, field), msg='Vector2 has no property `%s`' % field)
+            self.assertTrue(hasattr(v, field), msg='`Vector2` has no property `%s`' % field)
             field_val = getattr(v, field)
             self.assertEqual(type(field_val), ret_type, msg="`Vector2.%s` is expected to be a `%s`" % (field, ret_type))
+            val = 10.
+            setattr(v, field, val)
+            field_val = getattr(v, field)
+            self.assertEqual(field_val, val, msg="`Vector2.%s` is expected to be equal to `%d`" % (field_val, val))
 
 
 if __name__ == '__main__':
