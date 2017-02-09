@@ -9,7 +9,7 @@ compiler:
 env:
   global:
     # Use commit instead of tag as long as 3.0 is not released
-    - GODOT_TAG=b19c9bd1983b8c72621595b7c22daade4ebf6625
+    - GODOT_TAG=af3fabeb7745e6f7f4e7fe7a299bdd234fff26a6
     # Cannot use release given travis's glibc clash with -ffast-math with clang
     # other solution is to set `-D__extern_always_inline="extern __always_inline"`
     - EXTRA_OPTS="-j4 target=debug tools=yes module_pythonscript_enabled=yes"
@@ -42,7 +42,7 @@ before_script:
   # Cannot use this with commit id
   #  - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 https://github.com/godotengine/godot.git
   - git clone --recursive https://github.com/godotengine/godot.git
-  - git checkout $GODOT_TAG
+  - git --git-dir=godot/.git checkout $GODOT_TAG
   - git --git-dir=godot/.git rev-parse HEAD
   - ln -s `pwd`/pythonscript godot/modules/pythonscript
 

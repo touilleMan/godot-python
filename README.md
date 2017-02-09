@@ -4,7 +4,7 @@ Python support for Godot
 ========================
 
 /!\ Not ready to play with, move along /!\
-Godot master commit to use b19c9bd1983b8c72621595b7c22daade4ebf6625
+Godot master commit to use af3fabeb7745e6f7f4e7fe7a299bdd234fff26a6
 
 Overview
 --------
