@@ -264,6 +264,20 @@ static mp_obj_t _make_new_vector3(const mp_obj_type_t *type, size_t n_args, size
 }
 
 
+static mp_obj_t _unary_op_vector3(mp_uint_t op, mp_obj_t in) {
+  auto self = static_cast<Vector3Binder::mp_godot_bind_t*>(MP_OBJ_TO_PTR(in));
+  switch (op) {
+    case MP_UNARY_OP_NEGATIVE:
+      self->godot_vect3.x = -self->godot_vect3.x + 0.0;
+      self->godot_vect3.y = -self->godot_vect3.y + 0.0;
+      self->godot_vect3.z = -self->godot_vect3.z + 0.0;
+    case MP_UNARY_OP_POSITIVE:
+      return MP_OBJ_FROM_PTR(self);
+  }
+  return MP_OBJ_NULL;
+}
+
+
 static mp_obj_t _binary_op_vector3(mp_uint_t op, mp_obj_t lhs_in, mp_obj_t rhs_in) {
     auto self = static_cast<Vector3Binder::mp_godot_bind_t*>(MP_OBJ_TO_PTR(lhs_in));
     if (op == MP_BINARY_OP_EQUAL && mp_obj_get_type(rhs_in) == Vector3Binder::get_singleton()->get_mp_type()) {
@@ -288,7 +302,7 @@ Vector3Binder::Vector3Binder() {
         _print_vector3,                           // print
         _make_new_vector3,                        // make_new
         0,                                        // call
-        0,                                        // unary_op
+        _unary_op_vector3,                        // unary_op
         _binary_op_vector3,                       // binary_op
         attr_with_locals_and_properties,          // attr
         0,                                        // subscr
