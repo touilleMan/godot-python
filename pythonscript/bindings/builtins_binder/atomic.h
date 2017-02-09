@@ -1,5 +1,5 @@
-#ifndef ATOMIC_H
-#define ATOMIC_H
+#ifndef PYTHONSCRIPT_ATOMIC_H
+#define PYTHONSCRIPT_ATOMIC_H
 
 // Micropython imports
 #include "micropython/micropython.h"
@@ -119,4 +119,4 @@ public:
 };
 
 
-#endif // ATOMIC_H
+#endif // PYTHONSCRIPT_ATOMIC_H

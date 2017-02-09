@@ -1,5 +1,5 @@
-#ifndef PY_LOADER_H
-#define PY_LOADER_H
+#ifndef PYTHONSCRIPT_PY_LOADER_H
+#define PYTHONSCRIPT_PY_LOADER_H
 
 // Godot imports
 #include "core/script_language.h"
@@ -26,4 +26,4 @@ public:
 
 };
 
-#endif // PY_LOADER_H
+#endif // PYTHONSCRIPT_PY_LOADER_H

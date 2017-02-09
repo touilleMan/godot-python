@@ -1,5 +1,5 @@
-#ifndef TOOLS_H
-#define TOOLS_H
+#ifndef PYTHONSCRIPT_TOOLS_H
+#define PYTHONSCRIPT_TOOLS_H
 
 // Godot imports
 #include "core/typedefs.h"
@@ -37,4 +37,4 @@ T *Singleton<T>::_singleton = NULL;
 void attr_with_locals_and_properties(mp_obj_t self_in, qstr attr, mp_obj_t *dest);
 
 
-#endif
+#endif // PYTHONSCRIPT_TOOLS_H
