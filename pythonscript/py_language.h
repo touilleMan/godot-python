@@ -1,5 +1,5 @@
-#ifndef PY_SCRIPT_LANGUAGE_H
-#define PY_SCRIPT_LANGUAGE_H
+#ifndef PYTHONSCRIPT_PY_LANGUAGE_H
+#define PYTHONSCRIPT_PY_LANGUAGE_H
 
 // Microphython
 #include "micropython/micropython.h"
@@ -280,4 +280,4 @@ public:
 #endif
 
 
-#endif // PY_SCRIPT_LANGUAGE_H
+#endif // PYTHONSCRIPT_PY_LANGUAGE_H

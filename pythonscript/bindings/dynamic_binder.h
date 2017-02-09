@@ -1,5 +1,5 @@
-#ifndef DYNAMIC_BINDER_H
-#define DYNAMIC_BINDER_H
+#ifndef PYTHONSCRIPT_DYNAMIC_BINDER_H
+#define PYTHONSCRIPT_DYNAMIC_BINDER_H
 
 // Godot imports
 #include "core/string_db.h"
@@ -41,4 +41,4 @@ public:
 };
 
 
-#endif  // DYNAMIC_BINDER_H
+#endif  // PYTHONSCRIPT_DYNAMIC_BINDER_H

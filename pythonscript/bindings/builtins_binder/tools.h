@@ -1,5 +1,5 @@
-#ifndef BUILTINS_TOOLS_H
-#define BUILTINS_TOOLS_H
+#ifndef PYTHONSCRIPT_BUILTINS_TOOLS_H
+#define PYTHONSCRIPT_BUILTINS_TOOLS_H
 
 #include "micropython.h"
 // Godot imports
@@ -80,4 +80,4 @@ static Variant RETRIEVE_ARG(BaseBinder *type_binder, mp_obj_t var, const char *v
 }
 
 
-#endif // BUILTINS_TOOLS_H
+#endif // PYTHONSCRIPT_BUILTINS_TOOLS_H

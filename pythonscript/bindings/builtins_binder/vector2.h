@@ -1,5 +1,5 @@
-#ifndef VECTOR2_H
-#define VECTOR2_H
+#ifndef PYTHONSCRIPT_VECTOR2_H
+#define PYTHONSCRIPT_VECTOR2_H
 
 // Godot imports
 #include "core/math/math_2d.h"
@@ -32,4 +32,4 @@ public:
 };
 
 
-#endif // VECTOR2_H
+#endif // PYTHONSCRIPT_VECTOR2_H

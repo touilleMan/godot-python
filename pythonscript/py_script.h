@@ -1,5 +1,5 @@
-#ifndef PY_SCRIPT_H
-#define PY_SCRIPT_H
+#ifndef PYTHONSCRIPT_PY_SCRIPT_H
+#define PYTHONSCRIPT_PY_SCRIPT_H
 
 #include <iostream>
 // Microphython
@@ -112,4 +112,4 @@ public:
 };
 
 
-#endif // PY_SCRIPT_H
+#endif // PYTHONSCRIPT_PY_SCRIPT_H

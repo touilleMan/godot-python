@@ -1,5 +1,5 @@
-#ifndef BINDER_H
-#define BINDER_H
+#ifndef PYTHONSCRIPT_BINDER_H
+#define PYTHONSCRIPT_BINDER_H
 
 // Godot imports
 #include "core/string_db.h"
@@ -54,4 +54,4 @@ public:
 };
 
 
-#endif  // BINDER_H
+#endif  // PYTHONSCRIPT_BINDER_H
