@@ -274,6 +274,19 @@ static mp_obj_t _binary_op_vector2(mp_uint_t op, mp_obj_t lhs_in, mp_obj_t rhs_i
 }
 
 
+static mp_obj_t _unary_op_vector2(mp_uint_t op, mp_obj_t in) {
+    auto self = static_cast<Vector2Binder::mp_godot_bind_t*>(MP_OBJ_TO_PTR(in));
+    switch (op) {
+        case MP_UNARY_OP_POSITIVE:
+            return Vector2Binder::get_singleton()->build_pyobj(self->godot_vect2);
+        case MP_UNARY_OP_NEGATIVE:
+            return Vector2Binder::get_singleton()->build_pyobj(
+                Vector2(-self->godot_vect2.x, -self->godot_vect2.y));
+        default: return MP_OBJ_NULL; // op not supported
+    }
+}
+
+
 Vector2Binder::Vector2Binder() {
     const char *name = "Vector2";
     this->_type_name= StringName(name);
@@ -285,7 +298,7 @@ Vector2Binder::Vector2Binder() {
         _print_vector2,                           // print
         _make_new_vector2,                        // make_new
         0,                                        // call
-        0,                                        // unary_op
+        _unary_op_vector2,                        // unary_op
         _binary_op_vector2,                       // binary_op
         attr_with_locals_and_properties,          // attr
         0,                                        // subscr
