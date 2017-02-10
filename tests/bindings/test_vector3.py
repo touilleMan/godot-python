@@ -70,10 +70,30 @@ class TestVector3(unittest.TestCase):
             self.assertTrue(hasattr(v, field), msg='`Vector3` has no property `%s`' % field)
             field_val = getattr(v, field)
             self.assertEqual(type(field_val), ret_type, msg="`Vector3.%s` is expected to be a `%s`" % (field, ret_type))
-            val = 10.
-            setattr(v, field, val)
-            field_val = getattr(v, field)
-            self.assertEqual(field_val, val, msg="`Vector3.%s` is expected to be equal to `%d`" % (field_val, val))
+            for val in (0, 10, 10., 42.5):
+                setattr(v, field, val)
+                field_val = getattr(v, field)
+                self.assertEqual(field_val, val, msg="`Vector3.%s` is expected to be equal to `%d`" % (field_val, val))
+
+    def test_unary(self):
+        v = Vector3(0, 1, 2)
+        v2 = -v
+        self.assertEqual(v2.x, 0)
+        self.assertEqual(v2.y, -1)
+        self.assertEqual(v2.z, -2)
+        v3 = +v
+        self.assertEqual(v3.x, 0)
+        self.assertEqual(v3.y, 1)
+        self.assertEqual(v3.z, 2)
+        v = Vector3(0.0, 1.5, 2.5)
+        v2 = -v
+        self.assertEqual(v2.x, 0.0)
+        self.assertEqual(v2.y, -1.5)
+        self.assertEqual(v2.z, -2.5)
+        v3 = +v
+        self.assertEqual(v3.x, 0.0)
+        self.assertEqual(v3.y, 1.5)
+        self.assertEqual(v3.z, 2.5)
 
 
 if __name__ == '__main__':

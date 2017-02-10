@@ -23,8 +23,8 @@ public:
     _FORCE_INLINE_ StringName get_type_name() const { return this->_type_name; }
     _FORCE_INLINE_ qstr get_type_qstr() const { return this->_p_mp_type->name; }
     _FORCE_INLINE_ const mp_obj_type_t *get_mp_type() const { return this->_p_mp_type; }
-    _FORCE_INLINE_ bool is_type(mp_obj_t pyobj) { return MP_OBJ_IS_TYPE(pyobj, this->_p_mp_type); }
 
+    virtual bool is_type(mp_obj_t pyobj) { return MP_OBJ_IS_TYPE(pyobj, this->_p_mp_type); }
     virtual mp_obj_t build_pyobj() const = 0;
     virtual Variant pyobj_to_variant(mp_obj_t pyobj) const = 0;
     virtual mp_obj_t variant_to_pyobj(const Variant &p_variant) const = 0;
