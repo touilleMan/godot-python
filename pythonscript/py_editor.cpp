@@ -77,8 +77,10 @@ void PyLanguage::get_string_delimiters(List<String> *p_delimiters) const {
 
 Ref<Script> PyLanguage::get_template(const String& p_class_name, const String& p_base_class_name) const {
     String _template = String()+
-    "from godot import *\n" +
+    "from godot import exposed, export\n" +
+    "from godot.bindings import *\n" +
     "\n\n" +
+    "@exposed\n" +
     "class %CLS%(%BASE%):\n" +
     "\n" +
     "    # member variables here, example:\n" +
