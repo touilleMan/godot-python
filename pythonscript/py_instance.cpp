@@ -373,7 +373,8 @@ Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p
         ret = bindings->pyobj_to_variant(pyobj_ret);
     };
     auto handle_ex = [&r_error](mp_obj_t ex) {
-        mp_obj_print_exception(&mp_plat_print, ex);
+        // Godot could try to call some functions even if they don't exist
+        // so don't print any exception here
         r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
     };
     MP_WRAP_CALL_EX(call_method, handle_ex);
