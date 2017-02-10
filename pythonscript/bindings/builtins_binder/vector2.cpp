@@ -266,8 +266,8 @@ static mp_obj_t _unary_op_vector2(mp_uint_t op, mp_obj_t in) {
   auto self = static_cast<Vector2Binder::mp_godot_bind_t*>(MP_OBJ_TO_PTR(in));
   switch (op) {
     case MP_UNARY_OP_NEGATIVE:
-      self->godot_vect2.x = -self->godot_vect2.x + 0.0;
-      self->godot_vect2.y = -self->godot_vect2.y + 0.0;
+      return Vector2Binder::get_singleton()->build_pyobj(
+          Vector2(-self->godot_vect2.x, -self->godot_vect2.y));
     case MP_UNARY_OP_POSITIVE:
       return MP_OBJ_FROM_PTR(self);
   }

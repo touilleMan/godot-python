@@ -268,9 +268,8 @@ static mp_obj_t _unary_op_vector3(mp_uint_t op, mp_obj_t in) {
   auto self = static_cast<Vector3Binder::mp_godot_bind_t*>(MP_OBJ_TO_PTR(in));
   switch (op) {
     case MP_UNARY_OP_NEGATIVE:
-      self->godot_vect3.x = -self->godot_vect3.x + 0.0;
-      self->godot_vect3.y = -self->godot_vect3.y + 0.0;
-      self->godot_vect3.z = -self->godot_vect3.z + 0.0;
+      return Vector3Binder::get_singleton()->build_pyobj(
+          Vector3(-self->godot_vect3.x, -self->godot_vect3.y, -self->godot_vect3.z));
     case MP_UNARY_OP_POSITIVE:
       return MP_OBJ_FROM_PTR(self);
   }
