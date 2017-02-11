@@ -13,6 +13,7 @@
 #include "bindings/builtins_binder/atomic.h"
 #include "bindings/builtins_binder/vector2.h"
 #include "bindings/builtins_binder/vector3.h"
+#include "bindings/builtins_binder/plane.h"
 
 
 void init_bindings() {
@@ -24,6 +25,7 @@ void init_bindings() {
     StringBinder::init();
     Vector2Binder::init();
     Vector3Binder::init();
+    PlaneBinder::init();
     // TODO: make this lazy ?
     GodotBindingsModule::get_singleton()->build_binders();
 }
@@ -59,6 +61,7 @@ void GodotBindingsModule::build_binders() {
         STORE_BINDED_TYPE(StringBinder::get_singleton());
         STORE_BINDED_TYPE(Vector2Binder::get_singleton());
         STORE_BINDED_TYPE(Vector3Binder::get_singleton());
+        STORE_BINDED_TYPE(PlaneBinder::get_singleton());
         // TODO: finish builtins
 
         // Dynamically bind modules registered through ClassDB
@@ -180,11 +183,10 @@ mp_obj_t GodotBindingsModule::variant_to_pyobj(const Variant &p_variant) const {
         break;
     case Variant::Type::VECTOR3:
         return Vector3Binder::get_singleton()->variant_to_pyobj(p_variant);
-        break;
     case Variant::Type::TRANSFORM2D:
         break;
     case Variant::Type::PLANE:
-        break;
+        return PlaneBinder::get_singleton()->variant_to_pyobj(p_variant);
     case Variant::Type::QUAT:
         break;
     case Variant::Type::RECT3:
