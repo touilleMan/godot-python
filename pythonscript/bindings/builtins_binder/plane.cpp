@@ -1,197 +1,191 @@
+#include <cstring>
 #include <stdio.h>
 
 // Godot imports
+#include "core/math/vector3.h"
 #include "core/math/plane.h"
 // Pythonscript imports
 #include "bindings/tools.h"
 #include "bindings/builtins_binder/tools.h"
 #include "bindings/builtins_binder/atomic.h"
 #include "bindings/builtins_binder/plane.h"
+#include "bindings/builtins_binder/vector3.h"
 
 
 mp_obj_t PlaneBinder::_generate_bind_locals_dict() {
     // Build micropython type object
     mp_obj_t locals_dict = mp_obj_new_dict(0);
 
-    /* // Plane abs ( ) */
-    /* BIND_METHOD("abs", [](mp_obj_t self) -> mp_obj_t { */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     Plane plane_abs = variant->godot_plane.abs(); */
-    /*     return PlaneBinder::get_singleton()->build_pyobj(plane_abs); */
-    /* }); */
+    // Vector3 center (  )
+    BIND_METHOD("center", [](mp_obj_t self) -> mp_obj_t {
+      auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+      auto ret = variant->godot_plane.center();
+      return Vector3Binder::get_singleton()->build_pyobj(ret);
+    });
 
-    /* // float   angle ( ) */
-    /* BIND_METHOD("angle", [](mp_obj_t self) -> mp_obj_t { */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     float angle = variant->godot_plane.angle(); */
-    /*     return RealBinder::get_singleton()->build_pyobj(angle); */
-    /* }); */
+    // float distance_to ( Vector3 to )
+    BIND_METHOD_1("distance_to", [](mp_obj_t self, mp_obj_t pyto) -> mp_obj_t {
+        auto to = RETRIEVE_ARG(Vector3Binder::get_singleton(), pyto, "to");
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        float ret = variant->godot_plane.distance_to(to);
+        return RealBinder::get_singleton()->build_pyobj(ret);
+    });
 
-    /* // float   angle_to ( Plane to ) */
-    /* BIND_METHOD_1("angle_to", [](mp_obj_t self, mp_obj_t pyto) -> mp_obj_t { */
-    /*     Plane to = RETRIEVE_ARG(PlaneBinder::get_singleton(), pyto, "to"); */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     float angle_to = variant->godot_plane.angle_to(to); */
-    /*     return RealBinder::get_singleton()->build_pyobj(angle_to); */
-    /* }); */
+    // Vector3 get_any_point (  )
+    BIND_METHOD("get_any_point", [](mp_obj_t self) -> mp_obj_t {
+      auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+      auto ret = variant->godot_plane.get_any_point();
+      return Vector3Binder::get_singleton()->build_pyobj(ret);
+    });
 
-    /* // float   angle_to_point ( Plane to ) */
-    /* BIND_METHOD_1("angle_to_point", [](mp_obj_t self, mp_obj_t pyto) -> mp_obj_t { */
-    /*     Plane to = RETRIEVE_ARG(PlaneBinder::get_singleton(), pyto, "to"); */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     float angle_to_point = variant->godot_plane.angle_to_point(to); */
-    /*     return RealBinder::get_singleton()->build_pyobj(angle_to_point); */
-    /* }); */
+    // bool has_point (Vector3, float)
+    BIND_METHOD_VAR("has_point", [](size_t n, const mp_obj_t *args) -> mp_obj_t {
+        if (n != 2 && n != 3) {
+          char buff[64];
+          snprintf(buff, sizeof(buff), "Plane.has_point expected 1 or 2 arguments but got %zu", n - 1);
+          mp_raise_TypeError(buff);
+        }
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(args[0]));
+        auto point = RETRIEVE_ARG(Vector3Binder::get_singleton(), args[1], "point");
+        float epsilon = 0.00001; // default value if not given
+        if (n == 3) {
+          epsilon = RETRIEVE_ARG(RealBinder::get_singleton(), args[n - 1], "epsilon");
+        }
+        auto ret = variant->godot_plane.has_point(point, epsilon);
+        return BoolBinder::get_singleton()->build_pyobj(ret);
+    }, 2, 3);
 
-    /* // Plane clamped ( float length ) */
-    /* BIND_METHOD_1("clamped", [](mp_obj_t self, mp_obj_t pylength) -> mp_obj_t { */
-    /*     float length = RETRIEVE_ARG(RealBinder::get_singleton(), pylength, "length"); */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     Plane clamped = variant->godot_plane.clamped(length); */
-    /*     return PlaneBinder::get_singleton()->build_pyobj(clamped); */
-    /* }); */
+    // Vector3 intersect_3 ( Plane b, Plane c )
+    BIND_METHOD_2("intersect_3", [](mp_obj_t self, mp_obj_t pyb, mp_obj_t pyc) -> mp_obj_t {
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        auto b = RETRIEVE_ARG(PlaneBinder::get_singleton(), pyb, "b");
+        auto c = RETRIEVE_ARG(PlaneBinder::get_singleton(), pyc, "c");
+        Vector3 ret;
+        auto flag = variant->godot_plane.intersect_3(b, c, &ret);
+        if (flag) {
+          return MP_OBJ_NULL;
+        } else {
+          return Vector3Binder::get_singleton()->build_pyobj(ret);
+        }
+    });
 
-    /* // Plane cubic_interpolate ( Plane b, Plane pre_a, Plane post_b, float t ) */
-    /* BIND_METHOD_VAR("cubic_interpolate", [](size_t n, const mp_obj_t *args) -> mp_obj_t { */
-    /*     Plane b = RETRIEVE_ARG(PlaneBinder::get_singleton(), args[1], "b"); */
-    /*     Plane pre_a = RETRIEVE_ARG(PlaneBinder::get_singleton(), args[2], "pre_a"); */
-    /*     Plane post_b = RETRIEVE_ARG(PlaneBinder::get_singleton(), args[3], "post_b"); */
-    /*     float t = RETRIEVE_ARG(RealBinder::get_singleton(), args[4], "t"); */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(args[0])); */
-    /*     Plane cubic_interpolate = variant->godot_plane.cubic_interpolate(b, pre_a, post_b, t); */
-    /*     return PlaneBinder::get_singleton()->build_pyobj(cubic_interpolate); */
-    /* }, 5, 5); */
+    // Vector3 intersects_ray ( Vector3 from, Vector3 dir )
+    BIND_METHOD_2("intersects_ray", [](mp_obj_t self, mp_obj_t py_from, mp_obj_t py_dir) -> mp_obj_t {
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        auto from = RETRIEVE_ARG(Vector3Binder::get_singleton(), py_from, "from");
+        auto dir = RETRIEVE_ARG(Vector3Binder::get_singleton(), py_dir, "dir");
+        Vector3 ret;
+        auto flag = variant->godot_plane.intersects_ray(from, dir, &ret);
+        if (flag) {
+          return MP_OBJ_NULL;
+        } else {
+          return Vector3Binder::get_singleton()->build_pyobj(ret);
+        }
+    });
 
-    /* // float   distance_squared_to ( Plane to ) */
-    /* BIND_METHOD_1("distance_squared_to", [](mp_obj_t self, mp_obj_t pyto) -> mp_obj_t { */
-    /*     Plane to = RETRIEVE_ARG(PlaneBinder::get_singleton(), pyto, "to"); */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     float distance_squared_to = variant->godot_plane.distance_squared_to(to); */
-    /*     return RealBinder::get_singleton()->build_pyobj(distance_squared_to); */
-    /* }); */
+    // Vector3 intersects_segment ( Vector3 begin, Vector3 end )
+    BIND_METHOD_2("intersects_segment", [](mp_obj_t self, mp_obj_t py_begin, mp_obj_t py_end) -> mp_obj_t {
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        auto begin = RETRIEVE_ARG(Vector3Binder::get_singleton(), py_begin, "begin");
+        auto end = RETRIEVE_ARG(Vector3Binder::get_singleton(), py_end, "end");
+        Vector3 ret;
+        auto flag = variant->godot_plane.intersects_segment(begin, end, &ret);
+        if (flag) {
+          return MP_OBJ_NULL;
+        } else {
+          return Vector3Binder::get_singleton()->build_pyobj(ret);
+        }
+    });
 
-    /* // float   distance_to ( Plane to ) */
-    /* BIND_METHOD_1("distance_to", [](mp_obj_t self, mp_obj_t pyto) -> mp_obj_t { */
-    /*     Plane to = RETRIEVE_ARG(PlaneBinder::get_singleton(), pyto, "to"); */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     float distance_to = variant->godot_plane.distance_to(to); */
-    /*     return RealBinder::get_singleton()->build_pyobj(distance_to); */
-    /* }); */
+    // bool is_point_over ( Vector3 point )
+    BIND_METHOD_1("is_point_over", [](mp_obj_t self, mp_obj_t py_point) -> mp_obj_t {
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        auto point = RETRIEVE_ARG(Vector3Binder::get_singleton(), py_point, "point");
+        auto ret = variant->godot_plane.is_point_over(point);
+        return BoolBinder::get_singleton()->build_pyobj(ret);
+    });
 
-    /* // float   dot ( Plane with ) */
-    /* BIND_METHOD_1("dot", [](mp_obj_t self, mp_obj_t pywith) -> mp_obj_t { */
-    /*     Plane with = RETRIEVE_ARG(PlaneBinder::get_singleton(), pywith, "with"); */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     float dot = variant->godot_plane.dot(with); */
-    /*     return RealBinder::get_singleton()->build_pyobj(dot); */
-    /* }); */
 
-    /* // Plane floor ( ) */
-    /* BIND_METHOD("floor", [](mp_obj_t self) -> mp_obj_t { */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     Plane vec = variant->godot_plane.floor(); */
-    /*     return PlaneBinder::get_singleton()->build_pyobj(vec); */
-    /* }); */
+    // Plane normalized (  )
+    BIND_METHOD("normalized", [](mp_obj_t self) -> mp_obj_t {
+      auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+      auto ret = variant->godot_plane.normalized();
+      return PlaneBinder::get_singleton()->build_pyobj(ret);
+    });
 
-    /* // float   aspect ( ) */
-    /* BIND_METHOD("aspect", [](mp_obj_t self) -> mp_obj_t { */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     float aspect = variant->godot_plane.aspect(); */
-    /*     return RealBinder::get_singleton()->build_pyobj(aspect); */
-    /* }); */
+    // Vector3 project ( Vector3 point )
+    BIND_METHOD_1("project", [](mp_obj_t self, mp_obj_t py_point) -> mp_obj_t {
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        auto point = RETRIEVE_ARG(Vector3Binder::get_singleton(), py_point, "point");
+        auto ret = variant->godot_plane.project(point);
+        return Vector3Binder::get_singleton()->build_pyobj(ret);
+    });
 
-    /* // float   length ( ) */
-    /* BIND_METHOD("length", [](mp_obj_t self) -> mp_obj_t { */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     float length = variant->godot_plane.length(); */
-    /*     return RealBinder::get_singleton()->build_pyobj(length); */
-    /* }); */
 
-    /* // float   length_squared ( ) */
-    /* BIND_METHOD("length_squared", [](mp_obj_t self) -> mp_obj_t { */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     float length_squared = variant->godot_plane.length_squared(); */
-    /*     return RealBinder::get_singleton()->build_pyobj(length_squared); */
-    /* }); */
+    BIND_PROPERTY_GETSET("x",
+        [](mp_obj_t self) -> mp_obj_t {
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        const auto x = variant->godot_plane.normal.x;
+        return RealBinder::get_singleton()->build_pyobj(x);
+    },
+        [](mp_obj_t self, mp_obj_t pyval) -> mp_obj_t {
+        const auto val = RETRIEVE_ARG(RealBinder::get_singleton(), pyval, "val");
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        variant->godot_plane.normal.x = val;
+        return mp_const_none;
+    });
 
-    /* // Plane linear_interpolate ( Plane b, float t ) */
-    /* BIND_METHOD_2("linear_interpolate", [](mp_obj_t self, mp_obj_t pyb, mp_obj_t pyt) -> mp_obj_t { */
-    /*     Plane b = RETRIEVE_ARG(PlaneBinder::get_singleton(), pyb, "b"); */
-    /*     float t = RETRIEVE_ARG(RealBinder::get_singleton(), pyt, "t"); */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     Plane linear_interpolate = variant->godot_plane.linear_interpolate(b, t); */
-    /*     return PlaneBinder::get_singleton()->build_pyobj(linear_interpolate); */
-    /* }); */
+    BIND_PROPERTY_GETSET("y",
+        [](mp_obj_t self) -> mp_obj_t {
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        const auto y = variant->godot_plane.normal.y;
+        return RealBinder::get_singleton()->build_pyobj(y);
+    },
+        [](mp_obj_t self, mp_obj_t pyval) -> mp_obj_t {
+        const auto val = RETRIEVE_ARG(RealBinder::get_singleton(), pyval, "val");
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        variant->godot_plane.normal.y = val;
+        return mp_const_none;
+    });
 
-    /* // Plane normalized ( ) */
-    /* BIND_METHOD("normalized", [](mp_obj_t self) -> mp_obj_t { */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     Plane vec = variant->godot_plane.normalized(); */
-    /*     return PlaneBinder::get_singleton()->build_pyobj(vec); */
-    /* }); */
+    BIND_PROPERTY_GETSET("z",
+        [](mp_obj_t self) -> mp_obj_t {
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        const auto z = variant->godot_plane.normal.z;
+        return RealBinder::get_singleton()->build_pyobj(z);
+    },
+        [](mp_obj_t self, mp_obj_t pzval) -> mp_obj_t {
+        const auto val = RETRIEVE_ARG(RealBinder::get_singleton(), pzval, "val");
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        variant->godot_plane.normal.z = val;
+        return mp_const_none;
+    });
 
-    /* // Plane reflect ( Plane vec ) */
-    /* BIND_METHOD_1("reflect", [](mp_obj_t self, mp_obj_t pyvec) -> mp_obj_t { */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     Plane vec = RETRIEVE_ARG(PlaneBinder::get_singleton(), pyvec, "vec"); */
-    /*     Plane reflect = variant->godot_plane.reflect(vec); */
-    /*     return PlaneBinder::get_singleton()->build_pyobj(reflect); */
-    /* }); */
+    BIND_PROPERTY_GETSET("normal",
+        [](mp_obj_t self) -> mp_obj_t {
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        const auto normal = variant->godot_plane.normal;
+        return Vector3Binder::get_singleton()->build_pyobj(normal);
+    },
+        [](mp_obj_t self, mp_obj_t pdval) -> mp_obj_t {
+        const auto val = RETRIEVE_ARG(Vector3Binder::get_singleton(), pdval, "val");
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        variant->godot_plane.normal = val;
+        return mp_const_none;
+    });
 
-    /* // Plane rotated ( float phi ) */
-    /* BIND_METHOD_1("rotated", [](mp_obj_t self, mp_obj_t pyphi) -> mp_obj_t { */
-    /*     float phi = RETRIEVE_ARG(RealBinder::get_singleton(), pyphi, "phi"); */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     Plane rotated = variant->godot_plane.rotated(phi); */
-    /*     return PlaneBinder::get_singleton()->build_pyobj(rotated); */
-    /* }); */
-
-    /* // Plane slide ( Plane vec ) */
-    /* BIND_METHOD_1("slide", [](mp_obj_t self, mp_obj_t pyvec) -> mp_obj_t { */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     Plane vec = RETRIEVE_ARG(PlaneBinder::get_singleton(), pyvec, "vec"); */
-    /*     Plane slide = variant->godot_plane.slide(vec); */
-    /*     return PlaneBinder::get_singleton()->build_pyobj(slide); */
-    /* }); */
-
-    /* // Plane snapped ( Plane by ) */
-    /* BIND_METHOD_1("snapped", [](mp_obj_t self, mp_obj_t pyby) -> mp_obj_t { */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     Plane by = RETRIEVE_ARG(PlaneBinder::get_singleton(), pyby, "by"); */
-    /*     Plane snapped = variant->godot_plane.snapped(by); */
-    /*     return PlaneBinder::get_singleton()->build_pyobj(snapped); */
-    /* }); */
-
-    /* // Plane tangent ( ) */
-    /* BIND_METHOD("tangent", [](mp_obj_t self) -> mp_obj_t { */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     Plane vec = variant->godot_plane.tangent(); */
-    /*     return PlaneBinder::get_singleton()->build_pyobj(vec); */
-    /* }); */
-
-    /* BIND_PROPERTY_GETSET("x", */
-    /*     [](mp_obj_t self) -> mp_obj_t { */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     const float x = variant->godot_plane.x; */
-    /*     return RealBinder::get_singleton()->build_pyobj(x); */
-    /* }, */
-    /*     [](mp_obj_t self, mp_obj_t pyval) -> mp_obj_t { */
-    /*     const float val = RETRIEVE_ARG(RealBinder::get_singleton(), pyval, "val"); */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     variant->godot_plane.x = val; */
-    /*     return mp_const_none; */
-    /* }); */
-    /* BIND_PROPERTY_GETSET("y", [](mp_obj_t self) -> mp_obj_t { */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     const float y = variant->godot_plane.y; */
-    /*     return RealBinder::get_singleton()->build_pyobj(y); */
-    /* }, */
-    /*     [](mp_obj_t self, mp_obj_t pyval) -> mp_obj_t { */
-    /*     const float val = RETRIEVE_ARG(RealBinder::get_singleton(), pyval, "val"); */
-    /*     auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self)); */
-    /*     variant->godot_plane.y = val; */
-    /*     return mp_const_none; */
-    /* }); */
+    BIND_PROPERTY_GETSET("d",
+        [](mp_obj_t self) -> mp_obj_t {
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        const auto d = variant->godot_plane.d;
+        return RealBinder::get_singleton()->build_pyobj(d);
+    },
+        [](mp_obj_t self, mp_obj_t pdval) -> mp_obj_t {
+        const auto val = RETRIEVE_ARG(RealBinder::get_singleton(), pdval, "val");
+        auto variant = static_cast<PlaneBinder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
+        variant->godot_plane.d = val;
+        return mp_const_none;
+    });
 
     return locals_dict;
 }
@@ -207,27 +201,19 @@ static void _print_plane(const mp_print_t *print, mp_obj_t o, mp_print_kind_t ki
 }
 
 
-static mp_obj_t _make_new_plane(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
-    auto obj = m_new_obj_with_finaliser(PlaneBinder::mp_godot_bind_t);
-    obj->base.type = type;
-
-    mp_arg_check_num(n_args, 0, 0, 4, false);
-    if (n_args == 4) {
-      float args[n_args];
-      for (size_t i = 0; i < n_args; ++i) {
-        const auto &n = all_args[i];
-        if (MP_OBJ_IS_INT(n)) {
-          args[i] = static_cast<float>(mp_obj_int_get_checked(n));
-        } else if (mp_obj_is_float(n)) {
-          args[i] = mp_obj_float_get(n);
-        } else {
-          mp_raise_TypeError("arguments must be of type int or float");
-        }
-      }
-      obj->godot_plane = Plane(args[0], args[1], args[2], args[3]);
-    }
-
-    return MP_OBJ_FROM_PTR(obj);
+static mp_obj_t _unary_op_plane(mp_uint_t op, mp_obj_t in) {
+  auto self = static_cast<PlaneBinder::mp_godot_bind_t*>(MP_OBJ_TO_PTR(in));
+  switch (op) {
+    case MP_UNARY_OP_NEGATIVE:
+      return PlaneBinder::get_singleton()->build_pyobj(
+          Plane(-self->godot_plane.normal.x + 0.0,
+                -self->godot_plane.normal.y + 0.0,
+                -self->godot_plane.normal.z + 0.0,
+                -self->godot_plane.d + 0.0));
+    case MP_UNARY_OP_POSITIVE:
+      return MP_OBJ_FROM_PTR(self);
+  }
+  return MP_OBJ_NULL; // op not supported
 }
 
 
@@ -242,17 +228,62 @@ static mp_obj_t _binary_op_plane(mp_uint_t op, mp_obj_t lhs_in, mp_obj_t rhs_in)
 }
 
 
-static mp_obj_t _unary_op_plane(mp_uint_t op, mp_obj_t in) {
-  auto self = static_cast<PlaneBinder::mp_godot_bind_t*>(MP_OBJ_TO_PTR(in));
-  switch (op) {
-    case MP_UNARY_OP_NEGATIVE:
-      return PlaneBinder::get_singleton()->build_pyobj(
-          Plane(-self->godot_plane.normal.x, -self->godot_plane.normal.y,
-                -self->godot_plane.normal.z, -self->godot_plane.d));
-    case MP_UNARY_OP_POSITIVE:
-      return MP_OBJ_FROM_PTR(self);
-  }
-  return MP_OBJ_NULL; // op not supported
+static mp_obj_t _make_new_plane(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
+    auto obj = m_new_obj_with_finaliser(PlaneBinder::mp_godot_bind_t);
+    obj->base.type = type;
+
+    mp_arg_check_num(n_args, 0, 0, 4, false);
+    if (n_args == 4) {
+      float godot_args[4];
+      for (size_t i = 0; i < n_args; ++i) {
+        const auto &n = all_args[i];
+        if (MP_OBJ_IS_INT(n)) {
+          godot_args[i] = static_cast<float>(mp_obj_int_get_checked(n));
+        } else if (mp_obj_is_float(n)) {
+          godot_args[i] = mp_obj_float_get(n);
+        } else {
+          mp_raise_TypeError("arguments must be of type int or float");
+        }
+      }
+      obj->godot_plane = Plane(godot_args[0], godot_args[1], godot_args[2], godot_args[3]);
+    } else if (n_args == 3) {
+      Vector3Binder::mp_godot_bind_t * godot_args[3];
+      for (size_t i = 0; i < n_args; ++i) {
+        const auto &n = all_args[i];
+        if (MP_OBJ_IS_TYPE(n, Vector3Binder::get_singleton()->get_mp_type())) {
+          godot_args[i] = static_cast<Vector3Binder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(n));;
+        } else {
+          mp_raise_TypeError("arguments must be of type Vector3");
+        }
+      }
+      obj->godot_plane = Plane(godot_args[0]->godot_vect3,
+                               godot_args[1]->godot_vect3,
+                               godot_args[2]->godot_vect3);
+    } else if (n_args == 2) {
+      Vector3Binder::mp_godot_bind_t * godot_args0;
+      float godot_args1;
+      if (MP_OBJ_IS_TYPE(all_args[0], Vector3Binder::get_singleton()->get_mp_type())) {
+        godot_args0 = static_cast<Vector3Binder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(all_args[0]));
+      } else {
+        mp_raise_TypeError("argument 0 must be of type Vector3");
+      }
+      if (mp_obj_is_float(all_args[1])) {
+        godot_args1 = mp_obj_float_get(all_args[1]);
+      } else if (MP_OBJ_IS_INT(all_args[1])) {
+        godot_args1 = static_cast<float>(mp_obj_int_get_checked(all_args[1]));
+      } else {
+        mp_raise_TypeError("argument 1 must be of type int or float");
+      }
+      obj->godot_plane = Plane(godot_args0->godot_vect3, godot_args1);
+    } else if (n_args == 0) {
+      obj->godot_plane = Plane();
+    } else {
+      char buff[64];
+      snprintf(buff, sizeof(buff), "Plane constructor expected 0, 2, 3 or 4 arguments but got %zu", n_args);
+      mp_raise_TypeError(buff);
+    }
+
+    return MP_OBJ_FROM_PTR(obj);
 }
 
 

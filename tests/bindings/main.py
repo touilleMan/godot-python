@@ -13,6 +13,7 @@ class Node(Node):
         test_mods = (
             'test_vector2',
             'test_vector3',
+            'test_plane',
             'test_dynamic_bindings',
         )
         # Run tests here
