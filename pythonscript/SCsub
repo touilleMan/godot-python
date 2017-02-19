@@ -1,6 +1,13 @@
 Import('env')
 
-python_lib = File("cpython/libpython3.6dm.a")
+python_backend = ARGUMENTS.get('PYTHONSCRIPT_BACKEND', 'cpython').lower()
+if python_backend not in ('cpython', 'pypy'):
+    raise RuntimeError('PYTHONSCRIPT_BACKEND should be `cpython` (default) or `pypy`')
+
+if python_backend == 'cpython':
+    python_lib = File("cpython/libpython3.6dm.a")
+else:
+    raise RuntimeError("Pythonscript's pypy backend not supported yet :'-(")
 
 module_env = env.Clone()
 module_env.Append(CXXFLAGS='-I ' + Dir('.').path)
@@ -12,6 +19,12 @@ module_env.Append(CXXFLAGS='-std=c++11')
 module_env.Append(CXXFLAGS='-DPYTHON_HOME=L\\"/home/emmanuel/projects/godot-python/pythonscript/cpython/build/lib/python3.6/\\"')
 sources = [
 	"register_types.cpp",
+	"py_language.cpp",
+	"py_editor.cpp",
+	"py_debug.cpp",
+	"py_script.cpp",
+	"py_instance.cpp",
+	"py_loader.cpp"
 ]
 
 if ARGUMENTS.get('PYTHONSCRIPT_SHARED', 'no') == 'yes':

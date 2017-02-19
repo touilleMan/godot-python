@@ -2,8 +2,10 @@
 #define PYTHONSCRIPT_PY_SCRIPT_H
 
 #include <iostream>
+#ifdef BACKEND_MICROPYTHON
 // Microphython
 #include "micropython/micropython.h"
+#endif
 // Godot imports
 #include "core/script_language.h"
 // Pythonscript imports
@@ -44,10 +46,10 @@ private:
         ScriptInstance::RPCMode rpc_mode;
 
     };
-
+#ifdef BACKEND_MICROPYTHON
     mp_obj_t _mpo_exposed_class;
     mp_obj_t _mpo_module;
-
+#endif
     // Ref<PyNativeClass> native;
     Ref<PyScript> base;
     PyScript *_base; //fast pointer access
@@ -69,10 +71,10 @@ protected:
     virtual void _placeholder_erased(PlaceHolderScriptInstance *p_placeholder);
 #endif
 public:
-
+#ifdef BACKEND_MICROPYTHON
     _FORCE_INLINE_ mp_obj_t get_mpo_exposed_class() const { return this->_mpo_exposed_class; }
     _FORCE_INLINE_ mp_obj_t get_mpo_module() const { return this->_mpo_module; }
-
+#endif
 
     bool can_instance() const;
 

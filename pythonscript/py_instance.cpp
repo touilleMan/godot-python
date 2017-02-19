@@ -2,8 +2,10 @@
 #include "py_language.h"
 #include "py_script.h"
 #include "py_instance.h"
+#ifdef BACKEND_MICROPYTHON
 #include "bindings/binder.h"
 #include "bindings/dynamic_binder.h"
+#endif
 
 #if 0
 class ScriptInstance {
@@ -359,7 +361,7 @@ bool PyInstance::has_method(const StringName& p_method) const {
 
 Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p_argcount,Variant::CallError &r_error) {
     DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
-
+#ifdef BACKEND_MICROPYTHON
     qstr method_name = qstr_from_str(String(p_method).utf8().get_data());
     Variant ret;
     auto call_method = [this, method_name, p_args, p_argcount, &ret]() {
@@ -379,6 +381,7 @@ Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p
     };
     MP_WRAP_CALL_EX(call_method, handle_ex);
     return ret;
+#endif
 #if 0
 
     //printf("calling %ls:%i method %ls\n", script->get_path().c_str(), -1, String(p_method).c_str());
@@ -526,6 +529,7 @@ bool PyInstance::init(PyScript *p_script, Object *p_owner) {
     this->_owner = p_owner;
     this->_script = Ref<PyScript>(p_script);
 
+#ifdef BACKEND_MICROPYTHON
     auto init_instance = [this, p_script, p_owner] {
         // Actually create an instance inside Python
         auto type = static_cast<const mp_obj_type_t *>(p_script->get_mpo_exposed_class());
@@ -545,6 +549,7 @@ bool PyInstance::init(PyScript *p_script, Object *p_owner) {
         success = false;
     };
     MP_WRAP_CALL_EX(init_instance, handle_ex);
+#endif
 
     return success;
 }

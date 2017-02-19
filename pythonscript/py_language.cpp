@@ -3,13 +3,16 @@
 #include "core/globals.h"
 #include "core/os/os.h"
 #include "core/os/file_access.h"
+#ifdef BACKEND_MICROPYTHON
 // Microphython
 #include "micropython/micropython.h"
+#endif
 // Pythonscript imports
 #include "py_language.h"
 #include "py_script.h"
+#ifdef BACKEND_MICROPYTHON
 #include "bindings/dynamic_binder.h"
-
+#endif
 
 /************* SCRIPT LANGUAGE **************/
 /************* SCRIPT LANGUAGE **************/
@@ -31,6 +34,7 @@ String PyLanguage::get_name() const {
 
 /* LANGUAGE FUNCTIONS */
 
+#ifdef BACKEND_MICROPYTHON
 mp_obj_t PyLanguage::get_mp_exposed_class_from_module(const qstr qstr_module_name) {
     static mp_obj_t mpo_get_exposed_class_per_module = 0;
     mp_obj_t mpo_exposed_cls = mp_const_none;
@@ -44,7 +48,6 @@ mp_obj_t PyLanguage::get_mp_exposed_class_from_module(const qstr qstr_module_nam
     MP_WRAP_CALL(import_module);
     return mpo_exposed_cls;
 }
-
 
 void _mp_init_sys_path_and_argv(String path) {
     String resource_path = GlobalConfig::get_singleton()->get_resource_path();
@@ -76,6 +79,7 @@ void _mp_init_sys_path_and_argv(String path) {
     // Init sys.argv
     mp_obj_list_init(static_cast<mp_obj_list_t*>(MP_OBJ_TO_PTR(mp_sys_argv)), 0);
 }
+#endif
 
 
 void PyLanguage::init() {
@@ -86,6 +90,7 @@ void PyLanguage::init() {
     GLOBAL_DEF("python_script/heap_size", 128 * 1024 * 1024);
     GLOBAL_DEF("python_script/path", "res://;res://lib");
 
+#ifdef BACKEND_MICROPYTHON
     // MicroPython init
     // Initialized stack limit
     mp_stack_set_limit(globals->get("python_script/stack_size") * (BYTES_PER_WORD / 4));
@@ -121,6 +126,7 @@ void PyLanguage::init() {
     };
     MP_WRAP_CALL_EX(import_module, handle_ex);
     ERR_FAIL_COND(error);
+#endif
 #if 0
     //populate global constants
     int gcc=GlobalConstants::get_global_constant_count();
@@ -181,9 +187,11 @@ Error PyLanguage::execute_file(const String& p_path)  {
 
 void PyLanguage::finish()  {
     DEBUG_TRACE_METHOD();
+#ifdef BACKEND_MICROPYTHON
     mp_deinit();
     free(this->_mp_heap);
     GodotBindingsModule::finish();
+#endif
 }
 
 
@@ -408,7 +416,11 @@ void PyLanguage::get_reserved_words(List<String> *p_words) const  {
 }
 
 #endif // if 0
+#ifdef BACKEND_MICROPYTHON
 PyLanguage::PyLanguage() : _mpo_godot_module(mp_const_none) {
+#else
+PyLanguage::PyLanguage() {
+#endif
     DEBUG_TRACE_METHOD();
     ERR_FAIL_COND(this->singleton);
     this->singleton=this;

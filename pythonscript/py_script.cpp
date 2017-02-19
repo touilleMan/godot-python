@@ -25,11 +25,13 @@ void PyScript::_placeholder_erased(PlaceHolderScriptInstance *p_placeholder) {
 
 
 bool PyScript::can_instance() const {
+#ifdef BACKEND_MICROPYTHON
     DEBUG_TRACE_METHOD_ARGS((this->valid && this->_mpo_exposed_class != mp_const_none ? " true" : " false"));
     // TODO: think about it...
     // Only script file defining an exposed class can be instanciated
     return this->valid && this->_mpo_exposed_class != mp_const_none;
-    // return valid; //script can instance
+#endif
+    return valid; //script can instance
     // return this->valid || (!this->tool && !ScriptServer::is_scripting_enabled());
 }
 
@@ -155,6 +157,7 @@ Error PyScript::reload(bool p_keep_state) {
     if (basedir!="")
         basedir=basedir.get_base_dir();
 
+#ifdef BACKEND_MICROPYTHON
     // Retrieve the module path in python format from the ressource path
     const String mp_module_path = _to_mp_module_path(this->path);
     ERR_FAIL_COND_V(!mp_module_path.length(), ERR_FILE_BAD_PATH);
@@ -181,6 +184,7 @@ Error PyScript::reload(bool p_keep_state) {
 
     // Retrieve module's exposed class or set it to `mp_const_none` if not available
     this->_mpo_exposed_class = PyLanguage::get_singleton()->get_mp_exposed_class_from_module(qstr_module_path);
+#endif
 
     // mp_execute_as_module(this->sources)
     // TODO: load the module and retrieve exposed class here
@@ -809,8 +813,11 @@ void PyScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
 
 }
 
-
+#ifdef BACKEND_MICROPYTHON
 PyScript::PyScript() : tool(false), valid(false), _mpo_exposed_class(mp_const_none), _mpo_module(mp_const_none) {
+#else
+PyScript::PyScript() : tool(false), valid(false) {
+#endif
     DEBUG_TRACE_METHOD();
 
     // _mp_exposed_mp_class = NULL;
