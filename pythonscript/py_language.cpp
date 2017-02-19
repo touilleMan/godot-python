@@ -34,23 +34,11 @@ String PyLanguage::get_name() const {
 
 
 /* LANGUAGE FUNCTIONS */
-
-#ifdef BACKEND_MICROPYTHON
-mp_obj_t PyLanguage::get_mp_exposed_class_from_module(const qstr qstr_module_name) {
-    static mp_obj_t mpo_get_exposed_class_per_module = 0;
-    mp_obj_t mpo_exposed_cls = mp_const_none;
-    const auto import_module = [this, &qstr_module_name, &mpo_exposed_cls]() {
-        if (!mpo_get_exposed_class_per_module) {
-            mpo_get_exposed_class_per_module = mp_load_attr(
-                this->_mpo_godot_module, qstr_from_str("get_exposed_class_per_module"));
-        }
-        mpo_exposed_cls = mp_call_function_1(mpo_get_exposed_class_per_module, MP_OBJ_NEW_QSTR(qstr_module_name));
-    };
-    MP_WRAP_CALL(import_module);
-    return mpo_exposed_cls;
+py::object PyLanguage::get_py_exposed_class_from_module(py::module module) {
+    return this->_py_godot_module.attr("get_exposed_class_per_module")(module);
 }
 
-#endif
+
 void _mp_init_sys_path_and_argv(String path) {
     String resource_path = GlobalConfig::get_singleton()->get_resource_path();
     String data_dir = OS::get_singleton()->get_data_dir();
@@ -72,7 +60,9 @@ void _mp_init_sys_path_and_argv(String path) {
             }
         }
         printf("-> %s\n", curr_path.utf8().get_data());
-        sys.attr("path").attr("append")(curr_path.utf8().get_data());
+        // TODO: should we shadow default modules ?
+        // sys.attr("path").attr("append")(curr_path.utf8().get_data());
+        sys.attr("path").attr("insert")(0, curr_path.utf8().get_data());
     }
     py::object scope = py::module::import("__main__").attr("__dict__");
     py::eval<py::eval_statements>("import sys\n"
@@ -81,6 +71,21 @@ void _mp_init_sys_path_and_argv(String path) {
     // TODO: init sys.argv
 }
 
+
+PYBIND11_PLUGIN(godot_bindings) {
+    py::module m("godot.bindings", "godot classes just for you ;-)");
+
+    py::class_<Object>(m, "Object")
+        .def(py::init<>())
+        .def("get_instance_ID", &Object::get_instance_ID)
+        .def("is_class", &Object::is_class);
+
+    // Expose godot.bindings as a module
+    auto sys = py::module::import("sys");
+    sys.attr("modules")["godot.bindings"] = m;
+
+    return m.ptr();
+}
 
 void PyLanguage::init() {
     DEBUG_TRACE_METHOD();
@@ -98,21 +103,14 @@ void PyLanguage::init() {
 #endif
     try {
         _mp_init_sys_path_and_argv(globals->get("python_script/path"));
-
         // Load Godot module and attach the bindings to it
         this->_py_godot_module = py::module::import("godot");
-    } catch(const py::error_already_set&) {
-        // TODO: print exception ?
+        // TODO: attach the real binding here !
+        pybind11_init();
+    } catch(const py::error_already_set &e) {
+        ERR_PRINT(e.what());
         ERR_FAIL();
     }
-
-    // // Retrieve module's exposed class
-    // this->_mpo_exposed_classes_per_module = mp_load_method(
-    //     mpo_godot_module, qstr_from_str("__exposed_classes_per_module"));
-    // TODO: make the bindings creation lazy ?
-    // mp_obj_dict_t *mod_globals = static_cast<mp_obj_module_t *>(MP_OBJ_TO_PTR(this->_mpo_godot_module))->globals;
-    // auto bindings = GodotBindingsModule::get_singleton();
-    // mp_obj_dict_store(MP_OBJ_FROM_PTR(mod_globals), MP_OBJ_NEW_QSTR(qstr_from_str("bindings")), bindings->get_mp_module());
 
 #if 0
     //populate global constants

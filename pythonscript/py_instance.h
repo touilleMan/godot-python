@@ -17,9 +17,7 @@ private:
 
     Ref<PyScript> _script;
     Object *_owner;
-#ifdef BACKEND_MICROPYTHON
-    mp_obj_t _mpo;
-#endif
+    py::object _py_obj;
 
 public:
 

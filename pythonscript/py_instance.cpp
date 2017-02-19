@@ -361,6 +361,24 @@ bool PyInstance::has_method(const StringName& p_method) const {
 
 Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p_argcount,Variant::CallError &r_error) {
     DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
+    // TODO: precompute p_method lookup for faster access
+    auto attr = String(p_method).utf8().get_data();
+
+    // TODO: argument conversion
+    py::tuple args = py::list();
+    #if 0
+    for (int i = 0; i < p_argcount; ++i) {
+        args.append(*p_args[i]);
+    }
+    #endif
+    try {
+        auto ret = this->_py_obj.attr(attr)(*args);
+    } catch(const py::error_already_set &) {
+        // Godot could try to call some functions even if they don't exist
+        // so don't print any exception here
+        r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
+    }
+    // TODO: return value conversion
 #ifdef BACKEND_MICROPYTHON
     qstr method_name = qstr_from_str(String(p_method).utf8().get_data());
     Variant ret;
@@ -382,6 +400,7 @@ Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p
     MP_WRAP_CALL_EX(call_method, handle_ex);
     return ret;
 #endif
+    return Variant();
 #if 0
 
     //printf("calling %ls:%i method %ls\n", script->get_path().c_str(), -1, String(p_method).c_str());
@@ -529,6 +548,12 @@ bool PyInstance::init(PyScript *p_script, Object *p_owner) {
     this->_owner = p_owner;
     this->_script = Ref<PyScript>(p_script);
 
+    try {
+        this->_py_obj = p_script->get_py_exposed_class()();
+    } catch(const py::error_already_set &e) {
+        ERR_PRINT(e.what());
+        ERR_FAIL_V(false);
+    }
 #ifdef BACKEND_MICROPYTHON
     auto init_instance = [this, p_script, p_owner] {
         // Actually create an instance inside Python

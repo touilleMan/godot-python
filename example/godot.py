@@ -29,8 +29,11 @@ def export(type, default=None):
     return ExportedField(type, default)
 
 
-def get_exposed_class_per_module(module_name):
-    return __exposed_classes_per_module[module_name]
+def get_exposed_class_per_module(module):
+    if not isinstance(module, str):
+        module = module.__name__
+    print('RESOLVED', module, __exposed_classes_per_module[module])
+    return __exposed_classes_per_module[module]
 
 
 class Node:

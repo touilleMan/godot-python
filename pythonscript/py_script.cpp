@@ -1,6 +1,7 @@
 // Godot imports
 #include "core/os/file_access.h"
 // Pythonscript imports
+#include "pythonscript.h"
 #include "py_script.h"
 #include "py_instance.h"
 
@@ -26,10 +27,10 @@ void PyScript::_placeholder_erased(PlaceHolderScriptInstance *p_placeholder) {
 
 bool PyScript::can_instance() const {
 #ifdef BACKEND_MICROPYTHON
-    DEBUG_TRACE_METHOD_ARGS((this->valid && this->_mpo_exposed_class != mp_const_none ? " true" : " false"));
+    DEBUG_TRACE_METHOD_ARGS((this->valid && this->_py_exposed_class ? " true" : " false"));
     // TODO: think about it...
     // Only script file defining an exposed class can be instanciated
-    return this->valid && this->_mpo_exposed_class != mp_const_none;
+    return this->valid && this->_py_exposed_class;
 #endif
     return valid; //script can instance
     // return this->valid || (!this->tool && !ScriptServer::is_scripting_enabled());
@@ -137,7 +138,7 @@ void PyScript::set_source_code(const String& p_code) {
 }
 
 
-static const String _to_mp_module_path(const String &p_path) {
+static const String _resource_to_py_module_path(const String &p_path) {
     ERR_EXPLAIN("Bad python script path, must starts by `res://` and ends with `.py`");
     ERR_FAIL_COND_V(!p_path.begins_with("res://") || !p_path.ends_with(".py"), String());
     return p_path.substr(6, p_path.length() - 6 - 3).replace("/", ".");
@@ -157,10 +158,21 @@ Error PyScript::reload(bool p_keep_state) {
     if (basedir!="")
         basedir=basedir.get_base_dir();
 
+    // Retrieve the module path in python format from the resource path
+    const String module_path = _resource_to_py_module_path(this->path);
+    ERR_FAIL_COND_V(!module_path.length(), ERR_FILE_BAD_PATH);
+
+    try {
+        this->_py_module = py::module::import(module_path.utf8().get_data());
+        py::print("====>", this->_py_module, this->_py_module.attr("__name__"));
+        this->_py_exposed_class = PyLanguage::get_singleton()->get_py_exposed_class_from_module(this->_py_module);
+    } catch(const py::error_already_set &e) {
+        ERR_PRINT(e.what());
+        ERR_FAIL_V(ERR_COMPILATION_FAILED);
+    }
+    this->valid = true;
+
 #ifdef BACKEND_MICROPYTHON
-    // Retrieve the module path in python format from the ressource path
-    const String mp_module_path = _to_mp_module_path(this->path);
-    ERR_FAIL_COND_V(!mp_module_path.length(), ERR_FILE_BAD_PATH);
 
     // Load the module into micropython
     // TODO: mp_execute_expr should return error with traceback ?
@@ -171,8 +183,8 @@ Error PyScript::reload(bool p_keep_state) {
     qstr qstr_module_path = qstr_from_str(mp_module_path.ascii().get_data());
     auto import_module = [this, &qstr_module_path]() {
         // TODO handle deep path for module (e.g. `import foo.bar`)
-        this->_mpo_module = mp_import_name(qstr_module_path, mp_const_none, MP_OBJ_NEW_SMALL_INT(0));
-        mp_store_global(qstr_module_path, this->_mpo_module);
+        this->_py_module = mp_import_name(qstr_module_path, mp_const_none, MP_OBJ_NEW_SMALL_INT(0));
+        mp_store_global(qstr_module_path, this->_py_module);
         this->valid = true;
     };
     auto handle_ex = [&error](mp_obj_t ex) {
@@ -183,7 +195,7 @@ Error PyScript::reload(bool p_keep_state) {
     ERR_FAIL_COND_V(error, ERR_COMPILATION_FAILED);
 
     // Retrieve module's exposed class or set it to `mp_const_none` if not available
-    this->_mpo_exposed_class = PyLanguage::get_singleton()->get_mp_exposed_class_from_module(qstr_module_path);
+    this->_py_exposed_class = PyLanguage::get_singleton()->get_py_exposed_class_from_module(qstr_module_path);
 #endif
 
     // mp_execute_as_module(this->sources)
@@ -814,7 +826,7 @@ void PyScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
 }
 
 #ifdef BACKEND_MICROPYTHON
-PyScript::PyScript() : tool(false), valid(false), _mpo_exposed_class(mp_const_none), _mpo_module(mp_const_none) {
+PyScript::PyScript() : tool(false), valid(false), _py_exposed_class(mp_const_none), _py_module(mp_const_none) {
 #else
 PyScript::PyScript() : tool(false), valid(false) {
 #endif
