@@ -36,7 +36,7 @@ def _comment_entry(item, entry):
         return '// No %s to bind' % entry
 
 
-def parse_item(item):
+def generate_class(item):
     output = []
     clsname = item['name']
     if item['base_class']:
@@ -70,7 +70,7 @@ def parse_item(item):
 
 def main(infd, outfd):
     api = json.load(infd)
-    outfd.write(HEADER + '\n\n'.join([parse_item(x) for x in api]) + FOOTER)
+    outfd.write(HEADER + '\n\n'.join([generate_class(x) for x in api]) + FOOTER)
 
 
 if __name__ == '__main__':

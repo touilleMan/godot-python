@@ -2,7 +2,8 @@
 #include "py_language.h"
 #include "py_script.h"
 #include "py_instance.h"
-#ifdef BACKEND_MICROPYTHON
+#include "bindings.h"
+#if 0
 #include "bindings/binder.h"
 #include "bindings/dynamic_binder.h"
 #endif
@@ -368,38 +369,23 @@ Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p
     py::tuple args = py::list();
     #if 0
     for (int i = 0; i < p_argcount; ++i) {
-        args.append(*p_args[i]);
+        args.append(bindings->variant_to_pyobj(*p_args[i]));
     }
     #endif
     try {
-        auto ret = this->_py_obj.attr(attr)(*args);
+        auto pyobj_ret = this->_py_obj.attr(attr)(*args);
     } catch(const py::error_already_set &) {
+        // TODO: need to handle other errors:
+        // - CALL_ERROR_INVALID_ARGUMENT
+        // - CALL_ERROR_TOO_MANY_ARGUMENTS
+        // - CALL_ERROR_TOO_FEW_ARGUMENTS
+        // - CALL_ERROR_INSTANCE_IS_NULL
         // Godot could try to call some functions even if they don't exist
         // so don't print any exception here
         r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
     }
     // TODO: return value conversion
-#ifdef BACKEND_MICROPYTHON
-    qstr method_name = qstr_from_str(String(p_method).utf8().get_data());
-    Variant ret;
-    auto call_method = [this, method_name, p_args, p_argcount, &ret]() {
-        mp_obj_t method_obj = mp_load_attr(this->_mpo, method_name);
-        mp_obj_t args[p_argcount];
-        auto bindings = GodotBindingsModule::get_singleton();
-        for (int i = 0; i < p_argcount; ++i) {
-            args[i] = bindings->variant_to_pyobj(*p_args[i]);
-        }
-        mp_obj_t pyobj_ret = mp_call_function_n_kw(method_obj, p_argcount, 0, args);
-        ret = bindings->pyobj_to_variant(pyobj_ret);
-    };
-    auto handle_ex = [&r_error](mp_obj_t ex) {
-        // Godot could try to call some functions even if they don't exist
-        // so don't print any exception here
-        r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
-    };
-    MP_WRAP_CALL_EX(call_method, handle_ex);
-    return ret;
-#endif
+    // return bindings->pyobj_to_variant(pyobj_ret);
     return Variant();
 #if 0
 
@@ -550,6 +536,11 @@ bool PyInstance::init(PyScript *p_script, Object *p_owner) {
 
     try {
         this->_py_obj = p_script->get_py_exposed_class()();
+        // Script is not a "real" instance of the class is expend, instead it
+        // takes controle of the owner
+        py::print(this->_py_obj, this->_py_obj.attr("__set_godot_obj"));
+        this->_py_obj.attr("__set_godot_obj")(bindings::GodotObject(p_owner));
+        // this->_py_obj.attr("__set_godot_obj")(py::cast(p_owner));
     } catch(const py::error_already_set &e) {
         ERR_PRINT(e.what());
         ERR_FAIL_V(false);

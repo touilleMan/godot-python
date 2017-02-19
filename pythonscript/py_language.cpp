@@ -3,17 +3,12 @@
 #include "core/globals.h"
 #include "core/os/os.h"
 #include "core/os/file_access.h"
-#ifdef BACKEND_MICROPYTHON
-// Microphython
-#include "micropython/micropython.h"
-#endif
 // Pythonscript imports
 #include "pythonscript.h"
 #include "py_language.h"
 #include "py_script.h"
-#ifdef BACKEND_MICROPYTHON
-#include "bindings/dynamic_binder.h"
-#endif
+// #include "bindings/dynamic_binder.h"
+
 
 /************* SCRIPT LANGUAGE **************/
 /************* SCRIPT LANGUAGE **************/
@@ -71,7 +66,7 @@ void _mp_init_sys_path_and_argv(String path) {
     // TODO: init sys.argv
 }
 
-
+#if 0
 PYBIND11_PLUGIN(godot_bindings) {
     py::module m("godot.bindings", "godot classes just for you ;-)");
 
@@ -86,6 +81,9 @@ PYBIND11_PLUGIN(godot_bindings) {
 
     return m.ptr();
 }
+#else
+#include "bindings.h"
+#endif
 
 void PyLanguage::init() {
     DEBUG_TRACE_METHOD();
@@ -106,11 +104,15 @@ void PyLanguage::init() {
         // Load Godot module and attach the bindings to it
         this->_py_godot_module = py::module::import("godot");
         // TODO: attach the real binding here !
-        pybind11_init();
+        // pybind11_init();
+        bindings::init();
+    py::object scope = py::module::import("__main__").attr("__dict__");
     } catch(const py::error_already_set &e) {
         ERR_PRINT(e.what());
         ERR_FAIL();
     }
+
+    // init_bindings();
 
 #if 0
     //populate global constants

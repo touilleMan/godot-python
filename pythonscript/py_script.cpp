@@ -26,13 +26,11 @@ void PyScript::_placeholder_erased(PlaceHolderScriptInstance *p_placeholder) {
 
 
 bool PyScript::can_instance() const {
-#ifdef BACKEND_MICROPYTHON
     DEBUG_TRACE_METHOD_ARGS((this->valid && this->_py_exposed_class ? " true" : " false"));
     // TODO: think about it...
     // Only script file defining an exposed class can be instanciated
     return this->valid && this->_py_exposed_class;
-#endif
-    return valid; //script can instance
+    // return valid; //script can instance
     // return this->valid || (!this->tool && !ScriptServer::is_scripting_enabled());
 }
 
@@ -164,39 +162,12 @@ Error PyScript::reload(bool p_keep_state) {
 
     try {
         this->_py_module = py::module::import(module_path.utf8().get_data());
-        py::print("====>", this->_py_module, this->_py_module.attr("__name__"));
         this->_py_exposed_class = PyLanguage::get_singleton()->get_py_exposed_class_from_module(this->_py_module);
     } catch(const py::error_already_set &e) {
         ERR_PRINT(e.what());
         ERR_FAIL_V(ERR_COMPILATION_FAILED);
     }
     this->valid = true;
-
-#ifdef BACKEND_MICROPYTHON
-
-    // Load the module into micropython
-    // TODO: mp_execute_expr should return error with traceback ?
-    // const mp_obj_t ret = mp_execute_expr((String("import ") + mp_module_path).ascii().get_data());
-    // ERR_FAIL_COND_V(ret != mp_const_none, ERR_FILE_UNRECOGNIZED);
-
-    mp_obj_t error = 0;
-    qstr qstr_module_path = qstr_from_str(mp_module_path.ascii().get_data());
-    auto import_module = [this, &qstr_module_path]() {
-        // TODO handle deep path for module (e.g. `import foo.bar`)
-        this->_py_module = mp_import_name(qstr_module_path, mp_const_none, MP_OBJ_NEW_SMALL_INT(0));
-        mp_store_global(qstr_module_path, this->_py_module);
-        this->valid = true;
-    };
-    auto handle_ex = [&error](mp_obj_t ex) {
-        mp_obj_print_exception(&mp_plat_print, ex);
-        error = ex;
-    };
-    MP_WRAP_CALL_EX(import_module, handle_ex);
-    ERR_FAIL_COND_V(error, ERR_COMPILATION_FAILED);
-
-    // Retrieve module's exposed class or set it to `mp_const_none` if not available
-    this->_py_exposed_class = PyLanguage::get_singleton()->get_py_exposed_class_from_module(qstr_module_path);
-#endif
 
     // mp_execute_as_module(this->sources)
     // TODO: load the module and retrieve exposed class here
@@ -825,11 +796,7 @@ void PyScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
 
 }
 
-#ifdef BACKEND_MICROPYTHON
-PyScript::PyScript() : tool(false), valid(false), _py_exposed_class(mp_const_none), _py_module(mp_const_none) {
-#else
 PyScript::PyScript() : tool(false), valid(false) {
-#endif
     DEBUG_TRACE_METHOD();
 
     // _mp_exposed_mp_class = NULL;

@@ -18,6 +18,7 @@ module_env.Append(CXXFLAGS='-std=c++11')
 #module_env.Append(CXXFLAGS='-DPYTHON_HOME=L\\"%s\\"' % Dir('cpython/Lib').path)
 module_env.Append(CXXFLAGS='-DPYTHON_HOME=L\\"/home/emmanuel/projects/godot-python/pythonscript/cpython/build/lib/python3.6/\\"')
 sources = [
+	"bindings.cpp",
 	"register_types.cpp",
 	"py_language.cpp",
 	"py_editor.cpp",
