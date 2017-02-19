@@ -1,6 +1,7 @@
 #ifndef PYTHONSCRIPT_PY_LANGUAGE_H
 #define PYTHONSCRIPT_PY_LANGUAGE_H
 
+#include "pythonscript.h"
 #ifdef BACKEND_MICROPYTHON
 // Microphython
 #include "micropython/micropython.h"
@@ -23,9 +24,7 @@ class PyLanguage : public ScriptLanguage {
     Mutex *lock;
     static PyLanguage *singleton;
     SelfList<PyScript>::List script_list;
-#ifdef BACKEND_MICROPYTHON
-    mp_obj_t _mpo_godot_module;
-#endif
+    py::module _py_godot_module;
     char *_mp_heap;
 
 public:

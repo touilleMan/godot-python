@@ -8,6 +8,7 @@
 #include "micropython/micropython.h"
 #endif
 // Pythonscript imports
+#include "pythonscript.h"
 #include "py_language.h"
 #include "py_script.h"
 #ifdef BACKEND_MICROPYTHON
@@ -49,84 +50,70 @@ mp_obj_t PyLanguage::get_mp_exposed_class_from_module(const qstr qstr_module_nam
     return mpo_exposed_cls;
 }
 
+#endif
 void _mp_init_sys_path_and_argv(String path) {
     String resource_path = GlobalConfig::get_singleton()->get_resource_path();
     String data_dir = OS::get_singleton()->get_data_dir();
-    printf("MITROPYTHON_PATH %s\n", path.utf8().get_data());
+    printf("PYTHON_PATH %s\n", path.utf8().get_data());
 
     // Init sys.path list
+    auto sys = py::module::import("sys");
     auto pathes = path.split(";");
-    mp_uint_t path_num = pathes.size() + 1; // [0] is for current dir (or base dir of the script)
-    mp_obj_t *path_items;
-    mp_obj_list_init(static_cast<mp_obj_list_t*>(MP_OBJ_TO_PTR(mp_sys_path)), path_num);
-    mp_obj_list_get(mp_sys_path, &path_num, &path_items);
-    path_items[0] = MP_OBJ_NEW_QSTR(MP_QSTR_);
     for (int i=0; i < pathes.size(); ++i) {
         auto curr_path = pathes[i];
         if (curr_path.begins_with("res://")) {
+            // Keep on slash to make the path
             curr_path = curr_path.replace("res:/", resource_path);
         }
         else if (curr_path.begins_with("user://")) {
             if (data_dir != "") {
+                // Keep on slash to make the path
                 curr_path = curr_path.replace("user:/", data_dir);
-            };
-            curr_path = curr_path.replace("user://", "");
+            }
         }
         printf("-> %s\n", curr_path.utf8().get_data());
-        path_items[i+1] = mp_obj_new_str(curr_path.utf8().get_data(), curr_path.length(), false);
+        sys.attr("path").attr("append")(curr_path.utf8().get_data());
     }
+    py::object scope = py::module::import("__main__").attr("__dict__");
+    py::eval<py::eval_statements>("import sys\n"
+                                  "print('PYTHON_PATH:', sys.path)\n", scope);
 
-    // Init sys.argv
-    mp_obj_list_init(static_cast<mp_obj_list_t*>(MP_OBJ_TO_PTR(mp_sys_argv)), 0);
+    // TODO: init sys.argv
 }
-#endif
 
 
 void PyLanguage::init() {
     DEBUG_TRACE_METHOD();
     // Register configuration
     auto globals = GlobalConfig::get_singleton();
-    GLOBAL_DEF("python_script/stack_size", 40 * 1024);
-    GLOBAL_DEF("python_script/heap_size", 128 * 1024 * 1024);
     GLOBAL_DEF("python_script/path", "res://;res://lib");
 
-#ifdef BACKEND_MICROPYTHON
-    // MicroPython init
-    // Initialized stack limit
-    mp_stack_set_limit(globals->get("python_script/stack_size") * (BYTES_PER_WORD / 4));
-    // Initialize heap
-    int heap_size = globals->get("python_script/heap_size");
-    this->_mp_heap = static_cast<char*>(malloc(heap_size));
-    gc_init(this->_mp_heap, this->_mp_heap + heap_size);
-    // Disable automatic garbage collection
-    MP_STATE_MEM(gc_auto_collect_enabled) = 0;
-    // Initialize interpreter
-    mp_init();
-    _mp_init_sys_path_and_argv(globals->get("python_script/path"));
-    // Build the bindings module and store into as part of the main godot module
-    init_bindings();
-    // Load godot python module and connect it to PyLanguage
-    mp_obj_t error = 0;
-    auto import_module = [this]() {
-        // Load the module into micropython
-        qstr qstr_module_path = qstr_from_str("godot");
-        this->_mpo_godot_module = mp_import_name(qstr_module_path, mp_const_none, MP_OBJ_NEW_SMALL_INT(0));
-        mp_store_global(qstr_module_path, this->_mpo_godot_module);
-        // // Retrieve module's exposed class
-        // this->_mpo_exposed_classes_per_module = mp_load_method(
-        //     mpo_godot_module, qstr_from_str("__exposed_classes_per_module"));
-        // TODO: make the bindings creation lazy ?
-        mp_obj_dict_t *mod_globals = static_cast<mp_obj_module_t *>(MP_OBJ_TO_PTR(this->_mpo_godot_module))->globals;
-        auto bindings = GodotBindingsModule::get_singleton();
-        mp_obj_dict_store(MP_OBJ_FROM_PTR(mod_globals), MP_OBJ_NEW_QSTR(qstr_from_str("bindings")), bindings->get_mp_module());
-    };
-    auto handle_ex = [&error](mp_obj_t ex) {
-        mp_obj_print_exception(&mp_plat_print, ex);
-        error = ex;
-    };
-    MP_WRAP_CALL_EX(import_module, handle_ex);
-    ERR_FAIL_COND(error);
+#ifdef BACKEND_CPYTHON
+    Py_SetProgramName(L"godot");  /* optional but recommended */
+    // TODO: think where to keep python standard lib ?
+    // Py_SetPythonHome(globals->get("python_script/home"));
+    Py_Initialize();
+#else
+    // TODO: pypy
 #endif
+    try {
+        _mp_init_sys_path_and_argv(globals->get("python_script/path"));
+
+        // Load Godot module and attach the bindings to it
+        this->_py_godot_module = py::module::import("godot");
+    } catch(const py::error_already_set&) {
+        // TODO: print exception ?
+        ERR_FAIL();
+    }
+
+    // // Retrieve module's exposed class
+    // this->_mpo_exposed_classes_per_module = mp_load_method(
+    //     mpo_godot_module, qstr_from_str("__exposed_classes_per_module"));
+    // TODO: make the bindings creation lazy ?
+    // mp_obj_dict_t *mod_globals = static_cast<mp_obj_module_t *>(MP_OBJ_TO_PTR(this->_mpo_godot_module))->globals;
+    // auto bindings = GodotBindingsModule::get_singleton();
+    // mp_obj_dict_store(MP_OBJ_FROM_PTR(mod_globals), MP_OBJ_NEW_QSTR(qstr_from_str("bindings")), bindings->get_mp_module());
+
 #if 0
     //populate global constants
     int gcc=GlobalConstants::get_global_constant_count();
@@ -187,11 +174,12 @@ Error PyLanguage::execute_file(const String& p_path)  {
 
 void PyLanguage::finish()  {
     DEBUG_TRACE_METHOD();
-#ifdef BACKEND_MICROPYTHON
-    mp_deinit();
-    free(this->_mp_heap);
-    GodotBindingsModule::finish();
+#ifdef BACKEND_CPYTHON
+    Py_FinalizeEx();
+#else
+    // TODO: pypy
 #endif
+    // GodotBindingsModule::finish();
 }
 
 
@@ -416,11 +404,7 @@ void PyLanguage::get_reserved_words(List<String> *p_words) const  {
 }
 
 #endif // if 0
-#ifdef BACKEND_MICROPYTHON
-PyLanguage::PyLanguage() : _mpo_godot_module(mp_const_none) {
-#else
 PyLanguage::PyLanguage() {
-#endif
     DEBUG_TRACE_METHOD();
     ERR_FAIL_COND(this->singleton);
     this->singleton=this;
