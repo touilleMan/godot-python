@@ -9,6 +9,10 @@ HEADER = \
 /**********************************************************/
 
 
+#include "pythonscript.h"
+#include "bindings/bindings.gen.h"
+
+
 PYBIND11_PLUGIN(godot_bindings) {
     py::module m("godot.bindings", "Godot classes just for you ;-)");
 
