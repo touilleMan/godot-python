@@ -1,3 +1,6 @@
-[submodule "pythonscript/micropython/micropython"]
-	path = pythonscript/micropython/micropython
-	url = https://github.com/micropython/micropython.git
+[submodule "pythonscript/cpython"]
+	path = pythonscript/cpython
+	url = git@github.com:python/cpython.git
+[submodule "pythonscript/pybind11"]
+	path = pythonscript/pybind11
+	url = git@github.com:pybind/pybind11.git

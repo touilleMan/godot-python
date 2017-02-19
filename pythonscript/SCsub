@@ -1,40 +1,30 @@
 Import('env')
 
-micropython_lib = File("micropython/libmicropython.a")
+python_lib = File("cpython/libpython3.6dm.a")
 
 module_env = env.Clone()
 module_env.Append(CXXFLAGS='-I ' + Dir('.').path)
-module_env.Append(CXXFLAGS='-I ' + Dir('micropython').path)
-module_env.Append(CXXFLAGS='-I ' + Dir('micropython/micropython').path)
-module_env.Append(CXXFLAGS='-I ' + Dir('micropython/build').path)
+module_env.Append(CXXFLAGS='-I ' + Dir('cpython/').path)
+module_env.Append(CXXFLAGS='-I ' + Dir('cpython/Include').path)
+module_env.Append(CXXFLAGS='-I ' + Dir('pybind11/include/').path)
 module_env.Append(CXXFLAGS='-std=c++11')
-
+#module_env.Append(CXXFLAGS='-DPYTHON_HOME=L\\"%s\\"' % Dir('cpython/Lib').path)
+module_env.Append(CXXFLAGS='-DPYTHON_HOME=L\\"/home/emmanuel/projects/godot-python/pythonscript/cpython/build/lib/python3.6/\\"')
 sources = [
-	"bindings/binder.cpp",
-	"bindings/tools.cpp",
-	"bindings/dynamic_binder.cpp",
-	"bindings/builtins_binder/vector2.cpp",
-	"bindings/builtins_binder/vector3.cpp",
 	"register_types.cpp",
-	"py_language.cpp",
-	"py_editor.cpp",
-	"py_debug.cpp",
-	"py_script.cpp",
-	"py_instance.cpp",
-	"py_loader.cpp"
 ]
 
 if ARGUMENTS.get('PYTHONSCRIPT_SHARED', 'no') == 'yes':
 	shared_module_env = module_env.Clone()
-	shared_module_env['LIBS'] = []
+	shared_module_env['LIBS'] = [python_lib]
 	shared_module_env.Append(CXXFLAGS='-fPIC')
 	shared_lib = shared_module_env.SharedLibrary(target='#bin/pythonscript', source=sources)
 	# Scons needs the name of the lib with custom suffix (e.g. ".x11.tools.64")
 	# but without the final ".so"
 	shared_lib_shim = shared_lib[0].name.rsplit('.', 1)[0]
-	env.Append(LIBS=[shared_lib_shim, micropython_lib])
+	env.Append(LIBS=[shared_lib_shim, 'util'])
 	env.Append(LIBPATH=['#bin'])
 else:
-	env.Append(LIBS=micropython_lib)
+	env.Append(LIBS=[python_lib, 'util'])
 	for src in sources:
 		module_env.add_source_files(env.modules_sources, src)
