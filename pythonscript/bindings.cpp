@@ -88,10 +88,8 @@ PYBIND11_PLUGIN(godot_bindings) {
         // float   length_squared ( )
         .def("length_squared", &Vector2::length_squared)
         // Vector2 linear_interpolate ( Vector2 b, float t )
-        // TODO: fixme, doesn't compile
-        // .def("linear_interpolate", static_cast<Vector2 (*)(const Vector2&,real_t)>(&Vector2::linear_interpolate))
-        // .def("linear_interpolate", &Vector2::linear_interpolate, py::args(const Vector2&), py::arg(real_t))
-        // .def("linear_interpolate", &Vector2::linear_interpolate)
+        // Cannot directly bind to Vector2::linear_interpolate because there is two definitions of it
+        .def("linear_interpolate", [](const Vector2 &a, const Vector2 &b, real_t t) -> Vector2 { return a.linear_interpolate(b, t); })
         // Vector2 normalized ( )
         .def("normalized", &Vector2::normalized)
         // Vector2 reflect ( Vector2 vec )
