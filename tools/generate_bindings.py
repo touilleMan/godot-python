@@ -235,7 +235,7 @@ def generate_binding_class(clsapi):
 
     output.append(_comment_entry(clsapi, 'properties'))
     for prop in clsapi['properties']:
-        output.append('.def_property("{name}", &{clsname}::{getter}, &{clsname}::{setter})'.format(clsname=clsname, **prop))
+        output.append('.def_property("{name}", &{clsname}::__prop__{getter}, &{clsname}::__prop__{setter})'.format(clsname=clsname, **prop))
 
     output.append(';')
     # TODO: bind signals
