@@ -23929,12 +23929,6 @@
 				]
 			},
 			{
-				"name": "get_minimum_size",
-				"return_type": "Vector2",
-				"arguments": [
-				]
-			},
-			{
 				"name": "get_drag_data",
 				"return_type": "Object",
 				"arguments": [
@@ -55878,6 +55872,21 @@
 				]
 			}
 		]
+	},
+	{
+		"name": "EditorExportPlatform",
+		"base_class": "Reference",
+		"api_type": "tools",
+		"singleton": false,
+		"instanciable": true,
+		"constants": {
+		},
+		"properties": [
+		],
+		"signals": [
+		],
+		"methods": [
+		]		
 	},
 	{
 		"name": "EditorExportPlugin",

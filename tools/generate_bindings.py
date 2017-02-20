@@ -1,5 +1,6 @@
 import argparse
 import json
+import re
 
 
 def make_comment_box(msg):
@@ -17,25 +18,24 @@ BASE_TYPES = NO_PTR_TYPES # TODO: remove me
 ATOMIC_TYPES = ('String', 'Vector2', 'Rect2', 'Vector3', 'Plane', 'Rect3',
     'Quat', 'Basis', 'Transform2D', 'Transform', 'Color', 'Image', 'NodePath',
     'RefPtr', 'RID', 'InputEvent', 'Dictionary')
+# When an argument name is clashing with C++, put it here to get it escaped
+RESERVED_NAMES = ('class', 'short', 'long', 'default', 'template', 'char', 'export')
 
 
-def arg_ref(argapi):
-    if argapi['type'] in BASE_TYPES:
-        return argapi['name']
-    else:
-        return '&' + argapi['name']
+def cooked_varname(varname):
+    return varname if varname not in RESERVED_NAMES else varname + '_'
 
 
 def conv_type(gdtp):
-    if gdtp in ATOMIC_TYPES:
-        return '::%s*' % gdtp
+    if gdtp in ATOMIC_TYPES or gdtp == 'Error':
+        return '::%s' % gdtp
     return gdtp + ('' if gdtp in NO_PTR_TYPES else '*')
 
 
 def conv_to_variant(arg):
-    if arg['type'] not in NO_PTR_TYPES and arg['type'] in ATOMIC_TYPES:
-        return 'Variant(*%s)' % arg['name']
-    return 'Variant(%s)' % arg['name']
+    if arg['type'] not in NO_PTR_TYPES and arg['type'] not in ATOMIC_TYPES:
+        return 'Variant(%s)' % cooked_varname(arg['name'])
+    return 'Variant(%s)' % cooked_varname(arg['name'])
 
 
 def ret_from_variant(rettype, retname):
@@ -43,10 +43,12 @@ def ret_from_variant(rettype, retname):
         return 'return;'
     if rettype == 'float':
         return 'return static_cast<real_t>(%s);' % (retname)
+    if rettype == 'Error':
+        return 'return static_cast<Error>(%s.operator int());' % retname
     if rettype in NO_PTR_TYPES:
         return 'return %s;' % retname
     if rettype in ATOMIC_TYPES:
-        return 'return new ::%s(%s);' % (rettype, retname)
+        return 'return %s.operator ::%s();' % (retname, rettype)
     return 'return new %s(%s);' % (rettype, retname)
 
 
@@ -71,23 +73,73 @@ FOOTER = \
 """
 
 
-def generate_forward_declarations(api):
-    output = [make_comment_box('Forward declarations'), '']
+def generate_forward_classes_def(api):
+    output = []
     for clsapi in api:
-        output.append('struct {name};'.format(**clsapi))
+        output.append('struct %s;' % clsapi['name'])
     output.append('')
     return '\n'.join(output) + '\n'
 
 
-def generate_wrapper_classes(api):
-    output = [make_comment_box('Wrapper classes'), '']
+def generate_classes_def(api):
+    output = [make_comment_box('Classes declarations'), '']
+    defs = []
     for clsapi in api:
-        output.append(generate_wrapper_class(clsapi))
+        defs.append((clsapi['name'], clsapi['base_class'], generate_class_def(clsapi)))
+
+    def _get_children(parent=''):
+        return [c for c in defs if c[1] == parent]
+
+    # Reorder the definitions according to inheritance
+    parents = _get_children()
+    while parents:
+        output += [v for _, _, v in parents]
+        children = []
+        for p in parents:
+            children += _get_children(p[0])
+        parents = children
+
     output.append('')
-    return '\n'.join(output)
+    return '\n'.join(output) + '\n'
 
 
-def generate_wrapper_class(clsapi):
+def _strip_dummy_function_name(funcname):
+    return re.sub(r'[/]', r'_', funcname)
+
+
+def _mk_meth_name(basename):
+    return '__meth__' + _strip_dummy_function_name(basename)
+
+
+def _mk_getter_name(basename):
+    return '__getter__' + _strip_dummy_function_name(basename)
+
+
+def _mk_setter_name(basename):
+    return '__setter__' + _strip_dummy_function_name(basename)
+
+
+def _mk_function_signature(methodapi, ns=None):
+    # Build function signature
+    args = ', '.join(['%s %s' % (conv_type(a['type']), cooked_varname(a['name'])) for a in methodapi['arguments']])
+    name = _strip_dummy_function_name(methodapi['name'])
+    ret = conv_type(methodapi['return_type'])
+    return '%s %s%s(%s)' % (ret, ns + '::' if ns else '', _mk_meth_name(name), args)
+
+
+def _mk_getter_signature(propapi, ns=None):
+    tp = conv_type(propapi['type'])
+    name = _strip_dummy_function_name(propapi['name'])
+    return '%s %s%s()' % (tp, ns+'::' if ns else '', _mk_getter_name(name))
+
+
+def _mk_setter_signature(propapi, ns=None):
+    tp = conv_type(propapi['type'])
+    name = _strip_dummy_function_name(propapi['name'])
+    return 'void %s%s(%s value)' % (ns+'::' if ns else '', _mk_setter_name(name), tp)
+
+
+def generate_class_def(clsapi):
 
     def _comment_entry(item, entry):
         if item[entry]:
@@ -96,7 +148,6 @@ def generate_wrapper_class(clsapi):
             return '    // No %s to bind' % entry
 
     output = []
-    clsname = clsapi['name']
 
     # TODO: Handle constructor's parameters ?
     if clsapi['base_class']:
@@ -122,10 +173,103 @@ def generate_wrapper_class(clsapi):
         this->godot_variant = ::Variant(this->godot_obj);
     }}
 """.format(**clsapi))
+    output.append('    // Bind methods')
+    for methapi in clsapi['methods']:
+        output.append('    ' + _mk_function_signature(methapi) + ';')
+
+    output.append('    // Bind properties')
+    for propapi in clsapi['properties']:
+        if propapi['getter']:
+            output.append('    ' + _mk_getter_signature(propapi) + ';')
+        if propapi['setter']:
+            output.append('    ' + _mk_setter_signature(propapi) + ';')
 
     # No need to add constants to the wrapper class
 
-    output.append(_comment_entry(clsapi, 'methods'))
+    # TODO: bind signals
+    output.append('\n};\n')
+    return '\n'.join(output)
+
+
+def generate_classes_impl(api):
+    output = [make_comment_box('Classes implementation'), '']
+    for clsapi in api:
+        output.append(generate_class_impl(clsapi))
+    output.append('')
+    return '\n'.join(output)
+
+
+def generate_class_impl(clsapi):
+    output = []
+    clsname = clsapi['name']
+
+    output.append(make_comment_box(clsname))
+    output.append('')
+
+    def _build_method_impl(clsname, methodapi):
+        output = [_mk_function_signature(methapi, ns=clsname) + ' {']
+        args_count = len(methodapi['arguments'])
+        # Generic body
+        output.append('static MethodBind *__mb = ClassDB::get_method("%s", "%s");' % (clsname, methodapi['name']))
+        output.append('Variant::CallError __err;')
+        # Function params conversion
+        if args_count:
+            output.append('const Variant *__args[%s];' % args_count)
+            for i, arg in enumerate(methodapi['arguments']):
+                output.append('__args[%s] = new %s;' % (i, conv_to_variant(arg)))
+        # Actual call
+        output.append('Variant ret = __mb->call(this->godot_obj, %s, %s, __err);' % ('__args' if args_count else 'nullptr', args_count))
+        # params cleaning
+        if args_count:
+            output.append('for (int i = 0; i < %s; ++i) {' % args_count)
+            output.append('    delete __args[i];')
+            output.append('}')
+        # Return value
+        output.append(ret_from_variant(methodapi['return_type'], 'ret'))
+        # TODO: error handling
+        return '\n    '.join(output) + '\n}\n'
+
+    for methapi in clsapi['methods']:
+        output.append(_build_method_impl(clsname, methapi))
+        output.append('')
+
+    def _build_getter_impl(clsname, propapi):
+        if not propapi['getter']:
+            return ''
+        output = [_mk_getter_signature(propapi, ns=clsname) + ' {']
+        output.append('static MethodBind *__mb = ClassDB::get_method("%s", "%s");' % (clsname, propapi['getter']))
+        output.append('Variant::CallError __err;')
+        output.append('Variant __ret = __mb->call(this->godot_obj, nullptr, 0, __err);')
+        # TODO: error handling
+        # Return value
+        output.append(ret_from_variant(propapi['type'], '__ret'))
+        return '\n    '.join(output) + '\n}\n'
+
+    def _build_setter_impl(clsname, propapi):
+        if not propapi['setter']:
+            return ''
+        output = [_mk_setter_signature(propapi, ns=clsname) + ' {']
+        output.append('static MethodBind *__mb = ClassDB::get_method("%s", "%s");' % (clsname, propapi['setter']))
+        output.append('Variant::CallError __err;')
+        output.append('const Variant *__args[1];')
+        output.append('__args[0] = new %s;' % conv_to_variant({'type': propapi['type'], 'name': 'value'}))
+        output.append('__mb->call(this->godot_obj, __args, 1, __err);')
+        # TODO: error handling
+        return '\n    '.join(output) + '\n}\n'
+
+    for propapi in clsapi['properties']:
+        if propapi['getter']:
+            output.append(_build_getter_impl(clsname, propapi))
+        if propapi['setter']:
+            output.append(_build_setter_impl(clsname, propapi))
+
+
+    # for propapi in clsapi['properties']:
+    #     if propapi['getter']:
+    #         output.append('    ' + _mk_getter_signature(propapi) + ';')
+    #     if propapi['setter']:
+    #         output.append('    ' + _mk_setter_signature(propapi) + ';')
+
 
 #     def _build_method_func_ptrcall(clsname, methodapi):
 #         method_tmpl = \
@@ -157,64 +301,16 @@ def generate_wrapper_class(clsapi):
 #         return method_tmpl.format(clsname=clsname,
 #             args=args, args_def=args_def, args_val=args_val, ret_def=ret_def, ret_val=ret_val, ret=ret, **methodapi)
 
-    def _build_method_func(clsname, methodapi):
-        output = []
-        args_count = len(methodapi['arguments'])
-        # Build function signature
-        args = ', '.join(['%s %s' % (conv_type(a['type']), a['name']) for a in methodapi['arguments']])
-        ret = conv_type(methodapi['return_type'])
-        output.append('    inline %s %s(%s) {' % (ret, methodapi['name'], args))
-        # Generic body
-        output.append('        static MethodBind *mb = ClassDB::get_method("%s", "%s");' % (clsname, methodapi['name']))
-        output.append('        Variant::CallError err;')
-        # Function params conversion
-        output.append('        const Variant *args[%s];' % args_count)
-        for i, arg in enumerate(methodapi['arguments']):
-            output.append('        args[%s] = new %s;' % (i, conv_to_variant(arg)))
-        # Actual call
-        output.append('        Variant ret = mb->call(this->godot_obj, args, %s, err);' % args_count)
-        # params cleaning
-        output.append("""        for (int i = 0; i < %s; ++i) {
-            delete args[i];
-        }""" % args_count)
-        # Return value
-        output.append('        ' + ret_from_variant(methodapi['return_type'], 'ret'))
-        # TODO: error handling
-        output.append('    }')
-        return '\n'.join(output)
+#     for methodapi in clsapi['methods']:
+#         # No nee to handle default arguments here given they cannot be
+#         # inferred by pybind11
+#         output.append(_build_method_func(clsname, methodapi))
+#         # output.append(method_tmpl.format(clsname=clsname, params=params, **methodapi))
 
-    for methodapi in clsapi['methods']:
-        # No nee to handle default arguments here given they cannot be
-        # inferred by pybind11
-        output.append(_build_method_func(clsname, methodapi))
-        # output.append(method_tmpl.format(clsname=clsname, params=params, **methodapi))
-
-    output.append(_comment_entry(clsapi, 'properties'))
-    prop_getter_tmpl = \
-"""    inline {type} __prop__{getter}() {{
-        static MethodBind *mb = ClassDB::get_method("{clsname}", "{getter}");
-        {type} ret;
-        mb->ptrcall(this->godot_obj, nullptr, &ret);
-        return ret;
-    }}
-"""
-    prop_setter_tmpl = \
-"""    inline void __prop__{setter}({type} value) {{
-        static MethodBind *mb = ClassDB::get_method("{clsname}", "{setter}");
-        const void *args[1] = {{&value}};
-        mb->ptrcall(this->godot_obj, args, nullptr);
-    }}
-"""
-    for propapi in clsapi['properties']:
-        if propapi['getter']:
-            output.append(prop_getter_tmpl.format(clsname=clsname, **propapi))
-        if propapi['setter']:
-            output.append(prop_setter_tmpl.format(clsname=clsname, **propapi))
-
-    # TODO: bind signals
-    output.append("""
-};
-""")
+#     # TODO: bind signals
+#     output.append("""
+# };
+# """)
     return '\n'.join(output)
 
 
@@ -277,12 +373,14 @@ def generate_binding_class(clsapi):
 
     if not clsapi['instanciable']:
         # TODO: find a less clunky way to do this...
-        output.append('.def("__new__", (py::object cls) -> { py::eval("raise TypeError(\'%s is not instanciable.\')"); })' % clsname)
+        output.append('.def("__new__", [](py::object cls) { py::eval("raise TypeError(\'%s is not instanciable.\')"); })' % clsname)
 
     output.append(_comment_entry(clsapi, 'methods'))
     for methodapi in clsapi['methods']:
         params = _cook_method_params(methodapi)
-        output.append('.def("{name}", &{clsname}::{name}{params})'.format(clsname=clsname, params=params, **methodapi))
+        output.append('.def("{name}", &{clsname}::{methname}{c}{params})'.format(
+            clsname=clsname, methname=_mk_meth_name(methodapi['name']),
+            c=', ' if params else '', params=params, **methodapi))
 
     output.append(_comment_entry(clsapi, 'constants'))
     for key, value in clsapi['constants'].items():
@@ -290,7 +388,10 @@ def generate_binding_class(clsapi):
 
     output.append(_comment_entry(clsapi, 'properties'))
     for prop in clsapi['properties']:
-        output.append('.def_property("{name}", &{clsname}::__prop__{getter}, &{clsname}::__prop__{setter})'.format(clsname=clsname, **prop))
+        output.append(
+            '.def_property("{name}", &{clsname}::{gettername}, &{clsname}::{settername})'.format(
+                clsname=clsname, gettername=_mk_getter_name(prop['name']),
+                settername=_mk_setter_name(prop['name']), **prop))
 
     output.append(';')
     # TODO: bind signals
@@ -302,9 +403,11 @@ def main(infd, outfd):
     api = json.load(infd)
     output = HEADER
     output += '\n\n'
-    output += generate_forward_declarations(api)
+    output += generate_forward_classes_def(api)
     output += '\n\n'
-    output += generate_wrapper_classes(api)
+    output += generate_classes_def(api)
+    output += '\n\n'
+    output += generate_classes_impl(api)
     output += '\n\n'
     output += generate_bindings_module(api)
     output += '\n\n'
