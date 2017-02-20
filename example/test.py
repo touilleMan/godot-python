@@ -1,16 +1,16 @@
 from godot import exposed, export
 # from godot.bindings import Node2D, Object, Vector2, KEY_F5, OS
-from godot.bindings import Object
+from godot.bindings import Object, Vector2
 
 
-# v = Vector2(1, 2)
+v = Vector2(1, 2)
 # print('Vector2.x', Vector2.x)
 # print("Vector2.x.getter", Vector2.x.getter)
-# print("Vector2().x", Vector2().x)
-# print('BEFORE', v)
-# v.x = 1.5
-# print('AFTER', v)
-# Vector2().x = 1
+print("Vector2().x", Vector2().x)
+print('BEFORE', v)
+v.x = 1.5
+print('AFTER', v)
+Vector2().x = 1
 # p = property(lambda x: x.X)
 # print(p, p.getter(T()))
 # print(T.x, T.x.getter, T.x.getter(T()))
