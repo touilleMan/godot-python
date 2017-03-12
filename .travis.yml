@@ -44,8 +44,7 @@ before_script:
   #  - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 https://github.com/godotengine/godot.git
   - git clone --recursive https://github.com/godotengine/godot.git
 # Dunno why but .gitignore is modified by something...
-  - git --git-dir=godot/.git --no-pager diff
-  - git --git-dir=godot/.git stash
+  - git --git-dir=godot/.git reset --hard
   - git --git-dir=godot/.git checkout $GODOT_TAG
   - git --git-dir=godot/.git rev-parse HEAD
   - ln -s `pwd`/pythonscript godot/modules/pythonscript
