@@ -18,7 +18,7 @@ def configure(env):
             not path.isfile(PY_TARGET)):
         print('Building libpython...')
         if not path.isfile('Makefile'):
-            cmd = ['./configure', '--enable-shared --prefix=%s/build' % PY_DIR]
+            cmd = ['./configure', '--enable-shared', '--prefix=%s/build' % PY_DIR]
             if env["target"] == "debug":
                 cmd.append('--with-pydebug')
             subprocess.call(cmd, cwd=PY_DIR)
