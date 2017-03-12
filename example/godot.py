@@ -11,6 +11,7 @@ class ExportedField:
 def exposed(cls=None, tool=False):
 
     def wrapper(cls):
+        global __exposed_classes, __exposed_classes_per_module
         print("Exposing %s.%s Python class to Godot." % (cls.__module__, cls))
         assert cls.__name__ not in __exposed_classes
         assert cls.__module__ not in __exposed_classes_per_module

@@ -1,12 +1,12 @@
 from godot import exposed, export
 # from godot.bindings import Node2D, Object, Vector2, KEY_F5, OS
-from godot.bindings import Object, Vector2
+from godot.bindings import Vector2, Node2D
 
 
 v = Vector2(1, 2)
 # print('Vector2.x', Vector2.x)
 # print("Vector2.x.getter", Vector2.x.getter)
-print("Vector2().x", Vector2().x)
+# print("Vector2().x", Vector2().x)
 print('BEFORE', v)
 v.x = 1.5
 print('AFTER', v)
@@ -21,7 +21,7 @@ Vector2().x = 1
 
 
 @exposed
-class MyExportedCls(Object):
+class MyExportedCls(Node2D):
 
     # member variables here, example:
     a = export(int)
@@ -32,8 +32,11 @@ class MyExportedCls(Object):
         Called every time the node is added to the scene.
         Initialization here.
         """
-        print("Hello World !")
-        print("Instance ID:", self.get_instance_ID())
-        # print('OLD ROT:', self.get_rot())
-        # self.rotate(1.5)
-        # print('NEW ROT:', self.get_rot())
+        # print("Hello World !")
+        # print("Instance ID:", self.get_instance_ID())
+        # print('=========> BEFORE', self.pause_mode)
+        # self.pause_mode = True
+        # print('=========> AFTER', self.pause_mode)
+        print('OLD ROT:', self.rotation)
+        self.rotate(1.5)
+        print('NEW ROT:', self.rotation)
