@@ -9,7 +9,7 @@ compiler:
 env:
   global:
     # Use commit instead of tag as long as 3.0 is not released
-    - GODOT_TAG=af3fabeb7745e6f7f4e7fe7a299bdd234fff26a6
+    - GODOT_TAG=94103c0c025f04e75d5e163d9f0bdde27bb0c848
     # Cannot use release given travis's glibc clash with -ffast-math with clang
     # other solution is to set `-D__extern_always_inline="extern __always_inline"`
     - EXTRA_OPTS="-j4 target=debug tools=yes module_pythonscript_enabled=yes"
@@ -37,6 +37,7 @@ addons:
       # Need gcc > 4.6 for -std=c++11
       - gcc-5
       - g++-5
+      - python3
 
 before_script:
   # Cannot use this with commit id
@@ -47,5 +48,6 @@ before_script:
   - ln -s `pwd`/pythonscript godot/modules/pythonscript
 
 script:
+  - python tools/generate_bindings.py tools/api.json  -o pythonscript/bindings.gen.cpp -s
   - if [[ "$CXX" == "g++" ]]; then make compile OPTS="platform=$GODOT_TARGET $EXTRA_OPTS CXX=g++-5 CC=gcc-5"; fi
   - if [[ "$CXX" == "clang++" ]]; then make compile OPTS="platform=$GODOT_TARGET $EXTRA_OPTS use_llvm=yes"; fi

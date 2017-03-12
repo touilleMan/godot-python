@@ -12,7 +12,8 @@ def can_build(platform):
 
 
 def configure(env):
-    env.use_ptrcall = True
+    # TODO: use ptrcall for the binding
+    # env.use_ptrcall = True
     if ((env["target"] == "debug" and not path.isfile(PY_DEBUG_TARGET)) or
             not path.isfile(PY_TARGET)):
         print('Building libpython...')

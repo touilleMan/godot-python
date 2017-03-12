@@ -374,7 +374,7 @@ Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p
     #endif
     try {
         auto pyobj_ret = this->_py_obj.attr(attr)(*args);
-    } catch(const py::error_already_set &) {
+    } catch(const py::error_already_set &e) {
         // TODO: need to handle other errors:
         // - CALL_ERROR_INVALID_ARGUMENT
         // - CALL_ERROR_TOO_MANY_ARGUMENTS
@@ -382,6 +382,7 @@ Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p
         // - CALL_ERROR_INSTANCE_IS_NULL
         // Godot could try to call some functions even if they don't exist
         // so don't print any exception here
+        WARN_PRINT(e.what());
         r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
     }
     // TODO: return value conversion
