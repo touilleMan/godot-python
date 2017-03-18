@@ -104,8 +104,7 @@ void PyLanguage::init() {
         // Load Godot module and attach the bindings to it
         this->_py_godot_module = py::module::import("godot");
         // TODO: attach the real binding here !
-        // pybind11_init();
-        bindings::init();
+        // bindings::init();
     py::object scope = py::module::import("__main__").attr("__dict__");
     } catch(const py::error_already_set &e) {
         ERR_PRINT(e.what());

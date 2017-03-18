@@ -23,4 +23,5 @@ def configure(env):
                 cmd.append('--with-pydebug')
             subprocess.call(cmd, cwd=PY_DIR)
         subprocess.call(['make'], cwd=PY_DIR)
+        subprocess.call(['make', 'install'], cwd=PY_DIR)
         print('libpython successfully built !')
