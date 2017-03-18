@@ -14,8 +14,8 @@ def can_build(platform):
 def configure(env):
     # TODO: use ptrcall for the binding
     # env.use_ptrcall = True
-    if ((env["target"] == "debug" and not path.isfile(PY_DEBUG_TARGET)) or
-            not path.isfile(PY_TARGET)):
+    target = PY_TARGET if env["target"] != "debug" else PY_DEBUG_TARGET
+    if not path.isfile(target):
         print('Building libpython...')
         if not path.isfile('Makefile'):
             cmd = ['./configure', '--enable-shared', '--prefix=%s/build' % PY_DIR]
