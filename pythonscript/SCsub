@@ -24,7 +24,7 @@ module_env.Append(CXXFLAGS='-pthread -DNDEBUG -g -fwrapv -O2 -Wall -Wstrict-prot
 
 sources = [
 #	"bindings.cpp",
-	"pythonscriptcffi.cpp",
+	"cffi_bindings/pythonscriptcffi.cpp",
 	"register_types.cpp",
 	"py_language.cpp",
 	"py_editor.cpp",

@@ -1,6 +1,6 @@
 from godot import exposed, export
 # from godot.bindings import Node2D, Object, Vector2, KEY_F5, OS
-from godot.bindings import Vector2, Node2D
+from godot.bindings import Vector2
 
 
 v = Vector2(1, 2)
