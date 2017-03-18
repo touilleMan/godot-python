@@ -1,6 +1,6 @@
 from godot import exposed, export
 # from godot.bindings import Node2D, Object, Vector2, KEY_F5, OS
-from godot.bindings import Vector2
+from godot.bindings import Vector2, Node2D
 
 
 v = Vector2(1, 2)
@@ -32,6 +32,7 @@ class MyExportedCls(Node2D):
         Called every time the node is added to the scene.
         Initialization here.
         """
+        import pdb; pdb.set_trace()
         # print("Hello World !")
         # print("Instance ID:", self.get_instance_ID())
         # print('=========> BEFORE', self.pause_mode)

@@ -527,6 +527,8 @@ PyInstance::PyInstance() {
     DEBUG_TRACE_METHOD();
 }
 
+typedef void godot_object;
+extern void py_instance_set_godot_obj(PyObject *py_instance, godot_object *godot_obj);
 
 bool PyInstance::init(PyScript *p_script, Object *p_owner) {
     DEBUG_TRACE_METHOD();
@@ -539,9 +541,10 @@ bool PyInstance::init(PyScript *p_script, Object *p_owner) {
         this->_py_obj = p_script->get_py_exposed_class()();
         // Script is not a "real" instance of the class is expend, instead it
         // takes controle of the owner
-        py::print(this->_py_obj, this->_py_obj.attr("__set_godot_obj"));
-        this->_py_obj.attr("__set_godot_obj")(bindings::GodotObject(p_owner));
-        // this->_py_obj.attr("__set_godot_obj")(py::cast(p_owner));
+        // this->_py_obj.attr("_gd_set_godot_obj")(bindings::GodotObject(p_owner));
+        py::object handle = py::module::import("pythonscriptcffi").attr("ffi").attr("new_handle")(this->_py_obj);
+        py_instance_set_godot_obj(handle.ptr(), p_owner);
+        // this->_py_obj.attr("_gd_set_godot_obj")(py::cast(p_owner));
     } catch(const py::error_already_set &e) {
         ERR_PRINT(e.what());
         ERR_FAIL_V(false);
