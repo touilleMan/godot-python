@@ -36,6 +36,7 @@ class BaseObject:
     def _gd_set_godot_obj(self, obj):
         self._gd_obj = obj
 
+
 def iter_on_c(cstruct):
     i = 0
     while cstruct[i] != ffi.NULL:
@@ -43,12 +44,8 @@ def iter_on_c(cstruct):
         i += 1
 
 
-def get_class_parent(cclassname):
-    return ffi.string(lib.godot_get_class_parent(cclassname))
-
-
-def build_class(cclassname):
-    classname = cclassname.decode()
+def build_class(classname):
+    cclassname = classname.encode()
     nmspc = {
         '_gd_name': classname,
         '_gd_constructor': lib.godot_get_class_constructor(cclassname)
@@ -82,19 +79,46 @@ def build_class(cclassname):
     return type(classname, bases, nmspc)
 
 
-# Order class to have a parent defined before their children
-unordered_cclasses = [ffi.string(raw) for raw in iter_on_c(lib.godot_get_class_list())]
-cclasses = []
-while len(unordered_cclasses) != len(cclasses):
-    for cclassname in unordered_cclasses:
-        cparentname = get_class_parent(cclassname)
-        if not cparentname or cparentname in cclasses:
-            if cclassname not in cclasses:
-                cclasses.append(cclassname)
-del unordered_cclasses
+def get_class_list():
+    instance = lib.godot_global_get_singleton(b"ClassDB")
+    meth = lib.godot_method_bind_get_method(b"_ClassDB", b"get_class_list")
+    ret = ffi.new("godot_pool_string_array*")
+    lib.godot_pool_string_array_new(ret)
+    lib.godot_method_bind_ptrcall(meth, instance, ffi.NULL, ret)
 
-for cclassname in cclasses:
-    setattr(module, cclassname.decode(), build_class(cclassname))
+    # Convert Godot return into Python civilized stuff
+    unordered = []
+    for i in range(lib.godot_pool_string_array_size(ret)):
+        godot_str = lib.godot_pool_string_array_get(ret, i)
+        c_str = lib.godot_string_c_str(ffi.new('godot_string*', godot_str))
+        unordered.append(ffi.string(c_str))
+
+    # Order class to have a parent defined before their children
+    classes = []
+    while len(unordered) != len(classes):
+        for classname in unordered:
+            parentname = get_class_parent(classname)
+            if not parentname or parentname in classes:
+                if classname not in classes:
+                    classes.append(classname)
+
+    return classes
+
+
+def get_class_parent(classname):
+    instance = lib.godot_global_get_singleton(b"ClassDB")
+    meth = lib.godot_method_bind_get_method(b"_ClassDB", b"get_parent_class")
+    ret = ffi.new("godot_string*")
+    gd_classname = ffi.new("godot_string*")
+    lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
+    args = ffi.new("godot_string**", gd_classname)
+    lib.godot_method_bind_ptrcall(meth, instance, ffi.cast("void**", args), ret)
+    c_str = lib.godot_string_c_str(ret)
+    return ffi.string(c_str)
+
+
+for classname in get_class_list():
+    setattr(module, classname, build_class(classname))
 
 # clist = lib.godot_get_class_list()
 # i = 0
