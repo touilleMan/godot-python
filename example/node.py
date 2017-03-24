@@ -38,6 +38,12 @@ class MyExportedCls(Node2D):
         # print('=========> BEFORE', self.pause_mode)
         # self.pause_mode = True
         # print('=========> AFTER', self.pause_mode)
-        print('OLD ROT:', self.rotation)
-        self.rotate(1.5)
-        print('NEW ROT:', self.rotation)
+
+
+        # print('OLD ROT:', self.rotation)
+        # self.rotate(1.5)
+        # print('NEW ROT:', self.rotation)
+
+        print('OLD ROT:', self.get_rotation())
+        self.set_rotation(1.5)
+        print('NEW ROT:', self.get_rotation())

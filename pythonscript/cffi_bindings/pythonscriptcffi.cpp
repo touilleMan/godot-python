@@ -527,98 +527,176 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "        yield cstruct[i]\n" \
 "        i += 1\n" \
 "\n" \
+"def _gen_stub(msg):\n" \
+"    return lambda *args: print(msg)\n" \
 "\n" \
-"# def get_class_parent(cclassname):\n" \
-"#     return ffi.string(lib.godot_get_class_parent(cclassname))\n" \
 "\n" \
-"\n" \
-"def build_class(cclassname):\n" \
-"    classname = cclassname.decode()\n" \
+"def build_class(classname):\n" \
+"    cclassname = classname.encode()\n" \
 "    nmspc = {\n" \
 "        '_gd_name': classname,\n" \
 "        '_gd_constructor': lib.godot_get_class_constructor(cclassname)\n" \
 "    }\n" \
+"    print('======> BINDING', classname)\n" \
 "    # Methods\n" \
-"    for crawmeth in iter_on_c(lib.godot_get_class_methods(cclassname)):\n" \
-"        cmethname = ffi.string(crawmeth)\n" \
-"        methname = cmethname.decode()\n" \
+"    for meth in ClassDB.get_class_methods(classname):\n" \
+"        methname = meth['name']\n" \
+"        print('=> M', methname)\n" \
 "        # methbind = lib.godot_method_bind_get_method(classname, methname)\n" \
 "        # def bind(self, *args):\n" \
 "        #     lib.godot_method_bind_get_method(methbind)\n" \
 "        #     ret = ffi.new()\n" \
 "        #     lib.godot_method_bind_ptrcall(methbind, self, )\n" \
-"        nmspc[methname] = lambda *args: print('**** Should have called ', classname, methname)\n" \
+"        nmspc[methname] = _gen_stub('**** Should have called %s.%s' % (classname, methname))\n" \
 "    # Properties\n" \
-"    for crawprop in iter_on_c(lib.godot_get_class_properties(cclassname)):\n" \
-"        cpropname = ffi.string(crawprop)\n" \
-"        propname = cpropname.decode()\n" \
-"        nmspc[propname] = property(lambda self: print('***** Should have called %s.%s getter' % (classname, propname)))\n" \
-"        nmspc[propname].setter(lambda self, value: print('***** Should have called %s.%s setter' % (classname, propname)))\n" \
+"    for prop in ClassDB.get_class_properties(classname):\n" \
+"        propname = prop['name']\n" \
+"        print('=> P', propname)\n" \
+"        nmspc[propname] = property(_gen_stub('***** Should have called %s.%s getter' % (classname, propname)))\n" \
+"        nmspc[propname].setter(_gen_stub('***** Should have called %s.%s setter' % (classname, propname)))\n" \
 "    # Constants\n" \
-"    for crawconst in iter_on_c(lib.godot_get_class_constants(cclassname)):\n" \
-"        cconstname = ffi.string(crawconst)\n" \
-"        constname = cconstname.decode()\n" \
-"        nmspc[constname] = 42\n" \
-"    parent_name = ffi.string(lib.godot_get_class_parent(cclassname)).decode()\n" \
-"    if parent_name:\n" \
-"        bases = (getattr(module, parent_name), )\n" \
+"    for constname in ClassDB.get_class_consts(classname):\n" \
+"        nmspc[constname] = ClassDB.get_integer_constant(classname, constname)\n" \
+"        print('=> C', constname)\n" \
+"    parentname = ClassDB.get_parent_class(classname)\n" \
+"    print('=> P', parentname)\n" \
+"    if parentname:\n" \
+"        bases = (getattr(module, parentname), )\n" \
 "    else:\n" \
 "        bases = (BaseObject, )\n" \
 "    return type(classname, bases, nmspc)\n" \
 "\n" \
 "\n" \
-"def get_class_list():\n" \
-"    instance = lib.godot_global_get_singleton(b\"ClassDB\")\n" \
-"    meth = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"get_class_list\")\n" \
-"    ret = ffi.new(\"godot_pool_string_array*\")\n" \
-"    lib.godot_pool_string_array_new(ret)\n" \
-"    lib.godot_method_bind_ptrcall(meth, instance, ffi.NULL, ret)\n" \
+"class ClassDB:\n" \
+"    _instance = lib.godot_global_get_singleton(b\"ClassDB\")\n" \
+"    _meth_get_class_list = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"get_class_list\")\n" \
+"    _meth_get_method_list = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"class_get_method_list\")\n" \
+"    _meth_get_parent_class = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"get_parent_class\")\n" \
+"    _meth_get_property_list = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"class_get_property_list\")\n" \
+"    _meth_get_integer_constant_list = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"class_get_integer_constant_list\")\n" \
+"    _meth_get_integer_constant = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"class_get_integer_constant\")\n" \
 "\n" \
-"    # Convert Godot return into Python civilized stuff\n" \
-"    unordered = []\n" \
-"    for i in range(lib.godot_pool_string_array_size(ret)):\n" \
-"        godot_str = lib.godot_pool_string_array_get(ret, i)\n" \
-"        c_str = lib.godot_string_c_str(ffi.new('godot_string*', godot_str))\n" \
-"        unordered.append(ffi.string(c_str))\n" \
+"    @classmethod\n" \
+"    def get_class_list(cls):\n" \
+"        ret = ffi.new(\"godot_pool_string_array*\")\n" \
+"        lib.godot_pool_string_array_new(ret)\n" \
+"        lib.godot_method_bind_ptrcall(cls._meth_get_class_list, cls._instance, ffi.NULL, ret)\n" \
 "\n" \
-"    # Order class to have a parent defined before their children\n" \
-"    classes = []\n" \
-"    while len(unordered) != len(classes):\n" \
-"        for classname in unordered:\n" \
-"            parentname = get_class_parent(classname)\n" \
-"            if not parentname or parentname in classes:\n" \
-"                if classname not in classes:\n" \
-"                    classes.append(classname)\n" \
+"        # Convert Godot return into Python civilized stuff\n" \
+"        unordered = []\n" \
+"        for i in range(lib.godot_pool_string_array_size(ret)):\n" \
+"            godot_str = lib.godot_pool_string_array_get(ret, i)\n" \
+"            c_str = lib.godot_string_c_str(ffi.new('godot_string*', godot_str))\n" \
+"            unordered.append(ffi.string(c_str))\n" \
 "\n" \
-"    return classes\n" \
+"        # Order class to have a parent defined before their children\n" \
+"        classes = []\n" \
+"        while len(unordered) != len(classes):\n" \
+"            for classname in unordered:\n" \
+"                parentname = cls.get_parent_class(classname)\n" \
+"                if not parentname or parentname in classes:\n" \
+"                    if classname not in classes:\n" \
+"                        classes.append(classname)\n" \
+"\n" \
+"        return classes\n" \
+"\n" \
+"    @classmethod\n" \
+"    def get_class_methods(cls, classname):\n" \
+"        methods = []\n" \
+"        ret = ffi.new(\"godot_array*\")\n" \
+"        gd_classname = ffi.new(\"godot_string*\")\n" \
+"        lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))\n" \
+"        gd_true = ffi.new(\"godot_bool*\", 1)\n" \
+"        args = ffi.new(\"void*[2]\", [gd_classname, gd_true])\n" \
+"        # 2nd arg should be false, which what we get by not initializing it\n" \
+"        lib.godot_method_bind_ptrcall(cls._meth_get_method_list, cls._instance, args, ret)\n" \
+"        for i in range(lib.godot_array_size(ret)):\n" \
+"            var = lib.godot_array_get(ret, i)\n" \
+"            methdict = convert_godot_dictionary(lib.godot_variant_as_dictionary(var))\n" \
+"            methods.append(methdict)\n" \
+"        return methods\n" \
+"\n" \
+"    @classmethod\n" \
+"    def get_class_properties(cls, classname):\n" \
+"        properties = []\n" \
+"        ret = ffi.new(\"godot_array*\")\n" \
+"        gd_classname = ffi.new(\"godot_string*\")\n" \
+"        lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))\n" \
+"        gd_true = ffi.new(\"godot_bool*\", 1)\n" \
+"        args = ffi.new(\"void*[2]\", [gd_classname, gd_true])\n" \
+"        # 2nd arg should be false, which what we get by not initializing it\n" \
+"        lib.godot_method_bind_ptrcall(cls._meth_get_property_list, cls._instance, args, ret)\n" \
+"        for i in range(lib.godot_array_size(ret)):\n" \
+"            var = lib.godot_array_get(ret, i)\n" \
+"            propdict = convert_godot_dictionary(lib.godot_variant_as_dictionary(var))\n" \
+"            properties.append(propdict)\n" \
+"        return properties\n" \
+"\n" \
+"    @classmethod\n" \
+"    def get_class_consts(cls, classname):\n" \
+"        consts = []\n" \
+"        ret = ffi.new(\"godot_pool_string_array*\")\n" \
+"        lib.godot_pool_string_array_new(ret)\n" \
+"        gd_classname = ffi.new(\"godot_string*\")\n" \
+"        gd_true = ffi.new(\"godot_bool*\", 1)\n" \
+"        lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))\n" \
+"        args = ffi.new(\"void*[2]\", [gd_classname, gd_true])\n" \
+"        # 2nd arg should be false, which what we get by not initializing it\n" \
+"        lib.godot_method_bind_ptrcall(cls._meth_get_integer_constant_list, cls._instance, args, ret)\n" \
+"        for i in range(lib.godot_pool_string_array_size(ret)):\n" \
+"            godot_str = lib.godot_pool_string_array_get(ret, i)\n" \
+"            c_str = lib.godot_string_c_str(ffi.new('godot_string*', godot_str))\n" \
+"            consts.append(ffi.string(c_str))\n" \
+"        return consts\n" \
+"\n" \
+"    @classmethod\n" \
+"    def get_integer_constant(cls, classname, constname):\n" \
+"        ret = ffi.new(\"godot_int*\")\n" \
+"        gd_classname = ffi.new(\"godot_string*\")\n" \
+"        lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))\n" \
+"        gd_constname = ffi.new(\"godot_string*\")\n" \
+"        lib.godot_string_new_data(gd_constname, constname.encode(), len(constname.encode()))\n" \
+"        args = ffi.new(\"void*[2]\", [gd_classname, gd_constname])\n" \
+"        # 2nd arg should be false, which what we get by not initializing it\n" \
+"        lib.godot_method_bind_ptrcall(cls._meth_get_integer_constant, cls._instance, args, ret)\n" \
+"        return int(ret[0])\n" \
+"\n" \
+"    @classmethod\n" \
+"    def get_parent_class(cls, classname):\n" \
+"        ret = ffi.new(\"godot_string*\")\n" \
+"        gd_classname = ffi.new(\"godot_string*\")\n" \
+"        lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))\n" \
+"        args = ffi.new(\"godot_string**\", gd_classname)\n" \
+"        lib.godot_method_bind_ptrcall(cls._meth_get_parent_class, cls._instance, ffi.cast(\"void**\", args), ret)\n" \
+"        c_str = lib.godot_string_c_str(ret)\n" \
+"        return ffi.string(c_str)\n" \
 "\n" \
 "\n" \
-"def get_class_parent(classname):\n" \
-"    instance = lib.godot_global_get_singleton(b\"ClassDB\")\n" \
-"    meth = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"get_parent_class\")\n" \
-"    ret = ffi.new(\"godot_string*\")\n" \
-"    gd_classname = ffi.new(\"godot_string*\")\n" \
-"    lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))\n" \
-"    args = ffi.new(\"godot_string**\", gd_classname)\n" \
-"    lib.godot_method_bind_ptrcall(meth, instance, ffi.cast(\"void**\", args), ret)\n" \
-"    c_str = lib.godot_string_c_str(ret)\n" \
-"    return ffi.string(c_str)\n" \
+"def convert_godot_dictionary(gddict):\n" \
+"    pdict = {}\n" \
+"    p_gddict = ffi.new(\"godot_dictionary*\", gddict)\n" \
+"    gdkeys = lib.godot_dictionary_keys(p_gddict)\n" \
+"    p_gdkeys = ffi.new(\"godot_array*\", gdkeys)\n" \
+"    for i in range(lib.godot_array_size(p_gdkeys)):\n" \
+"        p_key = lib.godot_array_get(p_gdkeys, i)\n" \
+"        keystr = lib.godot_variant_as_string(p_key)\n" \
+"        p_keystr = ffi.new(\"godot_string*\", keystr)\n" \
+"        c_str = lib.godot_string_c_str(p_keystr)\n" \
+"        value = lib.godot_dictionary_operator_index(p_gddict, p_key)\n" \
+"        # Finger crossed everything is a string...\n" \
+"        valuestr = lib.godot_variant_as_string(value)\n" \
+"        p_valuestr = ffi.new(\"godot_string*\", valuestr)\n" \
+"        c_valuestr = lib.godot_string_c_str(p_valuestr)\n" \
+"        pdict[ffi.string(c_str)] = ffi.string(c_valuestr)\n" \
+"    return pdict\n" \
 "\n" \
 "\n" \
-"for classname in get_class_list():\n" \
+"def variant_to_pyobj(gdvar):\n" \
+"    pass\n" \
+"\n" \
+"\n" \
+"for classname in ClassDB.get_class_list():\n" \
 "    setattr(module, classname, build_class(classname))\n" \
-"\n" \
-"# clist = lib.godot_get_class_list()\n" \
-"# i = 0\n" \
-"# while clist[i] != ffi.NULL:\n" \
-"#     cclassname = ffi.string(clist[i])\n" \
-"#     classname = cclassname.decode()\n" \
-"#     constructor = lib.godot_get_class_constructor(cclassname)\n" \
-"#     cmethods = lib.godot_get_class_methods()\n" \
-"#     j = 0\n" \
-"\n" \
-"#     setattr(module, classname, type(classname, (BaseObject, ), {'_gd_constructor': constructor, '_gd_name': classname}))\n" \
-"#     i += 1\n" \
 "\n" \
 "\n" \
 "sys.modules[\"godot.bindings\"] = module\n" \
@@ -1168,155 +1246,262 @@ static int cffi_start_python(void)
 /************************************************************/
 
 static void *_cffi_types[] = {
-/*  0 */ _CFFI_OP(_CFFI_OP_FUNCTION, 127), // _Bool()(godot_string const *, godot_string const *)
-/*  1 */ _CFFI_OP(_CFFI_OP_POINTER, 135), // godot_string const *
-/*  2 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
-/*  3 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/*  4 */ _CFFI_OP(_CFFI_OP_FUNCTION, 128), // char * *()(void)
-/*  5 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/*  6 */ _CFFI_OP(_CFFI_OP_FUNCTION, 129), // char const * *()(char const *)
-/*  7 */ _CFFI_OP(_CFFI_OP_POINTER, 130), // char const *
-/*  8 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/*  9 */ _CFFI_OP(_CFFI_OP_FUNCTION, 7), // char const *()(char const *)
-/* 10 */ _CFFI_OP(_CFFI_OP_NOOP, 7),
-/* 11 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 12 */ _CFFI_OP(_CFFI_OP_FUNCTION, 108), // float()(godot_vector2 const *)
-/* 13 */ _CFFI_OP(_CFFI_OP_POINTER, 136), // godot_vector2 const *
-/* 14 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 15 */ _CFFI_OP(_CFFI_OP_FUNCTION, 108), // float()(godot_vector2 const *, godot_vector2 const *)
-/* 16 */ _CFFI_OP(_CFFI_OP_NOOP, 13),
-/* 17 */ _CFFI_OP(_CFFI_OP_NOOP, 13),
-/* 18 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 19 */ _CFFI_OP(_CFFI_OP_FUNCTION, 52), // godot_method_bind *()(char const *, char const *)
-/* 20 */ _CFFI_OP(_CFFI_OP_NOOP, 7),
-/* 21 */ _CFFI_OP(_CFFI_OP_NOOP, 7),
-/* 22 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 23 */ _CFFI_OP(_CFFI_OP_FUNCTION, 135), // godot_string()(godot_pool_string_array *, int)
-/* 24 */ _CFFI_OP(_CFFI_OP_POINTER, 134), // godot_pool_string_array *
-/* 25 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7), // int
+/*  0 */ _CFFI_OP(_CFFI_OP_FUNCTION, 228), // _Bool()(godot_array const *)
+/*  1 */ _CFFI_OP(_CFFI_OP_POINTER, 233), // godot_array const *
+/*  2 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/*  3 */ _CFFI_OP(_CFFI_OP_FUNCTION, 228), // _Bool()(godot_array const *, godot_variant const *)
+/*  4 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
+/*  5 */ _CFFI_OP(_CFFI_OP_POINTER, 239), // godot_variant const *
+/*  6 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/*  7 */ _CFFI_OP(_CFFI_OP_FUNCTION, 228), // _Bool()(godot_dictionary const *)
+/*  8 */ _CFFI_OP(_CFFI_OP_POINTER, 234), // godot_dictionary const *
+/*  9 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 10 */ _CFFI_OP(_CFFI_OP_FUNCTION, 228), // _Bool()(godot_dictionary const *, godot_array const *)
+/* 11 */ _CFFI_OP(_CFFI_OP_NOOP, 8),
+/* 12 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
+/* 13 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 14 */ _CFFI_OP(_CFFI_OP_FUNCTION, 228), // _Bool()(godot_dictionary const *, godot_variant const *)
+/* 15 */ _CFFI_OP(_CFFI_OP_NOOP, 8),
+/* 16 */ _CFFI_OP(_CFFI_OP_NOOP, 5),
+/* 17 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 18 */ _CFFI_OP(_CFFI_OP_FUNCTION, 228), // _Bool()(godot_string const *, godot_string const *)
+/* 19 */ _CFFI_OP(_CFFI_OP_POINTER, 237), // godot_string const *
+/* 20 */ _CFFI_OP(_CFFI_OP_NOOP, 19),
+/* 21 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 22 */ _CFFI_OP(_CFFI_OP_FUNCTION, 229), // char * *()(void)
+/* 23 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 24 */ _CFFI_OP(_CFFI_OP_FUNCTION, 230), // char const * *()(char const *)
+/* 25 */ _CFFI_OP(_CFFI_OP_POINTER, 231), // char const *
 /* 26 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 27 */ _CFFI_OP(_CFFI_OP_FUNCTION, 25), // int()(godot_pool_string_array *)
-/* 28 */ _CFFI_OP(_CFFI_OP_NOOP, 24),
+/* 27 */ _CFFI_OP(_CFFI_OP_FUNCTION, 25), // char const *()(char const *)
+/* 28 */ _CFFI_OP(_CFFI_OP_NOOP, 25),
 /* 29 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 30 */ _CFFI_OP(_CFFI_OP_FUNCTION, 25), // int()(godot_pool_string_array *, int, godot_string const *)
-/* 31 */ _CFFI_OP(_CFFI_OP_NOOP, 24),
-/* 32 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
-/* 33 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
-/* 34 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 35 */ _CFFI_OP(_CFFI_OP_FUNCTION, 25), // int()(int, int)
-/* 36 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
-/* 37 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
-/* 38 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 39 */ _CFFI_OP(_CFFI_OP_FUNCTION, 49), // void *()(char *)
-/* 40 */ _CFFI_OP(_CFFI_OP_POINTER, 130), // char *
-/* 41 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 42 */ _CFFI_OP(_CFFI_OP_FUNCTION, 49), // void *()(void)
-/* 43 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 44 */ _CFFI_OP(_CFFI_OP_FUNCTION, 143), // void *(*()(char const *))(void)
-/* 45 */ _CFFI_OP(_CFFI_OP_NOOP, 7),
+/* 30 */ _CFFI_OP(_CFFI_OP_FUNCTION, 209), // float()(godot_vector2 const *)
+/* 31 */ _CFFI_OP(_CFFI_OP_POINTER, 240), // godot_vector2 const *
+/* 32 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 33 */ _CFFI_OP(_CFFI_OP_FUNCTION, 209), // float()(godot_vector2 const *, godot_vector2 const *)
+/* 34 */ _CFFI_OP(_CFFI_OP_NOOP, 31),
+/* 35 */ _CFFI_OP(_CFFI_OP_NOOP, 31),
+/* 36 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 37 */ _CFFI_OP(_CFFI_OP_FUNCTION, 233), // godot_array()(godot_dictionary const *)
+/* 38 */ _CFFI_OP(_CFFI_OP_NOOP, 8),
+/* 39 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 40 */ _CFFI_OP(_CFFI_OP_FUNCTION, 234), // godot_dictionary()(godot_variant const *)
+/* 41 */ _CFFI_OP(_CFFI_OP_NOOP, 5),
+/* 42 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 43 */ _CFFI_OP(_CFFI_OP_FUNCTION, 153), // godot_method_bind *()(char const *, char const *)
+/* 44 */ _CFFI_OP(_CFFI_OP_NOOP, 25),
+/* 45 */ _CFFI_OP(_CFFI_OP_NOOP, 25),
 /* 46 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 47 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(PyObject *, void *)
-/* 48 */ _CFFI_OP(_CFFI_OP_POINTER, 126), // PyObject *
-/* 49 */ _CFFI_OP(_CFFI_OP_POINTER, 146), // void *
-/* 50 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 51 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_method_bind *, void *, void const * *, void *)
-/* 52 */ _CFFI_OP(_CFFI_OP_POINTER, 133), // godot_method_bind *
-/* 53 */ _CFFI_OP(_CFFI_OP_NOOP, 49),
-/* 54 */ _CFFI_OP(_CFFI_OP_POINTER, 144), // void const * *
-/* 55 */ _CFFI_OP(_CFFI_OP_NOOP, 49),
+/* 47 */ _CFFI_OP(_CFFI_OP_FUNCTION, 237), // godot_string()(godot_dictionary const *)
+/* 48 */ _CFFI_OP(_CFFI_OP_NOOP, 8),
+/* 49 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 50 */ _CFFI_OP(_CFFI_OP_FUNCTION, 237), // godot_string()(godot_pool_string_array *, int)
+/* 51 */ _CFFI_OP(_CFFI_OP_POINTER, 236), // godot_pool_string_array *
+/* 52 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7), // int
+/* 53 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 54 */ _CFFI_OP(_CFFI_OP_FUNCTION, 237), // godot_string()(godot_variant const *)
+/* 55 */ _CFFI_OP(_CFFI_OP_NOOP, 5),
 /* 56 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 57 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_pool_string_array *)
-/* 58 */ _CFFI_OP(_CFFI_OP_NOOP, 24),
-/* 59 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 60 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_pool_string_array *, godot_array const *)
-/* 61 */ _CFFI_OP(_CFFI_OP_NOOP, 24),
-/* 62 */ _CFFI_OP(_CFFI_OP_POINTER, 132), // godot_array const *
-/* 63 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 64 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_pool_string_array *, godot_pool_string_array const *)
-/* 65 */ _CFFI_OP(_CFFI_OP_NOOP, 24),
-/* 66 */ _CFFI_OP(_CFFI_OP_POINTER, 134), // godot_pool_string_array const *
+/* 57 */ _CFFI_OP(_CFFI_OP_FUNCTION, 238), // godot_variant *()(godot_array *, int)
+/* 58 */ _CFFI_OP(_CFFI_OP_POINTER, 233), // godot_array *
+/* 59 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
+/* 60 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 61 */ _CFFI_OP(_CFFI_OP_FUNCTION, 238), // godot_variant *()(godot_dictionary *, godot_variant const *)
+/* 62 */ _CFFI_OP(_CFFI_OP_POINTER, 234), // godot_dictionary *
+/* 63 */ _CFFI_OP(_CFFI_OP_NOOP, 5),
+/* 64 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 65 */ _CFFI_OP(_CFFI_OP_FUNCTION, 239), // godot_variant()(godot_array *)
+/* 66 */ _CFFI_OP(_CFFI_OP_NOOP, 58),
 /* 67 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 68 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_pool_string_array *, godot_string const *)
-/* 69 */ _CFFI_OP(_CFFI_OP_NOOP, 24),
-/* 70 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
-/* 71 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 72 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_pool_string_array *, int)
-/* 73 */ _CFFI_OP(_CFFI_OP_NOOP, 24),
-/* 74 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
-/* 75 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 76 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_pool_string_array *, int, godot_string const *)
-/* 77 */ _CFFI_OP(_CFFI_OP_NOOP, 24),
-/* 78 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
+/* 68 */ _CFFI_OP(_CFFI_OP_FUNCTION, 239), // godot_variant()(godot_array const *)
+/* 69 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
+/* 70 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 71 */ _CFFI_OP(_CFFI_OP_FUNCTION, 52), // int()(godot_array *, godot_variant const *)
+/* 72 */ _CFFI_OP(_CFFI_OP_NOOP, 58),
+/* 73 */ _CFFI_OP(_CFFI_OP_NOOP, 5),
+/* 74 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 75 */ _CFFI_OP(_CFFI_OP_FUNCTION, 52), // int()(godot_array const *)
+/* 76 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
+/* 77 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 78 */ _CFFI_OP(_CFFI_OP_FUNCTION, 52), // int()(godot_array const *, godot_variant const *)
 /* 79 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
-/* 80 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 81 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_string *)
-/* 82 */ _CFFI_OP(_CFFI_OP_POINTER, 135), // godot_string *
-/* 83 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 84 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_string *, char const *, int)
-/* 85 */ _CFFI_OP(_CFFI_OP_NOOP, 82),
-/* 86 */ _CFFI_OP(_CFFI_OP_NOOP, 7),
-/* 87 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
-/* 88 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 89 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_string *, godot_string const *, godot_string const *)
-/* 90 */ _CFFI_OP(_CFFI_OP_NOOP, 82),
-/* 91 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
-/* 92 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
+/* 80 */ _CFFI_OP(_CFFI_OP_NOOP, 5),
+/* 81 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 82 */ _CFFI_OP(_CFFI_OP_FUNCTION, 52), // int()(godot_array const *, godot_variant const *, int)
+/* 83 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
+/* 84 */ _CFFI_OP(_CFFI_OP_NOOP, 5),
+/* 85 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
+/* 86 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 87 */ _CFFI_OP(_CFFI_OP_FUNCTION, 52), // int()(godot_dictionary *, godot_string const *)
+/* 88 */ _CFFI_OP(_CFFI_OP_NOOP, 62),
+/* 89 */ _CFFI_OP(_CFFI_OP_NOOP, 19),
+/* 90 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 91 */ _CFFI_OP(_CFFI_OP_FUNCTION, 52), // int()(godot_dictionary const *)
+/* 92 */ _CFFI_OP(_CFFI_OP_NOOP, 8),
 /* 93 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 94 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_string const *, godot_string const *)
-/* 95 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
-/* 96 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
-/* 97 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 98 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_string const *, wchar_t *, int *)
-/* 99 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
-/* 100 */ _CFFI_OP(_CFFI_OP_POINTER, 148), // wchar_t *
-/* 101 */ _CFFI_OP(_CFFI_OP_POINTER, 25), // int *
-/* 102 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 103 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_vector2 *)
-/* 104 */ _CFFI_OP(_CFFI_OP_POINTER, 136), // godot_vector2 *
+/* 94 */ _CFFI_OP(_CFFI_OP_FUNCTION, 52), // int()(godot_pool_string_array *)
+/* 95 */ _CFFI_OP(_CFFI_OP_NOOP, 51),
+/* 96 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 97 */ _CFFI_OP(_CFFI_OP_FUNCTION, 52), // int()(godot_pool_string_array *, int, godot_string const *)
+/* 98 */ _CFFI_OP(_CFFI_OP_NOOP, 51),
+/* 99 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
+/* 100 */ _CFFI_OP(_CFFI_OP_NOOP, 19),
+/* 101 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 102 */ _CFFI_OP(_CFFI_OP_FUNCTION, 52), // int()(int, int)
+/* 103 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
+/* 104 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
 /* 105 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 106 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_vector2 *, float)
-/* 107 */ _CFFI_OP(_CFFI_OP_NOOP, 104),
-/* 108 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 13), // float
-/* 109 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 110 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_vector2 *, float, float)
-/* 111 */ _CFFI_OP(_CFFI_OP_NOOP, 104),
-/* 112 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 13),
-/* 113 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 13),
+/* 106 */ _CFFI_OP(_CFFI_OP_FUNCTION, 242), // uint32_t()(godot_array const *)
+/* 107 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
+/* 108 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 109 */ _CFFI_OP(_CFFI_OP_FUNCTION, 242), // uint32_t()(godot_dictionary const *)
+/* 110 */ _CFFI_OP(_CFFI_OP_NOOP, 8),
+/* 111 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 112 */ _CFFI_OP(_CFFI_OP_FUNCTION, 122), // void *()(char *)
+/* 113 */ _CFFI_OP(_CFFI_OP_POINTER, 231), // char *
 /* 114 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 115 */ _CFFI_OP(_CFFI_OP_FUNCTION, 146), // void()(godot_vector2 *, godot_vector2 const *)
-/* 116 */ _CFFI_OP(_CFFI_OP_NOOP, 104),
-/* 117 */ _CFFI_OP(_CFFI_OP_NOOP, 13),
-/* 118 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 119 */ _CFFI_OP(_CFFI_OP_FUNCTION, 100), // wchar_t *()(godot_string *, int)
-/* 120 */ _CFFI_OP(_CFFI_OP_NOOP, 82),
-/* 121 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
-/* 122 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 123 */ _CFFI_OP(_CFFI_OP_FUNCTION, 147), // wchar_t const *()(godot_string const *)
-/* 124 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
-/* 125 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
-/* 126 */ _CFFI_OP(_CFFI_OP_STRUCT_UNION, 0), // PyObject
-/* 127 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 1), // _Bool
-/* 128 */ _CFFI_OP(_CFFI_OP_POINTER, 40), // char * *
-/* 129 */ _CFFI_OP(_CFFI_OP_POINTER, 7), // char const * *
-/* 130 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 2), // char
-/* 131 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 14), // double
-/* 132 */ _CFFI_OP(_CFFI_OP_STRUCT_UNION, 1), // godot_array
-/* 133 */ _CFFI_OP(_CFFI_OP_STRUCT_UNION, 2), // godot_method_bind
-/* 134 */ _CFFI_OP(_CFFI_OP_STRUCT_UNION, 3), // godot_pool_string_array
-/* 135 */ _CFFI_OP(_CFFI_OP_STRUCT_UNION, 4), // godot_string
-/* 136 */ _CFFI_OP(_CFFI_OP_STRUCT_UNION, 5), // godot_vector2
-/* 137 */ _CFFI_OP(_CFFI_OP_POINTER, 35), // int(*)(int, int)
-/* 138 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 18), // uint8_t
-/* 139 */ _CFFI_OP(_CFFI_OP_ARRAY, 138), // uint8_t[1]
-/* 140 */ (_cffi_opcode_t)(1),
-/* 141 */ _CFFI_OP(_CFFI_OP_ARRAY, 138), // uint8_t[8]
-/* 142 */ (_cffi_opcode_t)(8),
-/* 143 */ _CFFI_OP(_CFFI_OP_POINTER, 42), // void *(*)(void)
-/* 144 */ _CFFI_OP(_CFFI_OP_POINTER, 146), // void const *
-/* 145 */ _CFFI_OP(_CFFI_OP_POINTER, 47), // void(*)(PyObject *, void *)
-/* 146 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 0), // void
-/* 147 */ _CFFI_OP(_CFFI_OP_POINTER, 148), // wchar_t const *
-/* 148 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 16), // wchar_t
+/* 115 */ _CFFI_OP(_CFFI_OP_FUNCTION, 122), // void *()(void)
+/* 116 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 117 */ _CFFI_OP(_CFFI_OP_FUNCTION, 250), // void *(*()(char const *))(void)
+/* 118 */ _CFFI_OP(_CFFI_OP_NOOP, 25),
+/* 119 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 120 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(PyObject *, void *)
+/* 121 */ _CFFI_OP(_CFFI_OP_POINTER, 227), // PyObject *
+/* 122 */ _CFFI_OP(_CFFI_OP_POINTER, 253), // void *
+/* 123 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 124 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_array *)
+/* 125 */ _CFFI_OP(_CFFI_OP_NOOP, 58),
+/* 126 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 127 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_array *, godot_variant const *)
+/* 128 */ _CFFI_OP(_CFFI_OP_NOOP, 58),
+/* 129 */ _CFFI_OP(_CFFI_OP_NOOP, 5),
+/* 130 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 131 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_array *, int)
+/* 132 */ _CFFI_OP(_CFFI_OP_NOOP, 58),
+/* 133 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
+/* 134 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 135 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_array *, int, godot_variant const *)
+/* 136 */ _CFFI_OP(_CFFI_OP_NOOP, 58),
+/* 137 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
+/* 138 */ _CFFI_OP(_CFFI_OP_NOOP, 5),
+/* 139 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 140 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_array *, void *, godot_string const *)
+/* 141 */ _CFFI_OP(_CFFI_OP_NOOP, 58),
+/* 142 */ _CFFI_OP(_CFFI_OP_NOOP, 122),
+/* 143 */ _CFFI_OP(_CFFI_OP_NOOP, 19),
+/* 144 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 145 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_dictionary *)
+/* 146 */ _CFFI_OP(_CFFI_OP_NOOP, 62),
+/* 147 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 148 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_dictionary *, godot_variant const *)
+/* 149 */ _CFFI_OP(_CFFI_OP_NOOP, 62),
+/* 150 */ _CFFI_OP(_CFFI_OP_NOOP, 5),
+/* 151 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 152 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_method_bind *, void *, void const * *, void *)
+/* 153 */ _CFFI_OP(_CFFI_OP_POINTER, 235), // godot_method_bind *
+/* 154 */ _CFFI_OP(_CFFI_OP_NOOP, 122),
+/* 155 */ _CFFI_OP(_CFFI_OP_POINTER, 251), // void const * *
+/* 156 */ _CFFI_OP(_CFFI_OP_NOOP, 122),
+/* 157 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 158 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_pool_string_array *)
+/* 159 */ _CFFI_OP(_CFFI_OP_NOOP, 51),
+/* 160 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 161 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_pool_string_array *, godot_array const *)
+/* 162 */ _CFFI_OP(_CFFI_OP_NOOP, 51),
+/* 163 */ _CFFI_OP(_CFFI_OP_NOOP, 1),
+/* 164 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 165 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_pool_string_array *, godot_pool_string_array const *)
+/* 166 */ _CFFI_OP(_CFFI_OP_NOOP, 51),
+/* 167 */ _CFFI_OP(_CFFI_OP_POINTER, 236), // godot_pool_string_array const *
+/* 168 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 169 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_pool_string_array *, godot_string const *)
+/* 170 */ _CFFI_OP(_CFFI_OP_NOOP, 51),
+/* 171 */ _CFFI_OP(_CFFI_OP_NOOP, 19),
+/* 172 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 173 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_pool_string_array *, int)
+/* 174 */ _CFFI_OP(_CFFI_OP_NOOP, 51),
+/* 175 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
+/* 176 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 177 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_pool_string_array *, int, godot_string const *)
+/* 178 */ _CFFI_OP(_CFFI_OP_NOOP, 51),
+/* 179 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
+/* 180 */ _CFFI_OP(_CFFI_OP_NOOP, 19),
+/* 181 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 182 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_string *)
+/* 183 */ _CFFI_OP(_CFFI_OP_POINTER, 237), // godot_string *
+/* 184 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 185 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_string *, char const *, int)
+/* 186 */ _CFFI_OP(_CFFI_OP_NOOP, 183),
+/* 187 */ _CFFI_OP(_CFFI_OP_NOOP, 25),
+/* 188 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
+/* 189 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 190 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_string *, godot_string const *, godot_string const *)
+/* 191 */ _CFFI_OP(_CFFI_OP_NOOP, 183),
+/* 192 */ _CFFI_OP(_CFFI_OP_NOOP, 19),
+/* 193 */ _CFFI_OP(_CFFI_OP_NOOP, 19),
+/* 194 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 195 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_string const *, godot_string const *)
+/* 196 */ _CFFI_OP(_CFFI_OP_NOOP, 19),
+/* 197 */ _CFFI_OP(_CFFI_OP_NOOP, 19),
+/* 198 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 199 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_string const *, wchar_t *, int *)
+/* 200 */ _CFFI_OP(_CFFI_OP_NOOP, 19),
+/* 201 */ _CFFI_OP(_CFFI_OP_POINTER, 255), // wchar_t *
+/* 202 */ _CFFI_OP(_CFFI_OP_POINTER, 52), // int *
+/* 203 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 204 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_vector2 *)
+/* 205 */ _CFFI_OP(_CFFI_OP_POINTER, 240), // godot_vector2 *
+/* 206 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 207 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_vector2 *, float)
+/* 208 */ _CFFI_OP(_CFFI_OP_NOOP, 205),
+/* 209 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 13), // float
+/* 210 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 211 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_vector2 *, float, float)
+/* 212 */ _CFFI_OP(_CFFI_OP_NOOP, 205),
+/* 213 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 13),
+/* 214 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 13),
+/* 215 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 216 */ _CFFI_OP(_CFFI_OP_FUNCTION, 253), // void()(godot_vector2 *, godot_vector2 const *)
+/* 217 */ _CFFI_OP(_CFFI_OP_NOOP, 205),
+/* 218 */ _CFFI_OP(_CFFI_OP_NOOP, 31),
+/* 219 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 220 */ _CFFI_OP(_CFFI_OP_FUNCTION, 201), // wchar_t *()(godot_string *, int)
+/* 221 */ _CFFI_OP(_CFFI_OP_NOOP, 183),
+/* 222 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 7),
+/* 223 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 224 */ _CFFI_OP(_CFFI_OP_FUNCTION, 254), // wchar_t const *()(godot_string const *)
+/* 225 */ _CFFI_OP(_CFFI_OP_NOOP, 19),
+/* 226 */ _CFFI_OP(_CFFI_OP_FUNCTION_END, 0),
+/* 227 */ _CFFI_OP(_CFFI_OP_STRUCT_UNION, 0), // PyObject
+/* 228 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 1), // _Bool
+/* 229 */ _CFFI_OP(_CFFI_OP_POINTER, 113), // char * *
+/* 230 */ _CFFI_OP(_CFFI_OP_POINTER, 25), // char const * *
+/* 231 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 2), // char
+/* 232 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 14), // double
+/* 233 */ _CFFI_OP(_CFFI_OP_STRUCT_UNION, 1), // godot_array
+/* 234 */ _CFFI_OP(_CFFI_OP_STRUCT_UNION, 2), // godot_dictionary
+/* 235 */ _CFFI_OP(_CFFI_OP_STRUCT_UNION, 3), // godot_method_bind
+/* 236 */ _CFFI_OP(_CFFI_OP_STRUCT_UNION, 4), // godot_pool_string_array
+/* 237 */ _CFFI_OP(_CFFI_OP_STRUCT_UNION, 5), // godot_string
+/* 238 */ _CFFI_OP(_CFFI_OP_POINTER, 239), // godot_variant *
+/* 239 */ _CFFI_OP(_CFFI_OP_STRUCT_UNION, 6), // godot_variant
+/* 240 */ _CFFI_OP(_CFFI_OP_STRUCT_UNION, 7), // godot_vector2
+/* 241 */ _CFFI_OP(_CFFI_OP_POINTER, 102), // int(*)(int, int)
+/* 242 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 22), // uint32_t
+/* 243 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 18), // uint8_t
+/* 244 */ _CFFI_OP(_CFFI_OP_ARRAY, 243), // uint8_t[1]
+/* 245 */ (_cffi_opcode_t)(1),
+/* 246 */ _CFFI_OP(_CFFI_OP_ARRAY, 243), // uint8_t[24]
+/* 247 */ (_cffi_opcode_t)(24),
+/* 248 */ _CFFI_OP(_CFFI_OP_ARRAY, 243), // uint8_t[8]
+/* 249 */ (_cffi_opcode_t)(8),
+/* 250 */ _CFFI_OP(_CFFI_OP_POINTER, 115), // void *(*)(void)
+/* 251 */ _CFFI_OP(_CFFI_OP_POINTER, 253), // void const *
+/* 252 */ _CFFI_OP(_CFFI_OP_POINTER, 120), // void(*)(PyObject *, void *)
+/* 253 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 0), // void
+/* 254 */ _CFFI_OP(_CFFI_OP_POINTER, 255), // wchar_t const *
+/* 255 */ _CFFI_OP(_CFFI_OP_PRIMITIVE, 16), // wchar_t
 };
 
 _CFFI_UNUSED_FN
@@ -1352,6 +1537,1859 @@ CFFI_DLLEXPORT void py_instance_set_godot_obj(PyObject * a0, void * a1)
   _cffi_call_python(&_cffi_externpy__py_instance_set_godot_obj, p);
 }
 
+static void _cffi_d_godot_array_append(godot_array * x0, godot_variant const * x1)
+{
+  godot_array_append(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_append(PyObject *self, PyObject *args)
+{
+  godot_array * x0;
+  godot_variant const * x1;
+  Py_ssize_t datasize;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_append", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(5), arg1) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_array_append(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_array_append _cffi_d_godot_array_append
+#endif
+
+static godot_variant _cffi_d_godot_array_back(godot_array const * x0)
+{
+  return godot_array_back(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_back(PyObject *self, PyObject *arg0)
+{
+  godot_array const * x0;
+  Py_ssize_t datasize;
+  godot_variant result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(1), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_array_back(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_struct((char *)&result, _cffi_type(239));
+}
+#else
+static void _cffi_f_godot_array_back(godot_variant *result, godot_array const * x0)
+{
+  { *result = godot_array_back(x0); }
+}
+#endif
+
+static void _cffi_d_godot_array_clear(godot_array * x0)
+{
+  godot_array_clear(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_clear(PyObject *self, PyObject *arg0)
+{
+  godot_array * x0;
+  Py_ssize_t datasize;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_array_clear(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_array_clear _cffi_d_godot_array_clear
+#endif
+
+static int _cffi_d_godot_array_count(godot_array * x0, godot_variant const * x1)
+{
+  return godot_array_count(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_count(PyObject *self, PyObject *args)
+{
+  godot_array * x0;
+  godot_variant const * x1;
+  Py_ssize_t datasize;
+  int result;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_count", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(5), arg1) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_array_count(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, int);
+}
+#else
+#  define _cffi_f_godot_array_count _cffi_d_godot_array_count
+#endif
+
+static void _cffi_d_godot_array_destroy(godot_array * x0)
+{
+  godot_array_destroy(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_destroy(PyObject *self, PyObject *arg0)
+{
+  godot_array * x0;
+  Py_ssize_t datasize;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_array_destroy(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_array_destroy _cffi_d_godot_array_destroy
+#endif
+
+static _Bool _cffi_d_godot_array_empty(godot_array const * x0)
+{
+  return godot_array_empty(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_empty(PyObject *self, PyObject *arg0)
+{
+  godot_array const * x0;
+  Py_ssize_t datasize;
+  _Bool result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(1), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_array_empty(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, _Bool);
+}
+#else
+#  define _cffi_f_godot_array_empty _cffi_d_godot_array_empty
+#endif
+
+static void _cffi_d_godot_array_erase(godot_array * x0, godot_variant const * x1)
+{
+  godot_array_erase(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_erase(PyObject *self, PyObject *args)
+{
+  godot_array * x0;
+  godot_variant const * x1;
+  Py_ssize_t datasize;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_erase", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(5), arg1) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_array_erase(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_array_erase _cffi_d_godot_array_erase
+#endif
+
+static int _cffi_d_godot_array_find(godot_array const * x0, godot_variant const * x1, int x2)
+{
+  return godot_array_find(x0, x1, x2);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_find(PyObject *self, PyObject *args)
+{
+  godot_array const * x0;
+  godot_variant const * x1;
+  int x2;
+  Py_ssize_t datasize;
+  int result;
+  PyObject *arg0;
+  PyObject *arg1;
+  PyObject *arg2;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_find", 3, 3, &arg0, &arg1, &arg2))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(1), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(5), arg1) < 0)
+      return NULL;
+  }
+
+  x2 = _cffi_to_c_int(arg2, int);
+  if (x2 == (int)-1 && PyErr_Occurred())
+    return NULL;
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_array_find(x0, x1, x2); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, int);
+}
+#else
+#  define _cffi_f_godot_array_find _cffi_d_godot_array_find
+#endif
+
+static int _cffi_d_godot_array_find_last(godot_array const * x0, godot_variant const * x1)
+{
+  return godot_array_find_last(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_find_last(PyObject *self, PyObject *args)
+{
+  godot_array const * x0;
+  godot_variant const * x1;
+  Py_ssize_t datasize;
+  int result;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_find_last", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(1), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(5), arg1) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_array_find_last(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, int);
+}
+#else
+#  define _cffi_f_godot_array_find_last _cffi_d_godot_array_find_last
+#endif
+
+static godot_variant _cffi_d_godot_array_front(godot_array const * x0)
+{
+  return godot_array_front(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_front(PyObject *self, PyObject *arg0)
+{
+  godot_array const * x0;
+  Py_ssize_t datasize;
+  godot_variant result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(1), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_array_front(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_struct((char *)&result, _cffi_type(239));
+}
+#else
+static void _cffi_f_godot_array_front(godot_variant *result, godot_array const * x0)
+{
+  { *result = godot_array_front(x0); }
+}
+#endif
+
+static godot_variant * _cffi_d_godot_array_get(godot_array * x0, int x1)
+{
+  return godot_array_get(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_get(PyObject *self, PyObject *args)
+{
+  godot_array * x0;
+  int x1;
+  Py_ssize_t datasize;
+  godot_variant * result;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_get", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  x1 = _cffi_to_c_int(arg1, int);
+  if (x1 == (int)-1 && PyErr_Occurred())
+    return NULL;
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_array_get(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_pointer((char *)result, _cffi_type(238));
+}
+#else
+#  define _cffi_f_godot_array_get _cffi_d_godot_array_get
+#endif
+
+static _Bool _cffi_d_godot_array_has(godot_array const * x0, godot_variant const * x1)
+{
+  return godot_array_has(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_has(PyObject *self, PyObject *args)
+{
+  godot_array const * x0;
+  godot_variant const * x1;
+  Py_ssize_t datasize;
+  _Bool result;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_has", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(1), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(5), arg1) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_array_has(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, _Bool);
+}
+#else
+#  define _cffi_f_godot_array_has _cffi_d_godot_array_has
+#endif
+
+static uint32_t _cffi_d_godot_array_hash(godot_array const * x0)
+{
+  return godot_array_hash(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_hash(PyObject *self, PyObject *arg0)
+{
+  godot_array const * x0;
+  Py_ssize_t datasize;
+  uint32_t result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(1), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_array_hash(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, uint32_t);
+}
+#else
+#  define _cffi_f_godot_array_hash _cffi_d_godot_array_hash
+#endif
+
+static void _cffi_d_godot_array_insert(godot_array * x0, int x1, godot_variant const * x2)
+{
+  godot_array_insert(x0, x1, x2);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_insert(PyObject *self, PyObject *args)
+{
+  godot_array * x0;
+  int x1;
+  godot_variant const * x2;
+  Py_ssize_t datasize;
+  PyObject *arg0;
+  PyObject *arg1;
+  PyObject *arg2;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_insert", 3, 3, &arg0, &arg1, &arg2))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  x1 = _cffi_to_c_int(arg1, int);
+  if (x1 == (int)-1 && PyErr_Occurred())
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg2, (char **)&x2);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x2 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x2, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x2, _cffi_type(5), arg2) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_array_insert(x0, x1, x2); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_array_insert _cffi_d_godot_array_insert
+#endif
+
+static void _cffi_d_godot_array_invert(godot_array * x0)
+{
+  godot_array_invert(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_invert(PyObject *self, PyObject *arg0)
+{
+  godot_array * x0;
+  Py_ssize_t datasize;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_array_invert(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_array_invert _cffi_d_godot_array_invert
+#endif
+
+static _Bool _cffi_d_godot_array_is_shared(godot_array const * x0)
+{
+  return godot_array_is_shared(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_is_shared(PyObject *self, PyObject *arg0)
+{
+  godot_array const * x0;
+  Py_ssize_t datasize;
+  _Bool result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(1), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_array_is_shared(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, _Bool);
+}
+#else
+#  define _cffi_f_godot_array_is_shared _cffi_d_godot_array_is_shared
+#endif
+
+static godot_variant _cffi_d_godot_array_pop_back(godot_array * x0)
+{
+  return godot_array_pop_back(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_pop_back(PyObject *self, PyObject *arg0)
+{
+  godot_array * x0;
+  Py_ssize_t datasize;
+  godot_variant result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_array_pop_back(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_struct((char *)&result, _cffi_type(239));
+}
+#else
+static void _cffi_f_godot_array_pop_back(godot_variant *result, godot_array * x0)
+{
+  { *result = godot_array_pop_back(x0); }
+}
+#endif
+
+static godot_variant _cffi_d_godot_array_pop_front(godot_array * x0)
+{
+  return godot_array_pop_front(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_pop_front(PyObject *self, PyObject *arg0)
+{
+  godot_array * x0;
+  Py_ssize_t datasize;
+  godot_variant result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_array_pop_front(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_struct((char *)&result, _cffi_type(239));
+}
+#else
+static void _cffi_f_godot_array_pop_front(godot_variant *result, godot_array * x0)
+{
+  { *result = godot_array_pop_front(x0); }
+}
+#endif
+
+static void _cffi_d_godot_array_push_back(godot_array * x0, godot_variant const * x1)
+{
+  godot_array_push_back(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_push_back(PyObject *self, PyObject *args)
+{
+  godot_array * x0;
+  godot_variant const * x1;
+  Py_ssize_t datasize;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_push_back", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(5), arg1) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_array_push_back(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_array_push_back _cffi_d_godot_array_push_back
+#endif
+
+static void _cffi_d_godot_array_push_front(godot_array * x0, godot_variant const * x1)
+{
+  godot_array_push_front(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_push_front(PyObject *self, PyObject *args)
+{
+  godot_array * x0;
+  godot_variant const * x1;
+  Py_ssize_t datasize;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_push_front", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(5), arg1) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_array_push_front(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_array_push_front _cffi_d_godot_array_push_front
+#endif
+
+static void _cffi_d_godot_array_remove(godot_array * x0, int x1)
+{
+  godot_array_remove(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_remove(PyObject *self, PyObject *args)
+{
+  godot_array * x0;
+  int x1;
+  Py_ssize_t datasize;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_remove", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  x1 = _cffi_to_c_int(arg1, int);
+  if (x1 == (int)-1 && PyErr_Occurred())
+    return NULL;
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_array_remove(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_array_remove _cffi_d_godot_array_remove
+#endif
+
+static void _cffi_d_godot_array_resize(godot_array * x0, int x1)
+{
+  godot_array_resize(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_resize(PyObject *self, PyObject *args)
+{
+  godot_array * x0;
+  int x1;
+  Py_ssize_t datasize;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_resize", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  x1 = _cffi_to_c_int(arg1, int);
+  if (x1 == (int)-1 && PyErr_Occurred())
+    return NULL;
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_array_resize(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_array_resize _cffi_d_godot_array_resize
+#endif
+
+static int _cffi_d_godot_array_rfind(godot_array const * x0, godot_variant const * x1, int x2)
+{
+  return godot_array_rfind(x0, x1, x2);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_rfind(PyObject *self, PyObject *args)
+{
+  godot_array const * x0;
+  godot_variant const * x1;
+  int x2;
+  Py_ssize_t datasize;
+  int result;
+  PyObject *arg0;
+  PyObject *arg1;
+  PyObject *arg2;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_rfind", 3, 3, &arg0, &arg1, &arg2))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(1), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(5), arg1) < 0)
+      return NULL;
+  }
+
+  x2 = _cffi_to_c_int(arg2, int);
+  if (x2 == (int)-1 && PyErr_Occurred())
+    return NULL;
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_array_rfind(x0, x1, x2); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, int);
+}
+#else
+#  define _cffi_f_godot_array_rfind _cffi_d_godot_array_rfind
+#endif
+
+static void _cffi_d_godot_array_set(godot_array * x0, int x1, godot_variant const * x2)
+{
+  godot_array_set(x0, x1, x2);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_set(PyObject *self, PyObject *args)
+{
+  godot_array * x0;
+  int x1;
+  godot_variant const * x2;
+  Py_ssize_t datasize;
+  PyObject *arg0;
+  PyObject *arg1;
+  PyObject *arg2;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_set", 3, 3, &arg0, &arg1, &arg2))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  x1 = _cffi_to_c_int(arg1, int);
+  if (x1 == (int)-1 && PyErr_Occurred())
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg2, (char **)&x2);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x2 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x2, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x2, _cffi_type(5), arg2) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_array_set(x0, x1, x2); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_array_set _cffi_d_godot_array_set
+#endif
+
+static int _cffi_d_godot_array_size(godot_array const * x0)
+{
+  return godot_array_size(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_size(PyObject *self, PyObject *arg0)
+{
+  godot_array const * x0;
+  Py_ssize_t datasize;
+  int result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(1), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_array_size(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, int);
+}
+#else
+#  define _cffi_f_godot_array_size _cffi_d_godot_array_size
+#endif
+
+static void _cffi_d_godot_array_sort(godot_array * x0)
+{
+  godot_array_sort(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_sort(PyObject *self, PyObject *arg0)
+{
+  godot_array * x0;
+  Py_ssize_t datasize;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_array_sort(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_array_sort _cffi_d_godot_array_sort
+#endif
+
+static void _cffi_d_godot_array_sort_custom(godot_array * x0, void * x1, godot_string const * x2)
+{
+  godot_array_sort_custom(x0, x1, x2);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_array_sort_custom(PyObject *self, PyObject *args)
+{
+  godot_array * x0;
+  void * x1;
+  godot_string const * x2;
+  Py_ssize_t datasize;
+  PyObject *arg0;
+  PyObject *arg1;
+  PyObject *arg2;
+
+  if (!PyArg_UnpackTuple(args, "godot_array_sort_custom", 3, 3, &arg0, &arg1, &arg2))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(58), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_array *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(58), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(122), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (void *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(122), arg1) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(19), arg2, (char **)&x2);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x2 = (godot_string const *)alloca((size_t)datasize);
+    memset((void *)x2, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x2, _cffi_type(19), arg2) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_array_sort_custom(x0, x1, x2); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_array_sort_custom _cffi_d_godot_array_sort_custom
+#endif
+
+static void _cffi_d_godot_dictionary_clear(godot_dictionary * x0)
+{
+  godot_dictionary_clear(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_dictionary_clear(PyObject *self, PyObject *arg0)
+{
+  godot_dictionary * x0;
+  Py_ssize_t datasize;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(62), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(62), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_dictionary_clear(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_dictionary_clear _cffi_d_godot_dictionary_clear
+#endif
+
+static void _cffi_d_godot_dictionary_destroy(godot_dictionary * x0)
+{
+  godot_dictionary_destroy(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_dictionary_destroy(PyObject *self, PyObject *arg0)
+{
+  godot_dictionary * x0;
+  Py_ssize_t datasize;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(62), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(62), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_dictionary_destroy(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_dictionary_destroy _cffi_d_godot_dictionary_destroy
+#endif
+
+static _Bool _cffi_d_godot_dictionary_empty(godot_dictionary const * x0)
+{
+  return godot_dictionary_empty(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_dictionary_empty(PyObject *self, PyObject *arg0)
+{
+  godot_dictionary const * x0;
+  Py_ssize_t datasize;
+  _Bool result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(8), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(8), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_dictionary_empty(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, _Bool);
+}
+#else
+#  define _cffi_f_godot_dictionary_empty _cffi_d_godot_dictionary_empty
+#endif
+
+static void _cffi_d_godot_dictionary_erase(godot_dictionary * x0, godot_variant const * x1)
+{
+  godot_dictionary_erase(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_dictionary_erase(PyObject *self, PyObject *args)
+{
+  godot_dictionary * x0;
+  godot_variant const * x1;
+  Py_ssize_t datasize;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_dictionary_erase", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(62), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(62), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(5), arg1) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_dictionary_erase(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_dictionary_erase _cffi_d_godot_dictionary_erase
+#endif
+
+static _Bool _cffi_d_godot_dictionary_has(godot_dictionary const * x0, godot_variant const * x1)
+{
+  return godot_dictionary_has(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_dictionary_has(PyObject *self, PyObject *args)
+{
+  godot_dictionary const * x0;
+  godot_variant const * x1;
+  Py_ssize_t datasize;
+  _Bool result;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_dictionary_has", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(8), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(8), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(5), arg1) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_dictionary_has(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, _Bool);
+}
+#else
+#  define _cffi_f_godot_dictionary_has _cffi_d_godot_dictionary_has
+#endif
+
+static _Bool _cffi_d_godot_dictionary_has_all(godot_dictionary const * x0, godot_array const * x1)
+{
+  return godot_dictionary_has_all(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_dictionary_has_all(PyObject *self, PyObject *args)
+{
+  godot_dictionary const * x0;
+  godot_array const * x1;
+  Py_ssize_t datasize;
+  _Bool result;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_dictionary_has_all", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(8), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(8), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(1), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (godot_array const *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(1), arg1) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_dictionary_has_all(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, _Bool);
+}
+#else
+#  define _cffi_f_godot_dictionary_has_all _cffi_d_godot_dictionary_has_all
+#endif
+
+static uint32_t _cffi_d_godot_dictionary_hash(godot_dictionary const * x0)
+{
+  return godot_dictionary_hash(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_dictionary_hash(PyObject *self, PyObject *arg0)
+{
+  godot_dictionary const * x0;
+  Py_ssize_t datasize;
+  uint32_t result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(8), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(8), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_dictionary_hash(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, uint32_t);
+}
+#else
+#  define _cffi_f_godot_dictionary_hash _cffi_d_godot_dictionary_hash
+#endif
+
+static godot_array _cffi_d_godot_dictionary_keys(godot_dictionary const * x0)
+{
+  return godot_dictionary_keys(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_dictionary_keys(PyObject *self, PyObject *arg0)
+{
+  godot_dictionary const * x0;
+  Py_ssize_t datasize;
+  godot_array result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(8), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(8), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_dictionary_keys(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_struct((char *)&result, _cffi_type(233));
+}
+#else
+static void _cffi_f_godot_dictionary_keys(godot_array *result, godot_dictionary const * x0)
+{
+  { *result = godot_dictionary_keys(x0); }
+}
+#endif
+
+static void _cffi_d_godot_dictionary_new(godot_dictionary * x0)
+{
+  godot_dictionary_new(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_dictionary_new(PyObject *self, PyObject *arg0)
+{
+  godot_dictionary * x0;
+  Py_ssize_t datasize;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(62), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(62), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_dictionary_new(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_dictionary_new _cffi_d_godot_dictionary_new
+#endif
+
+static godot_variant * _cffi_d_godot_dictionary_operator_index(godot_dictionary * x0, godot_variant const * x1)
+{
+  return godot_dictionary_operator_index(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_dictionary_operator_index(PyObject *self, PyObject *args)
+{
+  godot_dictionary * x0;
+  godot_variant const * x1;
+  Py_ssize_t datasize;
+  godot_variant * result;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_dictionary_operator_index", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(62), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(62), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(5), arg1) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_dictionary_operator_index(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_pointer((char *)result, _cffi_type(238));
+}
+#else
+#  define _cffi_f_godot_dictionary_operator_index _cffi_d_godot_dictionary_operator_index
+#endif
+
+static int _cffi_d_godot_dictionary_parse_json(godot_dictionary * x0, godot_string const * x1)
+{
+  return godot_dictionary_parse_json(x0, x1);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_dictionary_parse_json(PyObject *self, PyObject *args)
+{
+  godot_dictionary * x0;
+  godot_string const * x1;
+  Py_ssize_t datasize;
+  int result;
+  PyObject *arg0;
+  PyObject *arg1;
+
+  if (!PyArg_UnpackTuple(args, "godot_dictionary_parse_json", 2, 2, &arg0, &arg1))
+    return NULL;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(62), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(62), arg0) < 0)
+      return NULL;
+  }
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(19), arg1, (char **)&x1);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x1 = (godot_string const *)alloca((size_t)datasize);
+    memset((void *)x1, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(19), arg1) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_dictionary_parse_json(x0, x1); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, int);
+}
+#else
+#  define _cffi_f_godot_dictionary_parse_json _cffi_d_godot_dictionary_parse_json
+#endif
+
+static int _cffi_d_godot_dictionary_size(godot_dictionary const * x0)
+{
+  return godot_dictionary_size(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_dictionary_size(PyObject *self, PyObject *arg0)
+{
+  godot_dictionary const * x0;
+  Py_ssize_t datasize;
+  int result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(8), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(8), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_dictionary_size(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_int(result, int);
+}
+#else
+#  define _cffi_f_godot_dictionary_size _cffi_d_godot_dictionary_size
+#endif
+
+static godot_string _cffi_d_godot_dictionary_to_json(godot_dictionary const * x0)
+{
+  return godot_dictionary_to_json(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_dictionary_to_json(PyObject *self, PyObject *arg0)
+{
+  godot_dictionary const * x0;
+  Py_ssize_t datasize;
+  godot_string result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(8), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(8), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_dictionary_to_json(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_struct((char *)&result, _cffi_type(237));
+}
+#else
+static void _cffi_f_godot_dictionary_to_json(godot_string *result, godot_dictionary const * x0)
+{
+  { *result = godot_dictionary_to_json(x0); }
+}
+#endif
+
+static godot_array _cffi_d_godot_dictionary_values(godot_dictionary const * x0)
+{
+  return godot_dictionary_values(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_dictionary_values(PyObject *self, PyObject *arg0)
+{
+  godot_dictionary const * x0;
+  Py_ssize_t datasize;
+  godot_array result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(8), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(8), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_dictionary_values(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_struct((char *)&result, _cffi_type(233));
+}
+#else
+static void _cffi_f_godot_dictionary_values(godot_array *result, godot_dictionary const * x0)
+{
+  { *result = godot_dictionary_values(x0); }
+}
+#endif
+
 static char const * * _cffi_d_godot_get_class_constants(char const * x0)
 {
   return godot_get_class_constants(x0);
@@ -1365,13 +3403,13 @@ _cffi_f_godot_get_class_constants(PyObject *self, PyObject *arg0)
   char const * * result;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(7), arg0, (char **)&x0);
+      _cffi_type(25), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (char const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(7), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(25), arg0) < 0)
       return NULL;
   }
 
@@ -1382,7 +3420,7 @@ _cffi_f_godot_get_class_constants(PyObject *self, PyObject *arg0)
   Py_END_ALLOW_THREADS
 
   (void)self; /* unused */
-  return _cffi_from_c_pointer((char *)result, _cffi_type(129));
+  return _cffi_from_c_pointer((char *)result, _cffi_type(230));
 }
 #else
 #  define _cffi_f_godot_get_class_constants _cffi_d_godot_get_class_constants
@@ -1401,13 +3439,13 @@ _cffi_f_godot_get_class_constructor(PyObject *self, PyObject *arg0)
   void *(* result)(void);
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(7), arg0, (char **)&x0);
+      _cffi_type(25), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (char const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(7), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(25), arg0) < 0)
       return NULL;
   }
 
@@ -1418,7 +3456,7 @@ _cffi_f_godot_get_class_constructor(PyObject *self, PyObject *arg0)
   Py_END_ALLOW_THREADS
 
   (void)self; /* unused */
-  return _cffi_from_c_pointer((char *)result, _cffi_type(143));
+  return _cffi_from_c_pointer((char *)result, _cffi_type(250));
 }
 #else
 #  define _cffi_f_godot_get_class_constructor _cffi_d_godot_get_class_constructor
@@ -1442,7 +3480,7 @@ _cffi_f_godot_get_class_list(PyObject *self, PyObject *noarg)
 
   (void)self; /* unused */
   (void)noarg; /* unused */
-  return _cffi_from_c_pointer((char *)result, _cffi_type(128));
+  return _cffi_from_c_pointer((char *)result, _cffi_type(229));
 }
 #else
 #  define _cffi_f_godot_get_class_list _cffi_d_godot_get_class_list
@@ -1461,13 +3499,13 @@ _cffi_f_godot_get_class_methods(PyObject *self, PyObject *arg0)
   char const * * result;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(7), arg0, (char **)&x0);
+      _cffi_type(25), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (char const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(7), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(25), arg0) < 0)
       return NULL;
   }
 
@@ -1478,7 +3516,7 @@ _cffi_f_godot_get_class_methods(PyObject *self, PyObject *arg0)
   Py_END_ALLOW_THREADS
 
   (void)self; /* unused */
-  return _cffi_from_c_pointer((char *)result, _cffi_type(129));
+  return _cffi_from_c_pointer((char *)result, _cffi_type(230));
 }
 #else
 #  define _cffi_f_godot_get_class_methods _cffi_d_godot_get_class_methods
@@ -1497,13 +3535,13 @@ _cffi_f_godot_get_class_parent(PyObject *self, PyObject *arg0)
   char const * result;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(7), arg0, (char **)&x0);
+      _cffi_type(25), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (char const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(7), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(25), arg0) < 0)
       return NULL;
   }
 
@@ -1514,7 +3552,7 @@ _cffi_f_godot_get_class_parent(PyObject *self, PyObject *arg0)
   Py_END_ALLOW_THREADS
 
   (void)self; /* unused */
-  return _cffi_from_c_pointer((char *)result, _cffi_type(7));
+  return _cffi_from_c_pointer((char *)result, _cffi_type(25));
 }
 #else
 #  define _cffi_f_godot_get_class_parent _cffi_d_godot_get_class_parent
@@ -1533,13 +3571,13 @@ _cffi_f_godot_get_class_properties(PyObject *self, PyObject *arg0)
   char const * * result;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(7), arg0, (char **)&x0);
+      _cffi_type(25), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (char const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(7), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(25), arg0) < 0)
       return NULL;
   }
 
@@ -1550,7 +3588,7 @@ _cffi_f_godot_get_class_properties(PyObject *self, PyObject *arg0)
   Py_END_ALLOW_THREADS
 
   (void)self; /* unused */
-  return _cffi_from_c_pointer((char *)result, _cffi_type(129));
+  return _cffi_from_c_pointer((char *)result, _cffi_type(230));
 }
 #else
 #  define _cffi_f_godot_get_class_properties _cffi_d_godot_get_class_properties
@@ -1569,13 +3607,13 @@ _cffi_f_godot_global_get_singleton(PyObject *self, PyObject *arg0)
   void * result;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(40), arg0, (char **)&x0);
+      _cffi_type(113), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (char *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(40), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(113), arg0) < 0)
       return NULL;
   }
 
@@ -1586,7 +3624,7 @@ _cffi_f_godot_global_get_singleton(PyObject *self, PyObject *arg0)
   Py_END_ALLOW_THREADS
 
   (void)self; /* unused */
-  return _cffi_from_c_pointer((char *)result, _cffi_type(49));
+  return _cffi_from_c_pointer((char *)result, _cffi_type(122));
 }
 #else
 #  define _cffi_f_godot_global_get_singleton _cffi_d_godot_global_get_singleton
@@ -1611,24 +3649,24 @@ _cffi_f_godot_method_bind_get_method(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(7), arg0, (char **)&x0);
+      _cffi_type(25), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (char const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(7), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(25), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(7), arg1, (char **)&x1);
+      _cffi_type(25), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (char const *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(7), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(25), arg1) < 0)
       return NULL;
   }
 
@@ -1639,7 +3677,7 @@ _cffi_f_godot_method_bind_get_method(PyObject *self, PyObject *args)
   Py_END_ALLOW_THREADS
 
   (void)self; /* unused */
-  return _cffi_from_c_pointer((char *)result, _cffi_type(52));
+  return _cffi_from_c_pointer((char *)result, _cffi_type(153));
 }
 #else
 #  define _cffi_f_godot_method_bind_get_method _cffi_d_godot_method_bind_get_method
@@ -1667,46 +3705,46 @@ _cffi_f_godot_method_bind_ptrcall(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(52), arg0, (char **)&x0);
+      _cffi_type(153), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_method_bind *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(52), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(153), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(49), arg1, (char **)&x1);
+      _cffi_type(122), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (void *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(49), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(122), arg1) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(54), arg2, (char **)&x2);
+      _cffi_type(155), arg2, (char **)&x2);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x2 = (void const * *)alloca((size_t)datasize);
     memset((void *)x2, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x2, _cffi_type(54), arg2) < 0)
+    if (_cffi_convert_array_from_object((char *)x2, _cffi_type(155), arg2) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(49), arg3, (char **)&x3);
+      _cffi_type(122), arg3, (char **)&x3);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x3 = (void *)alloca((size_t)datasize);
     memset((void *)x3, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x3, _cffi_type(49), arg3) < 0)
+    if (_cffi_convert_array_from_object((char *)x3, _cffi_type(122), arg3) < 0)
       return NULL;
   }
 
@@ -1742,24 +3780,24 @@ _cffi_f_godot_pool_string_array_append(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(24), arg0, (char **)&x0);
+      _cffi_type(51), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_pool_string_array *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(24), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(51), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(1), arg1, (char **)&x1);
+      _cffi_type(19), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (godot_string const *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(1), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(19), arg1) < 0)
       return NULL;
   }
 
@@ -1795,24 +3833,24 @@ _cffi_f_godot_pool_string_array_append_array(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(24), arg0, (char **)&x0);
+      _cffi_type(51), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_pool_string_array *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(24), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(51), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(66), arg1, (char **)&x1);
+      _cffi_type(167), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (godot_pool_string_array const *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(66), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(167), arg1) < 0)
       return NULL;
   }
 
@@ -1842,13 +3880,13 @@ _cffi_f_godot_pool_string_array_destroy(PyObject *self, PyObject *arg0)
   Py_ssize_t datasize;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(24), arg0, (char **)&x0);
+      _cffi_type(51), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_pool_string_array *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(24), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(51), arg0) < 0)
       return NULL;
   }
 
@@ -1885,13 +3923,13 @@ _cffi_f_godot_pool_string_array_get(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(24), arg0, (char **)&x0);
+      _cffi_type(51), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_pool_string_array *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(24), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(51), arg0) < 0)
       return NULL;
   }
 
@@ -1906,7 +3944,7 @@ _cffi_f_godot_pool_string_array_get(PyObject *self, PyObject *args)
   Py_END_ALLOW_THREADS
 
   (void)self; /* unused */
-  return _cffi_from_c_struct((char *)&result, _cffi_type(135));
+  return _cffi_from_c_struct((char *)&result, _cffi_type(237));
 }
 #else
 static void _cffi_f_godot_pool_string_array_get(godot_string *result, godot_pool_string_array * x0, int x1)
@@ -1936,13 +3974,13 @@ _cffi_f_godot_pool_string_array_insert(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(24), arg0, (char **)&x0);
+      _cffi_type(51), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_pool_string_array *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(24), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(51), arg0) < 0)
       return NULL;
   }
 
@@ -1951,13 +3989,13 @@ _cffi_f_godot_pool_string_array_insert(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(1), arg2, (char **)&x2);
+      _cffi_type(19), arg2, (char **)&x2);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x2 = (godot_string const *)alloca((size_t)datasize);
     memset((void *)x2, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x2, _cffi_type(1), arg2) < 0)
+    if (_cffi_convert_array_from_object((char *)x2, _cffi_type(19), arg2) < 0)
       return NULL;
   }
 
@@ -1986,13 +4024,13 @@ _cffi_f_godot_pool_string_array_invert(PyObject *self, PyObject *arg0)
   Py_ssize_t datasize;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(24), arg0, (char **)&x0);
+      _cffi_type(51), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_pool_string_array *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(24), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(51), arg0) < 0)
       return NULL;
   }
 
@@ -2022,13 +4060,13 @@ _cffi_f_godot_pool_string_array_new(PyObject *self, PyObject *arg0)
   Py_ssize_t datasize;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(24), arg0, (char **)&x0);
+      _cffi_type(51), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_pool_string_array *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(24), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(51), arg0) < 0)
       return NULL;
   }
 
@@ -2064,24 +4102,24 @@ _cffi_f_godot_pool_string_array_new_with_array(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(24), arg0, (char **)&x0);
+      _cffi_type(51), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_pool_string_array *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(24), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(51), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(62), arg1, (char **)&x1);
+      _cffi_type(1), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (godot_array const *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(62), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(1), arg1) < 0)
       return NULL;
   }
 
@@ -2117,24 +4155,24 @@ _cffi_f_godot_pool_string_array_push_back(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(24), arg0, (char **)&x0);
+      _cffi_type(51), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_pool_string_array *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(24), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(51), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(1), arg1, (char **)&x1);
+      _cffi_type(19), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (godot_string const *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(1), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(19), arg1) < 0)
       return NULL;
   }
 
@@ -2170,13 +4208,13 @@ _cffi_f_godot_pool_string_array_remove(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(24), arg0, (char **)&x0);
+      _cffi_type(51), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_pool_string_array *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(24), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(51), arg0) < 0)
       return NULL;
   }
 
@@ -2216,13 +4254,13 @@ _cffi_f_godot_pool_string_array_resize(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(24), arg0, (char **)&x0);
+      _cffi_type(51), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_pool_string_array *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(24), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(51), arg0) < 0)
       return NULL;
   }
 
@@ -2264,13 +4302,13 @@ _cffi_f_godot_pool_string_array_set(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(24), arg0, (char **)&x0);
+      _cffi_type(51), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_pool_string_array *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(24), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(51), arg0) < 0)
       return NULL;
   }
 
@@ -2279,13 +4317,13 @@ _cffi_f_godot_pool_string_array_set(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(1), arg2, (char **)&x2);
+      _cffi_type(19), arg2, (char **)&x2);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x2 = (godot_string const *)alloca((size_t)datasize);
     memset((void *)x2, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x2, _cffi_type(1), arg2) < 0)
+    if (_cffi_convert_array_from_object((char *)x2, _cffi_type(19), arg2) < 0)
       return NULL;
   }
 
@@ -2316,13 +4354,13 @@ _cffi_f_godot_pool_string_array_size(PyObject *self, PyObject *arg0)
   int result;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(24), arg0, (char **)&x0);
+      _cffi_type(51), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_pool_string_array *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(24), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(51), arg0) < 0)
       return NULL;
   }
 
@@ -2352,13 +4390,13 @@ _cffi_f_godot_string_c_str(PyObject *self, PyObject *arg0)
   wchar_t const * result;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(1), arg0, (char **)&x0);
+      _cffi_type(19), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_string const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(19), arg0) < 0)
       return NULL;
   }
 
@@ -2369,7 +4407,7 @@ _cffi_f_godot_string_c_str(PyObject *self, PyObject *arg0)
   Py_END_ALLOW_THREADS
 
   (void)self; /* unused */
-  return _cffi_from_c_pointer((char *)result, _cffi_type(147));
+  return _cffi_from_c_pointer((char *)result, _cffi_type(254));
 }
 #else
 #  define _cffi_f_godot_string_c_str _cffi_d_godot_string_c_str
@@ -2393,24 +4431,24 @@ _cffi_f_godot_string_copy_string(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(1), arg0, (char **)&x0);
+      _cffi_type(19), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_string const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(19), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(1), arg1, (char **)&x1);
+      _cffi_type(19), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (godot_string const *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(1), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(19), arg1) < 0)
       return NULL;
   }
 
@@ -2448,35 +4486,35 @@ _cffi_f_godot_string_get_data(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(1), arg0, (char **)&x0);
+      _cffi_type(19), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_string const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(19), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(100), arg1, (char **)&x1);
+      _cffi_type(201), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (wchar_t *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(100), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(201), arg1) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(101), arg2, (char **)&x2);
+      _cffi_type(202), arg2, (char **)&x2);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x2 = (int *)alloca((size_t)datasize);
     memset((void *)x2, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x2, _cffi_type(101), arg2) < 0)
+    if (_cffi_convert_array_from_object((char *)x2, _cffi_type(202), arg2) < 0)
       return NULL;
   }
 
@@ -2506,13 +4544,13 @@ _cffi_f_godot_string_new(PyObject *self, PyObject *arg0)
   Py_ssize_t datasize;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(82), arg0, (char **)&x0);
+      _cffi_type(183), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_string *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(82), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(183), arg0) < 0)
       return NULL;
   }
 
@@ -2550,24 +4588,24 @@ _cffi_f_godot_string_new_data(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(82), arg0, (char **)&x0);
+      _cffi_type(183), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_string *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(82), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(183), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(7), arg1, (char **)&x1);
+      _cffi_type(25), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (char const *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(7), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(25), arg1) < 0)
       return NULL;
   }
 
@@ -2608,24 +4646,24 @@ _cffi_f_godot_string_operator_equal(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(1), arg0, (char **)&x0);
+      _cffi_type(19), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_string const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(19), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(1), arg1, (char **)&x1);
+      _cffi_type(19), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (godot_string const *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(1), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(19), arg1) < 0)
       return NULL;
   }
 
@@ -2661,13 +4699,13 @@ _cffi_f_godot_string_operator_index(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(82), arg0, (char **)&x0);
+      _cffi_type(183), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_string *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(82), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(183), arg0) < 0)
       return NULL;
   }
 
@@ -2682,7 +4720,7 @@ _cffi_f_godot_string_operator_index(PyObject *self, PyObject *args)
   Py_END_ALLOW_THREADS
 
   (void)self; /* unused */
-  return _cffi_from_c_pointer((char *)result, _cffi_type(100));
+  return _cffi_from_c_pointer((char *)result, _cffi_type(201));
 }
 #else
 #  define _cffi_f_godot_string_operator_index _cffi_d_godot_string_operator_index
@@ -2707,24 +4745,24 @@ _cffi_f_godot_string_operator_less(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(1), arg0, (char **)&x0);
+      _cffi_type(19), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_string const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(1), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(19), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(1), arg1, (char **)&x1);
+      _cffi_type(19), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (godot_string const *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(1), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(19), arg1) < 0)
       return NULL;
   }
 
@@ -2761,35 +4799,35 @@ _cffi_f_godot_string_operator_plus(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(82), arg0, (char **)&x0);
+      _cffi_type(183), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_string *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(82), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(183), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(1), arg1, (char **)&x1);
+      _cffi_type(19), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (godot_string const *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(1), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(19), arg1) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(1), arg2, (char **)&x2);
+      _cffi_type(19), arg2, (char **)&x2);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x2 = (godot_string const *)alloca((size_t)datasize);
     memset((void *)x2, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x2, _cffi_type(1), arg2) < 0)
+    if (_cffi_convert_array_from_object((char *)x2, _cffi_type(19), arg2) < 0)
       return NULL;
   }
 
@@ -2805,6 +4843,84 @@ _cffi_f_godot_string_operator_plus(PyObject *self, PyObject *args)
 }
 #else
 #  define _cffi_f_godot_string_operator_plus _cffi_d_godot_string_operator_plus
+#endif
+
+static godot_dictionary _cffi_d_godot_variant_as_dictionary(godot_variant const * x0)
+{
+  return godot_variant_as_dictionary(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_variant_as_dictionary(PyObject *self, PyObject *arg0)
+{
+  godot_variant const * x0;
+  Py_ssize_t datasize;
+  godot_dictionary result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(5), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_variant_as_dictionary(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_struct((char *)&result, _cffi_type(234));
+}
+#else
+static void _cffi_f_godot_variant_as_dictionary(godot_dictionary *result, godot_variant const * x0)
+{
+  { *result = godot_variant_as_dictionary(x0); }
+}
+#endif
+
+static godot_string _cffi_d_godot_variant_as_string(godot_variant const * x0)
+{
+  return godot_variant_as_string(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_variant_as_string(PyObject *self, PyObject *arg0)
+{
+  godot_variant const * x0;
+  Py_ssize_t datasize;
+  godot_string result;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(5), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_variant const *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(5), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { result = godot_variant_as_string(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  return _cffi_from_c_struct((char *)&result, _cffi_type(237));
+}
+#else
+static void _cffi_f_godot_variant_as_string(godot_string *result, godot_variant const * x0)
+{
+  { *result = godot_variant_as_string(x0); }
+}
 #endif
 
 static float _cffi_d_godot_vector2_distance_squared_to(godot_vector2 const * x0, godot_vector2 const * x1)
@@ -2826,24 +4942,24 @@ _cffi_f_godot_vector2_distance_squared_to(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(13), arg0, (char **)&x0);
+      _cffi_type(31), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_vector2 const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(13), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(31), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(13), arg1, (char **)&x1);
+      _cffi_type(31), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (godot_vector2 const *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(13), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(31), arg1) < 0)
       return NULL;
   }
 
@@ -2879,24 +4995,24 @@ _cffi_f_godot_vector2_distance_to(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(13), arg0, (char **)&x0);
+      _cffi_type(31), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_vector2 const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(13), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(31), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(13), arg1, (char **)&x1);
+      _cffi_type(31), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (godot_vector2 const *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(13), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(31), arg1) < 0)
       return NULL;
   }
 
@@ -2926,13 +5042,13 @@ _cffi_f_godot_vector2_get_x(PyObject *self, PyObject *arg0)
   float result;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(13), arg0, (char **)&x0);
+      _cffi_type(31), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_vector2 const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(13), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(31), arg0) < 0)
       return NULL;
   }
 
@@ -2962,13 +5078,13 @@ _cffi_f_godot_vector2_get_y(PyObject *self, PyObject *arg0)
   float result;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(13), arg0, (char **)&x0);
+      _cffi_type(31), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_vector2 const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(13), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(31), arg0) < 0)
       return NULL;
   }
 
@@ -2998,13 +5114,13 @@ _cffi_f_godot_vector2_length(PyObject *self, PyObject *arg0)
   float result;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(13), arg0, (char **)&x0);
+      _cffi_type(31), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_vector2 const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(13), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(31), arg0) < 0)
       return NULL;
   }
 
@@ -3034,13 +5150,13 @@ _cffi_f_godot_vector2_length_squared(PyObject *self, PyObject *arg0)
   float result;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(13), arg0, (char **)&x0);
+      _cffi_type(31), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_vector2 const *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(13), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(31), arg0) < 0)
       return NULL;
   }
 
@@ -3077,13 +5193,13 @@ _cffi_f_godot_vector2_new(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(104), arg0, (char **)&x0);
+      _cffi_type(205), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_vector2 *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(104), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(205), arg0) < 0)
       return NULL;
   }
 
@@ -3121,13 +5237,13 @@ _cffi_f_godot_vector2_normalize(PyObject *self, PyObject *arg0)
   Py_ssize_t datasize;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(104), arg0, (char **)&x0);
+      _cffi_type(205), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_vector2 *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(104), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(205), arg0) < 0)
       return NULL;
   }
 
@@ -3163,24 +5279,24 @@ _cffi_f_godot_vector2_normalized(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(104), arg0, (char **)&x0);
+      _cffi_type(205), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_vector2 *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(104), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(205), arg0) < 0)
       return NULL;
   }
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(13), arg1, (char **)&x1);
+      _cffi_type(31), arg1, (char **)&x1);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x1 = (godot_vector2 const *)alloca((size_t)datasize);
     memset((void *)x1, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(13), arg1) < 0)
+    if (_cffi_convert_array_from_object((char *)x1, _cffi_type(31), arg1) < 0)
       return NULL;
   }
 
@@ -3216,13 +5332,13 @@ _cffi_f_godot_vector2_set_x(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(104), arg0, (char **)&x0);
+      _cffi_type(205), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_vector2 *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(104), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(205), arg0) < 0)
       return NULL;
   }
 
@@ -3262,13 +5378,13 @@ _cffi_f_godot_vector2_set_y(PyObject *self, PyObject *args)
     return NULL;
 
   datasize = _cffi_prepare_pointer_call_argument(
-      _cffi_type(104), arg0, (char **)&x0);
+      _cffi_type(205), arg0, (char **)&x0);
   if (datasize != 0) {
     if (datasize < 0)
       return NULL;
     x0 = (godot_vector2 *)alloca((size_t)datasize);
     memset((void *)x0, 0, (size_t)datasize);
-    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(104), arg0) < 0)
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(205), arg0) < 0)
       return NULL;
   }
 
@@ -3300,6 +5416,15 @@ static void _cffi_checkfld__godot_array(godot_array *p)
 struct _cffi_align__godot_array { char x; godot_array y; };
 
 _CFFI_UNUSED_FN
+static void _cffi_checkfld__godot_dictionary(godot_dictionary *p)
+{
+  /* only to generate compile-time warnings or errors */
+  (void)p;
+  { uint8_t(*tmp)[8] = &p->_dont_touch_that; (void)tmp; }
+}
+struct _cffi_align__godot_dictionary { char x; godot_dictionary y; };
+
+_CFFI_UNUSED_FN
 static void _cffi_checkfld__godot_method_bind(godot_method_bind *p)
 {
   /* only to generate compile-time warnings or errors */
@@ -3327,6 +5452,15 @@ static void _cffi_checkfld__godot_string(godot_string *p)
 struct _cffi_align__godot_string { char x; godot_string y; };
 
 _CFFI_UNUSED_FN
+static void _cffi_checkfld__godot_variant(godot_variant *p)
+{
+  /* only to generate compile-time warnings or errors */
+  (void)p;
+  { uint8_t(*tmp)[24] = &p->_dont_touch_that; (void)tmp; }
+}
+struct _cffi_align__godot_variant { char x; godot_variant y; };
+
+_CFFI_UNUSED_FN
 static void _cffi_checkfld__godot_vector2(godot_vector2 *p)
 {
   /* only to generate compile-time warnings or errors */
@@ -3336,98 +5470,153 @@ static void _cffi_checkfld__godot_vector2(godot_vector2 *p)
 struct _cffi_align__godot_vector2 { char x; godot_vector2 y; };
 
 static const struct _cffi_global_s _cffi_globals[] = {
-  { "do_stuff", (void *)&_cffi_externpy__do_stuff, _CFFI_OP(_CFFI_OP_EXTERN_PYTHON, 137), (void *)do_stuff },
-  { "godot_get_class_constants", (void *)_cffi_f_godot_get_class_constants, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 6), (void *)_cffi_d_godot_get_class_constants },
-  { "godot_get_class_constructor", (void *)_cffi_f_godot_get_class_constructor, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 44), (void *)_cffi_d_godot_get_class_constructor },
-  { "godot_get_class_list", (void *)_cffi_f_godot_get_class_list, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_N, 4), (void *)_cffi_d_godot_get_class_list },
-  { "godot_get_class_methods", (void *)_cffi_f_godot_get_class_methods, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 6), (void *)_cffi_d_godot_get_class_methods },
-  { "godot_get_class_parent", (void *)_cffi_f_godot_get_class_parent, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 9), (void *)_cffi_d_godot_get_class_parent },
-  { "godot_get_class_properties", (void *)_cffi_f_godot_get_class_properties, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 6), (void *)_cffi_d_godot_get_class_properties },
-  { "godot_global_get_singleton", (void *)_cffi_f_godot_global_get_singleton, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 39), (void *)_cffi_d_godot_global_get_singleton },
-  { "godot_method_bind_get_method", (void *)_cffi_f_godot_method_bind_get_method, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 19), (void *)_cffi_d_godot_method_bind_get_method },
-  { "godot_method_bind_ptrcall", (void *)_cffi_f_godot_method_bind_ptrcall, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 51), (void *)_cffi_d_godot_method_bind_ptrcall },
-  { "godot_pool_string_array_append", (void *)_cffi_f_godot_pool_string_array_append, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 68), (void *)_cffi_d_godot_pool_string_array_append },
-  { "godot_pool_string_array_append_array", (void *)_cffi_f_godot_pool_string_array_append_array, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 64), (void *)_cffi_d_godot_pool_string_array_append_array },
-  { "godot_pool_string_array_destroy", (void *)_cffi_f_godot_pool_string_array_destroy, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 57), (void *)_cffi_d_godot_pool_string_array_destroy },
-  { "godot_pool_string_array_get", (void *)_cffi_f_godot_pool_string_array_get, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 23), (void *)_cffi_d_godot_pool_string_array_get },
-  { "godot_pool_string_array_insert", (void *)_cffi_f_godot_pool_string_array_insert, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 30), (void *)_cffi_d_godot_pool_string_array_insert },
-  { "godot_pool_string_array_invert", (void *)_cffi_f_godot_pool_string_array_invert, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 57), (void *)_cffi_d_godot_pool_string_array_invert },
-  { "godot_pool_string_array_new", (void *)_cffi_f_godot_pool_string_array_new, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 57), (void *)_cffi_d_godot_pool_string_array_new },
-  { "godot_pool_string_array_new_with_array", (void *)_cffi_f_godot_pool_string_array_new_with_array, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 60), (void *)_cffi_d_godot_pool_string_array_new_with_array },
-  { "godot_pool_string_array_push_back", (void *)_cffi_f_godot_pool_string_array_push_back, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 68), (void *)_cffi_d_godot_pool_string_array_push_back },
-  { "godot_pool_string_array_remove", (void *)_cffi_f_godot_pool_string_array_remove, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 72), (void *)_cffi_d_godot_pool_string_array_remove },
-  { "godot_pool_string_array_resize", (void *)_cffi_f_godot_pool_string_array_resize, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 72), (void *)_cffi_d_godot_pool_string_array_resize },
-  { "godot_pool_string_array_set", (void *)_cffi_f_godot_pool_string_array_set, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 76), (void *)_cffi_d_godot_pool_string_array_set },
-  { "godot_pool_string_array_size", (void *)_cffi_f_godot_pool_string_array_size, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 27), (void *)_cffi_d_godot_pool_string_array_size },
-  { "godot_string_c_str", (void *)_cffi_f_godot_string_c_str, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 123), (void *)_cffi_d_godot_string_c_str },
-  { "godot_string_copy_string", (void *)_cffi_f_godot_string_copy_string, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 94), (void *)_cffi_d_godot_string_copy_string },
-  { "godot_string_get_data", (void *)_cffi_f_godot_string_get_data, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 98), (void *)_cffi_d_godot_string_get_data },
-  { "godot_string_new", (void *)_cffi_f_godot_string_new, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 81), (void *)_cffi_d_godot_string_new },
-  { "godot_string_new_data", (void *)_cffi_f_godot_string_new_data, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 84), (void *)_cffi_d_godot_string_new_data },
-  { "godot_string_operator_equal", (void *)_cffi_f_godot_string_operator_equal, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 0), (void *)_cffi_d_godot_string_operator_equal },
-  { "godot_string_operator_index", (void *)_cffi_f_godot_string_operator_index, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 119), (void *)_cffi_d_godot_string_operator_index },
-  { "godot_string_operator_less", (void *)_cffi_f_godot_string_operator_less, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 0), (void *)_cffi_d_godot_string_operator_less },
-  { "godot_string_operator_plus", (void *)_cffi_f_godot_string_operator_plus, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 89), (void *)_cffi_d_godot_string_operator_plus },
-  { "godot_vector2_distance_squared_to", (void *)_cffi_f_godot_vector2_distance_squared_to, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 15), (void *)_cffi_d_godot_vector2_distance_squared_to },
-  { "godot_vector2_distance_to", (void *)_cffi_f_godot_vector2_distance_to, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 15), (void *)_cffi_d_godot_vector2_distance_to },
-  { "godot_vector2_get_x", (void *)_cffi_f_godot_vector2_get_x, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 12), (void *)_cffi_d_godot_vector2_get_x },
-  { "godot_vector2_get_y", (void *)_cffi_f_godot_vector2_get_y, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 12), (void *)_cffi_d_godot_vector2_get_y },
-  { "godot_vector2_length", (void *)_cffi_f_godot_vector2_length, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 12), (void *)_cffi_d_godot_vector2_length },
-  { "godot_vector2_length_squared", (void *)_cffi_f_godot_vector2_length_squared, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 12), (void *)_cffi_d_godot_vector2_length_squared },
-  { "godot_vector2_new", (void *)_cffi_f_godot_vector2_new, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 110), (void *)_cffi_d_godot_vector2_new },
-  { "godot_vector2_normalize", (void *)_cffi_f_godot_vector2_normalize, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 103), (void *)_cffi_d_godot_vector2_normalize },
-  { "godot_vector2_normalized", (void *)_cffi_f_godot_vector2_normalized, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 115), (void *)_cffi_d_godot_vector2_normalized },
-  { "godot_vector2_set_x", (void *)_cffi_f_godot_vector2_set_x, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 106), (void *)_cffi_d_godot_vector2_set_x },
-  { "godot_vector2_set_y", (void *)_cffi_f_godot_vector2_set_y, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 106), (void *)_cffi_d_godot_vector2_set_y },
-  { "py_instance_set_godot_obj", (void *)&_cffi_externpy__py_instance_set_godot_obj, _CFFI_OP(_CFFI_OP_EXTERN_PYTHON, 145), (void *)py_instance_set_godot_obj },
+  { "do_stuff", (void *)&_cffi_externpy__do_stuff, _CFFI_OP(_CFFI_OP_EXTERN_PYTHON, 241), (void *)do_stuff },
+  { "godot_array_append", (void *)_cffi_f_godot_array_append, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 127), (void *)_cffi_d_godot_array_append },
+  { "godot_array_back", (void *)_cffi_f_godot_array_back, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 68), (void *)_cffi_d_godot_array_back },
+  { "godot_array_clear", (void *)_cffi_f_godot_array_clear, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 124), (void *)_cffi_d_godot_array_clear },
+  { "godot_array_count", (void *)_cffi_f_godot_array_count, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 71), (void *)_cffi_d_godot_array_count },
+  { "godot_array_destroy", (void *)_cffi_f_godot_array_destroy, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 124), (void *)_cffi_d_godot_array_destroy },
+  { "godot_array_empty", (void *)_cffi_f_godot_array_empty, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 0), (void *)_cffi_d_godot_array_empty },
+  { "godot_array_erase", (void *)_cffi_f_godot_array_erase, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 127), (void *)_cffi_d_godot_array_erase },
+  { "godot_array_find", (void *)_cffi_f_godot_array_find, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 82), (void *)_cffi_d_godot_array_find },
+  { "godot_array_find_last", (void *)_cffi_f_godot_array_find_last, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 78), (void *)_cffi_d_godot_array_find_last },
+  { "godot_array_front", (void *)_cffi_f_godot_array_front, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 68), (void *)_cffi_d_godot_array_front },
+  { "godot_array_get", (void *)_cffi_f_godot_array_get, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 57), (void *)_cffi_d_godot_array_get },
+  { "godot_array_has", (void *)_cffi_f_godot_array_has, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 3), (void *)_cffi_d_godot_array_has },
+  { "godot_array_hash", (void *)_cffi_f_godot_array_hash, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 106), (void *)_cffi_d_godot_array_hash },
+  { "godot_array_insert", (void *)_cffi_f_godot_array_insert, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 135), (void *)_cffi_d_godot_array_insert },
+  { "godot_array_invert", (void *)_cffi_f_godot_array_invert, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 124), (void *)_cffi_d_godot_array_invert },
+  { "godot_array_is_shared", (void *)_cffi_f_godot_array_is_shared, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 0), (void *)_cffi_d_godot_array_is_shared },
+  { "godot_array_pop_back", (void *)_cffi_f_godot_array_pop_back, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 65), (void *)_cffi_d_godot_array_pop_back },
+  { "godot_array_pop_front", (void *)_cffi_f_godot_array_pop_front, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 65), (void *)_cffi_d_godot_array_pop_front },
+  { "godot_array_push_back", (void *)_cffi_f_godot_array_push_back, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 127), (void *)_cffi_d_godot_array_push_back },
+  { "godot_array_push_front", (void *)_cffi_f_godot_array_push_front, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 127), (void *)_cffi_d_godot_array_push_front },
+  { "godot_array_remove", (void *)_cffi_f_godot_array_remove, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 131), (void *)_cffi_d_godot_array_remove },
+  { "godot_array_resize", (void *)_cffi_f_godot_array_resize, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 131), (void *)_cffi_d_godot_array_resize },
+  { "godot_array_rfind", (void *)_cffi_f_godot_array_rfind, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 82), (void *)_cffi_d_godot_array_rfind },
+  { "godot_array_set", (void *)_cffi_f_godot_array_set, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 135), (void *)_cffi_d_godot_array_set },
+  { "godot_array_size", (void *)_cffi_f_godot_array_size, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 75), (void *)_cffi_d_godot_array_size },
+  { "godot_array_sort", (void *)_cffi_f_godot_array_sort, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 124), (void *)_cffi_d_godot_array_sort },
+  { "godot_array_sort_custom", (void *)_cffi_f_godot_array_sort_custom, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 140), (void *)_cffi_d_godot_array_sort_custom },
+  { "godot_dictionary_clear", (void *)_cffi_f_godot_dictionary_clear, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 145), (void *)_cffi_d_godot_dictionary_clear },
+  { "godot_dictionary_destroy", (void *)_cffi_f_godot_dictionary_destroy, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 145), (void *)_cffi_d_godot_dictionary_destroy },
+  { "godot_dictionary_empty", (void *)_cffi_f_godot_dictionary_empty, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 7), (void *)_cffi_d_godot_dictionary_empty },
+  { "godot_dictionary_erase", (void *)_cffi_f_godot_dictionary_erase, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 148), (void *)_cffi_d_godot_dictionary_erase },
+  { "godot_dictionary_has", (void *)_cffi_f_godot_dictionary_has, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 14), (void *)_cffi_d_godot_dictionary_has },
+  { "godot_dictionary_has_all", (void *)_cffi_f_godot_dictionary_has_all, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 10), (void *)_cffi_d_godot_dictionary_has_all },
+  { "godot_dictionary_hash", (void *)_cffi_f_godot_dictionary_hash, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 109), (void *)_cffi_d_godot_dictionary_hash },
+  { "godot_dictionary_keys", (void *)_cffi_f_godot_dictionary_keys, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 37), (void *)_cffi_d_godot_dictionary_keys },
+  { "godot_dictionary_new", (void *)_cffi_f_godot_dictionary_new, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 145), (void *)_cffi_d_godot_dictionary_new },
+  { "godot_dictionary_operator_index", (void *)_cffi_f_godot_dictionary_operator_index, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 61), (void *)_cffi_d_godot_dictionary_operator_index },
+  { "godot_dictionary_parse_json", (void *)_cffi_f_godot_dictionary_parse_json, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 87), (void *)_cffi_d_godot_dictionary_parse_json },
+  { "godot_dictionary_size", (void *)_cffi_f_godot_dictionary_size, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 91), (void *)_cffi_d_godot_dictionary_size },
+  { "godot_dictionary_to_json", (void *)_cffi_f_godot_dictionary_to_json, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 47), (void *)_cffi_d_godot_dictionary_to_json },
+  { "godot_dictionary_values", (void *)_cffi_f_godot_dictionary_values, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 37), (void *)_cffi_d_godot_dictionary_values },
+  { "godot_get_class_constants", (void *)_cffi_f_godot_get_class_constants, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 24), (void *)_cffi_d_godot_get_class_constants },
+  { "godot_get_class_constructor", (void *)_cffi_f_godot_get_class_constructor, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 117), (void *)_cffi_d_godot_get_class_constructor },
+  { "godot_get_class_list", (void *)_cffi_f_godot_get_class_list, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_N, 22), (void *)_cffi_d_godot_get_class_list },
+  { "godot_get_class_methods", (void *)_cffi_f_godot_get_class_methods, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 24), (void *)_cffi_d_godot_get_class_methods },
+  { "godot_get_class_parent", (void *)_cffi_f_godot_get_class_parent, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 27), (void *)_cffi_d_godot_get_class_parent },
+  { "godot_get_class_properties", (void *)_cffi_f_godot_get_class_properties, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 24), (void *)_cffi_d_godot_get_class_properties },
+  { "godot_global_get_singleton", (void *)_cffi_f_godot_global_get_singleton, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 112), (void *)_cffi_d_godot_global_get_singleton },
+  { "godot_method_bind_get_method", (void *)_cffi_f_godot_method_bind_get_method, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 43), (void *)_cffi_d_godot_method_bind_get_method },
+  { "godot_method_bind_ptrcall", (void *)_cffi_f_godot_method_bind_ptrcall, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 152), (void *)_cffi_d_godot_method_bind_ptrcall },
+  { "godot_pool_string_array_append", (void *)_cffi_f_godot_pool_string_array_append, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 169), (void *)_cffi_d_godot_pool_string_array_append },
+  { "godot_pool_string_array_append_array", (void *)_cffi_f_godot_pool_string_array_append_array, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 165), (void *)_cffi_d_godot_pool_string_array_append_array },
+  { "godot_pool_string_array_destroy", (void *)_cffi_f_godot_pool_string_array_destroy, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 158), (void *)_cffi_d_godot_pool_string_array_destroy },
+  { "godot_pool_string_array_get", (void *)_cffi_f_godot_pool_string_array_get, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 50), (void *)_cffi_d_godot_pool_string_array_get },
+  { "godot_pool_string_array_insert", (void *)_cffi_f_godot_pool_string_array_insert, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 97), (void *)_cffi_d_godot_pool_string_array_insert },
+  { "godot_pool_string_array_invert", (void *)_cffi_f_godot_pool_string_array_invert, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 158), (void *)_cffi_d_godot_pool_string_array_invert },
+  { "godot_pool_string_array_new", (void *)_cffi_f_godot_pool_string_array_new, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 158), (void *)_cffi_d_godot_pool_string_array_new },
+  { "godot_pool_string_array_new_with_array", (void *)_cffi_f_godot_pool_string_array_new_with_array, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 161), (void *)_cffi_d_godot_pool_string_array_new_with_array },
+  { "godot_pool_string_array_push_back", (void *)_cffi_f_godot_pool_string_array_push_back, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 169), (void *)_cffi_d_godot_pool_string_array_push_back },
+  { "godot_pool_string_array_remove", (void *)_cffi_f_godot_pool_string_array_remove, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 173), (void *)_cffi_d_godot_pool_string_array_remove },
+  { "godot_pool_string_array_resize", (void *)_cffi_f_godot_pool_string_array_resize, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 173), (void *)_cffi_d_godot_pool_string_array_resize },
+  { "godot_pool_string_array_set", (void *)_cffi_f_godot_pool_string_array_set, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 177), (void *)_cffi_d_godot_pool_string_array_set },
+  { "godot_pool_string_array_size", (void *)_cffi_f_godot_pool_string_array_size, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 94), (void *)_cffi_d_godot_pool_string_array_size },
+  { "godot_string_c_str", (void *)_cffi_f_godot_string_c_str, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 224), (void *)_cffi_d_godot_string_c_str },
+  { "godot_string_copy_string", (void *)_cffi_f_godot_string_copy_string, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 195), (void *)_cffi_d_godot_string_copy_string },
+  { "godot_string_get_data", (void *)_cffi_f_godot_string_get_data, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 199), (void *)_cffi_d_godot_string_get_data },
+  { "godot_string_new", (void *)_cffi_f_godot_string_new, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 182), (void *)_cffi_d_godot_string_new },
+  { "godot_string_new_data", (void *)_cffi_f_godot_string_new_data, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 185), (void *)_cffi_d_godot_string_new_data },
+  { "godot_string_operator_equal", (void *)_cffi_f_godot_string_operator_equal, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 18), (void *)_cffi_d_godot_string_operator_equal },
+  { "godot_string_operator_index", (void *)_cffi_f_godot_string_operator_index, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 220), (void *)_cffi_d_godot_string_operator_index },
+  { "godot_string_operator_less", (void *)_cffi_f_godot_string_operator_less, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 18), (void *)_cffi_d_godot_string_operator_less },
+  { "godot_string_operator_plus", (void *)_cffi_f_godot_string_operator_plus, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 190), (void *)_cffi_d_godot_string_operator_plus },
+  { "godot_variant_as_dictionary", (void *)_cffi_f_godot_variant_as_dictionary, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 40), (void *)_cffi_d_godot_variant_as_dictionary },
+  { "godot_variant_as_string", (void *)_cffi_f_godot_variant_as_string, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 54), (void *)_cffi_d_godot_variant_as_string },
+  { "godot_vector2_distance_squared_to", (void *)_cffi_f_godot_vector2_distance_squared_to, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 33), (void *)_cffi_d_godot_vector2_distance_squared_to },
+  { "godot_vector2_distance_to", (void *)_cffi_f_godot_vector2_distance_to, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 33), (void *)_cffi_d_godot_vector2_distance_to },
+  { "godot_vector2_get_x", (void *)_cffi_f_godot_vector2_get_x, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 30), (void *)_cffi_d_godot_vector2_get_x },
+  { "godot_vector2_get_y", (void *)_cffi_f_godot_vector2_get_y, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 30), (void *)_cffi_d_godot_vector2_get_y },
+  { "godot_vector2_length", (void *)_cffi_f_godot_vector2_length, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 30), (void *)_cffi_d_godot_vector2_length },
+  { "godot_vector2_length_squared", (void *)_cffi_f_godot_vector2_length_squared, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 30), (void *)_cffi_d_godot_vector2_length_squared },
+  { "godot_vector2_new", (void *)_cffi_f_godot_vector2_new, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 211), (void *)_cffi_d_godot_vector2_new },
+  { "godot_vector2_normalize", (void *)_cffi_f_godot_vector2_normalize, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 204), (void *)_cffi_d_godot_vector2_normalize },
+  { "godot_vector2_normalized", (void *)_cffi_f_godot_vector2_normalized, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 216), (void *)_cffi_d_godot_vector2_normalized },
+  { "godot_vector2_set_x", (void *)_cffi_f_godot_vector2_set_x, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 207), (void *)_cffi_d_godot_vector2_set_x },
+  { "godot_vector2_set_y", (void *)_cffi_f_godot_vector2_set_y, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 207), (void *)_cffi_d_godot_vector2_set_y },
+  { "py_instance_set_godot_obj", (void *)&_cffi_externpy__py_instance_set_godot_obj, _CFFI_OP(_CFFI_OP_EXTERN_PYTHON, 252), (void *)py_instance_set_godot_obj },
 };
 
 static const struct _cffi_field_s _cffi_fields[] = {
   { "_dont_touch_that", offsetof(godot_array, _dont_touch_that),
                         sizeof(((godot_array *)0)->_dont_touch_that),
-                        _CFFI_OP(_CFFI_OP_NOOP, 141) },
+                        _CFFI_OP(_CFFI_OP_NOOP, 248) },
+  { "_dont_touch_that", offsetof(godot_dictionary, _dont_touch_that),
+                        sizeof(((godot_dictionary *)0)->_dont_touch_that),
+                        _CFFI_OP(_CFFI_OP_NOOP, 248) },
   { "_dont_touch_that", offsetof(godot_method_bind, _dont_touch_that),
                         sizeof(((godot_method_bind *)0)->_dont_touch_that),
-                        _CFFI_OP(_CFFI_OP_NOOP, 139) },
+                        _CFFI_OP(_CFFI_OP_NOOP, 244) },
   { "_dont_touch_that", offsetof(godot_pool_string_array, _dont_touch_that),
                         sizeof(((godot_pool_string_array *)0)->_dont_touch_that),
-                        _CFFI_OP(_CFFI_OP_NOOP, 141) },
+                        _CFFI_OP(_CFFI_OP_NOOP, 248) },
   { "_dont_touch_that", offsetof(godot_string, _dont_touch_that),
                         sizeof(((godot_string *)0)->_dont_touch_that),
-                        _CFFI_OP(_CFFI_OP_NOOP, 141) },
+                        _CFFI_OP(_CFFI_OP_NOOP, 248) },
+  { "_dont_touch_that", offsetof(godot_variant, _dont_touch_that),
+                        sizeof(((godot_variant *)0)->_dont_touch_that),
+                        _CFFI_OP(_CFFI_OP_NOOP, 246) },
   { "_dont_touch_that", offsetof(godot_vector2, _dont_touch_that),
                         sizeof(((godot_vector2 *)0)->_dont_touch_that),
-                        _CFFI_OP(_CFFI_OP_NOOP, 141) },
+                        _CFFI_OP(_CFFI_OP_NOOP, 248) },
 };
 
 static const struct _cffi_struct_union_s _cffi_struct_unions[] = {
-  { "$PyObject", 126, 0,
+  { "$PyObject", 227, 0,
     sizeof(PyObject), offsetof(struct _cffi_align_typedef_PyObject, y), 0, 0 },
-  { "godot_array", 132, _CFFI_F_CHECK_FIELDS,
+  { "godot_array", 233, _CFFI_F_CHECK_FIELDS,
     sizeof(godot_array), offsetof(struct _cffi_align__godot_array, y), 0, 1 },
-  { "godot_method_bind", 133, _CFFI_F_CHECK_FIELDS,
-    sizeof(godot_method_bind), offsetof(struct _cffi_align__godot_method_bind, y), 1, 1 },
-  { "godot_pool_string_array", 134, _CFFI_F_CHECK_FIELDS,
-    sizeof(godot_pool_string_array), offsetof(struct _cffi_align__godot_pool_string_array, y), 2, 1 },
-  { "godot_string", 135, _CFFI_F_CHECK_FIELDS,
-    sizeof(godot_string), offsetof(struct _cffi_align__godot_string, y), 3, 1 },
-  { "godot_vector2", 136, _CFFI_F_CHECK_FIELDS,
-    sizeof(godot_vector2), offsetof(struct _cffi_align__godot_vector2, y), 4, 1 },
+  { "godot_dictionary", 234, _CFFI_F_CHECK_FIELDS,
+    sizeof(godot_dictionary), offsetof(struct _cffi_align__godot_dictionary, y), 1, 1 },
+  { "godot_method_bind", 235, _CFFI_F_CHECK_FIELDS,
+    sizeof(godot_method_bind), offsetof(struct _cffi_align__godot_method_bind, y), 2, 1 },
+  { "godot_pool_string_array", 236, _CFFI_F_CHECK_FIELDS,
+    sizeof(godot_pool_string_array), offsetof(struct _cffi_align__godot_pool_string_array, y), 3, 1 },
+  { "godot_string", 237, _CFFI_F_CHECK_FIELDS,
+    sizeof(godot_string), offsetof(struct _cffi_align__godot_string, y), 4, 1 },
+  { "godot_variant", 239, _CFFI_F_CHECK_FIELDS,
+    sizeof(godot_variant), offsetof(struct _cffi_align__godot_variant, y), 5, 1 },
+  { "godot_vector2", 240, _CFFI_F_CHECK_FIELDS,
+    sizeof(godot_vector2), offsetof(struct _cffi_align__godot_vector2, y), 6, 1 },
 };
 
 static const struct _cffi_typename_s _cffi_typenames[] = {
-  { "PyObject", 126 },
-  { "godot_array", 132 },
-  { "godot_bool", 127 },
-  { "godot_class_constructor", 143 },
-  { "godot_int", 25 },
-  { "godot_method_bind", 133 },
-  { "godot_object", 146 },
-  { "godot_pool_string_array", 134 },
-  { "godot_real", 108 },
-  { "godot_real64", 131 },
-  { "godot_string", 135 },
-  { "godot_vector2", 136 },
+  { "PyObject", 227 },
+  { "godot_array", 233 },
+  { "godot_bool", 228 },
+  { "godot_class_constructor", 250 },
+  { "godot_dictionary", 234 },
+  { "godot_int", 52 },
+  { "godot_method_bind", 235 },
+  { "godot_object", 253 },
+  { "godot_pool_string_array", 236 },
+  { "godot_real", 209 },
+  { "godot_real64", 232 },
+  { "godot_string", 237 },
+  { "godot_variant", 239 },
+  { "godot_vector2", 240 },
 };
 
 static const struct _cffi_type_context_s _cffi_type_context = {
@@ -3437,12 +5626,12 @@ static const struct _cffi_type_context_s _cffi_type_context = {
   _cffi_struct_unions,
   NULL,  /* no enums */
   _cffi_typenames,
-  44,  /* num_globals */
-  6,  /* num_struct_unions */
+  87,  /* num_globals */
+  8,  /* num_struct_unions */
   0,  /* num_enums */
-  12,  /* num_typenames */
+  14,  /* num_typenames */
   NULL,  /* no includes */
-  149,  /* num_types */
+  256,  /* num_types */
   1,  /* flags */
 };
 

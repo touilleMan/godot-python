@@ -43,6 +43,9 @@ def iter_on_c(cstruct):
         yield cstruct[i]
         i += 1
 
+def _gen_stub(msg):
+    return lambda *args: print(msg)
+
 
 def build_class(classname):
     cclassname = classname.encode()
@@ -50,29 +53,31 @@ def build_class(classname):
         '_gd_name': classname,
         '_gd_constructor': lib.godot_get_class_constructor(cclassname)
     }
+    print('======> BINDING', classname)
     # Methods
     for meth in ClassDB.get_class_methods(classname):
         methname = meth['name']
+        print('=> M', methname)
         # methbind = lib.godot_method_bind_get_method(classname, methname)
         # def bind(self, *args):
         #     lib.godot_method_bind_get_method(methbind)
         #     ret = ffi.new()
         #     lib.godot_method_bind_ptrcall(methbind, self, )
-        nmspc[methname] = lambda *args: print('**** Should have called ', classname, methname)
+        nmspc[methname] = _gen_stub('**** Should have called %s.%s' % (classname, methname))
     # Properties
-    for crawprop in iter_on_c(lib.godot_get_class_properties(cclassname)):
-        cpropname = ffi.string(crawprop)
-        propname = cpropname.decode()
-        nmspc[propname] = property(lambda self: print('***** Should have called %s.%s getter' % (classname, propname)))
-        nmspc[propname].setter(lambda self, value: print('***** Should have called %s.%s setter' % (classname, propname)))
+    for prop in ClassDB.get_class_properties(classname):
+        propname = prop['name']
+        print('=> P', propname)
+        nmspc[propname] = property(_gen_stub('***** Should have called %s.%s getter' % (classname, propname)))
+        nmspc[propname].setter(_gen_stub('***** Should have called %s.%s setter' % (classname, propname)))
     # Constants
-    for crawconst in iter_on_c(lib.godot_get_class_constants(cclassname)):
-        cconstname = ffi.string(crawconst)
-        constname = cconstname.decode()
-        nmspc[constname] = 42
-    parent_name = ffi.string(lib.godot_get_class_parent(cclassname)).decode()
-    if parent_name:
-        bases = (getattr(module, parent_name), )
+    for constname in ClassDB.get_class_consts(classname):
+        nmspc[constname] = ClassDB.get_integer_constant(classname, constname)
+        print('=> C', constname)
+    parentname = ClassDB.get_parent_class(classname)
+    print('=> P', parentname)
+    if parentname:
+        bases = (getattr(module, parentname), )
     else:
         bases = (BaseObject, )
     return type(classname, bases, nmspc)
@@ -81,8 +86,11 @@ def build_class(classname):
 class ClassDB:
     _instance = lib.godot_global_get_singleton(b"ClassDB")
     _meth_get_class_list = lib.godot_method_bind_get_method(b"_ClassDB", b"get_class_list")
-    _meth_get_method_list = lib.godot_method_bind_get_method(b"_ClassDB", b"get_method_list")
+    _meth_get_method_list = lib.godot_method_bind_get_method(b"_ClassDB", b"class_get_method_list")
     _meth_get_parent_class = lib.godot_method_bind_get_method(b"_ClassDB", b"get_parent_class")
+    _meth_get_property_list = lib.godot_method_bind_get_method(b"_ClassDB", b"class_get_property_list")
+    _meth_get_integer_constant_list = lib.godot_method_bind_get_method(b"_ClassDB", b"class_get_integer_constant_list")
+    _meth_get_integer_constant = lib.godot_method_bind_get_method(b"_ClassDB", b"class_get_integer_constant")
 
     @classmethod
     def get_class_list(cls):
@@ -101,7 +109,7 @@ class ClassDB:
         classes = []
         while len(unordered) != len(classes):
             for classname in unordered:
-                parentname = cls.get_class_parent(classname)
+                parentname = cls.get_parent_class(classname)
                 if not parentname or parentname in classes:
                     if classname not in classes:
                         classes.append(classname)
@@ -114,7 +122,8 @@ class ClassDB:
         ret = ffi.new("godot_array*")
         gd_classname = ffi.new("godot_string*")
         lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
-        args = ffi.new("void*[2]", [gd_classname])
+        gd_true = ffi.new("godot_bool*", 1)
+        args = ffi.new("void*[2]", [gd_classname, gd_true])
         # 2nd arg should be false, which what we get by not initializing it
         lib.godot_method_bind_ptrcall(cls._meth_get_method_list, cls._instance, args, ret)
         for i in range(lib.godot_array_size(ret)):
@@ -124,7 +133,52 @@ class ClassDB:
         return methods
 
     @classmethod
-    def get_class_parent(cls, classname):
+    def get_class_properties(cls, classname):
+        properties = []
+        ret = ffi.new("godot_array*")
+        gd_classname = ffi.new("godot_string*")
+        lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
+        gd_true = ffi.new("godot_bool*", 1)
+        args = ffi.new("void*[2]", [gd_classname, gd_true])
+        # 2nd arg should be false, which what we get by not initializing it
+        lib.godot_method_bind_ptrcall(cls._meth_get_property_list, cls._instance, args, ret)
+        for i in range(lib.godot_array_size(ret)):
+            var = lib.godot_array_get(ret, i)
+            propdict = convert_godot_dictionary(lib.godot_variant_as_dictionary(var))
+            properties.append(propdict)
+        return properties
+
+    @classmethod
+    def get_class_consts(cls, classname):
+        consts = []
+        ret = ffi.new("godot_pool_string_array*")
+        lib.godot_pool_string_array_new(ret)
+        gd_classname = ffi.new("godot_string*")
+        gd_true = ffi.new("godot_bool*", 1)
+        lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
+        args = ffi.new("void*[2]", [gd_classname, gd_true])
+        # 2nd arg should be false, which what we get by not initializing it
+        lib.godot_method_bind_ptrcall(cls._meth_get_integer_constant_list, cls._instance, args, ret)
+        for i in range(lib.godot_pool_string_array_size(ret)):
+            godot_str = lib.godot_pool_string_array_get(ret, i)
+            c_str = lib.godot_string_c_str(ffi.new('godot_string*', godot_str))
+            consts.append(ffi.string(c_str))
+        return consts
+
+    @classmethod
+    def get_integer_constant(cls, classname, constname):
+        ret = ffi.new("godot_int*")
+        gd_classname = ffi.new("godot_string*")
+        lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
+        gd_constname = ffi.new("godot_string*")
+        lib.godot_string_new_data(gd_constname, constname.encode(), len(constname.encode()))
+        args = ffi.new("void*[2]", [gd_classname, gd_constname])
+        # 2nd arg should be false, which what we get by not initializing it
+        lib.godot_method_bind_ptrcall(cls._meth_get_integer_constant, cls._instance, args, ret)
+        return int(ret[0])
+
+    @classmethod
+    def get_parent_class(cls, classname):
         ret = ffi.new("godot_string*")
         gd_classname = ffi.new("godot_string*")
         lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
@@ -159,18 +213,6 @@ def variant_to_pyobj(gdvar):
 
 for classname in ClassDB.get_class_list():
     setattr(module, classname, build_class(classname))
-
-# clist = lib.godot_get_class_list()
-# i = 0
-# while clist[i] != ffi.NULL:
-#     cclassname = ffi.string(clist[i])
-#     classname = cclassname.decode()
-#     constructor = lib.godot_get_class_constructor(cclassname)
-#     cmethods = lib.godot_get_class_methods()
-#     j = 0
-
-#     setattr(module, classname, type(classname, (BaseObject, ), {'_gd_constructor': constructor, '_gd_name': classname}))
-#     i += 1
 
 
 sys.modules["godot.bindings"] = module
