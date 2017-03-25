@@ -431,11 +431,12 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 
 #define _CFFI_MODULE_NAME  "pythonscriptcffi"
 #define _CFFI_PYTHON_STARTUP_CODE  "print('============> INIT CFFI <===========')\n" \
-"import os\n" \
-"import sys\n" \
-"import imp\n" \
 "\n" \
 "from pythonscriptcffi import ffi, lib\n" \
+"\n" \
+"import imp\n" \
+"import sys\n" \
+"\n" \
 "\n" \
 "__exposed_classes = {}\n" \
 "__exposed_classes_per_module = {}\n" \
@@ -482,89 +483,9 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "module.get_exposed_class_per_module = get_exposed_class_per_module\n" \
 "\n" \
 "sys.modules[\"godot\"] = module\n" \
-"module = imp.new_module(\"godot.bindings\")\n" \
-"\n" \
-"\n" \
-"class Vector2:\n" \
-"    def __init__(self, x=0.0, y=0.0):\n" \
-"        self.__gdobj = ffi.new('godot_vector2*')\n" \
-"        lib.godot_vector2_new(self.__gdobj, x, y)\n" \
-"\n" \
-"    @property\n" \
-"    def x(self):\n" \
-"        return lib.godot_vector2_get_x(self.__gdobj)\n" \
-"\n" \
-"    @property\n" \
-"    def y(self):\n" \
-"        return lib.godot_vector2_get_y(self.__gdobj)\n" \
-"\n" \
-"    @x.setter\n" \
-"    def x(self, val):\n" \
-"        return lib.godot_vector2_set_x(self.__gdobj, val)\n" \
-"\n" \
-"    @y.setter\n" \
-"    def y(self, val):\n" \
-"        return lib.godot_vector2_set_y(self.__gdobj, val)\n" \
-"\n" \
-"    def __repr__(self):\n" \
-"        return \"<%s(x=%s, y=%s)>\" % (type(self).__name__, self.x, self.y)\n" \
-"\n" \
-"\n" \
-"module.Vector2 = Vector2\n" \
-"\n" \
-"\n" \
-"class BaseObject:\n" \
-"    def __init__(self):\n" \
-"        self._gd_obj = self._gd_constructor()\n" \
-"\n" \
-"    def _gd_set_godot_obj(self, obj):\n" \
-"        self._gd_obj = obj\n" \
-"\n" \
-"\n" \
-"def iter_on_c(cstruct):\n" \
-"    i = 0\n" \
-"    while cstruct[i] != ffi.NULL:\n" \
-"        yield cstruct[i]\n" \
-"        i += 1\n" \
-"\n" \
-"def _gen_stub(msg):\n" \
-"    return lambda *args: print(msg)\n" \
-"\n" \
-"\n" \
-"def build_class(classname):\n" \
-"    cclassname = classname.encode()\n" \
-"    nmspc = {\n" \
-"        '_gd_name': classname,\n" \
-"        '_gd_constructor': lib.godot_get_class_constructor(cclassname)\n" \
-"    }\n" \
-"    print('======> BINDING', classname)\n" \
-"    # Methods\n" \
-"    for meth in ClassDB.get_class_methods(classname):\n" \
-"        methname = meth['name']\n" \
-"        print('=> M', methname)\n" \
-"        # methbind = lib.godot_method_bind_get_method(classname, methname)\n" \
-"        # def bind(self, *args):\n" \
-"        #     lib.godot_method_bind_get_method(methbind)\n" \
-"        #     ret = ffi.new()\n" \
-"        #     lib.godot_method_bind_ptrcall(methbind, self, )\n" \
-"        nmspc[methname] = _gen_stub('**** Should have called %s.%s' % (classname, methname))\n" \
-"    # Properties\n" \
-"    for prop in ClassDB.get_class_properties(classname):\n" \
-"        propname = prop['name']\n" \
-"        print('=> P', propname)\n" \
-"        nmspc[propname] = property(_gen_stub('***** Should have called %s.%s getter' % (classname, propname)))\n" \
-"        nmspc[propname].setter(_gen_stub('***** Should have called %s.%s setter' % (classname, propname)))\n" \
-"    # Constants\n" \
-"    for constname in ClassDB.get_class_consts(classname):\n" \
-"        nmspc[constname] = ClassDB.get_integer_constant(classname, constname)\n" \
-"        print('=> C', constname)\n" \
-"    parentname = ClassDB.get_parent_class(classname)\n" \
-"    print('=> P', parentname)\n" \
-"    if parentname:\n" \
-"        bases = (getattr(module, parentname), )\n" \
-"    else:\n" \
-"        bases = (BaseObject, )\n" \
-"    return type(classname, bases, nmspc)\n" \
+"import sys\n" \
+"from types import ModuleType\n" \
+"from pythonscriptcffi import ffi, lib\n" \
 "\n" \
 "\n" \
 "class ClassDB:\n" \
@@ -672,6 +593,110 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "        return ffi.string(c_str)\n" \
 "\n" \
 "\n" \
+"# TODO: use pybind11 for this \?\n" \
+"class Vector2:\n" \
+"    def __init__(self, x=0.0, y=0.0):\n" \
+"        self.__gdobj = ffi.new('godot_vector2*')\n" \
+"        lib.godot_vector2_new(self.__gdobj, x, y)\n" \
+"\n" \
+"    @property\n" \
+"    def x(self):\n" \
+"        return lib.godot_vector2_get_x(self.__gdobj)\n" \
+"\n" \
+"    @property\n" \
+"    def y(self):\n" \
+"        return lib.godot_vector2_get_y(self.__gdobj)\n" \
+"\n" \
+"    @x.setter\n" \
+"    def x(self, val):\n" \
+"        return lib.godot_vector2_set_x(self.__gdobj, val)\n" \
+"\n" \
+"    @y.setter\n" \
+"    def y(self, val):\n" \
+"        return lib.godot_vector2_set_y(self.__gdobj, val)\n" \
+"\n" \
+"    def __repr__(self):\n" \
+"        return \"<%s(x=%s, y=%s)>\" % (type(self).__name__, self.x, self.y)\n" \
+"\n" \
+"\n" \
+"# Werkzeug style lazy module\n" \
+"class LazyBindingsModule(ModuleType):\n" \
+"\n" \
+"    \"\"\"Automatically import objects from the modules.\"\"\"\n" \
+"\n" \
+"    def __init__(self, name, doc=None):\n" \
+"        super().__init__(name, doc=doc)\n" \
+"        self._loaded = {'Vector2': Vector2}\n" \
+"        self._available = ClassDB.get_class_list()\n" \
+"        setattr(self, '__package__', name)\n" \
+"        setattr(self, '__all__', self._available)\n" \
+"\n" \
+"    def __getattr__(self, name):\n" \
+"        if name not in self._loaded:\n" \
+"            if name not in self._available:\n" \
+"                return ModuleType.__getattribute__(self, name)\n" \
+"            self._loaded[name] = build_class(name)\n" \
+"        return self._loaded[name]\n" \
+"\n" \
+"    def __dir__(self):\n" \
+"        \"\"\"Just show what we want to show.\"\"\"\n" \
+"        result = list(self.__all__)\n" \
+"        result.extend(('__all__', '__doc__', '__loader__', '__name__',\n" \
+"                       '__package__', '__spec__', '_available', '_loaded'))\n" \
+"        return result\n" \
+"\n" \
+"\n" \
+"module = LazyBindingsModule(\"godot.bindings\")\n" \
+"\n" \
+"\n" \
+"class BaseObject:\n" \
+"    def __init__(self):\n" \
+"        self._gd_obj = self._gd_constructor()\n" \
+"\n" \
+"    def _gd_set_godot_obj(self, obj):\n" \
+"        self._gd_obj = obj\n" \
+"\n" \
+"\n" \
+"def _gen_stub(msg):\n" \
+"    return lambda *args: print(msg)\n" \
+"\n" \
+"\n" \
+"def build_class(classname):\n" \
+"    cclassname = classname.encode()\n" \
+"    nmspc = {\n" \
+"        '_gd_name': classname,\n" \
+"        '_gd_constructor': lib.godot_get_class_constructor(cclassname)\n" \
+"    }\n" \
+"    print('======> BINDING', classname)\n" \
+"    # Methods\n" \
+"    for meth in ClassDB.get_class_methods(classname):\n" \
+"        methname = meth['name']\n" \
+"        print('=> M', methname)\n" \
+"        # methbind = lib.godot_method_bind_get_method(classname, methname)\n" \
+"        # def bind(self, *args):\n" \
+"        #     lib.godot_method_bind_get_method(methbind)\n" \
+"        #     ret = ffi.new()\n" \
+"        #     lib.godot_method_bind_ptrcall(methbind, self, )\n" \
+"        nmspc[methname] = _gen_stub('**** Should have called %s.%s' % (classname, methname))\n" \
+"    # Properties\n" \
+"    for prop in ClassDB.get_class_properties(classname):\n" \
+"        propname = prop['name']\n" \
+"        print('=> P', propname)\n" \
+"        nmspc[propname] = property(_gen_stub('***** Should have called %s.%s getter' % (classname, propname)))\n" \
+"        nmspc[propname].setter(_gen_stub('***** Should have called %s.%s setter' % (classname, propname)))\n" \
+"    # Constants\n" \
+"    for constname in ClassDB.get_class_consts(classname):\n" \
+"        nmspc[constname] = ClassDB.get_integer_constant(classname, constname)\n" \
+"        print('=> C', constname)\n" \
+"    parentname = ClassDB.get_parent_class(classname)\n" \
+"    print('=> P', parentname)\n" \
+"    if parentname:\n" \
+"        bases = (getattr(module, parentname), )\n" \
+"    else:\n" \
+"        bases = (BaseObject, )\n" \
+"    return type(classname, bases, nmspc)\n" \
+"\n" \
+"\n" \
 "def convert_godot_dictionary(gddict):\n" \
 "    pdict = {}\n" \
 "    p_gddict = ffi.new(\"godot_dictionary*\", gddict)\n" \
@@ -695,8 +720,8 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "    pass\n" \
 "\n" \
 "\n" \
-"for classname in ClassDB.get_class_list():\n" \
-"    setattr(module, classname, build_class(classname))\n" \
+"# for classname in ClassDB.get_class_list():\n" \
+"#     setattr(module, classname, build_class(classname))\n" \
 "\n" \
 "\n" \
 "sys.modules[\"godot.bindings\"] = module\n" \

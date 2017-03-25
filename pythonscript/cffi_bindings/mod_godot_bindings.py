@@ -1,86 +1,6 @@
-module = imp.new_module("godot.bindings")
-
-
-class Vector2:
-    def __init__(self, x=0.0, y=0.0):
-        self.__gdobj = ffi.new('godot_vector2*')
-        lib.godot_vector2_new(self.__gdobj, x, y)
-
-    @property
-    def x(self):
-        return lib.godot_vector2_get_x(self.__gdobj)
-
-    @property
-    def y(self):
-        return lib.godot_vector2_get_y(self.__gdobj)
-
-    @x.setter
-    def x(self, val):
-        return lib.godot_vector2_set_x(self.__gdobj, val)
-
-    @y.setter
-    def y(self, val):
-        return lib.godot_vector2_set_y(self.__gdobj, val)
-
-    def __repr__(self):
-        return "<%s(x=%s, y=%s)>" % (type(self).__name__, self.x, self.y)
-
-
-module.Vector2 = Vector2
-
-
-class BaseObject:
-    def __init__(self):
-        self._gd_obj = self._gd_constructor()
-
-    def _gd_set_godot_obj(self, obj):
-        self._gd_obj = obj
-
-
-def iter_on_c(cstruct):
-    i = 0
-    while cstruct[i] != ffi.NULL:
-        yield cstruct[i]
-        i += 1
-
-def _gen_stub(msg):
-    return lambda *args: print(msg)
-
-
-def build_class(classname):
-    cclassname = classname.encode()
-    nmspc = {
-        '_gd_name': classname,
-        '_gd_constructor': lib.godot_get_class_constructor(cclassname)
-    }
-    print('======> BINDING', classname)
-    # Methods
-    for meth in ClassDB.get_class_methods(classname):
-        methname = meth['name']
-        print('=> M', methname)
-        # methbind = lib.godot_method_bind_get_method(classname, methname)
-        # def bind(self, *args):
-        #     lib.godot_method_bind_get_method(methbind)
-        #     ret = ffi.new()
-        #     lib.godot_method_bind_ptrcall(methbind, self, )
-        nmspc[methname] = _gen_stub('**** Should have called %s.%s' % (classname, methname))
-    # Properties
-    for prop in ClassDB.get_class_properties(classname):
-        propname = prop['name']
-        print('=> P', propname)
-        nmspc[propname] = property(_gen_stub('***** Should have called %s.%s getter' % (classname, propname)))
-        nmspc[propname].setter(_gen_stub('***** Should have called %s.%s setter' % (classname, propname)))
-    # Constants
-    for constname in ClassDB.get_class_consts(classname):
-        nmspc[constname] = ClassDB.get_integer_constant(classname, constname)
-        print('=> C', constname)
-    parentname = ClassDB.get_parent_class(classname)
-    print('=> P', parentname)
-    if parentname:
-        bases = (getattr(module, parentname), )
-    else:
-        bases = (BaseObject, )
-    return type(classname, bases, nmspc)
+import sys
+from types import ModuleType
+from pythonscriptcffi import ffi, lib
 
 
 class ClassDB:
@@ -188,6 +108,110 @@ class ClassDB:
         return ffi.string(c_str)
 
 
+# TODO: use pybind11 for this ?
+class Vector2:
+    def __init__(self, x=0.0, y=0.0):
+        self.__gdobj = ffi.new('godot_vector2*')
+        lib.godot_vector2_new(self.__gdobj, x, y)
+
+    @property
+    def x(self):
+        return lib.godot_vector2_get_x(self.__gdobj)
+
+    @property
+    def y(self):
+        return lib.godot_vector2_get_y(self.__gdobj)
+
+    @x.setter
+    def x(self, val):
+        return lib.godot_vector2_set_x(self.__gdobj, val)
+
+    @y.setter
+    def y(self, val):
+        return lib.godot_vector2_set_y(self.__gdobj, val)
+
+    def __repr__(self):
+        return "<%s(x=%s, y=%s)>" % (type(self).__name__, self.x, self.y)
+
+
+# Werkzeug style lazy module
+class LazyBindingsModule(ModuleType):
+
+    """Automatically import objects from the modules."""
+
+    def __init__(self, name, doc=None):
+        super().__init__(name, doc=doc)
+        self._loaded = {'Vector2': Vector2}
+        self._available = ClassDB.get_class_list()
+        setattr(self, '__package__', name)
+        setattr(self, '__all__', self._available)
+
+    def __getattr__(self, name):
+        if name not in self._loaded:
+            if name not in self._available:
+                return ModuleType.__getattribute__(self, name)
+            self._loaded[name] = build_class(name)
+        return self._loaded[name]
+
+    def __dir__(self):
+        """Just show what we want to show."""
+        result = list(self.__all__)
+        result.extend(('__all__', '__doc__', '__loader__', '__name__',
+                       '__package__', '__spec__', '_available', '_loaded'))
+        return result
+
+
+module = LazyBindingsModule("godot.bindings")
+
+
+class BaseObject:
+    def __init__(self):
+        self._gd_obj = self._gd_constructor()
+
+    def _gd_set_godot_obj(self, obj):
+        self._gd_obj = obj
+
+
+def _gen_stub(msg):
+    return lambda *args: print(msg)
+
+
+def build_class(classname):
+    cclassname = classname.encode()
+    nmspc = {
+        '_gd_name': classname,
+        '_gd_constructor': lib.godot_get_class_constructor(cclassname)
+    }
+    print('======> BINDING', classname)
+    # Methods
+    for meth in ClassDB.get_class_methods(classname):
+        methname = meth['name']
+        print('=> M', methname)
+        # methbind = lib.godot_method_bind_get_method(classname, methname)
+        # def bind(self, *args):
+        #     lib.godot_method_bind_get_method(methbind)
+        #     ret = ffi.new()
+        #     lib.godot_method_bind_ptrcall(methbind, self, )
+        nmspc[methname] = _gen_stub('**** Should have called %s.%s' % (classname, methname))
+    # Properties
+    for prop in ClassDB.get_class_properties(classname):
+        propname = prop['name']
+        print('=> P', propname)
+        nmspc[propname] = property(_gen_stub('***** Should have called %s.%s getter' % (classname, propname)))
+        nmspc[propname].setter(_gen_stub('***** Should have called %s.%s setter' % (classname, propname)))
+    # Constants
+    for constname in ClassDB.get_class_consts(classname):
+        nmspc[constname] = ClassDB.get_integer_constant(classname, constname)
+        print('=> C', constname)
+    parentname = ClassDB.get_parent_class(classname)
+    print('=> P', parentname)
+    if parentname:
+        bases = (getattr(module, parentname), )
+    else:
+        bases = (BaseObject, )
+    return type(classname, bases, nmspc)
+
+
 def convert_godot_dictionary(gddict):
     pdict = {}
     p_gddict = ffi.new("godot_dictionary*", gddict)
@@ -209,10 +233,6 @@ def convert_godot_dictionary(gddict):
 
 def variant_to_pyobj(gdvar):
     pass
-
-
-for classname in ClassDB.get_class_list():
-    setattr(module, classname, build_class(classname))
 
 
 sys.modules["godot.bindings"] = module

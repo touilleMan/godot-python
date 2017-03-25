@@ -1,3 +1,7 @@
+import imp
+import sys
+
+
 __exposed_classes = {}
 __exposed_classes_per_module = {}
 

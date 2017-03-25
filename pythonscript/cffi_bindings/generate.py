@@ -25,9 +25,6 @@ with open(BASEDIR + '/mod_godot_bindings.py', 'r') as fd:
 
 ffibuilder.embedding_init_code("""
 print('============> INIT CFFI <===========')
-import os
-import sys
-import imp
 
 from pythonscriptcffi import ffi, lib
 
