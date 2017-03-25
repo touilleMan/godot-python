@@ -176,6 +176,20 @@ def _gen_stub(msg):
     return lambda *args: print(msg)
 
 
+def build_method(classname, methname):
+        # methbind = lib.godot_method_bind_get_method(classname, methname)
+        # def bind(self, *args):
+        #     lib.godot_method_bind_get_method(methbind)
+        #     ret = ffi.new()
+        #     lib.godot_method_bind_ptrcall(methbind, self, )
+        return lambda *args: print('**** Should have called %s.%s' % (classname, methname))
+
+
+def build_property(classname, propname):
+    prop = property(lambda *args: print('***** Should have called %s.%s getter' % (classname, propname)))
+    return prop.setter(lambda *args: print('***** Should have called %s.%s setter' % (classname, propname)))
+
+
 def build_class(classname):
     cclassname = classname.encode()
     nmspc = {
@@ -187,18 +201,12 @@ def build_class(classname):
     for meth in ClassDB.get_class_methods(classname):
         methname = meth['name']
         print('=> M', methname)
-        # methbind = lib.godot_method_bind_get_method(classname, methname)
-        # def bind(self, *args):
-        #     lib.godot_method_bind_get_method(methbind)
-        #     ret = ffi.new()
-        #     lib.godot_method_bind_ptrcall(methbind, self, )
-        nmspc[methname] = _gen_stub('**** Should have called %s.%s' % (classname, methname))
+        nmspc[methname] = build_method(classname, methname)
     # Properties
     for prop in ClassDB.get_class_properties(classname):
         propname = prop['name']
         print('=> P', propname)
-        nmspc[propname] = property(_gen_stub('***** Should have called %s.%s getter' % (classname, propname)))
-        nmspc[propname].setter(_gen_stub('***** Should have called %s.%s setter' % (classname, propname)))
+        nmspc[propname] = build_property(classname, propname)
     # Constants
     for constname in ClassDB.get_class_consts(classname):
         nmspc[constname] = ClassDB.get_integer_constant(classname, constname)

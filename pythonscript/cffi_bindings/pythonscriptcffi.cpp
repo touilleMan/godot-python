@@ -661,6 +661,20 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "    return lambda *args: print(msg)\n" \
 "\n" \
 "\n" \
+"def build_method(classname, methname):\n" \
+"        # methbind = lib.godot_method_bind_get_method(classname, methname)\n" \
+"        # def bind(self, *args):\n" \
+"        #     lib.godot_method_bind_get_method(methbind)\n" \
+"        #     ret = ffi.new()\n" \
+"        #     lib.godot_method_bind_ptrcall(methbind, self, )\n" \
+"        return lambda *args: print('**** Should have called %s.%s' % (classname, methname))\n" \
+"\n" \
+"\n" \
+"def build_property(classname, propname):\n" \
+"    prop = property(lambda *args: print('***** Should have called %s.%s getter' % (classname, propname)))\n" \
+"    return prop.setter(lambda *args: print('***** Should have called %s.%s setter' % (classname, propname)))\n" \
+"\n" \
+"\n" \
 "def build_class(classname):\n" \
 "    cclassname = classname.encode()\n" \
 "    nmspc = {\n" \
@@ -672,18 +686,12 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "    for meth in ClassDB.get_class_methods(classname):\n" \
 "        methname = meth['name']\n" \
 "        print('=> M', methname)\n" \
-"        # methbind = lib.godot_method_bind_get_method(classname, methname)\n" \
-"        # def bind(self, *args):\n" \
-"        #     lib.godot_method_bind_get_method(methbind)\n" \
-"        #     ret = ffi.new()\n" \
-"        #     lib.godot_method_bind_ptrcall(methbind, self, )\n" \
-"        nmspc[methname] = _gen_stub('**** Should have called %s.%s' % (classname, methname))\n" \
+"        nmspc[methname] = build_method(classname, methname)\n" \
 "    # Properties\n" \
 "    for prop in ClassDB.get_class_properties(classname):\n" \
 "        propname = prop['name']\n" \
 "        print('=> P', propname)\n" \
-"        nmspc[propname] = property(_gen_stub('***** Should have called %s.%s getter' % (classname, propname)))\n" \
-"        nmspc[propname].setter(_gen_stub('***** Should have called %s.%s setter' % (classname, propname)))\n" \
+"        nmspc[propname] = build_property(classname, propname)\n" \
 "    # Constants\n" \
 "    for constname in ClassDB.get_class_consts(classname):\n" \
 "        nmspc[constname] = ClassDB.get_integer_constant(classname, constname)\n" \
@@ -718,10 +726,6 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "\n" \
 "def variant_to_pyobj(gdvar):\n" \
 "    pass\n" \
-"\n" \
-"\n" \
-"# for classname in ClassDB.get_class_list():\n" \
-"#     setattr(module, classname, build_class(classname))\n" \
 "\n" \
 "\n" \
 "sys.modules[\"godot.bindings\"] = module\n" \
