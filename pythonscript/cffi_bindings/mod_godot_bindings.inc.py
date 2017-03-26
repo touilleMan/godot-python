@@ -48,7 +48,8 @@ class ClassDB:
         lib.godot_method_bind_ptrcall(cls._meth_get_method_list, cls._instance, args, ret)
         for i in range(lib.godot_array_size(ret)):
             var = lib.godot_array_get(ret, i)
-            methdict = convert_godot_dictionary(lib.godot_variant_as_dictionary(var))
+            gddict = lib.godot_variant_as_dictionary(var)
+            methdict = godot_dictionary_to_pyobj(ffi.addressof(gddict))
             methods.append(methdict)
         return methods
 
@@ -64,7 +65,8 @@ class ClassDB:
         lib.godot_method_bind_ptrcall(cls._meth_get_property_list, cls._instance, args, ret)
         for i in range(lib.godot_array_size(ret)):
             var = lib.godot_array_get(ret, i)
-            propdict = convert_godot_dictionary(lib.godot_variant_as_dictionary(var))
+            gddict = lib.godot_variant_as_dictionary(var)
+            propdict = godot_dictionary_to_pyobj(ffi.addressof(gddict))
             properties.append(propdict)
         return properties
 
@@ -176,14 +178,35 @@ def _gen_stub(msg):
     return lambda *args: print(msg)
 
 
-def build_method(classname, methname):
-        # methbind = lib.godot_method_bind_get_method(classname, methname)
-        # def bind(self, *args):
-        #     lib.godot_method_bind_get_method(methbind)
-        #     ret = ffi.new()
-        #     lib.godot_method_bind_ptrcall(methbind, self, )
-        return lambda *args: print('**** Should have called %s.%s' % (classname, methname))
+def build_method(classname, meth):
+    methname = meth['name']
+    if meth['flags'] & lib.METHOD_FLAG_VIRTUAL:
+        def bind(self, *args):
+            raise NotImplementedError()
+    else:
+        methbind = lib.godot_method_bind_get_method(classname.encode(), methname.encode())
+        if methbind == ffi.NULL:
+            # TODO: should raise exception here, but Object.free trigger this
+            print('Cannot bind %s.%s (%s)' % (classname, methname, meth))
+            # raise RuntimeError('Cannot bind %s.%s' % (classname, methname))
 
+        def bind(self, *args):
+            # TODO: check args number and type here (ptrcall means segfault on bad args...)
+            print('++++ Calling %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
+            # TODO: check len(args)
+            raw_args = [pyobj_to_raw(meth_arg['type'], arg)
+                        for arg, meth_arg in zip(args, meth['args'])]
+            # args_as_variants = [pyobj_to_variant(arg) for arg in args]
+            gdargs = ffi.new("void*[]", raw_args)
+            # ret = ffi.new("godot_variant*")
+            ret = ffi.new("float*")
+            lib.godot_method_bind_ptrcall(methbind, self._gd_obj, gdargs, ret)
+            print('++++ Ret %s' % float(ret[0]))
+            return float(ret[0])
+            # return variant_to_pyobj(ret)
+
+    return bind
+    # return lambda *args: print('**** Should have called %s.%s' % (classname, methname))
 
 def build_property(classname, propname):
     prop = property(lambda *args: print('***** Should have called %s.%s getter' % (classname, propname)))
@@ -199,9 +222,8 @@ def build_class(classname):
     print('======> BINDING', classname)
     # Methods
     for meth in ClassDB.get_class_methods(classname):
-        methname = meth['name']
-        print('=> M', methname)
-        nmspc[methname] = build_method(classname, methname)
+        print('=> M', meth['name'])
+        nmspc[meth['name']] = build_method(classname, meth)
     # Properties
     for prop in ClassDB.get_class_properties(classname):
         propname = prop['name']
@@ -218,29 +240,6 @@ def build_class(classname):
     else:
         bases = (BaseObject, )
     return type(classname, bases, nmspc)
-
-
-def convert_godot_dictionary(gddict):
-    pdict = {}
-    p_gddict = ffi.new("godot_dictionary*", gddict)
-    gdkeys = lib.godot_dictionary_keys(p_gddict)
-    p_gdkeys = ffi.new("godot_array*", gdkeys)
-    for i in range(lib.godot_array_size(p_gdkeys)):
-        p_key = lib.godot_array_get(p_gdkeys, i)
-        keystr = lib.godot_variant_as_string(p_key)
-        p_keystr = ffi.new("godot_string*", keystr)
-        c_str = lib.godot_string_c_str(p_keystr)
-        value = lib.godot_dictionary_operator_index(p_gddict, p_key)
-        # Finger crossed everything is a string...
-        valuestr = lib.godot_variant_as_string(value)
-        p_valuestr = ffi.new("godot_string*", valuestr)
-        c_valuestr = lib.godot_string_c_str(p_valuestr)
-        pdict[ffi.string(c_str)] = ffi.string(c_valuestr)
-    return pdict
-
-
-def variant_to_pyobj(gdvar):
-    pass
 
 
 sys.modules["godot.bindings"] = module
