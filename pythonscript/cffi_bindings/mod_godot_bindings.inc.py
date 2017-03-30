@@ -1,6 +1,7 @@
 import sys
 from types import ModuleType
 from pythonscriptcffi import ffi, lib
+from functools import partial
 
 
 class ClassDB:
@@ -136,42 +137,18 @@ class Vector2:
         return "<%s(x=%s, y=%s)>" % (type(self).__name__, self.x, self.y)
 
 
-# Werkzeug style lazy module
-class LazyBindingsModule(ModuleType):
-
-    """Automatically import objects from the modules."""
-
-    def __init__(self, name, doc=None):
-        super().__init__(name, doc=doc)
-        self._loaded = {'Vector2': Vector2}
-        self._available = ClassDB.get_class_list()
-        setattr(self, '__package__', name)
-        setattr(self, '__all__', self._available)
-
-    def __getattr__(self, name):
-        if name not in self._loaded:
-            if name not in self._available:
-                return ModuleType.__getattribute__(self, name)
-            self._loaded[name] = build_class(name)
-        return self._loaded[name]
-
-    def __dir__(self):
-        """Just show what we want to show."""
-        result = list(self.__all__)
-        result.extend(('__all__', '__doc__', '__loader__', '__name__',
-                       '__package__', '__spec__', '_available', '_loaded'))
-        return result
-
-
-module = LazyBindingsModule("godot.bindings")
-
-
 class BaseObject:
-    def __init__(self):
-        self._gd_obj = self._gd_constructor()
+    def __init__(self, gd_obj=None):
+        self._gd_obj = gd_obj if gd_obj else self._gd_constructor()
 
     def _gd_set_godot_obj(self, obj):
         self._gd_obj = obj
+
+    def __eq__(self, other):
+        if hasattr(other, '_gd_obj'):
+            return self._gd_obj == other._gd_obj
+        else:
+            return False
 
 
 def _gen_stub(msg):
@@ -197,11 +174,13 @@ def build_method(classname, meth):
             raw_args = [pyobj_to_raw(meth_arg['type'], arg)
                         for arg, meth_arg in zip(args, meth['args'])]
             # args_as_variants = [pyobj_to_variant(arg) for arg in args]
-            gdargs = ffi.new("void*[]", raw_args)
+            gdargs = ffi.new("void*[]", raw_args) if raw_args else ffi.new('void**')
             # ret = ffi.new("godot_variant*")
-            ret = ffi.new("float*")
+            ret = ffi.new("float*", 42.0)
+            print('==============================>>>', methbind, self._gd_obj, gdargs, ret)
             lib.godot_method_bind_ptrcall(methbind, self._gd_obj, gdargs, ret)
-            print('++++ Ret %s' % float(ret[0]))
+            print('++++ Ret %s(%s - %s)' % (float(ret[0]), ret, ret[0]))
+            # print('++++ Ret %s' % float(ret[0]))
             return float(ret[0])
             # return variant_to_pyobj(ret)
 
@@ -213,7 +192,8 @@ def build_property(classname, propname):
     return prop.setter(lambda *args: print('***** Should have called %s.%s setter' % (classname, propname)))
 
 
-def build_class(classname):
+def build_class(classname, binding_classname=None):
+    binding_classname = binding_classname or classname
     cclassname = classname.encode()
     nmspc = {
         '_gd_name': classname,
@@ -239,7 +219,85 @@ def build_class(classname):
         bases = (getattr(module, parentname), )
     else:
         bases = (BaseObject, )
-    return type(classname, bases, nmspc)
+    return type(binding_classname, bases, nmspc)
 
 
+def build_global(name, clsname):
+    return getattr(module, clsname)(lib.godot_global_get_singleton(name.encode()))
+
+
+# Werkzeug style lazy module
+class LazyBindingsModule(ModuleType):
+
+    """Automatically import objects from the modules."""
+
+    def _bootstrap_global_singletons(self):
+        # Special classes generated in `godot/core/core_bind.h`, classname
+        # has a "_" prefix
+        for clsname, name in (
+                ('_ResourceLoader', 'ResourceLoader'),
+                ('_ResourceSaver', 'ResourceSaver'),
+                ('_OS', 'OS'),
+                ('_Geometry', 'Geometry'),
+                ('_ClassDB', 'ClassDB'),
+                ('_Engine', 'Engine'),):
+            self._available[name] = partial(build_global, name, clsname)
+        # Regular classses, we have to rename the classname with a "_" prefix
+        # to give the name to the singleton
+        # TODO: GlobalConfig doesn't provide a `list_singletons` to load
+        # this dynamically :'-(
+        for new_clsname, name in (
+                ('_AudioServer', 'AudioServer'),
+                ('_AudioServer', 'AS'),
+                ('_GlobalConfig', 'GlobalConfig'),
+                ('_IP', 'IP'),
+                ('_Input', 'Input'),
+                ('_InputMap', 'InputMap'),
+                ('_Marshalls', 'Marshalls'),
+                # TODO: seems to have been removed...
+                # ('_PathRemap', 'PathRemap'),
+                ('_Performance', 'Performance'),
+                ('_Physics2DServer', 'Physics2DServer'),
+                ('_Physics2DServer', 'PS2D'),
+                ('_PhysicsServer', 'PhysicsServer'),
+                ('_PhysicsServer', 'PS'),
+                # TODO: seems to have been removed...
+                # ('_SpatialSound2DServer', 'SpatialSound2DServer'),
+                # ('_SpatialSound2DServer', 'SS2D'),
+                # ('_SpatialSoundServer', 'SpatialSoundServer'),
+                # ('_SpatialSoundServer', 'SS'),
+                ('_TranslationServer', 'TranslationServer'),
+                ('_TranslationServer', 'TS'),
+                ('_VisualServer', 'VisualServer'),
+                ('_VisualServer', 'VS')):
+            if new_clsname not in self._available:
+                self._available[new_clsname] = self._available[name]
+            self._available[name] = partial(build_global, name, new_clsname)
+
+    def __init__(self, name, doc=None):
+        super().__init__(name, doc=doc)
+        self._loaded = {'Vector2': Vector2}
+        # Register classe types
+        self._available = {name: partial(build_class, name) for name in ClassDB.get_class_list()}
+        self._bootstrap_global_singletons()
+        setattr(self, '__package__', name)
+        setattr(self, '__all__', list(self._available.keys()))
+
+    def __getattr__(self, name):
+        if name not in self._loaded:
+            loader = self._available.get(name)
+            if not loader:
+                return ModuleType.__getattribute__(self, name)
+            self._loaded[name] = loader()
+        return self._loaded[name]
+
+    def __dir__(self):
+        """Just show what we want to show."""
+        result = list(self.__all__)
+        result.extend(('__all__', '__doc__', '__loader__', '__name__',
+                       '__package__', '__spec__', '_available', '_loaded'))
+        return result
+
+
+module = LazyBindingsModule("godot.bindings")
 sys.modules["godot.bindings"] = module

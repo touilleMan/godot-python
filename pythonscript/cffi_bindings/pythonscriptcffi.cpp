@@ -686,6 +686,7 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "import sys\n" \
 "from types import ModuleType\n" \
 "from pythonscriptcffi import ffi, lib\n" \
+"from functools import partial\n" \
 "\n" \
 "\n" \
 "class ClassDB:\n" \
@@ -821,42 +822,18 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "        return \"<%s(x=%s, y=%s)>\" % (type(self).__name__, self.x, self.y)\n" \
 "\n" \
 "\n" \
-"# Werkzeug style lazy module\n" \
-"class LazyBindingsModule(ModuleType):\n" \
-"\n" \
-"    \"\"\"Automatically import objects from the modules.\"\"\"\n" \
-"\n" \
-"    def __init__(self, name, doc=None):\n" \
-"        super().__init__(name, doc=doc)\n" \
-"        self._loaded = {'Vector2': Vector2}\n" \
-"        self._available = ClassDB.get_class_list()\n" \
-"        setattr(self, '__package__', name)\n" \
-"        setattr(self, '__all__', self._available)\n" \
-"\n" \
-"    def __getattr__(self, name):\n" \
-"        if name not in self._loaded:\n" \
-"            if name not in self._available:\n" \
-"                return ModuleType.__getattribute__(self, name)\n" \
-"            self._loaded[name] = build_class(name)\n" \
-"        return self._loaded[name]\n" \
-"\n" \
-"    def __dir__(self):\n" \
-"        \"\"\"Just show what we want to show.\"\"\"\n" \
-"        result = list(self.__all__)\n" \
-"        result.extend(('__all__', '__doc__', '__loader__', '__name__',\n" \
-"                       '__package__', '__spec__', '_available', '_loaded'))\n" \
-"        return result\n" \
-"\n" \
-"\n" \
-"module = LazyBindingsModule(\"godot.bindings\")\n" \
-"\n" \
-"\n" \
 "class BaseObject:\n" \
-"    def __init__(self):\n" \
-"        self._gd_obj = self._gd_constructor()\n" \
+"    def __init__(self, gd_obj=None):\n" \
+"        self._gd_obj = gd_obj if gd_obj else self._gd_constructor()\n" \
 "\n" \
 "    def _gd_set_godot_obj(self, obj):\n" \
 "        self._gd_obj = obj\n" \
+"\n" \
+"    def __eq__(self, other):\n" \
+"        if hasattr(other, '_gd_obj'):\n" \
+"            return self._gd_obj == other._gd_obj\n" \
+"        else:\n" \
+"            return False\n" \
 "\n" \
 "\n" \
 "def _gen_stub(msg):\n" \
@@ -879,15 +856,17 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "            # TODO: check args number and type here (ptrcall means segfault on bad args...)\n" \
 "            print('++++ Calling %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))\n" \
 "            # TODO: check len(args)\n" \
-"            # raw_args = [pyobj_to_raw(meth_arg['type'], arg)\n" \
-"            #             for arg, meth_arg in zip(args, meth['args'])]\n" \
-"            # # args_as_variants = [pyobj_to_variant(arg) for arg in args]\n" \
-"            # gdargs = ffi.new(\"void*[]\", raw_args)\n" \
-"            # # ret = ffi.new(\"godot_variant*\")\n" \
-"            # ret = ffi.new(\"float*\")\n" \
-"            # lib.godot_method_bind_ptrcall(methbind, self._gd_obj, gdargs, ret)\n" \
+"            raw_args = [pyobj_to_raw(meth_arg['type'], arg)\n" \
+"                        for arg, meth_arg in zip(args, meth['args'])]\n" \
+"            # args_as_variants = [pyobj_to_variant(arg) for arg in args]\n" \
+"            gdargs = ffi.new(\"void*[]\", raw_args) if raw_args else ffi.new('void**')\n" \
+"            # ret = ffi.new(\"godot_variant*\")\n" \
+"            ret = ffi.new(\"float*\", 42.0)\n" \
+"            print('==============================>>>', methbind, self._gd_obj, gdargs, ret)\n" \
+"            lib.godot_method_bind_ptrcall(methbind, self._gd_obj, gdargs, ret)\n" \
+"            print('++++ Ret %s(%s - %s)' % (float(ret[0]), ret, ret[0]))\n" \
 "            # print('++++ Ret %s' % float(ret[0]))\n" \
-"            # return float(ret[0])\n" \
+"            return float(ret[0])\n" \
 "            # return variant_to_pyobj(ret)\n" \
 "\n" \
 "    return bind\n" \
@@ -898,7 +877,8 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "    return prop.setter(lambda *args: print('***** Should have called %s.%s setter' % (classname, propname)))\n" \
 "\n" \
 "\n" \
-"def build_class(classname):\n" \
+"def build_class(classname, binding_classname=None):\n" \
+"    binding_classname = binding_classname or classname\n" \
 "    cclassname = classname.encode()\n" \
 "    nmspc = {\n" \
 "        '_gd_name': classname,\n" \
@@ -924,9 +904,87 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "        bases = (getattr(module, parentname), )\n" \
 "    else:\n" \
 "        bases = (BaseObject, )\n" \
-"    return type(classname, bases, nmspc)\n" \
+"    return type(binding_classname, bases, nmspc)\n" \
 "\n" \
 "\n" \
+"def build_global(name, clsname):\n" \
+"    return getattr(module, clsname)(lib.godot_global_get_singleton(name.encode()))\n" \
+"\n" \
+"\n" \
+"# Werkzeug style lazy module\n" \
+"class LazyBindingsModule(ModuleType):\n" \
+"\n" \
+"    \"\"\"Automatically import objects from the modules.\"\"\"\n" \
+"\n" \
+"    def _bootstrap_global_singletons(self):\n" \
+"        # Special classes generated in `godot/core/core_bind.h`, classname\n" \
+"        # has a \"_\" prefix\n" \
+"        for clsname, name in (\n" \
+"                ('_ResourceLoader', 'ResourceLoader'),\n" \
+"                ('_ResourceSaver', 'ResourceSaver'),\n" \
+"                ('_OS', 'OS'),\n" \
+"                ('_Geometry', 'Geometry'),\n" \
+"                ('_ClassDB', 'ClassDB'),\n" \
+"                ('_Engine', 'Engine'),):\n" \
+"            self._available[name] = partial(build_global, name, clsname)\n" \
+"        # Regular classses, we have to rename the classname with a \"_\" prefix\n" \
+"        # to give the name to the singleton\n" \
+"        # TODO: GlobalConfig doesn't provide a `list_singletons` to load\n" \
+"        # this dynamically :'-(\n" \
+"        for new_clsname, name in (\n" \
+"                ('_AudioServer', 'AudioServer'),\n" \
+"                ('_AudioServer', 'AS'),\n" \
+"                ('_GlobalConfig', 'GlobalConfig'),\n" \
+"                ('_IP', 'IP'),\n" \
+"                ('_Input', 'Input'),\n" \
+"                ('_InputMap', 'InputMap'),\n" \
+"                ('_Marshalls', 'Marshalls'),\n" \
+"                # TODO: seems to have been removed...\n" \
+"                # ('_PathRemap', 'PathRemap'),\n" \
+"                ('_Performance', 'Performance'),\n" \
+"                ('_Physics2DServer', 'Physics2DServer'),\n" \
+"                ('_Physics2DServer', 'PS2D'),\n" \
+"                ('_PhysicsServer', 'PhysicsServer'),\n" \
+"                ('_PhysicsServer', 'PS'),\n" \
+"                # TODO: seems to have been removed...\n" \
+"                # ('_SpatialSound2DServer', 'SpatialSound2DServer'),\n" \
+"                # ('_SpatialSound2DServer', 'SS2D'),\n" \
+"                # ('_SpatialSoundServer', 'SpatialSoundServer'),\n" \
+"                # ('_SpatialSoundServer', 'SS'),\n" \
+"                ('_TranslationServer', 'TranslationServer'),\n" \
+"                ('_TranslationServer', 'TS'),\n" \
+"                ('_VisualServer', 'VisualServer'),\n" \
+"                ('_VisualServer', 'VS')):\n" \
+"            if new_clsname not in self._available:\n" \
+"                self._available[new_clsname] = self._available[name]\n" \
+"            self._available[name] = partial(build_global, name, new_clsname)\n" \
+"\n" \
+"    def __init__(self, name, doc=None):\n" \
+"        super().__init__(name, doc=doc)\n" \
+"        self._loaded = {'Vector2': Vector2}\n" \
+"        # Register classe types\n" \
+"        self._available = {name: partial(build_class, name) for name in ClassDB.get_class_list()}\n" \
+"        self._bootstrap_global_singletons()\n" \
+"        setattr(self, '__package__', name)\n" \
+"        setattr(self, '__all__', list(self._available.keys()))\n" \
+"\n" \
+"    def __getattr__(self, name):\n" \
+"        if name not in self._loaded:\n" \
+"            loader = self._available.get(name)\n" \
+"            if not loader:\n" \
+"                return ModuleType.__getattribute__(self, name)\n" \
+"            self._loaded[name] = loader()\n" \
+"        return self._loaded[name]\n" \
+"\n" \
+"    def __dir__(self):\n" \
+"        \"\"\"Just show what we want to show.\"\"\"\n" \
+"        result = list(self.__all__)\n" \
+"        result.extend(('__all__', '__doc__', '__loader__', '__name__',\n" \
+"                       '__package__', '__spec__', '_available', '_loaded'))\n" \
+"        return result\n" \
+"\n" \
+"\n" \
+"module = LazyBindingsModule(\"godot.bindings\")\n" \
 "sys.modules[\"godot.bindings\"] = module\n" \
 "\n" \
 "\n" \
