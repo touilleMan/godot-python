@@ -32,7 +32,6 @@ class MyExportedCls(Node2D):
         Called every time the node is added to the scene.
         Initialization here.
         """
-        import pdb; pdb.set_trace()
         # print("Hello World !")
         # print("Instance ID:", self.get_instance_ID())
         # print('=========> BEFORE', self.pause_mode)

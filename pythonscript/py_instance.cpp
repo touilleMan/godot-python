@@ -365,6 +365,7 @@ Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p
     // TODO: precompute p_method lookup for faster access
     auto attr = String(p_method).utf8().get_data();
 
+    py::gil_scoped_acquire acquire;
     // TODO: argument conversion
     py::tuple args = py::list();
     #if 0
@@ -373,7 +374,8 @@ Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p
     }
     #endif
     try {
-        auto pyobj_ret = this->_py_obj.attr(attr)(*args);
+        auto meth = this->_py_obj.attr(attr);
+        auto pyobj_ret = meth(*args);
     } catch(const py::error_already_set &e) {
         // TODO: need to handle other errors:
         // - CALL_ERROR_INVALID_ARGUMENT
@@ -529,49 +531,31 @@ PyInstance::PyInstance() {
 
 typedef void godot_object;
 extern void py_instance_set_godot_obj(PyObject *py_instance, godot_object *godot_obj);
+extern PyObject *instanciate_binding_from_godot_obj(PyObject *py_cls, godot_object *godot_obj);
 
 bool PyInstance::init(PyScript *p_script, Object *p_owner) {
     DEBUG_TRACE_METHOD();
-    bool success = true;
 
     this->_owner = p_owner;
+    this->_owner_variant = Variant(p_owner);
     this->_script = Ref<PyScript>(p_script);
 
     try {
-        this->_py_obj = p_script->get_py_exposed_class()();
-        // Script is not a "real" instance of the class is expend, instead it
-        // takes controle of the owner
-        // this->_py_obj.attr("_gd_set_godot_obj")(bindings::GodotObject(p_owner));
-        py::object handle = py::module::import("pythonscriptcffi").attr("ffi").attr("new_handle")(this->_py_obj);
-        py_instance_set_godot_obj(handle.ptr(), p_owner);
-        // this->_py_obj.attr("_gd_set_godot_obj")(py::cast(p_owner));
+        py::gil_scoped_acquire acquire;
+        // TODO: need to be simplified and improved...
+        py::object handle = py::module::import("pythonscriptcffi").attr("ffi").attr("new_handle")(
+            p_script->get_py_exposed_class());
+        auto  handle2 = instanciate_binding_from_godot_obj(handle.ptr(), static_cast<void*>(p_owner));
+        this->_py_obj = py::module::import("pythonscriptcffi").attr("ffi").attr("from_handle")(
+            py::reinterpret_borrow<py::object>(handle2));
+        // Set owner responsible to destroy the instance
+        p_owner->set_script_instance(this);
     } catch(const py::error_already_set &e) {
         ERR_PRINT(e.what());
         ERR_FAIL_V(false);
     }
-#ifdef BACKEND_MICROPYTHON
-    auto init_instance = [this, p_script, p_owner] {
-        // Actually create an instance inside Python
-        auto type = static_cast<const mp_obj_type_t *>(p_script->get_mpo_exposed_class());
-        // TODO: use DynamicBinder::build_mpo_wrapper ?
-        this->_mpo = mp_obj_instance_make_new(type, 0, 0, NULL);
-        // Script is not a "real" instance of the class is expend, instead it
-        // takes controle of the owner
-        mp_obj_instance_t *inst = static_cast<mp_obj_instance_t *>(MP_OBJ_TO_PTR(this->_mpo));
-        auto self = static_cast<DynamicBinder::mp_godot_bind_t *>(inst->subobj[0]);
-        self->godot_obj = p_owner;
-        self->godot_variant = Variant(p_owner);
-        // Set owner responsible to destroy the instance
-        p_owner->set_script_instance(this);
-    };
-    auto handle_ex = [&success](mp_obj_t ex) {
-        mp_obj_print_exception(&mp_plat_print, ex);
-        success = false;
-    };
-    MP_WRAP_CALL_EX(init_instance, handle_ex);
-#endif
 
-    return success;
+    return true;
 }
 
 

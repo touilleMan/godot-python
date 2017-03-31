@@ -6,6 +6,7 @@
 BASEDIR = $(shell pwd)
 GODOT_DIR ?= $(BASEDIR)/godot
 
+# Add `LIBGL_ALWAYS_SOFTWARE=1` if you computer sucks with opengl3...
 ifndef DEBUG
 GODOT_CMD = LD_LIBRARY_PATH="$(GODOT_DIR)/bin" $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
 else
@@ -59,4 +60,4 @@ rebuild_micropython:
 	cd pythonscript/micropython && make -j6 DEBUG=y
 
 test:
-	cd tests/bindings && LIBGL_ALWAYS_SOFTWARE=1 $(GODOT_CMD)
+	cd tests/bindings && $(GODOT_CMD)

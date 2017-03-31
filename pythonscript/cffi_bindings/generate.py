@@ -10,6 +10,7 @@ ffibuilder.embedding_api(r"""
     typedef struct { ...; } PyObject;
     typedef void godot_object;
     int do_stuff(int, int);
+    PyObject *instanciate_binding_from_godot_obj(PyObject *py_cls, godot_object *godot_obj);
     void py_instance_set_godot_obj(PyObject *py_instance, godot_object *godot_obj);
 """)
 
@@ -28,6 +29,8 @@ enum MethodFlags {
     METHOD_FLAG_VARARG=128,
     METHOD_FLAGS_DEFAULT=METHOD_FLAG_NORMAL,
 };
+CFFI_DLLEXPORT PyObject *instanciate_binding_from_godot_obj(PyObject *py_cls, godot_object *godot_obj);
+CFFI_DLLEXPORT void py_instance_set_godot_obj(PyObject *py_instance, godot_object *godot_obj);
 """)
 
 with open(BASEDIR + '/mod_godot.inc.py', 'r') as fd:
@@ -42,8 +45,6 @@ print('============> INIT CFFI <===========')
 
 from pythonscriptcffi import ffi, lib
 
-""" + tools + godot_module + godot_bindings_module + """
-
 @ffi.def_extern()
 def do_stuff(x, y):
     return x + y
@@ -53,6 +54,22 @@ def py_instance_set_godot_obj(instance_handle, godot_obj):
     self = ffi.from_handle(ffi.cast('void*', instance_handle))
     print('** %s switched from %s to %s' % (self, self._gd_obj, godot_obj))
     self._gd_obj = godot_obj
+
+
+# TODO: find a cleaner way to prevent the newly initialized binding from beeing
+# garbage collected as soon as we leave the function
+newly_intanciated_anchor = []
+@ffi.def_extern()
+def instanciate_binding_from_godot_obj(py_cls_handle, godot_obj):
+    global newly_intanciated_anchor
+    py_cls = ffi.from_handle(ffi.cast('void*', py_cls_handle))
+    instance = py_cls(godot_obj)
+    instance_handle = ffi.new_handle(instance)
+    newly_intanciated_anchor.append((instance, instance_handle))
+    return instance_handle
+
+""" + tools + godot_module + godot_bindings_module + """
+
 """)
 
 # with open(BASEDIR + "../../modules/dlscript/godot.h", 'r') as fd:

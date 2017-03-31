@@ -30,7 +30,8 @@ String PyLanguage::get_name() const {
 
 /* LANGUAGE FUNCTIONS */
 py::object PyLanguage::get_py_exposed_class_from_module(py::module module) {
-    return this->_py_godot_module.attr("get_exposed_class_per_module")(module);
+    // TODO: do we have to do a borrow to prevent from refcounting free ?
+    return py::reinterpret_borrow<py::object>(this->_py_godot_module.attr("get_exposed_class_per_module")(module));
 }
 
 extern int do_stuff(int, int);

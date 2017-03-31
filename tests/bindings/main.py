@@ -6,14 +6,15 @@ from godot.bindings import Node, OS
 
 
 @exposed
-class Node(Node):
+class Main(Node):
 
     def _ready(self):
+        import pdb; pdb.set_trace()
         # os.listdir is not available, so list test modules by hand
         test_mods = (
-            'test_vector2',
-            'test_vector3',
-            'test_dynamic_bindings',
+            # 'test_vector2',
+            # 'test_vector3',
+            # 'test_dynamic_bindings',
         )
         # Run tests here
         for mod in test_mods:

@@ -17,6 +17,7 @@ private:
 
     Ref<PyScript> _script;
     Object *_owner;
+    Variant _owner_variant;
     py::object _py_obj;
 
 public:
