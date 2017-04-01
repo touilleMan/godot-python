@@ -262,6 +262,19 @@ static mp_obj_t _make_new_vector2(const mp_obj_type_t *type, size_t n_args, size
 }
 
 
+static mp_obj_t _unary_op_vector2(mp_uint_t op, mp_obj_t in) {
+  auto self = static_cast<Vector2Binder::mp_godot_bind_t*>(MP_OBJ_TO_PTR(in));
+  switch (op) {
+    case MP_UNARY_OP_NEGATIVE:
+      return Vector2Binder::get_singleton()->build_pyobj(
+          Vector2(-self->godot_vect2.x, -self->godot_vect2.y));
+    case MP_UNARY_OP_POSITIVE:
+      return MP_OBJ_FROM_PTR(self);
+  }
+  return MP_OBJ_NULL;
+}
+
+
 static mp_obj_t _binary_op_vector2(mp_uint_t op, mp_obj_t lhs_in, mp_obj_t rhs_in) {
     auto self = static_cast<Vector2Binder::mp_godot_bind_t*>(MP_OBJ_TO_PTR(lhs_in));
     if (op == MP_BINARY_OP_EQUAL && mp_obj_get_type(rhs_in) == Vector2Binder::get_singleton()->get_mp_type()) {

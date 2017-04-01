@@ -77,20 +77,20 @@ class TestVector2(unittest.TestCase):
                 self.assertEqual(field_val, val, msg="`Vector2.%s` is expected to be equal to `%d`" % (field_val, val))
 
     def test_unary(self):
-        v = Vector2(1, 2)
+        v = Vector2(0, 1)
         v2 = -v
-        self.assertEqual(v2.x, -1)
-        self.assertEqual(v2.y, -2)
+        self.assertEqual(v2.x, 0)
+        self.assertEqual(v2.y, -1)
         v3 = +v
-        self.assertEqual(v3.x, 1)
-        self.assertEqual(v3.y, 2)
-        v = Vector2(1.5, 2.5)
+        self.assertEqual(v3.x, 0)
+        self.assertEqual(v3.y, 1)
+        v = Vector2(0.0, 1.5)
         v2 = -v
-        self.assertEqual(v2.x, -1.5)
-        self.assertEqual(v2.y, -2.5)
+        self.assertEqual(v2.x, 0.0)
+        self.assertEqual(v2.y, -1.5)
         v3 = +v
-        self.assertEqual(v3.x, 1.5)
-        self.assertEqual(v3.y, 2.5)
+        self.assertEqual(v3.x, 0.0)
+        self.assertEqual(v3.y, 1.5)
 
 
 if __name__ == '__main__':
