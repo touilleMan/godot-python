@@ -877,7 +877,6 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "\n" \
 "        def bind(self, *args):\n" \
 "            # TODO: check args number and type here (ptrcall means segfault on bad args...)\n" \
-"            import pdb; pdb.set_trace()\n" \
 "            print('++++ Calling %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))\n" \
 "            # TODO: check len(args)\n" \
 "            raw_args = [pyobj_to_raw(meth_arg['type'], arg)\n" \

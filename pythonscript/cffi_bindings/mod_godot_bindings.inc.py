@@ -157,16 +157,12 @@ def _gen_stub(msg):
 
 def build_method(classname, meth):
     methname = meth['name']
-    if meth['flags'] & lib.METHOD_FLAG_VIRTUAL:
+    # Flag METHOD_FLAG_VIRTUAL only available when compiling godot with DEBUG_METHODS_ENABLED
+    methbind = lib.godot_method_bind_get_method(classname.encode(), methname.encode())
+    if meth['flags'] & lib.METHOD_FLAG_VIRTUAL or methbind == ffi.NULL:
         def bind(self, *args):
             raise NotImplementedError()
     else:
-        methbind = lib.godot_method_bind_get_method(classname.encode(), methname.encode())
-        if methbind == ffi.NULL:
-            # TODO: should raise exception here, but Object.free trigger this
-            print('Cannot bind %s.%s (%s)' % (classname, methname, meth))
-            # raise RuntimeError('Cannot bind %s.%s' % (classname, methname))
-
         def bind(self, *args):
             # TODO: check args number and type here (ptrcall means segfault on bad args...)
             print('++++ Calling %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
