@@ -15,6 +15,7 @@ sources = [
 	"bindings/dynamic_binder.cpp",
 	"bindings/builtins_binder/vector2.cpp",
 	"bindings/builtins_binder/vector3.cpp",
+	"bindings/builtins_binder/plane.cpp",
 	"register_types.cpp",
 	"py_language.cpp",
 	"py_editor.cpp",

@@ -19,7 +19,7 @@ mp_obj_t Vector3Binder::_generate_bind_locals_dict() {
     });
 
 
-    // float   angle_to ( Vector3 to )
+    // float angle_to ( Vector3 to )
     BIND_METHOD_1("angle_to", [](mp_obj_t self, mp_obj_t pyto) -> mp_obj_t {
         Vector3 to = RETRIEVE_ARG(Vector3Binder::get_singleton(), pyto, "to");
         auto variant = static_cast<Vector3Binder::mp_godot_bind_t *>(MP_OBJ_TO_PTR(self));
