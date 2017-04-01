@@ -114,24 +114,24 @@ class ClassDB:
 # TODO: use pybind11 for this ?
 class Vector2:
     def __init__(self, x=0.0, y=0.0):
-        self.__gdobj = ffi.new('godot_vector2*')
-        lib.godot_vector2_new(self.__gdobj, x, y)
+        self._gd_obj = ffi.new('godot_vector2*')
+        lib.godot_vector2_new(self._gd_obj, x, y)
 
     @property
     def x(self):
-        return lib.godot_vector2_get_x(self.__gdobj)
+        return lib.godot_vector2_get_x(self._gd_obj)
 
     @property
     def y(self):
-        return lib.godot_vector2_get_y(self.__gdobj)
+        return lib.godot_vector2_get_y(self._gd_obj)
 
     @x.setter
     def x(self, val):
-        return lib.godot_vector2_set_x(self.__gdobj, val)
+        return lib.godot_vector2_set_x(self._gd_obj, val)
 
     @y.setter
     def y(self, val):
-        return lib.godot_vector2_set_y(self.__gdobj, val)
+        return lib.godot_vector2_set_y(self._gd_obj, val)
 
     def __repr__(self):
         return "<%s(x=%s, y=%s)>" % (type(self).__name__, self.x, self.y)

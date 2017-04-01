@@ -8,6 +8,15 @@
 #include "bindings/dynamic_binder.h"
 #endif
 
+
+// TODO: replace this by a header file to include
+typedef void godot_object;
+extern void py_instance_set_godot_obj(PyObject *py_instance, godot_object *godot_obj);
+extern PyObject *instanciate_binding_from_godot_obj(PyObject *py_cls, godot_object *godot_obj);
+extern PyObject *variants_to_pyobjs(void *args, int argcount);
+extern PyObject *variant_to_pyobj2(void *arg);
+
+
 #if 0
 class ScriptInstance {
 public:
@@ -367,12 +376,15 @@ Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p
 
     py::gil_scoped_acquire acquire;
     // TODO: argument conversion
-    py::tuple args = py::list();
-    #if 0
+    auto args = py::list();
+    // py::object args = variants_to_pyobjs(p_args, p_argcount);
     for (int i = 0; i < p_argcount; ++i) {
-        args.append(bindings->variant_to_pyobj(*p_args[i]));
+        auto handle = variant_to_pyobj2((void*)p_args[i]);
+        // args.append(py::reinterpret_borrow<py::object>(handle));
+        args.append(
+            py::module::import("pythonscriptcffi").attr("ffi").attr("from_handle")(
+                py::reinterpret_borrow<py::object>(handle)));
     }
-    #endif
     try {
         auto meth = this->_py_obj.attr(attr);
         auto pyobj_ret = meth(*args);
@@ -529,9 +541,6 @@ PyInstance::PyInstance() {
     DEBUG_TRACE_METHOD();
 }
 
-typedef void godot_object;
-extern void py_instance_set_godot_obj(PyObject *py_instance, godot_object *godot_obj);
-extern PyObject *instanciate_binding_from_godot_obj(PyObject *py_cls, godot_object *godot_obj);
 
 bool PyInstance::init(PyScript *p_script, Object *p_owner) {
     DEBUG_TRACE_METHOD();
@@ -545,7 +554,7 @@ bool PyInstance::init(PyScript *p_script, Object *p_owner) {
         // TODO: need to be simplified and improved...
         py::object handle = py::module::import("pythonscriptcffi").attr("ffi").attr("new_handle")(
             p_script->get_py_exposed_class());
-        auto  handle2 = instanciate_binding_from_godot_obj(handle.ptr(), static_cast<void*>(p_owner));
+        auto handle2 = instanciate_binding_from_godot_obj(handle.ptr(), static_cast<void*>(p_owner));
         this->_py_obj = py::module::import("pythonscriptcffi").attr("ffi").attr("from_handle")(
             py::reinterpret_borrow<py::object>(handle2));
         // Set owner responsible to destroy the instance

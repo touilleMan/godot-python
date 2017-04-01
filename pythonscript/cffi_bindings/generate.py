@@ -12,6 +12,8 @@ ffibuilder.embedding_api(r"""
     int do_stuff(int, int);
     PyObject *instanciate_binding_from_godot_obj(PyObject *py_cls, godot_object *godot_obj);
     void py_instance_set_godot_obj(PyObject *py_instance, godot_object *godot_obj);
+    PyObject *variants_to_pyobjs(void **args, int argcount);
+    PyObject *variant_to_pyobj2(void *arg);
 """)
 
 ffibuilder.set_source("pythonscriptcffi", """
@@ -31,6 +33,8 @@ enum MethodFlags {
 };
 CFFI_DLLEXPORT PyObject *instanciate_binding_from_godot_obj(PyObject *py_cls, godot_object *godot_obj);
 CFFI_DLLEXPORT void py_instance_set_godot_obj(PyObject *py_instance, godot_object *godot_obj);
+CFFI_DLLEXPORT PyObject *variants_to_pyobjs(void **args, int argcount);
+CFFI_DLLEXPORT PyObject *variant_to_pyobj2(void *arg);
 """)
 
 with open(BASEDIR + '/mod_godot.inc.py', 'r') as fd:
@@ -67,6 +71,21 @@ def instanciate_binding_from_godot_obj(py_cls_handle, godot_obj):
     instance_handle = ffi.new_handle(instance)
     newly_intanciated_anchor.append((instance, instance_handle))
     return instance_handle
+
+
+@ffi.def_extern()
+def variant_to_pyobj2(v):
+    global newly_intanciated_anchor
+    instance = variant_to_pyobj(v)
+    instance_handle = ffi.new_handle(instance)
+    newly_intanciated_anchor.append((instance, instance_handle))
+    return instance_handle
+
+
+@ffi.def_extern()
+def variants_to_pyobjs(args, argcount):
+    return [variant_to_pyobj(args[i]) for i in range(argcount)]
+
 
 """ + tools + godot_module + godot_bindings_module + """
 

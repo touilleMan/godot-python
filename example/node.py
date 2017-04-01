@@ -27,11 +27,15 @@ class MyExportedCls(Node2D):
     a = export(int)
     b = export(str)
 
+    def _process(self, delta):
+        print('_process called with delta=%s' % delta)
+
     def _ready(self):
         """
         Called every time the node is added to the scene.
         Initialization here.
         """
+        self.set_process(True)
         # print("Hello World !")
         # print("Instance ID:", self.get_instance_ID())
         # print('=========> BEFORE', self.pause_mode)
