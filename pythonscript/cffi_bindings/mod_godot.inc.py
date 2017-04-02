@@ -41,9 +41,14 @@ def get_exposed_class_per_module(module):
     return __exposed_classes_per_module[module]
 
 
+def get_exposed_class_per_name(classname):
+    return __exposed_classes[classname]
+
+
 module = imp.new_module("godot")
 module.export = export
 module.exposed = exposed
 module.get_exposed_class_per_module = get_exposed_class_per_module
+module.get_exposed_class_per_name = get_exposed_class_per_name
 
 sys.modules["godot"] = module

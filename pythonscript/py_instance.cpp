@@ -3,6 +3,7 @@
 #include "py_script.h"
 #include "py_instance.h"
 #include "bindings.h"
+#include "modules/dlscript/godot.h"
 #if 0
 #include "bindings/binder.h"
 #include "bindings/dynamic_binder.h"
@@ -15,7 +16,12 @@ extern void py_instance_set_godot_obj(PyObject *py_instance, godot_object *godot
 extern PyObject *instanciate_binding_from_godot_obj(PyObject *py_cls, godot_object *godot_obj);
 extern PyObject *variants_to_pyobjs(void *args, int argcount);
 extern PyObject *variant_to_pyobj2(void *arg);
-
+extern PyObject *pyobj_to_variant2(PyObject *arg);
+extern godot_variant *call_with_variants(PyObject *func, const godot_variant **args, int argcount);
+extern void *pybind_instanciate_from_classname(const wchar_t *classname);
+extern void *pybind_wrap_gdobj_with_class(void *cls_handle, void *owner);
+extern void pybind_release_instance(void *handle);
+extern void pybind_call_meth(void *handle, const wchar_t *methname, void **args, int argcount, void *ret, int *error);
 
 #if 0
 class ScriptInstance {
@@ -369,39 +375,12 @@ bool PyInstance::has_method(const StringName& p_method) const {
 }
 
 
-Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p_argcount,Variant::CallError &r_error) {
+Variant PyInstance::call(const StringName& p_method, const Variant **p_args, int p_argcount, Variant::CallError &r_error) {
     DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
     // TODO: precompute p_method lookup for faster access
-    auto attr = String(p_method).utf8().get_data();
-
-    py::gil_scoped_acquire acquire;
-    // TODO: argument conversion
-    auto args = py::list();
-    // py::object args = variants_to_pyobjs(p_args, p_argcount);
-    for (int i = 0; i < p_argcount; ++i) {
-        auto handle = variant_to_pyobj2((void*)p_args[i]);
-        // args.append(py::reinterpret_borrow<py::object>(handle));
-        args.append(
-            py::module::import("pythonscriptcffi").attr("ffi").attr("from_handle")(
-                py::reinterpret_borrow<py::object>(handle)));
-    }
-    try {
-        auto meth = this->_py_obj.attr(attr);
-        auto pyobj_ret = meth(*args);
-    } catch(const py::error_already_set &e) {
-        // TODO: need to handle other errors:
-        // - CALL_ERROR_INVALID_ARGUMENT
-        // - CALL_ERROR_TOO_MANY_ARGUMENTS
-        // - CALL_ERROR_TOO_FEW_ARGUMENTS
-        // - CALL_ERROR_INSTANCE_IS_NULL
-        // Godot could try to call some functions even if they don't exist
-        // so don't print any exception here
-        WARN_PRINT(e.what());
-        r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
-    }
-    // TODO: return value conversion
-    // return bindings->pyobj_to_variant(pyobj_ret);
-    return Variant();
+    Variant ret;
+    pybind_call_meth(this->_py_obj2, String(p_method).c_str(), (void **)p_args, p_argcount, &ret, (int*)&r_error.error);
+    return ret;
 #if 0
 
     //printf("calling %ls:%i method %ls\n", script->get_path().c_str(), -1, String(p_method).c_str());
@@ -548,27 +527,16 @@ bool PyInstance::init(PyScript *p_script, Object *p_owner) {
     this->_owner = p_owner;
     this->_owner_variant = Variant(p_owner);
     this->_script = Ref<PyScript>(p_script);
-
-    try {
-        py::gil_scoped_acquire acquire;
-        // TODO: need to be simplified and improved...
-        py::object handle = py::module::import("pythonscriptcffi").attr("ffi").attr("new_handle")(
-            p_script->get_py_exposed_class());
-        auto handle2 = instanciate_binding_from_godot_obj(handle.ptr(), static_cast<void*>(p_owner));
-        this->_py_obj = py::module::import("pythonscriptcffi").attr("ffi").attr("from_handle")(
-            py::reinterpret_borrow<py::object>(handle2));
-        // Set owner responsible to destroy the instance
-        p_owner->set_script_instance(this);
-    } catch(const py::error_already_set &e) {
-        ERR_PRINT(e.what());
+    this->_py_obj2 = pybind_wrap_gdobj_with_class(p_script->get_py_exposed_class(), p_owner);
+    if (this->_py_obj2 == nullptr) {
         ERR_FAIL_V(false);
     }
-
+    p_owner->set_script_instance(this);
     return true;
 }
 
 
 PyInstance::~PyInstance() {
     DEBUG_TRACE_METHOD();
-
+    pybind_release_instance(this->_py_obj2);
 }

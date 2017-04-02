@@ -45,6 +45,8 @@ private:
     };
     py::object _py_exposed_class;
     py::module _py_module;
+    void *_py_exposed_class2;
+    void *_py_module2;
 
     // Ref<PyNativeClass> native;
     Ref<PyScript> base;
@@ -67,8 +69,13 @@ protected:
     virtual void _placeholder_erased(PlaceHolderScriptInstance *p_placeholder);
 #endif
 public:
+#if 0
     _FORCE_INLINE_ py::object get_py_exposed_class() const { return this->_py_exposed_class; }
+#endif
     _FORCE_INLINE_ py::module get_py_module() const { return this->_py_module; }
+    _FORCE_INLINE_ void *get_py_exposed_class() const { return this->_py_exposed_class2; }
+    // _FORCE_INLINE_ py::module get_py_module() const { return this->_py_module; }
+
 
     bool can_instance() const;
 

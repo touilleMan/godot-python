@@ -19,6 +19,7 @@ private:
     Object *_owner;
     Variant _owner_variant;
     py::object _py_obj;
+    void *_py_obj2;  // cffi handle
 
 public:
 

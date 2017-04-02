@@ -6,6 +6,11 @@
 #include "py_instance.h"
 
 
+// TODO: replace by an include
+// extern void pybind_load_module(const wchar_t *modname, void *ret_mod, void *ret_cls);
+extern void *pybind_load_exposed_class_per_module(const wchar_t *modname);
+
+
 void PyScript::_bind_methods() {
     DEBUG_TRACE();
     // TODO: bind class methods here
@@ -26,10 +31,10 @@ void PyScript::_placeholder_erased(PlaceHolderScriptInstance *p_placeholder) {
 
 
 bool PyScript::can_instance() const {
-    DEBUG_TRACE_METHOD_ARGS((this->valid && this->_py_exposed_class ? " true" : " false"));
+    DEBUG_TRACE_METHOD_ARGS((this->valid && this->_py_exposed_class2 ? " true" : " false"));
     // TODO: think about it...
     // Only script file defining an exposed class can be instanciated
-    return this->valid && this->_py_exposed_class;
+    return this->valid && this->_py_exposed_class2;
     // return valid; //script can instance
     // return this->valid || (!this->tool && !ScriptServer::is_scripting_enabled());
 }
@@ -77,9 +82,9 @@ ScriptInstance* PyScript::instance_create(Object *p_this) {
 #endif
     }
 
-    PyScript *top = this;
-    while(top->base.ptr())
-        top = top->base.ptr();
+    // PyScript *top = this;
+    // while(top->base.ptr())
+    //     top = top->base.ptr();
 
     // if (top->native.is_valid()) {
     //     if (!ClassDB::is_type(p_this->get_type_name(),top->native->get_name())) {
@@ -159,7 +164,10 @@ Error PyScript::reload(bool p_keep_state) {
     // Retrieve the module path in python format from the resource path
     const String module_path = _resource_to_py_module_path(this->path);
     ERR_FAIL_COND_V(!module_path.length(), ERR_FILE_BAD_PATH);
+    this->_py_exposed_class2 = pybind_load_exposed_class_per_module(module_path.c_str());
 
+    // pybind_load_module(module_path.c_str(), &this->_py_module2, &this->_py_exposed_class2);
+    #if 0
     try {
         this->_py_module = py::module::import(module_path.utf8().get_data());
         this->_py_exposed_class = PyLanguage::get_singleton()->get_py_exposed_class_from_module(this->_py_module);
@@ -167,6 +175,7 @@ Error PyScript::reload(bool p_keep_state) {
         ERR_PRINT(e.what());
         ERR_FAIL_V(ERR_COMPILATION_FAILED);
     }
+    #endif
     this->valid = true;
 
     // mp_execute_as_module(this->sources)

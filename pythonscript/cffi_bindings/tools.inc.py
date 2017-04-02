@@ -165,9 +165,11 @@ def raw_to_pyobj(gdtype, p_raw):
         raise TypeError("Unknown Variant type `%s` (this should never happen !)" % gdtype)
 
 
-def pyobj_to_variant(pyobj):
-    gdvar = ffi.new('godot_variant*')
-    if (isinstance(pyobj, bool)):
+def pyobj_to_variant(pyobj, gdvar=None):
+    gdvar = gdvar if gdvar else ffi.new('godot_variant*')
+    if pyobj is None:
+        return
+    elif (isinstance(pyobj, bool)):
         lib.godot_variant_new_bool(gdvar, pyobj)
     elif (isinstance(pyobj, int)):
         lib.godot_variant_new_int(gdvar, pyobj)
