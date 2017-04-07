@@ -6,16 +6,16 @@
 BASEDIR = $(shell pwd)
 GODOT_DIR ?= $(BASEDIR)/godot
 
-# Add `LIBGL_ALWAYS_SOFTWARE=1` if you computer sucks with opengl3...
-ifndef DEBUG
-GODOT_CMD = LD_LIBRARY_PATH="$(GODOT_DIR)/bin" $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
-else
-DEBUG ?= lldb
-GODOT_CMD = LD_LIBRARY_PATH="$(GODOT_DIR)/bin" $(DEBUG) $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
-endif
-
 BUILD_PYTHON_PATH = $(BASEDIR)/pythonscript/cpython/build
 PYTHON = LD_LIBRARY_PATH=$(BUILD_PYTHON_PATH)/lib $(BUILD_PYTHON_PATH)/bin/python3
+
+# Add `LIBGL_ALWAYS_SOFTWARE=1` if you computer sucks with opengl3...
+ifndef DEBUG
+GODOT_CMD = LD_LIBRARY_PATH="$(GODOT_DIR)/bin;$(BUILD_PYTHON_PATH)/lib" $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
+else
+DEBUG ?= lldb
+GODOT_CMD = LD_LIBRARY_PATH="$(GODOT_DIR)/bin;$(BUILD_PYTHON_PATH)/lib" $(DEBUG) $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
+endif
 
 OPTS ?= platform=x11 -j6 use_llvm=yes                  \
 CCFLAGS=-fcolor-diagnostics CFLAGS=-fcolor-diagnostics \

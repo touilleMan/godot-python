@@ -6,6 +6,7 @@ from functools import partial
 
 class ClassDB:
     _instance = lib.godot_global_get_singleton(b"ClassDB")
+    _meth_instance = lib.godot_method_bind_get_method(b"_ClassDB", b"instance")
     _meth_get_class_list = lib.godot_method_bind_get_method(b"_ClassDB", b"get_class_list")
     _meth_get_method_list = lib.godot_method_bind_get_method(b"_ClassDB", b"class_get_method_list")
     _meth_get_parent_class = lib.godot_method_bind_get_method(b"_ClassDB", b"get_parent_class")
@@ -36,6 +37,19 @@ class ClassDB:
                         classes.append(classname)
 
         return classes
+
+    @classmethod
+    def get_class_constructor(cls, classname):
+
+        def constructor():
+            gd_classname = ffi.new("godot_string*")
+            lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
+            args = ffi.new("void*[]", [gd_classname])
+            ret = ffi.new("godot_object*")
+            lib.godot_method_bind_ptrcall(cls._meth_instance, cls._instance, args, ret)
+            return ret
+
+        return constructor
 
     @classmethod
     def get_class_methods(cls, classname):
@@ -190,10 +204,9 @@ def build_property(classname, propname):
 
 def build_class(classname, binding_classname=None):
     binding_classname = binding_classname or classname
-    cclassname = classname.encode()
     nmspc = {
         '_gd_name': classname,
-        '_gd_constructor': lib.godot_get_class_constructor(cclassname)
+        '_gd_constructor': ClassDB.get_class_constructor(classname)
     }
     print('======> BINDING', classname)
     # Methods
