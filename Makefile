@@ -14,6 +14,9 @@ DEBUG ?= lldb
 GODOT_CMD = LD_LIBRARY_PATH="$(GODOT_DIR)/bin" $(DEBUG) $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
 endif
 
+BUILD_PYTHON_PATH = $(BASEDIR)/pythonscript/cpython/build
+PYTHON = LD_LIBRARY_PATH=$(BUILD_PYTHON_PATH)/lib $(BUILD_PYTHON_PATH)/bin/python3
+
 OPTS ?= platform=x11 -j6 use_llvm=yes                  \
 CCFLAGS=-fcolor-diagnostics CFLAGS=-fcolor-diagnostics \
 target=debug module_pythonscript_enabled=yes           \
@@ -40,8 +43,10 @@ endif
 run:
 	$(GODOT_CMD)
 
+
 run_example:
 	cd example && $(GODOT_CMD)
+
 
 compile:
 	cd $(GODOT_DIR) && scons $(OPTS)
@@ -55,9 +60,10 @@ clean:
 	rm -f $(GODOT_DIR)/bin/libpythonscript*
 
 
-rebuild_micropython:
-	cd pythonscript/micropython && make clean
-	cd pythonscript/micropython && make -j6 DEBUG=y
-
 test:
 	cd tests/bindings && $(GODOT_CMD)
+
+
+generate_cffi_bindings:
+	$(PYTHON) -m pip install cffi
+	$(PYTHON) $(BASEDIR)/pythonscript/cffi_bindings/generate.py
