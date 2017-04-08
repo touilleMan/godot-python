@@ -38,7 +38,7 @@ addons:
       # Need gcc > 4.6 for -std=c++11
       - gcc-5
       - g++-5
-      - clang-3.8
+      - clang-3.9
       - python3
 
 before_script:
