@@ -18,11 +18,6 @@ def godot_dictionary_to_pyobj(p_gddict):
         value = lib.godot_dictionary_operator_index(p_gddict, p_key)
         # Recursive conversion of dict values
         pydict[ffi.string(c_str)] = variant_to_pyobj(value)
-        # # Finger crossed everything is a string...
-        # valuestr = lib.godot_variant_as_string(value)
-        # p_valuestr = ffi.new("godot_string*", valuestr)
-        # c_valuestr = lib.godot_string_c_str(p_valuestr)
-        # pydict[ffi.string(c_str)] = ffi.string(c_valuestr)
     return pydict
 
 
@@ -102,17 +97,17 @@ def variant_to_pyobj(p_gdvar):
         raise TypeError("Unknown Variant type `%s` (this should never happen !)" % gdtype)
 
 
-def raw_to_pyobj(gdtype, p_raw):
+def new_raw(gdtype):
     if gdtype == lib.GODOT_VARIANT_TYPE_NIL:
-        return None
+        return ffi.NULL
     elif gdtype == lib.GODOT_VARIANT_TYPE_BOOL:
-        return bool(p_raw)
+        return ffi.new('godot_bool*')
     elif gdtype == lib.GODOT_VARIANT_TYPE_INT:
-        return int(p_raw)
+        return ffi.new('godot_int*')
     elif gdtype == lib.GODOT_VARIANT_TYPE_REAL:
-        return float(p_raw)
+        return ffi.new('godot_real*')
     elif gdtype == lib.GODOT_VARIANT_TYPE_STRING:
-        return godot_string_to_pyobj(p_raw)
+        return ffi.new('godot_string*')
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR2:
         raise TypeError("Type conversion `Vector2` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_RECT2:
@@ -140,7 +135,7 @@ def raw_to_pyobj(gdtype, p_raw):
     elif gdtype == lib.GODOT_VARIANT_TYPE_RID:
         raise TypeError("Type conversion `Rid` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_OBJECT:
-        raise TypeError("Type conversion `Object` not implemented yet")
+        return ffi.new('godot_object**')
     elif gdtype == lib.GODOT_VARIANT_TYPE_INPUT_EVENT:
         raise TypeError("Type conversion `InputEvent` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_DICTIONARY:
@@ -154,7 +149,73 @@ def raw_to_pyobj(gdtype, p_raw):
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY:
         raise TypeError("Variant type `PoolRealArray` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_STRING_ARRAY:
-        raise TypeError("Variant type `PoolStringArray` not implemented yet")
+        return ffi.new('godot_pool_string_array*')
+    elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY:
+        raise TypeError("Variant type `PoolVector2Array` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY:
+        raise TypeError("Variant type `PoolVector3Array` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_COLOR_ARRAY:
+        raise TypeError("Variant type `PoolColorArray` not implemented yet")
+    else:
+        raise TypeError("Unknown Variant type `%s` (this should never happen !)" % gdtype)
+
+
+def raw_to_pyobj(gdtype, p_raw, hint_string=None):
+    if gdtype == lib.GODOT_VARIANT_TYPE_NIL:
+        return None
+    elif gdtype == lib.GODOT_VARIANT_TYPE_BOOL:
+        return bool(p_raw[0])
+    elif gdtype == lib.GODOT_VARIANT_TYPE_INT:
+        return int(p_raw[0])
+    elif gdtype == lib.GODOT_VARIANT_TYPE_REAL:
+        return float(p_raw[0])
+    elif gdtype == lib.GODOT_VARIANT_TYPE_STRING:
+        return godot_string_to_pyobj(p_raw[0])
+    elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR2:
+        raise TypeError("Type conversion `Vector2` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_RECT2:
+        raise TypeError("Type conversion `Rect2` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR3:
+        raise TypeError("Type conversion `Vector3` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_TRANSFORM2D:
+        raise TypeError("Type conversion `Transform2d` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_PLANE:
+        raise TypeError("Type conversion `Plane` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_QUAT:
+        raise TypeError("Type conversion `Quat` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_RECT3:
+        raise TypeError("Type conversion `Rect3` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_BASIS:
+        raise TypeError("Type conversion `Basis` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_TRANSFORM:
+        raise TypeError("Type conversion `Transform` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_COLOR:
+        raise TypeError("Type conversion `Color` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_IMAGE:
+        raise TypeError("Type conversion `Image` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_NODE_PATH:
+        raise TypeError("Type conversion `NodePath` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_RID:
+        raise TypeError("Type conversion `Rid` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_OBJECT:
+        return getattr(module, hint_string)(p_raw[0])
+    elif gdtype == lib.GODOT_VARIANT_TYPE_INPUT_EVENT:
+        raise TypeError("Type conversion `InputEvent` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_DICTIONARY:
+        return godot_dictionary_to_pyobj(p_raw)
+    elif gdtype == lib.GODOT_VARIANT_TYPE_ARRAY:
+        return godot_array_to_pyobj(p_raw)
+    elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY:
+        raise TypeError("Variant type `PoolByteArray` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_INT_ARRAY:
+        raise TypeError("Variant type `PoolIntArray` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY:
+        raise TypeError("Variant type `PoolRealArray` not implemented yet")
+    elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_STRING_ARRAY:
+        ret = []
+        for i in range(lib.godot_pool_string_array_size(p_raw)):
+            ret.append(godot_string_to_pyobj(lib.godot_pool_string_array_get(p_raw, i)))
+        return ret
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY:
         raise TypeError("Variant type `PoolVector2Array` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY:
@@ -199,19 +260,19 @@ def pyobj_to_raw(gdtype, pyobj):
     elif gdtype == lib.GODOT_VARIANT_TYPE_BOOL:
         if not isinstance(pyobj, bool):
             raise TypeError("`%s` should be of type bool" % pyobj)
-        return ffi.new("int*", 1 if pyobj else 0)
+        return ffi.new("godot_bool*", 1 if pyobj else 0)
     elif gdtype == lib.GODOT_VARIANT_TYPE_INT:
         if not isinstance(pyobj, int):
             raise TypeError("`%s` should be of type int" % pyobj)
-        return ffi.new("int*", pyobj)
+        return ffi.new("godot_int*", pyobj)
     elif gdtype == lib.GODOT_VARIANT_TYPE_REAL:
         if not isinstance(pyobj, float):
             raise TypeError("`%s` should be of type float" % pyobj)
-        return ffi.new("float*", pyobj)
+        return ffi.new("godot_real*", pyobj)
     elif gdtype == lib.GODOT_VARIANT_TYPE_STRING:
-        raise TypeError("Variant type `String` not implemented yet")
         if not isinstance(pyobj, str):
             raise TypeError("`%s` should be of type str" % pyobj)
+        return ffi.new("wchar_t*", pyobj)
         # return ffi.new("char*", pyobj)
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR2:
         raise TypeError("Variant type `Vector2` not implemented yet")

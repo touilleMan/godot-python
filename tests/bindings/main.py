@@ -1,5 +1,4 @@
-import unittest
-import sys
+import pytest
 
 from godot import exposed
 from godot.bindings import Node, OS
@@ -9,20 +8,14 @@ from godot.bindings import Node, OS
 class Main(Node):
 
     def _ready(self):
-        import pdb; pdb.set_trace()
-        # os.listdir is not available, so list test modules by hand
-        test_mods = (
-            # 'test_vector2',
-            # 'test_vector3',
-            # 'test_dynamic_bindings',
-        )
+        # Retrieve command line arguments passed through --pytest=...
+        prefix = '--pytest='
+        pytest_args = []
+        for arg in OS.get_cmdline_args():
+            if arg.startswith(prefix):
+                pytest_args += arg[len(prefix):].split(',')
         # Run tests here
-        for mod in test_mods:
-            print('\t=== Tests %s ===' % mod)
-            try:
-                unittest.main(mod)
-            except Exception as exc:
-                sys.print_exception(exc)
-                OS.set_exit_code(1)
+        import pdb; pdb.set_trace()
+        pytest.main(pytest_args)
         # Exit godot
         self.get_tree().quit()

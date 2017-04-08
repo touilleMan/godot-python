@@ -34,7 +34,7 @@ py::object PyLanguage::get_py_exposed_class_from_module(py::module module) {
     return py::reinterpret_borrow<py::object>(this->_py_godot_module.attr("get_exposed_class_per_module")(module));
 }
 
-extern int do_stuff(int, int);
+
 void _mp_init_sys_path_and_argv(String path) {
     String resource_path = GlobalConfig::get_singleton()->get_resource_path();
     String data_dir = OS::get_singleton()->get_data_dir();
@@ -64,9 +64,10 @@ void _mp_init_sys_path_and_argv(String path) {
     py::eval<py::eval_statements>("import sys\n"
                                   "print('PYTHON_PATH:', sys.path)\n", scope);
 
-    do_stuff(1, 2);
 
-    // TODO: init sys.argv
+    // Init sys.argv
+    sys.attr("argv") = py::list();
+    sys.attr("argv").attr("append")(L"");
 }
 
 #if 0

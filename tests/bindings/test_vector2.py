@@ -1,17 +1,17 @@
-import unittest
+import pytest
 
 from godot.bindings import Vector2
 
 
-class TestVector2(unittest.TestCase):
+class TestVector2:
 
     def test_base(self):
         v = Vector2()
-        self.assertEqual(type(v), Vector2)
+        assert type(v) == Vector2
         v2 = Vector2(1, -2)
-        self.assertEqual(type(v), Vector2)
-        self.assertEqual(v2, Vector2(1, -2))
-        self.assertNotEqual(v, v2)
+        assert type(v) == Vector2
+        assert v2 == Vector2(1, -2)
+        assert v != v2
 
     def test_instanciate(self):
         # Can build it with int or float or nothing
@@ -22,15 +22,20 @@ class TestVector2(unittest.TestCase):
                 [(1, 2), 1, 2],
                 [(1,), 1, 0]):
             v = Vector2(*args)
-            self.assertEqual(v.x, expected_x, msg=msg_tmpl % (v.x, expected_x, args))
-            self.assertEqual(v.y, expected_y, msg=msg_tmpl % (v.y, expected_y, args))
-            self.assertEqual(v.width, expected_x, msg=msg_tmpl % (v.width, expected_y, args))
-            self.assertEqual(v.height, expected_y, msg=msg_tmpl % (v.height, expected_x, args))
-        self.assertRaises(TypeError, Vector2, "a", 2)
-        self.assertRaises(TypeError, Vector2, "a", 2)
-        self.assertRaises(TypeError, Vector2, 1, "b")
-        self.assertRaises(TypeError, Vector2, None, 2)
+            assert v.x == expected_x, msg_tmpl % (v.x, expected_x, args)
+            assert v.y == expected_y, msg_tmpl % (v.y, expected_y, args)
+            assert v.width == expected_x, msg_tmpl % (v.width, expected_y, args)
+            assert v.height == expected_y, msg_tmpl % (v.height, expected_x, args)
+        with pytest.raises(TypeError):
+            Vector2("a", 2)
+        with pytest.raises(TypeError):
+            Vector2("a", 2)
+        with pytest.raises(TypeError):
+            Vector2(1, "b")
+        with pytest.raises(TypeError):
+            Vector2(None, 2)
 
+    @pytest.mark.xfail(reason='Not implemented yet')
     def test_methods(self):
         v = Vector2()
         # Don't test methods' validity but bindings one
@@ -55,11 +60,11 @@ class TestVector2(unittest.TestCase):
                 ['slide', Vector2, (v, )],
                 ['snapped', Vector2, (v, )],
                 ['tangent', Vector2, ()]):
-            self.assertTrue(hasattr(v, field), msg='`Vector2` has no method `%s`' % field)
+            assert hasattr(v, field), '`Vector2` has no method `%s`' % field
             method = getattr(v, field)
-            self.assertTrue(callable(method))
+            assert callable(method)
             ret = method(*params)
-            self.assertEqual(type(ret), ret_type, msg="`Vector2.%s` is expected to return `%s`" % (field, ret_type))
+            assert type(ret) == ret_type, "`Vector2.%s` is expected to return `%s`" % (field, ret_type)
 
     def test_properties(self):
         v = Vector2()
@@ -68,30 +73,26 @@ class TestVector2(unittest.TestCase):
                 ('width', float),
                 ('x', float),
                 ('y', float)):
-            self.assertTrue(hasattr(v, field), msg='`Vector2` has no property `%s`' % field)
+            assert hasattr(v, field), '`Vector2` has no property `%s`' % field
             field_val = getattr(v, field)
-            self.assertEqual(type(field_val), ret_type, msg="`Vector2.%s` is expected to be a `%s`" % (field, ret_type))
+            assert type(field_val) == ret_type, "`Vector2.%s` is expected to be a `%s`" % (field, ret_type)
             for val in (0, 10, 10., 42.5):
                 setattr(v, field, val)
                 field_val = getattr(v, field)
-                self.assertEqual(field_val, val, msg="`Vector2.%s` is expected to be equal to `%d`" % (field_val, val))
+                assert field_val == val, "`Vector2.%s` is expected to be equal to `%d`" % (field_val, val)
 
     def test_unary(self):
         v = Vector2(1, 2)
         v2 = -v
-        self.assertEqual(v2.x, -1)
-        self.assertEqual(v2.y, -2)
+        assert v2.x == -1
+        assert v2.y == -2
         v3 = +v
-        self.assertEqual(v3.x, 1)
-        self.assertEqual(v3.y, 2)
+        assert v3.x == 1
+        assert v3.y == 2
         v = Vector2(1.5, 2.5)
         v2 = -v
-        self.assertEqual(v2.x, -1.5)
-        self.assertEqual(v2.y, -2.5)
+        assert v2.x == -1.5
+        assert v2.y == -2.5
         v3 = +v
-        self.assertEqual(v3.x, 1.5)
-        self.assertEqual(v3.y, 2.5)
-
-
-if __name__ == '__main__':
-    unittest.main()
+        assert v3.x == 1.5
+        assert v3.y == 2.5

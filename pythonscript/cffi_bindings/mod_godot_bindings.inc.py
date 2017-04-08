@@ -4,6 +4,44 @@ from pythonscriptcffi import ffi, lib
 from functools import partial
 
 
+class GlobalConstants:
+    _instance = lib.godot_global_get_singleton(b"GlobalConstants")
+    _meth_get_global_constant_count = lib.godot_method_bind_get_method(b"_GlobalConstants", b"get_global_constant_count")
+    _meth_get_global_constant_name = lib.godot_method_bind_get_method(b"_GlobalConstants", b"get_global_constant_name")
+    _meth_get_global_constant_value = lib.godot_method_bind_get_method(b"_GlobalConstants", b"get_global_constant_value")
+
+
+    @classmethod
+    def get_global_constansts(cls):
+        constants = {}
+        for i in range(lib.godot_get_global_constant_count()):
+            key = ffi.string(lib.godot_get_global_constant_name(i)).decode()
+            value = lib.godot_get_global_constant_value(i)
+            constants[key] = value
+        return constants
+
+    # ClassDB doesn't provide access for GlobalContansts yet
+    # @classmethod
+    # def get_global_constansts(cls):
+    #     constants = {}
+    #     ret = ffi.new("godot_int*")
+    #     import pdb; pdb.set_trace()
+    #     lib.godot_method_bind_ptrcall(cls._meth_get_global_constant_count, cls._instance, ffi.NULL, ret)
+    #     for i in range(int(ret)):
+    #         arg = ffi.new("godot_int*", i)
+    #         args = ffi.new("void*[1]", [arg])
+    #         # Retrieve key
+    #         ret = ffi.new("godot_string*")
+    #         lib.godot_method_bind_ptrcall(cls._meth_get_global_constant_name, cls._instance, args, ret)
+    #         key = ffi.string(ret)
+    #         # Retrieve value
+    #         ret = ffi.new("godot_int*")
+    #         lib.godot_method_bind_ptrcall(cls._meth_get_global_constant_value, cls._instance, args, ret)
+    #         value = int(ret)
+    #         constants[key] = value
+    #     return constants
+
+
 class ClassDB:
     _instance = lib.godot_global_get_singleton(b"ClassDB")
     _meth_instance = lib.godot_method_bind_get_method(b"_ClassDB", b"instance")
@@ -125,6 +163,20 @@ class ClassDB:
         return ffi.string(c_str)
 
 
+class BaseObject:
+    def __init__(self, gd_obj=None):
+        self._gd_obj = gd_obj if gd_obj else self._gd_constructor()
+
+    def _gd_set_godot_obj(self, obj):
+        self._gd_obj = obj
+
+    def __eq__(self, other):
+        if hasattr(other, '_gd_obj'):
+            return self._gd_obj == other._gd_obj
+        else:
+            return False
+
+
 # TODO: use pybind11 for this ?
 class Vector2:
     def __init__(self, x=0.0, y=0.0):
@@ -141,28 +193,39 @@ class Vector2:
 
     @x.setter
     def x(self, val):
-        return lib.godot_vector2_set_x(self._gd_obj, val)
+        lib.godot_vector2_set_x(self._gd_obj, val)
 
     @y.setter
     def y(self, val):
-        return lib.godot_vector2_set_y(self._gd_obj, val)
+        lib.godot_vector2_set_y(self._gd_obj, val)
+
+    @property
+    def width(self):
+        return self.x
+
+    @property
+    def height(self):
+        return self.y
+
+    @width.setter
+    def width(self, val):
+        self.x = val
+
+    @height.setter
+    def height(self, val):
+        self.y = val
 
     def __repr__(self):
         return "<%s(x=%s, y=%s)>" % (type(self).__name__, self.x, self.y)
 
-
-class BaseObject:
-    def __init__(self, gd_obj=None):
-        self._gd_obj = gd_obj if gd_obj else self._gd_constructor()
-
-    def _gd_set_godot_obj(self, obj):
-        self._gd_obj = obj
-
     def __eq__(self, other):
-        if hasattr(other, '_gd_obj'):
-            return self._gd_obj == other._gd_obj
-        else:
-            return False
+        return isinstance(other, Vector2) and other.x == self.x and other.y == self.y
+
+    def __neg__(self):
+        return type(self)(-self.x, -self.y)
+
+    def __pos__(self):
+        return self
 
 
 def _gen_stub(msg):
@@ -184,22 +247,38 @@ def build_method(classname, meth):
             raw_args = [pyobj_to_raw(meth_arg['type'], arg)
                         for arg, meth_arg in zip(args, meth['args'])]
             # args_as_variants = [pyobj_to_variant(arg) for arg in args]
-            gdargs = ffi.new("void*[]", raw_args) if raw_args else ffi.new('void**')
-            # ret = ffi.new("godot_variant*")
-            ret = ffi.new("float*", 42.0)
+            gdargs = ffi.new("void*[]", raw_args) if raw_args else ffi.NULL
+            ret = new_raw(meth['return']['type'])
             print('==============================>>>', methbind, self._gd_obj, gdargs, ret)
             lib.godot_method_bind_ptrcall(methbind, self._gd_obj, gdargs, ret)
-            print('++++ Ret %s(%s - %s)' % (float(ret[0]), ret, ret[0]))
-            # print('++++ Ret %s' % float(ret[0]))
-            return float(ret[0])
-            # return variant_to_pyobj(ret)
+            return raw_to_pyobj(meth['return']['type'], ret, meth['return']['hint_string'])
 
     return bind
-    # return lambda *args: print('**** Should have called %s.%s' % (classname, methname))
 
-def build_property(classname, propname):
-    prop = property(lambda *args: print('***** Should have called %s.%s getter' % (classname, propname)))
-    return prop.setter(lambda *args: print('***** Should have called %s.%s setter' % (classname, propname)))
+
+def build_property(classname, prop):
+    propname = prop['name']
+    getbind = lib.godot_method_bind_get_method(classname.encode(), propname.encode())
+    ######################### BUG getbind is NULL !!!
+
+    def getter(self):
+        print('++++ Property GET %s.%s (%s) on %s' % (classname, propname, prop, self))
+        ret = new_raw(prop['type'])
+        print('==============================>>>', getbind, self._gd_obj, ffi.NULL, ret)
+        lib.godot_method_bind_ptrcall(getbind, self._gd_obj, ffi.NULL, ret)
+        return raw_to_pyobj(prop['type'], ret, prop['hint_string'])
+
+    def setter(self, value):
+        print('++++ Property SET %s.%s (%s) on %s with %s' % (classname, propname, prop, self, value))
+        gdvalue = pyobj_to_raw(prop['type'], value, prop['hint_string'])
+        gdargs = ffi.new("void*[]", [gdvalue])
+        ret = new_raw(prop['type'])
+        print('==============================>>>', getbind, self._gd_obj, ffi.NULL, ret)
+        lib.godot_method_bind_ptrcall(getbind, self._gd_obj, gdargs, ret)
+        return raw_to_pyobj(prop['type'], ret, prop['hint_string'])
+
+    propobj = property(getter)
+    return propobj.setter(setter)
 
 
 def build_class(classname, binding_classname=None):
@@ -217,7 +296,7 @@ def build_class(classname, binding_classname=None):
     for prop in ClassDB.get_class_properties(classname):
         propname = prop['name']
         print('=> P', propname)
-        nmspc[propname] = build_property(classname, propname)
+        nmspc[propname] = build_property(classname, prop)
     # Constants
     for constname in ClassDB.get_class_consts(classname):
         nmspc[constname] = ClassDB.get_integer_constant(classname, constname)
@@ -286,11 +365,14 @@ class LazyBindingsModule(ModuleType):
     def __init__(self, name, doc=None):
         super().__init__(name, doc=doc)
         self._loaded = {'Vector2': Vector2}
+        # Load global constants
+        self._loaded.update(GlobalConstants.get_global_constansts())
         # Register classe types
         self._available = {name: partial(build_class, name) for name in ClassDB.get_class_list()}
         self._bootstrap_global_singletons()
+        # self._bootstrap_builtins()
         setattr(self, '__package__', name)
-        setattr(self, '__all__', list(self._available.keys()))
+        setattr(self, '__all__', list(self._loaded.keys()) + list(self._available.keys()))
 
     def __getattr__(self, name):
         if name not in self._loaded:
