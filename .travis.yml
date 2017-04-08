@@ -45,10 +45,11 @@ addons:
       - python3
 
 before_install:
-  - wget http://llvm.org/releases/$LLVM_VERSION/clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-14.04.tar.xz -O $LLVM_ARCHIVE_PATH
-  - mkdir $HOME/clang+llvm
-  - tar xf $LLVM_ARCHIVE_PATH -C $HOME/clang+llvm --strip-components 1
-  - export PATH=$HOME/clang+llvm/bin:$PATH
+  - if [[ "$CXX" == "clang++" ]]; then wget http://llvm.org/releases/$LLVM_VERSION/clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-14.04.tar.xz -O $LLVM_ARCHIVE_PATH; fi
+  - if [[ "$CXX" == "clang++" ]]; then mkdir $HOME/clang+llvm; fi
+  - if [[ "$CXX" == "clang++" ]]; then tar xf $LLVM_ARCHIVE_PATH -C $HOME/clang+llvm --strip-components 1; fi
+  - if [[ "$CXX" == "clang++" ]]; then export PATH=$HOME/clang+llvm/bin:$PATH; fi
+  - if [[ "$CXX" == "clang++" ]]; then clang --version; fi
 
 before_script:
   # Cannot use this with commit id
