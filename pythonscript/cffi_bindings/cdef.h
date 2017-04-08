@@ -15,15 +15,7 @@ void godot_method_bind_ptrcall(godot_method_bind *p_method_bind, godot_object *p
 
 godot_object *godot_global_get_singleton(char *p_name); // result shouldn't be freed
 
-// TODO remove this custom stuff
-char **godot_get_class_list();
-typedef godot_object *(*godot_class_constructor)();
-godot_class_constructor godot_get_class_constructor(const char *p_classname);
-const char **godot_get_class_methods(const char *p_classname);
-const char **godot_get_class_constants(const char *p_classname);
-const char **godot_get_class_properties(const char *p_classname);
-const char *godot_get_class_parent(const char *p_classname);
-
+// TODO: waiting for dlscript to implement this (https://github.com/godotengine/godot/issues/8316)
 const int godot_get_global_constant_count();
 const char *godot_get_global_constant_name(int index);
 int godot_get_global_constant_value(int index);

@@ -47,6 +47,20 @@ enum MethodFlags {
     METHOD_FLAG_VARARG=128,
     METHOD_FLAGS_DEFAULT=METHOD_FLAG_NORMAL,
 };
+
+// TODO: waiting for dlscript to implement this (https://github.com/godotengine/godot/issues/8316)
+#include "core/global_constants.h"
+const int godot_get_global_constant_count() {
+       return GlobalConstants::get_global_constant_count();
+}
+
+const char *godot_get_global_constant_name(int index) {
+       return GlobalConstants::get_global_constant_name(index);
+}
+
+int godot_get_global_constant_value(int index) {
+       return GlobalConstants::get_global_constant_value(index);
+}
 """)
 
 

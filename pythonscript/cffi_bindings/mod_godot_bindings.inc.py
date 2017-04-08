@@ -5,10 +5,10 @@ from functools import partial
 
 
 class GlobalConstants:
-    _instance = lib.godot_global_get_singleton(b"GlobalConstants")
-    _meth_get_global_constant_count = lib.godot_method_bind_get_method(b"_GlobalConstants", b"get_global_constant_count")
-    _meth_get_global_constant_name = lib.godot_method_bind_get_method(b"_GlobalConstants", b"get_global_constant_name")
-    _meth_get_global_constant_value = lib.godot_method_bind_get_method(b"_GlobalConstants", b"get_global_constant_value")
+    # _instance = lib.godot_global_get_singleton(b"GlobalConstants")
+    # _meth_get_global_constant_count = lib.godot_method_bind_get_method(b"_GlobalConstants", b"get_global_constant_count")
+    # _meth_get_global_constant_name = lib.godot_method_bind_get_method(b"_GlobalConstants", b"get_global_constant_name")
+    # _meth_get_global_constant_value = lib.godot_method_bind_get_method(b"_GlobalConstants", b"get_global_constant_value")
 
 
     @classmethod
