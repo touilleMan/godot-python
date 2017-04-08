@@ -988,6 +988,7 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "\n" \
 "class ClassDB:\n" \
 "    _instance = lib.godot_global_get_singleton(b\"ClassDB\")\n" \
+"    _meth_instance = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"instance\")\n" \
 "    _meth_get_class_list = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"get_class_list\")\n" \
 "    _meth_get_method_list = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"class_get_method_list\")\n" \
 "    _meth_get_parent_class = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"get_parent_class\")\n" \
@@ -1018,6 +1019,19 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "                        classes.append(classname)\n" \
 "\n" \
 "        return classes\n" \
+"\n" \
+"    @classmethod\n" \
+"    def get_class_constructor(cls, classname):\n" \
+"\n" \
+"        def constructor():\n" \
+"            gd_classname = ffi.new(\"godot_string*\")\n" \
+"            lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))\n" \
+"            args = ffi.new(\"void*[]\", [gd_classname])\n" \
+"            ret = ffi.new(\"godot_object*\")\n" \
+"            lib.godot_method_bind_ptrcall(cls._meth_instance, cls._instance, args, ret)\n" \
+"            return ret\n" \
+"\n" \
+"        return constructor\n" \
 "\n" \
 "    @classmethod\n" \
 "    def get_class_methods(cls, classname):\n" \
@@ -1189,6 +1203,7 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "def build_property(classname, prop):\n" \
 "    propname = prop['name']\n" \
 "    getbind = lib.godot_method_bind_get_method(classname.encode(), propname.encode())\n" \
+"    ######################### BUG getbind is NULL !!!\n" \
 "\n" \
 "    def getter(self):\n" \
 "        print('++++ Property GET %s.%s (%s) on %s' % (classname, propname, prop, self))\n" \
@@ -1212,10 +1227,9 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "\n" \
 "def build_class(classname, binding_classname=None):\n" \
 "    binding_classname = binding_classname or classname\n" \
-"    cclassname = classname.encode()\n" \
 "    nmspc = {\n" \
 "        '_gd_name': classname,\n" \
-"        '_gd_constructor': lib.godot_get_class_constructor(cclassname)\n" \
+"        '_gd_constructor': ClassDB.get_class_constructor(classname)\n" \
 "    }\n" \
 "    print('======> BINDING', classname)\n" \
 "    # Methods\n" \
