@@ -239,3 +239,5 @@ godot_bool godot_variant_operator_less(const godot_variant *p_a, const godot_var
 godot_bool godot_variant_hash_compare(const godot_variant *p_a, const godot_variant *p_b);
 godot_bool godot_variant_booleanize(const godot_variant *p_v, godot_bool *p_valid);
 void godot_variant_destroy(godot_variant *p_v);
+
+void godot_get_global_constants(godot_dictionary *constants);

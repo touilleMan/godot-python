@@ -5,41 +5,13 @@ from functools import partial
 
 
 class GlobalConstants:
-    # _instance = lib.godot_global_get_singleton(b"GlobalConstants")
-    # _meth_get_global_constant_count = lib.godot_method_bind_get_method(b"_GlobalConstants", b"get_global_constant_count")
-    # _meth_get_global_constant_name = lib.godot_method_bind_get_method(b"_GlobalConstants", b"get_global_constant_name")
-    # _meth_get_global_constant_value = lib.godot_method_bind_get_method(b"_GlobalConstants", b"get_global_constant_value")
-
 
     @classmethod
     def get_global_constansts(cls):
-        constants = {}
-        for i in range(lib.godot_get_global_constant_count()):
-            key = ffi.string(lib.godot_get_global_constant_name(i)).decode()
-            value = lib.godot_get_global_constant_value(i)
-            constants[key] = value
-        return constants
-
-    # ClassDB doesn't provide access for GlobalContansts yet
-    # @classmethod
-    # def get_global_constansts(cls):
-    #     constants = {}
-    #     ret = ffi.new("godot_int*")
-    #     import pdb; pdb.set_trace()
-    #     lib.godot_method_bind_ptrcall(cls._meth_get_global_constant_count, cls._instance, ffi.NULL, ret)
-    #     for i in range(int(ret)):
-    #         arg = ffi.new("godot_int*", i)
-    #         args = ffi.new("void*[1]", [arg])
-    #         # Retrieve key
-    #         ret = ffi.new("godot_string*")
-    #         lib.godot_method_bind_ptrcall(cls._meth_get_global_constant_name, cls._instance, args, ret)
-    #         key = ffi.string(ret)
-    #         # Retrieve value
-    #         ret = ffi.new("godot_int*")
-    #         lib.godot_method_bind_ptrcall(cls._meth_get_global_constant_value, cls._instance, args, ret)
-    #         value = int(ret)
-    #         constants[key] = value
-    #     return constants
+        constants = ffi.new('godot_dictionary*')
+        lib.godot_dictionary_new(constants)
+        lib.godot_get_global_constants(constants)
+        return godot_dictionary_to_pyobj(constants)
 
 
 class ClassDB:

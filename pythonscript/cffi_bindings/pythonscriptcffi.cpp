@@ -949,42 +949,13 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "\n" \
 "\n" \
 "class GlobalConstants:\n" \
-"    _instance = lib.godot_global_get_singleton(b\"GlobalConstants\")\n" \
-"    _meth_get_global_constant_count = lib.godot_method_bind_get_method(b\"_GlobalConstants\", b\"get_global_constant_count\")\n" \
-"    _meth_get_global_constant_name = lib.godot_method_bind_get_method(b\"_GlobalConstants\", b\"get_global_constant_name\")\n" \
-"    _meth_get_global_constant_value = lib.godot_method_bind_get_method(b\"_GlobalConstants\", b\"get_global_constant_value\")\n" \
-"\n" \
 "\n" \
 "    @classmethod\n" \
 "    def get_global_constansts(cls):\n" \
-"        import pdb; pdb.set_trace()\n" \
-"        constants = {}\n" \
-"        for i in range(lib.godot_get_global_constant_count()):\n" \
-"            key = ffi.string(lib.godot_get_global_constant_name(i)).decode()\n" \
-"            value = lib.godot_get_global_constant_value(i)\n" \
-"            constants[key] = value\n" \
-"        return constants\n" \
-"\n" \
-"    # ClassDB doesn't provide access for GlobalContansts yet\n" \
-"    # @classmethod\n" \
-"    # def get_global_constansts(cls):\n" \
-"    #     constants = {}\n" \
-"    #     ret = ffi.new(\"godot_int*\")\n" \
-"    #     import pdb; pdb.set_trace()\n" \
-"    #     lib.godot_method_bind_ptrcall(cls._meth_get_global_constant_count, cls._instance, ffi.NULL, ret)\n" \
-"    #     for i in range(int(ret)):\n" \
-"    #         arg = ffi.new(\"godot_int*\", i)\n" \
-"    #         args = ffi.new(\"void*[1]\", [arg])\n" \
-"    #         # Retrieve key\n" \
-"    #         ret = ffi.new(\"godot_string*\")\n" \
-"    #         lib.godot_method_bind_ptrcall(cls._meth_get_global_constant_name, cls._instance, args, ret)\n" \
-"    #         key = ffi.string(ret)\n" \
-"    #         # Retrieve value\n" \
-"    #         ret = ffi.new(\"godot_int*\")\n" \
-"    #         lib.godot_method_bind_ptrcall(cls._meth_get_global_constant_value, cls._instance, args, ret)\n" \
-"    #         value = int(ret)\n" \
-"    #         constants[key] = value\n" \
-"    #     return constants\n" \
+"        constants = ffi.new('godot_dictionary*')\n" \
+"        lib.godot_dictionary_new(constants)\n" \
+"        lib.godot_get_global_constants(constants)\n" \
+"        return godot_dictionary_to_pyobj(constants)\n" \
 "\n" \
 "\n" \
 "class ClassDB:\n" \
@@ -1581,7 +1552,7 @@ static int _cffi_initialize_python(void)
         f = PySys_GetObject((char *)"stderr");
         if (f != NULL && f != Py_None) {
             PyFile_WriteString("\nFrom: " _CFFI_MODULE_NAME
-                               "\ncompiled with cffi version: 1.9.1"
+                               "\ncompiled with cffi version: 1.9.0"
                                "\n_cffi_backend module: ", f);
             modules = PyImport_GetModuleDict();
             mod = PyDict_GetItemString(modules, "_cffi_backend");
@@ -4626,6 +4597,42 @@ _cffi_f_godot_get_global_constant_value(PyObject *self, PyObject *arg0)
 #  define _cffi_f_godot_get_global_constant_value _cffi_d_godot_get_global_constant_value
 #endif
 
+static void _cffi_d_godot_get_global_constants(godot_dictionary * x0)
+{
+  godot_get_global_constants(x0);
+}
+#ifndef PYPY_VERSION
+static PyObject *
+_cffi_f_godot_get_global_constants(PyObject *self, PyObject *arg0)
+{
+  godot_dictionary * x0;
+  Py_ssize_t datasize;
+
+  datasize = _cffi_prepare_pointer_call_argument(
+      _cffi_type(103), arg0, (char **)&x0);
+  if (datasize != 0) {
+    if (datasize < 0)
+      return NULL;
+    x0 = (godot_dictionary *)alloca((size_t)datasize);
+    memset((void *)x0, 0, (size_t)datasize);
+    if (_cffi_convert_array_from_object((char *)x0, _cffi_type(103), arg0) < 0)
+      return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS
+  _cffi_restore_errno();
+  { godot_get_global_constants(x0); }
+  _cffi_save_errno();
+  Py_END_ALLOW_THREADS
+
+  (void)self; /* unused */
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+#else
+#  define _cffi_f_godot_get_global_constants _cffi_d_godot_get_global_constants
+#endif
+
 static void * _cffi_d_godot_global_get_singleton(char * x0)
 {
   return godot_global_get_singleton(x0);
@@ -7425,6 +7432,7 @@ static const struct _cffi_global_s _cffi_globals[] = {
   { "godot_get_global_constant_count", (void *)_cffi_f_godot_get_global_constant_count, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_N, 156), (void *)_cffi_d_godot_get_global_constant_count },
   { "godot_get_global_constant_name", (void *)_cffi_f_godot_get_global_constant_name, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 54), (void *)_cffi_d_godot_get_global_constant_name },
   { "godot_get_global_constant_value", (void *)_cffi_f_godot_get_global_constant_value, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 149), (void *)_cffi_d_godot_get_global_constant_value },
+  { "godot_get_global_constants", (void *)_cffi_f_godot_get_global_constants, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 202), (void *)_cffi_d_godot_get_global_constants },
   { "godot_global_get_singleton", (void *)_cffi_f_godot_global_get_singleton, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_O, 167), (void *)_cffi_d_godot_global_get_singleton },
   { "godot_method_bind_get_method", (void *)_cffi_f_godot_method_bind_get_method, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 79), (void *)_cffi_d_godot_method_bind_get_method },
   { "godot_method_bind_ptrcall", (void *)_cffi_f_godot_method_bind_ptrcall, _CFFI_OP(_CFFI_OP_CPYTHON_BLTN_V, 209), (void *)_cffi_d_godot_method_bind_ptrcall },
@@ -7568,7 +7576,7 @@ static const struct _cffi_type_context_s _cffi_type_context = {
   _cffi_struct_unions,
   _cffi_enums,
   _cffi_typenames,
-  151,  /* num_globals */
+  152,  /* num_globals */
   8,  /* num_struct_unions */
   2,  /* num_enums */
   14,  /* num_typenames */
