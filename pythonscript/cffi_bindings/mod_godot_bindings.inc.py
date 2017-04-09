@@ -8,10 +8,10 @@ class GlobalConstants:
 
     @classmethod
     def get_global_constansts(cls):
-        constants = ffi.new('godot_dictionary*')
-        lib.godot_dictionary_new(constants)
-        lib.godot_get_global_constants(constants)
-        return godot_dictionary_to_pyobj(constants)
+        constants = lib.godot_get_global_constants()
+        pyobj_constants = godot_dictionary_to_pyobj(ffi.addressof(constants))
+        lib.godot_dictionary_clear(ffi.addressof(constants))
+        return pyobj_constants
 
 
 class ClassDB:
