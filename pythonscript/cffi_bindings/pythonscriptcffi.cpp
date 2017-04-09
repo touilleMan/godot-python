@@ -965,6 +965,8 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "    _meth_get_method_list = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"class_get_method_list\")\n" \
 "    _meth_get_parent_class = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"get_parent_class\")\n" \
 "    _meth_get_property_list = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"class_get_property_list\")\n" \
+"    _meth_get_property = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"class_get_property\")\n" \
+"    _meth_set_property = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"class_set_property\")\n" \
 "    _meth_get_integer_constant_list = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"class_get_integer_constant_list\")\n" \
 "    _meth_get_integer_constant = lib.godot_method_bind_get_method(b\"_ClassDB\", b\"class_get_integer_constant\")\n" \
 "\n" \
@@ -1021,6 +1023,27 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "            methdict = godot_dictionary_to_pyobj(ffi.addressof(gddict))\n" \
 "            methods.append(methdict)\n" \
 "        return methods\n" \
+"\n" \
+"    @classmethod\n" \
+"    def build_property_getset(cls, prop):\n" \
+"        propname = prop['name']\n" \
+"        gd_propname = ffi.new(\"godot_string*\")\n" \
+"        lib.godot_string_new_data(gd_propname, propname.encode(), len(propname.encode()))\n" \
+"\n" \
+"        def getter(self):\n" \
+"            ret = ffi.new('godot_variant*')\n" \
+"            args = ffi.new(\"void*[]\", [self._gd_obj, gd_propname])\n" \
+"            lib.godot_method_bind_ptrcall(cls._meth_get_property, cls._instance, args, ret)\n" \
+"            return variant_to_pyobj(ret)\n" \
+"\n" \
+"        def setter(self, value):\n" \
+"            gd_value = pyobj_to_variant(value)\n" \
+"            args = ffi.new(\"void*[]\", [self._gd_obj, gd_propname, gd_value])\n" \
+"            ret = ffi.new('godot_variant*')\n" \
+"            lib.godot_method_bind_ptrcall(cls._meth_set_property, cls._instance, args, ret)\n" \
+"            return variant_to_pyobj(ret)\n" \
+"\n" \
+"        return getter, setter\n" \
 "\n" \
 "    @classmethod\n" \
 "    def get_class_properties(cls, classname):\n" \
@@ -1173,26 +1196,7 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "\n" \
 "\n" \
 "def build_property(classname, prop):\n" \
-"    propname = prop['name']\n" \
-"    getbind = lib.godot_method_bind_get_method(classname.encode(), propname.encode())\n" \
-"    ######################### BUG getbind is NULL !!!\n" \
-"\n" \
-"    def getter(self):\n" \
-"        print('++++ Property GET %s.%s (%s) on %s' % (classname, propname, prop, self))\n" \
-"        ret = new_raw(prop['type'])\n" \
-"        print('==============================>>>', getbind, self._gd_obj, ffi.NULL, ret)\n" \
-"        lib.godot_method_bind_ptrcall(getbind, self._gd_obj, ffi.NULL, ret)\n" \
-"        return raw_to_pyobj(prop['type'], ret, prop['hint_string'])\n" \
-"\n" \
-"    def setter(self, value):\n" \
-"        print('++++ Property SET %s.%s (%s) on %s with %s' % (classname, propname, prop, self, value))\n" \
-"        gdvalue = pyobj_to_raw(prop['type'], value, prop['hint_string'])\n" \
-"        gdargs = ffi.new(\"void*[]\", [gdvalue])\n" \
-"        ret = new_raw(prop['type'])\n" \
-"        print('==============================>>>', getbind, self._gd_obj, ffi.NULL, ret)\n" \
-"        lib.godot_method_bind_ptrcall(getbind, self._gd_obj, gdargs, ret)\n" \
-"        return raw_to_pyobj(prop['type'], ret, prop['hint_string'])\n" \
-"\n" \
+"    getter, setter = ClassDB.build_property_getset(prop)\n" \
 "    propobj = property(getter)\n" \
 "    return propobj.setter(setter)\n" \
 "\n" \

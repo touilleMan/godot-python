@@ -21,6 +21,8 @@ class ClassDB:
     _meth_get_method_list = lib.godot_method_bind_get_method(b"_ClassDB", b"class_get_method_list")
     _meth_get_parent_class = lib.godot_method_bind_get_method(b"_ClassDB", b"get_parent_class")
     _meth_get_property_list = lib.godot_method_bind_get_method(b"_ClassDB", b"class_get_property_list")
+    _meth_get_property = lib.godot_method_bind_get_method(b"_ClassDB", b"class_get_property")
+    _meth_set_property = lib.godot_method_bind_get_method(b"_ClassDB", b"class_set_property")
     _meth_get_integer_constant_list = lib.godot_method_bind_get_method(b"_ClassDB", b"class_get_integer_constant_list")
     _meth_get_integer_constant = lib.godot_method_bind_get_method(b"_ClassDB", b"class_get_integer_constant")
 
@@ -77,6 +79,27 @@ class ClassDB:
             methdict = godot_dictionary_to_pyobj(ffi.addressof(gddict))
             methods.append(methdict)
         return methods
+
+    @classmethod
+    def build_property_getset(cls, prop):
+        propname = prop['name']
+        gd_propname = ffi.new("godot_string*")
+        lib.godot_string_new_data(gd_propname, propname.encode(), len(propname.encode()))
+
+        def getter(self):
+            ret = ffi.new('godot_variant*')
+            args = ffi.new("void*[]", [self._gd_obj, gd_propname])
+            lib.godot_method_bind_ptrcall(cls._meth_get_property, cls._instance, args, ret)
+            return variant_to_pyobj(ret)
+
+        def setter(self, value):
+            gd_value = pyobj_to_variant(value)
+            args = ffi.new("void*[]", [self._gd_obj, gd_propname, gd_value])
+            ret = ffi.new('godot_variant*')
+            lib.godot_method_bind_ptrcall(cls._meth_set_property, cls._instance, args, ret)
+            return variant_to_pyobj(ret)
+
+        return getter, setter
 
     @classmethod
     def get_class_properties(cls, classname):
@@ -229,26 +252,7 @@ def build_method(classname, meth):
 
 
 def build_property(classname, prop):
-    propname = prop['name']
-    getbind = lib.godot_method_bind_get_method(classname.encode(), propname.encode())
-    ######################### BUG getbind is NULL !!!
-
-    def getter(self):
-        print('++++ Property GET %s.%s (%s) on %s' % (classname, propname, prop, self))
-        ret = new_raw(prop['type'])
-        print('==============================>>>', getbind, self._gd_obj, ffi.NULL, ret)
-        lib.godot_method_bind_ptrcall(getbind, self._gd_obj, ffi.NULL, ret)
-        return raw_to_pyobj(prop['type'], ret, prop['hint_string'])
-
-    def setter(self, value):
-        print('++++ Property SET %s.%s (%s) on %s with %s' % (classname, propname, prop, self, value))
-        gdvalue = pyobj_to_raw(prop['type'], value, prop['hint_string'])
-        gdargs = ffi.new("void*[]", [gdvalue])
-        ret = new_raw(prop['type'])
-        print('==============================>>>', getbind, self._gd_obj, ffi.NULL, ret)
-        lib.godot_method_bind_ptrcall(getbind, self._gd_obj, gdargs, ret)
-        return raw_to_pyobj(prop['type'], ret, prop['hint_string'])
-
+    getter, setter = ClassDB.build_property_getset(prop)
     propobj = property(getter)
     return propobj.setter(setter)
 
