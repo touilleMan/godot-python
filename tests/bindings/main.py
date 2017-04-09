@@ -15,7 +15,6 @@ class Main(Node):
             if arg.startswith(prefix):
                 pytest_args += arg[len(prefix):].split(',')
         # Run tests here
-        import pdb; pdb.set_trace()
         pytest.main(pytest_args)
         # Exit godot
         self.get_tree().quit()

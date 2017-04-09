@@ -221,7 +221,7 @@ godot_string godot_variant_as_string(const godot_variant *p_v);
 // godot_image godot_variant_as_image(const godot_variant *p_v);
 // godot_node_path godot_variant_as_node_path(const godot_variant *p_v);
 // godot_rid godot_variant_as_rid(const godot_variant *p_v);
-// godot_object *godot_variant_as_object(const godot_variant *p_v);
+godot_object *godot_variant_as_object(const godot_variant *p_v);
 // godot_input_event godot_variant_as_input_event(const godot_variant *p_v);
 godot_dictionary godot_variant_as_dictionary(const godot_variant *p_v);
 godot_array godot_variant_as_array(const godot_variant *p_v);

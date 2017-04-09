@@ -53,13 +53,13 @@ class ClassDB:
     @classmethod
     def get_class_constructor(cls, classname):
 
-        def constructor():
+        def constructor(self):
             gd_classname = ffi.new("godot_string*")
             lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
             args = ffi.new("void*[]", [gd_classname])
-            ret = ffi.new("godot_object*")
+            ret = ffi.new("godot_variant*")
             lib.godot_method_bind_ptrcall(cls._meth_instance, cls._instance, args, ret)
-            return ret
+            return lib.godot_variant_as_object(ret)
 
         return constructor
 
