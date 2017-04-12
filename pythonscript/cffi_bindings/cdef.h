@@ -40,6 +40,31 @@ godot_real godot_vector2_length_squared(const godot_vector2 *p_v);
 godot_real godot_vector2_distance_to(const godot_vector2 *p_a, const godot_vector2 *p_b);
 godot_real godot_vector2_distance_squared_to(const godot_vector2 *p_a, const godot_vector2 *p_b);
 
+
+// vector3
+typedef struct godot_vector3 {
+    uint8_t _dont_touch_that[12];
+} godot_vector3;
+void godot_vector3_new(godot_vector3 *p_v, const godot_real p_x, const godot_real p_y, const godot_real p_z);
+void godot_vector3_set_axis(godot_vector3 *p_v, const godot_int p_axis, const godot_real p_val);
+godot_real godot_vector3_get_axis(const godot_vector3 *p_v, const godot_int p_axis);
+godot_int godot_vector3_min_axis(const godot_vector3 *p_v);
+godot_int godot_vector3_max_axis(const godot_vector3 *p_v);
+godot_real godot_vector3_length(const godot_vector3 *p_v);
+godot_real godot_vector3_length_squared(const godot_vector3 *p_v);
+void godot_vector3_normalize(godot_vector3 *p_v);
+void godot_vector3_normalized(godot_vector3 *p_dest, const godot_vector3 *p_src);
+godot_real godot_vector3_distance_to(const godot_vector3 *p_a, const godot_vector3 *p_b);
+godot_real godot_vector3_distance_squared_to(const godot_vector3 *p_a, const godot_vector3 *p_b);
+void godot_vector3_operator_add(godot_vector3 *p_dest, const godot_vector3 *p_a, const godot_vector3 *p_b);
+void godot_vector3_operator_subtract(godot_vector3 *p_dest, const godot_vector3 *p_a, const godot_vector3 *p_b);
+void godot_vector3_operator_multiply_vector(godot_vector3 *p_dest, const godot_vector3 *p_a, const godot_vector3 *p_b);
+void godot_vector3_operator_multiply_scalar(godot_vector3 *p_dest, const godot_vector3 *p_a, const godot_real p_b);
+void godot_vector3_operator_divide_vector(godot_vector3 *p_dest, const godot_vector3 *p_a, const godot_vector3 *p_b);
+void godot_vector3_operator_divide_scalar(godot_vector3 *p_dest, const godot_vector3 *p_a, const godot_real p_b);
+godot_bool godot_vector3_operator_equal(const godot_vector3 *p_a, const godot_vector3 *p_b);
+godot_bool godot_vector3_operator_less(const godot_vector3 *p_a, const godot_vector3 *p_b);
+
 // godot_string.h
 typedef struct godot_string {
     uint8_t _dont_touch_that[8];

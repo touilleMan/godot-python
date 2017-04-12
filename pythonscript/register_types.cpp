@@ -4,9 +4,6 @@
 #include "py_loader.h"
 
 
-namespace py = pybind11;
-
-
 PyLanguage *script_language_py = NULL;
 ResourceFormatLoaderPyScript *resource_loader_py = NULL;
 ResourceFormatSaverPyScript *resource_saver_py = NULL;

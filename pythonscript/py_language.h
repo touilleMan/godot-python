@@ -24,10 +24,6 @@ class PyLanguage : public ScriptLanguage {
     char *_mp_heap;
 
 public:
-    /* CUSTOM PYTHONSCRIPT FUNCTIONS */
-     py::object get_py_exposed_class_from_module(py::module module);
-    _FORCE_INLINE_ py::object get_py_exposed_class_from_module(const char *module_name) {return get_py_exposed_class_from_module(py::module(module_name));}
-
     String get_name() const;
     _FORCE_INLINE_ static PyLanguage *get_singleton() { return singleton; }
 

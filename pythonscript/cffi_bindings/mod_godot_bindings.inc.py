@@ -172,57 +172,6 @@ class BaseObject:
             return False
 
 
-# TODO: use pybind11 for this ?
-class Vector2:
-    def __init__(self, x=0.0, y=0.0):
-        self._gd_obj = ffi.new('godot_vector2*')
-        lib.godot_vector2_new(self._gd_obj, x, y)
-
-    @property
-    def x(self):
-        return lib.godot_vector2_get_x(self._gd_obj)
-
-    @property
-    def y(self):
-        return lib.godot_vector2_get_y(self._gd_obj)
-
-    @x.setter
-    def x(self, val):
-        lib.godot_vector2_set_x(self._gd_obj, val)
-
-    @y.setter
-    def y(self, val):
-        lib.godot_vector2_set_y(self._gd_obj, val)
-
-    @property
-    def width(self):
-        return self.x
-
-    @property
-    def height(self):
-        return self.y
-
-    @width.setter
-    def width(self, val):
-        self.x = val
-
-    @height.setter
-    def height(self, val):
-        self.y = val
-
-    def __repr__(self):
-        return "<%s(x=%s, y=%s)>" % (type(self).__name__, self.x, self.y)
-
-    def __eq__(self, other):
-        return isinstance(other, Vector2) and other.x == self.x and other.y == self.y
-
-    def __neg__(self):
-        return type(self)(-self.x, -self.y)
-
-    def __pos__(self):
-        return self
-
-
 def _gen_stub(msg):
     return lambda *args: print(msg)
 
@@ -280,14 +229,14 @@ def build_class(classname, binding_classname=None):
     parentname = ClassDB.get_parent_class(classname)
     print('=> P', parentname)
     if parentname:
-        bases = (getattr(module, parentname), )
+        bases = (getattr(godot_bindings_module, parentname), )
     else:
         bases = (BaseObject, )
     return type(binding_classname, bases, nmspc)
 
 
 def build_global(name, clsname):
-    return getattr(module, clsname)(lib.godot_global_get_singleton(name.encode()))
+    return getattr(godot_bindings_module, clsname)(lib.godot_global_get_singleton(name.encode()))
 
 
 # Werkzeug style lazy module
@@ -340,7 +289,7 @@ class LazyBindingsModule(ModuleType):
 
     def __init__(self, name, doc=None):
         super().__init__(name, doc=doc)
-        self._loaded = {'Vector2': Vector2}
+        self._loaded = get_builtins()
         # Load global constants
         self._loaded.update(GlobalConstants.get_global_constansts())
         # Register classe types
@@ -366,5 +315,5 @@ class LazyBindingsModule(ModuleType):
         return result
 
 
-module = LazyBindingsModule("godot.bindings")
-sys.modules["godot.bindings"] = module
+godot_bindings_module = LazyBindingsModule("godot.bindings")
+sys.modules["godot.bindings"] = godot_bindings_module

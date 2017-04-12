@@ -28,17 +28,9 @@ String PyLanguage::get_name() const {
 }
 
 
-/* LANGUAGE FUNCTIONS */
-py::object PyLanguage::get_py_exposed_class_from_module(py::module module) {
-    // TODO: do we have to do a borrow to prevent from refcounting free ?
-    return py::reinterpret_borrow<py::object>(this->_py_godot_module.attr("get_exposed_class_per_module")(module));
-}
-
-
-void _mp_init_sys_path_and_argv(String path) {
+void _init_sys_path_and_argv(String path) {
     String resource_path = GlobalConfig::get_singleton()->get_resource_path();
     String data_dir = OS::get_singleton()->get_data_dir();
-    printf("PYTHON_PATH %s\n", path.utf8().get_data());
 
     // Init sys.path list
     auto sys = py::module::import("sys");
@@ -55,7 +47,6 @@ void _mp_init_sys_path_and_argv(String path) {
                 curr_path = curr_path.replace("user:/", data_dir);
             }
         }
-        printf("-> %s\n", curr_path.utf8().get_data());
         // TODO: should we shadow default modules ?
         // sys.attr("path").attr("append")(curr_path.utf8().get_data());
         sys.attr("path").attr("insert")(0, curr_path.utf8().get_data());
@@ -64,30 +55,11 @@ void _mp_init_sys_path_and_argv(String path) {
     py::eval<py::eval_statements>("import sys\n"
                                   "print('PYTHON_PATH:', sys.path)\n", scope);
 
-
     // Init sys.argv
     sys.attr("argv") = py::list();
     sys.attr("argv").attr("append")(L"");
 }
 
-#if 0
-PYBIND11_PLUGIN(godot_bindings) {
-    py::module m("godot.bindings", "godot classes just for you ;-)");
-
-    py::class_<Object>(m, "Object")
-        .def(py::init<>())
-        .def("get_instance_ID", &Object::get_instance_ID)
-        .def("is_class", &Object::is_class);
-
-    // Expose godot.bindings as a module
-    auto sys = py::module::import("sys");
-    sys.attr("modules")["godot.bindings"] = m;
-
-    return m.ptr();
-}
-#else
-#include "bindings.h"
-#endif
 
 void PyLanguage::init() {
     DEBUG_TRACE_METHOD();
@@ -95,27 +67,22 @@ void PyLanguage::init() {
     auto globals = GlobalConfig::get_singleton();
     GLOBAL_DEF("python_script/path", "res://;res://lib");
 
-#ifdef BACKEND_CPYTHON
+    // Setup Python interpreter
     Py_SetProgramName(L"godot");  /* optional but recommended */
+    Py_Initialize();
+    if (pybind_init()) {
+        ERR_PRINT("Couldn't initialize Python interpreter or CFFI bindings.");
+        ERR_FAIL();
+    }
+
     // TODO: think where to keep python standard lib ?
     // Py_SetPythonHome(globals->get("python_script/home"));
-    Py_Initialize();
-#else
-    // TODO: pypy
-#endif
     try {
-        _mp_init_sys_path_and_argv(globals->get("python_script/path"));
-        // Load Godot module and attach the bindings to it
-        this->_py_godot_module = py::module::import("godot");
-        // TODO: attach the real binding here !
-        // bindings::init();
-    py::object scope = py::module::import("__main__").attr("__dict__");
+        _init_sys_path_and_argv(globals->get("python_script/path"));
     } catch(const py::error_already_set &e) {
         ERR_PRINT(e.what());
         ERR_FAIL();
     }
-
-    // init_bindings();
 
 #if 0
     //populate global constants
@@ -177,12 +144,8 @@ Error PyLanguage::execute_file(const String& p_path)  {
 
 void PyLanguage::finish()  {
     DEBUG_TRACE_METHOD();
-#ifdef BACKEND_CPYTHON
-    Py_FinalizeEx();
-#else
-    // TODO: pypy
-#endif
-    // GodotBindingsModule::finish();
+    // TODO: Do we need to deinit the interpreter ?
+    // Py_FinalizeEx();
 }
 
 

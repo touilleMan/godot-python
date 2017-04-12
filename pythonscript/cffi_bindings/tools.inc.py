@@ -198,7 +198,7 @@ def raw_to_pyobj(gdtype, p_raw, hint_string=None):
     elif gdtype == lib.GODOT_VARIANT_TYPE_RID:
         raise TypeError("Type conversion `Rid` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_OBJECT:
-        return getattr(module, hint_string)(p_raw[0])
+        return getattr(godot_bindings_module, hint_string)(p_raw[0])
     elif gdtype == lib.GODOT_VARIANT_TYPE_INPUT_EVENT:
         raise TypeError("Type conversion `InputEvent` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_DICTIONARY:

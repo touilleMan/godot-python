@@ -1,8 +1,7 @@
 #ifndef PYTHONSCRIPT_PY_INSTANCE_H
 #define PYTHONSCRIPT_PY_INSTANCE_H
 
-// Pythonscript imports
-// #include "py_script.h"
+
 class PyScript;
 
 

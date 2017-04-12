@@ -61,6 +61,11 @@ const char *godot_get_global_constant_name(int index) {
 int godot_get_global_constant_value(int index) {
        return GlobalConstants::get_global_constant_value(index);
 }
+
+CFFI_DLLEXPORT int pybind_init(void) {
+    return cffi_start_python();
+}
+
 """)
 
 
@@ -68,6 +73,8 @@ with open(BASEDIR + '/mod_godot.inc.py', 'r') as fd:
     godot_module = fd.read()
 with open(BASEDIR + '/tools.inc.py', 'r') as fd:
     tools = fd.read()
+with open(BASEDIR + '/builtins.inc.py', 'r') as fd:
+    builtins = fd.read()
 with open(BASEDIR + '/mod_godot_bindings.inc.py', 'r') as fd:
     godot_bindings_module = fd.read()
 
@@ -95,12 +102,10 @@ protect_from_gc = ProtectFromGC()
 
 def connect_handle(obj):
     handle = obj.__dict__.get('_cffi_handle')
-    if handle:
-        return handle
-    else:
+    if not handle:
         handle = ffi.new_handle(obj)
         obj._cffi_handle = handle
-        return handle
+    return handle
 
 
 @ffi.def_extern()
@@ -149,9 +154,11 @@ def pybind_call_meth(handle, methname, args, argcount, ret, error):
 
 # =====
 
+
 @ffi.def_extern()
 def do_stuff(x, y):
     return x + y
+
 
 @ffi.def_extern()
 def py_instance_set_godot_obj(instance_handle, godot_obj):
@@ -203,7 +210,7 @@ def call_with_variants(func, args, argcount):
     pyret = pyfunc(*pyargs)
     return pyobj_to_variant(pyret)
 
-""" + tools + godot_module + godot_bindings_module + """
+""" + tools + godot_module + builtins + godot_bindings_module + """
 
 """)
 
