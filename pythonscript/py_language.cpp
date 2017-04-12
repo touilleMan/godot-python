@@ -68,7 +68,8 @@ void PyLanguage::init() {
     GLOBAL_DEF("python_script/path", "res://;res://lib");
 
     // Setup Python interpreter
-    Py_SetProgramName(L"godot");  /* optional but recommended */
+    wchar_t name[6] = L"godot";
+    Py_SetProgramName(name);  /* optional but recommended */
     Py_Initialize();
     if (pybind_init()) {
         ERR_PRINT("Couldn't initialize Python interpreter or CFFI bindings.");
@@ -145,7 +146,7 @@ Error PyLanguage::execute_file(const String& p_path)  {
 void PyLanguage::finish()  {
     DEBUG_TRACE_METHOD();
     // TODO: Do we need to deinit the interpreter ?
-    // Py_FinalizeEx();
+    Py_FinalizeEx();
 }
 
 
@@ -344,29 +345,6 @@ void PyLanguage::reload_tool_script(const Ref<Script>& p_script,bool p_soft_relo
 
 
 #endif
-}
-
-
-/* EDITOR FUNCTIONS */
-void PyLanguage::get_reserved_words(List<String> *p_words) const  {
-
-    static const char *_reserved_words[]={
-        0};
-
-
-    const char **w=_reserved_words;
-
-
-    while (*w) {
-
-        p_words->push_back(*w);
-        w++;
-    }
-
-    for(int i=0;i<PyFunctions::FUNC_MAX;i++) {
-        p_words->push_back(PyFunctions::get_func_name(PyFunctions::Function(i)));
-    }
-
 }
 
 #endif // if 0
