@@ -68,4 +68,4 @@ script:
   - python tools/generate_bindings.py tools/api.json  -o pythonscript/bindings.gen.cpp -s
   - if [[ "$CXX" == "g++" ]]; then make compile OPTS="platform=$GODOT_TARGET $EXTRA_OPTS CXX=g++-5 CC=gcc-5"; fi
   - if [[ "$CXX" == "clang++" ]]; then make compile OPTS="platform=$GODOT_TARGET $EXTRA_OPTS use_llvm=yes"; fi
-  - LIBGL_ALWAYS_SOFTWARE=1 make test EXTRA_OPTS='--pytest=test_dynamic_bindings.py'
+  - LIBGL_ALWAYS_SOFTWARE=1 make test DEBUG=valgrind
