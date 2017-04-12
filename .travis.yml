@@ -46,6 +46,7 @@ addons:
       - g++-5
 #      - clang-3.9
       - python3
+      - valgrind
 
 before_install:
   - if [[ "$CXX" == "clang++" ]]; then wget http://llvm.org/releases/$LLVM_VERSION/clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-14.04.tar.xz -O $LLVM_ARCHIVE_PATH; fi
