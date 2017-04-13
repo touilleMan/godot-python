@@ -19,6 +19,7 @@ env:
     # other solution is to set `-D__extern_always_inline="extern __always_inline"`
     - BUILD_EXTRA_OPTS="-j4 target=debug tools=yes module_pythonscript_enabled=yes"
     - TEST_EXTRA_OPTS=""
+    - DISPLAY=:99.0
   matrix:
     - GODOT_TARGET=x11
     # nothing else yet...
