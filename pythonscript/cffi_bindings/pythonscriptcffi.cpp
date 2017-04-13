@@ -942,109 +942,6 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "module.get_exposed_class_per_name = get_exposed_class_per_name\n" \
 "\n" \
 "sys.modules[\"godot\"] = module\n" \
-"# TODO: use pybind11 for this \?\n" \
-"class Vector2:\n" \
-"    def __init__(self, x=0.0, y=0.0):\n" \
-"        self._gd_obj = ffi.new('godot_vector2*')\n" \
-"        lib.godot_vector2_new(self._gd_obj, x, y)\n" \
-"\n" \
-"    @property\n" \
-"    def x(self):\n" \
-"        return lib.godot_vector2_get_x(self._gd_obj)\n" \
-"\n" \
-"    @property\n" \
-"    def y(self):\n" \
-"        return lib.godot_vector2_get_y(self._gd_obj)\n" \
-"\n" \
-"    @x.setter\n" \
-"    def x(self, val):\n" \
-"        lib.godot_vector2_set_x(self._gd_obj, val)\n" \
-"\n" \
-"    @y.setter\n" \
-"    def y(self, val):\n" \
-"        lib.godot_vector2_set_y(self._gd_obj, val)\n" \
-"\n" \
-"    @property\n" \
-"    def width(self):\n" \
-"        return self.x\n" \
-"\n" \
-"    @property\n" \
-"    def height(self):\n" \
-"        return self.y\n" \
-"\n" \
-"    @width.setter\n" \
-"    def width(self, val):\n" \
-"        self.x = val\n" \
-"\n" \
-"    @height.setter\n" \
-"    def height(self, val):\n" \
-"        self.y = val\n" \
-"\n" \
-"    def __repr__(self):\n" \
-"        return \"<%s(x=%s, y=%s)>\" % (type(self).__name__, self.x, self.y)\n" \
-"\n" \
-"    def __eq__(self, other):\n" \
-"        return isinstance(other, Vector2) and other.x == self.x and other.y == self.y\n" \
-"\n" \
-"    def __neg__(self):\n" \
-"        return type(self)(-self.x, -self.y)\n" \
-"\n" \
-"    def __pos__(self):\n" \
-"        return self\n" \
-"\n" \
-"\n" \
-"class Vector3:\n" \
-"    AXIS_X = 0\n" \
-"    AXIS_Y = 1\n" \
-"    AXIS_Z = 2\n" \
-"\n" \
-"    def __init__(self, x=0.0, y=0.0, z=0.0):\n" \
-"        self._gd_obj = ffi.new('godot_vector3*')\n" \
-"        lib.godot_vector3_new(self._gd_obj, x, y, z)\n" \
-"\n" \
-"    @property\n" \
-"    def x(self):\n" \
-"        return lib.godot_vector3_get_axis(self._gd_obj, self.AXIS_X)\n" \
-"\n" \
-"    @property\n" \
-"    def y(self):\n" \
-"        return lib.godot_vector3_get_axis(self._gd_obj, self.AXIS_Y)\n" \
-"\n" \
-"    @property\n" \
-"    def z(self):\n" \
-"        return lib.godot_vector3_get_axis(self._gd_obj, self.AXIS_Z)\n" \
-"\n" \
-"    @x.setter\n" \
-"    def x(self, val):\n" \
-"        lib.godot_vector3_set_axis(self._gd_obj, self.AXIS_X, val)\n" \
-"\n" \
-"    @y.setter\n" \
-"    def y(self, val):\n" \
-"        lib.godot_vector3_set_axis(self._gd_obj, self.AXIS_Y, val)\n" \
-"\n" \
-"    @z.setter\n" \
-"    def z(self, val):\n" \
-"        lib.godot_vector3_set_axis(self._gd_obj, self.AXIS_Z, val)\n" \
-"\n" \
-"    def __repr__(self):\n" \
-"        return \"<%s(x=%s, y=%s, z=%s)>\" % (type(self).__name__, self.x, self.y, self.z)\n" \
-"\n" \
-"    def __eq__(self, other):\n" \
-"        return (isinstance(other, Vector3) and other.x == self.x and\n" \
-"                other.y == self.y and other.z == self.z)\n" \
-"\n" \
-"    def __neg__(self):\n" \
-"        return type(self)(-self.x, -self.y, -self.z)\n" \
-"\n" \
-"    def __pos__(self):\n" \
-"        return self\n" \
-"\n" \
-"\n" \
-"def get_builtins():\n" \
-"    return {\n" \
-"        'Vector2': Vector2,\n" \
-"        'Vector3': Vector3\n" \
-"    }\n" \
 "import sys\n" \
 "from types import ModuleType\n" \
 "from pythonscriptcffi import ffi, lib\n" \
@@ -1336,29 +1233,33 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "\n" \
 "    def __init__(self, name, doc=None):\n" \
 "        super().__init__(name, doc=doc)\n" \
-"        self._loaded = get_builtins()\n" \
 "        # Load global constants\n" \
-"        self._loaded.update(GlobalConstants.get_global_constansts())\n" \
+"        self.__dict__.update(GlobalConstants.get_global_constansts())\n" \
 "        # Register classe types\n" \
 "        self._available = {name: partial(build_class, name) for name in ClassDB.get_class_list()}\n" \
 "        self._bootstrap_global_singletons()\n" \
-"        # self._bootstrap_builtins()\n" \
 "        setattr(self, '__package__', name)\n" \
-"        setattr(self, '__all__', list(self._loaded.keys()) + list(self._available.keys()))\n" \
+"\n" \
+"    @property\n" \
+"    def __all__(self):\n" \
+"        # Cannot compute this statically given builtins will be added\n" \
+"        # by pybind11 after this module's creation\n" \
+"        elems = [k for k in self.__dict__.keys() if not k.startswith('_')]\n" \
+"        elems.extend(self._available.keys())\n" \
+"        return list(set(elems))\n" \
 "\n" \
 "    def __getattr__(self, name):\n" \
-"        if name not in self._loaded:\n" \
-"            loader = self._available.get(name)\n" \
-"            if not loader:\n" \
-"                return ModuleType.__getattribute__(self, name)\n" \
-"            self._loaded[name] = loader()\n" \
-"        return self._loaded[name]\n" \
+"        loader = self._available.get(name)\n" \
+"        if not loader:\n" \
+"            return ModuleType.__getattribute__(self, name)\n" \
+"        self.__dict__[name] = loader()\n" \
+"        return self.__dict__[name]\n" \
 "\n" \
 "    def __dir__(self):\n" \
 "        \"\"\"Just show what we want to show.\"\"\"\n" \
 "        result = list(self.__all__)\n" \
 "        result.extend(('__all__', '__doc__', '__loader__', '__name__',\n" \
-"                       '__package__', '__spec__', '_available', '_loaded'))\n" \
+"                       '__package__', '__spec__', '_available'))\n" \
 "        return result\n" \
 "\n" \
 "\n" \

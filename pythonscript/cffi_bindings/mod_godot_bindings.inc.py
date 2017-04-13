@@ -289,29 +289,33 @@ class LazyBindingsModule(ModuleType):
 
     def __init__(self, name, doc=None):
         super().__init__(name, doc=doc)
-        self._loaded = get_builtins()
         # Load global constants
-        self._loaded.update(GlobalConstants.get_global_constansts())
+        self.__dict__.update(GlobalConstants.get_global_constansts())
         # Register classe types
         self._available = {name: partial(build_class, name) for name in ClassDB.get_class_list()}
         self._bootstrap_global_singletons()
-        # self._bootstrap_builtins()
         setattr(self, '__package__', name)
-        setattr(self, '__all__', list(self._loaded.keys()) + list(self._available.keys()))
+
+    @property
+    def __all__(self):
+        # Cannot compute this statically given builtins will be added
+        # by pybind11 after this module's creation
+        elems = [k for k in self.__dict__.keys() if not k.startswith('_')]
+        elems.extend(self._available.keys())
+        return list(set(elems))
 
     def __getattr__(self, name):
-        if name not in self._loaded:
-            loader = self._available.get(name)
-            if not loader:
-                return ModuleType.__getattribute__(self, name)
-            self._loaded[name] = loader()
-        return self._loaded[name]
+        loader = self._available.get(name)
+        if not loader:
+            return ModuleType.__getattribute__(self, name)
+        self.__dict__[name] = loader()
+        return self.__dict__[name]
 
     def __dir__(self):
         """Just show what we want to show."""
         result = list(self.__all__)
         result.extend(('__all__', '__doc__', '__loader__', '__name__',
-                       '__package__', '__spec__', '_available', '_loaded'))
+                       '__package__', '__spec__', '_available'))
         return result
 
 

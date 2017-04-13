@@ -34,7 +34,6 @@ class TestVector3:
         with pytest.raises(TypeError):
             Vector3(None, 2, "c")
 
-    @pytest.mark.xfail(reason='Not implemented yet')
     def test_methods(self):
         v = Vector3()
         # Don't test methods' validity but bindings one
@@ -58,7 +57,7 @@ class TestVector3:
                 ['reflect', Vector3, (v, )],
                 ['rotated', Vector3, (v, 0.5)],
                 ['slide', Vector3, (v, )],
-                ['snapped', Vector3, (v, )]):
+                ['snapped', Vector3, (0.5, )]):
             assert hasattr(v, field)
             method = getattr(v, field)
             assert callable(method)
@@ -78,3 +77,13 @@ class TestVector3:
             setattr(v, field, val)
             field_val = getattr(v, field)
             assert field_val, val
+
+    def test_contants(self):
+        v = Vector3()
+        for field, ret_type in (
+                ('AXIS_X', int),
+                ('AXIS_Y', int),
+                ('AXIS_Z', int)):
+            assert hasattr(v, field)
+            field_val = getattr(v, field)
+            assert isinstance(field_val, ret_type)

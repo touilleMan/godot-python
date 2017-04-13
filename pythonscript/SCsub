@@ -25,8 +25,8 @@ module_env.Append(CXXFLAGS='-pthread -DDEBUG=1 -fwrapv -Wall -Wstrict-prototypes
 #x86_64-linux-gnu-gcc -pthread -shared -Wl,-O1 -Wl,-Bsymbolic-functions -Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,-Bsymbolic-functions -Wl,-z,relro -g -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 ./pythonscriptcffi.o -lpython3.5m -o ./pythonscriptcffi.so
 
 sources = [
-#	"bindings.cpp",
 	"cffi_bindings/pythonscriptcffi.cpp",
+	"static_bindings.cpp",
 	"register_types.cpp",
 	"py_language.cpp",
 	"py_editor.cpp",

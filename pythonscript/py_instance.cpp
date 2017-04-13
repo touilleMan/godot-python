@@ -2,7 +2,6 @@
 #include "py_language.h"
 #include "py_script.h"
 #include "py_instance.h"
-#include "bindings.h"
 #include "modules/dlscript/godot.h"
 #if 0
 #include "bindings/binder.h"

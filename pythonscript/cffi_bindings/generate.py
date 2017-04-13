@@ -73,8 +73,6 @@ with open(BASEDIR + '/mod_godot.inc.py', 'r') as fd:
     godot_module = fd.read()
 with open(BASEDIR + '/tools.inc.py', 'r') as fd:
     tools = fd.read()
-with open(BASEDIR + '/builtins.inc.py', 'r') as fd:
-    builtins = fd.read()
 with open(BASEDIR + '/mod_godot_bindings.inc.py', 'r') as fd:
     godot_bindings_module = fd.read()
 
@@ -210,7 +208,7 @@ def call_with_variants(func, args, argcount):
     pyret = pyfunc(*pyargs)
     return pyobj_to_variant(pyret)
 
-""" + tools + godot_module + builtins + godot_bindings_module + """
+""" + tools + godot_module + godot_bindings_module + """
 
 """)
 

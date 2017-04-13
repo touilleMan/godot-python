@@ -35,7 +35,6 @@ class TestVector2:
         with pytest.raises(TypeError):
             Vector2(None, 2)
 
-    @pytest.mark.xfail(reason='Not implemented yet')
     def test_methods(self):
         v = Vector2()
         # Don't test methods' validity but bindings one
