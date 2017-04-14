@@ -15,11 +15,6 @@ void godot_method_bind_ptrcall(godot_method_bind *p_method_bind, godot_object *p
 
 godot_object *godot_global_get_singleton(char *p_name); // result shouldn't be freed
 
-// TODO: waiting for dlscript to implement this (https://github.com/godotengine/godot/issues/8316)
-const int godot_get_global_constant_count();
-const char *godot_get_global_constant_name(int index);
-int godot_get_global_constant_value(int index);
-
 
 typedef float godot_real;
 typedef double godot_real64;
@@ -71,10 +66,10 @@ typedef struct godot_string {
 } godot_string;
 void godot_string_new(godot_string *p_str);
 void godot_string_new_data(godot_string *p_str, const char *p_contents, const int p_size);
-void godot_string_get_data(const godot_string *p_str, wchar_t *p_dest, int *p_size);
+void godot_string_get_data(const godot_string *p_str, char *p_dest, int *p_size);
 void godot_string_copy_string(const godot_string *p_dest, const godot_string *p_src);
 wchar_t *godot_string_operator_index(godot_string *p_str, const godot_int p_idx);
-const wchar_t *godot_string_c_str(const godot_string *p_str);
+const char *godot_string_c_str(const godot_string *p_str);
 godot_bool godot_string_operator_equal(const godot_string *p_a, const godot_string *p_b);
 godot_bool godot_string_operator_less(const godot_string *p_a, const godot_string *p_b);
 void godot_string_operator_plus(godot_string *p_dest, const godot_string *p_a, const godot_string *p_b);

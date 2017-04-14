@@ -8,10 +8,8 @@ class GlobalConstants:
 
     @classmethod
     def get_global_constansts(cls):
-        constants = lib.godot_get_global_constants()
-        pyobj_constants = godot_dictionary_to_pyobj(ffi.addressof(constants))
-        lib.godot_dictionary_clear(ffi.addressof(constants))
-        return pyobj_constants
+        raw_consts = lib.godot_get_global_constants()
+        return godot_dictionary_to_pyobj(ffi.addressof(raw_consts))
 
 
 class ClassDB:
@@ -37,7 +35,7 @@ class ClassDB:
         for i in range(lib.godot_pool_string_array_size(ret)):
             godot_str = lib.godot_pool_string_array_get(ret, i)
             c_str = lib.godot_string_c_str(ffi.new('godot_string*', godot_str))
-            unordered.append(ffi.string(c_str))
+            unordered.append(ffi.string(c_str).decode())
 
         # Order class to have a parent defined before their children
         classes = []
@@ -132,7 +130,7 @@ class ClassDB:
         for i in range(lib.godot_pool_string_array_size(ret)):
             godot_str = lib.godot_pool_string_array_get(ret, i)
             c_str = lib.godot_string_c_str(ffi.new('godot_string*', godot_str))
-            consts.append(ffi.string(c_str))
+            consts.append(ffi.string(c_str).decode())
         return consts
 
     @classmethod
@@ -155,7 +153,7 @@ class ClassDB:
         args = ffi.new("godot_string**", gd_classname)
         lib.godot_method_bind_ptrcall(cls._meth_get_parent_class, cls._instance, ffi.cast("void**", args), ret)
         c_str = lib.godot_string_c_str(ret)
-        return ffi.string(c_str)
+        return ffi.string(c_str).decode()
 
 
 class BaseObject:

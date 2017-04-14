@@ -2,74 +2,7 @@
 #include "py_language.h"
 #include "py_script.h"
 #include "py_instance.h"
-#include "modules/dlscript/godot.h"
-#if 0
-#include "bindings/binder.h"
-#include "bindings/dynamic_binder.h"
-#endif
-
-
-// TODO: replace this by a header file to include
-typedef void godot_object;
-extern void py_instance_set_godot_obj(PyObject *py_instance, godot_object *godot_obj);
-extern PyObject *instanciate_binding_from_godot_obj(PyObject *py_cls, godot_object *godot_obj);
-extern PyObject *variants_to_pyobjs(void *args, int argcount);
-extern PyObject *variant_to_pyobj2(void *arg);
-extern PyObject *pyobj_to_variant2(PyObject *arg);
-extern godot_variant *call_with_variants(PyObject *func, const godot_variant **args, int argcount);
-extern void *pybind_instanciate_from_classname(const wchar_t *classname);
-extern void *pybind_wrap_gdobj_with_class(void *cls_handle, void *owner);
-extern void pybind_release_instance(void *handle);
-extern void pybind_call_meth(void *handle, const wchar_t *methname, void **args, int argcount, void *ret, int *error);
-
-#if 0
-class ScriptInstance {
-public:
-
-
-    virtual bool set(const StringName& p_name, const Variant& p_value)=0;
-    virtual bool get(const StringName& p_name, Variant &r_ret) const=0;
-    virtual void get_property_list(List<PropertyInfo> *p_properties) const=0;
-    virtual Variant::Type get_property_type(const StringName& p_name,bool *r_is_valid=NULL) const=0;
-
-    virtual void get_property_state(List<Pair<StringName,Variant> > &state);
-
-    virtual void get_method_list(List<MethodInfo> *p_list) const=0;
-    virtual bool has_method(const StringName& p_method) const=0;
-    virtual Variant call(const StringName& p_method,VARIANT_ARG_LIST);
-    virtual Variant call(const StringName& p_method,const Variant** p_args,int p_argcount,Variant::CallError &r_error)=0;
-    virtual void call_multilevel(const StringName& p_method,VARIANT_ARG_LIST);
-    virtual void call_multilevel(const StringName& p_method,const Variant** p_args,int p_argcount);
-    virtual void call_multilevel_reversed(const StringName& p_method,const Variant** p_args,int p_argcount);
-    virtual void notification(int p_notification)=0;
-
-    //this is used by script languages that keep a reference counter of their own
-    //you can make make Ref<> not die when it reaches zero, so deleting the reference
-    //depends entirely from the script
-
-    virtual void refcount_incremented() {}
-    virtual bool refcount_decremented() { return true; } //return true if it can die
-
-    virtual Ref<Script> get_script() const=0;
-
-    virtual bool is_placeholder() const { return false; }
-
-    enum RPCMode {
-        RPC_MODE_DISABLED,
-        RPC_MODE_REMOTE,
-        RPC_MODE_SYNC,
-        RPC_MODE_MASTER,
-        RPC_MODE_SLAVE,
-    };
-
-    virtual RPCMode get_rpc_mode(const StringName& p_method) const=0;
-    virtual RPCMode get_rset_mode(const StringName& p_variable) const=0;
-
-    virtual ScriptLanguage *get_language()=0;
-    virtual ~ScriptInstance();
-};
-
-#endif
+#include "cffi_bindings/api.h"
 
 
 bool PyInstance::set(const StringName& p_name, const Variant& p_value) {

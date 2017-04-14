@@ -11,20 +11,22 @@ def godot_dictionary_to_pyobj(p_gddict):
     gdkeys = lib.godot_dictionary_keys(p_gddict)
     p_gdkeys = ffi.new("godot_array*", gdkeys)
     for i in range(lib.godot_array_size(p_gdkeys)):
-        p_key = lib.godot_array_get(p_gdkeys, i)
-        keystr = lib.godot_variant_as_string(p_key)
-        p_keystr = ffi.new("godot_string*", keystr)
-        c_str = lib.godot_string_c_str(p_keystr)
-        value = lib.godot_dictionary_operator_index(p_gddict, p_key)
+        p_raw_key = lib.godot_array_get(p_gdkeys, i)
+        var_key = lib.godot_variant_as_string(p_raw_key)
+        key = godot_string_to_pyobj(var_key)
+        value = lib.godot_dictionary_operator_index(p_gddict, p_raw_key)
         # Recursive conversion of dict values
-        pydict[ffi.string(c_str)] = variant_to_pyobj(value)
+        pydict[key] = variant_to_pyobj(value)
     return pydict
 
 
 def godot_string_to_pyobj(gdstring):
     p_gdstring = ffi.new("godot_string*", gdstring)
     c_str = lib.godot_string_c_str(p_gdstring)
-    return ffi.string(c_str)
+    # TODO: godot_string_c_str returns a char* so we have to use `decode`
+    # However Godot's String internally uses wchar_t, would be better to
+    # directly access to this
+    return ffi.string(c_str).decode()
 
 
 def variant_to_pyobj(p_gdvar):

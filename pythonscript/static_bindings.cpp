@@ -26,7 +26,20 @@ PYBIND11_PLUGIN(godot_bindings) {
     py::class_<Transform2D>(m, "Transform2D");
     py::class_<Color>(m, "Color");
     py::class_<Image>(m, "Image");
-    py::class_<NodePath>(m, "NodePath");
+    py::class_<NodePath>(m, "NodePath")
+        .def(py::init<String>(), py::arg("from"))
+        // Methods
+        .def("get_name", &NodePath::get_name)
+        .def("get_name_count", &NodePath::get_name_count)
+        .def("get_property", &NodePath::get_property)
+        .def("get_subname", &NodePath::get_subname)
+        .def("get_subname_count", &NodePath::get_subname_count)
+        .def("is_absolute", &NodePath::is_absolute)
+        .def("is_empty", &NodePath::is_empty)
+        // Properties
+        // Constants
+        ;
+
     py::class_<RefPtr>(m, "RefPtr");
     py::class_<RID>(m, "RID");
     py::class_<InputEvent>(m, "InputEvent");
@@ -39,59 +52,6 @@ PYBIND11_PLUGIN(godot_bindings) {
     py::class_<PoolVector2Array>(m, "PoolVector2Array");
     py::class_<PoolVector3Array>(m, "PoolVector3Array");
     py::class_<PoolColorArray>(m, "PoolColorArray");
-
-    // py::enum_<::Error>(m, "Error")
-    //     .value("OK", ::Error::OK)
-    //     .value("FAILED", ::Error::FAILED)
-    //     .value("ERR_UNAVAILABLE", ::Error::ERR_UNAVAILABLE)
-    //     .value("ERR_UNCONFIGURED", ::Error::ERR_UNCONFIGURED)
-    //     .value("ERR_UNAUTHORIZED", ::Error::ERR_UNAUTHORIZED)
-    //     .value("ERR_PARAMETER_RANGE_ERROR", ::Error::ERR_PARAMETER_RANGE_ERROR)
-    //     .value("ERR_OUT_OF_MEMORY", ::Error::ERR_OUT_OF_MEMORY)
-    //     .value("ERR_FILE_NOT_FOUND", ::Error::ERR_FILE_NOT_FOUND)
-    //     .value("ERR_FILE_BAD_DRIVE", ::Error::ERR_FILE_BAD_DRIVE)
-    //     .value("ERR_FILE_BAD_PATH", ::Error::ERR_FILE_BAD_PATH)
-    //     .value("ERR_FILE_NO_PERMISSION", ::Error::ERR_FILE_NO_PERMISSION)
-    //     .value("ERR_FILE_ALREADY_IN_USE", ::Error::ERR_FILE_ALREADY_IN_USE)
-    //     .value("ERR_FILE_CANT_OPEN", ::Error::ERR_FILE_CANT_OPEN)
-    //     .value("ERR_FILE_CANT_WRITE", ::Error::ERR_FILE_CANT_WRITE)
-    //     .value("ERR_FILE_CANT_READ", ::Error::ERR_FILE_CANT_READ)
-    //     .value("ERR_FILE_UNRECOGNIZED", ::Error::ERR_FILE_UNRECOGNIZED)
-    //     .value("ERR_FILE_CORRUPT", ::Error::ERR_FILE_CORRUPT)
-    //     .value("ERR_FILE_MISSING_DEPENDENCIES", ::Error::ERR_FILE_MISSING_DEPENDENCIES)
-    //     .value("ERR_FILE_EOF", ::Error::ERR_FILE_EOF)
-    //     .value("ERR_CANT_OPEN", ::Error::ERR_CANT_OPEN)
-    //     .value("ERR_CANT_CREATE", ::Error::ERR_CANT_CREATE)
-    //     .value("ERR_QUERY_FAILED", ::Error::ERR_QUERY_FAILED)
-    //     .value("ERR_ALREADY_IN_USE", ::Error::ERR_ALREADY_IN_USE)
-    //     .value("ERR_LOCKED", ::Error::ERR_LOCKED)
-    //     .value("ERR_TIMEOUT", ::Error::ERR_TIMEOUT)
-    //     .value("ERR_CANT_CONNECT", ::Error::ERR_CANT_CONNECT)
-    //     .value("ERR_CANT_RESOLVE", ::Error::ERR_CANT_RESOLVE)
-    //     .value("ERR_CONNECTION_ERROR", ::Error::ERR_CONNECTION_ERROR)
-    //     .value("ERR_CANT_AQUIRE_RESOURCE", ::Error::ERR_CANT_AQUIRE_RESOURCE)
-    //     .value("ERR_CANT_FORK", ::Error::ERR_CANT_FORK)
-    //     .value("ERR_INVALID_DATA", ::Error::ERR_INVALID_DATA)
-    //     .value("ERR_INVALID_PARAMETER", ::Error::ERR_INVALID_PARAMETER)
-    //     .value("ERR_ALREADY_EXISTS", ::Error::ERR_ALREADY_EXISTS)
-    //     .value("ERR_DOES_NOT_EXIST", ::Error::ERR_DOES_NOT_EXIST)
-    //     .value("ERR_DATABASE_CANT_READ", ::Error::ERR_DATABASE_CANT_READ)
-    //     .value("ERR_DATABASE_CANT_WRITE", ::Error::ERR_DATABASE_CANT_WRITE)
-    //     .value("ERR_COMPILATION_FAILED", ::Error::ERR_COMPILATION_FAILED)
-    //     .value("ERR_METHOD_NOT_FOUND", ::Error::ERR_METHOD_NOT_FOUND)
-    //     .value("ERR_LINK_FAILED", ::Error::ERR_LINK_FAILED)
-    //     .value("ERR_SCRIPT_FAILED", ::Error::ERR_SCRIPT_FAILED)
-    //     .value("ERR_CYCLIC_LINK", ::Error::ERR_CYCLIC_LINK)
-    //     .value("ERR_INVALID_DECLARATION", ::Error::ERR_INVALID_DECLARATION)
-    //     .value("ERR_DUPLICATE_SYMBOL", ::Error::ERR_DUPLICATE_SYMBOL)
-    //     .value("ERR_PARSE_ERROR", ::Error::ERR_PARSE_ERROR)
-    //     .value("ERR_BUSY", ::Error::ERR_BUSY)
-    //     .value("ERR_SKIP", ::Error::ERR_SKIP)
-    //     .value("ERR_HELP", ::Error::ERR_HELP)
-    //     .value("ERR_BUG", ::Error::ERR_BUG)
-    //     .value("ERR_PRINTER_ON_FIRE", ::Error::ERR_PRINTER_ON_FIRE)
-    //     .value("ERR_OMFG_THIS_IS_VERY_VERY_BAD", ::Error::ERR_OMFG_THIS_IS_VERY_VERY_BAD)
-    //     .value("ERR_WTF", ::Error::ERR_WTF);
 
     py::class_<Vector3>(m, "Vector3")
         .def(py::init<float, float, float>(), py::arg("x")=0.0, py::arg("y")=0.0, py::arg("z")=0.0)
@@ -160,6 +120,7 @@ PYBIND11_PLUGIN(godot_bindings) {
         .def("slide", &Vector2::slide)
         .def("snapped", &Vector2::snapped)
         .def("tangent", &Vector2::tangent)
+        // Properties
         .def_readwrite("height", &Vector2::height)
         .def_readwrite("width", &Vector2::width)
         .def_readwrite("x", &Vector2::x)

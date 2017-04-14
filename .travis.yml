@@ -11,10 +11,8 @@ env:
     - LLVM_VERSION=3.8.0
     - LLVM_ARCHIVE_PATH=$HOME/clang+llvm.tar.xz
     # Use commit instead of tag as long as 3.0 is not released
-    # - GODOT_REPO=https://github.com/godotengine/godot.git
-    # - GODOT_TAG=master  # I like to live dangerously ;-)
-    - GODOT_REPO=https://github.com/touilleMan/godot.git
-    - GODOT_TAG=waiting-for-master-to-follow
+    - GODOT_REPO=https://github.com/godotengine/godot.git
+    - GODOT_TAG=master  # I like to live dangerously ;-)
     # Cannot use release given travis's glibc clash with -ffast-math with clang
     # other solution is to set `-D__extern_always_inline="extern __always_inline"`
     - BUILD_EXTRA_OPTS="-j4 target=debug tools=yes module_pythonscript_enabled=yes"

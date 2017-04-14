@@ -34,7 +34,7 @@ ffibuilder = cffi.FFI()
 
 ffibuilder.set_source("pythonscriptcffi", """
 #include "Include/Python.h"
-#include "modules/dlscript/godot.h"
+#include "modules/gdnative/godot.h"
 // TODO: MethodFlags not in ldscript headers
 enum MethodFlags {
     METHOD_FLAG_NORMAL=1,
@@ -47,20 +47,6 @@ enum MethodFlags {
     METHOD_FLAG_VARARG=128,
     METHOD_FLAGS_DEFAULT=METHOD_FLAG_NORMAL,
 };
-
-// TODO: waiting for dlscript to implement this (https://github.com/godotengine/godot/issues/8316)
-#include "core/global_constants.h"
-const int godot_get_global_constant_count() {
-       return GlobalConstants::get_global_constant_count();
-}
-
-const char *godot_get_global_constant_name(int index) {
-       return GlobalConstants::get_global_constant_name(index);
-}
-
-int godot_get_global_constant_value(int index) {
-       return GlobalConstants::get_global_constant_value(index);
-}
 
 CFFI_DLLEXPORT int pybind_init(void) {
     return cffi_start_python();
@@ -214,10 +200,10 @@ def call_with_variants(func, args, argcount):
 
 
 # TODO: this header extractor is not ready yet...
-def load_dlscript_header_for_cdef(path, loaded_includes):
+def load_gdnative_header_for_cdef(path, loaded_includes):
     src_lines = []
     macroif_stack = []
-    with open(GODOT_HOME + '/modules/dlscript/' + path) as fd:
+    with open(GODOT_HOME + '/modules/gdnative/' + path) as fd:
         for line in fd.readlines():
             # Skip the line if it is inside a #if 0 or #ifdef __cplusplus block
             if re.search(r'#[ \t]*ifdef[ \t]+__cplusplus', line) or re.search(r'#[ \t]+if[ \t]+0', line):
@@ -238,7 +224,7 @@ def load_dlscript_header_for_cdef(path, loaded_includes):
                         continue
                     loaded_includes.append(header)
                     src_lines.append('// ' + line)
-                    src_lines.append(load_dlscript_header_for_cdef(header, loaded_includes))
+                    src_lines.append(load_gdnative_header_for_cdef(header, loaded_includes))
                     print(src_lines[-1])
                 elif re.search(r'^[ \t]*#', line):
                     # Ignore other macros
@@ -267,7 +253,7 @@ enum MethodFlags {
     METHOD_FLAGS_DEFAULT=METHOD_FLAG_NORMAL,
 };
 """
-# + load_dlscript_header_for_cdef('godot.h', [])
+# + load_gdnative_header_for_cdef('godot.h', [])
 + cdef
 )
 
