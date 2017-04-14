@@ -55,12 +55,17 @@ CFFI_DLLEXPORT int pybind_init(void) {
 """)
 
 
-with open(BASEDIR + '/mod_godot.inc.py', 'r') as fd:
-    godot_module = fd.read()
-with open(BASEDIR + '/tools.inc.py', 'r') as fd:
-    tools = fd.read()
-with open(BASEDIR + '/mod_godot_bindings.inc.py', 'r') as fd:
-    godot_bindings_module = fd.read()
+embedding_init_code_extra = []
+for to_include in (
+        'mod_godot.inc.py',
+        'builtin_vector2.inc.py',
+        'builtin_vector3.inc.py',
+        'builtin_basis.inc.py',
+        'tools.inc.py',
+        'mod_godot_bindings.inc.py',):
+    with open('%s/%s' % (BASEDIR, to_include), 'r') as fd:
+        embedding_init_code_extra.append(fd.read())
+embedding_init_code_extra = '\n'.join(embedding_init_code_extra)
 
 
 ffibuilder.embedding_init_code("""
@@ -194,7 +199,7 @@ def call_with_variants(func, args, argcount):
     pyret = pyfunc(*pyargs)
     return pyobj_to_variant(pyret)
 
-""" + tools + godot_module + godot_bindings_module + """
+""" + embedding_init_code_extra + """
 
 """)
 
@@ -229,14 +234,24 @@ def load_gdnative_header_for_cdef(path, loaded_includes):
                 elif re.search(r'^[ \t]*#', line):
                     # Ignore other macros
                     continue
+                elif re.match(r'^[ \t]*GODOT_BUTTON_MASK_', line):
+                    # CFFI doesn't support definition with computation, hence
+                    # this hack to fix this enum...
+                    if 'LEFT' in line:
+                        src_lines.append('GODOT_BUTTON_MASK_LEFT = %s,' % (1 << (1 - 1)))
+                    elif 'RIGHT' in line:
+                        src_lines.append('GODOT_BUTTON_MASK_RIGHT = %s,' % (1 << (2 - 1)))
+                    elif 'MIDDLE' in line:
+                        src_lines.append('GODOT_BUTTON_MASK_MIDDLE = %s,' % (1 << (3 - 1)))
                 else:
                     src_lines.append(line.replace(' GDAPI ', ' '))
                     print(src_lines[-1])
     return '\n'.join(src_lines)
 
-
+# with open('cdef3.h', 'w') as fd:
+#     fd.write(load_gdnative_header_for_cdef('godot.h', []))
 # C stuff exposed to Python
-with open(BASEDIR + '/cdef.h') as fd:
+with open(BASEDIR + '/cdef.gen.h') as fd:
     cdef = fd.read()
 ffibuilder.cdef(
     """

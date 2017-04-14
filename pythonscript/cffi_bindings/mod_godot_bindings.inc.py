@@ -237,6 +237,14 @@ def build_global(name, clsname):
     return getattr(godot_bindings_module, clsname)(lib.godot_global_get_singleton(name.encode()))
 
 
+def get_builtins():
+    return {
+        'Vector2': Vector2,
+        'Vector3': Vector3,
+        'Basis': Basis,
+    }
+
+
 # Werkzeug style lazy module
 class LazyBindingsModule(ModuleType):
 
@@ -288,6 +296,7 @@ class LazyBindingsModule(ModuleType):
     def __init__(self, name, doc=None):
         super().__init__(name, doc=doc)
         # Load global constants
+        self.__dict__.update(get_builtins())
         self.__dict__.update(GlobalConstants.get_global_constansts())
         # Register classe types
         self._available = {name: partial(build_class, name) for name in ClassDB.get_class_list()}

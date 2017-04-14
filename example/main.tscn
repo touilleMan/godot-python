@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=2]
+[gd_scene load_steps=3 format=2]
 
 [ext_resource path="res://node.gd" type="Script" id=1]
 [ext_resource path="res://node.py" type="Script" id=2]
@@ -59,5 +59,20 @@ params/final_size = 1.0
 params/hue_variation = 0.0
 params/anim_speed_scale = 1.0
 params/anim_initial_pos = 0.0
+
+[node name="Button" type="Button" parent="."]
+
+margin_left = 514.0
+margin_top = 159.0
+margin_right = 526.0
+margin_bottom = 179.0
+rect_clip_content = false
+mouse_filter = 0
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+group = null
+text = "button"
+flat = false
 
 

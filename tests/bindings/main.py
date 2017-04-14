@@ -15,6 +15,7 @@ class Main(Node):
             if arg.startswith(prefix):
                 pytest_args += arg[len(prefix):].split(',')
         # Run tests here
-        pytest.main(pytest_args)
+        if pytest.main(pytest_args):
+            OS.set_exit_code(1)
         # Exit godot
         self.get_tree().quit()

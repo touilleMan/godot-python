@@ -35,50 +35,52 @@ class TestVector2:
         with pytest.raises(TypeError):
             Vector2(None, 2)
 
-    def test_methods(self):
+    @pytest.mark.parametrize('args', [
+        ['abs', Vector2, ()],
+        ['angle', float, ()],
+        ['angle_to', float, (Vector2(), )],
+        ['angle_to_point', float, (Vector2(), )],
+        ['clamped', Vector2, (0.5, )],
+        ['cubic_interpolate', Vector2, (Vector2(), Vector2(), Vector2(), 0.5)],
+        ['distance_squared_to', float, (Vector2(), )],
+        ['distance_to', float, (Vector2(), )],
+        ['dot', float, (Vector2(), )],
+        ['floor', Vector2, ()],
+        ['aspect', float, ()],
+        ['length', float, ()],
+        ['length_squared', float, ()],
+        ['linear_interpolate', Vector2, (Vector2(), 0.5)],
+        ['normalized', Vector2, ()],
+        ['reflect', Vector2, (Vector2(), )],
+        ['rotated', Vector2, (0.5, )],
+        ['slide', Vector2, (Vector2(), )],
+        ['snapped', Vector2, (Vector2(), )],
+        ['tangent', Vector2, ()]])
+    def test_methods(self, args):
         v = Vector2()
         # Don't test methods' validity but bindings one
-        for field, ret_type, params in (
-                ['abs', Vector2, ()],
-                ['angle', float, ()],
-                ['angle_to', float, (v, )],
-                ['angle_to_point', float, (v, )],
-                ['clamped', Vector2, (0.5, )],
-                ['cubic_interpolate', Vector2, (v, v, v, 0.5)],
-                ['distance_squared_to', float, (v, )],
-                ['distance_to', float, (v, )],
-                ['dot', float, (v, )],
-                ['floor', Vector2, ()],
-                ['aspect', float, ()],
-                ['length', float, ()],
-                ['length_squared', float, ()],
-                ['linear_interpolate', Vector2, (v, 0.5)],
-                ['normalized', Vector2, ()],
-                ['reflect', Vector2, (v, )],
-                ['rotated', Vector2, (0.5, )],
-                ['slide', Vector2, (v, )],
-                ['snapped', Vector2, (v, )],
-                ['tangent', Vector2, ()]):
-            assert hasattr(v, field), '`Vector2` has no method `%s`' % field
-            method = getattr(v, field)
-            assert callable(method)
-            ret = method(*params)
-            assert type(ret) == ret_type, "`Vector2.%s` is expected to return `%s`" % (field, ret_type)
+        field, ret_type, params = args
+        assert hasattr(v, field), '`Vector2` has no method `%s`' % field
+        method = getattr(v, field)
+        assert callable(method)
+        ret = method(*params)
+        assert type(ret) == ret_type, "`Vector2.%s` is expected to return `%s`" % (field, ret_type)
 
-    def test_properties(self):
+    @pytest.mark.parametrize('args', [
+        ('height', float),
+        ('width', float),
+        ('x', float),
+        ('y', float)])
+    def test_properties(self, args):
         v = Vector2()
-        for field, ret_type in (
-                ('height', float),
-                ('width', float),
-                ('x', float),
-                ('y', float)):
-            assert hasattr(v, field), '`Vector2` has no property `%s`' % field
+        field, ret_type = args
+        assert hasattr(v, field), '`Vector2` has no property `%s`' % field
+        field_val = getattr(v, field)
+        assert type(field_val) == ret_type, "`Vector2.%s` is expected to be a `%s`" % (field, ret_type)
+        for val in (0, 10, 10., 42.5):
+            setattr(v, field, val)
             field_val = getattr(v, field)
-            assert type(field_val) == ret_type, "`Vector2.%s` is expected to be a `%s`" % (field, ret_type)
-            for val in (0, 10, 10., 42.5):
-                setattr(v, field, val)
-                field_val = getattr(v, field)
-                assert field_val == val, "`Vector2.%s` is expected to be equal to `%d`" % (field_val, val)
+            assert field_val == val, "`Vector2.%s` is expected to be equal to `%d`" % (field_val, val)
 
     def test_unary(self):
         v = Vector2(1, 2)

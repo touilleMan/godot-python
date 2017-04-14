@@ -76,7 +76,7 @@ void PyLanguage::init() {
         ERR_PRINT("Couldn't initialize Python interpreter or CFFI bindings.");
         ERR_FAIL();
     }
-    bindings::init();
+    // bindings::init();
 
     // TODO: think where to keep python standard lib ?
     // Py_SetPythonHome(globals->get("python_script/home"));

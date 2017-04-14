@@ -34,56 +34,59 @@ class TestVector3:
         with pytest.raises(TypeError):
             Vector3(None, 2, "c")
 
-    def test_methods(self):
+    @pytest.mark.parametrize('args', [
+        ['abs', Vector3, ()],
+        ['angle_to', float, (Vector3(), )],
+        ['ceil', Vector3, ()],
+        ['cross', Vector3, (Vector3(), )],
+        ['cubic_interpolate', Vector3, (Vector3(), Vector3(), Vector3(), 0.5)],
+        ['distance_squared_to', float, (Vector3(), )],
+        ['distance_to', float, (Vector3(), )],
+        ['dot', float, (Vector3(), )],
+        ['floor', Vector3, ()],
+        ['inverse', Vector3, ()],
+        ['length', float, ()],
+        ['length_squared', float, ()],
+        ['linear_interpolate', Vector3, (Vector3(), 0.5)],
+        ['max_axis', int, ()],
+        ['min_axis', int, ()],
+        ['normalized', Vector3, ()],
+        ['reflect', Vector3, (Vector3(), )],
+        ['rotated', Vector3, (Vector3(), 0.5)],
+        ['slide', Vector3, (Vector3(), )],
+        ['snapped', Vector3, (0.5, )]])
+    def test_methods(self, args):
         v = Vector3()
         # Don't test methods' validity but bindings one
-        for field, ret_type, params in (
-                ['abs', Vector3, ()],
-                ['angle_to', float, (v, )],
-                ['ceil', Vector3, ()],
-                ['cross', Vector3, (v, )],
-                ['cubic_interpolate', Vector3, (v, v, v, 0.5)],
-                ['distance_squared_to', float, (v, )],
-                ['distance_to', float, (v, )],
-                ['dot', float, (v, )],
-                ['floor', Vector3, ()],
-                ['inverse', Vector3, ()],
-                ['length', float, ()],
-                ['length_squared', float, ()],
-                ['linear_interpolate', Vector3, (v, 0.5)],
-                ['max_axis', int, ()],
-                ['min_axis', int, ()],
-                ['normalized', Vector3, ()],
-                ['reflect', Vector3, (v, )],
-                ['rotated', Vector3, (v, 0.5)],
-                ['slide', Vector3, (v, )],
-                ['snapped', Vector3, (0.5, )]):
-            assert hasattr(v, field)
-            method = getattr(v, field)
-            assert callable(method)
-            ret = method(*params)
-            assert isinstance(ret, ret_type)
+        field, ret_type, params = args
+        assert hasattr(v, field)
+        method = getattr(v, field)
+        assert callable(method)
+        ret = method(*params)
+        assert isinstance(ret, ret_type)
 
-    def test_properties(self):
+    @pytest.mark.parametrize('args', [
+        ('x', float),
+        ('y', float),
+        ('z', float)])
+    def test_properties(self, args):
         v = Vector3()
-        for field, ret_type in (
-                ('x', float),
-                ('y', float),
-                ('z', float)):
-            assert hasattr(v, field)
-            field_val = getattr(v, field)
-            assert isinstance(field_val, ret_type)
-            val = 10.
-            setattr(v, field, val)
-            field_val = getattr(v, field)
-            assert field_val, val
+        field, ret_type = args
+        assert hasattr(v, field)
+        field_val = getattr(v, field)
+        assert isinstance(field_val, ret_type)
+        val = 10.
+        setattr(v, field, val)
+        field_val = getattr(v, field)
+        assert field_val, val
 
-    def test_contants(self):
+    @pytest.mark.parametrize('args', [
+        ('AXIS_X', int),
+        ('AXIS_Y', int),
+        ('AXIS_Z', int)])
+    def test_contants(self, args):
         v = Vector3()
-        for field, ret_type in (
-                ('AXIS_X', int),
-                ('AXIS_Y', int),
-                ('AXIS_Z', int)):
-            assert hasattr(v, field)
-            field_val = getattr(v, field)
-            assert isinstance(field_val, ret_type)
+        field, ret_type = args
+        assert hasattr(v, field)
+        field_val = getattr(v, field)
+        assert isinstance(field_val, ret_type)

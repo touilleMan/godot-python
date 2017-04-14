@@ -27,21 +27,26 @@ class MyExportedCls(Node2D):
     a = export(int)
     b = export(str)
 
+    def _on_button_pressed(self):
+        print("+++++++++++++++++++++++++++++++++")
+
     def _process(self, delta):
-        print('_process called with delta=%s' % delta)
+        pass
+#        print('_process called with delta=%s' % delta)
 
     def _ready(self):
         """
         Called every time the node is added to the scene.
         Initialization here.
         """
-        import pdb; pdb.set_trace()
-        self.set_process(True)
+        # import pdb; pdb.set_trace()
+        self.set_process(False)
         # print("Hello World !")
         # print("Instance ID:", self.get_instance_ID())
         # print('=========> BEFORE', self.pause_mode)
         # self.pause_mode = True
         # print('=========> AFTER', self.pause_mode)
+        self.get_parent().get_node("Button").connect("pressed",self,"_on_button_pressed")
 
 
         # print('OLD ROT:', self.rotation)
