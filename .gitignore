@@ -11,3 +11,4 @@ godot
 
 # Godot import folders
 .import
+.cache
