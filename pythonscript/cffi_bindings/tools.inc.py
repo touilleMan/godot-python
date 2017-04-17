@@ -21,12 +21,8 @@ def godot_dictionary_to_pyobj(p_gddict):
 
 
 def godot_string_to_pyobj(gdstring):
-    p_gdstring = ffi.new("godot_string*", gdstring)
-    c_str = lib.godot_string_c_str(p_gdstring)
-    # TODO: godot_string_c_str returns a char* so we have to use `decode`
-    # However Godot's String internally uses wchar_t, would be better to
-    # directly access to this
-    return ffi.string(c_str).decode()
+    raw_str = lib.godot_string_unicode_str(ffi.addressof(gdstring))
+    return ffi.string(raw_str)
 
 
 def variant_to_pyobj(p_gdvar):
