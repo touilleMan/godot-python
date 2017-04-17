@@ -14,6 +14,11 @@ class TestBasis:
         v1.x = Vector3(1, 2, 3)
         assert v1 == v2
 
+    def test_repr(self):
+        args = (Vector3(1, 2, 3), Vector3(4, 5, 6), Vector3(7, 8, 9))
+        v = Basis.build_from_rows(*args)
+        assert repr(v) == '<Basis((1, 2, 3), (4, 5, 6), (7, 8, 9))>'
+
     def test_default_instanciate(self):
         v = Basis()
         assert isinstance(v, Basis)

@@ -13,6 +13,10 @@ class TestVector2:
         assert v2 == Vector2(1, -2)
         assert v != v2
 
+    def test_repr(self):
+        v = Vector2(1, 2)
+        assert repr(v) == '<Vector2(x=1.0, y=2.0)>'
+
     def test_instanciate(self):
         # Can build it with int or float or nothing
         msg_tmpl = "%s vs (expected) %s (args=%s)"

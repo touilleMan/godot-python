@@ -13,6 +13,10 @@ class TestVector3:
         assert v2 == Vector3(1, -2, 5)
         assert v != v2
 
+    def test_repr(self):
+        v = Vector3(1, 2, 3)
+        assert repr(v) == '<Vector3(x=1.0, y=2.0, z=3.0)>'
+
     def test_instanciate(self):
         # Can build it with int or float or nothing
         for args, expected_x, expected_y, expected_z in (

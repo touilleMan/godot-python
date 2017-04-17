@@ -115,6 +115,7 @@ godot_real godot_basis_tdotz(const godot_basis *p_v, const godot_vector3 p_with)
 void godot_basis_transposed(godot_basis *p_dest, const godot_basis *p_v);
 godot_vector3 godot_basis_xform(const godot_basis *p_v, const godot_vector3 p_vect);
 godot_vector3 godot_basis_xform_inv(const godot_basis *p_v, const godot_vector3 p_vect);
+godot_string godot_basis_to_string(const godot_basis *p_v);
 godot_vector3 godot_vector3_new(const godot_real p_x, const godot_real p_y, const godot_real p_z);
 void godot_vector3_set_axis(godot_vector3 *p_v, const godot_int p_axis, const godot_real p_val);
 godot_real godot_vector3_get_axis(const godot_vector3 *p_v, const godot_int p_axis);
