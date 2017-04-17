@@ -60,11 +60,11 @@ class TestVector2:
         v = Vector2()
         # Don't test methods' validity but bindings one
         field, ret_type, params = args
-        assert hasattr(v, field), '`Vector2` has no method `%s`' % field
+        assert hasattr(v, field)
         method = getattr(v, field)
         assert callable(method)
         ret = method(*params)
-        assert type(ret) == ret_type, "`Vector2.%s` is expected to return `%s`" % (field, ret_type)
+        assert type(ret) == ret_type
 
     @pytest.mark.parametrize('args', [
         ('height', float),
@@ -74,13 +74,24 @@ class TestVector2:
     def test_properties(self, args):
         v = Vector2()
         field, ret_type = args
-        assert hasattr(v, field), '`Vector2` has no property `%s`' % field
+        assert hasattr(v, field)
         field_val = getattr(v, field)
-        assert type(field_val) == ret_type, "`Vector2.%s` is expected to be a `%s`" % (field, ret_type)
+        assert type(field_val) == ret_type
         for val in (0, 10, 10., 42.5):
             setattr(v, field, val)
             field_val = getattr(v, field)
-            assert field_val == val, "`Vector2.%s` is expected to be equal to `%d`" % (field_val, val)
+            assert field_val == val
+
+    @pytest.mark.parametrize('args', [
+        ('height', 'NaN'),
+        ('width', 'NaN'),
+        ('x', 'NaN'),
+        ('y', 'NaN')])
+    def test_bad_properties(self, args):
+        v = Vector2()
+        field, bad_value = args
+        with pytest.raises(TypeError):
+            setattr(v, field, bad_value)
 
     def test_unary(self):
         v = Vector2(1, 2)

@@ -61,6 +61,7 @@ for to_include in (
         'builtin_vector2.inc.py',
         'builtin_vector3.inc.py',
         'builtin_basis.inc.py',
+        'builtin_quat.inc.py',
         'tools.inc.py',
         'mod_godot_bindings.inc.py',):
     with open('%s/%s' % (BASEDIR, to_include), 'r') as fd:

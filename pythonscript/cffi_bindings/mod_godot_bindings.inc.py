@@ -242,6 +242,7 @@ def get_builtins():
         'Vector2': Vector2,
         'Vector3': Vector3,
         'Basis': Basis,
+        'Quat': Quat,
     }
 
 

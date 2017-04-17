@@ -1,7 +1,25 @@
 class Vector2:
+    @classmethod
+    def build_from_gd_obj(cls, gd_obj):
+        # TODO: optimize this
+        v = cls()
+        v._gd_obj = gd_obj
+        v._gd_obj_ptr = ffi.addressof(gd_obj)
+        return v
+
+    @staticmethod
+    def check_param_type(argname, arg, type):
+        if not isinstance(arg, type):
+            raise TypeError('Param `%s` should be of type `%s`' % (argname, type))
+
+    @staticmethod
+    def check_param_float(argname, arg):
+        if not isinstance(arg, (int, float)):
+            raise TypeError('Param `%s` should be of type `float`' % argname)
+
     def __init__(self, x=0.0, y=0.0):
-        self._gd_obj = ffi.new('godot_vector2*')
-        lib.godot_vector2_new(self._gd_obj, x, y)
+        self._gd_obj = lib.godot_vector2_new(x, y)
+        self._gd_obj_ptr = ffi.addressof(self._gd_obj)
 
     def __repr__(self):
         return "<%s(x=%s, y=%s)>" % (type(self).__name__, self.x, self.y)
@@ -19,19 +37,21 @@ class Vector2:
 
     @property
     def x(self):
-        return lib.godot_vector2_get_x(self._gd_obj)
+        return lib.godot_vector2_get_x(self._gd_obj_ptr)
 
     @property
     def y(self):
-        return lib.godot_vector2_get_y(self._gd_obj)
+        return lib.godot_vector2_get_y(self._gd_obj_ptr)
 
     @x.setter
     def x(self, val):
-        lib.godot_vector2_set_x(self._gd_obj, val)
+        self.check_param_float('val', val)
+        lib.godot_vector2_set_x(self._gd_obj_ptr, val)
 
     @y.setter
     def y(self, val):
-        lib.godot_vector2_set_y(self._gd_obj, val)
+        self.check_param_float('val', val)
+        lib.godot_vector2_set_y(self._gd_obj_ptr, val)
 
     @property
     def width(self):
@@ -52,110 +72,97 @@ class Vector2:
     # Methods
 
     def abs(self):
-        dest = Vector2()
-        lib.godot_vector2_abs(dest._gd_obj, self._gd_obj)
-        return dest
+        gd_obj = lib.godot_vector2_abs(self._gd_obj_ptr)
+        return Vector2.build_from_gd_obj(gd_obj)
 
     def angle(self):
-        return lib.godot_vector2_angle(self._gd_obj)
+        return lib.godot_vector2_angle(self._gd_obj_ptr)
 
     def angle_to(self, to):
-        assert isinstance(to, Vector2)
-        return lib.godot_vector2_angle_to(self._gd_obj, to._gd_obj)
+        self.check_param_type('to', to, Vector2)
+        return lib.godot_vector2_angle_to(self._gd_obj_ptr, to._gd_obj)
 
     def angle_to_point(self, to):
-        assert isinstance(to, Vector2)
-        return lib.godot_vector2_angle_to_point(self._gd_obj, to._gd_obj)
+        self.check_param_type('to', to, Vector2)
+        return lib.godot_vector2_angle_to_point(self._gd_obj_ptr, to._gd_obj)
 
     def clamped(self, length):
-        assert isinstance(length, float)
-        dest = Vector2()
-        lib.godot_vector2_clamped(dest._gd_obj, self._gd_obj, length)
-        return dest
+        self.check_param_float('length', length)
+        gd_obj = lib.godot_vector2_clamped(self._gd_obj_ptr, length)
+        return Vector2.build_from_gd_obj(gd_obj)
 
     def cubic_interpolate(self, b, pre_a, post_b, t):
-        assert isinstance(b, Vector2)
-        assert isinstance(pre_a, Vector2)
-        assert isinstance(post_b, Vector2)
-        assert isinstance(t, float)
-        dest = Vector2()
-        lib.godot_vector2_cubic_interpolate(
-            dest._gd_obj, self._gd_obj, b._gd_obj, pre_a._gd_obj, post_b._gd_obj, t)
-        return dest
+        self.check_param_type('b', b, Vector2)
+        self.check_param_type('pre_a', pre_a, Vector2)
+        self.check_param_type('post_b', post_b, Vector2)
+        self.check_param_float('t', t)
+        gd_obj = lib.godot_vector2_cubic_interpolate(
+            self._gd_obj_ptr, b._gd_obj, pre_a._gd_obj, post_b._gd_obj, t)
+        return Vector2.build_from_gd_obj(gd_obj)
 
     def distance_squared_to(self, to):
-        assert isinstance(to, Vector2)
-        return lib.godot_vector2_distance_squared_to(self._gd_obj, to._gd_obj)
+        self.check_param_type('to', to, Vector2)
+        return lib.godot_vector2_distance_squared_to(self._gd_obj_ptr, to._gd_obj)
 
     def distance_to(self, to):
-        assert isinstance(to, Vector2)
-        return lib.godot_vector2_distance_to(self._gd_obj, to._gd_obj)
+        self.check_param_type('to', to, Vector2)
+        return lib.godot_vector2_distance_to(self._gd_obj_ptr, to._gd_obj)
 
     def dot(self, with_):
-        assert isinstance(with_, Vector2)
-        return lib.godot_vector2_dot(self._gd_obj, with_._gd_obj)
+        self.check_param_type('with_', with_, Vector2)
+        return lib.godot_vector2_dot(self._gd_obj_ptr, with_._gd_obj)
 
     def floor(self):
-        dest = Vector2()
-        lib.godot_vector2_floor(dest._gd_obj, self._gd_obj)
-        return dest
+        gd_obj = lib.godot_vector2_floor(self._gd_obj_ptr)
+        return Vector2.build_from_gd_obj(gd_obj)
 
     def floorf(self):
-        dest = Vector2()
-        lib.godot_vector2_floorf(dest._gd_obj, self._gd_obj)
-        return dest
+        gd_obj = lib.godot_vector2_floorf(self._gd_obj_ptr)
+        return Vector2.build_from_gd_obj(gd_obj)
 
     def aspect(self):
-        return lib.godot_vector2_aspect(self._gd_obj)
+        return lib.godot_vector2_aspect(self._gd_obj_ptr)
 
     def length(self):
-        return lib.godot_vector2_length(self._gd_obj)
+        return lib.godot_vector2_length(self._gd_obj_ptr)
 
     def length_squared(self):
-        return lib.godot_vector2_length_squared(self._gd_obj)
+        return lib.godot_vector2_length_squared(self._gd_obj_ptr)
 
     def linear_interpolate(self, b, t):
-        assert isinstance(b, Vector2)
-        assert isinstance(t, float)
-        dest = Vector2()
-        lib.godot_vector2_linear_interpolate(dest._gd_obj, self._gd_obj, b._gd_obj, t)
-        return dest
+        self.check_param_type('b', b, Vector2)
+        self.check_param_float('t', t)
+        gd_obj = lib.godot_vector2_linear_interpolate(self._gd_obj_ptr, b._gd_obj, t)
+        return Vector2.build_from_gd_obj(gd_obj)
 
     def normalized(self):
-        dest = Vector2()
-        lib.godot_vector2_normalized(dest._gd_obj, self._gd_obj)
-        return dest
+        gd_obj = lib.godot_vector2_normalized(self._gd_obj_ptr)
+        return Vector2.build_from_gd_obj(gd_obj)
 
     def reflect(self, vec):
-        assert isinstance(vec, Vector2)
-        dest = Vector2()
-        lib.godot_vector2_reflect(dest._gd_obj, self._gd_obj, vec._gd_obj)
-        return dest
+        self.check_param_type('vec', vec, Vector2)
+        gd_obj = lib.godot_vector2_reflect(self._gd_obj_ptr, vec._gd_obj)
+        return Vector2.build_from_gd_obj(gd_obj)
 
     def rotated(self, phi):
-        assert isinstance(phi, float)
-        dest = Vector2()
-        lib.godot_vector2_rotated(dest._gd_obj, self._gd_obj, phi)
-        return dest
+        self.check_param_float('phi', phi)
+        gd_obj = lib.godot_vector2_rotated(self._gd_obj_ptr, phi)
+        return Vector2.build_from_gd_obj(gd_obj)
 
     def slide(self, vec):
-        assert isinstance(vec, Vector2)
-        dest = Vector2()
-        lib.godot_vector2_slide(dest._gd_obj, self._gd_obj, vec._gd_obj)
-        return dest
+        self.check_param_type('vec', vec, Vector2)
+        gd_obj = lib.godot_vector2_slide(self._gd_obj_ptr, vec._gd_obj)
+        return Vector2.build_from_gd_obj(gd_obj)
 
     def snapped(self, by):
-        assert isinstance(by, Vector2)
-        dest = Vector2()
-        lib.godot_vector2_snapped(dest._gd_obj, self._gd_obj, by._gd_obj)
-        return dest
+        self.check_param_type('by', by, Vector2)
+        gd_obj = lib.godot_vector2_snapped(self._gd_obj_ptr, by._gd_obj)
+        return Vector2.build_from_gd_obj(gd_obj)
 
     def tangent(self):
-        dest = Vector2()
-        lib.godot_vector2_tangent(dest._gd_obj, self._gd_obj)
-        return dest
+        gd_obj = lib.godot_vector2_tangent(self._gd_obj_ptr)
+        return Vector2.build_from_gd_obj(gd_obj)
 
     def to_string(self):
-        dest = Vector2()
-        lib.godot_vector2_to_string(dest._gd_obj, self._gd_obj)
-        return dest
+        gd_obj = lib.godot_vector2_to_string(self._gd_obj_ptr)
+        return Vector2.build_from_gd_obj(gd_obj)

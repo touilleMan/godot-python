@@ -78,7 +78,17 @@ class TestVector3:
         val = 10.
         setattr(v, field, val)
         field_val = getattr(v, field)
-        assert field_val, val
+        assert field_val == val
+
+    @pytest.mark.parametrize('args', [
+        ('x', 'NaN'),
+        ('y', 'NaN'),
+        ('z', 'NaN')])
+    def test_bad_properties(self, args):
+        v = Vector3()
+        field, bad_value = args
+        with pytest.raises(TypeError):
+            setattr(v, field, bad_value)
 
     @pytest.mark.parametrize('args', [
         ('AXIS_X', int),
