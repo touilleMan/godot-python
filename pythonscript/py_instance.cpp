@@ -4,108 +4,22 @@
 #include "py_instance.h"
 #include "cffi_bindings/api.h"
 
+#include "core/variant.h"
+
 
 bool PyInstance::set(const StringName& p_name, const Variant& p_value) {
     DEBUG_TRACE_METHOD();
 
-#if 0
-    //member
-    {
-        const Map<StringName,PyScript::MemberInfo>::Element *E = script->member_indices.find(p_name);
-        if (E) {
-            if (E->get().setter) {
-                const Variant *val=&p_value;
-                Variant::CallError err;
-                call(E->get().setter,&val,1,err);
-                if (err.error==Variant::CallError::CALL_OK) {
-                    return true; //function exists, call was successful
-                }
-            }
-            else
-                members[E->get().index] = p_value;
-            return true;
-        }
-    }
-
-    PyScript *sptr=script.ptr();
-    while(sptr) {
-
-
-        Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyLanguage::get_singleton()->strings._set);
-        if (E) {
-
-            Variant name=p_name;
-            const Variant *args[2]={&name,&p_value};
-
-            Variant::CallError err;
-            Variant ret = E->get()->call(this,(const Variant**)args,2,err);
-            if (err.error==Variant::CallError::CALL_OK && ret.get_type()==Variant::BOOL && ret.operator bool())
-                return true;
-        }
-        sptr = sptr->_base;
-    }
-#endif
-    return false;
+    const wchar_t *propname = String(p_name).c_str();
+    return pybind_set_prop(this->_py_obj2, propname, (const godot_variant*)&p_value);
 }
 
 
 bool PyInstance::get(const StringName& p_name, Variant &r_ret) const {
     DEBUG_TRACE_METHOD();
 
-#if 0
-    const PyScript *sptr=script.ptr();
-    while(sptr) {
-
-        {
-            const Map<StringName,PyScript::MemberInfo>::Element *E = script->member_indices.find(p_name);
-            if (E) {
-                if (E->get().getter) {
-                    Variant::CallError err;
-                    r_ret=const_cast<PyInstance*>(this)->call(E->get().getter,NULL,0,err);
-                    if (err.error==Variant::CallError::CALL_OK) {
-                        return true;
-                    }
-                }
-                r_ret=members[E->get().index];
-                return true; //index found
-
-            }
-        }
-
-        {
-
-            const PyScript *sl = sptr;
-            while(sl) {
-                const Map<StringName,Variant>::Element *E = sl->constants.find(p_name);
-                if (E) {
-                    r_ret=E->get();
-                    return true; //index found
-
-                }
-                sl=sl->_base;
-            }
-        }
-
-        {
-            const Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyLanguage::get_singleton()->strings._get);
-            if (E) {
-
-                Variant name=p_name;
-                const Variant *args[1]={&name};
-
-                Variant::CallError err;
-                Variant ret = const_cast<GDFunction*>(E->get())->call(const_cast<PyInstance*>(this),(const Variant**)args,1,err);
-                if (err.error==Variant::CallError::CALL_OK && ret.get_type()!=Variant::NIL) {
-                    r_ret=ret;
-                    return true;
-                }
-            }
-        }
-        sptr = sptr->_base;
-    }
-#endif
-    return false;
-
+    const wchar_t *propname = String(p_name).c_str();
+    return pybind_get_prop(this->_py_obj2, propname, (godot_variant*)&r_ret);
 }
 
 
@@ -312,6 +226,11 @@ Variant PyInstance::call(const StringName& p_method, const Variant **p_args, int
     // TODO: precompute p_method lookup for faster access
     Variant ret;
     pybind_call_meth(this->_py_obj2, String(p_method).c_str(), (void **)p_args, p_argcount, &ret, (int*)&r_error.error);
+    // TODO handle argument/type attributes
+    if (r_error.error) {
+        r_error.argument = 0;
+        r_error.expected = Variant::NIL;
+    }
     return ret;
 #if 0
 

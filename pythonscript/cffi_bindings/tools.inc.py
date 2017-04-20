@@ -270,8 +270,9 @@ def pyobj_to_raw(gdtype, pyobj):
     elif gdtype == lib.GODOT_VARIANT_TYPE_STRING:
         if not isinstance(pyobj, str):
             raise TypeError("`%s` should be of type str" % pyobj)
-        return ffi.new("wchar_t*", pyobj)
-        # return ffi.new("char*", pyobj)
+        gdobj = ffi.new("godot_string*")
+        lib.godot_string_new_unicode_data(gdobj, pyobj, -1)
+        return gdobj
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR2:
         raise TypeError("Variant type `Vector2` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_RECT2:

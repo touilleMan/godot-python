@@ -12,6 +12,7 @@ typedef struct godot_string
 } godot_string;
 void godot_string_new(godot_string *p_str);
 void godot_string_new_data(godot_string *p_str, const char *p_contents, const int p_size);
+void godot_string_new_unicode_data(godot_string *p_str, const wchar_t *p_contents, const int p_size);
 void godot_string_get_data(const godot_string *p_str, char *p_dest, int *p_size);
 void godot_string_copy_string(const godot_string *p_dest, const godot_string *p_src);
 wchar_t *godot_string_operator_index(godot_string *p_str, const godot_int p_idx);

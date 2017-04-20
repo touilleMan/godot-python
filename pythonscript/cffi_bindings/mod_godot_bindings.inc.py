@@ -156,7 +156,27 @@ class ClassDB:
         return ffi.string(raw_str)
 
 
-class BaseObject:
+class MetaBaseObject(type):
+    def __new__(cls, name, bases, nmspc):
+        exported = {}
+        cooked_nmspc = {'_exported': exported}
+        # Retrieve parent exported fields
+        for b in bases:
+            exported.update(getattr(b, '_exported', {}))
+        # Collect exported fields
+        for k, v in nmspc.items():
+            if isinstance(v, ExportedField):
+                exported[k] = v
+                if v.property:
+                    # If export has been used to decorate a property, expose it
+                    # in the generated class
+                    cooked_nmspc[k] = v.property
+            else:
+                cooked_nmspc[k] = v
+        return type.__new__(cls, name, bases, cooked_nmspc)
+
+
+class BaseObject(metaclass=MetaBaseObject):
     def __init__(self, gd_obj=None):
         self._gd_obj = gd_obj if gd_obj else self._gd_constructor()
 
@@ -164,10 +184,7 @@ class BaseObject:
         self._gd_obj = obj
 
     def __eq__(self, other):
-        if hasattr(other, '_gd_obj'):
-            return self._gd_obj == other._gd_obj
-        else:
-            return False
+        return hasattr(other, '_gd_obj') and self._gd_obj == other._gd_obj
 
 
 def _gen_stub(msg):
@@ -180,7 +197,7 @@ def build_method(classname, meth):
     methbind = lib.godot_method_bind_get_method(classname.encode(), methname.encode())
     if meth['flags'] & lib.METHOD_FLAG_VIRTUAL or methbind == ffi.NULL:
         def bind(self, *args):
-            raise NotImplementedError()
+            raise NotImplementedError("Method %s.%s is virtual" % (classname, methname))
     else:
         def bind(self, *args):
             # TODO: check args number and type here (ptrcall means segfault on bad args...)

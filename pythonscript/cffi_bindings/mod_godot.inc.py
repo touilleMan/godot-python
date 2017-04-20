@@ -1,5 +1,6 @@
 import imp
 import sys
+import builtins
 
 
 __exposed_classes = {}
@@ -10,6 +11,18 @@ class ExportedField:
     def __init__(self, type, default):
         self.type = type
         self.default = default
+        self.property = None
+
+    def __call__(self, decorated):
+        # This object is used as a decorator
+        if not callable(decorated) and not isinstance(decorated, builtins.property):
+            raise RuntimeError("@export should decorate function or property.")
+        # Next time this object is called, call the decorated instead
+        self.property = decorated
+        return self
+
+    def setter(self, setfunc):
+        self.property = self.property.setter(setfunc)
 
 
 def exposed(cls=None, tool=False):

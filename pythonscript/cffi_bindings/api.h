@@ -14,3 +14,5 @@ extern void *pybind_instanciate_from_classname(const wchar_t *classname);
 extern void *pybind_wrap_gdobj_with_class(void *cls_handle, void *owner);
 extern void pybind_release_instance(void *handle);
 extern void pybind_call_meth(void *handle, const wchar_t *methname, void **args, int argcount, void *ret, int *error);
+extern godot_bool pybind_set_prop(void *handle, const wchar_t *propname, const godot_variant *value);
+extern godot_bool pybind_get_prop(void *handle, const wchar_t *propname, godot_variant *ret);

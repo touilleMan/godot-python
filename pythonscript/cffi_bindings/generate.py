@@ -127,6 +127,14 @@ def pybind_release_instance(handle):
     protect_from_gc.unregister(instance)
 
 
+CALL_OK = 0
+CALL_ERROR_INVALID_METHOD = 1
+CALL_ERROR_INVALID_ARGUMENT = 2
+CALL_ERROR_TOO_MANY_ARGUMENTS = 3
+CALL_ERROR_TOO_FEW_ARGUMENTS = 4
+CALL_ERROR_INSTANCE_IS_NULL = 5
+
+
 @ffi.def_extern()
 def pybind_call_meth(handle, methname, args, argcount, ret, error):
     instance = ffi.from_handle(handle)
@@ -137,10 +145,35 @@ def pybind_call_meth(handle, methname, args, argcount, ret, error):
         pyret = meth(*pyargs)
         pyobj_to_variant(pyret, ret)
     except NotImplementedError:
-        error[0] = 1
+        error[0] = CALL_ERROR_INVALID_METHOD
     except TypeError:
-        error[0] = 2
+        error[0] = CALL_ERROR_INVALID_ARGUMENT
     # TODO: handle errors here
+
+
+@ffi.def_extern()
+def pybind_set_prop(handle, propname, val):
+    instance = ffi.from_handle(handle)
+    try:
+        pyval = variant_to_pyobj(val)
+        setattr(instance, ffi.string(propname), pyval)
+        return True
+    except Exception as exc:
+        print(exc)
+        return False
+
+
+@ffi.def_extern()
+def pybind_get_prop(handle, propname, ret):
+    instance = ffi.from_handle(handle)
+    try:
+        pyret = getattr(instance, ffi.string(propname))
+        pyobj_to_variant(pyret, ret)
+        return True
+    except Exception as exc:
+        print(exc)
+        return False
+
 
 # =====
 
@@ -291,6 +324,9 @@ ffibuilder.embedding_api(r"""
     void *pybind_wrap_gdobj_with_class(void *cls_handle, void *gdobj);
     void pybind_release_instance(void *handle);
     void pybind_call_meth(void *handle, const wchar_t *methname, void **args, int argcount, void *ret, int *error);
+    godot_bool pybind_set_prop(void *handle, const wchar_t *propname, const godot_variant *value);
+    godot_bool pybind_get_prop(void *handle, const wchar_t *propname, godot_variant *ret);
+
 //    void pybind_load_module(const wchar_t *modname, void *ret_mod, void *ret_cls);
     void *pybind_load_exposed_class_per_module(const wchar_t *modname);
 """)
