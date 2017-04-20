@@ -11,10 +11,10 @@ PYTHON = LD_LIBRARY_PATH=$(BUILD_PYTHON_PATH)/lib $(BUILD_PYTHON_PATH)/bin/pytho
 
 # Add `LIBGL_ALWAYS_SOFTWARE=1` if you computer sucks with opengl3...
 ifndef DEBUG
-GODOT_CMD = LD_LIBRARY_PATH="$(GODOT_DIR)/bin;$(BUILD_PYTHON_PATH)/lib" $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
+GODOT_CMD = $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
 else
 DEBUG ?= lldb
-GODOT_CMD = LD_LIBRARY_PATH="$(GODOT_DIR)/bin;$(BUILD_PYTHON_PATH)/lib" $(DEBUG) $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
+GODOT_CMD = $(DEBUG) $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
 endif
 
 OPTS ?= platform=x11 -j6 use_llvm=yes                  \
