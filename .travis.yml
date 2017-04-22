@@ -19,7 +19,6 @@ env:
     # other solution is to set `-D__extern_always_inline="extern __always_inline"`
     - BUILD_EXTRA_OPTS="-j4 target=debug tools=yes module_pythonscript_enabled=yes"
     - TEST_EXTRA_OPTS=""
-    - DISPLAY=:99.0
   matrix:
     - GODOT_TARGET=x11
     # nothing else yet...
@@ -66,6 +65,10 @@ before_script:
   - git --git-dir=godot/.git checkout $GODOT_TAG
   - git --git-dir=godot/.git rev-parse HEAD
   - ln -s `pwd`/pythonscript godot/modules/pythonscript
+# Start X11 server
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  - sleep 3 # give xvfb some time to start
 
 script:
   - if [[ "$CXX" == "g++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS CXX=g++-5 CC=gcc-5"; fi
