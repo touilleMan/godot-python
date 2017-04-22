@@ -40,6 +40,7 @@ def configure(env):
             run_and_shutup(cmd)
         run_and_shutup('make -j4')
         run_and_shutup('make install')
+        run_and_shutup('cp %s/libpython3.6dm.so.1.0 %s/../../godot/bin/' % (PY_DIR, PY_DIR))
         # Install cffi is a pita...
         cmd_env = environ.copy()
         cmd_env['LD_LIBRARY_PATH'] = PY_DIR
