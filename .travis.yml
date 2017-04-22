@@ -68,7 +68,6 @@ before_script:
   - ln -s `pwd`/pythonscript godot/modules/pythonscript
 
 script:
-  - python tools/generate_bindings.py tools/api.json  -o pythonscript/bindings.gen.cpp -s
   - if [[ "$CXX" == "g++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS CXX=g++-5 CC=gcc-5"; fi
   - if [[ "$CXX" == "clang++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS use_llvm=yes"; fi
   - LIBGL_ALWAYS_SOFTWARE=1 make test DEBUG=valgrind EXTRA_OPTS=$TEST_EXTRA_OPTS
