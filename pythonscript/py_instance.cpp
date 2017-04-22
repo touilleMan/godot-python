@@ -225,11 +225,15 @@ Variant PyInstance::call(const StringName& p_method, const Variant **p_args, int
     DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
     // TODO: precompute p_method lookup for faster access
     Variant ret;
-    pybind_call_meth(this->_py_obj2, String(p_method).c_str(), (void **)p_args, p_argcount, &ret, (int*)&r_error.error);
+    // Instead of passing C++ Variant::CallError object through cffi, we compress
+    // it arguments into a single int, yeah this is a hack ;-)
+    int error = 0;
+    pybind_call_meth(this->_py_obj2, String(p_method).c_str(), (void **)p_args, p_argcount, &ret, &error);
     // TODO handle argument/type attributes
-    if (r_error.error) {
-        r_error.argument = 0;
-        r_error.expected = Variant::NIL;
+    r_error.error = (Variant::CallError::Error)(error & 0xFF);
+    if (error) {
+        r_error.argument = (error >> 2) & 0xFF;
+        r_error.expected = (Variant::Type)(error >> 4);
     }
     return ret;
 #if 0

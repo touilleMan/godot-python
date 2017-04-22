@@ -70,8 +70,6 @@ embedding_init_code_extra = '\n'.join(embedding_init_code_extra)
 
 
 ffibuilder.embedding_init_code("""
-print('============> INIT CFFI <===========')
-
 from pythonscriptcffi import ffi, lib
 
 # Protect python objects passed to C from beeing garbage collected
@@ -127,27 +125,60 @@ def pybind_release_instance(handle):
     protect_from_gc.unregister(instance)
 
 
-CALL_OK = 0
-CALL_ERROR_INVALID_METHOD = 1
-CALL_ERROR_INVALID_ARGUMENT = 2
-CALL_ERROR_TOO_MANY_ARGUMENTS = 3
-CALL_ERROR_TOO_FEW_ARGUMENTS = 4
-CALL_ERROR_INSTANCE_IS_NULL = 5
+CALL_METH_OK = 0
+CALL_METH_ERROR_INVALID_METHOD = 1
+CALL_METH_ERROR_INVALID_ARGUMENT = 2
+CALL_METH_ERROR_TOO_MANY_ARGUMENTS = 3
+CALL_METH_ERROR_TOO_FEW_ARGUMENTS = 4
+CALL_METH_ERROR_INSTANCE_IS_NULL = 5
+
+CALL_METH_TYPE_NIL = 0 << 4
+CALL_METH_TYPE_BOOL = 1 << 4
+CALL_METH_TYPE_INT = 2 << 4
+CALL_METH_TYPE_REAL = 3 << 4
+CALL_METH_TYPE_STRING = 4 << 4
+CALL_METH_TYPE_VECTOR2 = 5 << 4
+CALL_METH_TYPE_RECT2 = 6 << 4
+CALL_METH_TYPE_VECTOR3 = 7 << 4
+CALL_METH_TYPE_TRANSFORM2D = 8 << 4
+CALL_METH_TYPE_PLANE = 9 << 4
+CALL_METH_TYPE_QUAT = 10 << 4
+CALL_METH_TYPE_RECT3 = 11 << 4
+CALL_METH_TYPE_BASIS = 12 << 4
+CALL_METH_TYPE_TRANSFORM = 13 << 4
+CALL_METH_TYPE_COLOR = 14 << 4
+CALL_METH_TYPE_IMAGE = 15 << 4
+CALL_METH_TYPE_NODE_PATH = 16 << 4
+CALL_METH_TYPE__RID = 17 << 4
+CALL_METH_TYPE_OBJECT = 18 << 4
+CALL_METH_TYPE_INPUT_EVENT = 19 << 4
+CALL_METH_TYPE_DICTIONARY = 20 << 4
+CALL_METH_TYPE_ARRAY = 21 << 4
+CALL_METH_TYPE_POOL_BYTE_ARRAY = 22 << 4
+CALL_METH_TYPE_POOL_INT_ARRAY = 23 << 4
+CALL_METH_TYPE_POOL_REAL_ARRAY = 24 << 4
+CALL_METH_TYPE_POOL_STRING_ARRAY = 25 << 4
+CALL_METH_TYPE_POOL_VECTOR2_ARRAY = 26 << 4
+CALL_METH_TYPE_POOL_VECTOR3_ARRAY = 27 << 4
+CALL_METH_TYPE_POOL_COLOR_ARRAY = 28 << 4
 
 
 @ffi.def_extern()
 def pybind_call_meth(handle, methname, args, argcount, ret, error):
     instance = ffi.from_handle(handle)
     meth = getattr(instance, ffi.string(methname))
-    print('Calling %s on %s (%s) ==> %s' % (ffi.string(methname), handle, instance, meth))
+    print('[GD->PY] Calling %s on %s (%s) ==> %s' % (ffi.string(methname), handle, instance, meth))
     pyargs = [variant_to_pyobj(args[i]) for i in range(argcount)]
+    # error is an hacky int compressing Variant::CallError values
     try:
         pyret = meth(*pyargs)
         pyobj_to_variant(pyret, ret)
+        error[0] = CALL_METH_OK
     except NotImplementedError:
-        error[0] = CALL_ERROR_INVALID_METHOD
-    except TypeError:
-        error[0] = CALL_ERROR_INVALID_ARGUMENT
+        error[0] = CALL_METH_ERROR_INVALID_METHOD
+    except TypeError as exc:
+        print(exc)
+        error[0] = 1 | CALL_METH_ERROR_INVALID_ARGUMENT | CALL_METH_TYPE_NIL
     # TODO: handle errors here
 
 
@@ -186,7 +217,7 @@ def do_stuff(x, y):
 @ffi.def_extern()
 def py_instance_set_godot_obj(instance_handle, godot_obj):
     self = ffi.from_handle(ffi.cast('void*', instance_handle))
-    print('** %s switched from %s to %s' % (self, self._gd_obj, godot_obj))
+    print('[GD->PY] %s switched from %s to %s' % (self, self._gd_obj, godot_obj))
     self._gd_obj = godot_obj
 
 
@@ -238,53 +269,6 @@ def call_with_variants(func, args, argcount):
 """)
 
 
-# TODO: this header extractor is not ready yet...
-def load_gdnative_header_for_cdef(path, loaded_includes):
-    src_lines = []
-    macroif_stack = []
-    with open(GODOT_HOME + '/modules/gdnative/' + path) as fd:
-        for line in fd.readlines():
-            # Skip the line if it is inside a #if 0 or #ifdef __cplusplus block
-            if re.search(r'#[ \t]*ifdef[ \t]+__cplusplus', line) or re.search(r'#[ \t]+if[ \t]+0', line):
-                print('========SKIP', line)
-                macroif_stack.append('SKIP_BLOCK')
-            elif re.search(r'#[ \t]*(ifdef|ifndef|if)', line):
-                print('========KEEP', line)
-                macroif_stack.append('KEEP_BLOCK')
-            elif re.search(r'#[ \t]*endif', line):
-                blk = macroif_stack.pop()
-                print('======== ENDBLOCK', blk)
-            elif 'SKIP_BLOCK' not in macroif_stack:
-                match = re.search(r'#[ \t]*include[ \t]+["<]((godot/)?godot_[a-zA-Z0-9/_.]+)[>"]', line)
-                if match:
-                    header = match.group(1)
-                    header = 'godot/' + header if not header.startswith('godot/') else header
-                    if header in loaded_includes:
-                        continue
-                    loaded_includes.append(header)
-                    src_lines.append('// ' + line)
-                    src_lines.append(load_gdnative_header_for_cdef(header, loaded_includes))
-                    print(src_lines[-1])
-                elif re.search(r'^[ \t]*#', line):
-                    # Ignore other macros
-                    continue
-                elif re.match(r'^[ \t]*GODOT_BUTTON_MASK_', line):
-                    # CFFI doesn't support definition with computation, hence
-                    # this hack to fix this enum...
-                    if 'LEFT' in line:
-                        src_lines.append('GODOT_BUTTON_MASK_LEFT = %s,' % (1 << (1 - 1)))
-                    elif 'RIGHT' in line:
-                        src_lines.append('GODOT_BUTTON_MASK_RIGHT = %s,' % (1 << (2 - 1)))
-                    elif 'MIDDLE' in line:
-                        src_lines.append('GODOT_BUTTON_MASK_MIDDLE = %s,' % (1 << (3 - 1)))
-                else:
-                    src_lines.append(line.replace(' GDAPI ', ' '))
-                    print(src_lines[-1])
-    return '\n'.join(src_lines)
-
-# with open('cdef3.h', 'w') as fd:
-#     fd.write(load_gdnative_header_for_cdef('godot.h', []))
-# C stuff exposed to Python
 with open(BASEDIR + '/cdef.gen.h') as fd:
     cdef = fd.read()
 ffibuilder.cdef(

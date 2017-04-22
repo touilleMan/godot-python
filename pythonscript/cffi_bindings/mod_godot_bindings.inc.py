@@ -201,14 +201,14 @@ def build_method(classname, meth):
     else:
         def bind(self, *args):
             # TODO: check args number and type here (ptrcall means segfault on bad args...)
-            print('++++ Calling %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
+            print('[PY->GD] Calling %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
             # TODO: check len(args)
             raw_args = [pyobj_to_raw(meth_arg['type'], arg)
                         for arg, meth_arg in zip(args, meth['args'])]
             # args_as_variants = [pyobj_to_variant(arg) for arg in args]
             gdargs = ffi.new("void*[]", raw_args) if raw_args else ffi.NULL
             ret = new_raw(meth['return']['type'])
-            print('==============================>>>', methbind, self._gd_obj, gdargs, ret)
+            print('[PY->GD] returned:', methbind, self._gd_obj, gdargs, ret)
             lib.godot_method_bind_ptrcall(methbind, self._gd_obj, gdargs, ret)
             return raw_to_pyobj(meth['return']['type'], ret, meth['return']['hint_string'])
 
@@ -227,22 +227,17 @@ def build_class(classname, binding_classname=None):
         '_gd_name': classname,
         '_gd_constructor': ClassDB.get_class_constructor(classname)
     }
-    print('======> BINDING', classname)
     # Methods
     for meth in ClassDB.get_class_methods(classname):
-        print('=> M', meth['name'])
         nmspc[meth['name']] = build_method(classname, meth)
     # Properties
     for prop in ClassDB.get_class_properties(classname):
         propname = prop['name']
-        print('=> P', propname)
         nmspc[propname] = build_property(classname, prop)
     # Constants
     for constname in ClassDB.get_class_consts(classname):
         nmspc[constname] = ClassDB.get_integer_constant(classname, constname)
-        print('=> C', constname)
     parentname = ClassDB.get_parent_class(classname)
-    print('=> P', parentname)
     if parentname:
         bases = (getattr(godot_bindings_module, parentname), )
     else:

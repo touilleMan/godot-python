@@ -50,7 +50,6 @@ def export(type, default=None):
 def get_exposed_class_per_module(module):
     if not isinstance(module, str):
         module = module.__name__
-    print('RESOLVED', module, __exposed_classes_per_module[module])
     return __exposed_classes_per_module[module]
 
 

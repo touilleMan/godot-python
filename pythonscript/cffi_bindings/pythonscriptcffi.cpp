@@ -430,9 +430,7 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 #endif
 
 #define _CFFI_MODULE_NAME  "pythonscriptcffi"
-#define _CFFI_PYTHON_STARTUP_CODE  "print('============> INIT CFFI <===========')\n" \
-"\n" \
-"from pythonscriptcffi import ffi, lib\n" \
+#define _CFFI_PYTHON_STARTUP_CODE  "from pythonscriptcffi import ffi, lib\n" \
 "\n" \
 "# Protect python objects passed to C from beeing garbage collected\n" \
 "class ProtectFromGC:\n" \
@@ -487,27 +485,60 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "    protect_from_gc.unregister(instance)\n" \
 "\n" \
 "\n" \
-"CALL_OK = 0\n" \
-"CALL_ERROR_INVALID_METHOD = 1\n" \
-"CALL_ERROR_INVALID_ARGUMENT = 2\n" \
-"CALL_ERROR_TOO_MANY_ARGUMENTS = 3\n" \
-"CALL_ERROR_TOO_FEW_ARGUMENTS = 4\n" \
-"CALL_ERROR_INSTANCE_IS_NULL = 5\n" \
+"CALL_METH_OK = 0\n" \
+"CALL_METH_ERROR_INVALID_METHOD = 1\n" \
+"CALL_METH_ERROR_INVALID_ARGUMENT = 2\n" \
+"CALL_METH_ERROR_TOO_MANY_ARGUMENTS = 3\n" \
+"CALL_METH_ERROR_TOO_FEW_ARGUMENTS = 4\n" \
+"CALL_METH_ERROR_INSTANCE_IS_NULL = 5\n" \
+"\n" \
+"CALL_METH_TYPE_NIL = 0 << 4\n" \
+"CALL_METH_TYPE_BOOL = 1 << 4\n" \
+"CALL_METH_TYPE_INT = 2 << 4\n" \
+"CALL_METH_TYPE_REAL = 3 << 4\n" \
+"CALL_METH_TYPE_STRING = 4 << 4\n" \
+"CALL_METH_TYPE_VECTOR2 = 5 << 4\n" \
+"CALL_METH_TYPE_RECT2 = 6 << 4\n" \
+"CALL_METH_TYPE_VECTOR3 = 7 << 4\n" \
+"CALL_METH_TYPE_TRANSFORM2D = 8 << 4\n" \
+"CALL_METH_TYPE_PLANE = 9 << 4\n" \
+"CALL_METH_TYPE_QUAT = 10 << 4\n" \
+"CALL_METH_TYPE_RECT3 = 11 << 4\n" \
+"CALL_METH_TYPE_BASIS = 12 << 4\n" \
+"CALL_METH_TYPE_TRANSFORM = 13 << 4\n" \
+"CALL_METH_TYPE_COLOR = 14 << 4\n" \
+"CALL_METH_TYPE_IMAGE = 15 << 4\n" \
+"CALL_METH_TYPE_NODE_PATH = 16 << 4\n" \
+"CALL_METH_TYPE__RID = 17 << 4\n" \
+"CALL_METH_TYPE_OBJECT = 18 << 4\n" \
+"CALL_METH_TYPE_INPUT_EVENT = 19 << 4\n" \
+"CALL_METH_TYPE_DICTIONARY = 20 << 4\n" \
+"CALL_METH_TYPE_ARRAY = 21 << 4\n" \
+"CALL_METH_TYPE_POOL_BYTE_ARRAY = 22 << 4\n" \
+"CALL_METH_TYPE_POOL_INT_ARRAY = 23 << 4\n" \
+"CALL_METH_TYPE_POOL_REAL_ARRAY = 24 << 4\n" \
+"CALL_METH_TYPE_POOL_STRING_ARRAY = 25 << 4\n" \
+"CALL_METH_TYPE_POOL_VECTOR2_ARRAY = 26 << 4\n" \
+"CALL_METH_TYPE_POOL_VECTOR3_ARRAY = 27 << 4\n" \
+"CALL_METH_TYPE_POOL_COLOR_ARRAY = 28 << 4\n" \
 "\n" \
 "\n" \
 "@ffi.def_extern()\n" \
 "def pybind_call_meth(handle, methname, args, argcount, ret, error):\n" \
 "    instance = ffi.from_handle(handle)\n" \
 "    meth = getattr(instance, ffi.string(methname))\n" \
-"    print('Calling %s on %s (%s) ==> %s' % (ffi.string(methname), handle, instance, meth))\n" \
+"    print('[GD->PY] Calling %s on %s (%s) ==> %s' % (ffi.string(methname), handle, instance, meth))\n" \
 "    pyargs = [variant_to_pyobj(args[i]) for i in range(argcount)]\n" \
+"    # error is an hacky int compressing Variant::CallError values\n" \
 "    try:\n" \
 "        pyret = meth(*pyargs)\n" \
 "        pyobj_to_variant(pyret, ret)\n" \
+"        error[0] = CALL_METH_OK\n" \
 "    except NotImplementedError:\n" \
-"        error[0] = CALL_ERROR_INVALID_METHOD\n" \
-"    except TypeError:\n" \
-"        error[0] = CALL_ERROR_INVALID_ARGUMENT\n" \
+"        error[0] = CALL_METH_ERROR_INVALID_METHOD\n" \
+"    except TypeError as exc:\n" \
+"        print(exc)\n" \
+"        error[0] = 1 | CALL_METH_ERROR_INVALID_ARGUMENT | CALL_METH_TYPE_NIL\n" \
 "    # TODO: handle errors here\n" \
 "\n" \
 "\n" \
@@ -546,7 +577,7 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "@ffi.def_extern()\n" \
 "def py_instance_set_godot_obj(instance_handle, godot_obj):\n" \
 "    self = ffi.from_handle(ffi.cast('void*', instance_handle))\n" \
-"    print('** %s switched from %s to %s' % (self, self._gd_obj, godot_obj))\n" \
+"    print('[GD->PY] %s switched from %s to %s' % (self, self._gd_obj, godot_obj))\n" \
 "    self._gd_obj = godot_obj\n" \
 "\n" \
 "\n" \
@@ -645,7 +676,6 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "def get_exposed_class_per_module(module):\n" \
 "    if not isinstance(module, str):\n" \
 "        module = module.__name__\n" \
-"    print('RESOLVED', module, __exposed_classes_per_module[module])\n" \
 "    return __exposed_classes_per_module[module]\n" \
 "\n" \
 "\n" \
@@ -1724,14 +1754,14 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "    else:\n" \
 "        def bind(self, *args):\n" \
 "            # TODO: check args number and type here (ptrcall means segfault on bad args...)\n" \
-"            print('++++ Calling %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))\n" \
+"            print('[PY->GD] Calling %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))\n" \
 "            # TODO: check len(args)\n" \
 "            raw_args = [pyobj_to_raw(meth_arg['type'], arg)\n" \
 "                        for arg, meth_arg in zip(args, meth['args'])]\n" \
 "            # args_as_variants = [pyobj_to_variant(arg) for arg in args]\n" \
 "            gdargs = ffi.new(\"void*[]\", raw_args) if raw_args else ffi.NULL\n" \
 "            ret = new_raw(meth['return']['type'])\n" \
-"            print('==============================>>>', methbind, self._gd_obj, gdargs, ret)\n" \
+"            print('[PY->GD] returned:', methbind, self._gd_obj, gdargs, ret)\n" \
 "            lib.godot_method_bind_ptrcall(methbind, self._gd_obj, gdargs, ret)\n" \
 "            return raw_to_pyobj(meth['return']['type'], ret, meth['return']['hint_string'])\n" \
 "\n" \
@@ -1750,22 +1780,17 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "        '_gd_name': classname,\n" \
 "        '_gd_constructor': ClassDB.get_class_constructor(classname)\n" \
 "    }\n" \
-"    print('======> BINDING', classname)\n" \
 "    # Methods\n" \
 "    for meth in ClassDB.get_class_methods(classname):\n" \
-"        print('=> M', meth['name'])\n" \
 "        nmspc[meth['name']] = build_method(classname, meth)\n" \
 "    # Properties\n" \
 "    for prop in ClassDB.get_class_properties(classname):\n" \
 "        propname = prop['name']\n" \
-"        print('=> P', propname)\n" \
 "        nmspc[propname] = build_property(classname, prop)\n" \
 "    # Constants\n" \
 "    for constname in ClassDB.get_class_consts(classname):\n" \
 "        nmspc[constname] = ClassDB.get_integer_constant(classname, constname)\n" \
-"        print('=> C', constname)\n" \
 "    parentname = ClassDB.get_parent_class(classname)\n" \
-"    print('=> P', parentname)\n" \
 "    if parentname:\n" \
 "        bases = (getattr(godot_bindings_module, parentname), )\n" \
 "    else:\n" \
@@ -2113,7 +2138,7 @@ static int _cffi_initialize_python(void)
         f = PySys_GetObject((char *)"stderr");
         if (f != NULL && f != Py_None) {
             PyFile_WriteString("\nFrom: " _CFFI_MODULE_NAME
-                               "\ncompiled with cffi version: 1.9.1"
+                               "\ncompiled with cffi version: 1.10.0"
                                "\n_cffi_backend module: ", f);
             modules = PyImport_GetModuleDict();
             mod = PyDict_GetItemString(modules, "_cffi_backend");
@@ -4308,7 +4333,7 @@ static void _cffi_checkfld_typedef_PyObject(PyObject *p)
 struct _cffi_align_typedef_PyObject { char x; PyObject y; };
 
 static struct _cffi_externpy_s _cffi_externpy__call_with_variants =
-  { "call_with_variants", (int)sizeof(godot_variant *) };
+  { "pythonscriptcffi.call_with_variants", (int)sizeof(godot_variant *) };
 
 CFFI_DLLEXPORT godot_variant * call_with_variants(PyObject * a0, godot_variant const * * a1, int a2)
 {
@@ -4322,7 +4347,7 @@ CFFI_DLLEXPORT godot_variant * call_with_variants(PyObject * a0, godot_variant c
 }
 
 static struct _cffi_externpy_s _cffi_externpy__do_stuff =
-  { "do_stuff", (int)sizeof(int) };
+  { "pythonscriptcffi.do_stuff", (int)sizeof(int) };
 
 CFFI_DLLEXPORT int do_stuff(int a0, int a1)
 {
@@ -4335,7 +4360,7 @@ CFFI_DLLEXPORT int do_stuff(int a0, int a1)
 }
 
 static struct _cffi_externpy_s _cffi_externpy__instanciate_binding_from_godot_obj =
-  { "instanciate_binding_from_godot_obj", (int)sizeof(PyObject *) };
+  { "pythonscriptcffi.instanciate_binding_from_godot_obj", (int)sizeof(PyObject *) };
 
 CFFI_DLLEXPORT PyObject * instanciate_binding_from_godot_obj(PyObject * a0, void * a1)
 {
@@ -4348,7 +4373,7 @@ CFFI_DLLEXPORT PyObject * instanciate_binding_from_godot_obj(PyObject * a0, void
 }
 
 static struct _cffi_externpy_s _cffi_externpy__py_instance_set_godot_obj =
-  { "py_instance_set_godot_obj", 0 };
+  { "pythonscriptcffi.py_instance_set_godot_obj", 0 };
 
 CFFI_DLLEXPORT void py_instance_set_godot_obj(PyObject * a0, void * a1)
 {
@@ -4360,7 +4385,7 @@ CFFI_DLLEXPORT void py_instance_set_godot_obj(PyObject * a0, void * a1)
 }
 
 static struct _cffi_externpy_s _cffi_externpy__pybind_call_meth =
-  { "pybind_call_meth", 0 };
+  { "pythonscriptcffi.pybind_call_meth", 0 };
 
 CFFI_DLLEXPORT void pybind_call_meth(void * a0, wchar_t const * a1, void * * a2, int a3, void * a4, int * a5)
 {
@@ -4376,7 +4401,7 @@ CFFI_DLLEXPORT void pybind_call_meth(void * a0, wchar_t const * a1, void * * a2,
 }
 
 static struct _cffi_externpy_s _cffi_externpy__pybind_get_prop =
-  { "pybind_get_prop", (int)sizeof(_Bool) };
+  { "pythonscriptcffi.pybind_get_prop", (int)sizeof(_Bool) };
 
 CFFI_DLLEXPORT _Bool pybind_get_prop(void * a0, wchar_t const * a1, godot_variant * a2)
 {
@@ -4390,7 +4415,7 @@ CFFI_DLLEXPORT _Bool pybind_get_prop(void * a0, wchar_t const * a1, godot_varian
 }
 
 static struct _cffi_externpy_s _cffi_externpy__pybind_instanciate_from_classname =
-  { "pybind_instanciate_from_classname", (int)sizeof(void *) };
+  { "pythonscriptcffi.pybind_instanciate_from_classname", (int)sizeof(void *) };
 
 CFFI_DLLEXPORT void * pybind_instanciate_from_classname(wchar_t const * a0)
 {
@@ -4402,7 +4427,7 @@ CFFI_DLLEXPORT void * pybind_instanciate_from_classname(wchar_t const * a0)
 }
 
 static struct _cffi_externpy_s _cffi_externpy__pybind_load_exposed_class_per_module =
-  { "pybind_load_exposed_class_per_module", (int)sizeof(void *) };
+  { "pythonscriptcffi.pybind_load_exposed_class_per_module", (int)sizeof(void *) };
 
 CFFI_DLLEXPORT void * pybind_load_exposed_class_per_module(wchar_t const * a0)
 {
@@ -4414,7 +4439,7 @@ CFFI_DLLEXPORT void * pybind_load_exposed_class_per_module(wchar_t const * a0)
 }
 
 static struct _cffi_externpy_s _cffi_externpy__pybind_module_from_name =
-  { "pybind_module_from_name", (int)sizeof(PyObject *) };
+  { "pythonscriptcffi.pybind_module_from_name", (int)sizeof(PyObject *) };
 
 CFFI_DLLEXPORT PyObject * pybind_module_from_name(wchar_t * a0)
 {
@@ -4426,7 +4451,7 @@ CFFI_DLLEXPORT PyObject * pybind_module_from_name(wchar_t * a0)
 }
 
 static struct _cffi_externpy_s _cffi_externpy__pybind_release_instance =
-  { "pybind_release_instance", 0 };
+  { "pythonscriptcffi.pybind_release_instance", 0 };
 
 CFFI_DLLEXPORT void pybind_release_instance(void * a0)
 {
@@ -4437,7 +4462,7 @@ CFFI_DLLEXPORT void pybind_release_instance(void * a0)
 }
 
 static struct _cffi_externpy_s _cffi_externpy__pybind_set_prop =
-  { "pybind_set_prop", (int)sizeof(_Bool) };
+  { "pythonscriptcffi.pybind_set_prop", (int)sizeof(_Bool) };
 
 CFFI_DLLEXPORT _Bool pybind_set_prop(void * a0, wchar_t const * a1, godot_variant const * a2)
 {
@@ -4451,7 +4476,7 @@ CFFI_DLLEXPORT _Bool pybind_set_prop(void * a0, wchar_t const * a1, godot_varian
 }
 
 static struct _cffi_externpy_s _cffi_externpy__pybind_wrap_gdobj_with_class =
-  { "pybind_wrap_gdobj_with_class", (int)sizeof(void *) };
+  { "pythonscriptcffi.pybind_wrap_gdobj_with_class", (int)sizeof(void *) };
 
 CFFI_DLLEXPORT void * pybind_wrap_gdobj_with_class(void * a0, void * a1)
 {
@@ -4464,7 +4489,7 @@ CFFI_DLLEXPORT void * pybind_wrap_gdobj_with_class(void * a0, void * a1)
 }
 
 static struct _cffi_externpy_s _cffi_externpy__pyobj_to_variant2 =
-  { "pyobj_to_variant2", (int)sizeof(PyObject *) };
+  { "pythonscriptcffi.pyobj_to_variant2", (int)sizeof(PyObject *) };
 
 CFFI_DLLEXPORT PyObject * pyobj_to_variant2(PyObject * a0)
 {
@@ -4476,7 +4501,7 @@ CFFI_DLLEXPORT PyObject * pyobj_to_variant2(PyObject * a0)
 }
 
 static struct _cffi_externpy_s _cffi_externpy__variant_to_pyobj2 =
-  { "variant_to_pyobj2", (int)sizeof(PyObject *) };
+  { "pythonscriptcffi.variant_to_pyobj2", (int)sizeof(PyObject *) };
 
 CFFI_DLLEXPORT PyObject * variant_to_pyobj2(void * a0)
 {
@@ -4488,7 +4513,7 @@ CFFI_DLLEXPORT PyObject * variant_to_pyobj2(void * a0)
 }
 
 static struct _cffi_externpy_s _cffi_externpy__variants_to_pyobjs =
-  { "variants_to_pyobjs", (int)sizeof(PyObject *) };
+  { "pythonscriptcffi.variants_to_pyobjs", (int)sizeof(PyObject *) };
 
 CFFI_DLLEXPORT PyObject * variants_to_pyobjs(void * * a0, int a1)
 {
@@ -28008,6 +28033,10 @@ static const struct _cffi_type_context_s _cffi_type_context = {
   1,  /* flags */
 };
 
+#ifdef __GNUC__
+#  pragma GCC visibility push(default)  /* for -fvisibility= */
+#endif
+
 #ifdef PYPY_VERSION
 PyMODINIT_FUNC
 _cffi_pypyinit_pythonscriptcffi(const void *p[])
@@ -28038,4 +28067,8 @@ initpythonscriptcffi(void)
 {
   _cffi_init("pythonscriptcffi", 0x2701, &_cffi_type_context);
 }
+#endif
+
+#ifdef __GNUC__
+#  pragma GCC visibility pop
 #endif
