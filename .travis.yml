@@ -19,11 +19,12 @@ env:
     # other solution is to set `-D__extern_always_inline="extern __always_inline"`
     - BUILD_EXTRA_OPTS="-j4 target=debug tools=yes module_pythonscript_enabled=yes"
     - TEST_EXTRA_OPTS=""
-    - DISPLAY=":99"
+    - DISPLAY=":99.0"
     - AUDIODEV="null"
-    - XVFB_OPTS=":99 -ac -screen 0 1280x1024x24 -ac +extension GLX +extension RANDR +render -noreset"
+    - XVFB_OPTS=":99.0 -ac -screen 0 1280x1024x24 -ac +extension GLX +extension RANDR +render -noreset"
   matrix:
-    - GODOT_TARGET=x11
+    # - GODOT_TARGET=x11
+    - GODOT_TARGET=server
     # nothing else yet...
 
 addons:
