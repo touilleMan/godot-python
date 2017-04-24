@@ -52,6 +52,14 @@ CFFI_DLLEXPORT int pybind_init(void) {
     return cffi_start_python();
 }
 
+typedef struct {
+    int type;
+    godot_string name;
+    int hint;
+    godot_string hint_string;
+    uint32_t usage;
+} pybind_prop_info;
+
 """)
 
 
@@ -206,6 +214,48 @@ def pybind_get_prop(handle, propname, ret):
         return False
 
 
+@ffi.def_extern()
+def pybind_get_prop_type(handle, propname, prop_type):
+    instance = ffi.from_handle(handle)
+    prop = instance._exported.get(ffi.string(propname), None)
+    if not prop:
+        return False
+    else:
+        prop_type[0] = prop.gd_type
+        return True
+
+
+@ffi.def_extern()
+def pybind_get_prop_default_value(handle, propname, r_val):
+    cls_or_instance = ffi.from_handle(handle)
+    prop = cls_or_instance._exported.get(ffi.string(propname), None)
+    if not prop:
+        return False
+    print('default_value for ', ffi.string(propname), prop)
+    pyobj_to_variant(prop.default, r_val)
+    return True
+
+
+@ffi.def_extern()
+def pybind_get_prop_info(handle, propname, r_prop_info):
+    cls_or_instance = ffi.from_handle(handle)
+    prop = cls_or_instance._exported.get(ffi.string(propname), None)
+    if not prop:
+        return False
+    r_prop_info.type = prop.gd_type
+    r_prop_info.hint = prop.gd_hint
+    r_prop_info.name = prop.gd_name[0]
+    r_prop_info.hint_string = prop.gd_hint_string[0]
+    r_prop_info.usage = prop.gd_usage
+    return True
+
+
+@ffi.def_extern()
+def pybind_get_prop_list(handle):
+    cls_or_instance = ffi.from_handle(handle)
+    return cls_or_instance._exported_raw_list
+
+
 # =====
 
 
@@ -285,9 +335,18 @@ enum MethodFlags {
     METHOD_FLAG_VARARG=128,
     METHOD_FLAGS_DEFAULT=METHOD_FLAG_NORMAL,
 };
+
+""" + cdef + """
+
+typedef struct {
+    int type;
+    godot_string name;
+    int hint;
+    godot_string hint_string;
+    uint32_t usage;
+} pybind_prop_info;
+
 """
-# + load_gdnative_header_for_cdef('godot.h', [])
-+ cdef
 )
 
 ffibuilder.embedding_api(r"""
@@ -310,6 +369,10 @@ ffibuilder.embedding_api(r"""
     void pybind_call_meth(void *handle, const wchar_t *methname, void **args, int argcount, void *ret, int *error);
     godot_bool pybind_set_prop(void *handle, const wchar_t *propname, const godot_variant *value);
     godot_bool pybind_get_prop(void *handle, const wchar_t *propname, godot_variant *ret);
+    godot_bool pybind_get_prop_type(void *handle, const wchar_t *propname, int *prop_type);
+    godot_bool pybind_get_prop_default_value(void *handle, const wchar_t *propname, godot_variant *r_val);
+    const godot_string *pybind_get_prop_list(void *handle);
+    godot_bool pybind_get_prop_info(void *handle, const wchar_t *propname, pybind_prop_info *r_prop_info);
 
 //    void pybind_load_module(const wchar_t *modname, void *ret_mod, void *ret_cls);
     void *pybind_load_exposed_class_per_module(const wchar_t *modname);

@@ -325,3 +325,50 @@ def pyobj_to_raw(gdtype, pyobj):
         raise TypeError("Variant type `PoolColorArray` not implemented yet")
     else:
         raise TypeError("Unknown Variant type `%s` (this should never happen !)" % gdtype)
+
+
+GD_PY_TYPES = (
+    (lib.GODOT_VARIANT_TYPE_NIL, type(None)),
+    (lib.GODOT_VARIANT_TYPE_BOOL, bool),
+    (lib.GODOT_VARIANT_TYPE_INT, int),
+    (lib.GODOT_VARIANT_TYPE_REAL, float),
+    (lib.GODOT_VARIANT_TYPE_STRING, str),
+    (lib.GODOT_VARIANT_TYPE_VECTOR2, Vector2),
+    (lib.GODOT_VARIANT_TYPE_RECT2, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_VECTOR3, Vector3),
+    (lib.GODOT_VARIANT_TYPE_TRANSFORM2D, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_PLANE, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_QUAT, Quat),
+    (lib.GODOT_VARIANT_TYPE_RECT3, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_BASIS, Basis),
+    (lib.GODOT_VARIANT_TYPE_TRANSFORM, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_COLOR, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_IMAGE, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_NODE_PATH, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_RID, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_OBJECT, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_INPUT_EVENT, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_DICTIONARY, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_ARRAY, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_POOL_INT_ARRAY, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_POOL_STRING_ARRAY, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_POOL_COLOR_ARRAY, type(None)),  # TODO
+)
+
+
+def gd_to_py_type(gdtype):
+    pytype = next((py for gd, py in GD_PY_TYPES if gd == gdtype), None)
+    if pytype is None:
+        raise RuntimeError('No Python equivalent for Godot type `%s`' % gdtype)
+    return pytype
+
+
+def py_to_gd_type(pytype):
+    gdtype = next((gd for gd, py in GD_PY_TYPES if py == pytype), None)
+    if gdtype is None:
+        raise RuntimeError('No Godot equivalent for Python type `%s`' % pytype)
+    return gdtype

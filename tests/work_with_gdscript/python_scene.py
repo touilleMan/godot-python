@@ -16,11 +16,13 @@ class MyExportedCls(Node2D):
     def python_method(self, attr):
         return attr
 
-    @export(int)
+    python_prop_static = export(str)
+
+    @export(int, default=42)
     @property
-    def python_getter(self):
+    def python_prop(self):
         return self._python_prop
 
-    @python_getter.setter
-    def python_getter(self, value):
+    @python_prop.setter
+    def python_prop(self, value):
         self._python_prop = value

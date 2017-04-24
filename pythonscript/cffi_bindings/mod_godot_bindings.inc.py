@@ -157,6 +157,8 @@ class ClassDB:
 
 
 class MetaBaseObject(type):
+    GD_TYPE = lib.GODOT_VARIANT_TYPE_OBJECT
+
     def __new__(cls, name, bases, nmspc):
         exported = {}
         cooked_nmspc = {'_exported': exported}
@@ -167,12 +169,22 @@ class MetaBaseObject(type):
         for k, v in nmspc.items():
             if isinstance(v, ExportedField):
                 exported[k] = v
+                v.name = k  # hard to bind this earlier...
                 if v.property:
                     # If export has been used to decorate a property, expose it
                     # in the generated class
                     cooked_nmspc[k] = v.property
+                else:
+                    cooked_nmspc[k] = v.default
             else:
                 cooked_nmspc[k] = v
+        # Build the list of exported fields' names, ready to be access by godot
+        raw_list = ffi.new('godot_string[]', len(exported) + 1)
+        for i, name in enumerate(exported.keys()):
+            lib.godot_string_new_unicode_data(ffi.addressof(raw_list[i]), name, -1)
+        # Last entry is an empty string
+        lib.godot_string_new(ffi.addressof(raw_list[len(exported)]))
+        cooked_nmspc['_exported_raw_list'] = raw_list
         return type.__new__(cls, name, bases, cooked_nmspc)
 
 
@@ -216,9 +228,17 @@ def build_method(classname, meth):
 
 
 def build_property(classname, prop):
+    print(classname, prop)
+    gdprop = prop.copy()
+    gdprop.pop('type')
     getter, setter = ClassDB.build_property_getset(prop)
-    propobj = property(getter)
-    return propobj.setter(setter)
+    return property(getter).setter(setter)
+    # TODO: Node exported doesn't seems to be shown by the script,
+    # uncomment this if it's the case
+    # prop_field = ExportedField(type=gd_to_py_type(prop['type']), **gdprop)
+    # getter, setter = ClassDB.build_property_getset(prop)
+    # prop_field.property = property(getter).setter(setter)
+    # return prop_field
 
 
 def build_class(classname, binding_classname=None):

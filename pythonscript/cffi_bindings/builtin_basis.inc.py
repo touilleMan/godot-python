@@ -1,4 +1,6 @@
 class Basis:
+    GD_TYPE = lib.GODOT_VARIANT_TYPE_BASIS
+
     @classmethod
     def build_from_gd_ptr(cls, gd_ptr):
         # TODO: optimize this

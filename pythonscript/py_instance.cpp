@@ -40,6 +40,13 @@ ScriptLanguage *PyInstance::get_language() {
 Variant::Type PyInstance::get_property_type(const StringName& p_name,bool *r_is_valid) const {
     DEBUG_TRACE_METHOD();
 
+    const wchar_t *propname = String(p_name).c_str();
+    Variant::Type prop_type;
+    const bool is_valid = pybind_get_prop_type(this->_py_obj2, propname, (int*)&prop_type);
+    if (r_is_valid) {
+        *r_is_valid = is_valid;
+    }
+    return prop_type;
 
 #if 0
     const PyScript *sptr=script.ptr();

@@ -4,11 +4,7 @@
 #include "pythonscript.h"
 #include "py_script.h"
 #include "py_instance.h"
-
-
-// TODO: replace by an include
-// extern void pybind_load_module(const wchar_t *modname, void *ret_mod, void *ret_cls);
-extern void *pybind_load_exposed_class_per_module(const wchar_t *modname);
+#include "cffi_bindings/api.h"
 
 
 void PyScript::_bind_methods() {
@@ -60,22 +56,44 @@ StringName PyScript::get_instance_base_type() const {
 }
 
 
+void PyScript::update_exports() {
+    if (/*changed &&*/ this->placeholders.size()) { //hm :(
+
+        //print_line("updating placeholders for "+get_path());
+
+        //update placeholders if any
+        Map<StringName, Variant> propdefvalues;
+        List<PropertyInfo> propinfos;
+        const String *props = (const String *)pybind_get_prop_list(this->_py_exposed_class2);
+        for (int i = 0; props[i] != ""; ++i) {
+            const String propname = props[i];
+            pybind_get_prop_default_value(this->_py_exposed_class2, propname.c_str(), (godot_variant*)&propdefvalues[propname]);
+            pybind_prop_info raw_info;
+            pybind_get_prop_info(this->_py_exposed_class2, propname.c_str(), &raw_info);
+            PropertyInfo info;
+            info.type = (Variant::Type)raw_info.type;
+            info.name = propname;
+            info.hint = (PropertyHint)raw_info.hint;
+            info.hint_string = *(String*)&raw_info.hint_string;
+            info.usage = raw_info.usage;
+            propinfos.push_back(info);
+        }
+        for (Set<PlaceHolderScriptInstance *>::Element *E = placeholders.front(); E; E = E->next()) {
+            E->get()->update(propinfos, propdefvalues);
+        }
+    }
+}
+
+
 // TODO: rename p_this "p_owner" ?
 ScriptInstance* PyScript::instance_create(Object *p_this) {
     DEBUG_TRACE_METHOD();
     if (!this->tool && !ScriptServer::is_scripting_enabled()) {
 #ifdef TOOLS_ENABLED
         //instance a fake script for editing the values
-        //plist.invert();
-
-        /*print_line("CREATING PLACEHOLDER");
-        for(List<PropertyInfo>::Element *E=plist.front();E;E=E->next()) {
-            print_line(E->get().name);
-        }*/
         PlaceHolderScriptInstance *si = memnew(PlaceHolderScriptInstance(PyLanguage::get_singleton(), Ref<Script>(this), p_this));
-        placeholders.insert(si);
-        //_update_placeholder(si);
-        // _update_exports();
+        this->placeholders.insert(si);
+        this->update_exports();
         return si;
 #else
         return NULL;
@@ -332,8 +350,11 @@ MethodInfo PyScript::get_method_info(const StringName& p_method) const {
 
 bool PyScript::get_property_default_value(const StringName& p_property, Variant &r_value) const {
     DEBUG_TRACE_METHOD();
-    // TODO
-// #ifdef TOOLS_ENABLED
+
+#ifdef TOOLS_ENABLED
+    const wchar_t *propname = String(p_property).c_str();
+    return pybind_get_prop_default_value(this->_py_exposed_class2, propname, (godot_variant*)&r_value);
+
 
 //     //for (const Map<StringName,Variant>::Element *I=member_default_values.front();I;I=I->next()) {
 //     //  print_line("\t"+String(String(I->key())+":"+String(I->get())));
@@ -347,9 +368,7 @@ bool PyScript::get_property_default_value(const StringName& p_property, Variant 
 //     if (base_cache.is_valid()) {
 //         return base_cache->get_property_default_value(p_property,r_value);
 //     }
-// #endif
-    return false;
-
+#endif
 }
 
 

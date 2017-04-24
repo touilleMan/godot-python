@@ -1,4 +1,6 @@
 class Vector3:
+    GD_TYPE = lib.GODOT_VARIANT_TYPE_VECTOR3
+
     @classmethod
     def build_from_gd_obj(cls, gd_obj):
         # TODO: optimize this

@@ -8,10 +8,33 @@ __exposed_classes_per_module = {}
 
 
 class ExportedField:
-    def __init__(self, type, default):
+
+    def __init__(self, type, default=None, name='', hint=0, usage=lib.GODOT_PROPERTY_USAGE_DEFAULT, hint_string=''):
+        self.property = None
+
         self.type = type
         self.default = default
-        self.property = None
+        self.name = name
+        self.hint = hint
+        self.usage = usage
+        self.hint_string = hint_string
+
+        self.gd_hint = self.hint
+        self.gd_usage = self.usage
+        self.gd_hint_string = pyobj_to_raw(lib.GODOT_VARIANT_TYPE_STRING, self.hint_string)
+        self.gd_type = py_to_gd_type(self.type)
+        if self.default is not None:
+            self.gd_default = pyobj_to_raw(self.gd_type, self.default)
+        else:
+            self.gd_default = ffi.NULL
+
+    @property
+    def gd_name(self):
+        # Name is defined lazily when ExportedField is connected to it class
+        return pyobj_to_raw(lib.GODOT_VARIANT_TYPE_STRING, self.name)
+
+    def __repr__(self):
+        return '<{x.__class__.__name__}(type={x.type}, default={x.default})>'.format(x=self)
 
     def __call__(self, decorated):
         # This object is used as a decorator
@@ -23,6 +46,7 @@ class ExportedField:
 
     def setter(self, setfunc):
         self.property = self.property.setter(setfunc)
+        return self
 
 
 def exposed(cls=None, tool=False):
@@ -43,8 +67,8 @@ def exposed(cls=None, tool=False):
         return wrapper
 
 
-def export(type, default=None):
-    return ExportedField(type, default)
+def export(type, default=None, **kwargs):
+    return ExportedField(type, default, **kwargs)
 
 
 def get_exposed_class_per_module(module):

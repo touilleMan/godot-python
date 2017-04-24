@@ -1,5 +1,6 @@
 extends Node
 
+export (int) var exported = 42
 
 var python_scene = preload("res://python_scene.tscn")
 
@@ -35,10 +36,10 @@ func _process(delta):
 	self.test_started = true
 	var python_scene_instance = self.get_node("python_scene")
 	# Test property
-	python_scene_instance.python_exported_val = "foo"
-	var prop_val = python_scene_instance.python_exported_val
-	if prop_val != "foo":
-		self.exit_test('python_scene_instance.python_exported_val != "foo" (value = %s)' % prop_val)
+	python_scene_instance.python_prop = 42
+	var prop_val = python_scene_instance.python_prop
+	if prop_val != 42:
+		self.exit_test('python_scene_instance.python_prop != 42 (value = %s)' % prop_val)
 	# Test method
 	var meth_ret = python_scene_instance.python_method("foo")
 	if meth_ret != "foo":

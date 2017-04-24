@@ -66,6 +66,7 @@ protected:
 
 #ifdef TOOLS_ENABLED
     Set<PlaceHolderScriptInstance*> placeholders;
+    //void _update_placeholder(PlaceHolderScriptInstance *p_placeholder);
     virtual void _placeholder_erased(PlaceHolderScriptInstance *p_placeholder);
 #endif
 public:
@@ -106,7 +107,7 @@ public:
 
     bool get_property_default_value(const StringName& p_property,Variant& r_value) const;
 
-    virtual void update_exports() {} //editor tool
+    virtual void update_exports();
     void get_script_method_list(List<MethodInfo> *p_list) const;
     void get_script_property_list(List<PropertyInfo> *p_list) const;
 
