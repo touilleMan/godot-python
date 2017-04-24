@@ -228,7 +228,6 @@ def build_method(classname, meth):
 
 
 def build_property(classname, prop):
-    print(classname, prop)
     gdprop = prop.copy()
     gdprop.pop('type')
     getter, setter = ClassDB.build_property_getset(prop)

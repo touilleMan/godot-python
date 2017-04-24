@@ -583,7 +583,6 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "    prop = cls_or_instance._exported.get(ffi.string(propname), None)\n" \
 "    if not prop:\n" \
 "        return False\n" \
-"    print('default_value for ', ffi.string(propname), prop)\n" \
 "    pyobj_to_variant(prop.default, r_val)\n" \
 "    return True\n" \
 "\n" \
@@ -721,7 +720,7 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "\n" \
 "    def wrapper(cls):\n" \
 "        global __exposed_classes, __exposed_classes_per_module\n" \
-"        print(\"Exposing %s.%s Python class to Godot.\" % (cls.__module__, cls))\n" \
+"        print(\"Exposing %s.%s Python class to Godot.\" % (cls.__module__, cls.__name__))\n" \
 "        assert cls.__name__ not in __exposed_classes\n" \
 "        assert cls.__module__ not in __exposed_classes_per_module\n" \
 "        cls._tool = tool\n" \
@@ -1902,7 +1901,6 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "\n" \
 "\n" \
 "def build_property(classname, prop):\n" \
-"    print(classname, prop)\n" \
 "    gdprop = prop.copy()\n" \
 "    gdprop.pop('type')\n" \
 "    getter, setter = ClassDB.build_property_getset(prop)\n" \

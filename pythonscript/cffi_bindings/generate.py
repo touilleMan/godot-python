@@ -231,7 +231,6 @@ def pybind_get_prop_default_value(handle, propname, r_val):
     prop = cls_or_instance._exported.get(ffi.string(propname), None)
     if not prop:
         return False
-    print('default_value for ', ffi.string(propname), prop)
     pyobj_to_variant(prop.default, r_val)
     return True
 
