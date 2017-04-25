@@ -1,52 +1,47 @@
 // Pythonscript imports
-#include "py_language.h"
-#include "py_script.h"
 #include "py_instance.h"
 #include "cffi_bindings/api.h"
+#include "py_language.h"
+#include "py_script.h"
 
 #include "core/variant.h"
 
+bool PyInstance::set(const StringName &p_name, const Variant &p_value) {
+	DEBUG_TRACE_METHOD();
 
-bool PyInstance::set(const StringName& p_name, const Variant& p_value) {
-    DEBUG_TRACE_METHOD();
-
-    const wchar_t *propname = String(p_name).c_str();
-    return pybind_set_prop(this->_py_obj2, propname, (const godot_variant*)&p_value);
+	const wchar_t *propname = String(p_name).c_str();
+	return pybind_set_prop(this->_py_obj2, propname, (const godot_variant *)&p_value);
 }
 
+bool PyInstance::get(const StringName &p_name, Variant &r_ret) const {
+	DEBUG_TRACE_METHOD();
 
-bool PyInstance::get(const StringName& p_name, Variant &r_ret) const {
-    DEBUG_TRACE_METHOD();
-
-    const wchar_t *propname = String(p_name).c_str();
-    return pybind_get_prop(this->_py_obj2, propname, (godot_variant*)&r_ret);
+	const wchar_t *propname = String(p_name).c_str();
+	return pybind_get_prop(this->_py_obj2, propname, (godot_variant *)&r_ret);
 }
-
 
 Ref<Script> PyInstance::get_script() const {
-    DEBUG_TRACE_METHOD();
+	DEBUG_TRACE_METHOD();
 
-    return this->_script;
+	return this->_script;
 }
-
 
 ScriptLanguage *PyInstance::get_language() {
-    DEBUG_TRACE_METHOD();
+	DEBUG_TRACE_METHOD();
 
-    return PyLanguage::get_singleton();
+	return PyLanguage::get_singleton();
 }
 
+Variant::Type PyInstance::get_property_type(const StringName &p_name, bool *r_is_valid) const {
+	DEBUG_TRACE_METHOD();
 
-Variant::Type PyInstance::get_property_type(const StringName& p_name,bool *r_is_valid) const {
-    DEBUG_TRACE_METHOD();
-
-    const wchar_t *propname = String(p_name).c_str();
-    Variant::Type prop_type;
-    const bool is_valid = pybind_get_prop_type(this->_py_obj2, propname, (int*)&prop_type);
-    if (r_is_valid) {
-        *r_is_valid = is_valid;
-    }
-    return prop_type;
+	const wchar_t *propname = String(p_name).c_str();
+	Variant::Type prop_type;
+	const bool is_valid = pybind_get_prop_type(this->_py_obj2, propname, (int *)&prop_type);
+	if (r_is_valid) {
+		*r_is_valid = is_valid;
+	}
+	return prop_type;
 
 #if 0
     const PyScript *sptr=script.ptr();
@@ -63,11 +58,11 @@ Variant::Type PyInstance::get_property_type(const StringName& p_name,bool *r_is_
     if (r_is_valid)
         *r_is_valid=false;
 #endif
-    return Variant::NIL;
+	return Variant::NIL;
 }
 
 void PyInstance::get_property_list(List<PropertyInfo> *p_properties) const {
-    DEBUG_TRACE_METHOD();
+	DEBUG_TRACE_METHOD();
 #if 0
     // exported members, not doen yet!
 
@@ -190,7 +185,7 @@ void PyInstance::get_property_list(List<PropertyInfo> *p_properties) const {
 }
 
 void PyInstance::get_method_list(List<MethodInfo> *p_list) const {
-    DEBUG_TRACE_METHOD();
+	DEBUG_TRACE_METHOD();
 #if 0
 
     const PyScript *sptr=script.ptr();
@@ -211,8 +206,8 @@ void PyInstance::get_method_list(List<MethodInfo> *p_list) const {
 #endif
 }
 
-bool PyInstance::has_method(const StringName& p_method) const {
-    DEBUG_TRACE_METHOD();
+bool PyInstance::has_method(const StringName &p_method) const {
+	DEBUG_TRACE_METHOD();
 #if 0
 
     const PyScript *sptr=script.ptr();
@@ -224,25 +219,24 @@ bool PyInstance::has_method(const StringName& p_method) const {
     }
 
 #endif
-    return false;
+	return false;
 }
 
-
-Variant PyInstance::call(const StringName& p_method, const Variant **p_args, int p_argcount, Variant::CallError &r_error) {
-    DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
-    // TODO: precompute p_method lookup for faster access
-    Variant ret;
-    // Instead of passing C++ Variant::CallError object through cffi, we compress
-    // it arguments into a single int, yeah this is a hack ;-)
-    int error = 0;
-    pybind_call_meth(this->_py_obj2, String(p_method).c_str(), (void **)p_args, p_argcount, &ret, &error);
-    // TODO handle argument/type attributes
-    r_error.error = (Variant::CallError::Error)(error & 0xFF);
-    if (error) {
-        r_error.argument = (error >> 2) & 0xFF;
-        r_error.expected = (Variant::Type)(error >> 4);
-    }
-    return ret;
+Variant PyInstance::call(const StringName &p_method, const Variant **p_args, int p_argcount, Variant::CallError &r_error) {
+	DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
+	// TODO: precompute p_method lookup for faster access
+	Variant ret;
+	// Instead of passing C++ Variant::CallError object through cffi, we compress
+	// it arguments into a single int, yeah this is a hack ;-)
+	int error = 0;
+	pybind_call_meth(this->_py_obj2, String(p_method).c_str(), (void **)p_args, p_argcount, &ret, &error);
+	// TODO handle argument/type attributes
+	r_error.error = (Variant::CallError::Error)(error & 0xFF);
+	if (error) {
+		r_error.argument = (error >> 2) & 0xFF;
+		r_error.expected = (Variant::Type)(error >> 4);
+	}
+	return ret;
 #if 0
 
     //printf("calling %ls:%i method %ls\n", script->get_path().c_str(), -1, String(p_method).c_str());
@@ -260,7 +254,7 @@ Variant PyInstance::call(const StringName& p_method, const Variant **p_args, int
 #endif
 }
 
-#if 0  // TODO: Don't rely on default implementations provided by ScriptInstance ?
+#if 0 // TODO: Don't rely on default implementations provided by ScriptInstance ?
 void PyInstance::call_multilevel(const StringName& p_method,const Variant** p_args,int p_argcount) {
     DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
 
@@ -278,7 +272,6 @@ void PyInstance::call_multilevel(const StringName& p_method,const Variant** p_ar
 #endif
 
 }
-
 
 #if 0
 void PyInstance::_ml_call_reversed(PyScript *sptr,const StringName& p_method,const Variant** p_args,int p_argcount) {
@@ -306,99 +299,92 @@ void PyInstance::call_multilevel_reversed(const StringName& p_method,const Varia
     }
 #endif
 }
-#endif  // Multilevel stuff
-
+#endif // Multilevel stuff
 
 void PyInstance::notification(int p_notification) {
-    DEBUG_TRACE_METHOD();
-    // TODO
+	DEBUG_TRACE_METHOD();
+	// TODO
 
-    // //notification is not virutal, it gets called at ALL levels just like in C.
-    // Variant value=p_notification;
-    // const Variant *args[1]={&value };
+	// //notification is not virutal, it gets called at ALL levels just like in C.
+	// Variant value=p_notification;
+	// const Variant *args[1]={&value };
 
-    // PyScript *sptr = this->_script.ptr();
-    // while(sptr) {
-    //     Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyScriptLanguage::get_singleton()->strings._notification);
-    //     if (E) {
-    //         Variant::CallError err;
-    //         E->get()->call(this,args,1,err);
-    //         if (err.error!=Variant::CallError::CALL_OK) {
-    //             //print error about notification call
+	// PyScript *sptr = this->_script.ptr();
+	// while(sptr) {
+	//     Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyScriptLanguage::get_singleton()->strings._notification);
+	//     if (E) {
+	//         Variant::CallError err;
+	//         E->get()->call(this,args,1,err);
+	//         if (err.error!=Variant::CallError::CALL_OK) {
+	//             //print error about notification call
 
-    //         }
-    //     }
-    //     sptr = sptr->_base;
-    // }
-
+	//         }
+	//     }
+	//     sptr = sptr->_base;
+	// }
 }
 
+PyInstance::RPCMode PyInstance::get_rpc_mode(const StringName &p_method) const {
+	DEBUG_TRACE_METHOD();
+	// TODO
 
-PyInstance::RPCMode PyInstance::get_rpc_mode(const StringName& p_method) const {
-    DEBUG_TRACE_METHOD();
-    // TODO
+	// const PyScript *cscript = script.ptr();
 
-    // const PyScript *cscript = script.ptr();
+	// while(cscript) {
+	//     const Map<StringName,GDFunction*>::Element *E=cscript->member_functions.find(p_method);
+	//     if (E) {
 
-    // while(cscript) {
-    //     const Map<StringName,GDFunction*>::Element *E=cscript->member_functions.find(p_method);
-    //     if (E) {
+	//         if (E->get()->get_rpc_mode()!=RPC_MODE_DISABLED) {
+	//             return E->get()->get_rpc_mode();
+	//         }
 
-    //         if (E->get()->get_rpc_mode()!=RPC_MODE_DISABLED) {
-    //             return E->get()->get_rpc_mode();
-    //         }
+	//     }
+	//     cscript=cscript->_base;
+	// }
 
-    //     }
-    //     cscript=cscript->_base;
-    // }
-
-    return RPC_MODE_DISABLED;
+	return RPC_MODE_DISABLED;
 }
 
+PyInstance::RPCMode PyInstance::get_rset_mode(const StringName &p_variable) const {
+	DEBUG_TRACE_METHOD();
+	// TODO
 
-PyInstance::RPCMode PyInstance::get_rset_mode(const StringName& p_variable) const {
-    DEBUG_TRACE_METHOD();
-    // TODO
+	// const PyScript *cscript = script.ptr();
 
-    // const PyScript *cscript = script.ptr();
+	// while(cscript) {
+	//     const Map<StringName,PyScript::MemberInfo>::Element *E=cscript->member_indices.find(p_variable);
+	//     if (E) {
 
-    // while(cscript) {
-    //     const Map<StringName,PyScript::MemberInfo>::Element *E=cscript->member_indices.find(p_variable);
-    //     if (E) {
+	//         if (E->get().rpc_mode) {
+	//             return E->get().rpc_mode;
+	//         }
 
-    //         if (E->get().rpc_mode) {
-    //             return E->get().rpc_mode;
-    //         }
+	//     }
+	//     cscript=cscript->_base;
+	// }
 
-    //     }
-    //     cscript=cscript->_base;
-    // }
-
-    return RPC_MODE_DISABLED;
+	return RPC_MODE_DISABLED;
 }
-
 
 PyInstance::PyInstance() {
-    DEBUG_TRACE_METHOD();
+	DEBUG_TRACE_METHOD();
 }
-
 
 bool PyInstance::init(PyScript *p_script, Object *p_owner) {
-    DEBUG_TRACE_METHOD();
+	DEBUG_TRACE_METHOD();
 
-    this->_owner = p_owner;
-    this->_owner_variant = Variant(p_owner);
-    this->_script = Ref<PyScript>(p_script);
-    this->_py_obj2 = pybind_wrap_gdobj_with_class(p_script->get_py_exposed_class(), p_owner);
-    if (this->_py_obj2 == nullptr) {
-        ERR_FAIL_V(false);
-    }
-    p_owner->set_script_instance(this);
-    return true;
+	this->_owner = p_owner;
+	this->_owner_variant = Variant(p_owner);
+	this->_script = Ref<PyScript>(p_script);
+	this->_py_obj2 = pybind_wrap_gdobj_with_class(p_script->get_py_exposed_class(), p_owner);
+	if (this->_py_obj2 == nullptr) {
+		ERR_FAIL_V(false);
+	}
+	p_owner->set_script_instance(this);
+	return true;
 }
 
-
 PyInstance::~PyInstance() {
-    DEBUG_TRACE_METHOD();
-    pybind_release_instance(this->_py_obj2);
+	DEBUG_TRACE_METHOD();
+	pybind_release_instance(this->_py_obj2);
 }

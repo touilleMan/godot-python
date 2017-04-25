@@ -1,6 +1,5 @@
 #pragma once
 
-
 namespace bindings {
-    void init();
+void init();
 }

@@ -4,13 +4,11 @@
 #include "py_loader.h"
 #include "py_script.h"
 
-
-RES ResourceFormatLoaderPyScript::load(const String &p_path, const String& p_original_path, Error *r_error)
-{
+RES ResourceFormatLoaderPyScript::load(const String &p_path, const String &p_original_path, Error *r_error) {
 	if (r_error)
-		*r_error=ERR_FILE_CANT_OPEN;
+		*r_error = ERR_FILE_CANT_OPEN;
 
-	PyScript *script = memnew( PyScript );
+	PyScript *script = memnew(PyScript);
 
 	Ref<PyScript> scriptres(script);
 
@@ -22,31 +20,27 @@ RES ResourceFormatLoaderPyScript::load(const String &p_path, const String& p_ori
 	script->reload();
 
 	if (r_error)
-		*r_error=OK;
+		*r_error = OK;
 
 	return scriptres;
 }
 
-void ResourceFormatLoaderPyScript::get_recognized_extensions(List<String> *p_extensions) const
-{
+void ResourceFormatLoaderPyScript::get_recognized_extensions(List<String> *p_extensions) const {
 	p_extensions->push_back("py");
 }
 
-bool ResourceFormatLoaderPyScript::handles_type(const String& p_type) const
-{
+bool ResourceFormatLoaderPyScript::handles_type(const String &p_type) const {
 	return p_type == "Script" || p_type == "PyScript";
 }
 
-String ResourceFormatLoaderPyScript::get_resource_type(const String &p_path) const
-{
+String ResourceFormatLoaderPyScript::get_resource_type(const String &p_path) const {
 	String el = p_path.get_extension().to_lower();
 	if (el == "py")
 		return "PyScript";
 	return "";
 }
 
-Error ResourceFormatSaverPyScript::save(const String &p_path,const RES& p_resource,uint32_t p_flags)
-{
+Error ResourceFormatSaverPyScript::save(const String &p_path, const RES &p_resource, uint32_t p_flags) {
 	Ref<PyScript> sqscr = p_resource;
 	ERR_FAIL_COND_V(sqscr.is_null(), ERR_INVALID_PARAMETER);
 
@@ -66,14 +60,12 @@ Error ResourceFormatSaverPyScript::save(const String &p_path,const RES& p_resour
 	return OK;
 }
 
-void ResourceFormatSaverPyScript::get_recognized_extensions(const RES& p_resource,List<String> *p_extensions) const
-{
+void ResourceFormatSaverPyScript::get_recognized_extensions(const RES &p_resource, List<String> *p_extensions) const {
 	if (p_resource->cast_to<PyScript>()) {
 		p_extensions->push_back("py");
 	}
 }
 
-bool ResourceFormatSaverPyScript::recognize(const RES& p_resource) const
-{
+bool ResourceFormatSaverPyScript::recognize(const RES &p_resource) const {
 	return p_resource->cast_to<PyScript>() != NULL;
 }

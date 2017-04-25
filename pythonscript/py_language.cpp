@@ -1,91 +1,85 @@
 #include <stdlib.h>
 // Godot imports
 #include "core/global_config.h"
-#include "core/os/os.h"
 #include "core/os/file_access.h"
+#include "core/os/os.h"
 // Pythonscript imports
-#include "pythonscript.h"
 #include "py_language.h"
 #include "py_script.h"
+#include "pythonscript.h"
 #include "static_bindings.h"
 // #include "bindings/dynamic_binder.h"
 
-
 /************* SCRIPT LANGUAGE **************/
 /************* SCRIPT LANGUAGE **************/
 /************* SCRIPT LANGUAGE **************/
 /************* SCRIPT LANGUAGE **************/
 /************* SCRIPT LANGUAGE **************/
-
 
 // TODO: Allocate this dynamically ?
 PyLanguage *PyLanguage::singleton = NULL;
 
-
-
 String PyLanguage::get_name() const {
 
-    return "Python";
+	return "Python";
 }
-
 
 void _init_sys_path_and_argv(String path) {
-    String resource_path = GlobalConfig::get_singleton()->get_resource_path();
-    String data_dir = OS::get_singleton()->get_data_dir();
+	String resource_path = GlobalConfig::get_singleton()->get_resource_path();
+	String data_dir = OS::get_singleton()->get_data_dir();
 
-    // Init sys.path list
-    auto sys = py::module::import("sys");
-    auto pathes = path.split(";");
-    for (int i=0; i < pathes.size(); ++i) {
-        auto curr_path = pathes[i];
-        if (curr_path.begins_with("res://")) {
-            // Keep on slash to make the path
-            curr_path = curr_path.replace("res:/", resource_path);
-        }
-        else if (curr_path.begins_with("user://")) {
-            if (data_dir != "") {
-                // Keep on slash to make the path
-                curr_path = curr_path.replace("user:/", data_dir);
-            }
-        }
-        // TODO: should we shadow default modules ?
-        // sys.attr("path").attr("append")(curr_path.utf8().get_data());
-        sys.attr("path").attr("insert")(0, curr_path.utf8().get_data());
-    }
-    py::object scope = py::module::import("__main__").attr("__dict__");
-    py::eval<py::eval_statements>("import sys\n"
-                                  "print('PYTHON_PATH:', sys.path)\n", scope);
+	// Init sys.path list
+	auto sys = py::module::import("sys");
+	auto pathes = path.split(";");
+	for (int i = 0; i < pathes.size(); ++i) {
+		auto curr_path = pathes[i];
+		if (curr_path.begins_with("res://")) {
+			// Keep on slash to make the path
+			curr_path = curr_path.replace("res:/", resource_path);
+		} else if (curr_path.begins_with("user://")) {
+			if (data_dir != "") {
+				// Keep on slash to make the path
+				curr_path = curr_path.replace("user:/", data_dir);
+			}
+		}
+		// TODO: should we shadow default modules ?
+		// sys.attr("path").attr("append")(curr_path.utf8().get_data());
+		sys.attr("path").attr("insert")(0, curr_path.utf8().get_data());
+	}
+	py::object scope = py::module::import("__main__").attr("__dict__");
+	py::eval<py::eval_statements>("import sys\n"
+								  "print('PYTHON_PATH:', sys.path)\n",
+			scope);
 
-    // Init sys.argv
-    sys.attr("argv") = py::list();
-    sys.attr("argv").attr("append")(L"");
+	// Init sys.argv
+	sys.attr("argv") = py::list();
+	sys.attr("argv").attr("append")(L"");
 }
 
-
 void PyLanguage::init() {
-    DEBUG_TRACE_METHOD();
-    // Register configuration
-    auto globals = GlobalConfig::get_singleton();
-    GLOBAL_DEF("python_script/path", "res://;res://lib");
+	DEBUG_TRACE_METHOD();
+	// Register configuration
+	auto globals = GlobalConfig::get_singleton();
+	GLOBAL_DEF("python_script/path", "res://;res://lib");
 
-    // Setup Python interpreter
-    wchar_t name[6] = L"godot";
-    Py_SetProgramName(name);  /* optional but recommended */
-    Py_Initialize();
-    if (pybind_init()) {
-        ERR_PRINT("Couldn't initialize Python interpreter or CFFI bindings.");
-        ERR_FAIL();
-    }
-    // bindings::init();
+	// Setup Python interpreter
+	wchar_t name[6] = L"godot";
+	Py_SetProgramName(name); /* optional but recommended */
+	Py_Initialize();
+	if (pybind_init()) {
+		ERR_PRINT("Couldn't initialize Python interpreter or CFFI bindings.");
+		ERR_FAIL();
+	}
+	// bindings::init();
 
-    // TODO: think where to keep python standard lib ?
-    // Py_SetPythonHome(globals->get("python_script/home"));
-    try {
-        _init_sys_path_and_argv(globals->get("python_script/path"));
-    } catch(const py::error_already_set &e) {
-        ERR_PRINT(e.what());
-        ERR_FAIL();
-    }
+	// TODO: think where to keep python standard lib ?
+	// Py_SetPythonHome(globals->get("python_script/home"));
+	try {
+		_init_sys_path_and_argv(globals->get("python_script/path"));
+	} catch (const py::error_already_set &e) {
+		ERR_PRINT(e.what());
+		ERR_FAIL();
+	}
 
 #if 0
     //populate global constants
@@ -125,48 +119,40 @@ void PyLanguage::init() {
 #endif
 }
 
-
 String PyLanguage::get_type() const {
-    DEBUG_TRACE_METHOD();
-    return "Python";
+	DEBUG_TRACE_METHOD();
+	return "Python";
 }
-
 
 String PyLanguage::get_extension() const {
 
-    return "py";
+	return "py";
 }
 
-
-Error PyLanguage::execute_file(const String& p_path)  {
-    DEBUG_TRACE_METHOD();
-    // ??
-    return OK;
+Error PyLanguage::execute_file(const String &p_path) {
+	DEBUG_TRACE_METHOD();
+	// ??
+	return OK;
 }
 
-
-void PyLanguage::finish()  {
-    DEBUG_TRACE_METHOD();
-    // TODO: Do we need to deinit the interpreter ?
-    Py_FinalizeEx();
+void PyLanguage::finish() {
+	DEBUG_TRACE_METHOD();
+	// TODO: Do we need to deinit the interpreter ?
+	Py_FinalizeEx();
 }
-
 
 /* MULTITHREAD FUNCTIONS */
 
-
 /* DEBUGGER FUNCTIONS */
 
-
 PyLanguage::~PyLanguage() {
-    DEBUG_TRACE_METHOD();
-    singleton = NULL;
-    if (lock) {
-        memdelete(lock);
-        lock=NULL;
-    }
+	DEBUG_TRACE_METHOD();
+	singleton = NULL;
+	if (lock) {
+		memdelete(lock);
+		lock = NULL;
+	}
 }
-
 
 #if 0
 struct PyScriptDepSort {
@@ -191,8 +177,6 @@ struct PyScriptDepSort {
 };
 
 void PyLanguage::reload_all_scripts() {
-
-
 
 #ifdef DEBUG_ENABLED
     print_line("RELOAD ALL SCRIPTS");
@@ -230,7 +214,6 @@ void PyLanguage::reload_all_scripts() {
 
 
 void PyLanguage::reload_tool_script(const Ref<Script>& p_script,bool p_soft_reload) {
-
 
 #ifdef DEBUG_ENABLED
 
@@ -345,20 +328,19 @@ void PyLanguage::reload_tool_script(const Ref<Script>& p_script,bool p_soft_relo
         //if instance states were saved, set them!
     }
 
-
 #endif
 }
 
 #endif // if 0
 PyLanguage::PyLanguage() {
-    DEBUG_TRACE_METHOD();
-    ERR_FAIL_COND(this->singleton);
-    this->singleton=this;
+	DEBUG_TRACE_METHOD();
+	ERR_FAIL_COND(this->singleton);
+	this->singleton = this;
 
 #ifdef NO_THREADS
-    this->lock=NULL;
+	this->lock = NULL;
 #else
-    this->lock = Mutex::create();
+	this->lock = Mutex::create();
 #endif
 
 #if 0
