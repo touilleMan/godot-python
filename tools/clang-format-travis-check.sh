@@ -2,7 +2,7 @@
 
 # Copied from Godot's clang-format.sh
 
-CLANG_FORMAT=clang-format-3.9
+CLANG_FORMAT=clang-format
 
 if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
     # Check the whole commit range against $TRAVIS_BRANCH, the base merge branch

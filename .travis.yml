@@ -52,8 +52,6 @@ addons:
 #      - clang-3.9
       - python3
       - valgrind
-      # For style checks.
-      - clang-format-3.9
 
 before_install:
   - if [[ "$CXX" == "clang++" ]]; then wget http://llvm.org/releases/$LLVM_VERSION/clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-14.04.tar.xz -O $LLVM_ARCHIVE_PATH; fi
@@ -76,7 +74,7 @@ before_script:
   - sleep 3 # give xvfb some time to start
 
 script:
-  - sh tools/clang-format-travis-check.sh
+  - if [[ "$CXX" == "clang++" ]]; then sh tools/clang-format-travis-check.sh; fi
   - if [[ "$CXX" == "g++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS CXX=g++-5 CC=gcc-5"; fi
   - if [[ "$CXX" == "clang++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS use_llvm=yes"; fi
   - cp pythonscript/cpython/libpython3.6dm.so.1.0 godot/bin
