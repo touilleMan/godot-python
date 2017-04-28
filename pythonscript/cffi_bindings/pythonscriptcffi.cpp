@@ -431,9 +431,9 @@ static void (*_cffi_call_python_org)(struct _cffi_externpy_s *, char *);
 "    res_path = ffi.string(res_path)\n" \
 "    data_path = ffi.string(data_path)\n" \
 "\n" \
-"    # TODO: handle argv\n" \
 "    import sys\n" \
-"    sys.argv = ['godot']\n" \
+"    from godot.bindings import OS\n" \
+"    sys.argv = [\"godot\"] + OS.get_cmdline_args()\n" \
 "\n" \
 "    for p in pythonpath.split(';'):\n" \
 "        if p.startswith(\"res://\"):\n" \

@@ -7,9 +7,9 @@ def pybind_init_sys_path_and_argv(pythonpath, res_path, data_path):
     res_path = ffi.string(res_path)
     data_path = ffi.string(data_path)
 
-    # TODO: handle argv
     import sys
-    sys.argv = ['godot']
+    from godot.bindings import OS
+    sys.argv = ["godot"] + OS.get_cmdline_args()
 
     for p in pythonpath.split(';'):
         if p.startswith("res://"):
