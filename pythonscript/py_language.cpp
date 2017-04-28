@@ -7,14 +7,6 @@
 #include "py_language.h"
 #include "py_script.h"
 #include "pythonscript.h"
-#include "static_bindings.h"
-// #include "bindings/dynamic_binder.h"
-
-/************* SCRIPT LANGUAGE **************/
-/************* SCRIPT LANGUAGE **************/
-/************* SCRIPT LANGUAGE **************/
-/************* SCRIPT LANGUAGE **************/
-/************* SCRIPT LANGUAGE **************/
 
 // TODO: Allocate this dynamically ?
 PyLanguage *PyLanguage::singleton = NULL;
@@ -70,7 +62,6 @@ void PyLanguage::init() {
 		ERR_PRINT("Couldn't initialize Python interpreter or CFFI bindings.");
 		ERR_FAIL();
 	}
-	// bindings::init();
 
 	// TODO: think where to keep python standard lib ?
 	// Py_SetPythonHome(globals->get("python_script/home"));

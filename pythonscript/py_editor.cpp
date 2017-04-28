@@ -1,8 +1,8 @@
-// Godot imports
-#include "core/os/file_access.h"
 // Pythonscript imports
 #include "py_language.h"
 #include "py_script.h"
+// Godot imports
+#include "core/os/file_access.h"
 
 /* EDITOR FUNCTIONS */
 

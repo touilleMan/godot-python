@@ -1,6 +1,12 @@
 #ifndef PYTHONSCRIPT_PY_INSTANCE_H
 #define PYTHONSCRIPT_PY_INSTANCE_H
 
+// Pythonscript imports
+#include "pythonscript.h"
+// Godot imports
+#include "core/script_language.h"
+
+
 class PyScript;
 
 /**
