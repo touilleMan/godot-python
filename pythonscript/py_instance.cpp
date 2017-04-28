@@ -11,14 +11,14 @@ bool PyInstance::set(const StringName &p_name, const Variant &p_value) {
 	DEBUG_TRACE_METHOD();
 
 	const wchar_t *propname = String(p_name).c_str();
-	return pybind_set_prop(this->_py_obj2, propname, (const godot_variant *)&p_value);
+	return pybind_set_prop(this->_py_obj, propname, (const godot_variant *)&p_value);
 }
 
 bool PyInstance::get(const StringName &p_name, Variant &r_ret) const {
 	DEBUG_TRACE_METHOD();
 
 	const wchar_t *propname = String(p_name).c_str();
-	return pybind_get_prop(this->_py_obj2, propname, (godot_variant *)&r_ret);
+	return pybind_get_prop(this->_py_obj, propname, (godot_variant *)&r_ret);
 }
 
 Ref<Script> PyInstance::get_script() const {
@@ -38,7 +38,7 @@ Variant::Type PyInstance::get_property_type(const StringName &p_name, bool *r_is
 
 	const wchar_t *propname = String(p_name).c_str();
 	Variant::Type prop_type;
-	const bool is_valid = pybind_get_prop_type(this->_py_obj2, propname, (int *)&prop_type);
+	const bool is_valid = pybind_get_prop_type(this->_py_obj, propname, (int *)&prop_type);
 	if (r_is_valid) {
 		*r_is_valid = is_valid;
 	}
@@ -230,7 +230,7 @@ Variant PyInstance::call(const StringName &p_method, const Variant **p_args, int
 	// Instead of passing C++ Variant::CallError object through cffi, we compress
 	// it arguments into a single int, yeah this is a hack ;-)
 	int error = 0;
-	pybind_call_meth(this->_py_obj2, String(p_method).c_str(), (void **)p_args, p_argcount, &ret, &error);
+	pybind_call_meth(this->_py_obj, String(p_method).c_str(), (void **)p_args, p_argcount, &ret, &error);
 	// TODO handle argument/type attributes
 	r_error.error = (Variant::CallError::Error)(error & 0xFF);
 	if (error) {
@@ -377,8 +377,8 @@ bool PyInstance::init(PyScript *p_script, Object *p_owner) {
 	this->_owner = p_owner;
 	this->_owner_variant = Variant(p_owner);
 	this->_script = Ref<PyScript>(p_script);
-	this->_py_obj2 = pybind_wrap_gdobj_with_class(p_script->get_py_exposed_class(), p_owner);
-	if (this->_py_obj2 == nullptr) {
+	this->_py_obj = pybind_wrap_gdobj_with_class(p_script->get_py_exposed_class(), p_owner);
+	if (this->_py_obj == nullptr) {
 		ERR_FAIL_V(false);
 	}
 	p_owner->set_script_instance(this);
@@ -387,5 +387,5 @@ bool PyInstance::init(PyScript *p_script, Object *p_owner) {
 
 PyInstance::~PyInstance() {
 	DEBUG_TRACE_METHOD();
-	pybind_release_instance(this->_py_obj2);
+	pybind_release_instance(this->_py_obj);
 }

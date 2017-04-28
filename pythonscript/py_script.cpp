@@ -23,10 +23,10 @@ void PyScript::_placeholder_erased(PlaceHolderScriptInstance *p_placeholder) {
 #endif
 
 bool PyScript::can_instance() const {
-	DEBUG_TRACE_METHOD_ARGS((this->valid && this->_py_exposed_class2 ? " true" : " false"));
+	DEBUG_TRACE_METHOD_ARGS((this->valid && this->_py_exposed_class ? " true" : " false"));
 	// TODO: think about it...
 	// Only script file defining an exposed class can be instanciated
-	return this->valid && this->_py_exposed_class2;
+	return this->valid && this->_py_exposed_class;
 	// return valid; //script can instance
 	// return this->valid || (!this->tool && !ScriptServer::is_scripting_enabled());
 }
@@ -57,12 +57,12 @@ void PyScript::update_exports() {
 		//update placeholders if any
 		Map<StringName, Variant> propdefvalues;
 		List<PropertyInfo> propinfos;
-		const String *props = (const String *)pybind_get_prop_list(this->_py_exposed_class2);
+		const String *props = (const String *)pybind_get_prop_list(this->_py_exposed_class);
 		for (int i = 0; props[i] != ""; ++i) {
 			const String propname = props[i];
-			pybind_get_prop_default_value(this->_py_exposed_class2, propname.c_str(), (godot_variant *)&propdefvalues[propname]);
+			pybind_get_prop_default_value(this->_py_exposed_class, propname.c_str(), (godot_variant *)&propdefvalues[propname]);
 			pybind_prop_info raw_info;
-			pybind_get_prop_info(this->_py_exposed_class2, propname.c_str(), &raw_info);
+			pybind_get_prop_info(this->_py_exposed_class, propname.c_str(), &raw_info);
 			PropertyInfo info;
 			info.type = (Variant::Type)raw_info.type;
 			info.name = propname;
@@ -168,18 +168,8 @@ Error PyScript::reload(bool p_keep_state) {
 	// Retrieve the module path in python format from the resource path
 	const String module_path = _resource_to_py_module_path(this->path);
 	ERR_FAIL_COND_V(!module_path.length(), ERR_FILE_BAD_PATH);
-	this->_py_exposed_class2 = pybind_load_exposed_class_per_module(module_path.c_str());
+	this->_py_exposed_class = pybind_load_exposed_class_per_module(module_path.c_str());
 
-// pybind_load_module(module_path.c_str(), &this->_py_module2, &this->_py_exposed_class2);
-#if 0
-    try {
-        this->_py_module = py::module::import(module_path.utf8().get_data());
-        this->_py_exposed_class = PyLanguage::get_singleton()->get_py_exposed_class_from_module(this->_py_module);
-    } catch(const py::error_already_set &e) {
-        ERR_PRINT(e.what());
-        ERR_FAIL_V(ERR_COMPILATION_FAILED);
-    }
-#endif
 	this->valid = true;
 
 // mp_execute_as_module(this->sources)
@@ -330,7 +320,7 @@ bool PyScript::get_property_default_value(const StringName &p_property, Variant 
 
 #ifdef TOOLS_ENABLED
 	const wchar_t *propname = String(p_property).c_str();
-	return pybind_get_prop_default_value(this->_py_exposed_class2, propname, (godot_variant *)&r_value);
+	return pybind_get_prop_default_value(this->_py_exposed_class, propname, (godot_variant *)&r_value);
 
 //     //for (const Map<StringName,Variant>::Element *I=member_default_values.front();I;I=I->next()) {
 //     //  print_line("\t"+String(String(I->key())+":"+String(I->get())));

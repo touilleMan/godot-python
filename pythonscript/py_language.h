@@ -19,8 +19,6 @@ class PyLanguage : public ScriptLanguage {
 	Mutex *lock;
 	static PyLanguage *singleton;
 	SelfList<PyScript>::List script_list;
-	py::module _py_godot_module;
-	char *_mp_heap;
 
 public:
 	String get_name() const;

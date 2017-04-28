@@ -20,8 +20,7 @@ private:
 	Ref<PyScript> _script;
 	Object *_owner;
 	Variant _owner_variant;
-	py::object _py_obj;
-	void *_py_obj2; // cffi handle
+	cffi_handle _py_obj;
 
 public:
 	_FORCE_INLINE_ Object *get_owner() { return this->_owner; }

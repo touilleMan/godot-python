@@ -16,38 +16,6 @@ String PyLanguage::get_name() const {
 	return "Python";
 }
 
-void _init_sys_path_and_argv(String path) {
-	String resource_path = GlobalConfig::get_singleton()->get_resource_path();
-	String data_dir = OS::get_singleton()->get_data_dir();
-
-	// Init sys.path list
-	auto sys = py::module::import("sys");
-	auto pathes = path.split(";");
-	for (int i = 0; i < pathes.size(); ++i) {
-		auto curr_path = pathes[i];
-		if (curr_path.begins_with("res://")) {
-			// Keep on slash to make the path
-			curr_path = curr_path.replace("res:/", resource_path);
-		} else if (curr_path.begins_with("user://")) {
-			if (data_dir != "") {
-				// Keep on slash to make the path
-				curr_path = curr_path.replace("user:/", data_dir);
-			}
-		}
-		// TODO: should we shadow default modules ?
-		// sys.attr("path").attr("append")(curr_path.utf8().get_data());
-		sys.attr("path").attr("insert")(0, curr_path.utf8().get_data());
-	}
-	py::object scope = py::module::import("__main__").attr("__dict__");
-	py::eval<py::eval_statements>("import sys\n"
-								  "print('PYTHON_PATH:', sys.path)\n",
-			scope);
-
-	// Init sys.argv
-	sys.attr("argv") = py::list();
-	sys.attr("argv").attr("append")(L"");
-}
-
 void PyLanguage::init() {
 	DEBUG_TRACE_METHOD();
 	// Register configuration
@@ -58,19 +26,25 @@ void PyLanguage::init() {
 	wchar_t name[6] = L"godot";
 	Py_SetProgramName(name); /* optional but recommended */
 	Py_Initialize();
-	if (pybind_init()) {
-		ERR_PRINT("Couldn't initialize Python interpreter or CFFI bindings.");
-		ERR_FAIL();
-	}
+	// if (pybind_init()) {
+	// 	ERR_PRINT("Couldn't initialize Python interpreter or CFFI bindings.");
+	// 	ERR_FAIL();
+	// }
 
-	// TODO: think where to keep python standard lib ?
-	// Py_SetPythonHome(globals->get("python_script/home"));
-	try {
-		_init_sys_path_and_argv(globals->get("python_script/path"));
-	} catch (const py::error_already_set &e) {
-		ERR_PRINT(e.what());
-		ERR_FAIL();
-	}
+    if (!pybind_init_sys_path_and_argv(
+            String(globals->get("python_script/path")).c_str(),
+            GlobalConfig::get_singleton()->get_resource_path().c_str(),
+            OS::get_singleton()->get_data_dir().c_str())) {
+        ERR_FAIL()
+    }
+	// // TODO: think where to keep python standard lib ?
+	// // Py_SetPythonHome(globals->get("python_script/home"));
+	// try {
+	// 	_init_sys_path_and_argv(globals->get("python_script/path"));
+	// } catch (const py::error_already_set &e) {
+	// 	ERR_PRINT(e.what());
+	// 	ERR_FAIL();
+	// }
 
 #if 0
     //populate global constants

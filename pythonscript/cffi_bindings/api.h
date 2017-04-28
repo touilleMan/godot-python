@@ -2,8 +2,7 @@
 
 #include "modules/gdnative/godot.h"
 
-int pybind_init(void);
-
+extern godot_bool pybind_init_sys_path_and_argv(const wchar_t *pythonpath, const wchar_t *res_path, const wchar_t *data_path);
 extern void *pybind_load_exposed_class_per_module(const wchar_t *modname);
 extern void py_instance_set_godot_obj(PyObject *py_instance, godot_object *godot_obj);
 extern PyObject *instanciate_binding_from_godot_obj(PyObject *py_cls, godot_object *godot_obj);

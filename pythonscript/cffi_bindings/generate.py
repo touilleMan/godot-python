@@ -48,10 +48,6 @@ enum MethodFlags {
     METHOD_FLAGS_DEFAULT=METHOD_FLAG_NORMAL,
 };
 
-CFFI_DLLEXPORT int pybind_init(void) {
-    return cffi_start_python();
-}
-
 typedef struct {
     int type;
     godot_string name;
@@ -79,6 +75,28 @@ embedding_init_code_extra = '\n'.join(embedding_init_code_extra)
 
 ffibuilder.embedding_init_code("""
 from pythonscriptcffi import ffi, lib
+
+
+@ffi.def_extern()
+def pybind_init_sys_path_and_argv(pythonpath, res_path, data_path):
+    pythonpath = ffi.string(pythonpath)
+    res_path = ffi.string(res_path)
+    data_path = ffi.string(data_path)
+
+    # TODO: handle argv
+    import sys
+    sys.argv = ['godot']
+
+    for p in pythonpath.split(';'):
+        if p.startswith("res://"):
+            p = p.replace("res:/", res_path, 1)
+        elif p.startswith("user://"):
+            p = p.replace("user:/", data_path, 1)
+        sys.path.append(p)
+
+    print('PYTHON_PATH: %s, argv: %s' % (sys.path, sys.argv))
+    return True
+
 
 # Protect python objects passed to C from beeing garbage collected
 class ProtectFromGC:
@@ -354,7 +372,8 @@ ffibuilder.embedding_api(r"""
     typedef void godot_object;
     int do_stuff(int, int);
 
-    PyObject *pybind_module_from_name(wchar_t *name);
+    godot_bool pybind_init_sys_path_and_argv(const wchar_t *pythonpath, const wchar_t *res_path, const wchar_t *data_path);
+    PyObject *pybind_module_from_name(const wchar_t *name);
     PyObject *instanciate_binding_from_godot_obj(PyObject *py_cls, godot_object *godot_obj);
     void py_instance_set_godot_obj(PyObject *py_instance, godot_object *godot_obj);
     PyObject *variants_to_pyobjs(void **args, int argcount);
