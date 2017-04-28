@@ -9,12 +9,7 @@ typedef void *cffi_handle;
 
 extern godot_bool pybind_init_sys_path_and_argv(const wchar_t *pythonpath, const wchar_t *res_path, const wchar_t *data_path);
 extern void *pybind_load_exposed_class_per_module(const wchar_t *modname);
-extern void py_instance_set_godot_obj(cffi_handle py_instance, godot_object *godot_obj);
-extern cffi_handle instanciate_binding_from_godot_obj(cffi_handle py_cls, godot_object *godot_obj);
-extern cffi_handle variants_to_pyobjs(void *args, int argcount);
-extern cffi_handle variant_to_pyobj2(void *arg);
-extern cffi_handle pyobj_to_variant2(cffi_handle arg);
-extern godot_variant *call_with_variants(cffi_handle func, const godot_variant **args, int argcount);
+
 extern void *pybind_instanciate_from_classname(const wchar_t *classname);
 extern void *pybind_wrap_gdobj_with_class(void *cls_handle, void *owner);
 extern void pybind_release_instance(void *handle);

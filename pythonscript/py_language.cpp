@@ -22,11 +22,6 @@ void PyLanguage::init() {
 	auto globals = GlobalConfig::get_singleton();
 	GLOBAL_DEF("python_script/path", "res://;res://lib");
 
-	// Setup Python interpreter
-	// wchar_t name[6] = L"godot";
-	// Py_SetProgramName(name); /* optional but recommended */
-	// Py_Initialize();
-
 	if (!pybind_init_sys_path_and_argv(
 				String(globals->get("python_script/path")).c_str(),
 				GlobalConfig::get_singleton()->get_resource_path().c_str(),
