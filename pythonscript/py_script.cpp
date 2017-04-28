@@ -169,6 +169,10 @@ Error PyScript::reload(bool p_keep_state) {
 	const String module_path = _resource_to_py_module_path(this->path);
 	ERR_FAIL_COND_V(!module_path.length(), ERR_FILE_BAD_PATH);
 	this->_py_exposed_class = pybind_load_exposed_class_per_module(module_path.c_str());
+	if (!this->_py_exposed_class) {
+		// Python should have printed an exception explaining the error
+		ERR_FAIL_V(ERR_PARSE_ERROR);
+	}
 
 	this->valid = true;
 
