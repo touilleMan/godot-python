@@ -6,7 +6,6 @@
 // Godot imports
 #include "core/script_language.h"
 
-
 class PyScript;
 
 /**

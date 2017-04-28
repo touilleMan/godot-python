@@ -1,10 +1,10 @@
 // Godot imports
 #include "core/os/file_access.h"
 // Pythonscript imports
+#include "cffi_bindings/api.h"
 #include "py_instance.h"
 #include "py_script.h"
 #include "pythonscript.h"
-#include "cffi_bindings/api.h"
 
 void PyScript::_bind_methods() {
 	DEBUG_TRACE();

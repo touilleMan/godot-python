@@ -23,28 +23,16 @@ void PyLanguage::init() {
 	GLOBAL_DEF("python_script/path", "res://;res://lib");
 
 	// Setup Python interpreter
-	wchar_t name[6] = L"godot";
-	Py_SetProgramName(name); /* optional but recommended */
-	Py_Initialize();
-	// if (pybind_init()) {
-	// 	ERR_PRINT("Couldn't initialize Python interpreter or CFFI bindings.");
-	// 	ERR_FAIL();
-	// }
+	// wchar_t name[6] = L"godot";
+	// Py_SetProgramName(name); /* optional but recommended */
+	// Py_Initialize();
 
-    if (!pybind_init_sys_path_and_argv(
-            String(globals->get("python_script/path")).c_str(),
-            GlobalConfig::get_singleton()->get_resource_path().c_str(),
-            OS::get_singleton()->get_data_dir().c_str())) {
-        ERR_FAIL()
-    }
-	// // TODO: think where to keep python standard lib ?
-	// // Py_SetPythonHome(globals->get("python_script/home"));
-	// try {
-	// 	_init_sys_path_and_argv(globals->get("python_script/path"));
-	// } catch (const py::error_already_set &e) {
-	// 	ERR_PRINT(e.what());
-	// 	ERR_FAIL();
-	// }
+	if (!pybind_init_sys_path_and_argv(
+				String(globals->get("python_script/path")).c_str(),
+				GlobalConfig::get_singleton()->get_resource_path().c_str(),
+				OS::get_singleton()->get_data_dir().c_str())) {
+		ERR_FAIL()
+	}
 
 #if 0
     //populate global constants
