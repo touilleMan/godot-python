@@ -1,5 +1,12 @@
 import cffi
 import os
+import argparse
+
+
+parser = argparse.ArgumentParser(description='Generate CFFI binding .cpp file.')
+parser.add_argument('--dev-dyn', '-d', action='store_true',
+                    help='Load at runtime *.inc.py files instead of embedding them in the .cpp')
+args = parser.parse_args()
 
 
 BASEDIR = os.path.dirname(os.path.abspath(__file__))
@@ -40,19 +47,35 @@ enum MethodFlags {
 
 # Python source code embedded and run at init time
 # (including python functions exposed to C through `@ffi.def_extern()`)
-embedding_init_code = []
-for to_include in (
-        'embedding_init_code.inc.py',
-        'mod_godot.inc.py',
-        'builtin_vector2.inc.py',
-        'builtin_vector3.inc.py',
-        'builtin_basis.inc.py',
-        'builtin_quat.inc.py',
-        'tools.inc.py',
-        'mod_godot_bindings.inc.py',):
-    with open('%s/%s' % (BASEDIR, to_include), 'r') as fd:
-        embedding_init_code.append(fd.read())
-ffibuilder.embedding_init_code('\n'.join(embedding_init_code))
+EMBEDDING_INC_SOURCES = (
+    'embedding_init_code.inc.py',
+    'mod_godot.inc.py',
+    'builtin_node_path.inc.py',
+    'builtin_vector2.inc.py',
+    'builtin_vector3.inc.py',
+    'builtin_basis.inc.py',
+    'builtin_quat.inc.py',
+    'tools.inc.py',
+    'mod_godot_bindings.inc.py'
+)
+# Hack not to have to compile everytime we modify an `*.inc.py` file
+if args.dev_dyn:
+    embedding_init_code = """
+code = []
+for to_include in {sources!r}:
+    with open('%s/%s' % ({basedir!r}, to_include), 'r') as fd:
+        code.append(fd.read())
+exec('\\n'.join(code))
+""".format(sources=EMBEDDING_INC_SOURCES, basedir=BASEDIR)
+else:
+    embedding_init_code = []
+    for to_include in EMBEDDING_INC_SOURCES:
+        with open('%s/%s' % (BASEDIR, to_include), 'r') as fd:
+            embedding_init_code.append(fd.read())
+    embedding_init_code = '\n'.join(embedding_init_code)
+
+ffibuilder.embedding_init_code(embedding_init_code)
+
 
 
 # C API exposed to Python
