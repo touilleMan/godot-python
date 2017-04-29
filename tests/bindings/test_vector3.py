@@ -58,7 +58,8 @@ class TestVector3:
         ['reflect', Vector3, (Vector3(), )],
         ['rotated', Vector3, (Vector3(), 0.5)],
         ['slide', Vector3, (Vector3(), )],
-        ['snapped', Vector3, (0.5, )]])
+        ['snapped', Vector3, (0.5, )],
+    ], ids=lambda x: x[0])
     def test_methods(self, args):
         v = Vector3()
         # Don't test methods' validity but bindings one
@@ -72,7 +73,8 @@ class TestVector3:
     @pytest.mark.parametrize('args', [
         ('x', float),
         ('y', float),
-        ('z', float)])
+        ('z', float),
+    ], ids=lambda x: x[0])
     def test_properties(self, args):
         v = Vector3()
         field, ret_type = args
@@ -87,7 +89,8 @@ class TestVector3:
     @pytest.mark.parametrize('args', [
         ('x', 'NaN'),
         ('y', 'NaN'),
-        ('z', 'NaN')])
+        ('z', 'NaN'),
+    ], ids=lambda x: x[0])
     def test_bad_properties(self, args):
         v = Vector3()
         field, bad_value = args
@@ -97,7 +100,8 @@ class TestVector3:
     @pytest.mark.parametrize('args', [
         ('AXIS_X', int),
         ('AXIS_Y', int),
-        ('AXIS_Z', int)])
+        ('AXIS_Z', int)
+    ], ids=lambda x: x[0])
     def test_contants(self, args):
         v = Vector3()
         field, ret_type = args

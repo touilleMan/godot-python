@@ -197,3 +197,12 @@ def pybind_get_prop_info(handle, propname, r_prop_info):
 def pybind_get_prop_list(handle):
     cls_or_instance = ffi.from_handle(handle)
     return cls_or_instance._exported_raw_list
+
+
+@ffi.def_extern()
+def pybind_notification(handle, notification):
+    instance = ffi.from_handle(handle)
+    try:
+        instance._notification(notification)
+    except NotImplementedError:
+        pass

@@ -304,6 +304,7 @@ void PyInstance::call_multilevel_reversed(const StringName& p_method,const Varia
 void PyInstance::notification(int p_notification) {
 	DEBUG_TRACE_METHOD();
 	// TODO
+    pybind_notification(this->_py_obj, p_notification);
 
 	// //notification is not virutal, it gets called at ALL levels just like in C.
 	// Variant value=p_notification;

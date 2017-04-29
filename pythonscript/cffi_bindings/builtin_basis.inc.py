@@ -57,7 +57,7 @@ class Basis:
     def __repr__(self):
         gd_repr = lib.godot_basis_to_string(self._gd_ptr)
         raw_str = lib.godot_string_unicode_str(ffi.addressof(gd_repr))
-        return "<Basis%s>" % ffi.string(raw_str)
+        return "<%s%s>" % (type(self).__name__, ffi.string(raw_str))
 
     def __eq__(self, other):
         return (isinstance(other, Basis) and other.x == self.x and

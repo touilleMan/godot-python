@@ -344,7 +344,7 @@ GD_PY_TYPES = (
     (lib.GODOT_VARIANT_TYPE_TRANSFORM, type(None)),  # TODO
     (lib.GODOT_VARIANT_TYPE_COLOR, type(None)),  # TODO
     (lib.GODOT_VARIANT_TYPE_IMAGE, type(None)),  # TODO
-    (lib.GODOT_VARIANT_TYPE_NODE_PATH, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_NODE_PATH, NodePath),
     (lib.GODOT_VARIANT_TYPE_RID, type(None)),  # TODO
     (lib.GODOT_VARIANT_TYPE_OBJECT, type(None)),  # TODO
     (lib.GODOT_VARIANT_TYPE_INPUT_EVENT, type(None)),  # TODO

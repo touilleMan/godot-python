@@ -59,7 +59,8 @@ class TestVector2:
         ['rotated', Vector2, (0.5, )],
         ['slide', Vector2, (Vector2(), )],
         ['snapped', Vector2, (Vector2(), )],
-        ['tangent', Vector2, ()]])
+        ['tangent', Vector2, ()]
+    ], ids=lambda x: x[0])
     def test_methods(self, args):
         v = Vector2()
         # Don't test methods' validity but bindings one
@@ -74,7 +75,8 @@ class TestVector2:
         ('height', float),
         ('width', float),
         ('x', float),
-        ('y', float)])
+        ('y', float),
+    ], ids=lambda x: x[0])
     def test_properties(self, args):
         v = Vector2()
         field, ret_type = args
@@ -90,7 +92,8 @@ class TestVector2:
         ('height', 'NaN'),
         ('width', 'NaN'),
         ('x', 'NaN'),
-        ('y', 'NaN')])
+        ('y', 'NaN')
+    ], ids=lambda x: x[0])
     def test_bad_properties(self, args):
         v = Vector2()
         field, bad_value = args

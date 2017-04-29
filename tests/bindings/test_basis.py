@@ -83,7 +83,8 @@ class TestBasis:
         ['tdotz', float, (Vector3(),)],
         ['transposed', Basis, ()],
         ['xform', Vector3, (Vector3(),)],
-        ['xform_inv', Vector3, (Vector3(),)]])
+        ['xform_inv', Vector3, (Vector3(),)],
+    ], ids=lambda x: x[0])
     def test_methods(self, args):
         v = Basis()
         # Don't test methods' validity but bindings one
@@ -97,7 +98,8 @@ class TestBasis:
     @pytest.mark.parametrize('args', [
         ('x', Vector3),
         ('y', Vector3),
-        ('z', Vector3)])
+        ('z', Vector3),
+    ], ids=lambda x: x[0])
     def test_properties(self, args):
         v = Basis()
         field, ret_type = args
@@ -116,7 +118,7 @@ class TestBasis:
         ('x', 1),
         ('y', 2),
         ('z', 3),
-        ])
+    ], ids=lambda x: x[0])
     def test_bad_properties(self, args):
         v = Basis()
         field, bad_value = args
@@ -126,7 +128,8 @@ class TestBasis:
     @pytest.mark.parametrize('args', [
         ('AXIS_X', int),
         ('AXIS_Y', int),
-        ('AXIS_Z', int)])
+        ('AXIS_Z', int),
+    ], ids=lambda x: x[0])
     def test_contants(self, args):
         v = Basis()
         field, ret_type = args

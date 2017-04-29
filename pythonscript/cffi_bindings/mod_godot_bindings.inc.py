@@ -271,9 +271,30 @@ def build_global(name, clsname):
 def get_builtins():
     return {
         'Vector2': Vector2,
+        # 'Rect2': Rect2,
         'Vector3': Vector3,
-        'Basis': Basis,
+        # 'Transform2d': Transform2d,
+        # 'Plane': Plane,
         'Quat': Quat,
+        # 'Rect3': Rect3,
+        'Basis': Basis,
+        # 'Transform': Transform,
+        # 'Color': Color,
+        # 'Image': Image,
+        'NodePath': NodePath,
+        # 'Rid': Rid,
+        # 'Object': Object,
+        # 'InputEvent': InputEvent,
+        # 'Dictionary': Dictionary,
+        # 'Array': Array,
+        # 'PoolByteArray': PoolByteArray,
+        # 'PoolIntArray': PoolIntArray,
+        # 'PoolRealArray': PoolRealArray,
+        # 'PoolStringArray': PoolStringArray,
+        # 'PoolVector2Array': PoolVector2Array,
+        # 'PoolVector3Array': PoolVector3Array,
+        # 'PoolColorArray': PoolColorArray,
+
     }
 
 
