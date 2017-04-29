@@ -51,6 +51,7 @@ EMBEDDING_INC_SOURCES = (
     'embedding_init_code.inc.py',
     'mod_godot.inc.py',
     'builtin_node_path.inc.py',
+    'builtin_rect2.inc.py',
     'builtin_vector2.inc.py',
     'builtin_vector3.inc.py',
     'builtin_basis.inc.py',

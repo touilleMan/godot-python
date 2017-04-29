@@ -17,7 +17,7 @@ class TestVector2:
         v = Vector2(1, 2)
         assert repr(v) == '<Vector2(x=1.0, y=2.0)>'
 
-    def test_instanciate(self):
+    def test_instantiate(self):
         # Can build it with int or float or nothing
         msg_tmpl = "%s vs (expected) %s (args=%s)"
         for args, expected_x, expected_y in (

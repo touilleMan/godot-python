@@ -65,12 +65,23 @@ typedef struct godot_rect2
 {
   uint8_t _dont_touch_that[16];
 } godot_rect2;
-void godot_rect2_new(godot_rect2 *p_rect);
-void godot_rect2_new_with_pos_and_size(godot_rect2 *p_rect, const godot_vector2 *p_pos, const godot_vector2 *p_size);
-godot_vector2 *godot_rect2_get_pos(godot_rect2 *p_rect);
-void godot_rect2_set_pos(godot_rect2 *p_rect, const godot_vector2 *p_pos);
-godot_vector2 *godot_rect2_get_size(godot_rect2 *p_rect);
-void godot_rect2_set_size(godot_rect2 *p_rect, const godot_vector2 *p_size);
+godot_rect2 godot_rect2_new(const godot_real p_x, const godot_real p_y, const godot_real p_width, const godot_real p_height);
+godot_rect2 godot_rect2_new_with_pos_and_size(const godot_vector2 p_pos, const godot_vector2 p_size);
+godot_bool godot_rect2_equals(const godot_rect2 *p_a, const godot_rect2 *p_b);
+godot_string godot_rect2_to_string(const godot_rect2 *p_v);
+godot_vector2 godot_rect2_get_pos(const godot_rect2 *p_v);
+void godot_rect2_set_pos(godot_rect2 *p_v, const godot_vector2 p_pos);
+godot_vector2 godot_rect2_get_size(const godot_rect2 *p_v);
+void godot_rect2_set_size(godot_rect2 *p_v, const godot_vector2 p_size);
+godot_rect2 godot_rect2_clip(const godot_rect2 *p_v, const godot_rect2 p_b);
+godot_bool godot_rect2_encloses(const godot_rect2 *p_v, const godot_rect2 p_b);
+godot_rect2 godot_rect2_expand(const godot_rect2 *p_v, const godot_vector2 p_to);
+godot_real godot_rect2_get_area(const godot_rect2 *p_v);
+godot_rect2 godot_rect2_grow(const godot_rect2 *p_v, const godot_real p_by);
+bool godot_rect2_has_no_area(const godot_rect2 *p_v);
+bool godot_rect2_has_point(const godot_rect2 *p_v, const godot_vector2 p_point);
+bool godot_rect2_intersects(const godot_rect2 *p_v, const godot_rect2 p_b);
+godot_rect2 godot_rect2_merge(const godot_rect2 *p_v, const godot_rect2 p_b);
 typedef struct godot_vector3
 {
   uint8_t _dont_touch_that[12];

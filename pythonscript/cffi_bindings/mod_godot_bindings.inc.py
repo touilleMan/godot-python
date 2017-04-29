@@ -271,7 +271,7 @@ def build_global(name, clsname):
 def get_builtins():
     return {
         'Vector2': Vector2,
-        # 'Rect2': Rect2,
+        'Rect2': Rect2,
         'Vector3': Vector3,
         # 'Transform2d': Transform2d,
         # 'Plane': Plane,
@@ -294,7 +294,6 @@ def get_builtins():
         # 'PoolVector2Array': PoolVector2Array,
         # 'PoolVector3Array': PoolVector3Array,
         # 'PoolColorArray': PoolColorArray,
-
     }
 
 
