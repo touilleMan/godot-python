@@ -7,9 +7,28 @@ __exposed_classes = {}
 __exposed_classes_per_module = {}
 
 
+# Expose RPC modes can be used both as a decorator and a value to pass
+# to ExportedField ;-)
+class RPCMode:
+    def __init__(self, mod, modname):
+        self.mod = mod
+        self.modname = modname
+
+    def __call__(decorated):
+        if isinstance(decorated, ExportedField):
+            decorated.rpc = self.mod
+        else:
+            decorated.__rpc = self.mod
+
+    def __repr__(self):
+        return '<%s(%s)>' % (type(self).__name__, self.modname)
+
+
 class ExportedField:
 
-    def __init__(self, type, default=None, name='', hint=0, usage=lib.GODOT_PROPERTY_USAGE_DEFAULT, hint_string=''):
+    def __init__(self, type, default=None, name='', hint=0,
+                 usage=lib.GODOT_PROPERTY_USAGE_DEFAULT, hint_string='',
+                 rpc=lib.GODOT_METHOD_RPC_MODE_DISABLED):
         self.property = None
 
         self.type = type
@@ -18,6 +37,10 @@ class ExportedField:
         self.hint = hint
         self.usage = usage
         self.hint_string = hint_string
+        if isinstance(rpc, RPCMode):
+            self.rpc = rpc.mod
+        else:
+            self.rpc = rpc
 
         self.gd_hint = self.hint
         self.gd_usage = self.usage
@@ -40,11 +63,16 @@ class ExportedField:
         # This object is used as a decorator
         if not callable(decorated) and not isinstance(decorated, builtins.property):
             raise RuntimeError("@export should decorate function or property.")
-        # Next time this object is called, call the decorated instead
+        # It's possible decorated has already been passed through a rpc decorator
+        rpc = getattr(decorated, '__rpc', None)
+        if rpc:
+            self.rpc = rpc
         self.property = decorated
         return self
 
     def setter(self, setfunc):
+        if not self.property:
+            raise RuntimeError("Cannot use setter attribute before defining the getter !")
         self.property = self.property.setter(setfunc)
         return self
 
@@ -56,7 +84,7 @@ def exposed(cls=None, tool=False):
         print("Exposing %s.%s Python class to Godot." % (cls.__module__, cls.__name__))
         assert cls.__name__ not in __exposed_classes
         assert cls.__module__ not in __exposed_classes_per_module
-        cls._tool = tool
+        cls.__tool = tool
         __exposed_classes[cls.__name__] = cls
         __exposed_classes_per_module[cls.__module__] = cls
         return cls
@@ -86,5 +114,9 @@ module.export = export
 module.exposed = exposed
 module.get_exposed_class_per_module = get_exposed_class_per_module
 module.get_exposed_class_per_name = get_exposed_class_per_name
+module.rpcmaster = RPCMode(lib.GODOT_METHOD_RPC_MODE_MASTER, 'master')
+module.rpcslave = RPCMode(lib.GODOT_METHOD_RPC_MODE_SLAVE, 'slave')
+module.rpcremote = RPCMode(lib.GODOT_METHOD_RPC_MODE_REMOTE, 'remote')
+module.rpcsync = RPCMode(lib.GODOT_METHOD_RPC_MODE_SYNC, 'sync')
 
 sys.modules["godot"] = module

@@ -42,8 +42,6 @@ Ref<Script> PyScript::get_base_script() const {
 
 StringName PyScript::get_instance_base_type() const {
 	DEBUG_TRACE_METHOD();
-	// if (this->native.is_valid())
-	//     return this->native->get_name();
 	if (this->base.is_valid())
 		return this->base->get_instance_base_type();
 	return StringName();
@@ -51,8 +49,6 @@ StringName PyScript::get_instance_base_type() const {
 
 void PyScript::update_exports() {
 	if (/*changed &&*/ this->placeholders.size()) { //hm :(
-
-		//print_line("updating placeholders for "+get_path());
 
 		//update placeholders if any
 		Map<StringName, Variant> propdefvalues;
@@ -173,7 +169,7 @@ Error PyScript::reload(bool p_keep_state) {
 		// Python should have printed an exception explaining the error
 		ERR_FAIL_V(ERR_PARSE_ERROR);
 	}
-
+	this->tool = pybind_is_tool(this->_py_exposed_class);
 	this->valid = true;
 
 // mp_execute_as_module(this->sources)
@@ -236,87 +232,59 @@ struct _PyScriptMemberSort {
 
 void PyScript::get_script_method_list(List<MethodInfo> *p_list) const {
 	DEBUG_TRACE_METHOD();
-	// TODO
-	return;
-
-	// for (const Map<StringName,GDFunction*>::Element *E=member_functions.front();E;E=E->next()) {
-	//     MethodInfo mi;
-	//     mi.name=E->key();
-	//     for(int i=0;i<E->get()->get_argument_count();i++) {
-	//         PropertyInfo arg;
-	//         arg.type=Variant::NIL; //variant
-	//         arg.name=E->get()->get_argument_name(i);
-	//         mi.arguments.push_back(arg);
-	//     }
-
-	//     mi.return_val.name="Variant";
-	//     p_list->push_back(mi);
-	// }
+    // TODO: Simple&hacky implementation...
+    const godot_string *prop_names = pybind_get_meth_list(this->_py_exposed_class);
+    int i = 0;
+    const String *pname = (String*)&prop_names[i];
+    while (*pname != "") {
+        MethodInfo mi;
+        mi.name = *pname;
+        mi.flags |= METHOD_FLAG_FROM_SCRIPT;  // TODO: copied from gdscript, but think about it...
+        int argcount;
+        if (pybind_get_meth_info(this->_py_exposed_class, pname->c_str(), &argcount)) {
+            for (int i = 0; i < argcount; i++) {
+                mi.arguments.push_back(PropertyInfo(Variant::NIL, "arg" + itos(i)));
+            }
+            p_list->push_back(mi);
+        }
+        pname = (String*)&prop_names[++i];
+    }
 }
 
 void PyScript::get_script_property_list(List<PropertyInfo> *p_list) const {
 	DEBUG_TRACE_METHOD();
-	// TODO
-	return;
-
-	// const PyScript *sptr=this;
-	// List<PropertyInfo> props;
-
-	// while(sptr) {
-
-	//     Vector<_PyScriptMemberSort> msort;
-	//     for(Map<StringName,PropertyInfo>::Element *E=sptr->member_info.front();E;E=E->next()) {
-
-	//         _PyScriptMemberSort ms;
-	//         ERR_CONTINUE(!sptr->member_indices.has(E->key()));
-	//         ms.index=sptr->member_indices[E->key()].index;
-	//         ms.name=E->key();
-	//         msort.push_back(ms);
-
-	//     }
-
-	//     msort.sort();
-	//     msort.invert();
-	//     for(int i=0;i<msort.size();i++) {
-
-	//         props.push_front(sptr->member_info[msort[i].name]);
-
-	//     }
-
-	//     sptr = sptr->_base;
-	// }
-
-	// for (List<PropertyInfo>::Element *E=props.front();E;E=E->next()) {
-	//     p_list->push_back(E->get());
-	// }
+    const godot_string *prop_names = pybind_get_prop_list(this->_py_exposed_class);
+    int i = 0;
+    const String *pname = (String*)&prop_names[i];
+    while (*pname != "") {
+        pybind_prop_info prop;
+        pybind_get_prop_info(this->_py_exposed_class, pname->c_str(), &prop);
+        PropertyInfo propinfo((Variant::Type)prop.type, *pname, (PropertyHint)prop.hint, *(String*)&prop.hint_string, prop.usage);
+        p_list->push_back(propinfo);
+        pname = (String*)&prop_names[++i];
+    }
 }
 
 bool PyScript::has_method(const StringName &p_method) const {
 	DEBUG_TRACE_METHOD();
-	// TODO !
-	return false;
-	// return member_functions.has(p_method);
+    const wchar_t *methname = String(p_method).c_str();
+    return pybind_has_meth(this->_py_exposed_class, methname);
 }
 
 MethodInfo PyScript::get_method_info(const StringName &p_method) const {
+    // TODO: Simple&hacky implementation...
 	DEBUG_TRACE_METHOD();
-	// TODO !
-	return MethodInfo();
-	// const Map<StringName,GDFunction*>::Element *E=member_functions.find(p_method);
-	// if (!E)
-	//     return MethodInfo();
-
-	// MethodInfo mi;
-	// mi.name=E->key();
-	// for(int i=0;i<E->get()->get_argument_count();i++) {
-	//     PropertyInfo arg;
-	//     arg.type=Variant::NIL; //variant
-	//     arg.name=E->get()->get_argument_name(i);
-	//     mi.arguments.push_back(arg);
-	// }
-
-	// mi.return_val.name="Variant";
-	// return mi;
+    int argcount;
+    if (!pybind_get_meth_info(this->_py_exposed_class, String(p_method).c_str(), &argcount)) {
+    	return MethodInfo();
+    }
+	MethodInfo mi;
+	mi.name = p_method;
+	for (int i = 0; i < argcount; i++) {
+        mi.arguments.push_back(PropertyInfo(Variant::NIL, "arg" + itos(i)));
+	}
+	mi.return_val.name = "Variant";
+	return mi;
 }
 
 bool PyScript::get_property_default_value(const StringName &p_property, Variant &r_value) const {
@@ -325,19 +293,6 @@ bool PyScript::get_property_default_value(const StringName &p_property, Variant 
 #ifdef TOOLS_ENABLED
 	const wchar_t *propname = String(p_property).c_str();
 	return pybind_get_prop_default_value(this->_py_exposed_class, propname, (godot_variant *)&r_value);
-
-//     //for (const Map<StringName,Variant>::Element *I=member_default_values.front();I;I=I->next()) {
-//     //  print_line("\t"+String(String(I->key())+":"+String(I->get())));
-//     //}
-//     const Map<StringName,Variant>::Element *E=member_default_values_cache.find(p_property);
-//     if (E) {
-//         r_value=E->get();
-//         return true;
-//     }
-
-//     if (base_cache.is_valid()) {
-//         return base_cache->get_property_default_value(p_property,r_value);
-//     }
 #endif
 }
 

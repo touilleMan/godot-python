@@ -1,3 +1,4 @@
+import inspect
 from pythonscriptcffi import ffi, lib
 
 
@@ -195,14 +196,112 @@ def pybind_get_prop_info(handle, propname, r_prop_info):
 
 @ffi.def_extern()
 def pybind_get_prop_list(handle):
+    # Lazily generate the list of exported properties' names
     cls_or_instance = ffi.from_handle(handle)
-    return cls_or_instance._exported_raw_list
+    cls = cls_or_instance if isinstance(cls_or_instance, type) else type(cls_or_instance)
+    # Need to store the cached list with a per-class name to avoid shadowing
+    # from a parent class
+    field = '_%s__exported_raw_list' % cls.__name__
+    raw_list = getattr(cls_or_instance, field, None)
+    exported = getattr(cls, '__exported')
+    if not raw_list:
+        # Build the list of exported fields' names, ready to be access by godot
+        raw_list = ffi.new('godot_string[]', len(exported) + 1)
+        for i, name in enumerate(exported.keys()):
+            lib.godot_string_new_unicode_data(ffi.addressof(raw_list[i]), name, -1)
+        # Last entry is an empty string
+        lib.godot_string_new(ffi.addressof(raw_list[len(exported)]))
+    return raw_list
+
+
+@ffi.def_extern()
+def pybind_get_meth_list(handle):
+    # Lazily generate the list of methods' names
+    cls_or_instance = ffi.from_handle(handle)
+    cls = cls_or_instance if isinstance(cls_or_instance, type) else type(cls_or_instance)
+    # Need to store the cached list with a per-class name to avoid shadowing
+    # from a parent class
+    field = '_%s__meth_raw_list' % cls.__name__
+    raw_list = getattr(cls, field, None)
+    if not raw_list:
+        meths = [k for k in dir(cls) if not k.startswith('__') and callable(getattr(cls, k))]
+        raw_list = ffi.new('godot_string[]', len(meths) + 1)
+        for i, name in enumerate(meths):
+            lib.godot_string_new_unicode_data(ffi.addressof(raw_list[i]), name, -1)
+        # Last entry is an empty string
+        lib.godot_string_new(ffi.addressof(raw_list[len(meths)]))
+        setattr(cls, field, raw_list)
+    return raw_list
+
+
+@ffi.def_extern()
+def pybind_get_meth_info(handle, methname, r_argcount):
+    cls_or_instance = ffi.from_handle(handle)
+    cls = cls_or_instance if isinstance(cls_or_instance, type) else type(cls_or_instance)
+    meth = getattr(cls, ffi.string(methname), None)
+    if not meth:
+        return False
+    spec = inspect.getfullargspec(meth)
+    # Cannot pass keyword only arguments through godot
+    r_argcount[0] = len(spec.args)
+    return True
+
+
+@ffi.def_extern()
+def pybind_has_meth(handle, methname):
+    cls_or_instance = ffi.from_handle(handle)
+    cls = cls_or_instance if isinstance(cls_or_instance, type) else type(cls_or_instance)
+    meth = getattr(cls, ffi.string(methname), None)
+    return callable(meth)
+
+
+@ffi.def_extern()
+def pybind_is_tool(handle):
+    instance = ffi.from_handle(handle)
+    return getattr(instance, '__tool', False)
 
 
 @ffi.def_extern()
 def pybind_notification(handle, notification):
+    # Godot's notification should call all parent `_notification`
+    # methods (better not use `super()._notification` in those methods...)
     instance = ffi.from_handle(handle)
-    try:
-        instance._notification(notification)
-    except NotImplementedError:
-        pass
+    cls = type(instance)
+    # TODO: cache the methods to call ?
+    for parentcls in inspect.getmro(cls):
+        try:
+            parentcls.__dict__['_notification'](instance, notification)
+        except (KeyError, NotImplementedError):
+            pass
+
+
+@ffi.def_extern()
+def pybind_get_rpc_mode(handle, methname):
+    cls_or_instance = ffi.from_handle(handle)
+    cls = cls_or_instance if isinstance(cls_or_instance, type) else type(cls_or_instance)
+    # TODO: it seems if gdstript find a method with RPC_MODE_DISABLED, it tries
+    # to find a parent with rpc enabled...
+    for parentcls in inspect.getmro(cls):
+        try:
+            mode = parentcls.__dict__[ffi.string(methname)].__rpc
+            if mode != lib.GODOT_METHOD_RPC_MODE_DISABLED:
+                return mode
+        except (KeyError, AttributeError):
+            pass
+    return lib.GODOT_METHOD_RPC_MODE_DISABLED
+
+
+@ffi.def_extern()
+def pybind_get_rset_mode(handle, varname):
+    cls_or_instance = ffi.from_handle(handle)
+    cls = cls_or_instance if isinstance(cls_or_instance, type) else type(cls_or_instance)
+    # TODO: it seems if gdstript find a method with RPC_MODE_DISABLED, it tries
+    # to find a parent with rpc enabled...
+    for parentcls in inspect.getmro(cls):
+        try:
+            mode = parentcls._exported[varname].rpc
+            if mode != lib.GODOT_METHOD_RPC_MODE_DISABLED:
+                return mode
+        except (ValueError, KeyError):
+            pass
+    return lib.GODOT_METHOD_RPC_MODE_DISABLED

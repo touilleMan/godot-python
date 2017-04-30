@@ -19,6 +19,12 @@ extern godot_bool pybind_get_prop_type(cffi_handle handle, const wchar_t *propna
 extern const godot_string *pybind_get_prop_list(cffi_handle handle);
 extern godot_bool pybind_get_prop_default_value(cffi_handle handle, const wchar_t *propname, godot_variant *r_val);
 extern godot_bool pybind_get_prop_info(cffi_handle handle, const wchar_t *propname, pybind_prop_info *r_prop_info);
+extern const godot_string *pybind_get_meth_list(cffi_handle handle);
+extern godot_bool pybind_get_meth_info(cffi_handle handle, const wchar_t *methname, int *r_argcount);
+extern godot_bool pybind_has_meth(cffi_handle handle, const wchar_t *methname);
+extern godot_bool pybind_is_tool(cffi_handle handle);
 extern void pybind_notification(cffi_handle handle, int notification);
+extern godot_int pybind_get_rpc_mode(cffi_handle handle, const wchar_t *methname);
+extern godot_int pybind_get_rset_mode(cffi_handle handle, const wchar_t *varname);
 
 #endif // PYTHONSCRIPT_API_H

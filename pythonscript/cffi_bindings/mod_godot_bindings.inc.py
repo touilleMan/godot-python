@@ -161,10 +161,11 @@ class MetaBaseObject(type):
 
     def __new__(cls, name, bases, nmspc):
         exported = {}
-        cooked_nmspc = {'_exported': exported}
+        meths = {}
+        cooked_nmspc = {'__exported': exported}
         # Retrieve parent exported fields
         for b in bases:
-            exported.update(getattr(b, '_exported', {}))
+            exported.update(getattr(b, '__exported', {}))
         # Collect exported fields
         for k, v in nmspc.items():
             if isinstance(v, ExportedField):
@@ -178,13 +179,6 @@ class MetaBaseObject(type):
                     cooked_nmspc[k] = v.default
             else:
                 cooked_nmspc[k] = v
-        # Build the list of exported fields' names, ready to be access by godot
-        raw_list = ffi.new('godot_string[]', len(exported) + 1)
-        for i, name in enumerate(exported.keys()):
-            lib.godot_string_new_unicode_data(ffi.addressof(raw_list[i]), name, -1)
-        # Last entry is an empty string
-        lib.godot_string_new(ffi.addressof(raw_list[len(exported)]))
-        cooked_nmspc['_exported_raw_list'] = raw_list
         return type.__new__(cls, name, bases, cooked_nmspc)
 
 

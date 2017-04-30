@@ -42,184 +42,21 @@ Variant::Type PyInstance::get_property_type(const StringName &p_name, bool *r_is
 		*r_is_valid = is_valid;
 	}
 	return prop_type;
-
-#if 0
-    const PyScript *sptr=script.ptr();
-    while(sptr) {
-
-        if (sptr->member_info.has(p_name)) {
-            if (r_is_valid)
-                *r_is_valid=true;
-            return sptr->member_info[p_name].type;
-        }
-        sptr = sptr->_base;
-    }
-
-    if (r_is_valid)
-        *r_is_valid=false;
-#endif
-	return Variant::NIL;
 }
 
 void PyInstance::get_property_list(List<PropertyInfo> *p_properties) const {
 	DEBUG_TRACE_METHOD();
-#if 0
-    // exported members, not doen yet!
-
-    const PyScript *sptr=script.ptr();
-    List<PropertyInfo> props;
-
-    while(sptr) {
-
-
-        const Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyScriptLanguage::get_singleton()->strings._get_property_list);
-        if (E) {
-
-
-            Variant::CallError err;
-            Variant ret = const_cast<GDFunction*>(E->get())->call(const_cast<PyInstance*>(this),NULL,0,err);
-            if (err.error==Variant::CallError::CALL_OK) {
-
-                if (ret.get_type()!=Variant::ARRAY) {
-
-                    ERR_EXPLAIN("Wrong type for _get_property list, must be an array of dictionaries.");
-                    ERR_FAIL();
-                }
-                Array arr = ret;
-                for(int i=0;i<arr.size();i++) {
-
-                    Dictionary d = arr[i];
-                    ERR_CONTINUE(!d.has("name"));
-                    ERR_CONTINUE(!d.has("type"));
-                    PropertyInfo pinfo;
-                    pinfo.type = Variant::Type( d["type"].operator int());
-                    ERR_CONTINUE(pinfo.type<0 || pinfo.type>=Variant::VARIANT_MAX );
-                    pinfo.name = d["name"];
-                    ERR_CONTINUE(pinfo.name=="");
-                    if (d.has("hint"))
-                        pinfo.hint=PropertyHint(d["hint"].operator int());
-                    if (d.has("hint_string"))
-                        pinfo.hint_string=d["hint_string"];
-                    if (d.has("usage"))
-                        pinfo.usage=d["usage"];
-
-                    props.push_back(pinfo);
-
-                }
-
-            }
-        }
-
-        //instance a fake script for editing the values
-
-        Vector<_PyScriptMemberSort> msort;
-        for(Map<StringName,PropertyInfo>::Element *E=sptr->member_info.front();E;E=E->next()) {
-
-            _PyScriptMemberSort ms;
-            ERR_CONTINUE(!sptr->member_indices.has(E->key()));
-            ms.index=sptr->member_indices[E->key()].index;
-            ms.name=E->key();
-            msort.push_back(ms);
-
-        }
-
-        msort.sort();
-        msort.invert();
-        for(int i=0;i<msort.size();i++) {
-
-            props.push_front(sptr->member_info[msort[i].name]);
-
-        }
-#if 0
-        if (sptr->member_functions.has("_get_property_list")) {
-
-            Variant::CallError err;
-            GDFunction *f = const_cast<GDFunction*>(sptr->member_functions["_get_property_list"]);
-            Variant plv = f->call(const_cast<PyInstance*>(this),NULL,0,err);
-
-            if (plv.get_type()!=Variant::ARRAY) {
-
-                ERR_PRINT("_get_property_list: expected array returned");
-            } else {
-
-                Array pl=plv;
-
-                for(int i=0;i<pl.size();i++) {
-
-                    Dictionary p = pl[i];
-                    PropertyInfo pinfo;
-                    if (!p.has("name")) {
-                        ERR_PRINT("_get_property_list: expected 'name' key of type string.")
-                                continue;
-                    }
-                    if (!p.has("type")) {
-                        ERR_PRINT("_get_property_list: expected 'type' key of type integer.")
-                                continue;
-                    }
-                    pinfo.name=p["name"];
-                    pinfo.type=Variant::Type(int(p["type"]));
-                    if (p.has("hint"))
-                        pinfo.hint=PropertyHint(int(p["hint"]));
-                    if (p.has("hint_string"))
-                        pinfo.hint_string=p["hint_string"];
-                    if (p.has("usage"))
-                        pinfo.usage=p["usage"];
-
-
-                    props.push_back(pinfo);
-                }
-            }
-        }
-#endif
-
-        sptr = sptr->_base;
-    }
-
-    //props.invert();
-
-    for (List<PropertyInfo>::Element *E=props.front();E;E=E->next()) {
-
-        p_properties->push_back(E->get());
-    }
-#endif
+    this->_script.ptr()->get_property_list(p_properties);
 }
 
 void PyInstance::get_method_list(List<MethodInfo> *p_list) const {
 	DEBUG_TRACE_METHOD();
-#if 0
-
-    const PyScript *sptr=script.ptr();
-    while(sptr) {
-
-        for (Map<StringName,GDFunction*>::Element *E = sptr->member_functions.front();E;E=E->next()) {
-
-            MethodInfo mi;
-            mi.name=E->key();
-            mi.flags|=METHOD_FLAG_FROM_SCRIPT;
-            for(int i=0;i<E->get()->get_argument_count();i++)
-                mi.arguments.push_back(PropertyInfo(Variant::NIL,"arg"+itos(i)));
-            p_list->push_back(mi);
-        }
-        sptr = sptr->_base;
-    }
-
-#endif
+    this->_script.ptr()->get_script_method_list(p_list);
 }
 
 bool PyInstance::has_method(const StringName &p_method) const {
 	DEBUG_TRACE_METHOD();
-#if 0
-
-    const PyScript *sptr=script.ptr();
-    while(sptr) {
-        const Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(p_method);
-        if (E)
-            return true;
-        sptr = sptr->_base;
-    }
-
-#endif
-	return false;
+    return this->_script.ptr()->has_method(p_method);
 }
 
 Variant PyInstance::call(const StringName &p_method, const Variant **p_args, int p_argcount, Variant::CallError &r_error) {
@@ -237,21 +74,6 @@ Variant PyInstance::call(const StringName &p_method, const Variant **p_args, int
 		r_error.expected = (Variant::Type)(error >> 4);
 	}
 	return ret;
-#if 0
-
-    //printf("calling %ls:%i method %ls\n", script->get_path().c_str(), -1, String(p_method).c_str());
-
-    PyScript *sptr=script.ptr();
-    while(sptr) {
-        Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(p_method);
-        if (E) {
-            return E->get()->call(this,p_args,p_argcount,r_error);
-        }
-        sptr = sptr->_base;
-    }
-    r_error.error=Variant::CallError::CALL_ERROR_INVALID_METHOD;
-    return Variant();
-#endif
 }
 
 #if 0 // TODO: Don't rely on default implementations provided by ScriptInstance ?
@@ -303,68 +125,19 @@ void PyInstance::call_multilevel_reversed(const StringName& p_method,const Varia
 
 void PyInstance::notification(int p_notification) {
 	DEBUG_TRACE_METHOD();
-	// TODO
     pybind_notification(this->_py_obj, p_notification);
-
-	// //notification is not virutal, it gets called at ALL levels just like in C.
-	// Variant value=p_notification;
-	// const Variant *args[1]={&value };
-
-	// PyScript *sptr = this->_script.ptr();
-	// while(sptr) {
-	//     Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyScriptLanguage::get_singleton()->strings._notification);
-	//     if (E) {
-	//         Variant::CallError err;
-	//         E->get()->call(this,args,1,err);
-	//         if (err.error!=Variant::CallError::CALL_OK) {
-	//             //print error about notification call
-
-	//         }
-	//     }
-	//     sptr = sptr->_base;
-	// }
 }
 
 PyInstance::RPCMode PyInstance::get_rpc_mode(const StringName &p_method) const {
 	DEBUG_TRACE_METHOD();
-	// TODO
-
-	// const PyScript *cscript = script.ptr();
-
-	// while(cscript) {
-	//     const Map<StringName,GDFunction*>::Element *E=cscript->member_functions.find(p_method);
-	//     if (E) {
-
-	//         if (E->get()->get_rpc_mode()!=RPC_MODE_DISABLED) {
-	//             return E->get()->get_rpc_mode();
-	//         }
-
-	//     }
-	//     cscript=cscript->_base;
-	// }
-
-	return RPC_MODE_DISABLED;
+    const wchar_t *methname = String(p_method).c_str();
+    return (PyInstance::RPCMode)pybind_get_rpc_mode(this->_py_obj, methname);
 }
 
 PyInstance::RPCMode PyInstance::get_rset_mode(const StringName &p_variable) const {
 	DEBUG_TRACE_METHOD();
-	// TODO
-
-	// const PyScript *cscript = script.ptr();
-
-	// while(cscript) {
-	//     const Map<StringName,PyScript::MemberInfo>::Element *E=cscript->member_indices.find(p_variable);
-	//     if (E) {
-
-	//         if (E->get().rpc_mode) {
-	//             return E->get().rpc_mode;
-	//         }
-
-	//     }
-	//     cscript=cscript->_base;
-	// }
-
-	return RPC_MODE_DISABLED;
+    const wchar_t *varname = String(p_variable).c_str();
+    return (PyInstance::RPCMode)pybind_get_rset_mode(this->_py_obj, varname);
 }
 
 PyInstance::PyInstance() {
