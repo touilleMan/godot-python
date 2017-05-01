@@ -46,17 +46,17 @@ Variant::Type PyInstance::get_property_type(const StringName &p_name, bool *r_is
 
 void PyInstance::get_property_list(List<PropertyInfo> *p_properties) const {
 	DEBUG_TRACE_METHOD();
-    this->_script.ptr()->get_property_list(p_properties);
+	this->_script.ptr()->get_property_list(p_properties);
 }
 
 void PyInstance::get_method_list(List<MethodInfo> *p_list) const {
 	DEBUG_TRACE_METHOD();
-    this->_script.ptr()->get_script_method_list(p_list);
+	this->_script.ptr()->get_script_method_list(p_list);
 }
 
 bool PyInstance::has_method(const StringName &p_method) const {
 	DEBUG_TRACE_METHOD();
-    return this->_script.ptr()->has_method(p_method);
+	return this->_script.ptr()->has_method(p_method);
 }
 
 Variant PyInstance::call(const StringName &p_method, const Variant **p_args, int p_argcount, Variant::CallError &r_error) {
@@ -125,19 +125,19 @@ void PyInstance::call_multilevel_reversed(const StringName& p_method,const Varia
 
 void PyInstance::notification(int p_notification) {
 	DEBUG_TRACE_METHOD();
-    pybind_notification(this->_py_obj, p_notification);
+	pybind_notification(this->_py_obj, p_notification);
 }
 
 PyInstance::RPCMode PyInstance::get_rpc_mode(const StringName &p_method) const {
 	DEBUG_TRACE_METHOD();
-    const wchar_t *methname = String(p_method).c_str();
-    return (PyInstance::RPCMode)pybind_get_rpc_mode(this->_py_obj, methname);
+	const wchar_t *methname = String(p_method).c_str();
+	return (PyInstance::RPCMode)pybind_get_rpc_mode(this->_py_obj, methname);
 }
 
 PyInstance::RPCMode PyInstance::get_rset_mode(const StringName &p_variable) const {
 	DEBUG_TRACE_METHOD();
-    const wchar_t *varname = String(p_variable).c_str();
-    return (PyInstance::RPCMode)pybind_get_rset_mode(this->_py_obj, varname);
+	const wchar_t *varname = String(p_variable).c_str();
+	return (PyInstance::RPCMode)pybind_get_rset_mode(this->_py_obj, varname);
 }
 
 PyInstance::PyInstance() {

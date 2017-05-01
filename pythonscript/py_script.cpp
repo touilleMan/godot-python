@@ -232,56 +232,56 @@ struct _PyScriptMemberSort {
 
 void PyScript::get_script_method_list(List<MethodInfo> *p_list) const {
 	DEBUG_TRACE_METHOD();
-    // TODO: Simple&hacky implementation...
-    const godot_string *prop_names = pybind_get_meth_list(this->_py_exposed_class);
-    int i = 0;
-    const String *pname = (String*)&prop_names[i];
-    while (*pname != "") {
-        MethodInfo mi;
-        mi.name = *pname;
-        mi.flags |= METHOD_FLAG_FROM_SCRIPT;  // TODO: copied from gdscript, but think about it...
-        int argcount;
-        if (pybind_get_meth_info(this->_py_exposed_class, pname->c_str(), &argcount)) {
-            for (int i = 0; i < argcount; i++) {
-                mi.arguments.push_back(PropertyInfo(Variant::NIL, "arg" + itos(i)));
-            }
-            p_list->push_back(mi);
-        }
-        pname = (String*)&prop_names[++i];
-    }
+	// TODO: Simple&hacky implementation...
+	const godot_string *prop_names = pybind_get_meth_list(this->_py_exposed_class);
+	int i = 0;
+	const String *pname = (String *)&prop_names[i];
+	while (*pname != "") {
+		MethodInfo mi;
+		mi.name = *pname;
+		mi.flags |= METHOD_FLAG_FROM_SCRIPT; // TODO: copied from gdscript, but think about it...
+		int argcount;
+		if (pybind_get_meth_info(this->_py_exposed_class, pname->c_str(), &argcount)) {
+			for (int i = 0; i < argcount; i++) {
+				mi.arguments.push_back(PropertyInfo(Variant::NIL, "arg" + itos(i)));
+			}
+			p_list->push_back(mi);
+		}
+		pname = (String *)&prop_names[++i];
+	}
 }
 
 void PyScript::get_script_property_list(List<PropertyInfo> *p_list) const {
 	DEBUG_TRACE_METHOD();
-    const godot_string *prop_names = pybind_get_prop_list(this->_py_exposed_class);
-    int i = 0;
-    const String *pname = (String*)&prop_names[i];
-    while (*pname != "") {
-        pybind_prop_info prop;
-        pybind_get_prop_info(this->_py_exposed_class, pname->c_str(), &prop);
-        PropertyInfo propinfo((Variant::Type)prop.type, *pname, (PropertyHint)prop.hint, *(String*)&prop.hint_string, prop.usage);
-        p_list->push_back(propinfo);
-        pname = (String*)&prop_names[++i];
-    }
+	const godot_string *prop_names = pybind_get_prop_list(this->_py_exposed_class);
+	int i = 0;
+	const String *pname = (String *)&prop_names[i];
+	while (*pname != "") {
+		pybind_prop_info prop;
+		pybind_get_prop_info(this->_py_exposed_class, pname->c_str(), &prop);
+		PropertyInfo propinfo((Variant::Type)prop.type, *pname, (PropertyHint)prop.hint, *(String *)&prop.hint_string, prop.usage);
+		p_list->push_back(propinfo);
+		pname = (String *)&prop_names[++i];
+	}
 }
 
 bool PyScript::has_method(const StringName &p_method) const {
 	DEBUG_TRACE_METHOD();
-    const wchar_t *methname = String(p_method).c_str();
-    return pybind_has_meth(this->_py_exposed_class, methname);
+	const wchar_t *methname = String(p_method).c_str();
+	return pybind_has_meth(this->_py_exposed_class, methname);
 }
 
 MethodInfo PyScript::get_method_info(const StringName &p_method) const {
-    // TODO: Simple&hacky implementation...
+	// TODO: Simple&hacky implementation...
 	DEBUG_TRACE_METHOD();
-    int argcount;
-    if (!pybind_get_meth_info(this->_py_exposed_class, String(p_method).c_str(), &argcount)) {
-    	return MethodInfo();
-    }
+	int argcount;
+	if (!pybind_get_meth_info(this->_py_exposed_class, String(p_method).c_str(), &argcount)) {
+		return MethodInfo();
+	}
 	MethodInfo mi;
 	mi.name = p_method;
 	for (int i = 0; i < argcount; i++) {
-        mi.arguments.push_back(PropertyInfo(Variant::NIL, "arg" + itos(i)));
+		mi.arguments.push_back(PropertyInfo(Variant::NIL, "arg" + itos(i)));
 	}
 	mi.return_val.name = "Variant";
 	return mi;
