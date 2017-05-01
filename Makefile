@@ -18,6 +18,7 @@ DEBUG ?= lldb
 GODOT_CMD = $(DEBUG) $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
 endif
 
+# Remove use_llvm and CCFLAGS/CFLAGS if you'r still using gcc
 OPTS ?= platform=x11 -j6 use_llvm=yes                  \
 CCFLAGS=-fcolor-diagnostics CFLAGS=-fcolor-diagnostics \
 target=debug module_pythonscript_enabled=yes           \

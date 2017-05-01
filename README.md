@@ -3,87 +3,80 @@
 Python support for Godot
 ========================
 
-/!\ Not ready to play with, move along /!\
 
 Overview
 --------
 
 The goal of this project is to provide Python language as scripting module for
 [Godot](http://godotengine.org) game engine.
-Instead of relying on CPython (default Python implementation), the choice has
-been to use the [MicroPython](http://micropython.org) alternative implementation.
-The reasons for this choice are:
 
-Pros:
-- Godot team stated [they already tried using CPython](http://docs.godotengine.org/en/stable/reference/gdscript.html#history)
-  as scripting language, but result wasn't concluent. CPython is known to favorise
-  extension pattern instead of embedding.
-- Much smaller dependency (MicroPython binary output is ~800ko vs CPython's ~4mo)
-- No "battery included" policy unlike CPython, this allow to simply get rid
-  of all the useless library from the final build (for example a standard
-  CPython distribution is typically ~30mo).
-- GIL can be disabled to allow real concurrent threading (which must be
-  manually protected of course).
-- It should be easy to tweak MicroPython in the future to allow multiple
-  independent interpreters within the same application.
-- [Code emitter](http://docs.micropython.org/en/latest/wipy/reference/speed_python.html#the-native-code-emitter)
-  allows compilation to native code of some parts of the script for speedup boost.
-- Unlike CPython reference counting, MicroPython make use of a garbage collector
-  which can be manually triggered (i.g. to run it in parallel with
-  rendering [given game logic is not run at this time](https://godotengine.org/article/why-does-godot-use-servers-and-rids)).
-- Python's "everything is object" logic means CPython store each object on the heap and refer to it through pointer.
-  On the other hand [MicroPython implements base types](https://github.com/micropython/micropython/blob/master/py/mpconfig.h#L54)
-  (bool, strings, small int and float) whithin the "pointer" (quotes because it's no longer a pointer
-  then !). This is close to Godot's Variant type so we could expect fast convertion.
-
-Cons:
-- Less support & documentation about MicroPython internals.
-- MicroPython doesn't implement all Python so far (e.g. no metaclasses) which
-  typically means not all libraries are compatible with it.
-- Incompatible with SWIG and Boost::Python so binding need to be done by hand.
-
-Note that this is an early work and it's possible we switch implementation
-to CPython if it reveals itself more suited in the end ;-)
+Not everything is implemented so far, however there is enough to start
+playing/reporting issues ;-)
 
 
-Roadmap
--------
+Quickstart
+----------
 
-- [X] Integrate Micropython within Godot compilation toolchain
-- [X] Create minimal compiling Godot module implementing `ScriptLanguage`, `Script` and `ScriptInstance`
-- [X] Define Python API within Godot
-- [X] Load Python module as `Script`
-- [X] Instantiate Python class as `ScriptInstance`
-- [ ] Connect Godot's `Variant` and basetypes with Python ones
-- [ ] Expose Python `Script` through `ObjectTypeDB`
-- [X] Generate binding code to work with Godot's `MethodBind` & `ObjectTypeDB`
-- [X] Have a "HelloWorld" script working
+0 - Configure the repo
+The current repo must have a `godot` directory (can be a symbolic link) pointing
+on the godot's sources, itself having the `pythonscript` directory
+in it `modules/pythonscript`.
+```
+$ make setup GODOT_TARGET_DIR='/path/to/godot_repo'
+```
+
+Basically we should endup with those links:
+```
+/godot # Godot source repo
+/godot-python # *this* repo
+/godot-python/godot -> /godot
+/godot/modules/pythonscript -> /godot-python/pythonscript
+```
+
+1 - Generate `cdef.gen.h` (Godot's GDnative API header cooked for CFFI)
+```
+$ make generate_gdnative_cffidefs
+```
+Note this step is only useful if GDnative API has changed (we should not
+happen really often when Godot 3.0 will be released).
+
+2 - Use CFFI to generate `pythonscriptcffi.cpp`
+```
+$ make generate_dev_dyn_cffi_bindings
+```
+Or if you want to be able to modify *.inc.py files without having to recompile
+everytime (useful for dev):
+```
+$ make generate_cffi_bindings
+```
+
+4 - Compile CPython & Pythonscript module
+```
+$ make compile
+```
+By default the command uses clang as compiler, have a look at the `Makefile` if
+you want to switch to gcc.
+
+5 - Run tests & example
+```
+$ make tests
+$ make example
+```
 
 
-API (work in progress)
-----------------------
-
-Godot API to implement a new language is based on three classes
-
-### ScriptLanguage
-- Initialize&teardown micropython interpreter
-- Keep track of the scripts
-- Provide editor&debug stuff (reload scripts, display language extension and keywords etc.)
-
-
-### Script
-A single file, in GDscript a file represent a class however this is not the case
-in python.
+API
+---
 
 example:
 
 ```python
+# Explicit is better than implicit
 from godot import exposed, export
-from godot.bindings import Node
+from godot.bindings import Node2D, Vector2
 
 
 @exposed
-class Player(Node):
+class Player(Node2D):
 	"""
 	This is the file's main class which will be made available to Godot. This
 	class must inherit of `godot.Node` or any of it children (i.g.
@@ -93,6 +86,30 @@ class Player(Node):
 	# Exposed class can define some attributes as export(<type>) to achieve
 	# similar goal than GDSscript's `export` keyword
 	name = export(str)
+
+	# Can export property as well
+	@export(int)
+	@property
+	def age(self):
+		return self._age
+
+	@age.setter
+	def age(self, value):
+		self._age = value
+
+	# All methods are exposed to Godot
+	def talk(self, msg):
+		print("I'm saying %s" % msg)
+
+	def __init__(self):
+		# Don't confuse `__init__` with Godot's `_ready` !
+		self._age = 42
+
+	def _ready(self):
+		# Of course you can access property&methods defined in the parent
+		name = self.get_name()
+		print('%s position x=%s, y=%s' % (name, self.position.x, self.position.y))
+
 	...
 
 
@@ -107,7 +124,37 @@ class Helper:
 ```
 
 
-### ScriptInstance
-In GDscript this is an instance of a `Script` binded to a node.
-Similarly in Python we instantiated the exposed class of the `Script` and
-connect it to the node.
+Technical internals
+-------------------
+
+The project is built with the awesome [CFFI](https://cffi.readthedocs.io/en/latest/).
+Before that, both [Micropython](https://github.com/micropython/micropython) and
+[Pybind11](https://github.com/pybind/pybind11) has been tried, but each comes with
+it own drawback (basically API complexity and compatibility for Micropython,
+C++ craziness and output size for Pybind11) so they just couldn't compete with
+CFFI ;-)
+
+Godot is a C++ game engine, however CFFI only support C API, hence Pythonscript
+module use two interfaces:
+- Godot's default C++ API to expose Pythonscript as a script language
+- [Godot's GDnative](https://godotengine.org/article/dlscript-here) for binding Godot's
+  Classes (Node, Vector2 etc.)
+
+The reason behind GDnative is C++ is a terrible language when it comes to redistribute
+a shared library (unlike in C, output is compiler dependant).
+The long term goal for this project is to only depend on GDnative, this way we
+will be able to distribute Pythonscript as a shared library ready to be loaded
+by the official Godot build !
+
+Map of the code:
+- `py_*.[cpp|h]`: Godot's C++ language classes implementations (i.g. Script, ScriptInstance).
+- `cffi_bindings/api.h`&`cffi_bindings/api_struct.h`: Exposed C api use in the language classes implementations.
+- `cffi_bindings/*.inc.py`: Python code that will be verbatim included in the pythonscript module.
+- `cffi_bindings/builtin_*.inc.py`: Python binding for Godot builtins
+- `cffi_bindings/embedding_init_code.inc.py`: Very first Python code that will be executed on module loading.
+- `cffi_bindings/mod_godot.inc.py`: Python `godot` module code.
+- `cffi_bindings/mod_godot_bindings.inc.py`: Python `godot.bindings` module code.
+- `cffi_bindings/cdef.gen.h`: C Godot's GDnative API ready to be used by the CFFI generator.
+  This file is generated by `tools/generate_gdnative_cffidefs.py`.
+- `cffi_bindings/pythonscriptcffi.cpp`: Pythonscript module output by the CFFI generator.
+  This file is generated by `cffi_bindings/generate.py`.
