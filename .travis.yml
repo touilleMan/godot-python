@@ -73,9 +73,11 @@ before_script:
   - sleep 3 # give xvfb some time to start
 
 script:
+  - set -e  # Enable fail on first error
   - if [[ "$CXX" == "clang++" ]]; then sh tools/clang-format-travis-check.sh; fi
   - if [[ "$CXX" == "g++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS CXX=g++-5 CC=gcc-5"; fi
   - if [[ "$CXX" == "clang++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS use_llvm=yes"; fi
   - cp pythonscript/cpython/libpython3.6dm.so.1.0 godot/bin
 # Tests need x11 server with opengl3 or compile godot with platform=server (both not working so far...)
   # - LIBGL_ALWAYS_SOFTWARE=1 make test DEBUG=valgrind EXTRA_OPTS=$TEST_EXTRA_OPTS
+  - set +e
