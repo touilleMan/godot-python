@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import argparse
 from os import path
 from pycparser import parse_file, c_ast, c_generator
@@ -44,6 +46,7 @@ def generate(godot_root):
     # First lines are typedefs not related with godot creating compile time errors
     first_line = next(i for i, line in enumerate(splitted_src) if 'godot' in line.lower())
     return '\n'.join(splitted_src[first_line:])
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate cdef.gen.h file (needed to generate'

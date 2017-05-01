@@ -8,6 +8,7 @@ GODOT_DIR ?= $(BASEDIR)/godot
 
 BUILD_PYTHON_PATH = $(BASEDIR)/pythonscript/cpython/build
 PYTHON = LD_LIBRARY_PATH=$(BUILD_PYTHON_PATH)/lib $(BUILD_PYTHON_PATH)/bin/python3
+GDNATIVE_CFFIDEFS = $(BASEDIR)/pythonscript/cffi_bindings/cdef.gen.h
 
 # Add `LIBGL_ALWAYS_SOFTWARE=1` if you computer sucks with opengl3...
 ifndef DEBUG
@@ -59,10 +60,23 @@ clean:
 	rm -f $(GODOT_DIR)/bin/libpythonscript*
 
 
+veryclean: clean
+	rm -f $(GDNATIVE_CFFIDEFS)
+
 test:
 	cd tests/bindings && $(GODOT_CMD)
 
 
-generate_cffi_bindings:
+generate_cffi_bindings: generate_gdnative_cffidefs
 	$(PYTHON) -m pip install cffi
 	$(PYTHON) $(BASEDIR)/pythonscript/cffi_bindings/generate.py
+
+
+generate_dev_dyn_cffi_bindings: generate_gdnative_cffidefs
+	$(PYTHON) -m pip install cffi
+	$(PYTHON) $(BASEDIR)/pythonscript/cffi_bindings/generate.py --dev-dyn
+	@printf "\033[0;32mPython .inc.py files are now dynamically loaded, don't share the binary !\033[0m\n"
+
+
+generate_gdnative_cffidefs: $(GDNATIVE_CFFIDEFS)
+	./tools/generate_gdnative_cffidefs.py --output $(GDNATIVE_CFFIDEFS) $(GODOT_DIR)
