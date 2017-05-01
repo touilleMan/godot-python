@@ -36,7 +36,6 @@ private:
 	cffi_handle _py_exposed_class;
 	cffi_handle _py_module;
 
-	// Ref<PyNativeClass> native;
 	Ref<PyScript> base;
 	PyScript *_base; //fast pointer access
 	// PyScript *_owner; //for subclasses

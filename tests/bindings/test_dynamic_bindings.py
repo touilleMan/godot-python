@@ -28,7 +28,7 @@ class TestDynamicBindings:
         # Of course different objects should be different and equality
         # should not crash with bad given types
         assert ml != Object()
-        assert ml != None
+        assert ml != None  # noqa
         assert ml != ""
         assert ml != 42
 
