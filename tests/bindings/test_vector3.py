@@ -108,3 +108,27 @@ class TestVector3:
         assert hasattr(v, field)
         field_val = getattr(v, field)
         assert isinstance(field_val, ret_type)
+
+    @pytest.mark.parametrize('args', [
+        (0, Vector3(0, 0, 0)),
+        (1, Vector3(2, 3, 4)),
+        (2.5, Vector3(5, 7.5, 10)),
+        (Vector3(1, 1, 1), Vector3(2, 3, 4)),
+        (Vector3(2, 3, 4), Vector3(4, 9, 16))
+    ], ids=lambda x: x[0])
+    def test_mult(self, args):
+        param, result = args
+        calc = Vector3(2, 3, 4) * param
+        assert calc == result
+
+    @pytest.mark.parametrize('args', [
+        (1, Vector3(2, 3, 4)),
+        (.5, Vector3(4, 6, 8)),
+        (2, Vector3(1, 1.5, 2)),
+        (Vector3(1, 1, 1), Vector3(2, 3, 4)),
+        (Vector3(2, 3, 4), Vector3(1, 1, 1))
+    ], ids=lambda x: x[0])
+    def test_div(self, args):
+        param, result = args
+        calc = Vector3(2, 3, 4) / param
+        assert calc == result

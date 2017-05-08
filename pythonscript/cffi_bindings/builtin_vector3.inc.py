@@ -40,6 +40,20 @@ class Vector3:
     def __pos__(self):
         return self
 
+    def __mul__(self, val):
+        if isinstance(val, Vector3):
+            gd_obj = lib.godot_vector3_operator_multiply_vector(self._gd_obj_ptr, val._gd_obj)
+        else:
+            gd_obj = lib.godot_vector3_operator_multiply_scalar(self._gd_obj_ptr, val)
+        return Vector3.build_from_gd_obj(gd_obj)
+
+    def __truediv__(self, val):
+        if isinstance(val, Vector3):
+            gd_obj = lib.godot_vector3_operator_divide_vector(self._gd_obj_ptr, val._gd_obj)
+        else:
+            gd_obj = lib.godot_vector3_operator_divide_scalar(self._gd_obj_ptr, val)
+        return Vector3.build_from_gd_obj(gd_obj)
+
     # Properties
 
     @property

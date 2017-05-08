@@ -115,3 +115,27 @@ class TestVector2:
         v3 = +v
         assert v3.x == 1.5
         assert v3.y == 2.5
+
+    @pytest.mark.parametrize('args', [
+        (0, Vector2(0, 0)),
+        (1, Vector2(2, 3)),
+        (2.5, Vector2(5, 7.5)),
+        (Vector2(1, 1), Vector2(2, 3)),
+        (Vector2(2, 3), Vector2(4, 9))
+    ], ids=lambda x: x[0])
+    def test_mult(self, args):
+        param, result = args
+        calc = Vector2(2, 3) * param
+        assert calc == result
+
+    @pytest.mark.parametrize('args', [
+        (1, Vector2(2, 3)),
+        (.5, Vector2(4, 6)),
+        (2, Vector2(1, 1.5)),
+        (Vector2(1, 1), Vector2(2, 3)),
+        (Vector2(2, 3), Vector2(1, 1))
+    ], ids=lambda x: x[0])
+    def test_div(self, args):
+        param, result = args
+        calc = Vector2(2, 3) / param
+        assert calc == result

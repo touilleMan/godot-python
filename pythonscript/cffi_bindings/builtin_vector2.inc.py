@@ -9,6 +9,14 @@ class Vector2:
         v._gd_obj_ptr = ffi.addressof(gd_obj)
         return v
 
+    @classmethod
+    def build_from_gd_obj_ptr(cls, gd_obj_ptr):
+        # TODO: optimize this
+        v = cls()
+        v._gd_obj_ptr = gd_obj_ptr
+        v._gd_obj = gd_obj_ptr[0]
+        return v
+
     @staticmethod
     def check_param_type(argname, arg, type):
         if not isinstance(arg, type):
@@ -34,6 +42,20 @@ class Vector2:
 
     def __pos__(self):
         return self
+
+    def __mul__(self, val):
+        if isinstance(val, Vector2):
+            gd_obj = lib.godot_vector2_operator_multiply_vector(self._gd_obj_ptr, val._gd_obj)
+        else:
+            gd_obj = lib.godot_vector2_operator_multiply_scalar(self._gd_obj_ptr, val)
+        return Vector2.build_from_gd_obj(gd_obj)
+
+    def __truediv__(self, val):
+        if isinstance(val, Vector2):
+            gd_obj = lib.godot_vector2_operator_divide_vector(self._gd_obj_ptr, val._gd_obj)
+        else:
+            gd_obj = lib.godot_vector2_operator_divide_scalar(self._gd_obj_ptr, val)
+        return Vector2.build_from_gd_obj(gd_obj)
 
     # Properties
 
