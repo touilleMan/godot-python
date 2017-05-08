@@ -6,6 +6,25 @@
 #include "py_script.h"
 #include "pythonscript.h"
 
+
+#if DEBUG_ENABLED
+#define __ASSERT_PYSCRIPT_REASON "Cannot retrieve Python class for this script, is you code correct ?"
+#define ASSERT_PYSCRIPT_VALID()               \
+{                                             \
+	ERR_EXPLAIN(__ASSERT_PYSCRIPT_REASON);    \
+	ERR_FAIL_COND(!this->can_instance())      \
+}
+#define ASSERT_PYSCRIPT_VALID_V(ret)          \
+{                                             \
+	ERR_EXPLAIN(__ASSERT_PYSCRIPT_REASON);    \
+	ERR_FAIL_COND_V(!this->can_instance(), ret) \
+}
+#else
+#define ASSERT_PYSCRIPT_VALID()
+#define ASSERT_PYSCRIPT_VALID_V(ret)
+#endif
+
+
 void PyScript::_bind_methods() {
 	DEBUG_TRACE();
 	// TODO: bind class methods here
@@ -48,6 +67,8 @@ StringName PyScript::get_instance_base_type() const {
 }
 
 void PyScript::update_exports() {
+	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID();
 	if (/*changed &&*/ this->placeholders.size()) { //hm :(
 
 		//update placeholders if any
@@ -76,6 +97,7 @@ void PyScript::update_exports() {
 // TODO: rename p_this "p_owner" ?
 ScriptInstance *PyScript::instance_create(Object *p_this) {
 	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID_V(NULL);
 	if (!this->tool && !ScriptServer::is_scripting_enabled()) {
 #ifdef TOOLS_ENABLED
 		//instance a fake script for editing the values
@@ -169,11 +191,10 @@ Error PyScript::reload(bool p_keep_state) {
 		// Python should have printed an exception explaining the error
 		ERR_FAIL_V(ERR_PARSE_ERROR);
 	}
+	pybind_get_class_name(this->_py_exposed_class, (godot_string*)&this->name);
 	this->tool = pybind_is_tool(this->_py_exposed_class);
 	this->valid = true;
 
-// mp_execute_as_module(this->sources)
-// TODO: load the module and retrieve exposed class here
 
 // valid=false;
 // GDParser parser;
@@ -232,6 +253,7 @@ struct _PyScriptMemberSort {
 
 void PyScript::get_script_method_list(List<MethodInfo> *p_list) const {
 	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID();
 	// TODO: Simple&hacky implementation...
 	const godot_string *prop_names = pybind_get_meth_list(this->_py_exposed_class);
 	int i = 0;
@@ -253,6 +275,7 @@ void PyScript::get_script_method_list(List<MethodInfo> *p_list) const {
 
 void PyScript::get_script_property_list(List<PropertyInfo> *p_list) const {
 	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID();
 	const godot_string *prop_names = pybind_get_prop_list(this->_py_exposed_class);
 	int i = 0;
 	const String *pname = (String *)&prop_names[i];
@@ -267,6 +290,7 @@ void PyScript::get_script_property_list(List<PropertyInfo> *p_list) const {
 
 bool PyScript::has_method(const StringName &p_method) const {
 	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID_V(false);
 	const wchar_t *methname = String(p_method).c_str();
 	return pybind_has_meth(this->_py_exposed_class, methname);
 }
@@ -274,6 +298,7 @@ bool PyScript::has_method(const StringName &p_method) const {
 MethodInfo PyScript::get_method_info(const StringName &p_method) const {
 	// TODO: Simple&hacky implementation...
 	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID_V(MethodInfo());
 	int argcount;
 	if (!pybind_get_meth_info(this->_py_exposed_class, String(p_method).c_str(), &argcount)) {
 		return MethodInfo();
@@ -289,6 +314,7 @@ MethodInfo PyScript::get_method_info(const StringName &p_method) const {
 
 bool PyScript::get_property_default_value(const StringName &p_property, Variant &r_value) const {
 	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID_V(false);
 
 #ifdef TOOLS_ENABLED
 	const wchar_t *propname = String(p_property).c_str();
@@ -696,25 +722,30 @@ Ref<PyScript> PyScript::get_base() const {
 
 bool PyScript::has_script_signal(const StringName &p_signal) const {
 	DEBUG_TRACE_METHOD();
-	// TODO
-	//     if (_signals.has(p_signal))
-	//         return true;
-	//     if (base.is_valid()) {
-	//         return base->has_script_signal(p_signal);
-	//     }
-	// #ifdef TOOLS_ENABLED
-	//     else if (base_cache.is_valid()){
-	//         return base_cache->has_script_signal(p_signal);
-	//     }
-
-	// #endif
-	return false;
+	ASSERT_PYSCRIPT_VALID_V(false);
+	return pybind_has_signal(this->_py_exposed_class, String(p_signal).c_str());
 }
 
 void PyScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
 	DEBUG_TRACE_METHOD();
-	// TODO
-	return;
+	ASSERT_PYSCRIPT_VALID();
+	// TODO: Simple&hacky implementation...
+	const godot_string *signals = pybind_get_signal_list(this->_py_exposed_class);
+	int i = 0;
+	const String *signal = (String *)&signals[i];
+	while (*signal != "") {
+		MethodInfo mi;
+		mi.name = *signal;
+		int argcount;
+		if (pybind_get_signal_info(this->_py_exposed_class, signal->c_str(), &argcount)) {
+			for (int i = 0; i < argcount; i++) {
+				mi.arguments.push_back(PropertyInfo(Variant::NIL, "arg" + itos(i)));
+			}
+			r_signals->push_back(mi);
+		}
+		signal = (String *)&signals[++i];
+	}
+
 
 	//     for(const Map<StringName,Vector<StringName> >::Element *E=_signals.front();E;E=E->next()) {
 
@@ -739,12 +770,20 @@ void PyScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
 	// #endif
 }
 
+StringName PyScript::get_meth_signature(StringName p_methname) {
+	StringName signature;
+	// TODO: Cache this
+	// TODO: Handle line number
+#ifdef DEBUG_ENABLED
+		signature = this->path + "::0::" + this->name + "." + p_methname;
+#endif
+		return signature;
+};
+
 PyScript::PyScript()
 	: tool(false), valid(false) {
 	DEBUG_TRACE_METHOD();
 
-// _mp_exposed_mp_class = NULL;
-// _mp_module = NULL;
 // base = NULL;
 
 #ifdef DEBUG_ENABLED

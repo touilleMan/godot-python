@@ -291,6 +291,9 @@ PyLanguage::PyLanguage() {
 	this->lock = Mutex::create();
 #endif
 
+#ifdef DEBUG_ENABLED
+    this->profiling = false;
+#endif
 #if 0
     calls=0;
     strings._init = StaticCString::create("_init");

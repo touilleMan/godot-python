@@ -14,7 +14,7 @@ class RPCMode:
         self.mod = mod
         self.modname = modname
 
-    def __call__(decorated):
+    def __call__(self, decorated):
         if isinstance(decorated, ExportedField):
             decorated.rpc = self.mod
         else:
@@ -22,6 +22,14 @@ class RPCMode:
 
     def __repr__(self):
         return '<%s(%s)>' % (type(self).__name__, self.modname)
+
+
+class SignalField:
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return '<%s(%r)>' % (type(self).__name__, self.name)
 
 
 class ExportedField:
@@ -77,6 +85,10 @@ class ExportedField:
         return self
 
 
+def signal(name=None):
+    return SignalField(name)
+
+
 def exposed(cls=None, tool=False):
 
     def wrapper(cls):
@@ -110,6 +122,7 @@ def get_exposed_class_per_name(classname):
 
 
 module = imp.new_module("godot")
+module.signal = signal
 module.export = export
 module.exposed = exposed
 module.get_exposed_class_per_module = get_exposed_class_per_module

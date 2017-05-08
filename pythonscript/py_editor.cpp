@@ -200,20 +200,29 @@ void PyLanguage::get_public_constants(List<Pair<String, Variant> > *p_constants)
 
 void PyLanguage::profiling_start() {
 #ifdef DEBUG_ENABLED
-// TODO
+	this->profiling = true;
+	this->per_meth_profiling.clear();
 #endif
 }
 
 void PyLanguage::profiling_stop() {
 #ifdef DEBUG_ENABLED
-// TODO
+	this->profiling = false;
 #endif
 }
 
 int PyLanguage::profiling_get_accumulated_data(ProfilingInfo *p_info_arr, int p_info_max) {
 	int current = 0;
 #ifdef DEBUG_ENABLED
-// TODO
+	for (auto e = this->per_meth_profiling.front(); e != NULL; e = e->next()) {
+		if (current >= p_info_max)
+			break;
+		p_info_arr[current].call_count = e->value().call_count;
+		p_info_arr[current].self_time = e->value().self_time;
+		p_info_arr[current].total_time = e->value().total_time;
+		p_info_arr[current].signature = e->key();
+		current++;
+	}
 #endif
 	return current;
 }
@@ -221,13 +230,32 @@ int PyLanguage::profiling_get_accumulated_data(ProfilingInfo *p_info_arr, int p_
 int PyLanguage::profiling_get_frame_data(ProfilingInfo *p_info_arr, int p_info_max) {
 	int current = 0;
 #ifdef DEBUG_ENABLED
-// TODO
+	for (auto e = this->per_meth_profiling.front(); e != NULL; e = e->next()) {
+		if (current >= p_info_max)
+			break;
+		p_info_arr[current].call_count = e->value().last_frame_call_count;
+		p_info_arr[current].self_time = e->value().last_frame_self_time;
+		p_info_arr[current].total_time = e->value().last_frame_total_time;
+		p_info_arr[current].signature = e->key();
+		current++;
+	}
 #endif
 	return current;
 }
 
 void PyLanguage::frame() {
 #ifdef DEBUG_ENABLED
+	for (auto e = this->per_meth_profiling.front(); e != NULL; e = e->next()) {
+		e->value().call_count += e->value().frame_call_count;
+		e->value().self_time += e->value().frame_self_time;
+		e->value().total_time += e->value().frame_total_time;
+		e->value().last_frame_call_count = e->value().frame_call_count;
+		e->value().last_frame_self_time = e->value().frame_self_time;
+		e->value().last_frame_total_time = e->value().frame_total_time;
+		e->value().frame_call_count = 0;
+		e->value().frame_self_time = 0;
+		e->value().frame_total_time = 0;
+	}
 // TODO
 #endif
 }

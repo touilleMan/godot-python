@@ -26,5 +26,9 @@ extern godot_bool pybind_is_tool(cffi_handle handle);
 extern void pybind_notification(cffi_handle handle, int notification);
 extern godot_int pybind_get_rpc_mode(cffi_handle handle, const wchar_t *methname);
 extern godot_int pybind_get_rset_mode(cffi_handle handle, const wchar_t *varname);
+extern const godot_string *pybind_get_signal_list(cffi_handle handle);
+extern godot_bool pybind_has_signal(cffi_handle handle, const wchar_t *signalname);
+extern godot_bool pybind_get_signal_info(cffi_handle handle, const wchar_t *signalname, int *r_argcount);
+extern void pybind_get_class_name(cffi_handle handle, godot_string *r_name);
 
 #endif // PYTHONSCRIPT_API_H

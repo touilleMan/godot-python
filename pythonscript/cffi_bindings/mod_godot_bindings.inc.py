@@ -161,11 +161,12 @@ class MetaBaseObject(type):
 
     def __new__(cls, name, bases, nmspc):
         exported = {}
-        meths = {}
-        cooked_nmspc = {'__exported': exported}
+        signals = {}
+        cooked_nmspc = {'__exported': exported, '__signals': signals}
         # Retrieve parent exported fields
         for b in bases:
             exported.update(getattr(b, '__exported', {}))
+            signals.update(getattr(b, '__signals', {}))
         # Collect exported fields
         for k, v in nmspc.items():
             if isinstance(v, ExportedField):
@@ -177,6 +178,10 @@ class MetaBaseObject(type):
                     cooked_nmspc[k] = v.property
                 else:
                     cooked_nmspc[k] = v.default
+            elif isinstance(v, SignalField):
+                v.name = v.name if v.name else k
+                signals[v.name] = v
+                cooked_nmspc[k] = v
             else:
                 cooked_nmspc[k] = v
         return type.__new__(cls, name, bases, cooked_nmspc)

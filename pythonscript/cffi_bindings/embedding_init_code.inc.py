@@ -1,4 +1,5 @@
 import inspect
+import traceback
 from pythonscriptcffi import ffi, lib
 
 
@@ -129,8 +130,8 @@ def pybind_call_meth(handle, methname, args, argcount, ret, error):
         error[0] = CALL_METH_OK
     except NotImplementedError:
         error[0] = CALL_METH_ERROR_INVALID_METHOD
-    except TypeError as exc:
-        print(exc)
+    except TypeError:
+        traceback.print_exc()
         error[0] = 1 | CALL_METH_ERROR_INVALID_ARGUMENT | CALL_METH_TYPE_NIL
     # TODO: handle errors here
 
@@ -142,8 +143,8 @@ def pybind_set_prop(handle, propname, val):
         pyval = variant_to_pyobj(val)
         setattr(instance, ffi.string(propname), pyval)
         return True
-    except Exception as exc:
-        print(exc)
+    except Exception:
+        traceback.print_exc()
         return False
 
 
@@ -154,8 +155,8 @@ def pybind_get_prop(handle, propname, ret):
         pyret = getattr(instance, ffi.string(propname))
         pyobj_to_variant(pyret, ret)
         return True
-    except Exception as exc:
-        print(exc)
+    except Exception:
+        traceback.print_exc()
         return False
 
 
@@ -173,7 +174,8 @@ def pybind_get_prop_type(handle, propname, prop_type):
 @ffi.def_extern()
 def pybind_get_prop_default_value(handle, propname, r_val):
     cls_or_instance = ffi.from_handle(handle)
-    prop = cls_or_instance._exported.get(ffi.string(propname), None)
+    cls = cls_or_instance if isinstance(cls_or_instance, type) else type(cls_or_instance)
+    prop = cls.__exported.get(ffi.string(propname), None)
     if not prop:
         return False
     pyobj_to_variant(prop.default, r_val)
@@ -183,7 +185,8 @@ def pybind_get_prop_default_value(handle, propname, r_val):
 @ffi.def_extern()
 def pybind_get_prop_info(handle, propname, r_prop_info):
     cls_or_instance = ffi.from_handle(handle)
-    prop = cls_or_instance._exported.get(ffi.string(propname), None)
+    cls = cls_or_instance if isinstance(cls_or_instance, type) else type(cls_or_instance)
+    prop = cls.__exported.get(ffi.string(propname), None)
     if not prop:
         return False
     r_prop_info.type = prop.gd_type
@@ -202,7 +205,7 @@ def pybind_get_prop_list(handle):
     # Need to store the cached list with a per-class name to avoid shadowing
     # from a parent class
     field = '_%s__exported_raw_list' % cls.__name__
-    raw_list = getattr(cls_or_instance, field, None)
+    raw_list = getattr(cls, field, None)
     exported = getattr(cls, '__exported')
     if not raw_list:
         # Build the list of exported fields' names, ready to be access by godot
@@ -305,3 +308,52 @@ def pybind_get_rset_mode(handle, varname):
         except (ValueError, KeyError):
             pass
     return lib.GODOT_METHOD_RPC_MODE_DISABLED
+
+
+@ffi.def_extern()
+def pybind_get_signal_list(handle):
+    # Lazily generate the list of exported properties' names
+    cls_or_instance = ffi.from_handle(handle)
+    cls = cls_or_instance if isinstance(cls_or_instance, type) else type(cls_or_instance)
+    # Need to store the cached list with a per-class name to avoid shadowing
+    # from a parent class
+    field = '_%s__signal_raw_list' % cls.__name__
+    raw_list = getattr(cls, field, None)
+    if not raw_list:
+        # Build the list of signals, ready to be access by godot
+        raw_list = ffi.new('godot_string[]', len(cls.__signals) + 1)
+        for i, name in enumerate(cls.__signals.keys()):
+            lib.godot_string_new_unicode_data(ffi.addressof(raw_list[i]), name, -1)
+        # Last entry is an empty string
+        lib.godot_string_new(ffi.addressof(raw_list[len(cls.__signals)]))
+        setattr(cls, field, raw_list)
+    return raw_list
+
+
+@ffi.def_extern()
+def pybind_has_signal(handle, signalname):
+    cls_or_instance = ffi.from_handle(handle)
+    cls = cls_or_instance if isinstance(cls_or_instance, type) else type(cls_or_instance)
+    return ffi.string(signalname) in cls.__signals
+
+
+@ffi.def_extern()
+def pybind_get_signal_info(handle, signalname, r_argcount):
+    cls_or_instance = ffi.from_handle(handle)
+    cls = cls_or_instance if isinstance(cls_or_instance, type) else type(cls_or_instance)
+    signal = cls.__signals.get(signalname, None)
+    if not signal:
+        return False
+    # TODO: finish this
+    r_argcount[0] = 0
+    # spec = inspect.getfullargspec(signal)
+    # # Cannot pass keyword only arguments through godot
+    # r_argcount[0] = len(spec.args)
+    return True
+
+
+@ffi.def_extern()
+def pybind_get_class_name(handle, r_name):
+    cls_or_instance = ffi.from_handle(handle)
+    cls = cls_or_instance if isinstance(cls_or_instance, type) else type(cls_or_instance)
+    lib.godot_string_new_unicode_data(r_name, cls.__name__, -1)

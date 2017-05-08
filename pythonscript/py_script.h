@@ -56,8 +56,13 @@ protected:
 	virtual void _placeholder_erased(PlaceHolderScriptInstance *p_placeholder);
 #endif
 public:
+	StringName get_meth_signature(StringName p_methname);
+
 	_FORCE_INLINE_ cffi_handle get_py_module() const { return this->_py_module; }
 	_FORCE_INLINE_ cffi_handle get_py_exposed_class() const { return this->_py_exposed_class; }
+
+	String get_name() { return this->name; }
+	String get_path() { return this->path; }
 
 	bool can_instance() const;
 

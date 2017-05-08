@@ -5,6 +5,8 @@
 #include "py_script.h"
 // Godot imports
 #include "core/variant.h"
+#include "core/os/os.h"
+
 
 bool PyInstance::set(const StringName &p_name, const Variant &p_value) {
 	DEBUG_TRACE_METHOD();
@@ -59,10 +61,53 @@ bool PyInstance::has_method(const StringName &p_method) const {
 	return this->_script.ptr()->has_method(p_method);
 }
 
+
+// #ifdef DEBUG_ENABLED
+// void godot_method_bind_ptrcall_profiled(godot_method_bind *p_method_bind, godot_object *p_instance, const void **p_args, void *p_ret) {
+//     uint64_t call_time;
+//     uint64_t function_call_time;
+
+//     if (GDScriptLanguage::get_singleton()->profiling) {
+//         call_time = OS::get_singleton()->get_ticks_usec();
+//     }
+
+// 	MethodBind *mb = (MethodBind *)p_method_bind;
+// 	Object *o = (Object *)p_instance;
+//     godot_method_bind_ptrcall(p_method_bind, p_instance, p_args, p_ret);
+
+//     if (GDScriptLanguage::get_singleton()->profiling) {
+//         function_call_time += OS::get_singleton()->get_ticks_usec() - call_time;
+//     }
+// }
+// #else
+// #define godot_method_bind_ptrcall_profiled godot_method_bind_ptrcall
+// #endif
+
+
 Variant PyInstance::call(const StringName &p_method, const Variant **p_args, int p_argcount, Variant::CallError &r_error) {
 	DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
+	// TODO: optimize when calling a Godot method from Godot to avoid param conversion
 	// TODO: precompute p_method lookup for faster access
 	Variant ret;
+#ifdef DEBUG_ENABLED
+
+	uint64_t function_start_time;
+	// uint64_t function_call_time;
+
+	PyLanguage::MethProfile *profile = nullptr;
+	if (PyLanguage::get_singleton()->profiling) {
+		StringName signature = ((PyScript*)this->get_script().ptr())->get_meth_signature(p_method);
+		auto e = PyLanguage::get_singleton()->per_meth_profiling.find(signature);
+		if (e == NULL) {
+			PyLanguage::get_singleton()->per_meth_profiling[signature] = PyLanguage::MethProfile();
+			e = PyLanguage::get_singleton()->per_meth_profiling.find(signature);
+		}
+		profile = &e->value();
+		function_start_time = OS::get_singleton()->get_ticks_usec();
+		profile->frame_call_count++;
+	}
+#endif
+
 	// Instead of passing C++ Variant::CallError object through cffi, we compress
 	// it arguments into a single int, yeah this is a hack ;-)
 	int error = 0;
@@ -73,6 +118,16 @@ Variant PyInstance::call(const StringName &p_method, const Variant **p_args, int
 		r_error.argument = (error >> 2) & 0xFF;
 		r_error.expected = (Variant::Type)(error >> 4);
 	}
+
+#ifdef DEBUG_ENABLED
+	if (PyLanguage::get_singleton()->profiling) {
+		uint64_t time_taken = OS::get_singleton()->get_ticks_usec() - function_start_time;
+		profile->frame_total_time += time_taken;
+		profile->frame_self_time += time_taken;
+		// profile->frame_self_time += time_taken - function_call_time;
+	}
+
+#endif
 	return ret;
 }
 
