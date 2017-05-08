@@ -6,24 +6,22 @@
 #include "py_script.h"
 #include "pythonscript.h"
 
-
 #if DEBUG_ENABLED
 #define __ASSERT_PYSCRIPT_REASON "Cannot retrieve Python class for this script, is you code correct ?"
-#define ASSERT_PYSCRIPT_VALID()               \
-{                                             \
-	ERR_EXPLAIN(__ASSERT_PYSCRIPT_REASON);    \
-	ERR_FAIL_COND(!this->can_instance())      \
-}
-#define ASSERT_PYSCRIPT_VALID_V(ret)          \
-{                                             \
-	ERR_EXPLAIN(__ASSERT_PYSCRIPT_REASON);    \
-	ERR_FAIL_COND_V(!this->can_instance(), ret) \
-}
+#define ASSERT_PYSCRIPT_VALID()                \
+	{                                          \
+		ERR_EXPLAIN(__ASSERT_PYSCRIPT_REASON); \
+		ERR_FAIL_COND(!this->can_instance())   \
+	}
+#define ASSERT_PYSCRIPT_VALID_V(ret)                \
+	{                                               \
+		ERR_EXPLAIN(__ASSERT_PYSCRIPT_REASON);      \
+		ERR_FAIL_COND_V(!this->can_instance(), ret) \
+	}
 #else
 #define ASSERT_PYSCRIPT_VALID()
 #define ASSERT_PYSCRIPT_VALID_V(ret)
 #endif
-
 
 void PyScript::_bind_methods() {
 	DEBUG_TRACE();
@@ -191,10 +189,9 @@ Error PyScript::reload(bool p_keep_state) {
 		// Python should have printed an exception explaining the error
 		ERR_FAIL_V(ERR_PARSE_ERROR);
 	}
-	pybind_get_class_name(this->_py_exposed_class, (godot_string*)&this->name);
+	pybind_get_class_name(this->_py_exposed_class, (godot_string *)&this->name);
 	this->tool = pybind_is_tool(this->_py_exposed_class);
 	this->valid = true;
-
 
 // valid=false;
 // GDParser parser;
@@ -746,7 +743,6 @@ void PyScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
 		signal = (String *)&signals[++i];
 	}
 
-
 	//     for(const Map<StringName,Vector<StringName> >::Element *E=_signals.front();E;E=E->next()) {
 
 	//         MethodInfo mi;
@@ -772,12 +768,12 @@ void PyScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
 
 StringName PyScript::get_meth_signature(StringName p_methname) {
 	StringName signature;
-	// TODO: Cache this
-	// TODO: Handle line number
+// TODO: Cache this
+// TODO: Handle line number
 #ifdef DEBUG_ENABLED
-		signature = this->path + "::0::" + this->name + "." + p_methname;
+	signature = this->path + "::0::" + this->name + "." + p_methname;
 #endif
-		return signature;
+	return signature;
 };
 
 PyScript::PyScript()

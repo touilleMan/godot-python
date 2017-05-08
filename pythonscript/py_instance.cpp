@@ -4,9 +4,8 @@
 #include "py_language.h"
 #include "py_script.h"
 // Godot imports
-#include "core/variant.h"
 #include "core/os/os.h"
-
+#include "core/variant.h"
 
 bool PyInstance::set(const StringName &p_name, const Variant &p_value) {
 	DEBUG_TRACE_METHOD();
@@ -61,7 +60,6 @@ bool PyInstance::has_method(const StringName &p_method) const {
 	return this->_script.ptr()->has_method(p_method);
 }
 
-
 // #ifdef DEBUG_ENABLED
 // void godot_method_bind_ptrcall_profiled(godot_method_bind *p_method_bind, godot_object *p_instance, const void **p_args, void *p_ret) {
 //     uint64_t call_time;
@@ -83,7 +81,6 @@ bool PyInstance::has_method(const StringName &p_method) const {
 // #define godot_method_bind_ptrcall_profiled godot_method_bind_ptrcall
 // #endif
 
-
 Variant PyInstance::call(const StringName &p_method, const Variant **p_args, int p_argcount, Variant::CallError &r_error) {
 	DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
 	// TODO: optimize when calling a Godot method from Godot to avoid param conversion
@@ -96,7 +93,7 @@ Variant PyInstance::call(const StringName &p_method, const Variant **p_args, int
 
 	PyLanguage::MethProfile *profile = nullptr;
 	if (PyLanguage::get_singleton()->profiling) {
-		StringName signature = ((PyScript*)this->get_script().ptr())->get_meth_signature(p_method);
+		StringName signature = ((PyScript *)this->get_script().ptr())->get_meth_signature(p_method);
 		auto e = PyLanguage::get_singleton()->per_meth_profiling.find(signature);
 		if (e == NULL) {
 			PyLanguage::get_singleton()->per_meth_profiling[signature] = PyLanguage::MethProfile();

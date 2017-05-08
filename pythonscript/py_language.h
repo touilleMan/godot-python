@@ -6,10 +6,9 @@
 // Godot imports
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
+#include "core/map.h"
 #include "core/script_language.h"
 #include "core/self_list.h"
-#include "core/map.h"
-
 
 class PyScript;
 class PyInstance;
@@ -32,10 +31,11 @@ class PyLanguage : public ScriptLanguage {
 		uint64_t last_frame_call_count;
 		uint64_t last_frame_self_time;
 		uint64_t last_frame_total_time;
-		MethProfile() : call_count(0), self_time(0), total_time(0),
-			frame_call_count(0), frame_self_time(0), frame_total_time(0),
-			last_frame_call_count(0), last_frame_self_time(0),
-			last_frame_total_time(0) {}
+		MethProfile()
+			: call_count(0), self_time(0), total_time(0),
+			  frame_call_count(0), frame_self_time(0), frame_total_time(0),
+			  last_frame_call_count(0), last_frame_self_time(0),
+			  last_frame_total_time(0) {}
 	};
 	Map<StringName, MethProfile> per_meth_profiling;
 	bool profiling;

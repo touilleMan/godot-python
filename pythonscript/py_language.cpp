@@ -292,7 +292,7 @@ PyLanguage::PyLanguage() {
 #endif
 
 #ifdef DEBUG_ENABLED
-    this->profiling = false;
+	this->profiling = false;
 #endif
 #if 0
     calls=0;
