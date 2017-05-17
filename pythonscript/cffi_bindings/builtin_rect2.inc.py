@@ -20,8 +20,9 @@ class Rect2:
             raise TypeError('Param `%s` should be of type `float`' % argname)
 
     def __init__(self, x=0.0, y=0.0, width=0.0, height=0.0):
-        self._gd_obj = lib.godot_rect2_new(x, y, width, height)
-        self._gd_obj_ptr = ffi.addressof(self._gd_obj)
+        self._gd_obj_ptr = ffi.new('godot_rect2*')
+        lib.godot_rect2_new(self._gd_obj_ptr, x, y, width, height)
+        self._gd_obj = self._gd_obj_ptr[0]
 
     def __eq__(self, other):
         return isinstance(other, Rect2) and lib.godot_rect2_equals(self._gd_obj_ptr, other._gd_obj_ptr)

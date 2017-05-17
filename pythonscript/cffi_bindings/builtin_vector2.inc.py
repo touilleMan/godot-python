@@ -28,8 +28,9 @@ class Vector2:
             raise TypeError('Param `%s` should be of type `float`' % argname)
 
     def __init__(self, x=0.0, y=0.0):
-        self._gd_obj = lib.godot_vector2_new(x, y)
-        self._gd_obj_ptr = ffi.addressof(self._gd_obj)
+        self._gd_obj_ptr = ffi.new('godot_vector2*')
+        lib.godot_vector2_new(self._gd_obj_ptr, x, y)
+        self._gd_obj = self._gd_obj_ptr[0]
 
     def __repr__(self):
         return "<%s(x=%s, y=%s)>" % (type(self).__name__, self.x, self.y)
@@ -96,8 +97,9 @@ class Vector2:
     # Methods
 
     def abs(self):
-        gd_obj = lib.godot_vector2_abs(self._gd_obj_ptr)
-        return Vector2.build_from_gd_obj(gd_obj)
+        ret = Vector2()
+        lib.godot_vector2_abs(self._gd_obj_ptr, ret._gd_obj_ptr)
+        return ret
 
     def angle(self):
         return lib.godot_vector2_angle(self._gd_obj_ptr)
@@ -185,8 +187,4 @@ class Vector2:
 
     def tangent(self):
         gd_obj = lib.godot_vector2_tangent(self._gd_obj_ptr)
-        return Vector2.build_from_gd_obj(gd_obj)
-
-    def to_string(self):
-        gd_obj = lib.godot_vector2_to_string(self._gd_obj_ptr)
         return Vector2.build_from_gd_obj(gd_obj)

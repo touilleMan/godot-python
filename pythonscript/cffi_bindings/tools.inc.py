@@ -8,20 +8,22 @@ def godot_array_to_pyobj(p_gdarray):
 
 def godot_dictionary_to_pyobj(p_gddict):
     pydict = {}
-    gdkeys = lib.godot_dictionary_keys(p_gddict)
-    p_gdkeys = ffi.new("godot_array*", gdkeys)
+    p_gdkeys = ffi.new('godot_array*')
+    lib.godot_dictionary_keys(p_gddict, p_gdkeys)
     for i in range(lib.godot_array_size(p_gdkeys)):
         p_raw_key = lib.godot_array_get(p_gdkeys, i)
-        var_key = lib.godot_variant_as_string(p_raw_key)
-        key = godot_string_to_pyobj(var_key)
-        value = lib.godot_dictionary_operator_index(p_gddict, p_raw_key)
+        p_var_key = ffi.new('godot_string*')
+        lib.godot_variant_as_string(p_raw_key, p_var_key)
+        key = godot_string_to_pyobj(p_var_key)
+        p_raw_value = ffi.new('godot_variant*')
+        lib.godot_dictionary_operator_index(p_gddict, p_raw_value, p_raw_key)
         # Recursive conversion of dict values
-        pydict[key] = variant_to_pyobj(value)
+        pydict[key] = variant_to_pyobj(p_raw_value)
     return pydict
 
 
-def godot_string_to_pyobj(gdstring):
-    raw_str = lib.godot_string_unicode_str(ffi.addressof(gdstring))
+def godot_string_to_pyobj(p_gdstring):
+    raw_str = lib.godot_string_unicode_str(p_gdstring)
     return ffi.string(raw_str)
 
 
@@ -40,13 +42,19 @@ def variant_to_pyobj(p_gdvar, hint_string=None):
     elif gdtype == lib.GODOT_VARIANT_TYPE_REAL:
         return float(lib.godot_variant_as_real(p_gdvar))
     elif gdtype == lib.GODOT_VARIANT_TYPE_STRING:
-        return godot_string_to_pyobj(lib.godot_variant_as_string(p_gdvar))
+        p_raw = ffi.new('godot_string*')
+        lib.godot_variant_as_string(p_gdvar, p_raw)
+        return godot_string_to_pyobj(p_raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR2:
-        return Vector2.build_from_gd_obj(lib.godot_variant_as_vector2(p_gdvar))
+        p_raw = ffi.new('godot_vector2*')
+        lib.godot_variant_as_vector2(p_gdvar, p_raw)
+        return Vector2.build_from_gd_obj(p_raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_RECT2:
         raise TypeError("Variant type `Rect2` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR3:
-        return Vector3.build_from_gd_obj(lib.godot_variant_as_vector3(p_gdvar))
+        p_raw = ffi.new('godot_vector3*')
+        lib.godot_variant_as_vector3(p_gdvar, p_raw)
+        return Vector3.build_from_gd_obj(p_raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_TRANSFORM2D:
         raise TypeError("Variant type `Transform2d` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_PLANE:
@@ -68,16 +76,18 @@ def variant_to_pyobj(p_gdvar, hint_string=None):
     elif gdtype == lib.GODOT_VARIANT_TYPE_RID:
         raise TypeError("Variant type `Rid` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_OBJECT:
-        p_gdobj = godot_variant_as_object(p_gdvar)
-        return getattr(bindings, hint_string)(p_gdobj[0])
+        p_raw = lib.godot_variant_as_object(p_gdvar)
+        return getattr(bindings, hint_string)(p_raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_INPUT_EVENT:
         raise TypeError("Variant type `InputEvent` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_DICTIONARY:
-        gddict = lib.godot_variant_as_dictionary(p_gdvar)
-        return godot_dictionary_to_pyobj(ffi.addressof(gddict))
+        p_raw = ffi.new('godot_dictionary*')
+        lib.godot_variant_as_dictionary(p_gdvar, p_raw)
+        return godot_dictionary_to_pyobj(p_raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_ARRAY:
-        gdarray = lib.godot_variant_as_array(p_gdvar)
-        return godot_array_to_pyobj(ffi.addressof(gdarray))
+        p_raw = ffi.new('godot_array*')
+        lib.godot_variant_as_array(p_gdvar, p_raw)
+        return godot_array_to_pyobj(p_raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY:
         raise TypeError("Variant type `PoolByteArray` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_INT_ARRAY:
@@ -134,13 +144,18 @@ def new_raw(gdtype):
     elif gdtype == lib.GODOT_VARIANT_TYPE_RID:
         raise TypeError("Type conversion `Rid` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_OBJECT:
+        # TODO use malloc to prevent garbage collection on object
         return ffi.new('godot_object**')
     elif gdtype == lib.GODOT_VARIANT_TYPE_INPUT_EVENT:
         raise TypeError("Type conversion `InputEvent` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_DICTIONARY:
-        return godot_dictionary_to_pyobj(p_raw)
+        p_raw = ffi.new('godot_dictionary*')
+        lib.godot_dictionary_new(p_raw)
+        return p_raw
     elif gdtype == lib.GODOT_VARIANT_TYPE_ARRAY:
-        return godot_array_to_pyobj(p_raw)
+        p_raw = ffi.new('godot_array*')
+        lib.godot_array_new(p_raw)
+        return p_raw
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY:
         raise TypeError("Variant type `PoolByteArray` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_INT_ARRAY:
@@ -169,7 +184,7 @@ def raw_to_pyobj(gdtype, p_raw, hint_string=None):
     elif gdtype == lib.GODOT_VARIANT_TYPE_REAL:
         return float(p_raw[0])
     elif gdtype == lib.GODOT_VARIANT_TYPE_STRING:
-        return godot_string_to_pyobj(p_raw[0])
+        return godot_string_to_pyobj(p_raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR2:
         return Vector2.build_from_gd_obj_ptr(p_raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_RECT2:
@@ -213,7 +228,9 @@ def raw_to_pyobj(gdtype, p_raw, hint_string=None):
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_STRING_ARRAY:
         ret = []
         for i in range(lib.godot_pool_string_array_size(p_raw)):
-            ret.append(godot_string_to_pyobj(lib.godot_pool_string_array_get(p_raw, i)))
+            p_raw_value = ffi.new('godot_string*')
+            lib.godot_pool_string_array_get(p_raw, p_raw_value, i)
+            ret.append(godot_string_to_pyobj(p_raw_value))
         return ret
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY:
         raise TypeError("Variant type `PoolVector2Array` not implemented yet")

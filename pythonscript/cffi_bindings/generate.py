@@ -97,6 +97,8 @@ enum MethodFlags {
     METHOD_FLAGS_DEFAULT=METHOD_FLAG_NORMAL,
 };
 
+// We use malloc to bypass Python garbage collector for Godot Object
+void *malloc(size_t size);
 """ + cdef + strip_hashed_src(api_struct_src))
 
 

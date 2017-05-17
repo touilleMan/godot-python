@@ -14,21 +14,28 @@ class NodePath:
         lib.godot_node_path_destroy(self._gd_ptr)
 
     def __repr__(self):
-        gd_repr = lib.godot_node_path_as_string(self._gd_ptr)
-        raw_str = lib.godot_string_unicode_str(ffi.addressof(gd_repr))
+        gd_repr = ffi.new('godot_string *')
+        lib.godot_node_path_as_string(self._gd_ptr, gd_repr)
+        raw_str = lib.godot_string_unicode_str(gd_repr)
         return "<%s(path=%r)>" % (type(self).__name__, ffi.string(raw_str))
 
     def get_name(self, idx):
-        return godot_string_to_pyobj(lib.godot_node_path_get_name(self._gd_ptr, idx))
+        ret = ffi.new('godot_string *')
+        lib.godot_node_path_get_name(self._gd_ptr, ret, idx)
+        return godot_string_to_pyobj(ret)
 
     def get_name_count(self):
         return lib.godot_node_path_get_name_count(self._gd_ptr)
 
     def get_property(self):
-        return godot_string_to_pyobj(lib.godot_node_path_get_property(self._gd_ptr))
+        ret = ffi.new('godot_string *')
+        lib.godot_node_path_get_property(self._gd_ptr, ret, idx)
+        return godot_string_to_pyobj(ret)
 
     def get_subname(self, idx):
-        return godot_string_to_pyobj(lib.godot_node_path_get_subname(self._gd_ptr, idx))
+        ret = ffi.new('godot_string *')
+        lib.godot_node_path_get_subname(self._gd_ptr, ret, idx)
+        return godot_string_to_pyobj(ret)
 
     def get_subname_count(self):
         return lib.godot_node_path_get_subname_count(self._gd_ptr)

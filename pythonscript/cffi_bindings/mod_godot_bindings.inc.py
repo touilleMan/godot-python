@@ -73,8 +73,9 @@ class ClassDB:
         lib.godot_method_bind_ptrcall(cls._meth_get_method_list, cls._instance, args, ret)
         for i in range(lib.godot_array_size(ret)):
             var = lib.godot_array_get(ret, i)
-            gddict = lib.godot_variant_as_dictionary(var)
-            methdict = godot_dictionary_to_pyobj(ffi.addressof(gddict))
+            p_gddict = ffi.new('godot_dictionary*')
+            lib.godot_variant_as_dictionary(var, p_gddict)
+            methdict = godot_dictionary_to_pyobj(p_gddict)
             methods.append(methdict)
         return methods
 
@@ -86,13 +87,13 @@ class ClassDB:
 
         def getter(self):
             ret = ffi.new('godot_variant*')
-            args = ffi.new("void*[]", [self._gd_obj, gd_propname])
+            args = ffi.new("void*[]", [self._gd_obj_ptr, gd_propname])
             lib.godot_method_bind_ptrcall(cls._meth_get_property, cls._instance, args, ret)
             return variant_to_pyobj(ret)
 
         def setter(self, value):
             gd_value = pyobj_to_variant(value)
-            args = ffi.new("void*[]", [self._gd_obj, gd_propname, gd_value])
+            args = ffi.new("void*[]", [self._gd_obj_ptr, gd_propname, gd_value])
             ret = ffi.new('godot_variant*')
             lib.godot_method_bind_ptrcall(cls._meth_set_property, cls._instance, args, ret)
             return variant_to_pyobj(ret)
@@ -111,8 +112,9 @@ class ClassDB:
         lib.godot_method_bind_ptrcall(cls._meth_get_property_list, cls._instance, args, ret)
         for i in range(lib.godot_array_size(ret)):
             var = lib.godot_array_get(ret, i)
-            gddict = lib.godot_variant_as_dictionary(var)
-            propdict = godot_dictionary_to_pyobj(ffi.addressof(gddict))
+            p_gddict = ffi.new('godot_dictionary*')
+            lib.godot_variant_as_dictionary(var, p_gddict)
+            propdict = godot_dictionary_to_pyobj(p_gddict)
             properties.append(propdict)
         return properties
 
@@ -188,14 +190,15 @@ class MetaBaseObject(type):
 
 
 class BaseObject(metaclass=MetaBaseObject):
-    def __init__(self, gd_obj=None):
-        self._gd_obj = gd_obj if gd_obj else self._gd_constructor()
-
-    def _gd_set_godot_obj(self, obj):
-        self._gd_obj = obj
+    def __init__(self, gd_obj_ptr=None):
+        """
+        Note that gd_obj_ptr should not have ownership of the Godot's Object
+        memory given it livespan is not related to its Python wrapper.
+        """
+        self._gd_obj_ptr = gd_obj_ptr if gd_obj_ptr else self._gd_constructor()
 
     def __eq__(self, other):
-        return hasattr(other, '_gd_obj') and self._gd_obj == other._gd_obj
+        return hasattr(other, '_gd_obj_ptr') and self._gd_obj_ptr == other._gd_obj_ptr
 
 
 def _gen_stub(msg):
@@ -219,8 +222,8 @@ def build_method(classname, meth):
             # args_as_variants = [pyobj_to_variant(arg) for arg in args]
             gdargs = ffi.new("void*[]", raw_args) if raw_args else ffi.NULL
             ret = new_raw(meth['return']['type'])
-            print('[PY->GD] returned:', methbind, self._gd_obj, gdargs, ret)
-            lib.godot_method_bind_ptrcall(methbind, self._gd_obj, gdargs, ret)
+            print('[PY->GD] returned:', methbind, self._gd_obj_ptr, gdargs, ret)
+            lib.godot_method_bind_ptrcall(methbind, self._gd_obj_ptr, gdargs, ret)
             return raw_to_pyobj(meth['return']['type'], ret, meth['return']['hint_string'])
 
     return bind
