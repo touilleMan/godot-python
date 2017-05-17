@@ -1,8 +1,13 @@
 class NodePath:
     GD_TYPE = lib.GODOT_VARIANT_TYPE_NODE_PATH
 
+    @classmethod
+    def build_from_gdobj(cls, gdobj):
+        ret = cls()
+        ret._gd_ptr[0] = gdobj
+        return ret
+
     def __init__(self, path):
-        self.path = path
         self._gd_ptr = ffi.new('godot_node_path*')
         gd_str = pyobj_to_raw(lib.GODOT_VARIANT_TYPE_STRING, path)
         lib.godot_node_path_new(self._gd_ptr, gd_str)
@@ -14,28 +19,27 @@ class NodePath:
         lib.godot_node_path_destroy(self._gd_ptr)
 
     def __repr__(self):
-        gd_repr = ffi.new('godot_string *')
-        lib.godot_node_path_as_string(self._gd_ptr, gd_repr)
-        raw_str = lib.godot_string_unicode_str(gd_repr)
-        return "<%s(path=%r)>" % (type(self).__name__, ffi.string(raw_str))
+        return "<%s(path=%r)>" % (type(self).__name__, self.path)
+
+    @property
+    def path(self):
+        gd_repr = lib.godot_node_path_as_string(self._gd_ptr)
+        return ffi.string(lib.godot_string_unicode_str(ffi.addressof(gd_repr)))
 
     def get_name(self, idx):
-        ret = ffi.new('godot_string *')
-        lib.godot_node_path_get_name(self._gd_ptr, ret, idx)
-        return godot_string_to_pyobj(ret)
+        name = lib.godot_node_path_get_name(self._gd_ptr, idx)
+        return godot_string_to_pyobj(ffi.addressof(name))
 
     def get_name_count(self):
         return lib.godot_node_path_get_name_count(self._gd_ptr)
 
     def get_property(self):
-        ret = ffi.new('godot_string *')
-        lib.godot_node_path_get_property(self._gd_ptr, ret, idx)
-        return godot_string_to_pyobj(ret)
+        prop = lib.godot_node_path_get_property(self._gd_ptr)
+        return godot_string_to_pyobj(ffi.addressof(prop))
 
     def get_subname(self, idx):
-        ret = ffi.new('godot_string *')
-        lib.godot_node_path_get_subname(self._gd_ptr, ret, idx)
-        return godot_string_to_pyobj(ret)
+        subname = lib.godot_node_path_get_subname(self._gd_ptr, idx)
+        return godot_string_to_pyobj(ffi.addressof(subname))
 
     def get_subname_count(self):
         return lib.godot_node_path_get_subname_count(self._gd_ptr)

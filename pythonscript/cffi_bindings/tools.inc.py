@@ -8,17 +8,16 @@ def godot_array_to_pyobj(p_gdarray):
 
 def godot_dictionary_to_pyobj(p_gddict):
     pydict = {}
-    p_gdkeys = ffi.new('godot_array*')
-    lib.godot_dictionary_keys(p_gddict, p_gdkeys)
+    gdkeys = lib.godot_dictionary_keys(p_gddict)
+    p_gdkeys = ffi.addressof(gdkeys)
     for i in range(lib.godot_array_size(p_gdkeys)):
         p_raw_key = lib.godot_array_get(p_gdkeys, i)
         p_var_key = ffi.new('godot_string*')
         lib.godot_variant_as_string(p_raw_key, p_var_key)
         key = godot_string_to_pyobj(p_var_key)
-        p_raw_value = ffi.new('godot_variant*')
-        lib.godot_dictionary_operator_index(p_gddict, p_raw_value, p_raw_key)
+        raw_value = lib.godot_dictionary_operator_index(p_gddict, p_raw_key)
         # Recursive conversion of dict values
-        pydict[key] = variant_to_pyobj(p_raw_value)
+        pydict[key] = variant_to_pyobj(ffi.addressof(raw_value))
     return pydict
 
 
@@ -229,8 +228,8 @@ def raw_to_pyobj(gdtype, p_raw, hint_string=None):
         ret = []
         for i in range(lib.godot_pool_string_array_size(p_raw)):
             p_raw_value = ffi.new('godot_string*')
-            lib.godot_pool_string_array_get(p_raw, p_raw_value, i)
-            ret.append(godot_string_to_pyobj(p_raw_value))
+            raw_value = lib.godot_pool_string_array_get(p_raw, i)
+            ret.append(godot_string_to_pyobj(ffi.addressof(raw_value)))
         return ret
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY:
         raise TypeError("Variant type `PoolVector2Array` not implemented yet")

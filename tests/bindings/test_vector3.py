@@ -132,3 +132,58 @@ class TestVector3:
         param, result = args
         calc = Vector3(2, 3, 4) / param
         assert calc == result
+
+    @pytest.mark.parametrize('args', [
+        (Vector3(0, 0, 0), Vector3(2, 3, 4)),
+        (Vector3(3, 2, 1), Vector3(5, 5, 5)),
+        (Vector3(-1, -4, -2), Vector3(1, -1, 2)),
+    ], ids=lambda x: x[0])
+    def test_add(self, args):
+        param, result = args
+        calc = Vector3(2, 3, 4) + param
+        assert calc == result
+
+    @pytest.mark.parametrize('args', [
+        (Vector3(0, 0, 0), Vector3(2, 3, 4)),
+        (Vector3(3, 2, 1), Vector3(-1, 1, 3)),
+        (Vector3(-1, -1, -1), Vector3(3, 4, 5)),
+    ], ids=lambda x: x[0])
+    def test_sub(self, args):
+        param, result = args
+        calc = Vector3(2, 3, 4) - param
+        assert calc == result
+
+    @pytest.mark.parametrize('arg', [
+        None, 1, 'dummy'
+    ], ids=lambda x: x[0])
+    def test_bad_add(self, arg):
+        with pytest.raises(TypeError):
+            Vector3(2, 3, 4) + arg
+
+    @pytest.mark.parametrize('arg', [
+        None, 1, 'dummy'
+    ], ids=lambda x: x[0])
+    def test_bad_sub(self, arg):
+        with pytest.raises(TypeError):
+            Vector3(2, 3, 4) - arg
+
+    @pytest.mark.parametrize('arg', [
+        None, 'dummy'
+    ], ids=lambda x: x[0])
+    def test_bad_div(self, arg):
+        with pytest.raises(TypeError):
+            Vector3(2, 3, 4) / arg
+
+    @pytest.mark.parametrize('arg', [
+        0, Vector3(0, 1, 1), Vector3(1, 0, 1), Vector3(1, 1, 0), Vector3(0, 0, 0)
+    ], ids=lambda x: x[0])
+    def test_zero_div(self, arg):
+        with pytest.raises(ZeroDivisionError):
+            Vector3(2, 3, 4) / arg
+
+    @pytest.mark.parametrize('arg', [
+        None, 'dummy'
+    ], ids=lambda x: x[0])
+    def test_bad_mult(self, arg):
+        with pytest.raises(TypeError):
+            Vector3(2, 3, 4) * arg

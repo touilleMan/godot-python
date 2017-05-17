@@ -17,7 +17,7 @@ class TestBasis:
     def test_repr(self):
         args = (Vector3(1, 2, 3), Vector3(4, 5, 6), Vector3(7, 8, 9))
         v = Basis.build_from_rows(*args)
-        assert repr(v) == '<Basis((1, 2, 3), (4, 5, 6), (7, 8, 9))>'
+        assert repr(v) == '<Basis((1.0, 4.0, 7.0), (2.0, 5.0, 8.0), (3.0, 6.0, 9.0))>'
 
     def test_default_instanciate(self):
         v = Basis()

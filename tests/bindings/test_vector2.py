@@ -117,6 +117,61 @@ class TestVector2:
         assert v3.y == 2.5
 
     @pytest.mark.parametrize('args', [
+        (Vector2(0, 0), Vector2(2, 3)),
+        (Vector2(3, 2), Vector2(5, 5)),
+        (Vector2(-1, -4), Vector2(1, -1)),
+    ], ids=lambda x: x[0])
+    def test_add(self, args):
+        param, result = args
+        calc = Vector2(2, 3) + param
+        assert calc == result
+
+    @pytest.mark.parametrize('args', [
+        (Vector2(0, 0), Vector2(2, 3)),
+        (Vector2(3, 2), Vector2(-1, 1)),
+        (Vector2(-1, -1), Vector2(3, 4)),
+    ], ids=lambda x: x[0])
+    def test_sub(self, args):
+        param, result = args
+        calc = Vector2(2, 3) - param
+        assert calc == result
+
+    @pytest.mark.parametrize('arg', [
+        None, 1, 'dummy'
+    ], ids=lambda x: x[0])
+    def test_bad_add(self, arg):
+        with pytest.raises(TypeError):
+            Vector2(2, 3) + arg
+
+    @pytest.mark.parametrize('arg', [
+        None, 1, 'dummy'
+    ], ids=lambda x: x[0])
+    def test_bad_sub(self, arg):
+        with pytest.raises(TypeError):
+            Vector2(2, 3) - arg
+
+    @pytest.mark.parametrize('arg', [
+        None, 'dummy'
+    ], ids=lambda x: x[0])
+    def test_bad_div(self, arg):
+        with pytest.raises(TypeError):
+            Vector2(2, 3) / arg
+
+    @pytest.mark.parametrize('arg', [
+        0, Vector2(0, 1), Vector2(1, 0), Vector2(0, 0)
+    ], ids=lambda x: x[0])
+    def test_zero_div(self, arg):
+        with pytest.raises(ZeroDivisionError):
+            Vector2(2, 3) / arg
+
+    @pytest.mark.parametrize('arg', [
+        None, 'dummy'
+    ], ids=lambda x: x[0])
+    def test_bad_mult(self, arg):
+        with pytest.raises(TypeError):
+            Vector2(2, 3) * arg
+
+    @pytest.mark.parametrize('args', [
         (0, Vector2(0, 0)),
         (1, Vector2(2, 3)),
         (2.5, Vector2(5, 7.5)),
