@@ -7,9 +7,7 @@ if python_backend not in ('cpython', 'pypy'):
     raise UserError('PYTHONSCRIPT_BACKEND should be `cpython` (default) or `pypy`')
 
 if python_backend == 'cpython':
-# CFFI import system complains it doesn't have a libpython.so with static build
-#    python_lib = File("cpython/libpython3.6dm.a")
-    python_lib = File("cpython/libpython3.6dm.so")
+    python_lib = File("#bin/libpython.so")
 else:
     raise UserError("Pythonscript's pypy backend not supported yet :'-(")
 
@@ -29,27 +27,27 @@ env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN'"])
 #x86_64-linux-gnu-gcc -pthread -shared -Wl,-O1 -Wl,-Bsymbolic-functions -Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,-Bsymbolic-functions -Wl,-z,relro -g -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 ./pythonscriptcffi.o -lpython3.5m -o ./pythonscriptcffi.so
 
 sources = [
-	"cffi_bindings/pythonscriptcffi.gen.cpp",
-	"register_types.cpp",
-	"py_language.cpp",
-	"py_editor.cpp",
-	"py_debug.cpp",
-	"py_script.cpp",
-	"py_instance.cpp",
-	"py_loader.cpp"
+    "cffi_bindings/pythonscriptcffi.gen.cpp",
+    "register_types.cpp",
+    "py_language.cpp",
+    "py_editor.cpp",
+    "py_debug.cpp",
+    "py_script.cpp",
+    "py_instance.cpp",
+    "py_loader.cpp"
 ]
 
 if ARGUMENTS.get('PYTHONSCRIPT_SHARED', 'no') == 'yes':
-	shared_module_env = module_env.Clone()
-	shared_module_env['LIBS'] = [python_lib]
-	shared_module_env.Append(CXXFLAGS='-fPIC')
-	shared_lib = shared_module_env.SharedLibrary(target='#bin/pythonscript', source=sources)
-	# Scons needs the name of the lib with custom suffix (e.g. ".x11.tools.64")
-	# but without the final ".so"
-	shared_lib_shim = shared_lib[0].name.rsplit('.', 1)[0]
-	env.Append(LIBS=[shared_lib_shim, 'util'])
-	env.Append(LIBPATH=['#bin'])
+    shared_module_env = module_env.Clone()
+    shared_module_env['LIBS'] = [python_lib]
+    shared_module_env.Append(CXXFLAGS='-fPIC')
+    shared_lib = shared_module_env.SharedLibrary(target='#bin/pythonscript', source=sources)
+    # Scons needs the name of the lib with custom suffix (e.g. ".x11.tools.64")
+    # but without the final ".so"
+    shared_lib_shim = shared_lib[0].name.rsplit('.', 1)[0]
+    env.Append(LIBS=[shared_lib_shim, 'util'])
+    env.Append(LIBPATH=['#bin'])
 else:
-	env.Append(LIBS=[python_lib, 'util'])
-	for src in sources:
-		module_env.add_source_files(env.modules_sources, src)
+    env.Append(LIBS=[python_lib, 'util'])
+    for src in sources:
+        module_env.add_source_files(env.modules_sources, src)

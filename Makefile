@@ -10,7 +10,7 @@ BASEDIR = $(shell pwd)
 GODOT_DIR ?= $(BASEDIR)/godot
 
 PYTHON_DIR = $(BASEDIR)/pythonscript/cpython
-PYTHON_LIB = $(PYTHON_DIR)/libpython*.a
+PYTHON_LIB = $(PYTHON_DIR)/libpython*.so.1.0
 BUILD_PYTHON_PATH = $(PYTHON_DIR)/build
 BUILD_PYTHON_OPTS =
 PYTHON = LD_LIBRARY_PATH=$(BUILD_PYTHON_PATH)/lib $(BUILD_PYTHON_PATH)/bin/python3
@@ -120,4 +120,6 @@ build_python:
 	cd $(PYTHON_DIR) && make install
 	# Install cffi is a pita...
 	LD_LIBRARY_PATH=$(PYTHON_DIR) $(PIP) install cffi
-	cp $(PYTHON_LIB) $(GODOT_DIR)/bin
+	if ( [ ! -d $(GODOT_DIR)/bin ] ); then mkdir $(GODOT_DIR)/bin; fi
+	cp $(PYTHON_LIB) $(GODOT_DIR)/bin/
+	ln -s `basename $(PYTHON_LIB)` $(GODOT_DIR)/bin/libpython.so
