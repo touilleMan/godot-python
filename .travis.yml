@@ -74,6 +74,7 @@ before_script:
 
 script:
   - set -e  # Enable fail on first error
+  - make generate_cffi_bindings
   - if [[ "$CXX" == "clang++" ]]; then sh tools/clang-format-travis-check.sh; fi
   - if [[ "$CXX" == "g++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS CXX=g++-5 CC=gcc-5"; fi
   - if [[ "$CXX" == "clang++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS use_llvm=yes"; fi

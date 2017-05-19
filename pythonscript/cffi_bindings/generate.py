@@ -107,4 +107,4 @@ ffibuilder.embedding_api(strip_hashed_src(api_src))
 
 
 # Output .cpp code ready to be compiled ;-)
-ffibuilder.emit_c_code(BASEDIR + "/pythonscriptcffi.cpp")
+ffibuilder.emit_c_code(BASEDIR + "/pythonscriptcffi.gen.cpp")

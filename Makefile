@@ -9,6 +9,7 @@ GODOT_DIR ?= $(BASEDIR)/godot
 BUILD_PYTHON_PATH = $(BASEDIR)/pythonscript/cpython/build
 PYTHON = LD_LIBRARY_PATH=$(BUILD_PYTHON_PATH)/lib $(BUILD_PYTHON_PATH)/bin/python3
 GDNATIVE_CFFIDEFS = $(BASEDIR)/pythonscript/cffi_bindings/cdef.gen.h
+GDNATIVE_CFFI_BINDINGS = $(BASEDIR)/pythonscript/cffi_bindings/pythonscriptcffi.gen.cpp
 
 # Add `LIBGL_ALWAYS_SOFTWARE=1` if you computer sucks with opengl3...
 ifndef DEBUG
@@ -63,6 +64,7 @@ clean:
 
 veryclean: clean
 	rm -f $(GDNATIVE_CFFIDEFS)
+	rm -f $(GDNATIVE_CFFI_BINDINGS)
 
 test:
 	cd tests/bindings && $(GODOT_CMD)

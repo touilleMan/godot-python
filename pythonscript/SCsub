@@ -29,7 +29,7 @@ env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN'"])
 #x86_64-linux-gnu-gcc -pthread -shared -Wl,-O1 -Wl,-Bsymbolic-functions -Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,-Bsymbolic-functions -Wl,-z,relro -g -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 ./pythonscriptcffi.o -lpython3.5m -o ./pythonscriptcffi.so
 
 sources = [
-	"cffi_bindings/pythonscriptcffi.cpp",
+	"cffi_bindings/pythonscriptcffi.gen.cpp",
 	"register_types.cpp",
 	"py_language.cpp",
 	"py_editor.cpp",

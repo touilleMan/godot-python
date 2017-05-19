@@ -37,17 +37,17 @@ Basically we should endup with those links:
 ```
 $ make generate_gdnative_cffidefs
 ```
-Note this step is only useful if GDnative API has changed (we should not
+Note this step is only useful if GDnative API has changed (should not
 happen really often when Godot 3.0 will be released).
 
 2 - Use CFFI to generate `pythonscriptcffi.cpp`
 ```
-$ make generate_dev_dyn_cffi_bindings
+$ make generate_cffi_bindings
 ```
 Or if you want to be able to modify *.inc.py files without having to recompile
 everytime (useful for dev):
 ```
-$ make generate_cffi_bindings
+$ make generate_dev_dyn_cffi_bindings
 ```
 
 4 - Compile CPython & Pythonscript module
