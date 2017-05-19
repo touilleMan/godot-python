@@ -38,7 +38,7 @@ class CookComplexEnumsVisitor(c_ast.NodeVisitor):
 def generate(godot_root):
     gdnative_header = '%s/modules/gdnative/godot.h' % godot_root
     gdnative_include = '%s/modules/gdnative/godot' % godot_root
-    ast = parse_file(gdnative_header, use_cpp=True, cpp_args=['-I' + gdnative_include, '-I%s/fake_libc_include' % BASEDIR])
+    ast = parse_file(gdnative_header, use_cpp=True, cpp_args=['-D__attribute__(x)=', '-I' + gdnative_include, '-I%s/fake_libc_include' % BASEDIR])
     v = CookComplexEnumsVisitor()
     v.visit(ast)
     generator = c_generator.CGenerator()

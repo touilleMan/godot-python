@@ -6,12 +6,11 @@
 [node name="Node" type="Node"]
 
 script = ExtResource( 1 )
-exported = 42
 
 [node name="Node" type="Node" parent="."]
 
 script = ExtResource( 2 )
 python_prop_static = "foooo"
-python_prop = 41
+ = null
 
 

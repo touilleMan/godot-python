@@ -73,9 +73,8 @@ class ClassDB:
         lib.godot_method_bind_ptrcall(cls._meth_get_method_list, cls._instance, args, ret)
         for i in range(lib.godot_array_size(ret)):
             var = lib.godot_array_get(ret, i)
-            p_gddict = ffi.new('godot_dictionary*')
-            lib.godot_variant_as_dictionary(var, p_gddict)
-            methdict = godot_dictionary_to_pyobj(p_gddict)
+            gddict = lib.godot_variant_as_dictionary(ffi.addressof(var))
+            methdict = godot_dictionary_to_pyobj(ffi.addressof(gddict))
             methods.append(methdict)
         return methods
 
@@ -112,9 +111,8 @@ class ClassDB:
         lib.godot_method_bind_ptrcall(cls._meth_get_property_list, cls._instance, args, ret)
         for i in range(lib.godot_array_size(ret)):
             var = lib.godot_array_get(ret, i)
-            p_gddict = ffi.new('godot_dictionary*')
-            lib.godot_variant_as_dictionary(var, p_gddict)
-            propdict = godot_dictionary_to_pyobj(p_gddict)
+            gddict = lib.godot_variant_as_dictionary(ffi.addressof(var))
+            propdict = godot_dictionary_to_pyobj(ffi.addressof(gddict))
             properties.append(propdict)
         return properties
 
@@ -282,11 +280,9 @@ def get_builtins():
         'Basis': Basis,
         # 'Transform': Transform,
         # 'Color': Color,
-        # 'Image': Image,
         'NodePath': NodePath,
         # 'Rid': Rid,
         # 'Object': Object,
-        # 'InputEvent': InputEvent,
         # 'Dictionary': Dictionary,
         # 'Array': Array,
         # 'PoolByteArray': PoolByteArray,

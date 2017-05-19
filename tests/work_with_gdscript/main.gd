@@ -6,6 +6,13 @@ var python_scene = preload("res://python_scene.tscn")
 
 
 func _ready():
+	var a = Basis(Vector3(1, 2, 3), Vector3(4, 5, 6), Vector3(7, 8, 9))
+	print('=========>', a)
+	var b = Basis()
+	b.x = Vector3(1, 2, 3)
+	b.y = Vector3(4, 5, 6)
+	b.z = Vector3(7, 8, 9)
+	print('=========>', b)
 	var python_scene_instance = python_scene.instance()
 	python_scene_instance.set_name("python_scene")
 	self.add_child(python_scene_instance)
