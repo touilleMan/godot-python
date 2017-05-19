@@ -81,5 +81,5 @@ generate_dev_dyn_cffi_bindings: generate_gdnative_cffidefs
 	@printf "\033[0;32mPython .inc.py files are now dynamically loaded, don't share the binary !\033[0m\n"
 
 
-generate_gdnative_cffidefs: $(GDNATIVE_CFFIDEFS)
+generate_gdnative_cffidefs:
 	./tools/generate_gdnative_cffidefs.py --output $(GDNATIVE_CFFIDEFS) $(GODOT_DIR)
