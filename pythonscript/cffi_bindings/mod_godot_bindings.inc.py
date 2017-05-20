@@ -215,7 +215,7 @@ def build_method(classname, meth):
             # TODO: check args number and type here (ptrcall means segfault on bad args...)
             print('[PY->GD] Calling %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
             # TODO: check len(args)
-            raw_args = [pyobj_to_raw(meth_arg['type'], arg)
+            raw_args = [pyobj_to_raw(arg)
                         for arg, meth_arg in zip(args, meth['args'])]
             # args_as_variants = [pyobj_to_variant(arg) for arg in args]
             gdargs = ffi.new("void*[]", raw_args) if raw_args else ffi.NULL
@@ -273,25 +273,24 @@ def get_builtins():
         'Vector2': Vector2,
         'Rect2': Rect2,
         'Vector3': Vector3,
-        # 'Transform2d': Transform2d,
-        # 'Plane': Plane,
+        'Transform2d': Transform2d,
+        'Plane': Plane,
         'Quat': Quat,
-        # 'Rect3': Rect3,
+        'Rect3': Rect3,
         'Basis': Basis,
-        # 'Transform': Transform,
-        # 'Color': Color,
+        'Transform': Transform,
+        'Color': Color,
         'NodePath': NodePath,
         'RID': RID,
-        # 'Object': Object,
-        # 'Dictionary': Dictionary,
-        # 'Array': Array,
-        # 'PoolByteArray': PoolByteArray,
-        # 'PoolIntArray': PoolIntArray,
-        # 'PoolRealArray': PoolRealArray,
-        # 'PoolStringArray': PoolStringArray,
-        # 'PoolVector2Array': PoolVector2Array,
-        # 'PoolVector3Array': PoolVector3Array,
-        # 'PoolColorArray': PoolColorArray,
+        'Dictionary': Dictionary,
+        'Array': Array,
+        'PoolByteArray': PoolByteArray,
+        'PoolIntArray': PoolIntArray,
+        'PoolRealArray': PoolRealArray,
+        'PoolStringArray': PoolStringArray,
+        'PoolVector2Array': PoolVector2Array,
+        'PoolVector3Array': PoolVector3Array,
+        'PoolColorArray': PoolColorArray,
     }
 
 
