@@ -122,4 +122,3 @@ build_python:
 	LD_LIBRARY_PATH=$(PYTHON_DIR) $(PIP) install cffi
 	if ( [ ! -d $(GODOT_DIR)/bin ] ); then mkdir $(GODOT_DIR)/bin; fi
 	cp $(PYTHON_LIB) $(GODOT_DIR)/bin/
-	ln -s `basename $(PYTHON_LIB)` $(GODOT_DIR)/bin/libpython.so

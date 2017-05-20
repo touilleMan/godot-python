@@ -1,4 +1,4 @@
-import os
+import os, glob
 from SCons.Errors import UserError
 Import('env')
 
@@ -7,7 +7,10 @@ if python_backend not in ('cpython', 'pypy'):
     raise UserError('PYTHONSCRIPT_BACKEND should be `cpython` (default) or `pypy`')
 
 if python_backend == 'cpython':
-    python_lib = File("#bin/libpython.so")
+    try:
+        python_lib = File(glob.glob('cpython/libpython*.so.*')[0])
+    except IndexError:
+        raise UserError("Cannot find `%s/cpython/libpython*.so.*`, has CPython been compiled ?" % os.getcwd())
 else:
     raise UserError("Pythonscript's pypy backend not supported yet :'-(")
 
@@ -19,7 +22,7 @@ module_env.Append(CXXFLAGS='-I ' + Dir('pybind11/include/').path)
 module_env.Append(CXXFLAGS='-std=c++11')
 module_env.Append(CXXFLAGS='-pthread -DDEBUG=1 -fwrapv -Wall -Wstrict-prototypes -g -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -Bsymbolic-functions -Wformat -Werror=format-security'.split())
 
-# libpython3.6dm.so.1.0 will be in the same directory as the godot binary,
+# libpythonX.Ym.so.1.0 will be in the same directory as the godot binary,
 # hence we need to inform the binary to look there.
 env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN'"])
 
