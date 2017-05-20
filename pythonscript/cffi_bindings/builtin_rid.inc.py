@@ -16,8 +16,9 @@ class RID(BaseBuiltin):
         return isinstance(other, RID) and lib.godot_rid_operator_equal(self._gd_ptr, other._gd_ptr)
 
     def __lt__(self, other):
-        self._check_param_type('other', other, RID)
-        return isinstance(other, RID) and lib.godot_rid_operator_less(self._gd_ptr, other._gd_ptr)
+        if isinstance(other, RID):
+            return lib.godot_rid_operator_less(self._gd_ptr, other._gd_ptr)
+        return NotImplemented
 
     # Properties
 
