@@ -52,17 +52,17 @@ class ExportedField:
 
         self.gd_hint = self.hint
         self.gd_usage = self.usage
-        self.gd_hint_string = pyobj_to_raw(lib.GODOT_VARIANT_TYPE_STRING, self.hint_string)
+        self.gd_hint_string = pyobj_to_raw(self.hint_string)
         self.gd_type = py_to_gd_type(self.type)
         if self.default is not None:
-            self.gd_default = pyobj_to_raw(self.gd_type, self.default)
+            self.gd_default = pyobj_to_raw(self.default)
         else:
             self.gd_default = ffi.NULL
 
     @property
     def gd_name(self):
         # Name is defined lazily when ExportedField is connected to it class
-        return pyobj_to_raw(lib.GODOT_VARIANT_TYPE_STRING, self.name)
+        return pyobj_to_raw(self.name)
 
     def __repr__(self):
         return '<{x.__class__.__name__}(type={x.type}, default={x.default})>'.format(x=self)

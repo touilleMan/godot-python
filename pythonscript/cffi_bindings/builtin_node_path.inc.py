@@ -2,8 +2,9 @@ class NodePath(BaseBuiltin):
     GD_TYPE = lib.GODOT_VARIANT_TYPE_NODE_PATH
 
     def __init__(self, path):
+        self._check_param_type('path', path, str)
         self._gd_ptr = ffi.new('godot_node_path*')
-        gd_str = pyobj_to_raw(lib.GODOT_VARIANT_TYPE_STRING, path)
+        gd_str = pyobj_to_raw(path)
         lib.godot_node_path_new(self._gd_ptr, gd_str)
 
     def __eq__(self, other):
@@ -21,6 +22,7 @@ class NodePath(BaseBuiltin):
         return ffi.string(lib.godot_string_unicode_str(ffi.addressof(gd_repr)))
 
     def get_name(self, idx):
+        self._check_param_type('idx', idx, int)
         name = lib.godot_node_path_get_name(self._gd_ptr, idx)
         return godot_string_to_pyobj(ffi.addressof(name))
 
@@ -32,6 +34,7 @@ class NodePath(BaseBuiltin):
         return godot_string_to_pyobj(ffi.addressof(prop))
 
     def get_subname(self, idx):
+        self._check_param_type('idx', idx, int)
         subname = lib.godot_node_path_get_subname(self._gd_ptr, idx)
         return godot_string_to_pyobj(ffi.addressof(subname))
 
