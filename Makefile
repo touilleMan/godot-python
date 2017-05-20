@@ -50,7 +50,7 @@ all:
 	@printf '\033[0;32mgenerate_gdnative_cffidefs\033[0m: Generate GDnative cdef for CFFI\n'
 	@printf '\033[0;32mgenerate_cffi_bindings\033[0m:     Generate the CFFI bindings source\n'
 	@printf '\033[0;32mcompile\033[0m:                    Compile the Godot project with pythonscript module\n'
-	@printf '\033[0;32mtest\033[0m:                       Run test and go have a beer ;-)\n'
+	@printf '\033[0;32mtest\033[0m:                       Run tests and go have a beer ;-)\n'
 
 
 setup:
