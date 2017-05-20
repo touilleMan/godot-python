@@ -248,7 +248,56 @@ def pyobj_to_variant(pyobj, gdvar=None):
         gdstr = ffi.new("godot_string*")
         lib.godot_string_new_data(gdstr, pyobj, len(pyobj))
         lib.godot_variant_new_string(gdvar, gdstr)
-    elif hasattr(pyobj, "_gd_ptr"):
+    elif isinstance(pyobj, BaseBuiltin):
+        if pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_VECTOR2:
+            lib.godot_variant_new_vector2(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_RECT2:
+            lib.godot_variant_new_rect2(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_VECTOR3:
+            lib.godot_variant_new_vector3(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_TRANSFORM2D:
+            lib.godot_variant_new_transform2d(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_PLANE:
+            lib.godot_variant_new_plane(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_QUAT:
+            lib.godot_variant_new_quat(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_RECT3:
+            lib.godot_variant_new_rect3(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_BASIS:
+            lib.godot_variant_new_basis(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_TRANSFORM:
+            lib.godot_variant_new_transform(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_COLOR:
+            lib.godot_variant_new_color(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_IMAGE:
+            lib.godot_variant_new_image(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_NODEPATH:
+            lib.godot_variant_new_nodepath(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_RID:
+            lib.godot_variant_new_rid(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_OBJECT:
+            lib.godot_variant_new_object(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_INPUTEVENT:
+            lib.godot_variant_new_inputevent(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_DICTIONARY:
+            lib.godot_variant_new_dictionary(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_ARRAY:
+            lib.godot_variant_new_array(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLBYTEARRAY:
+            lib.godot_variant_new_poolbytearray(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLINTARRAY:
+            lib.godot_variant_new_poolintarray(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLREALARRAY:
+            lib.godot_variant_new_poolrealarray(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLSTRINGARRAY:
+            lib.godot_variant_new_poolstringarray(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLVECTOR2ARRAY:
+            lib.godot_variant_new_poolvector2array(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLVECTOR3ARRAY:
+            lib.godot_variant_new_poolvector3array(gdvar, pyobj._gd_ptr)
+        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLCOLORARRAY:
+            lib.godot_variant_new_poolcolorarray(gdvar, pyobj._gd_ptr)
+    elif isinstance(pyobj, BaseObject):
         lib.godot_variant_new_object(gdvar, pyobj._gd_ptr)
     else:
         raise TypeError("Cannot convert `%s` to Godot's Variant" % pyobj)
