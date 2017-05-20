@@ -1,21 +1,5 @@
-class Vector2:
+class Vector2(BaseBuiltin):
     GD_TYPE = lib.GODOT_VARIANT_TYPE_VECTOR2
-
-    @classmethod
-    def build_from_gdobj(cls, gdobj):
-        ret = cls()
-        ret._gd_ptr[0] = gdobj
-        return ret
-
-    @staticmethod
-    def check_param_type(argname, arg, type):
-        if not isinstance(arg, type):
-            raise TypeError('Param `%s` should be of type `%s`' % (argname, type))
-
-    @staticmethod
-    def check_param_float(argname, arg):
-        if not isinstance(arg, (int, float)):
-            raise TypeError('Param `%s` should be of type `float`' % argname)
 
     def __init__(self, x=0.0, y=0.0):
         self._gd_ptr = ffi.new('godot_vector2*')
@@ -77,12 +61,12 @@ class Vector2:
 
     @x.setter
     def x(self, val):
-        self.check_param_float('val', val)
+        self._check_param_float('val', val)
         lib.godot_vector2_set_x(self._gd_ptr, val)
 
     @y.setter
     def y(self, val):
-        self.check_param_float('val', val)
+        self._check_param_float('val', val)
         lib.godot_vector2_set_y(self._gd_ptr, val)
 
     @property
@@ -110,37 +94,37 @@ class Vector2:
         return lib.godot_vector2_angle(self._gd_ptr)
 
     def angle_to(self, to):
-        self.check_param_type('to', to, Vector2)
+        self._check_param_type('to', to, Vector2)
         return lib.godot_vector2_angle_to(self._gd_ptr, to._gd_ptr)
 
     def angle_to_point(self, to):
-        self.check_param_type('to', to, Vector2)
+        self._check_param_type('to', to, Vector2)
         return lib.godot_vector2_angle_to_point(self._gd_ptr, to._gd_ptr)
 
     def clamped(self, length):
-        self.check_param_float('length', length)
+        self._check_param_float('length', length)
         gd_obj = lib.godot_vector2_clamped(self._gd_ptr, length)
         return Vector2.build_from_gdobj(gd_obj)
 
     def cubic_interpolate(self, b, pre_a, post_b, t):
-        self.check_param_type('b', b, Vector2)
-        self.check_param_type('pre_a', pre_a, Vector2)
-        self.check_param_type('post_b', post_b, Vector2)
-        self.check_param_float('t', t)
+        self._check_param_type('b', b, Vector2)
+        self._check_param_type('pre_a', pre_a, Vector2)
+        self._check_param_type('post_b', post_b, Vector2)
+        self._check_param_float('t', t)
         gd_obj = lib.godot_vector2_cubic_interpolate(
             self._gd_ptr, b._gd_ptr, pre_a._gd_ptr, post_b._gd_ptr, t)
         return Vector2.build_from_gdobj(gd_obj)
 
     def distance_squared_to(self, to):
-        self.check_param_type('to', to, Vector2)
+        self._check_param_type('to', to, Vector2)
         return lib.godot_vector2_distance_squared_to(self._gd_ptr, to._gd_ptr)
 
     def distance_to(self, to):
-        self.check_param_type('to', to, Vector2)
+        self._check_param_type('to', to, Vector2)
         return lib.godot_vector2_distance_to(self._gd_ptr, to._gd_ptr)
 
     def dot(self, with_):
-        self.check_param_type('with_', with_, Vector2)
+        self._check_param_type('with_', with_, Vector2)
         return lib.godot_vector2_dot(self._gd_ptr, with_._gd_ptr)
 
     def floor(self):
@@ -161,8 +145,8 @@ class Vector2:
         return lib.godot_vector2_length_squared(self._gd_ptr)
 
     def linear_interpolate(self, b, t):
-        self.check_param_type('b', b, Vector2)
-        self.check_param_float('t', t)
+        self._check_param_type('b', b, Vector2)
+        self._check_param_float('t', t)
         gd_obj = lib.godot_vector2_linear_interpolate(self._gd_ptr, b._gd_ptr, t)
         return Vector2.build_from_gdobj(gd_obj)
 
@@ -171,22 +155,22 @@ class Vector2:
         return Vector2.build_from_gdobj(gd_obj)
 
     def reflect(self, vec):
-        self.check_param_type('vec', vec, Vector2)
+        self._check_param_type('vec', vec, Vector2)
         gd_obj = lib.godot_vector2_reflect(self._gd_ptr, vec._gd_ptr)
         return Vector2.build_from_gdobj(gd_obj)
 
     def rotated(self, phi):
-        self.check_param_float('phi', phi)
+        self._check_param_float('phi', phi)
         gd_obj = lib.godot_vector2_rotated(self._gd_ptr, phi)
         return Vector2.build_from_gdobj(gd_obj)
 
     def slide(self, vec):
-        self.check_param_type('vec', vec, Vector2)
+        self._check_param_type('vec', vec, Vector2)
         gd_obj = lib.godot_vector2_slide(self._gd_ptr, vec._gd_ptr)
         return Vector2.build_from_gdobj(gd_obj)
 
     def snapped(self, by):
-        self.check_param_type('by', by, Vector2)
+        self._check_param_type('by', by, Vector2)
         gd_obj = lib.godot_vector2_snapped(self._gd_ptr, by._gd_ptr)
         return Vector2.build_from_gdobj(gd_obj)
 

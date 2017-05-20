@@ -56,6 +56,7 @@ EMBEDDING_INC_SOURCES = (
     'builtin_vector3.inc.py',
     'builtin_basis.inc.py',
     'builtin_quat.inc.py',
+    'builtin_rid.inc.py',
     'tools.inc.py',
     'mod_godot_bindings.inc.py'
 )

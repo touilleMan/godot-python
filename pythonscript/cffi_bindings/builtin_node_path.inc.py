@@ -1,11 +1,5 @@
-class NodePath:
+class NodePath(BaseBuiltin):
     GD_TYPE = lib.GODOT_VARIANT_TYPE_NODE_PATH
-
-    @classmethod
-    def build_from_gdobj(cls, gdobj):
-        ret = cls()
-        ret._gd_ptr[0] = gdobj
-        return ret
 
     def __init__(self, path):
         self._gd_ptr = ffi.new('godot_node_path*')

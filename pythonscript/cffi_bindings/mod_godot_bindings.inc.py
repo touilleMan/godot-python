@@ -86,13 +86,13 @@ class ClassDB:
 
         def getter(self):
             ret = ffi.new('godot_variant*')
-            args = ffi.new("void*[]", [self._gd_obj_ptr, gd_propname])
+            args = ffi.new("void*[]", [self._gd_ptr, gd_propname])
             lib.godot_method_bind_ptrcall(cls._meth_get_property, cls._instance, args, ret)
             return variant_to_pyobj(ret)
 
         def setter(self, value):
             gd_value = pyobj_to_variant(value)
-            args = ffi.new("void*[]", [self._gd_obj_ptr, gd_propname, gd_value])
+            args = ffi.new("void*[]", [self._gd_ptr, gd_propname, gd_value])
             ret = ffi.new('godot_variant*')
             lib.godot_method_bind_ptrcall(cls._meth_set_property, cls._instance, args, ret)
             return variant_to_pyobj(ret)
@@ -193,10 +193,10 @@ class BaseObject(metaclass=MetaBaseObject):
         Note that gd_obj_ptr should not have ownership of the Godot's Object
         memory given it livespan is not related to its Python wrapper.
         """
-        self._gd_obj_ptr = gd_obj_ptr if gd_obj_ptr else self._gd_constructor()
+        self._gd_ptr = gd_obj_ptr if gd_obj_ptr else self._gd_constructor()
 
     def __eq__(self, other):
-        return hasattr(other, '_gd_obj_ptr') and self._gd_obj_ptr == other._gd_obj_ptr
+        return hasattr(other, '_gd_ptr') and self._gd_ptr == other._gd_ptr
 
 
 def _gen_stub(msg):
@@ -220,8 +220,8 @@ def build_method(classname, meth):
             # args_as_variants = [pyobj_to_variant(arg) for arg in args]
             gdargs = ffi.new("void*[]", raw_args) if raw_args else ffi.NULL
             ret = new_raw(meth['return']['type'])
-            print('[PY->GD] returned:', methbind, self._gd_obj_ptr, gdargs, ret)
-            lib.godot_method_bind_ptrcall(methbind, self._gd_obj_ptr, gdargs, ret)
+            print('[PY->GD] returned:', methbind, self._gd_ptr, gdargs, ret)
+            lib.godot_method_bind_ptrcall(methbind, self._gd_ptr, gdargs, ret)
             return raw_to_pyobj(meth['return']['type'], ret, meth['return']['hint_string'])
 
     return bind
@@ -281,7 +281,7 @@ def get_builtins():
         # 'Transform': Transform,
         # 'Color': Color,
         'NodePath': NodePath,
-        # 'Rid': Rid,
+        'RID': RID,
         # 'Object': Object,
         # 'Dictionary': Dictionary,
         # 'Array': Array,

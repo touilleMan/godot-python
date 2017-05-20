@@ -177,7 +177,7 @@ def raw_to_pyobj(gdtype, p_raw, hint_string=None):
     elif gdtype == lib.GODOT_VARIANT_TYPE_STRING:
         return godot_string_to_pyobj(p_raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR2:
-        return Vector2.build_from_gd_obj_ptr(p_raw)
+        return Vector2.build_from_gd_ptr(p_raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_RECT2:
         raise TypeError("Type conversion `Rect2` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR3:
@@ -248,8 +248,8 @@ def pyobj_to_variant(pyobj, gdvar=None):
         gdstr = ffi.new("godot_string*")
         lib.godot_string_new_data(gdstr, pyobj, len(pyobj))
         lib.godot_variant_new_string(gdvar, gdstr)
-    elif hasattr(pyobj, "_gd_obj_ptr"):
-        lib.godot_variant_new_object(gdvar, pyobj._gd_obj_ptr)
+    elif hasattr(pyobj, "_gd_ptr"):
+        lib.godot_variant_new_object(gdvar, pyobj._gd_ptr)
     else:
         raise TypeError("Cannot convert `%s` to Godot's Variant" % pyobj)
     return gdvar
@@ -279,7 +279,7 @@ def pyobj_to_raw(gdtype, pyobj):
         lib.godot_string_new_unicode_data(gdobj, pyobj, -1)
         return gdobj
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR2:
-        return pyobj._gd_obj_ptr
+        return pyobj._gd_ptr
     elif gdtype == lib.GODOT_VARIANT_TYPE_RECT2:
         raise TypeError("Variant type `Rect2` not implemented yet")
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR3:

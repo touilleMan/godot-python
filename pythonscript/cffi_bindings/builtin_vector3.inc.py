@@ -1,21 +1,5 @@
-class Vector3:
+class Vector3(BaseBuiltin):
     GD_TYPE = lib.GODOT_VARIANT_TYPE_VECTOR3
-
-    @classmethod
-    def build_from_gdobj(cls, gdobj):
-        ret = cls()
-        ret._gd_ptr[0] = gdobj
-        return ret
-
-    @staticmethod
-    def check_param_type(argname, arg, type):
-        if not isinstance(arg, type):
-            raise TypeError('Param `%s` should be of type `%s`' % (argname, type))
-
-    @staticmethod
-    def check_param_float(argname, arg):
-        if not isinstance(arg, (int, float)):
-            raise TypeError('Param `%s` should be of type `float`' % argname)
 
     AXIS_X = 0
     AXIS_Y = 1
@@ -85,17 +69,17 @@ class Vector3:
 
     @x.setter
     def x(self, val):
-        self.check_param_float('val', val)
+        self._check_param_float('val', val)
         lib.godot_vector3_set_axis(self._gd_ptr, self.AXIS_X, val)
 
     @y.setter
     def y(self, val):
-        self.check_param_float('val', val)
+        self._check_param_float('val', val)
         lib.godot_vector3_set_axis(self._gd_ptr, self.AXIS_Y, val)
 
     @z.setter
     def z(self, val):
-        self.check_param_float('val', val)
+        self._check_param_float('val', val)
         lib.godot_vector3_set_axis(self._gd_ptr, self.AXIS_Z, val)
 
     # Methods
@@ -127,58 +111,58 @@ class Vector3:
         lib.godot_vector3_zero(self._gd_ptr)
 
     def snap(self, val):
-        self.check_param_float('val', val)
+        self._check_param_float('val', val)
         lib.godot_vector3_snap(self._gd_ptr)
 
     def snapped(self, val):
-        self.check_param_float('val', val)
+        self._check_param_float('val', val)
         gd_obj = lib.godot_vector3_snapped(self._gd_ptr, val)
         return Vector3.build_from_gdobj(gd_obj)
 
     def rotate(self, axis, phi):
-        self.check_param_type('axis', axis, Vector3)
-        self.check_param_float('phi', phi)
+        self._check_param_type('axis', axis, Vector3)
+        self._check_param_float('phi', phi)
         lib.godot_vector3_rotate(self._gd_ptr, axis._gd_ptr, phi)
 
     def rotated(self, axis, phi):
-        self.check_param_type('axis', axis, Vector3)
-        self.check_param_float('phi', phi)
+        self._check_param_type('axis', axis, Vector3)
+        self._check_param_float('phi', phi)
         gd_obj = lib.godot_vector3_rotated(self._gd_ptr, axis._gd_ptr, phi)
         return Vector3.build_from_gdobj(gd_obj)
 
     def linear_interpolate(self, b, t):
-        self.check_param_type('b', b, Vector3)
-        self.check_param_float('t', t)
+        self._check_param_type('b', b, Vector3)
+        self._check_param_float('t', t)
         gd_obj = lib.godot_vector3_linear_interpolate(self._gd_ptr, b._gd_ptr, t)
         return Vector3.build_from_gdobj(gd_obj)
 
     def cubic_interpolate(self, b, pre_a, post_b, t):
-        self.check_param_type('b', b, Vector3)
-        self.check_param_type('pre_a', pre_a, Vector3)
-        self.check_param_type('post_b', post_b, Vector3)
-        self.check_param_float('t', t)
+        self._check_param_type('b', b, Vector3)
+        self._check_param_type('pre_a', pre_a, Vector3)
+        self._check_param_type('post_b', post_b, Vector3)
+        self._check_param_float('t', t)
         gd_obj = lib.godot_vector3_cubic_interpolate(self._gd_ptr, b._gd_ptr, pre_a._gd_ptr, post_b._gd_ptr, t)
         return Vector3.build_from_gdobj(gd_obj)
 
     def cubic_interpolaten(self, b, pre_a, post_b, t):
-        self.check_param_type('b', b, Vector3)
-        self.check_param_type('pre_a', pre_a, Vector3)
-        self.check_param_type('post_b', post_b, Vector3)
-        self.check_param_float('t', t)
+        self._check_param_type('b', b, Vector3)
+        self._check_param_type('pre_a', pre_a, Vector3)
+        self._check_param_type('post_b', post_b, Vector3)
+        self._check_param_float('t', t)
         gd_obj = lib.godot_vector3_cubic_interpolaten(self._gd_ptr, b._gd_ptr, pre_a._gd_ptr, post_b._gd_ptr, t)
         return Vector3.build_from_gdobj(gd_obj)
 
     def cross(self, b):
-        self.check_param_type('b', b, Vector3)
+        self._check_param_type('b', b, Vector3)
         gd_obj = lib.godot_vector3_cross(self._gd_ptr, b._gd_ptr)
         return Vector3.build_from_gdobj(gd_obj)
 
     def dot(self, b):
-        self.check_param_type('b', b, Vector3)
+        self._check_param_type('b', b, Vector3)
         return lib.godot_vector3_dot(self._gd_ptr, b._gd_ptr)
 
     def outer(self, b):
-        self.check_param_type('b', b, Vector3)
+        self._check_param_type('b', b, Vector3)
         gd_obj = lib.godot_vector3_outer(self._gd_ptr, b._gd_ptr)
         return Basis.build_from_gdobj(gd_obj)
 
@@ -199,28 +183,28 @@ class Vector3:
         return Vector3.build_from_gdobj(gd_obj)
 
     def distance_to(self, b):
-        self.check_param_type('b', b, Vector3)
+        self._check_param_type('b', b, Vector3)
         return lib.godot_vector3_distance_to(self._gd_ptr, b._gd_ptr)
 
     def distance_squared_to(self, b):
-        self.check_param_type('b', b, Vector3)
+        self._check_param_type('b', b, Vector3)
         return lib.godot_vector3_distance_squared_to(self._gd_ptr, b._gd_ptr)
 
     def angle_to(self, b):
-        self.check_param_type('b', b, Vector3)
+        self._check_param_type('b', b, Vector3)
         return lib.godot_vector3_angle_to(self._gd_ptr, b._gd_ptr)
 
     def slide(self, vec):
-        self.check_param_type('vec', vec, Vector3)
+        self._check_param_type('vec', vec, Vector3)
         gd_obj = lib.godot_vector3_slide(self._gd_ptr, vec._gd_ptr)
         return Vector3.build_from_gdobj(gd_obj)
 
     def bounce(self, vec):
-        self.check_param_type('vec', vec, Vector3)
+        self._check_param_type('vec', vec, Vector3)
         gd_obj = lib.godot_vector3_bounce(self._gd_ptr, vec._gd_ptr)
         return Vector3.build_from_gdobj(gd_obj)
 
     def reflect(self, vec):
-        self.check_param_type('vec', vec, Vector3)
+        self._check_param_type('vec', vec, Vector3)
         gd_obj = lib.godot_vector3_reflect(self._gd_ptr, vec._gd_ptr)
         return Vector3.build_from_gdobj(gd_obj)

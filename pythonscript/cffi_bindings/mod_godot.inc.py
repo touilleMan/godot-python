@@ -121,6 +121,26 @@ def get_exposed_class_per_name(classname):
     return __exposed_classes[classname]
 
 
+class BaseBuiltin:
+    GD_TYPE = lib.GODOT_VARIANT_TYPE_NIL  # Overwritten by children
+
+    @classmethod
+    def build_from_gdobj(cls, gdobj):
+        ret = cls()
+        ret._gd_ptr[0] = gdobj
+        return ret
+
+    @staticmethod
+    def _check_param_type(argname, arg, type):
+        if not isinstance(arg, type):
+            raise TypeError('Param `%s` should be of type `%s`' % (argname, type))
+
+    @staticmethod
+    def _check_param_float(argname, arg):
+        if not isinstance(arg, (int, float)):
+            raise TypeError('Param `%s` should be of type `float`' % argname)
+
+
 module = imp.new_module("godot")
 module.signal = signal
 module.export = export
