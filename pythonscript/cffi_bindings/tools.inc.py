@@ -233,7 +233,7 @@ def raw_to_pyobj(gdtype, p_raw, hint_string=None):
 def pyobj_to_variant(pyobj, gdvar=None):
     gdvar = gdvar if gdvar else ffi.new('godot_variant*')
     if pyobj is None:
-        return
+        lib.godot_variant_new_nil(gdvar)
     elif (isinstance(pyobj, bool)):
         lib.godot_variant_new_bool(gdvar, pyobj)
     elif (isinstance(pyobj, int)):

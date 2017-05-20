@@ -41,6 +41,35 @@ class TestArray:
         arr = Array()
         assert arr != arg
 
+    def test_add(self):
+        arr = Array([None])
+        arr += Array([1, 'two'])  # __iadd__
+        assert arr == Array([None, 1, 'two'])
+        arr2 = arr + Array([3])  # __add__
+        assert arr2 == Array([None, 1, 'two', 3])
+
+    def test_add_with_non_array(self):
+        arr = Array([0])
+        arr += [1, 'two']  # __iadd__
+        assert arr == Array([0, 1, 'two'])
+        arr2 = arr + [3]  # __add__
+        assert arr2 == Array([0, 1, 'two', 3])
+        # Test __radd__ as well
+        arr3 = [b'-1'] + arr
+        assert arr3 == Array([b'-1', 0, 1, 'two'])
+
+    @pytest.mark.parametrize('arg', [
+        None,
+        0,
+        'foo',
+        Vector2(),
+        Node(),
+    ])
+    def test_bad_add(self, arg):
+        with pytest.raises(TypeError):
+            assert Array() + arg
+            assert Array() + 'foo'
+
     def test_repr(self):
         v = Array()
         assert repr(v) == '<Array([])>'

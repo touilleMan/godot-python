@@ -70,6 +70,25 @@ class Array(BaseBuiltin, list):
     def __len__(self):
         return lib.godot_array_size(self._gd_ptr)
 
+    def __iadd__(self, items):
+        if isinstance(items, (str, bytes)):
+            return NotImplemented
+        for x in items:
+            self.append(x)
+        return self
+
+    def __radd__(self, items):
+        return Array(items) + self
+
+    def __add__(self, items):
+        if isinstance(items, (str, bytes)):
+            return NotImplemented        
+        arr = Array()
+        for x in self:
+            arr.append(x)
+        for x in items:
+            arr.append(x)
+        return arr
     # Properties
 
     # Methods
