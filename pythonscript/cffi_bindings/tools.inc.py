@@ -285,16 +285,12 @@ def pyobj_to_variant(pyobj, gdvar=None):
             lib.godot_variant_new_transform(gdvar, pyobj._gd_ptr)
         elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_COLOR:
             lib.godot_variant_new_color(gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_IMAGE:
-            lib.godot_variant_new_image(gdvar, pyobj._gd_ptr)
         elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_NODEPATH:
             lib.godot_variant_new_nodepath(gdvar, pyobj._gd_ptr)
         elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_RID:
             lib.godot_variant_new_rid(gdvar, pyobj._gd_ptr)
         elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_OBJECT:
             lib.godot_variant_new_object(gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_INPUTEVENT:
-            lib.godot_variant_new_inputevent(gdvar, pyobj._gd_ptr)
         elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_DICTIONARY:
             lib.godot_variant_new_dictionary(gdvar, pyobj._gd_ptr)
         elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_ARRAY:
@@ -347,27 +343,27 @@ GD_PY_TYPES = (
     (lib.GODOT_VARIANT_TYPE_REAL, float),
     (lib.GODOT_VARIANT_TYPE_STRING, str),
     (lib.GODOT_VARIANT_TYPE_VECTOR2, Vector2),
-    (lib.GODOT_VARIANT_TYPE_RECT2, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_RECT2, Rect2),
     (lib.GODOT_VARIANT_TYPE_VECTOR3, Vector3),
-    (lib.GODOT_VARIANT_TYPE_TRANSFORM2D, type(None)),  # TODO
-    (lib.GODOT_VARIANT_TYPE_PLANE, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_TRANSFORM2D, Transform2d),
+    (lib.GODOT_VARIANT_TYPE_PLANE, Plane),
     (lib.GODOT_VARIANT_TYPE_QUAT, Quat),
-    (lib.GODOT_VARIANT_TYPE_RECT3, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_RECT3, Rect3),
     (lib.GODOT_VARIANT_TYPE_BASIS, Basis),
-    (lib.GODOT_VARIANT_TYPE_TRANSFORM, type(None)),  # TODO
-    (lib.GODOT_VARIANT_TYPE_COLOR, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_TRANSFORM, Transform),
+    (lib.GODOT_VARIANT_TYPE_COLOR, Color),
     (lib.GODOT_VARIANT_TYPE_NODE_PATH, NodePath),
-    (lib.GODOT_VARIANT_TYPE_RID, type(None)),  # TODO
-    (lib.GODOT_VARIANT_TYPE_OBJECT, type(None)),  # TODO
-    (lib.GODOT_VARIANT_TYPE_DICTIONARY, type(None)),  # TODO
-    (lib.GODOT_VARIANT_TYPE_ARRAY, type(None)),  # TODO
-    (lib.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY, type(None)),  # TODO
-    (lib.GODOT_VARIANT_TYPE_POOL_INT_ARRAY, type(None)),  # TODO
-    (lib.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY, type(None)),  # TODO
-    (lib.GODOT_VARIANT_TYPE_POOL_STRING_ARRAY, type(None)),  # TODO
-    (lib.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY, type(None)),  # TODO
-    (lib.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY, type(None)),  # TODO
-    (lib.GODOT_VARIANT_TYPE_POOL_COLOR_ARRAY, type(None)),  # TODO
+    (lib.GODOT_VARIANT_TYPE_RID, RID),
+    # (lib.GODOT_VARIANT_TYPE_OBJECT, BaseObject),  # TODO: recursive import error ?
+    (lib.GODOT_VARIANT_TYPE_DICTIONARY, Dictionary),
+    (lib.GODOT_VARIANT_TYPE_ARRAY, Array),
+    (lib.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY, PoolByteArray),
+    (lib.GODOT_VARIANT_TYPE_POOL_INT_ARRAY, PoolIntArray),
+    (lib.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY, PoolRealArray),
+    (lib.GODOT_VARIANT_TYPE_POOL_STRING_ARRAY, PoolStringArray),
+    (lib.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY, PoolVector2Array),
+    (lib.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY, PoolVector3Array),
+    (lib.GODOT_VARIANT_TYPE_POOL_COLOR_ARRAY, PoolColorArray),
 )
 
 

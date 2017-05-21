@@ -54,7 +54,6 @@ EMBEDDING_INC_SOURCES = (
     'builtin_basis.inc.py',
     'builtin_color.inc.py',
     'builtin_dictionary.inc.py',
-    'builtin_input_event.inc.py',
     'builtin_node_path.inc.py',
     'builtin_plane.inc.py',
     'builtin_pool_byte_array.inc.py',
