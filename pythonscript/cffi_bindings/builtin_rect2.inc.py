@@ -8,6 +8,9 @@ class Rect2(BaseBuiltin):
     def __eq__(self, other):
         return isinstance(other, Rect2) and lib.godot_rect2_operator_equal(self._gd_ptr, other._gd_ptr)
 
+    def __ne__(self, other):
+        return not self == other
+
     def __repr__(self):
         gd_repr = lib.godot_rect2_as_string(self._gd_ptr)
         raw_str = lib.godot_string_unicode_str(ffi.addressof(gd_repr))

@@ -10,6 +10,9 @@ class NodePath(BaseBuiltin):
     def __eq__(self, other):
         return isinstance(other, NodePath) and self.path == other.path
 
+    def __ne__(self, other):
+        return not self == other
+
     def __del__(self):
         lib.godot_node_path_destroy(self._gd_ptr)
 

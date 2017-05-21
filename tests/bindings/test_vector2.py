@@ -194,3 +194,20 @@ class TestVector2:
         param, result = args
         calc = Vector2(2, 3) / param
         assert calc == result
+
+    def test_equal(self):
+        arr = Vector2(1, 2)
+        other = Vector2(1, 2)
+        assert arr == other
+        bad = Vector2(1, 3)
+        assert not arr == bad  # Force use of __eq__
+
+    @pytest.mark.parametrize('arg', [
+        None,
+        0,
+        'foo',
+        Vector2(1, 3),
+    ])
+    def test_bad_equal(self, arg):
+        arr = Vector2(1, 2)
+        assert arr != arg

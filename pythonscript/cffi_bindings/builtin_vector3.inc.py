@@ -15,6 +15,9 @@ class Vector3(BaseBuiltin):
     def __eq__(self, other):
         return isinstance(other, Vector3) and lib.godot_vector3_operator_equal(self._gd_ptr, other._gd_ptr)
 
+    def __ne__(self, other):
+        return not self == other
+
     def __neg__(self):
         return type(self)(-self.x, -self.y, -self.z)
 

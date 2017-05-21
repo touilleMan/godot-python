@@ -10,7 +10,17 @@ class TestNodePath:
         v2 = NodePath('parent/child')
         assert v1 == v2
         other = NodePath('parent/other_child')
-        assert v1 != other
+        assert not v1 == other  # Force use of __eq__
+
+    @pytest.mark.parametrize('arg', [
+        None,
+        0,
+        'parent/child',
+        NodePath('parent/other_child'),
+    ])
+    def test_bad_equal(self, arg):
+        basis = NodePath('parent/child')
+        assert basis != arg
 
     def test_repr(self):
         v = NodePath('/root/leaf')

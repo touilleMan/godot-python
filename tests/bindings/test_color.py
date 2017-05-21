@@ -32,7 +32,17 @@ class TestColor:
         assert v1 == v2
         vrgba = Color(1, 2, 3, 4)
         vrgb = Color(1, 2, 3)
-        assert vrgb != vrgba
+        assert not vrgb == vrgba  # Force use of __eq__
+
+    @pytest.mark.parametrize('arg', [
+        None,
+        0,
+        'foo',
+        Color(1, 2, 3, 5),
+    ])
+    def test_bad_equal(self, arg):
+        basis = Color(1, 2, 3, 4)
+        assert basis != arg
 
     def test_repr(self):
         v = Color()

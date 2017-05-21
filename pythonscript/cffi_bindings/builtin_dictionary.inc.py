@@ -13,6 +13,9 @@ class Dictionary(BaseBuiltin):
     def __eq__(self, other):
         return isinstance(other, Dictionary) and lib.godot_dictionary_operator_equal(self._gd_ptr, other._gd_ptr)
 
+    def __ne__(self, other):
+        return not self == other
+
     # Properties
 
     # Methods

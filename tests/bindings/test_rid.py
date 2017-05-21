@@ -21,7 +21,17 @@ class TestRID:
         assert v_a_1 == v_a_2
         res_b = Environment()
         v_b = RID(res_b)
-        assert v_a_1 != v_b
+        assert not v_a_1 == v_b  # Force use of __eq__
+
+    @pytest.mark.parametrize('arg', [
+        None,
+        0,
+        'foo',
+        RID(Environment()),
+    ])
+    def test_bad_equal(self, arg):
+        arr = Environment(Environment())
+        assert arr != arg
 
     def test_repr(self):
         v = RID()

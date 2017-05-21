@@ -193,3 +193,20 @@ class TestQuat:
         param, result = args
         calc = Quat(2, 3, 4, 5) / param
         assert calc == result
+
+    def test_equal(self):
+        arr = Quat(0.1, 1, 2, 3)
+        other = Quat(0.1, 1, 2, 3)
+        assert arr == other
+        bad = Quat(0.1, 1, 2, 4)
+        assert not arr == bad  # Force use of __eq__
+
+    @pytest.mark.parametrize('arg', [
+        None,
+        0,
+        'foo',
+        Quat(0.1, 1, 2, 4),
+    ])
+    def test_bad_equal(self, arg):
+        arr = Quat(0.1, 1, 2, 3)
+        assert arr != arg

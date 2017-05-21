@@ -1,6 +1,6 @@
 import pytest
 
-from godot.bindings import Array, Node, Resource, Area2D, Vector2
+from godot.bindings import Array, Node, Resource, Area2D, Vector2, PoolByteArray
 
 
 class TestArray:
@@ -28,6 +28,8 @@ class TestArray:
             arr.append(item)
             other.append(item)
         assert arr == other
+        bad = Array([0, 0, 0])
+        assert not arr == bad  # Force use of __eq__
 
 
     @pytest.mark.parametrize('arg', [
@@ -36,9 +38,12 @@ class TestArray:
         'foo',
         Vector2(),
         Node(),
+        [1, 2],
+        Array([1, 2]),
+        PoolByteArray([1, 2]),
     ])
     def test_bad_equal(self, arg):
-        arr = Array()
+        arr = Array([1])
         assert arr != arg
 
     def test_add(self):
@@ -68,7 +73,6 @@ class TestArray:
     def test_bad_add(self, arg):
         with pytest.raises(TypeError):
             assert Array() + arg
-            assert Array() + 'foo'
 
     def test_repr(self):
         v = Array()
@@ -95,7 +99,7 @@ class TestArray:
         # PoolStringArray(),
         # PoolRealArray(),
         # PoolIntArray(),
-        # PoolByteArray(),
+        PoolByteArray(),
         # PoolRealArray(),
         [],
         (),

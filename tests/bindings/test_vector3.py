@@ -187,3 +187,20 @@ class TestVector3:
     def test_bad_mult(self, arg):
         with pytest.raises(TypeError):
             Vector3(2, 3, 4) * arg
+
+    def test_equal(self):
+        arr = Vector3(1, 2, 3)
+        other = Vector3(1, 2, 3)
+        assert arr == other
+        bad = Vector3(1, 2, 4)
+        assert not arr == bad  # Force use of __eq__
+
+    @pytest.mark.parametrize('arg', [
+        None,
+        0,
+        'foo',
+        Vector3(1, 2, 4),
+    ])
+    def test_bad_equal(self, arg):
+        arr = Vector3(1, 2, 3)
+        assert arr != arg

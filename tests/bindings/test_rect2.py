@@ -87,3 +87,20 @@ class TestRect2:
         field, bad_value = args
         with pytest.raises(TypeError):
             setattr(v, field, bad_value)
+
+    def test_equal(self):
+        arr = Rect2(0.1, 1, 2, 3)
+        other = Rect2(0.1, 1, 2, 3)
+        assert arr == other
+        bad = Rect2(0.1, 1, 2, 4)
+        assert not arr == bad  # Force use of __eq__
+
+    @pytest.mark.parametrize('arg', [
+        None,
+        0,
+        'foo',
+        Rect2(0.1, 1, 2, 4),
+    ])
+    def test_bad_equal(self, arg):
+        arr = Rect2(0.1, 1, 2, 3)
+        assert arr != arg

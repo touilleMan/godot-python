@@ -38,8 +38,11 @@ class Array(BaseBuiltin, list):
         # TODO: should be able to optimize this...
         try:
             return list(self) == list(other)
-        except:
-            return NotImplemented
+        except TypeError:
+            return False
+
+    def __ne__(self, other):
+        return not self == other
 
     def __repr__(self):
         return "<%s(%s)>" % (type(self).__name__, list(self))
@@ -89,6 +92,7 @@ class Array(BaseBuiltin, list):
         for x in items:
             arr.append(x)
         return arr
+
     # Properties
 
     # Methods

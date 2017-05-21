@@ -13,6 +13,9 @@ class Transform2d(BaseBuiltin):
     def __eq__(self, other):
         return isinstance(other, Transform2d) and lib.godot_transform2d_operator_equal(self._gd_ptr, other._gd_ptr)
 
+    def __ne__(self, other):
+        return not self == other
+
     # Properties
 
     # Methods

@@ -6,13 +6,25 @@ from godot.bindings import Basis, Vector3
 class TestBasis:
 
     def test_equal(self):
-        v1 = Basis()
-        v2 = Basis()
-        assert v1 == v2
-        v2.x = Vector3(1, 2, 3)
-        assert v1 != v2
-        v1.x = Vector3(1, 2, 3)
-        assert v1 == v2
+        basis1 = Basis.build_from_euler(Vector3(1, 2, 3))
+        basis2 = Basis.build_from_euler(Vector3(1, 2, 3))
+        assert basis1 == basis2
+        basis2.x = Vector3(1, 2, 3)
+        assert basis1 != basis2
+        basis1.x = Vector3(1, 2, 3)
+        assert basis1 == basis2
+        bad = Basis.build_from_euler(Vector3(1, 2, 4))
+        assert not basis1 == bad  # Force use of __eq__
+
+    @pytest.mark.parametrize('arg', [
+        None,
+        0,
+        'foo',
+        Basis.build_from_euler(Vector3(1, 2, 4)),
+    ])
+    def test_bad_equal(self, arg):
+        basis = Basis.build_from_euler(Vector3(1, 2, 3))
+        assert basis != arg
 
     def test_repr(self):
         args = (Vector3(1, 2, 3), Vector3(4, 5, 6), Vector3(7, 8, 9))

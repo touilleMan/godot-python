@@ -33,7 +33,7 @@ class Basis(BaseBuiltin):
     AXIS_Y = 1
     AXIS_Z = 2
 
-    def __init__(self):
+    def __init__(self):  # TODO: allow rows as param ?
         self._gd_ptr = ffi.new('godot_basis*')
         lib.godot_basis_new(self._gd_ptr)
 
@@ -42,6 +42,9 @@ class Basis(BaseBuiltin):
 
     def __eq__(self, other):
         return isinstance(other, Basis) and lib.godot_basis_operator_equal(self._gd_ptr, other._gd_ptr)
+
+    def __ne__(self, other):
+        return not self == other
 
     def __neg__(self):
         return type(self)(-self.x, -self.y, -self.z)
