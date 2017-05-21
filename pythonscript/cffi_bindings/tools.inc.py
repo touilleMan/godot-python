@@ -49,55 +49,70 @@ def variant_to_pyobj(p_gdvar, hint_string=None):
         raw = lib.godot_variant_as_vector2(p_gdvar)
         return Vector2.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_RECT2:
-        raise TypeError("Variant type `Rect2` not implemented yet")
+        raw = lib.godot_variant_as_rec2(p_gdvar)
+        return Rect2.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR3:
-        p_raw = ffi.new('godot_vector3*')
         raw = lib.godot_variant_as_vector3(p_gdvar)
         return Vector3.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_TRANSFORM2D:
-        raise TypeError("Variant type `Transform2d` not implemented yet")
+        raw = lib.godot_variant_as_transform2d(p_gdvar)
+        return Transform2d.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_PLANE:
-        raise TypeError("Variant type `Plane` not implemented yet")
+        raw = lib.godot_variant_as_plane(p_gdvar)
+        return Plane.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_QUAT:
-        raise TypeError("Variant type `Quat` not implemented yet")
+        raw = lib.godot_variant_as_quat(p_gdvar)
+        return Quat.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_RECT3:
-        raise TypeError("Variant type `Rect3` not implemented yet")
+        raw = lib.godot_variant_as_rect3(p_gdvar)
+        return Rect3.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_BASIS:
-        raise TypeError("Variant type `Basis` not implemented yet")
+        raw = lib.godot_variant_as_basis(p_gdvar)
+        return Basis.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_TRANSFORM:
-        raise TypeError("Variant type `Transform` not implemented yet")
+        raw = lib.godot_variant_as_transform(p_gdvar)
+        return Transform.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_COLOR:
-        raise TypeError("Variant type `Color` not implemented yet")
+        raw = lib.godot_variant_as_color(p_gdvar)
+        return Color.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_NODE_PATH:
-        raise TypeError("Variant type `NodePath` not implemented yet")
+        raw = lib.godot_variant_as_node_path(p_gdvar)
+        return NodePath.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_RID:
-        raise TypeError("Variant type `Rid` not implemented yet")
+        raw = lib.godot_variant_as_rid(p_gdvar)
+        return Rid.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_OBJECT:
         p_raw = lib.godot_variant_as_object(p_gdvar)
         # TODO gdnative should have a way to get object type
         hint_string = hint_string or 'Object'
         return getattr(godot_bindings_module, hint_string)(p_raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_DICTIONARY:
-        p_raw = ffi.new('godot_dictionary*')
         raw = lib.godot_variant_as_dictionary(p_gdvar)
         return godot_dictionary_to_pyobj(ffi.addressof(raw))
     elif gdtype == lib.GODOT_VARIANT_TYPE_ARRAY:
         raw = lib.godot_variant_as_array(p_gdvar)
         return godot_array_to_pyobj(ffi.addressof(raw))
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY:
-        raise TypeError("Variant type `PoolByteArray` not implemented yet")
+        raw = lib.godot_variant_as_pool_byte_array(p_gdvar)
+        return PoolByteArray.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_INT_ARRAY:
-        raise TypeError("Variant type `PoolIntArray` not implemented yet")
+        raw = lib.godot_variant_as_pool_int_array(p_gdvar)
+        return PoolIntArray.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY:
-        raise TypeError("Variant type `PoolRealArray` not implemented yet")
+        raw = lib.godot_variant_as_pool_real_array(p_gdvar)
+        return PoolRealArray.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_STRING_ARRAY:
-        raise TypeError("Variant type `PoolStringArray` not implemented yet")
+        raw = lib.godot_variant_as_pool_string_array(p_gdvar)
+        return PoolStringArray.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY:
-        raise TypeError("Variant type `PoolVector2Array` not implemented yet")
+        raw = lib.godot_variant_as_pool_vector2_array(p_gdvar)
+        return PoolVector2Array.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY:
-        raise TypeError("Variant type `PoolVector3Array` not implemented yet")
+        raw = lib.godot_variant_as_pool_vector3_array(p_gdvar)
+        return PoolVector3Array.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_COLOR_ARRAY:
-        raise TypeError("Variant type `PoolColorArray` not implemented yet")
+        raw = lib.godot_variant_as_pool_color_array(p_gdvar)
+        return PoolColorArray.build_from_gdobj(raw)
     else:
         raise TypeError("Unknown Variant type `%s` (this should never happen !)" % gdtype)
 
