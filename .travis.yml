@@ -14,7 +14,7 @@ env:
     # - GODOT_REPO=https://github.com/godotengine/godot.git
     # - GODOT_TAG=master  # I like to live dangerously ;-)
     - GODOT_REPO=https://github.com/touilleMan/godot.git
-    - GODOT_TAG=gdnative_missing_functions
+    - GODOT_TAG=gdnative-clean-and-add-properties
     # Cannot use release given travis's glibc clash with -ffast-math with clang
     # other solution is to set `-D__extern_always_inline="extern __always_inline"`
     - BUILD_EXTRA_OPTS="-j4 target=debug tools=yes module_pythonscript_enabled=yes"
