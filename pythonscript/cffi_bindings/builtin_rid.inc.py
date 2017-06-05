@@ -1,4 +1,5 @@
 class RID(BaseBuiltin):
+    __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_RID
 
     def __init__(self, from_=None):

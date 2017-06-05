@@ -25,7 +25,7 @@ class TestRect2:
                 [(0.5, 0.5), Vector2(0.5, 0.5), Vector2(0, 0)],
                 [(1, 2, 1, 2), Vector2(1, 2), Vector2(1, 2)]):
             v = Rect2(*args)
-            assert v.pos == expected_pos, msg_tmpl % (v.pos, expected_pos, args)
+            assert v.position == expected_pos, msg_tmpl % (v.position, expected_pos, args)
             assert v.size == expected_size, msg_tmpl % (v.size, expected_size, args)
         with pytest.raises(TypeError):
             Rect2("a", 2, 3, 4)
@@ -60,7 +60,7 @@ class TestRect2:
         assert type(ret) == ret_type
 
     @pytest.mark.parametrize('args', [
-        ('pos', Vector2),
+        ('position', Vector2),
         ('size', Vector2),
     ], ids=lambda x: x[0])
     def test_properties(self, args):
@@ -75,11 +75,11 @@ class TestRect2:
             assert field_val == val
 
     @pytest.mark.parametrize('args', [
-        ('pos', 'dummy'),
+        ('position', 'dummy'),
         ('size', 'dummy'),
-        ('pos', None),
+        ('position', None),
         ('size', None),
-        ('pos', 42),
+        ('position', 42),
         ('size', 42),
     ], ids=lambda x: x[0])
     def test_bad_properties(self, args):

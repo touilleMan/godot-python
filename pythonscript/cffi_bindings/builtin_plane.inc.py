@@ -1,4 +1,5 @@
 class Plane(BaseBuiltin):
+    __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_PLANE
 
     @classmethod

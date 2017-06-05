@@ -121,7 +121,6 @@ class BaseTestPoolArray:
         ['append', type(None), lambda s: (s.vg(), )],
         ['insert', type(None), lambda s: (0, s.vg())],
         ['push_back', type(None), lambda s: (s.vg(), )],
-        ['remove', type(None), (0, )],
         ['resize', type(None), (2, )],
     ], ids=lambda x: x[0])
     def test_methods(self, args):
@@ -146,6 +145,7 @@ class BaseTestPoolArray:
         arr = self.acls(v)
         assert arr[0] == v[0]
         assert arr[1] == v[1]
+        assert arr[-1] == v[-1]
 
     def test_getitem_slice(self):
         arr = self.acls(self.vg(3))
@@ -163,12 +163,31 @@ class BaseTestPoolArray:
         arr[0] = v
         assert len(arr) == 3
         assert arr[0] == v
+        arr[-1] = v
+        assert len(arr) == 3
+        assert arr[-1] == v
 
     def test_outofrange_setitem(self):
         arr = self.acls(self.vg(2))
         v = self.vg()
         with pytest.raises(IndexError):
             arr[2] = v
+
+    def test_delitem(self):
+        items = self.vg(3)
+        arr = self.acls(items)
+        del arr[0]
+        assert len(arr) == 2
+        assert arr[0] == items[1]
+        assert arr[1] == items[2]
+        del arr[-1]
+        assert len(arr) == 1
+        assert arr[-1] == items[1]
+
+    def test_outofrange_delitem(self):
+        arr = self.acls(self.vg(2))
+        with pytest.raises(IndexError):
+            del arr[2]
 
     def test_iter(self):
         items = self.vg(3)

@@ -1,4 +1,5 @@
 class Quat(BaseBuiltin):
+    __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_QUAT
 
     def __init__(self, x=0.0, y=0.0, z=0.0, w=0.0):

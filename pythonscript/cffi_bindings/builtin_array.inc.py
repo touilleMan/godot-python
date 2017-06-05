@@ -1,45 +1,54 @@
-
-class Array(BaseBuiltin, list):
+class Array(BaseBuiltinWithGDObjOwnership):
+    __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_ARRAY
 
     def __init__(self, items=()):
-        self._gd_ptr = ffi.new('godot_array *')
-        if not items:
-            lib.godot_array_new(self._gd_ptr)
-        elif isinstance(items, Array):
-            self._gd_ptr[0] = lib.godot_array_copy(items._gd_ptr)
-        elif isinstance(items, PoolColorArray):
-            lib.godot_array_new_pool_color_array(self._gd_ptr, items._gd_ptr)
-        elif isinstance(items, PoolVector3Array):
-            lib.godot_array_new_pool_vector3_array(self._gd_ptr, items._gd_ptr)
-        elif isinstance(items, PoolVector2Array):
-            lib.godot_array_new_pool_vector2_array(self._gd_ptr, items._gd_ptr)
-        elif isinstance(items, PoolStringArray):
-            lib.godot_array_new_pool_string_array(self._gd_ptr, items._gd_ptr)
-        elif isinstance(items, PoolRealArray):
-            lib.godot_array_new_pool_real_array(self._gd_ptr, items._gd_ptr)
-        elif isinstance(items, PoolIntArray):
-            lib.godot_array_new_pool_int_array(self._gd_ptr, items._gd_ptr)
-        elif isinstance(items, PoolByteArray):
-            lib.godot_array_new_pool_byte_array(self._gd_ptr, items._gd_ptr)
-        elif isinstance(items, PoolRealArray):
-            lib.godot_array_new_pool_real_array(self._gd_ptr, items._gd_ptr)
-        elif hasattr(items, '__iter__') and not isinstance(items, (str, bytes)):
-            lib.godot_array_new(self._gd_ptr)
-            for x in items:
-                self.append(x)
-        else:
-            raise TypeError('Param `items` should be of type `Array` or `Pool*Array`')
+        try:
+            self._gd_ptr = ffi.new('godot_array*')
+            if not items:
+                lib.godot_array_new(self._gd_ptr)
+            elif isinstance(items, Array):
+                self._gd_ptr[0] = lib.godot_array_copy(items._gd_ptr)
+            elif isinstance(items, PoolColorArray):
+                lib.godot_array_new_pool_color_array(self._gd_ptr, items._gd_ptr)
+            elif isinstance(items, PoolVector3Array):
+                lib.godot_array_new_pool_vector3_array(self._gd_ptr, items._gd_ptr)
+            elif isinstance(items, PoolVector2Array):
+                lib.godot_array_new_pool_vector2_array(self._gd_ptr, items._gd_ptr)
+            elif isinstance(items, PoolStringArray):
+                lib.godot_array_new_pool_string_array(self._gd_ptr, items._gd_ptr)
+            elif isinstance(items, PoolRealArray):
+                lib.godot_array_new_pool_real_array(self._gd_ptr, items._gd_ptr)
+            elif isinstance(items, PoolIntArray):
+                lib.godot_array_new_pool_int_array(self._gd_ptr, items._gd_ptr)
+            elif isinstance(items, PoolByteArray):
+                lib.godot_array_new_pool_byte_array(self._gd_ptr, items._gd_ptr)
+            elif isinstance(items, PoolRealArray):
+                lib.godot_array_new_pool_real_array(self._gd_ptr, items._gd_ptr)
+            elif hasattr(items, '__iter__') and not isinstance(items, (str, bytes)):
+                lib.godot_array_new(self._gd_ptr)
+                for x in items:
+                    self.append(x)
+            else:
+                raise TypeError('Param `items` should be of type `Array` or `Pool*Array`')
+        except:
+            # Unset _gd_ptr anyway to avoid segfault in __del__
+            self._gd_ptr = None
+            raise
 
     def __del__(self):
-        lib.godot_array_destroy(self._gd_ptr)
+        if self._gd_ptr:
+            lib.godot_array_destroy(self._gd_ptr)
+
+    @staticmethod
+    def _copy_gdobj(gdobj):
+        return ffi.new('godot_array*', lib.godot_array_copy(gdobj))
 
     def __eq__(self, other):
         # TODO: should be able to optimize this...
-        try:
+        if isinstance(other, Array):
             return list(self) == list(other)
-        except TypeError:
-            return False
+        return False
 
     def __ne__(self, other):
         return not self == other
@@ -56,19 +65,26 @@ class Array(BaseBuiltin, list):
         if isinstance(idx, slice):
             return Array(list(self)[idx])
         size = len(self)
+        idx = size + idx if idx < 0 else idx
         if abs(idx) >= size:
             raise IndexError('list index out of range')
-        idx = size - idx if idx < 0 else idx
         ret = lib.godot_array_get(self._gd_ptr, idx)
         return variant_to_pyobj(ffi.addressof(ret))
 
     def __setitem__(self, idx, value):
         size = len(self)
+        idx = size + idx if idx < 0 else idx
         if abs(idx) >= size:
             raise IndexError('list index out of range')
-        idx = size - idx if idx < 0 else idx
         var = pyobj_to_variant(value)
         lib.godot_array_set(self._gd_ptr, idx, var)
+
+    def __delitem__(self, idx):
+        size = len(self)
+        idx = size + idx if idx < 0 else idx
+        if abs(idx) >= size:
+            raise IndexError('list index out of range')
+        lib.godot_array_remove(self._gd_ptr, idx)
 
     def __len__(self):
         return lib.godot_array_size(self._gd_ptr)
@@ -161,9 +177,6 @@ class Array(BaseBuiltin, list):
         var = pyobj_to_variant(value)
         lib.godot_array_push_front(self._gd_ptr, var)
 
-    def remove(self, idx):
-        lib.godot_array_remove(self._gd_ptr, idx)
-
     def resize(self, size):
         lib.godot_array_resize(self._gd_ptr, size)
 
@@ -178,6 +191,6 @@ class Array(BaseBuiltin, list):
     # def sort_custom(self, obj, func):
     #     self._check_param_type('obj', obj, BaseObject)
     #     self._check_param_type('func', func, str)
-    #     raw_func = pyobj_to_raw(func)
+    #     raw_func = pyobj_to_gdobj(func)
     #     # TODO how to check sort hasn't failed ?
     #     lib.godot_array_sort_custom(self._gd_ptr, obj._gd_ptr, raw_func)

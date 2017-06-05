@@ -1,4 +1,5 @@
 class Rect2(BaseBuiltin):
+    __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_RECT2
 
     def __init__(self, x=0.0, y=0.0, width=0.0, height=0.0):
@@ -19,17 +20,17 @@ class Rect2(BaseBuiltin):
     # Properties
 
     @property
-    def pos(self):
-        return Vector2.build_from_gdobj(lib.godot_rect2_get_pos(self._gd_ptr))
+    def position(self):
+        return Vector2.build_from_gdobj(lib.godot_rect2_get_position(self._gd_ptr))
 
     @property
     def size(self):
         return Vector2.build_from_gdobj(lib.godot_rect2_get_size(self._gd_ptr))
 
-    @pos.setter
-    def pos(self, val):
+    @position.setter
+    def position(self, val):
         self._check_param_type('val', val, Vector2)
-        lib.godot_rect2_set_pos(self._gd_ptr, val._gd_ptr)
+        lib.godot_rect2_set_position(self._gd_ptr, val._gd_ptr)
 
     @size.setter
     def size(self, val):

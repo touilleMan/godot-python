@@ -211,18 +211,20 @@ def build_method(classname, meth):
         def bind(self, *args):
             raise NotImplementedError("Method %s.%s is virtual" % (classname, methname))
     else:
+        rettype = meth['return']['type']
+        rethint = meth['return']['hint_string']
+
         def bind(self, *args):
             # TODO: check args number and type here (ptrcall means segfault on bad args...)
             print('[PY->GD] Calling %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
             # TODO: check len(args)
-            raw_args = [pyobj_to_raw(arg)
+            raw_args = [pyobj_to_gdobj(arg)
                         for arg, meth_arg in zip(args, meth['args'])]
-            # args_as_variants = [pyobj_to_variant(arg) for arg in args]
             gdargs = ffi.new("void*[]", raw_args) if raw_args else ffi.NULL
-            ret = new_raw(meth['return']['type'])
-            print('[PY->GD] returned:', methbind, self._gd_ptr, gdargs, ret)
+            ret = new_uninitialized_gdobj(rettype)
             lib.godot_method_bind_ptrcall(methbind, self._gd_ptr, gdargs, ret)
-            return raw_to_pyobj(meth['return']['type'], ret, meth['return']['hint_string'])
+            print('[PY->GD] returned:', methbind, self._gd_ptr, gdargs, ret)
+            return gdobj_to_pyobj(rettype, ret, rethint)
 
     return bind
 
@@ -273,7 +275,7 @@ def get_builtins():
         'Vector2': Vector2,
         'Rect2': Rect2,
         'Vector3': Vector3,
-        'Transform2d': Transform2d,
+        'Transform2D': Transform2D,
         'Plane': Plane,
         'Quat': Quat,
         'Rect3': Rect3,

@@ -1,4 +1,5 @@
 class Vector3(BaseBuiltin):
+    __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_VECTOR3
 
     AXIS_X = 0

@@ -1,4 +1,5 @@
 class Basis(BaseBuiltin):
+    __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_BASIS
 
     @classmethod

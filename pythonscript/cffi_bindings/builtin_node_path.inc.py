@@ -1,11 +1,17 @@
-class NodePath(BaseBuiltin):
+class NodePath(BaseBuiltinWithGDObjOwnership):
+    __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_NODE_PATH
 
     def __init__(self, path):
-        self._check_param_type('path', path, str)
-        self._gd_ptr = ffi.new('godot_node_path*')
-        gd_str = pyobj_to_raw(path)
-        lib.godot_node_path_new(self._gd_ptr, gd_str)
+        try:
+            self._check_param_type('path', path, str)
+            self._gd_ptr = ffi.new('godot_node_path*')
+            gd_str = pyobj_to_gdobj(path)
+            lib.godot_node_path_new(self._gd_ptr, gd_str)
+        except:
+            # Unset _gd_ptr anyway to avoid segfault in __del__
+            self._gd_ptr = None
+            raise
 
     def __eq__(self, other):
         return isinstance(other, NodePath) and self.path == other.path
@@ -14,7 +20,12 @@ class NodePath(BaseBuiltin):
         return not self == other
 
     def __del__(self):
-        lib.godot_node_path_destroy(self._gd_ptr)
+        if self._gd_ptr:
+            lib.godot_node_path_destroy(self._gd_ptr)
+
+    @staticmethod
+    def _copy_gdobj(gdobj):
+        return ffi.new('godot_node_path*', lib.godot_node_path_copy(gdobj))
 
     def __repr__(self):
         return "<%s(path=%r)>" % (type(self).__name__, self.path)

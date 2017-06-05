@@ -1,5 +1,5 @@
-
 class Color(BaseBuiltin):
+    __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_COLOR
 
     def __init__(self, r=0, g=0, b=0, a=None):

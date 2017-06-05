@@ -1,4 +1,5 @@
 class Rect3(BaseBuiltin):
+    __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_RECT3
 
     def __init__(self, pos=Vector3(), size=Vector3()):

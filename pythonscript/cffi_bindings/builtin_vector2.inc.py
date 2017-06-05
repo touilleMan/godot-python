@@ -1,4 +1,5 @@
 class Vector2(BaseBuiltin):
+    __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_VECTOR2
 
     def __init__(self, x=0.0, y=0.0):

@@ -1,6 +1,10 @@
 import pytest
 
-from godot.bindings import Array, Node, Resource, Area2D, Vector2, PoolByteArray
+from godot.bindings import (
+    Array, Node, Resource, Area2D, Vector2,
+    PoolColorArray, PoolVector3Array, PoolVector2Array, PoolStringArray,
+    PoolRealArray, PoolIntArray, PoolByteArray
+)
 
 
 class TestArray:
@@ -9,21 +13,9 @@ class TestArray:
         v = Array()
         assert type(v) == Array
 
-    @pytest.mark.parametrize('arg', [
-        Array,
-        # PoolColorArray,
-        # PoolVector3Array,
-        # PoolVector2Array,
-        # PoolStringArray,
-        # PoolRealArray,
-        # PoolIntArray,
-        # PoolByteArray,
-        # PoolRealArray,
-        list,
-    ])
-    def test_equal(self, arg):
+    def test_equal(self):
         arr = Array()
-        other = arg()
+        other = Array()
         for item in [1, 'foo', Node(), Vector2()]:
             arr.append(item)
             other.append(item)
@@ -31,16 +23,16 @@ class TestArray:
         bad = Array([0, 0, 0])
         assert not arr == bad  # Force use of __eq__
 
-
     @pytest.mark.parametrize('arg', [
         None,
         0,
         'foo',
         Vector2(),
         Node(),
-        [1, 2],
+        [1],
         Array([1, 2]),
-        PoolByteArray([1, 2]),
+        PoolByteArray([1]),
+        PoolIntArray([1])
     ])
     def test_bad_equal(self, arg):
         arr = Array([1])
@@ -93,14 +85,13 @@ class TestArray:
 
     @pytest.mark.parametrize('arg', [
         Array(),
-        # PoolColorArray(),
-        # PoolVector3Array(),
-        # PoolVector2Array(),
-        # PoolStringArray(),
-        # PoolRealArray(),
-        # PoolIntArray(),
+        PoolColorArray(),
+        PoolVector3Array(),
+        PoolVector2Array(),
+        PoolStringArray(),
+        PoolRealArray(),
+        PoolIntArray(),
         PoolByteArray(),
-        # PoolRealArray(),
         [],
         (),
         [42, 43, 44],
@@ -132,7 +123,6 @@ class TestArray:
         ['pop_front', str, ()],
         ['push_back', type(None), ('bar', )],
         ['push_front', type(None), ('bar', )],
-        ['remove', type(None), (0, )],
         ['resize', type(None), (2, )],
         ['rfind', int, ('foo', 0)],
         ['sort', type(None), ()],
@@ -155,9 +145,10 @@ class TestArray:
         assert len(v) == 1
 
     def test_getitem(self):
-        v = Array(['foo', 0, Node()])
+        v = Array(['foo', 0, Node(), 0.42])
         assert v[0] == 'foo'
         assert v[1] == 0
+        assert v[-1] == 0.42
 
     def test_getitem_slice(self):
         v = Array(['foo', 0, Node()])
@@ -174,11 +165,28 @@ class TestArray:
         v[0] = 'bar'
         assert len(v) == 3
         assert v[0] == 'bar'
+        v[-1] = 4
+        assert len(v) == 3
+        assert v[2] == 4
 
     def test_outofrange_setitem(self):
         v = Array(['foo', 0])
         with pytest.raises(IndexError):
             v[2] = 42
+
+    def test_delitem(self):
+        v = Array(['foo', 0, Node()])
+        del v[0]
+        assert len(v) == 2
+        assert v[0] == 0
+        del v[-1]
+        assert len(v) == 1
+        v[0] == 0
+
+    def test_outofrange_delitem(self):
+        v = Array(['foo', 0])
+        with pytest.raises(IndexError):
+            del v[2]
 
     def test_iter(self):
         items = ['foo', 0, Node()]
