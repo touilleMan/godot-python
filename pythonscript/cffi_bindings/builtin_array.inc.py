@@ -8,7 +8,7 @@ class Array(BaseBuiltinWithGDObjOwnership):
             if not items:
                 lib.godot_array_new(self._gd_ptr)
             elif isinstance(items, Array):
-                self._gd_ptr[0] = lib.godot_array_copy(items._gd_ptr)
+                lib.godot_array_new_copy(self._gd_ptr, items._gd_ptr)
             elif isinstance(items, PoolColorArray):
                 lib.godot_array_new_pool_color_array(self._gd_ptr, items._gd_ptr)
             elif isinstance(items, PoolVector3Array):
@@ -42,7 +42,9 @@ class Array(BaseBuiltinWithGDObjOwnership):
 
     @staticmethod
     def _copy_gdobj(gdobj):
-        return ffi.new('godot_array*', lib.godot_array_copy(gdobj))
+        gdobj_copy = ffi.new('godot_array*')
+        lib.godot_array_copy(gdobj_copy, gdobj)
+        return gdobj_copy
 
     def __eq__(self, other):
         # TODO: should be able to optimize this...

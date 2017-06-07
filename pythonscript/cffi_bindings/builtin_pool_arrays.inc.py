@@ -19,7 +19,7 @@ class BasePoolArray(BaseBuiltinWithGDObjOwnership, MutableSequence):
             # TODO: use godot_pool_*_array_new_with_array
             if items:
                 if isinstance(items, self._cls):
-                    self._gd_ptr[0] = self._gd_array_copy(items._gd_ptr)
+                    self._gd_array_new_copy(self._gd_ptr, items._gd_ptr)
                 else:
                         self._gd_array_new(self._gd_ptr)
                         self += items
@@ -36,9 +36,9 @@ class BasePoolArray(BaseBuiltinWithGDObjOwnership, MutableSequence):
 
     @classmethod
     def _copy_gdobj(cls, gdobj):
-        gdobj = cls._gd_new_ptr_mem()
-        gdobj[0] = cls._gd_array_copy(gdobj)
-        return gdobj
+        gdobj_copy = cls._gd_new_ptr_mem()
+        cls._gd_array_new_copy(gdobj_copy, gdobj)
+        return gdobj_copy
 
     def __repr__(self):
         return "<%s(%s)>" % (type(self).__name__, [x for x in self])
@@ -138,7 +138,7 @@ def _generate_pool_array(clsname, pycls, gdname, py_to_gd=None, gd_to_py=None):
         '_gd_new_ptr_mem': partial(ffi.new, 'godot_%s*' % gdname),
         '_contained_cls': pycls
     }
-    for suffix in ('new', 'copy', 'destroy', 'get',
+    for suffix in ('new', 'new_copy', 'destroy', 'get',
                    'set', 'remove', 'size', 'append',
                    'insert', 'invert', 'push_back', 'resize'):
         nmspc['_gd_array_%s' % suffix] = getattr(lib, 'godot_%s_%s' % (gdname, suffix))

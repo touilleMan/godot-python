@@ -8,7 +8,7 @@ class Dictionary(BaseBuiltinWithGDObjOwnership):
             if not items:
                 lib.godot_dictionary_new(self._gd_ptr)
             elif isinstance(items, Dictionary):
-                self._gd_ptr[0] = lib.godot_dictionary_copy(items._gd_ptr)
+                lib.godot_dictionary_new_copy(self._gd_ptr, items._gd_ptr)
                 # copy
             elif isinstance(items, dict):
                 lib.godot_dictionary_new(self._gd_ptr)
@@ -27,7 +27,9 @@ class Dictionary(BaseBuiltinWithGDObjOwnership):
 
     @staticmethod
     def _copy_gdobj(gdobj):
-        return ffi.new('godot_dictionary*', lib.godot_dictionary_copy(gdobj))
+        gdobj_copy = ffi.new('godot_dictionary*')
+        lib.godot_dictionary_new_copy(gdobj_copy, gdobj)
+        return gdobj_copy
 
     def __repr__(self):
         return "<%s(%s)>" % (type(self).__name__, dict(self))
