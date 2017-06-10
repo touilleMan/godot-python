@@ -15,7 +15,7 @@ class TestRect3:
 
     def test_repr(self):
         v = Rect3(Vector3(1, 2, 3), Vector3(4, 5, 6))
-        assert repr(v) == '<Rect3(pos=<Vector3(x=1.0, y=2.0, z=3.0)>, size=<Vector3(x=4.0, y=5.0, z=6.0)>)>'
+        assert repr(v) == '<Rect3(position=<Vector3(x=1.0, y=2.0, z=3.0)>, size=<Vector3(x=4.0, y=5.0, z=6.0)>)>'
 
     def test_instantiate(self):
         # Can build it with int or float or nothing
@@ -25,7 +25,7 @@ class TestRect3:
                 [(Vector3(0, 1, 0), Vector3(0, 0, 1)), Vector3(0, 1, 0), Vector3(0, 0, 1)],
                 ):
             v = Rect3(*args)
-            assert v.pos == expected_pos, msg_tmpl % (v.pos, expected_pos, args)
+            assert v.position == expected_pos, msg_tmpl % (v.position, expected_pos, args)
             assert v.size == expected_size, msg_tmpl % (v.size, expected_size, args)
         with pytest.raises(TypeError):
             Rect3("a", Vector3())
@@ -65,7 +65,7 @@ class TestRect3:
         assert type(ret) == ret_type
 
     @pytest.mark.parametrize('args', [
-        ('pos', Vector3),
+        ('position', Vector3),
         ('size', Vector3),
     ], ids=lambda x: x[0])
     def test_properties(self, args):
@@ -80,11 +80,11 @@ class TestRect3:
             assert field_val == val
 
     @pytest.mark.parametrize('args', [
-        ('pos', 'dummy'),
+        ('position', 'dummy'),
         ('size', 'dummy'),
-        ('pos', None),
+        ('position', None),
         ('size', None),
-        ('pos', 42),
+        ('position', 42),
         ('size', 42),
     ], ids=lambda x: x[0])
     def test_bad_properties(self, args):

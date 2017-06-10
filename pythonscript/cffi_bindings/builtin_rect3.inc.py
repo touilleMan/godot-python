@@ -2,11 +2,11 @@ class Rect3(BaseBuiltin):
     __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_RECT3
 
-    def __init__(self, pos=Vector3(), size=Vector3()):
-        self._check_param_type('pos', pos, Vector3)
+    def __init__(self, position=Vector3(), size=Vector3()):
+        self._check_param_type('position', position, Vector3)
         self._check_param_type('size', size, Vector3)
         self._gd_ptr = ffi.new('godot_rect3*')
-        lib.godot_rect3_new(self._gd_ptr, pos._gd_ptr, size._gd_ptr)
+        lib.godot_rect3_new(self._gd_ptr, position._gd_ptr, size._gd_ptr)
 
     def __eq__(self, other):
         return isinstance(other, Rect3) and lib.godot_rect3_operator_equal(self._gd_ptr, other._gd_ptr)
@@ -15,18 +15,18 @@ class Rect3(BaseBuiltin):
         return not self == other
 
     def __repr__(self):
-        return "<%s(pos=%s, size=%s)>" % (type(self).__name__, self.pos, self.size)
+        return "<%s(position=%s, size=%s)>" % (type(self).__name__, self.position, self.size)
 
     # Properties
 
     @property
-    def pos(self):
-        return Vector3.build_from_gdobj(lib.godot_rect3_get_pos(self._gd_ptr))
+    def position(self):
+        return Vector3.build_from_gdobj(lib.godot_rect3_get_position(self._gd_ptr))
 
-    @pos.setter
-    def pos(self, val):
+    @position.setter
+    def position(self, val):
         self._check_param_type('val', val, Vector3)
-        lib.godot_rect3_set_pos(self._gd_ptr, val._gd_ptr)
+        lib.godot_rect3_set_position(self._gd_ptr, val._gd_ptr)
 
     @property
     def size(self):
