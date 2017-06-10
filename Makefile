@@ -20,11 +20,12 @@ GDNATIVE_CFFIDEFS = $(BASEDIR)/pythonscript/cffi_bindings/cdef.gen.h
 GDNATIVE_CFFI_BINDINGS = $(BASEDIR)/pythonscript/cffi_bindings/pythonscriptcffi.gen.cpp
 
 # Add `LIBGL_ALWAYS_SOFTWARE=1` if you computer sucks with opengl3...
+GODOT_BIN ?= `ls $(GODOT_DIR)/bin/godot* | head -n 1`
 ifndef DEBUG
-GODOT_CMD = $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
+GODOT_CMD = $(GODOT_BIN) $(EXTRA_OPTS)
 else
 DEBUG ?= lldb
-GODOT_CMD = $(DEBUG) $(GODOT_DIR)/bin/godot* $(EXTRA_OPTS)
+GODOT_CMD = $(DEBUG) $(GODOT_BIN) $(EXTRA_OPTS)
 BUILD_PYTHON_OPTS += --with-pydebug
 endif
 
