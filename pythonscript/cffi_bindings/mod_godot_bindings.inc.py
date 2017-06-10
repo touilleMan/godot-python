@@ -69,7 +69,7 @@ class ClassDB:
         lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
         gd_true = ffi.new("godot_bool*", 1)
         args = ffi.new("void*[2]", [gd_classname, gd_true])
-        # 2nd arg should be false, which what we get by not initializing it
+        # 2nd arg should be false, which is what we get by not initializing it
         lib.godot_method_bind_ptrcall(cls._meth_get_method_list, cls._instance, args, ret)
         for i in range(lib.godot_array_size(ret)):
             var = lib.godot_array_get(ret, i)
@@ -210,21 +210,38 @@ def build_method(classname, meth):
     if meth['flags'] & lib.METHOD_FLAG_VIRTUAL or methbind == ffi.NULL:
         def bind(self, *args):
             raise NotImplementedError("Method %s.%s is virtual" % (classname, methname))
+    elif meth['flags'] & lib.METHOD_FLAG_VARARG:
+        # Vararg methods are not support by ptrcall, must use slower dynamic mode instead
+        rettype = meth['return']['type']
+        rethint = meth['return']['hint_string']
+
+        def bind(self, *args):
+            print('[PY->GD] Varargs call %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
+            # TODO: check len(args)
+            vaargs = [pyobj_to_variant(arg) for arg in args]
+            vavaargs = ffi.new("godot_variant*[]", vaargs) if vaargs else ffi.NULL
+            # TODO: use `godot_variant_call_error` to raise exceptions
+            varret = lib.godot_method_bind_call(methbind, self._gd_ptr, vavaargs, len(args), ffi.NULL)
+            ret = variant_to_pyobj(ffi.addressof(varret))
+            print('[PY->GD] returned:', ret)
+            return ret
     else:
+        # Use ptrcall for calling method
         rettype = meth['return']['type']
         rethint = meth['return']['hint_string']
 
         def bind(self, *args):
             # TODO: check args number and type here (ptrcall means segfault on bad args...)
-            print('[PY->GD] Calling %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
+            print('[PY->GD] Ptrcall %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
             # TODO: check len(args)
             raw_args = [pyobj_to_gdobj(arg)
                         for arg, meth_arg in zip(args, meth['args'])]
             gdargs = ffi.new("void*[]", raw_args) if raw_args else ffi.NULL
             ret = new_uninitialized_gdobj(rettype)
             lib.godot_method_bind_ptrcall(methbind, self._gd_ptr, gdargs, ret)
-            print('[PY->GD] returned:', methbind, self._gd_ptr, gdargs, ret)
-            return gdobj_to_pyobj(rettype, ret, rethint)
+            ret = gdobj_to_pyobj(rettype, ret, rethint)
+            print('[PY->GD] returned:', ret)
+            return ret
 
     return bind
 

@@ -119,7 +119,7 @@ CALL_METH_TYPE_POOL_COLOR_ARRAY = 26 << 4
 def pybind_call_meth(handle, methname, args, argcount, ret, error):
     instance = ffi.from_handle(handle)
     meth = getattr(instance, ffi.string(methname))
-    print('[GD->PY] Calling %s on %s (%s) ==> %s' % (ffi.string(methname), handle, instance, meth))
+    print('[GD->PY] Calling %s on %s ==> %s' % (ffi.string(methname), instance, meth))
     pyargs = [variant_to_pyobj(args[i]) for i in range(argcount)]
     # error is an hacky int compressing Variant::CallError values
     try:
