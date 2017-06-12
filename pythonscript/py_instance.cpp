@@ -7,6 +7,7 @@
 #include "core/os/os.h"
 #include "core/variant.h"
 
+
 bool PyInstance::set(const StringName &p_name, const Variant &p_value) {
 	DEBUG_TRACE_METHOD();
 
@@ -47,7 +48,7 @@ Variant::Type PyInstance::get_property_type(const StringName &p_name, bool *r_is
 
 void PyInstance::get_property_list(List<PropertyInfo> *p_properties) const {
 	DEBUG_TRACE_METHOD();
-	this->_script.ptr()->get_property_list(p_properties);
+	this->_script.ptr()->get_script_property_list(p_properties);
 }
 
 void PyInstance::get_method_list(List<MethodInfo> *p_list) const {

@@ -160,6 +160,9 @@ class MetaBaseObject(type):
     GD_TYPE = lib.GODOT_VARIANT_TYPE_OBJECT
 
     def __new__(cls, name, bases, nmspc):
+        if ('__init__' in nmspc or '__new__' in nmspc) and name != 'BaseObject':
+            raise RuntimeError('Exported to Godot class must not redifine '
+                               '`__new__` or `__init__`, use `_ready` instead')
         exported = {}
         signals = {}
         cooked_nmspc = {'__exported': exported, '__signals': signals}
@@ -188,12 +191,38 @@ class MetaBaseObject(type):
 
 
 class BaseObject(metaclass=MetaBaseObject):
+    __slots__ = ('_gd_ptr', )
+
     def __init__(self, gd_obj_ptr=None):
         """
         Note that gd_obj_ptr should not have ownership of the Godot's Object
         memory given it livespan is not related to its Python wrapper.
         """
-        self._gd_ptr = gd_obj_ptr if gd_obj_ptr else self._gd_constructor()
+        gd_ptr = gd_obj_ptr if gd_obj_ptr else self._gd_constructor()
+        object.__setattr__(self, '_gd_ptr', gd_ptr)
+
+    def __getattr__(self, name):
+        # If a script is attached to the object, we expose here it methods
+        script = self.get_script()
+        if not script:
+            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
+        if self.has_method(name):
+            return lambda *args: self.call(name, *args)
+        elif any(x for x in self.get_property_list() if x['name'] == name):
+            # TODO: Godot currently lacks a `has_property` method
+            return self.get(name)
+        else:
+            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
+
+    def __setattr__(self, name, value):
+        try:
+            object.__setattr__(self, name, value)
+        except AttributeError:
+            # Check wheither a script has attached this property to the object
+            if any(x for x in self.get_property_list() if x['name'] == name):
+                self.set(name, value)
+            else:
+                raise
 
     def __eq__(self, other):
         return hasattr(other, '_gd_ptr') and self._gd_ptr == other._gd_ptr
@@ -208,17 +237,19 @@ def build_method(classname, meth):
     # Flag METHOD_FLAG_VIRTUAL only available when compiling godot with DEBUG_METHODS_ENABLED
     methbind = lib.godot_method_bind_get_method(classname.encode(), methname.encode())
     if meth['flags'] & lib.METHOD_FLAG_VIRTUAL or methbind == ffi.NULL:
-        def bind(self, *args):
-            raise NotImplementedError("Method %s.%s is virtual" % (classname, methname))
+        return None
+        # def bind(self, *args):
+        #     raise NotImplementedError("Method %s.%s is virtual" % (classname, methname))
     elif meth['flags'] & lib.METHOD_FLAG_VARARG:
         # Vararg methods are not support by ptrcall, must use slower dynamic mode instead
         rettype = meth['return']['type']
-        rethint = meth['return']['hint_string']
+        fixargs_count = len(meth['args'])
 
         def bind(self, *args):
             print('[PY->GD] Varargs call %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
-            # TODO: check len(args)
-            vaargs = [pyobj_to_variant(arg) for arg in args]
+            vaargs = [convert_arg(meth_arg['type'], meth_arg['name'], arg, to_variant=True)
+                        for arg, meth_arg in zip(args, meth['args'])]
+            vaargs += [pyobj_to_variant(arg) for arg in args[fixargs_count:]]
             vavaargs = ffi.new("godot_variant*[]", vaargs) if vaargs else ffi.NULL
             # TODO: use `godot_variant_call_error` to raise exceptions
             varret = lib.godot_method_bind_call(methbind, self._gd_ptr, vavaargs, len(args), ffi.NULL)
@@ -228,18 +259,19 @@ def build_method(classname, meth):
     else:
         # Use ptrcall for calling method
         rettype = meth['return']['type']
-        rethint = meth['return']['hint_string']
 
         def bind(self, *args):
+            if len(args) != len(meth['args']):
+                raise TypeError('%s() takes %s positional argument but %s were given' %
+                                (methname, len(meth['args']), len(args)))
             # TODO: check args number and type here (ptrcall means segfault on bad args...)
             print('[PY->GD] Ptrcall %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
-            # TODO: check len(args)
-            raw_args = [pyobj_to_gdobj(arg)
+            raw_args = [convert_arg(meth_arg['type'], meth_arg['name'], arg)
                         for arg, meth_arg in zip(args, meth['args'])]
             gdargs = ffi.new("void*[]", raw_args) if raw_args else ffi.NULL
             ret = new_uninitialized_gdobj(rettype)
             lib.godot_method_bind_ptrcall(methbind, self._gd_ptr, gdargs, ret)
-            ret = gdobj_to_pyobj(rettype, ret, rethint)
+            ret = gdobj_to_pyobj(rettype, ret)
             print('[PY->GD] returned:', ret)
             return ret
 
@@ -267,7 +299,12 @@ def build_class(classname, binding_classname=None):
     }
     # Methods
     for meth in ClassDB.get_class_methods(classname):
-        nmspc[meth['name']] = build_method(classname, meth)
+        # Godot cannot tell which Python function is virtual, so we
+        # don't provide them
+        methbind = build_method(classname, meth)
+        if methbind:
+            nmspc[meth['name']] = methbind
+        # nmspc[meth['name']] = build_method(classname, meth)
     # Properties
     for prop in ClassDB.get_class_properties(classname):
         propname = prop['name']

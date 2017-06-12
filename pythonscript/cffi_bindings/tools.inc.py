@@ -38,7 +38,7 @@ def godot_string_to_pyobj(p_gdstring):
     return ffi.string(raw_str)
 
 
-def variant_to_pyobj(p_gdvar, hint_string=None):
+def variant_to_pyobj(p_gdvar):
     """
     Convert Godot variant to regular Python object
     :param p_gdvar: Godot variant as ``<cdata 'struct godot_variant *'>`` (note the pointer)
@@ -90,12 +90,12 @@ def variant_to_pyobj(p_gdvar, hint_string=None):
         return NodePath.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_RID:
         raw = lib.godot_variant_as_rid(p_gdvar)
-        return Rid.build_from_gdobj(raw)
+        return RID.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_OBJECT:
         p_raw = lib.godot_variant_as_object(p_gdvar)
-        # TODO gdnative should have a way to get object type
-        hint_string = hint_string or 'Object'
-        return getattr(godot_bindings_module, hint_string)(p_raw)
+        # TODO: optimize this
+        tmpobj = godot_bindings_module.Object(p_raw)
+        return getattr(godot_bindings_module, tmpobj.get_class())(p_raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_DICTIONARY:
         raw = lib.godot_variant_as_dictionary(p_gdvar)
         return Dictionary.build_from_gdobj(raw)
@@ -204,8 +204,9 @@ def pyobj_to_variant(pyobj, p_gdvar=None):
 
 def new_uninitialized_gdobj(gdtype):
     # TODO: use dict to optimize this ?
+    # It seems Godot encode Variant as type nil...
     if gdtype == lib.GODOT_VARIANT_TYPE_NIL:
-        return ffi.NULL
+        return ffi.new('godot_variant*')
     elif gdtype == lib.GODOT_VARIANT_TYPE_BOOL:
         return ffi.new('godot_bool*')
     elif gdtype == lib.GODOT_VARIANT_TYPE_INT:
@@ -263,9 +264,13 @@ def new_uninitialized_gdobj(gdtype):
         raise TypeError("Unknown Variant type `%s` (this should never happen !)" % gdtype)
 
 
-def gdobj_to_pyobj(gdtype, p_gdobj, hint_string=None, steal_gdobj=True):
+def gdobj_to_pyobj(gdtype, p_gdobj, steal_gdobj=True):
+    # It seems Godot encode Variant as type nil...
     if gdtype == lib.GODOT_VARIANT_TYPE_NIL:
-        return None
+        if p_gdobj == ffi.NULL:
+            return None
+        else:
+            return variant_to_pyobj(p_gdobj)
     elif gdtype == lib.GODOT_VARIANT_TYPE_BOOL:
         return bool(p_gdobj[0])
     elif gdtype == lib.GODOT_VARIANT_TYPE_INT:
@@ -297,10 +302,11 @@ def gdobj_to_pyobj(gdtype, p_gdobj, hint_string=None, steal_gdobj=True):
     elif gdtype == lib.GODOT_VARIANT_TYPE_NODE_PATH:
         return Node_path.build_from_gdobj(p_gdobj, steal=steal_gdobj)
     elif gdtype == lib.GODOT_VARIANT_TYPE_RID:
-        return Rid.build_from_gdobj(p_gdobj)
+        return RID.build_from_gdobj(p_gdobj)
     elif gdtype == lib.GODOT_VARIANT_TYPE_OBJECT:
-        # TODO: add in gdnative `godot_get_object_class_name`
-        return getattr(godot_bindings_module, hint_string)(p_gdobj[0])
+        # TODO: optimize this
+        tmpobj = godot_bindings_module.Object(p_gdobj[0])
+        return getattr(godot_bindings_module, tmpobj.get_class())(p_gdobj[0])
     elif gdtype == lib.GODOT_VARIANT_TYPE_DICTIONARY:
         return Dictionary.build_from_gdobj(p_gdobj, steal=steal_gdobj)
     elif gdtype == lib.GODOT_VARIANT_TYPE_ARRAY:
@@ -393,6 +399,57 @@ def py_to_gd_type(pytype):
     if gdtype is None:
         raise RuntimeError('No Godot equivalent for Python type `%s`' % pytype)
     return gdtype
+
+
+def convert_arg(gdtype, argname, arg, to_variant=False):
+    gdtype_to_pytype = {
+        lib.GODOT_VARIANT_TYPE_NIL: type(None),
+        lib.GODOT_VARIANT_TYPE_BOOL: bool,
+        lib.GODOT_VARIANT_TYPE_INT: int,
+        # lib.GODOT_VARIANT_TYPE_REAL: (int, float),
+        lib.GODOT_VARIANT_TYPE_STRING: str,
+        lib.GODOT_VARIANT_TYPE_VECTOR2: Vector2,
+        lib.GODOT_VARIANT_TYPE_RECT2: Rect2,
+        lib.GODOT_VARIANT_TYPE_VECTOR3: Vector3,
+        lib.GODOT_VARIANT_TYPE_TRANSFORM2D: Transform2D,
+        lib.GODOT_VARIANT_TYPE_PLANE: Plane,
+        lib.GODOT_VARIANT_TYPE_QUAT: Quat,
+        lib.GODOT_VARIANT_TYPE_RECT3: Rect3,
+        lib.GODOT_VARIANT_TYPE_BASIS: Basis,
+        lib.GODOT_VARIANT_TYPE_TRANSFORM: Transform,
+        lib.GODOT_VARIANT_TYPE_COLOR: Color,
+        # lib.GODOT_VARIANT_TYPE_NODE_PATH: NodePath,
+        lib.GODOT_VARIANT_TYPE_RID: RID,
+        lib.GODOT_VARIANT_TYPE_OBJECT: BaseObject,
+        lib.GODOT_VARIANT_TYPE_DICTIONARY: Dictionary,
+        lib.GODOT_VARIANT_TYPE_ARRAY: Array,
+        lib.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY: PoolByteArray,
+        lib.GODOT_VARIANT_TYPE_POOL_INT_ARRAY: PoolIntArray,
+        lib.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY: PoolRealArray,
+        lib.GODOT_VARIANT_TYPE_POOL_STRING_ARRAY: PoolStringArray,
+        lib.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY: PoolVector2Array,
+        lib.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY: PoolVector3Array,
+        lib.GODOT_VARIANT_TYPE_POOL_COLOR_ARRAY: PoolColorArray
+    }
+    if gdtype == lib.GODOT_VARIANT_TYPE_REAL:
+        try:
+            arg = float(arg)
+        except ValueError:
+            raise TypeError('`%s` must be of type float or int' % argname)
+    elif gdtype == lib.GODOT_VARIANT_TYPE_NODE_PATH:
+        if not isinstance(arg, NodePath):
+            if isinstance(arg, str):
+                return str_to_gd_node_path(arg, to_variant=to_variant)
+            else:
+                raise TypeError('`%s` must be of type NodePath or str' % argname)
+    else:
+        pytype = gdtype_to_pytype[gdtype]
+        if not isinstance(arg, pytype):
+            raise TypeError('`%s` must be of type %s' % (argname, pytype))
+    if to_variant:
+        return pyobj_to_variant(arg)
+    else:
+        return pyobj_to_gdobj(arg)
 
 
 module = imp.new_module("godot._tools")

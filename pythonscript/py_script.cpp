@@ -254,7 +254,7 @@ void PyScript::get_script_method_list(List<MethodInfo> *p_list) const {
 	// TODO: Simple&hacky implementation...
 	const godot_string *prop_names = pybind_get_meth_list(this->_py_exposed_class);
 	int i = 0;
-	const String *pname = (String *)&prop_names[i];
+	const String *pname = (String *)&prop_names[0];
 	while (*pname != "") {
 		MethodInfo mi;
 		mi.name = *pname;
