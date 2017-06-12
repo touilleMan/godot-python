@@ -1,0 +1,4 @@
+[application]
+
+name="godo-bindings-tests"
+main_scene="res://main.tscn"
