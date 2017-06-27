@@ -68,7 +68,7 @@ run:
 
 
 run_example:
-	cd example && $(GODOT_CMD)
+	cd examples/pong && $(GODOT_CMD)
 
 
 compile: $(PYTHON_LIB) $(GDNATIVE_CFFI_BINDINGS)
