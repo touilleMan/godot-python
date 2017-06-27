@@ -218,11 +218,12 @@ class BaseObject(metaclass=MetaBaseObject):
         try:
             object.__setattr__(self, name, value)
         except AttributeError:
-            # Check wheither a script has attached this property to the object
-            if any(x for x in self.get_property_list() if x['name'] == name):
-                self.set(name, value)
-            else:
-                raise
+            # Could retrieve the item inside the Godot class, try to look into
+            # the attached script if it has one
+            script = self.get_script()
+            if not script:
+                raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
+            ret = self.set(name, value)
 
     def __eq__(self, other):
         return hasattr(other, '_gd_ptr') and self._gd_ptr == other._gd_ptr
@@ -294,6 +295,7 @@ def build_property(classname, prop):
 def build_class(classname, binding_classname=None):
     binding_classname = binding_classname or classname
     nmspc = {
+        '__slots__': (),
         '_gd_name': classname,
         '_gd_constructor': ClassDB.get_class_constructor(classname)
     }

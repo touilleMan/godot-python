@@ -403,7 +403,7 @@ def py_to_gd_type(pytype):
 
 def convert_arg(gdtype, argname, arg, to_variant=False):
     gdtype_to_pytype = {
-        lib.GODOT_VARIANT_TYPE_NIL: type(None),
+        # lib.GODOT_VARIANT_TYPE_NIL: type(None),
         lib.GODOT_VARIANT_TYPE_BOOL: bool,
         lib.GODOT_VARIANT_TYPE_INT: int,
         # lib.GODOT_VARIANT_TYPE_REAL: (int, float),
@@ -442,6 +442,9 @@ def convert_arg(gdtype, argname, arg, to_variant=False):
                 return str_to_gd_node_path(arg, to_variant=to_variant)
             else:
                 raise TypeError('`%s` must be of type NodePath or str' % argname)
+    elif gdtype == lib.GODOT_VARIANT_TYPE_NIL:
+        # NIL type is used by Godot to represent variant...
+        return pyobj_to_variant(arg)
     else:
         pytype = gdtype_to_pytype[gdtype]
         if not isinstance(arg, pytype):
