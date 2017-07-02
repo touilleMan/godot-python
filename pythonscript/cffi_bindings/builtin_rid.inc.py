@@ -2,13 +2,15 @@ class RID(BaseBuiltin):
     __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_RID
 
+    @staticmethod
+    def _copy_gdobj(gdobj):
+        return godot_rid_alloc(gdobj[0])
+
     def __init__(self, from_=None):
-        self._gd_ptr = ffi.new('godot_rid*')
+        self._gd_ptr = godot_rid_alloc()
         if from_:
             self._check_param_type('from_', from_, godot_bindings_module.Resource)
             lib.godot_rid_new_with_resource(self._gd_ptr, from_._gd_ptr)
-        else:
-            lib.godot_rid_new(self._gd_ptr)
 
     def __repr__(self):
         return "<%s(id=%s)>" % (type(self).__name__, self.get_id())

@@ -9,7 +9,7 @@ class GlobalConstants:
     @classmethod
     def get_global_constansts(cls):
         raw_consts = lib.godot_get_global_constants()
-        return godot_dictionary_to_pyobj(ffi.addressof(raw_consts))
+        return Dictionary.build_from_gdobj(raw_consts)
 
 
 class ClassDB:
@@ -26,8 +26,7 @@ class ClassDB:
 
     @classmethod
     def get_class_list(cls):
-        ret = ffi.new("godot_pool_string_array*")
-        lib.godot_pool_string_array_new(ret)
+        ret = godot_pool_string_array_alloc()
         lib.godot_method_bind_ptrcall(cls._meth_get_class_list, cls._instance, ffi.NULL, ret)
 
         # Convert Godot return into Python civilized stuff
@@ -52,40 +51,44 @@ class ClassDB:
     def get_class_constructor(cls, classname):
 
         def constructor(self):
-            gd_classname = ffi.new("godot_string*")
-            lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
+            gd_classname = godot_string_from_pyobj(classname)
+            # TODO: alloc this on the stack (usign _malloca ?)
             args = ffi.new("void*[]", [gd_classname])
-            ret = ffi.new("godot_variant*")
+            ret = godot_variant_alloc()
             lib.godot_method_bind_ptrcall(cls._meth_instance, cls._instance, args, ret)
-            return lib.godot_variant_as_object(ret)
+            objret = lib.godot_variant_as_object(ret)
+            # Quick'n dirty fix to prevent Ressource objects from beeing automatically
+            # freed when the variant is destroyed given it holds the only ref on it
+            self._gd_var = ret
+            return objret
 
         return constructor
 
     @classmethod
     def get_class_methods(cls, classname):
         methods = []
-        ret = ffi.new("godot_array*")
-        gd_classname = ffi.new("godot_string*")
-        lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
-        gd_true = ffi.new("godot_bool*", 1)
+        ret = godot_array_alloc()
+        lib.godot_array_new(ret)
+        gd_classname = godot_string_from_pyobj(classname)
+        gd_true = godot_bool_alloc(True)
         args = ffi.new("void*[2]", [gd_classname, gd_true])
         # 2nd arg should be false, which is what we get by not initializing it
         lib.godot_method_bind_ptrcall(cls._meth_get_method_list, cls._instance, args, ret)
         for i in range(lib.godot_array_size(ret)):
             var = lib.godot_array_get(ret, i)
             gddict = lib.godot_variant_as_dictionary(ffi.addressof(var))
-            methdict = godot_dictionary_to_pyobj(ffi.addressof(gddict))
+            methdict = Dictionary.build_from_gdobj(gddict)
             methods.append(methdict)
         return methods
 
     @classmethod
     def build_property_getset(cls, prop):
         propname = prop['name']
-        gd_propname = ffi.new("godot_string*")
-        lib.godot_string_new_data(gd_propname, propname.encode(), len(propname.encode()))
+        gd_propname = godot_string_from_pyobj(propname)
 
         def getter(self):
-            ret = ffi.new('godot_variant*')
+            ret = godot_variant_alloc()
+            lib.godot_variant_new_nil(ret)
             args = ffi.new("void*[]", [self._gd_ptr, gd_propname])
             lib.godot_method_bind_ptrcall(cls._meth_get_property, cls._instance, args, ret)
             return variant_to_pyobj(ret)
@@ -93,7 +96,8 @@ class ClassDB:
         def setter(self, value):
             gd_value = pyobj_to_variant(value)
             args = ffi.new("void*[]", [self._gd_ptr, gd_propname, gd_value])
-            ret = ffi.new('godot_variant*')
+            ret = godot_variant_alloc()
+            lib.godot_variant_new_nil(ret)
             lib.godot_method_bind_ptrcall(cls._meth_set_property, cls._instance, args, ret)
             return variant_to_pyobj(ret)
 
@@ -102,28 +106,27 @@ class ClassDB:
     @classmethod
     def get_class_properties(cls, classname):
         properties = []
-        ret = ffi.new("godot_array*")
-        gd_classname = ffi.new("godot_string*")
-        lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
-        gd_true = ffi.new("godot_bool*", 1)
+        ret = godot_array_alloc()
+        lib.godot_array_new(ret)
+        gd_classname = godot_string_from_pyobj(classname)
+        gd_true = godot_bool_alloc(True)
         args = ffi.new("void*[2]", [gd_classname, gd_true])
         # 2nd arg should be false, which what we get by not initializing it
         lib.godot_method_bind_ptrcall(cls._meth_get_property_list, cls._instance, args, ret)
         for i in range(lib.godot_array_size(ret)):
             var = lib.godot_array_get(ret, i)
             gddict = lib.godot_variant_as_dictionary(ffi.addressof(var))
-            propdict = godot_dictionary_to_pyobj(ffi.addressof(gddict))
+            propdict = Dictionary.build_from_gdobj(gddict)
             properties.append(propdict)
         return properties
 
     @classmethod
     def get_class_consts(cls, classname):
         consts = []
-        ret = ffi.new("godot_pool_string_array*")
+        ret = godot_pool_string_array_alloc()
         lib.godot_pool_string_array_new(ret)
-        gd_classname = ffi.new("godot_string*")
-        gd_true = ffi.new("godot_bool*", 1)
-        lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
+        gd_classname = godot_string_from_pyobj(classname)
+        gd_true = godot_bool_alloc(True)
         args = ffi.new("void*[2]", [gd_classname, gd_true])
         # 2nd arg should be false, which what we get by not initializing it
         lib.godot_method_bind_ptrcall(cls._meth_get_integer_constant_list, cls._instance, args, ret)
@@ -135,11 +138,9 @@ class ClassDB:
 
     @classmethod
     def get_integer_constant(cls, classname, constname):
-        ret = ffi.new("godot_int*")
-        gd_classname = ffi.new("godot_string*")
-        lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
-        gd_constname = ffi.new("godot_string*")
-        lib.godot_string_new_data(gd_constname, constname.encode(), len(constname.encode()))
+        ret = godot_int_alloc()
+        gd_classname = godot_string_from_pyobj(classname)
+        gd_constname = godot_string_from_pyobj(constname)
         args = ffi.new("void*[2]", [gd_classname, gd_constname])
         # 2nd arg should be false, which what we get by not initializing it
         lib.godot_method_bind_ptrcall(cls._meth_get_integer_constant, cls._instance, args, ret)
@@ -147,9 +148,9 @@ class ClassDB:
 
     @classmethod
     def get_parent_class(cls, classname):
-        ret = ffi.new("godot_string*")
-        gd_classname = ffi.new("godot_string*")
-        lib.godot_string_new_data(gd_classname, classname.encode(), len(classname.encode()))
+        ret = godot_string_alloc()
+        lib.godot_string_new(ret)
+        gd_classname = godot_string_from_pyobj(classname)
         args = ffi.new("godot_string**", gd_classname)
         lib.godot_method_bind_ptrcall(cls._meth_get_parent_class, cls._instance, ffi.cast("void**", args), ret)
         raw_str = lib.godot_string_unicode_str(ret)
@@ -191,7 +192,7 @@ class MetaBaseObject(type):
 
 
 class BaseObject(metaclass=MetaBaseObject):
-    __slots__ = ('_gd_ptr', )
+    __slots__ = ('_gd_ptr', '_gd_var')
 
     def __init__(self, gd_obj_ptr=None):
         """

@@ -49,6 +49,7 @@ enum MethodFlags {
 # (including python functions exposed to C through `@ffi.def_extern()`)
 EMBEDDING_INC_SOURCES = (
     'embedding_init_code.inc.py',
+    'allocator.inc.py',
     'mod_godot.inc.py',
     'builtin_rid.inc.py',
     'builtin_color.inc.py',
@@ -108,6 +109,7 @@ enum MethodFlags {
 
 // We use malloc to bypass Python garbage collector for Godot Object
 void *malloc(size_t size);
+void free(void *ptr);
 """ + cdef + strip_hashed_src(api_struct_src))
 
 

@@ -2,8 +2,12 @@ class Vector2(BaseBuiltin):
     __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_VECTOR2
 
+    @staticmethod
+    def _copy_gdobj(gdobj):
+        return godot_vector2_alloc(gdobj[0])
+
     def __init__(self, x=0.0, y=0.0):
-        self._gd_ptr = ffi.new('godot_vector2*')
+        self._gd_ptr = godot_vector2_alloc()
         lib.godot_vector2_new(self._gd_ptr, x, y)
 
     def __repr__(self):

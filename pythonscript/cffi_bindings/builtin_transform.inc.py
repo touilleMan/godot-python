@@ -2,10 +2,14 @@ class Transform(BaseBuiltin):
     __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_TRANSFORM
 
+    @staticmethod
+    def _copy_gdobj(gdobj):
+        return godot_transform_alloc(gdobj[0])
+
     def __init__(self, basis=Basis(), origin=Vector3()):
         self._check_param_type('basis', basis, Basis)
         self._check_param_type('origin', origin, Vector3)
-        self._gd_ptr = ffi.new('godot_transform*')
+        self._gd_ptr = godot_transform_alloc()
         lib.godot_transform_new(self._gd_ptr, rot, basis._gd_ptr, origin._gd_ptr)
 
     @classmethod

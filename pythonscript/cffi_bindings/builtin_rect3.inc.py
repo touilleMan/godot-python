@@ -2,10 +2,14 @@ class Rect3(BaseBuiltin):
     __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_RECT3
 
+    @staticmethod
+    def _copy_gdobj(gdobj):
+        return godot_rect3_alloc(gdobj[0])
+
     def __init__(self, position=Vector3(), size=Vector3()):
         self._check_param_type('position', position, Vector3)
         self._check_param_type('size', size, Vector3)
-        self._gd_ptr = ffi.new('godot_rect3*')
+        self._gd_ptr = godot_rect3_alloc()
         lib.godot_rect3_new(self._gd_ptr, position._gd_ptr, size._gd_ptr)
 
     def __eq__(self, other):

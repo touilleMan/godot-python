@@ -1,14 +1,13 @@
 from functools import partial
 
-_variant_new = partial(ffi.new_allocator(alloc=lib.malloc, free=lib.godot_variant_destroy, should_clear_after_alloc=False), 'godot_variant*')
-_node_path_new = partial(ffi.new_allocator(alloc=lib.malloc, free=lib.godot_node_path_destroy, should_clear_after_alloc=False), 'godot_node_path*')
+
 def str_to_gd_node_path(path, to_variant=False):
-    gd_ptr = _node_path_new()
     gd_str = pyobj_to_gdobj(path)
+    gd_ptr = godot_node_path_alloc()
     lib.godot_node_path_new(gd_ptr, gd_str)
     if to_variant:
-        gdvar_ptr = _variant_new()
-        lib.godot_variant_new_nodepath(gdvar_ptr, gd_ptr)
+        gdvar_ptr = godot_variant_alloc()
+        lib.godot_variant_new_node_path(gdvar_ptr, gd_ptr)
     return gd_ptr
 
 
@@ -16,34 +15,23 @@ class NodePath(BaseBuiltinWithGDObjOwnership):
     __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_NODE_PATH
 
+    @staticmethod
+    def _copy_gdobj(gdobj):
+        cpy_gdobj = godot_node_path_alloc()
+        lib.godot_node_path_new_copy(cpy_gdobj, gdobj)
+        return cpy_gdobj
+
     def __init__(self, path):
-        try:
-            self._check_param_type('path', path, str)
-            self._gd_ptr = ffi.new('godot_node_path*')
-            gd_str = pyobj_to_gdobj(path)
-            lib.godot_node_path_new(self._gd_ptr, gd_str)
-        except:
-            # Unset _gd_ptr anyway to avoid segfault in __del__
-            self._gd_ptr = None
-            raise
+        self._check_param_type('path', path, str)
+        gd_str = pyobj_to_gdobj(path)
+        self._gd_ptr = godot_node_path_alloc()
+        lib.godot_node_path_new(self._gd_ptr, gd_str)
 
     def __eq__(self, other):
         return isinstance(other, NodePath) and self.path == other.path
 
     def __ne__(self, other):
         return not self == other
-
-    def __del__(self):
-        if self._gd_ptr:
-            lib.godot_node_path_destroy(self._gd_ptr)
-
-    @staticmethod
-    def _gdobj_new():
-        return _node_path_new()
-
-    @staticmethod
-    def _copy_gdobj(gdobj):
-        return ffi.new('godot_node_path*', lib.godot_node_path_new_copy(gdobj))
 
     def __repr__(self):
         return "<%s(path=%r)>" % (type(self).__name__, self.path)

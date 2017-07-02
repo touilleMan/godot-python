@@ -210,3 +210,7 @@ class TestQuat:
     def test_bad_equal(self, arg):
         arr = Quat(0.1, 1, 2, 3)
         assert arr != arg
+
+    @pytest.mark.xfail
+    def test_build_with_axis_angle(self):
+        pass

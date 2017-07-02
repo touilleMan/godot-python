@@ -3,7 +3,7 @@ import pytest
 from godot.bindings import Array, Dictionary
 from godot._tools import (
     variant_to_pyobj, pyobj_to_variant, gdobj_to_pyobj, pyobj_to_gdobj, gd_to_py_type,
-    py_to_gd_type, godot_array_to_pyobj, godot_dictionary_to_pyobj, godot_string_to_pyobj
+    py_to_gd_type, godot_string_to_pyobj
 )
 from pythonscriptcffi import ffi, lib
 

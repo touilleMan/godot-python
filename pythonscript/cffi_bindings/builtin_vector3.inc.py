@@ -6,8 +6,12 @@ class Vector3(BaseBuiltin):
     AXIS_Y = 1
     AXIS_Z = 2
 
+    @staticmethod
+    def _copy_gdobj(gdobj):
+        return godot_vector3_alloc(gdobj[0])
+
     def __init__(self, x=0.0, y=0.0, z=0.0):
-        self._gd_ptr = ffi.new('godot_vector3*')
+        self._gd_ptr = godot_vector3_alloc()
         lib.godot_vector3_new(self._gd_ptr, x, y, z)
 
     def __repr__(self):

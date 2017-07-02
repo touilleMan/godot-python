@@ -2,34 +2,26 @@ class Dictionary(BaseBuiltinWithGDObjOwnership):
     __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_DICTIONARY
 
-    def __init__(self, items=None):
-        try:
-            self._gd_ptr = ffi.new('godot_dictionary*')
-            if not items:
-                lib.godot_dictionary_new(self._gd_ptr)
-            elif isinstance(items, Dictionary):
-                lib.godot_dictionary_new_copy(self._gd_ptr, items._gd_ptr)
-                # copy
-            elif isinstance(items, dict):
-                lib.godot_dictionary_new(self._gd_ptr)
-                for k, v in items.items():
-                    self[k] = v
-            else:
-                raise TypeError('Param `items` should be of type `dict` or `Dictionary`')
-        except:
-            # Unset _gd_ptr anyway to avoid segfault in __del__
-            self._gd_ptr = None
-            raise
-
-    def __del__(self):
-        if self._gd_ptr:
-            lib.godot_dictionary_destroy(self._gd_ptr)
-
     @staticmethod
     def _copy_gdobj(gdobj):
-        gdobj_copy = ffi.new('godot_dictionary*')
-        lib.godot_dictionary_new_copy(gdobj_copy, gdobj)
-        return gdobj_copy
+        cpy_gdobj = godot_dictionary_alloc()
+        lib.godot_dictionary_new_copy(cpy_gdobj, gdobj)
+        return cpy_gdobj
+
+    def __init__(self, items=None):
+        if not items:
+            self._gd_ptr = godot_dictionary_alloc()
+            lib.godot_dictionary_new(self._gd_ptr)
+        elif isinstance(items, Dictionary):
+            self._gd_ptr = godot_dictionary_alloc()
+            lib.godot_dictionary_new_copy(self._gd_ptr, items._gd_ptr)
+        elif isinstance(items, dict):
+            self._gd_ptr = godot_dictionary_alloc()
+            lib.godot_dictionary_new(self._gd_ptr)
+            for k, v in items.items():
+                self[k] = v
+        else:
+            raise TypeError('Param `items` should be of type `dict` or `Dictionary`')
 
     def __repr__(self):
         return "<%s(%s)>" % (type(self).__name__, dict(self))
@@ -70,13 +62,30 @@ class Dictionary(BaseBuiltinWithGDObjOwnership):
 
     # Methods
 
+    def copy(self):
+        gd_ptr = godot_dictionary_alloc()
+        lib.godot_dictionary_new_copy(gd_ptr, self._gd_ptr)
+        return Dictionary.build_from_gdobj(gd_ptr, steal=True)
+
+    def pop(self, *args):
+        key, *default = args
+        try:
+            value = self[key]
+        except KeyError:
+            if default:
+                return default[0]
+            else:
+                raise
+        del self[key]
+        return value
+
     def keys(self):
         gdarr = lib.godot_dictionary_keys(self._gd_ptr)
-        return iter(godot_array_to_pyobj(ffi.addressof(gdarr)))
+        return iter(Array.build_from_gdobj(gdarr))
 
     def values(self):
         gdarr = lib.godot_dictionary_values(self._gd_ptr)
-        return iter(godot_array_to_pyobj(ffi.addressof(gdarr)))
+        return iter(Array.build_from_gdobj(gdarr))
 
     def items(self):
         return ((k, self[k]) for k in self.keys())

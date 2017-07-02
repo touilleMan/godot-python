@@ -2,14 +2,18 @@ class Plane(BaseBuiltin):
     __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_PLANE
 
+    @staticmethod
+    def _copy_gdobj(gdobj):
+        return godot_plane_alloc(gdobj[0])
+
     @classmethod
     def build_from_vectors(cls, v1=Vector3(), v2=Vector3(), v3=Vector3()):
         cls._check_param_type('v1', v1, Vector3)
         cls._check_param_type('v2', v2, Vector3)
         cls._check_param_type('v3', v3, Vector3)
-        ret = cls()
-        lib.godot_plane_new_with_vectors(ret._gd_ptr, v1._gd_ptr, v2._gd_ptr, v3._gd_ptr)
-        return ret
+        gd_ptr = godot_plane_alloc()
+        lib.godot_plane_new_with_vectors(gd_ptr, v1._gd_ptr, v2._gd_ptr, v3._gd_ptr)
+        return cls.build_from_gdobj(gd_ptr, steal=True)
 
     @classmethod
     def build_from_reals(cls, a=0, b=0, c=0, d=0):
@@ -17,14 +21,14 @@ class Plane(BaseBuiltin):
         cls._check_param_float('b', b)
         cls._check_param_float('c', c)
         cls._check_param_float('d', d)
-        ret = cls()
-        lib.godot_plane_new_with_reals(ret._gd_ptr, a, b, c, d)
-        return ret
+        gd_ptr = godot_plane_alloc()
+        lib.godot_plane_new_with_reals(gd_ptr, a, b, c, d)
+        return cls.build_from_gdobj(gd_ptr, steal=True)
 
     def __init__(self, normal=Vector3(), d=0.0):
         self._check_param_type('normal', normal, Vector3)
         self._check_param_float('d', d)
-        self._gd_ptr = ffi.new('godot_plane*')
+        self._gd_ptr = godot_plane_alloc()
         lib.godot_plane_new_with_normal(self._gd_ptr, normal._gd_ptr, d)
 
     def __eq__(self, other):

@@ -1,6 +1,6 @@
 import pytest
 
-from godot.bindings import Basis, Vector3
+from godot.bindings import Basis, Vector3, Quat
 
 
 class TestBasis:
@@ -55,17 +55,18 @@ class TestBasis:
         v = Basis.build_from_euler(Vector3(1, 2, 3))
         assert isinstance(v, Basis)
 
+    def test_build_from_euler_quat(self):
+        v = Basis.build_from_euler(Quat(1, 2, 3, 4))
+        assert isinstance(v, Basis)
+
     @pytest.mark.parametrize('args', [
         (),
+        (Quat(), Quat()),
         (Vector3(), Vector3()),
         (1,), (None,)])
-    def test_bad_build_from_euler_vector3(self, args):
+    def test_bad_build_from_euler(self, args):
         with pytest.raises(TypeError):
             Basis.build_from_euler(*args)
-
-    @pytest.mark.xfail(reason='Quat not implemented yet.')
-    def test_build_from_euler_quat(self):
-        pass
 
     @classmethod
     def test_build_from_axis_and_angle(axis, phi):

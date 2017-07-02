@@ -217,6 +217,7 @@ def pybind_get_prop_list(handle):
             lib.godot_string_new_unicode_data(ffi.addressof(raw_list[i]), name, -1)
         # Last entry is an empty string
         lib.godot_string_new(ffi.addressof(raw_list[len(exported)]))
+        setattr(cls, field, raw_list)
     return raw_list
 
 

@@ -2,15 +2,20 @@ class Quat(BaseBuiltin):
     __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_QUAT
 
+    @staticmethod
+    def _copy_gdobj(gdobj):
+        return godot_quat_alloc(gdobj[0])
+
     def __init__(self, x=0.0, y=0.0, z=0.0, w=0.0):
-        self._gd_ptr = ffi.new('godot_quat*')
+        self._gd_ptr = godot_quat_alloc()
         lib.godot_quat_new(self._gd_ptr, x, y, z, w)
 
-    def build_with_axis_angle(axis, angle):
-        self._check_param_type('axis', axis, Vector3)
-        self = Quat()
-        lib.godot_quat_new_with_axis_angle(axis._gd_ptr, angle)
-        return self
+    @classmethod
+    def build_with_axis_angle(cls, axis, angle):
+        cls._check_param_type('axis', axis, Vector3)
+        gd_ptr = godot_quat_alloc()
+        lib.godot_quat_new_with_axis_angle(gd_ptr, axis._gd_ptr, angle)
+        return cls.build_from_gdobj(gd_ptr, steal=True)
 
     def __eq__(self, other):
         return isinstance(other, Quat) and lib.godot_quat_operator_equal(self._gd_ptr, other._gd_ptr)

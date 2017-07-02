@@ -14,31 +14,15 @@ class BasePoolArray(BaseBuiltinWithGDObjOwnership, MutableSequence):
         return value._gd_ptr
 
     def __init__(self, items=None):
-        try:
-            self._gd_ptr = self._gd_new_ptr_mem()
+        if isinstance(items, self._cls):
+            self._gd_ptr = self._gd_array_alloc()
+            self._gd_array_new_copy(self._gd_ptr, items._gd_ptr)
+        else:
+            self._gd_ptr = self._gd_array_alloc()
+            self._gd_array_new(self._gd_ptr)
             # TODO: use godot_pool_*_array_new_with_array
             if items:
-                if isinstance(items, self._cls):
-                    self._gd_array_new_copy(self._gd_ptr, items._gd_ptr)
-                else:
-                        self._gd_array_new(self._gd_ptr)
-                        self += items
-            else:
-                self._gd_array_new(self._gd_ptr)
-        except:
-            # Unset _gd_ptr anyway to avoid segfault in __del__
-            self._gd_ptr = None
-            raise
-
-    def __del__(self):
-        if self._gd_ptr:
-            self._gd_array_destroy(self._gd_ptr)
-
-    @classmethod
-    def _copy_gdobj(cls, gdobj):
-        gdobj_copy = cls._gd_new_ptr_mem()
-        cls._gd_array_new_copy(gdobj_copy, gdobj)
-        return gdobj_copy
+                self += items
 
     def __repr__(self):
         return "<%s(%s)>" % (type(self).__name__, [x for x in self])
@@ -132,15 +116,23 @@ class BasePoolArray(BaseBuiltinWithGDObjOwnership, MutableSequence):
 
 
 def _generate_pool_array(clsname, pycls, gdname, py_to_gd=None, gd_to_py=None):
+    godot_x_alloc = globals()['godot_%s_alloc' % gdname]
+    godot_x_new_copy = getattr(lib, 'godot_%s_new_copy' % gdname)
+
+    def _copy_gdobj(gdobj):
+        cpy_gdobj = godot_x_alloc()
+        godot_x_new_copy(cpy_gdobj, gdobj)
+        return cpy_gdobj
+
     nmspc = {
         '__slots__': (),
         'GD_TYPE': getattr(lib, 'GODOT_VARIANT_TYPE_%s' % gdname.upper()),
-        '_gd_new_ptr_mem': partial(ffi.new, 'godot_%s*' % gdname),
-        '_contained_cls': pycls
+        '_copy_gdobj': staticmethod(_copy_gdobj),
+        '_contained_cls': pycls,
+        '_gd_array_alloc': staticmethod(godot_x_alloc)
     }
-    for suffix in ('new', 'new_copy', 'destroy', 'get',
-                   'set', 'remove', 'size', 'append',
-                   'insert', 'invert', 'push_back', 'resize'):
+    for suffix in ('new', 'new_copy', 'get', 'set', 'remove', 'size',
+                   'append', 'insert', 'invert', 'push_back', 'resize'):
         nmspc['_gd_array_%s' % suffix] = getattr(lib, 'godot_%s_%s' % (gdname, suffix))
     if py_to_gd:
         nmspc['_py_to_gd'] = py_to_gd

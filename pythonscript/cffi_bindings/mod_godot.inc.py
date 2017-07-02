@@ -120,40 +120,32 @@ def get_exposed_class_per_name(classname):
     return __exposed_classes[classname]
 
 
+class BuiltinInitPlaceholder:
+    __slots__ = ('_gd_ptr', )
+
+
 class BaseBuiltin:
     __slots__ = ('_gd_ptr', )
 
     GD_TYPE = lib.GODOT_VARIANT_TYPE_NIL  # Overwritten by children
 
-    # def __init__(self, __gdobj):
-    #     self._gd_ptr = __gdobj
-    #     # if __steal_gdobj:
-    #     #     self._gd_ptr = __steal_gdobj
-    #     # elif __copy_gdobj:
-    #     #     self.
-    #     #     # TODO faster to lookup for field `item` instead ?
-    #     #     if ffi.typeof(__copy_gdobj).kind != 'pointer':
-    #     #         # Must save the object to keep reference
-    #     #         self._gd_obj = __copy_gdobj
-    #     #         self._gd_ptr = ffi.addressof(__copy_gdobj)
-    #     #     self._gd_ptr = (__copy_gdobj)
-
     def __copy__(self):
         return self.build_from_gdobj(self._gd_obj)
 
-    def _copy_gdobj(self):
-        gdobj = new_uninitialized_gdobj(self.GD_TYPE)
-        gdobj[0] = self._gd_ptr[0]
-        return gdobj
-
     @classmethod
-    def build_from_gdobj(cls, gdobj):
-        # TODO: find a way to avoid copy
-        ret = cls()
-        if ffi.typeof(gdobj).kind == 'pointer':
-            ret._gd_ptr[0] = gdobj[0]
+    def build_from_gdobj(cls, gdobj, steal=False):
+        # Avoid calling cls.__init__ by first instanciating a placeholder, then
+        # overloading it __class__ to turn it into an instance of the right class
+        ret = BuiltinInitPlaceholder()
+        if steal:
+            assert ffi.typeof(gdobj).kind == 'pointer'
+            ret._gd_ptr = gdobj
         else:
-            ret._gd_ptr[0] = gdobj
+            if ffi.typeof(gdobj).kind == 'pointer':
+                ret._gd_ptr = cls._copy_gdobj(gdobj)
+            else:
+                ret._gd_ptr = cls._copy_gdobj(ffi.addressof(gdobj))
+        ret.__class__ = cls
         return ret
 
     @staticmethod
@@ -168,33 +160,27 @@ class BaseBuiltin:
 
 
 class BaseBuiltinWithGDObjOwnership(BaseBuiltin):
+    __slots__ = ()
 
     # def __init__(self, __copy_gdobj=None, __steal_gdobj=None):
     #     raise NotImplementedError()
 
-    @classmethod
-    def build_from_gdobj(cls, gdobj, steal=True):
-        # TODO: find a way to avoid copy
-        if not steal:
-            gdobj = self._copy_gdobj(gdobj)
-        return super().build_from_gdobj(gdobj)
+    # @classmethod
+    # def build_from_gdobj(cls, gdobj, steal=True):
+    #     # TODO: find a way to avoid copy
+    #     if not steal:
+    #         gdobj = self._copy_gdobj(gdobj)
+    #     return super().build_from_gdobj(gdobj)
 
-        ret = cls()
-        if ffi.typeof(gdobj).kind == 'pointer':
-            ret._gd_ptr[0] = gdobj[0]
-        else:
-            ret._gd_ptr[0] = gdobj
-        return ret
-
-    @staticmethod
-    def _copy_gdobj(gdobj):
-        raise NotImplementedError()
+    # @staticmethod
+    # def _copy_gdobj(gdobj):
+    #     raise NotImplementedError()
 
     def __copy__(self):
-        return self.build_from_gdobj(self._copy_gdobj(self._gd_ptr))
+        return self.build_from_gdobj(self._hazmat_gdobj_alloc(self._gd_ptr))
 
-    def __del__(self):
-        raise NotImplementedError()
+    # def __del__(self):
+    #     raise NotImplementedError()
 
 
 module = imp.new_module("godot")

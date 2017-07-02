@@ -2,10 +2,14 @@ class Transform2D(BaseBuiltin):
     __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_TRANSFORM2D
 
+    @staticmethod
+    def _copy_gdobj(gdobj):
+        return godot_transform2d_alloc(gdobj[0])
+
     def __init__(self, rot=0.0, pos=Vector2()):
         self._check_param_float('rot', rot)
         self._check_param_type('pos', pos, Vector2)
-        self._gd_ptr = ffi.new('godot_transform2d*')
+        self._gd_ptr = godot_transform2d_alloc()
         lib.godot_transform2d_new(self._gd_ptr, rot, pos._gd_ptr)
 
     @classmethod

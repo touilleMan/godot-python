@@ -2,49 +2,50 @@ class Array(BaseBuiltinWithGDObjOwnership):
     __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_ARRAY
 
-    def __init__(self, items=()):
-        try:
-            self._gd_ptr = ffi.new('godot_array*')
-            if not items:
-                lib.godot_array_new(self._gd_ptr)
-            elif isinstance(items, Array):
-                lib.godot_array_new_copy(self._gd_ptr, items._gd_ptr)
-            elif isinstance(items, PoolColorArray):
-                lib.godot_array_new_pool_color_array(self._gd_ptr, items._gd_ptr)
-            elif isinstance(items, PoolVector3Array):
-                lib.godot_array_new_pool_vector3_array(self._gd_ptr, items._gd_ptr)
-            elif isinstance(items, PoolVector2Array):
-                lib.godot_array_new_pool_vector2_array(self._gd_ptr, items._gd_ptr)
-            elif isinstance(items, PoolStringArray):
-                lib.godot_array_new_pool_string_array(self._gd_ptr, items._gd_ptr)
-            elif isinstance(items, PoolRealArray):
-                lib.godot_array_new_pool_real_array(self._gd_ptr, items._gd_ptr)
-            elif isinstance(items, PoolIntArray):
-                lib.godot_array_new_pool_int_array(self._gd_ptr, items._gd_ptr)
-            elif isinstance(items, PoolByteArray):
-                lib.godot_array_new_pool_byte_array(self._gd_ptr, items._gd_ptr)
-            elif isinstance(items, PoolRealArray):
-                lib.godot_array_new_pool_real_array(self._gd_ptr, items._gd_ptr)
-            elif hasattr(items, '__iter__') and not isinstance(items, (str, bytes)):
-                lib.godot_array_new(self._gd_ptr)
-                for x in items:
-                    self.append(x)
-            else:
-                raise TypeError('Param `items` should be of type `Array` or `Pool*Array`')
-        except:
-            # Unset _gd_ptr anyway to avoid segfault in __del__
-            self._gd_ptr = None
-            raise
-
-    def __del__(self):
-        if self._gd_ptr:
-            lib.godot_array_destroy(self._gd_ptr)
-
     @staticmethod
     def _copy_gdobj(gdobj):
-        gdobj_copy = ffi.new('godot_array*')
-        lib.godot_array_copy(gdobj_copy, gdobj)
-        return gdobj_copy
+        cpy_gdobj = godot_array_alloc()
+        lib.godot_array_new_copy(cpy_gdobj, gdobj)
+        return cpy_gdobj
+
+    def __init__(self, items=()):
+        if not items:
+            self._gd_ptr = godot_array_alloc()
+            lib.godot_array_new(self._gd_ptr)
+        elif isinstance(items, Array):
+            self._gd_ptr = godot_array_alloc()
+            lib.godot_array_new_copy(self._gd_ptr, items._gd_ptr)
+        elif isinstance(items, PoolColorArray):
+            self._gd_ptr = godot_array_alloc()
+            lib.godot_array_new_pool_color_array(self._gd_ptr, items._gd_ptr)
+        elif isinstance(items, PoolVector3Array):
+            self._gd_ptr = godot_array_alloc()
+            lib.godot_array_new_pool_vector3_array(self._gd_ptr, items._gd_ptr)
+        elif isinstance(items, PoolVector2Array):
+            self._gd_ptr = godot_array_alloc()
+            lib.godot_array_new_pool_vector2_array(self._gd_ptr, items._gd_ptr)
+        elif isinstance(items, PoolStringArray):
+            self._gd_ptr = godot_array_alloc()
+            lib.godot_array_new_pool_string_array(self._gd_ptr, items._gd_ptr)
+        elif isinstance(items, PoolRealArray):
+            self._gd_ptr = godot_array_alloc()
+            lib.godot_array_new_pool_real_array(self._gd_ptr, items._gd_ptr)
+        elif isinstance(items, PoolIntArray):
+            self._gd_ptr = godot_array_alloc()
+            lib.godot_array_new_pool_int_array(self._gd_ptr, items._gd_ptr)
+        elif isinstance(items, PoolByteArray):
+            self._gd_ptr = godot_array_alloc()
+            lib.godot_array_new_pool_byte_array(self._gd_ptr, items._gd_ptr)
+        elif isinstance(items, PoolRealArray):
+            self._gd_ptr = godot_array_alloc()
+            lib.godot_array_new_pool_real_array(self._gd_ptr, items._gd_ptr)
+        elif hasattr(items, '__iter__') and not isinstance(items, (str, bytes)):
+            self._gd_ptr = godot_array_alloc()
+            lib.godot_array_new(self._gd_ptr)
+            for x in items:
+                self.append(x)
+        else:
+            raise TypeError('Param `items` should be of type `Array` or `Pool*Array`')
 
     def __eq__(self, other):
         # TODO: should be able to optimize this...

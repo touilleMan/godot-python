@@ -2,41 +2,44 @@ class Basis(BaseBuiltin):
     __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_BASIS
 
+    @staticmethod
+    def _copy_gdobj(gdobj):
+        return godot_basis_alloc(gdobj[0])
+
     @classmethod
     def build_from_rows(cls, row0, row1, row2):
         cls._check_param_type('row0', row0, Vector3)
         cls._check_param_type('row1', row1, Vector3)
         cls._check_param_type('row2', row2, Vector3)
-        ret = cls()
-        lib.godot_basis_new_with_rows(ret._gd_ptr, row0._gd_ptr, row1._gd_ptr, row2._gd_ptr)
-        return ret
+        gd_ptr = godot_basis_alloc()
+        lib.godot_basis_new_with_rows(gd_ptr, row0._gd_ptr, row1._gd_ptr, row2._gd_ptr)
+        return cls.build_from_gdobj(gd_ptr, steal=True)
 
     @classmethod
     def build_from_euler(cls, euler):
-        ret = cls()
+        gd_ptr = godot_basis_alloc()
         if isinstance(euler, Vector3):
-            lib.godot_basis_new_with_euler(ret._gd_ptr, euler._gd_ptr)
+            lib.godot_basis_new_with_euler(gd_ptr, euler._gd_ptr)
         elif isinstance(euler, Quat):
-            lib.godot_basis_new_with_euler_quat(ret._gd_ptr, euler._gd_ptr[0])
+            lib.godot_basis_new_with_euler_quat(gd_ptr, euler._gd_ptr)
         else:
             raise TypeError("Param `euler` should be of type `%s`" % (Vector3, Quat))
-        return ret
+        return cls.build_from_gdobj(gd_ptr, steal=True)
 
     @classmethod
     def build_from_axis_and_angle(cls, axis, phi):
         cls._check_param_type('axis', axis, Vector3)
         cls._check_param_float('phi', phi)
-        ret = cls()
-        lib.godot_basis_new_with_axis_and_angle(ret._gd_ptr, axis._gd_ptr, phi)
-        return ret
+        gd_ptr = godot_basis_alloc()
+        lib.godot_basis_new_with_axis_and_angle(gd_ptr, axis._gd_ptr, phi)
+        return cls.build_from_gdobj(gd_ptr, steal=True)
 
     AXIS_X = 0
     AXIS_Y = 1
     AXIS_Z = 2
 
     def __init__(self):  # TODO: allow rows as param ?
-        self._gd_ptr = ffi.new('godot_basis*')
-        lib.godot_basis_new(self._gd_ptr)
+        self._gd_ptr = godot_basis_alloc()
 
     def __repr__(self):
         return "<{n}(({v.x.x}, {v.x.y}, {v.x.z}), ({v.y.x}, {v.y.y}, {v.y.z}), ({v.z.x}, {v.z.y}, {v.z.z}))>".format(n=type(self).__name__, v=self)

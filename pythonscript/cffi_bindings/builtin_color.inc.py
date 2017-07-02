@@ -2,8 +2,12 @@ class Color(BaseBuiltin):
     __slots__ = ()
     GD_TYPE = lib.GODOT_VARIANT_TYPE_COLOR
 
+    @staticmethod
+    def _copy_gdobj(gdobj):
+        return godot_color_alloc(gdobj[0])
+
     def __init__(self, r=0, g=0, b=0, a=None):
-        self._gd_ptr = ffi.new('godot_color*')
+        self._gd_ptr = godot_color_alloc()
         if a is None:
             lib.godot_color_new_rgb(self._gd_ptr, r, g, b)
         else:

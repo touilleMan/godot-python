@@ -11,31 +11,21 @@ from pythonscriptcffi import ffi, lib
 # doesn't exist in Python)
 
 
-def godot_array_to_pyobj(p_gdarray):
-    ret = []
-    for i in range(lib.godot_array_size(p_gdarray)):
-        raw = lib.godot_array_get(p_gdarray, i)
-        ret.append(variant_to_pyobj(ffi.addressof(raw)))
-    return ret
-
-
-def godot_dictionary_to_pyobj(p_gddict):
-    pydict = {}
-    gdkeys = lib.godot_dictionary_keys(p_gddict)
-    p_gdkeys = ffi.addressof(gdkeys)
-    for i in range(lib.godot_array_size(p_gdkeys)):
-        raw_key = lib.godot_array_get(p_gdkeys, i)
-        var_key = lib.godot_variant_as_string(ffi.addressof(raw_key))
-        key = godot_string_to_pyobj(ffi.addressof(var_key))
-        raw_value = lib.godot_dictionary_get(p_gddict, ffi.addressof(raw_key))
-        # Recursive conversion of dict values
-        pydict[key] = variant_to_pyobj(ffi.addressof(raw_value))
-    return pydict
-
-
 def godot_string_to_pyobj(p_gdstring):
     raw_str = lib.godot_string_unicode_str(p_gdstring)
     return ffi.string(raw_str)
+
+
+def godot_string_from_pyobj(pystr):
+    if isinstance(pystr, str):
+        gdstr = godot_string_alloc()
+        lib.godot_string_new_unicode_data(gdstr, pystr, len(pystr))
+    elif isinstance(pystr, bytes):
+        gdstr = godot_string_alloc()
+        lib.godot_string_new_data(gdstr, pystr, len(pystr))
+    else:
+        raise TypeError('`pystr` must be `str` or `bytes`')
+    return gdstr
 
 
 def variant_to_pyobj(p_gdvar):
@@ -127,78 +117,80 @@ def variant_to_pyobj(p_gdvar):
         raise TypeError("Unknown Variant type `%s` (this should never happen !)" % gdtype)
 
 
-variant_new = ffi.new_allocator(alloc=lib.malloc, free=lib.godot_variant_destroy, should_clear_after_alloc=False)
 def pyobj_to_variant(pyobj, p_gdvar=None):
-    p_gdvar = p_gdvar if p_gdvar else variant_new('godot_variant*')
-    # p_gdvar = p_gdvar if p_gdvar else ffi.new('godot_variant*')
-    if pyobj is None:
-        lib.godot_variant_new_nil(p_gdvar)
-    elif (isinstance(pyobj, bool)):
-        lib.godot_variant_new_bool(p_gdvar, pyobj)
-    elif (isinstance(pyobj, int)):
-        lib.godot_variant_new_int(p_gdvar, pyobj)
-    elif (isinstance(pyobj, float)):
-        lib.godot_variant_new_real(p_gdvar, pyobj)
-    elif (isinstance(pyobj, str)):
-        gdstr = ffi.new("godot_string*")
-        pyobj_as_bytes = pyobj.encode()
-        lib.godot_string_new_data(gdstr, pyobj_as_bytes, len(pyobj_as_bytes))
-        lib.godot_variant_new_string(p_gdvar, gdstr)
-    elif (isinstance(pyobj, bytes)):
-        gdstr = ffi.new("godot_string*")
-        lib.godot_string_new_data(gdstr, pyobj, len(pyobj))
-        lib.godot_variant_new_string(p_gdvar, gdstr)
-    elif isinstance(pyobj, BaseBuiltin):
-        if pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_VECTOR2:
-            lib.godot_variant_new_vector2(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_RECT2:
-            lib.godot_variant_new_rect2(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_VECTOR3:
-            lib.godot_variant_new_vector3(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_TRANSFORM2D:
-            lib.godot_variant_new_transform2d(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_PLANE:
-            lib.godot_variant_new_plane(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_QUAT:
-            lib.godot_variant_new_quat(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_RECT3:
-            lib.godot_variant_new_rect3(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_BASIS:
-            lib.godot_variant_new_basis(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_TRANSFORM:
-            lib.godot_variant_new_transform(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_COLOR:
-            lib.godot_variant_new_color(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_NODE_PATH:
-            lib.godot_variant_new_nodepath(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_RID:
-            lib.godot_variant_new_rid(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_OBJECT:
+    # `initialized=False` means we MUST manually init this by hand no matter what
+    p_gdvar = p_gdvar if p_gdvar else godot_variant_alloc(initialized=False)
+    try:
+        if pyobj is None:
+            lib.godot_variant_new_nil(p_gdvar)
+        elif (isinstance(pyobj, bool)):
+            lib.godot_variant_new_bool(p_gdvar, pyobj)
+        elif (isinstance(pyobj, int)):
+            lib.godot_variant_new_int(p_gdvar, pyobj)
+        elif (isinstance(pyobj, float)):
+            lib.godot_variant_new_real(p_gdvar, pyobj)
+        elif (isinstance(pyobj, str)):
+            gdstr = ffi.new("godot_string*")
+            pyobj_as_bytes = pyobj.encode()
+            lib.godot_string_new_data(gdstr, pyobj_as_bytes, len(pyobj_as_bytes))
+            lib.godot_variant_new_string(p_gdvar, gdstr)
+        elif (isinstance(pyobj, bytes)):
+            gdstr = ffi.new("godot_string*")
+            lib.godot_string_new_data(gdstr, pyobj, len(pyobj))
+            lib.godot_variant_new_string(p_gdvar, gdstr)
+        elif isinstance(pyobj, BaseBuiltin):
+            if pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_VECTOR2:
+                lib.godot_variant_new_vector2(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_RECT2:
+                lib.godot_variant_new_rect2(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_VECTOR3:
+                lib.godot_variant_new_vector3(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_TRANSFORM2D:
+                lib.godot_variant_new_transform2d(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_PLANE:
+                lib.godot_variant_new_plane(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_QUAT:
+                lib.godot_variant_new_quat(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_RECT3:
+                lib.godot_variant_new_rect3(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_BASIS:
+                lib.godot_variant_new_basis(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_TRANSFORM:
+                lib.godot_variant_new_transform(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_COLOR:
+                lib.godot_variant_new_color(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_NODE_PATH:
+                lib.godot_variant_new_nodepath(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_RID:
+                lib.godot_variant_new_rid(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_OBJECT:
+                lib.godot_variant_new_object(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_DICTIONARY:
+                lib.godot_variant_new_dictionary(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_ARRAY:
+                lib.godot_variant_new_array(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLBYTEARRAY:
+                lib.godot_variant_new_poolbytearray(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLINTARRAY:
+                lib.godot_variant_new_poolintarray(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLREALARRAY:
+                lib.godot_variant_new_poolrealarray(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLSTRINGARRAY:
+                lib.godot_variant_new_poolstringarray(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLVECTOR2ARRAY:
+                lib.godot_variant_new_poolvector2array(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLVECTOR3ARRAY:
+                lib.godot_variant_new_poolvector3array(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLCOLORARRAY:
+                lib.godot_variant_new_poolcolorarray(p_gdvar, pyobj._gd_ptr)
+        elif isinstance(pyobj, BaseObject):
             lib.godot_variant_new_object(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_DICTIONARY:
-            lib.godot_variant_new_dictionary(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_ARRAY:
-            lib.godot_variant_new_array(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLBYTEARRAY:
-            lib.godot_variant_new_poolbytearray(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLINTARRAY:
-            lib.godot_variant_new_poolintarray(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLREALARRAY:
-            lib.godot_variant_new_poolrealarray(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLSTRINGARRAY:
-            lib.godot_variant_new_poolstringarray(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLVECTOR2ARRAY:
-            lib.godot_variant_new_poolvector2array(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLVECTOR3ARRAY:
-            lib.godot_variant_new_poolvector3array(p_gdvar, pyobj._gd_ptr)
-        elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLCOLORARRAY:
-            lib.godot_variant_new_poolcolorarray(p_gdvar, pyobj._gd_ptr)
-    elif isinstance(pyobj, BaseObject):
-        lib.godot_variant_new_object(p_gdvar, pyobj._gd_ptr)
-    else:
+        else:
+            raise TypeError("Cannot convert `%s` to Godot's Variant" % pyobj)
+    except:
         # Must init the variant anyway to avoid segfault in it destructor
         lib.godot_variant_new_nil(p_gdvar)
-        raise TypeError("Cannot convert `%s` to Godot's Variant" % pyobj)
+        raise
     return p_gdvar
 
 
@@ -206,60 +198,59 @@ def new_uninitialized_gdobj(gdtype):
     # TODO: use dict to optimize this ?
     # It seems Godot encode Variant as type nil...
     if gdtype == lib.GODOT_VARIANT_TYPE_NIL:
-        return ffi.new('godot_variant*')
+        return godot_variant_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_BOOL:
-        return ffi.new('godot_bool*')
+        return godot_bool_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_INT:
-        return ffi.new('godot_int*')
+        return godot_int_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_REAL:
-        return ffi.new('godot_real*')
+        return godot_real_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_STRING:
-        return ffi.new('godot_string*')
+        return godot_string_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR2:
-        return ffi.new('godot_vector2*')
+        return godot_vector2_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_RECT2:
-        return ffi.new('godot_rect2*')
+        return godot_rect2_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR3:
-        return ffi.new('godot_vector3*')
+        return godot_vector3_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_TRANSFORM2D:
-        return ffi.new('godot_transform2d*')
+        return godot_transform2d_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_PLANE:
-        return ffi.new('godot_plane*')
+        return godot_plane_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_QUAT:
-        return ffi.new('godot_quat*')
+        return godot_quat_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_RECT3:
-        return ffi.new('godot_rect3*')
+        return godot_rect3_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_BASIS:
-        return ffi.new('godot_basis*')
+        return godot_basis_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_TRANSFORM:
-        return ffi.new('godot_transform*')
+        return godot_transform_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_COLOR:
-        return ffi.new('godot_color*')
+        return godot_color_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_NODE_PATH:
-        return ffi.new('godot_node_path*')
+        return godot_node_path_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_RID:
-        return ffi.new('godot_rid*')
+        return godot_rid_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_OBJECT:
-        # TODO use malloc to prevent garbage collection on object
-        return ffi.new('godot_object**')
+        return godot_object_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_DICTIONARY:
-        return ffi.new('godot_dictionary*')
+        return godot_dictionary_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_ARRAY:
-        return ffi.new('godot_array*')
+        return godot_array_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY:
-        return ffi.new('godot_pool_byte_array*')
+        return godot_pool_byte_array_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_INT_ARRAY:
-        return ffi.new('godot_pool_int_array*')
+        return godot_pool_int_array_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY:
-        return ffi.new('godot_pool_real_array*')
+        return godot_pool_real_array_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_STRING_ARRAY:
-        return ffi.new('godot_pool_string_array*')
+        return godot_pool_string_array_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY:
-        return ffi.new('godot_pool_vector2_array*')
+        return godot_pool_vector2_array_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY:
-        return ffi.new('godot_pool_vector3_array*')
+        return godot_pool_vector3_array_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_COLOR_ARRAY:
-        return ffi.new('godot_pool_color_array*')
+        return godot_pool_color_array_alloc()
     else:
         raise TypeError("Unknown Variant type `%s` (this should never happen !)" % gdtype)
 
@@ -333,13 +324,13 @@ def pyobj_to_gdobj(pyobj, steal_gdobj=True):
     if pyobj is None:
         return ffi.NULL
     elif isinstance(pyobj, bool):
-        return ffi.new("godot_bool*", 1 if pyobj else 0)
+        return godot_bool_alloc(1 if pyobj else 0)
     elif isinstance(pyobj, int):
-        return ffi.new("godot_int*", pyobj)
+        return godot_int_alloc(pyobj)
     elif isinstance(pyobj, float):
-        return ffi.new("godot_real*", pyobj)
+        return godot_real_alloc(pyobj)
     elif isinstance(pyobj, str):
-        gdobj = ffi.new("godot_string*")
+        gdobj = godot_string_alloc()
         lib.godot_string_new_unicode_data(gdobj, pyobj, -1)
         return gdobj
     elif isinstance(pyobj, BaseBuiltinWithGDObjOwnership):
@@ -463,9 +454,8 @@ module.gdobj_to_pyobj = gdobj_to_pyobj
 module.pyobj_to_gdobj = pyobj_to_gdobj
 module.gd_to_py_type = gd_to_py_type
 module.py_to_gd_type = py_to_gd_type
-module.godot_array_to_pyobj = godot_array_to_pyobj
-module.godot_dictionary_to_pyobj = godot_dictionary_to_pyobj
 module.godot_string_to_pyobj = godot_string_to_pyobj
+module.godot_string_from_pyobj = godot_string_from_pyobj
 
 
 # Expose this for test
