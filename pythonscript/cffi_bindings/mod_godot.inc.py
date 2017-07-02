@@ -3,6 +3,8 @@ import sys
 import builtins
 
 __version__ = '0.8.0'
+__author__ = 'Emmanuel Leblond'
+__email__ = 'emmanuel.leblond@gmail.com'
 
 __exposed_classes = {}
 __exposed_classes_per_module = {}
@@ -185,6 +187,9 @@ class BaseBuiltinWithGDObjOwnership(BaseBuiltin):
 
 
 module = imp.new_module("godot")
+module.__version__ = __version__
+module.__author__ = __author__
+module.__email__ = __email__
 module.signal = signal
 module.export = export
 module.exposed = exposed
