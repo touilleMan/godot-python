@@ -2,6 +2,7 @@ import imp
 import sys
 import builtins
 
+__version__ = '0.8.0'
 
 __exposed_classes = {}
 __exposed_classes_per_module = {}
