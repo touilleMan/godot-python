@@ -248,7 +248,7 @@ def build_method(classname, meth):
         fixargs_count = len(meth['args'])
 
         def bind(self, *args):
-            print('[PY->GD] Varargs call %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
+            # print('[PY->GD] Varargs call %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
             vaargs = [convert_arg(meth_arg['type'], meth_arg['name'], arg, to_variant=True)
                         for arg, meth_arg in zip(args, meth['args'])]
             vaargs += [pyobj_to_variant(arg) for arg in args[fixargs_count:]]
@@ -256,7 +256,7 @@ def build_method(classname, meth):
             # TODO: use `godot_variant_call_error` to raise exceptions
             varret = lib.godot_method_bind_call(methbind, self._gd_ptr, vavaargs, len(args), ffi.NULL)
             ret = variant_to_pyobj(ffi.addressof(varret))
-            print('[PY->GD] returned:', ret)
+            # print('[PY->GD] returned:', ret)
             return ret
     else:
         # Use ptrcall for calling method
@@ -267,14 +267,14 @@ def build_method(classname, meth):
                 raise TypeError('%s() takes %s positional argument but %s were given' %
                                 (methname, len(meth['args']), len(args)))
             # TODO: check args number and type here (ptrcall means segfault on bad args...)
-            print('[PY->GD] Ptrcall %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
+            # print('[PY->GD] Ptrcall %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
             raw_args = [convert_arg(meth_arg['type'], meth_arg['name'], arg)
                         for arg, meth_arg in zip(args, meth['args'])]
             gdargs = ffi.new("void*[]", raw_args) if raw_args else ffi.NULL
             ret = new_uninitialized_gdobj(rettype)
             lib.godot_method_bind_ptrcall(methbind, self._gd_ptr, gdargs, ret)
             ret = gdobj_to_pyobj(rettype, ret)
-            print('[PY->GD] returned:', ret)
+            # print('[PY->GD] returned:', ret)
             return ret
 
     return bind
