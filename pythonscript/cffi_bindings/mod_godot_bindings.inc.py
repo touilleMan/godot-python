@@ -162,7 +162,7 @@ class MetaBaseObject(type):
 
     def __new__(cls, name, bases, nmspc):
         if ('__init__' in nmspc or '__new__' in nmspc) and name != 'BaseObject':
-            raise RuntimeError('Exported to Godot class must not redifine '
+            raise RuntimeError('Exported to Godot class must not redefine '
                                '`__new__` or `__init__`, use `_ready` instead')
         exported = {}
         signals = {}

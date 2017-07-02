@@ -5,10 +5,7 @@ from godot.bindings import Node2D
 @exposed
 class MyExportedCls(Node2D):
     initialized = False
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._python_prop = None
+    _python_prop = None
 
     def _ready(self):
         self.initialized = True
