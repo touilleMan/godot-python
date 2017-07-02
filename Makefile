@@ -29,17 +29,10 @@ GODOT_CMD = $(DEBUG) $(GODOT_BIN) $(EXTRA_OPTS)
 BUILD_PYTHON_OPTS += --with-pydebug
 endif
 
-# Remove use_llvm and CCFLAGS/CFLAGS if you'r still using gcc
-OPTS ?= platform=x11 -j6 use_llvm=yes                  \
-CCFLAGS=-fcolor-diagnostics CFLAGS=-fcolor-diagnostics \
-target=debug module_pythonscript_enabled=yes           \
-PYTHONSCRIPT_SHARED=no
-
-ifeq ($(TARGET), pythonscript)
-OPTS += $(shell cd $(GODOT_DIR) && ls bin/libpythonscript*.so)
-else
-OPTS += $(TARGET)
-endif
+# Remove use_llvm and CCFLAGS/CFLAGS if you're still using gcc
+OPTS ?= platform=x11 -j6 use_llvm=yes                    \
+  CCFLAGS=-fcolor-diagnostics CFLAGS=-fcolor-diagnostics \
+  target=debug module_pythonscript_enabled=yes
 
 OPTS += $(EXTRA_OPTS)
 
