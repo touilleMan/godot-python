@@ -85,8 +85,10 @@ Error PyLanguage::execute_file(const String &p_path) {
 
 void PyLanguage::finish() {
 	DEBUG_TRACE_METHOD();
+#ifdef BACKEND_CPYTHON
 	// TODO: Do we need to deinit the interpreter ?
 	Py_FinalizeEx();
+#endif
 }
 
 /* MULTITHREAD FUNCTIONS */

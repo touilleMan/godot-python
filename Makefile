@@ -9,12 +9,25 @@
 BASEDIR = $(shell pwd)
 GODOT_DIR ?= $(BASEDIR)/godot
 
+PYTHONSCRIPT_BACKEND ?= cpython
+
+ifeq ($(PYTHONSCRIPT_BACKEND),cpython)
 PYTHON_DIR = $(BASEDIR)/pythonscript/cpython
 PYTHON_LIB = $(PYTHON_DIR)/libpython*.so.1.0
 BUILD_PYTHON_PATH = $(PYTHON_DIR)/build
 BUILD_PYTHON_OPTS =
 PYTHON = LD_LIBRARY_PATH=$(BUILD_PYTHON_PATH)/lib $(BUILD_PYTHON_PATH)/bin/python3
 PIP = LD_LIBRARY_PATH=$(BUILD_PYTHON_PATH)/lib $(BUILD_PYTHON_PATH)/bin/pip3
+else
+ifeq ($(PYTHONSCRIPT_BACKEND),pypy)
+PYTHON_DIR = $(BASEDIR)/pythonscript/pypy
+PYTHON_LIB = $(PYTHON_DIR)/bin/libpypy3-c.so
+PYTHON = $(PYTHON_DIR)/bin/pypy3
+PIP =
+else
+$(error PYTHONSCRIPT_BACKEND should be `cpython` (default) or `pypy`)
+endif
+endif
 
 GDNATIVE_CFFIDEFS = $(BASEDIR)/pythonscript/cffi_bindings/cdef.gen.h
 GDNATIVE_CFFI_BINDINGS = $(BASEDIR)/pythonscript/cffi_bindings/pythonscriptcffi.gen.cpp
@@ -34,7 +47,7 @@ OPTS ?= platform=x11 -j6 use_llvm=yes                    \
   CCFLAGS=-fcolor-diagnostics CFLAGS=-fcolor-diagnostics \
   target=debug module_pythonscript_enabled=yes
 
-OPTS += $(EXTRA_OPTS)
+OPTS += $(EXTRA_OPTS) PYTHONSCRIPT_BACKEND=$(PYTHONSCRIPT_BACKEND)
 
 
 all:

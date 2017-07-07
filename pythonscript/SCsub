@@ -6,21 +6,32 @@ python_backend = ARGUMENTS.get('PYTHONSCRIPT_BACKEND', 'cpython').lower()
 if python_backend not in ('cpython', 'pypy'):
     raise UserError('PYTHONSCRIPT_BACKEND should be `cpython` (default) or `pypy`')
 
+
+module_env = env.Clone()
+module_env.Append(CXXFLAGS='-I ' + Dir('.').path)
+
+
 if python_backend == 'cpython':
     try:
         python_lib = File(glob.glob('cpython/libpython*.so.*')[0])
     except IndexError:
         raise UserError("Cannot find `%s/cpython/libpython*.so.*`, has CPython been compiled ?" % os.getcwd())
+    module_env.Append(CXXFLAGS='-I ' + Dir('cpython/').path)
+    module_env.Append(CXXFLAGS='-I ' + Dir('cpython/Include').path)
+    module_env.Append(CXXFLAGS='-DBACKEND_CPYTHON')
 else:
-    raise UserError("Pythonscript's pypy backend not supported yet :'-(")
+    try:
+        python_lib = File(glob.glob('pypy/bin/libpypy3-c.so')[0])
+    except IndexError:
+        raise UserError("Cannot find `%s/pypy/bin/libpypy3-c.so`." % os.getcwd())
+    module_env.Append(CXXFLAGS='-I ' + Dir('pypy/include').path)
+    module_env.Append(CXXFLAGS='-DBACKEND_PYPY')
 
-module_env = env.Clone()
-module_env.Append(CXXFLAGS='-I ' + Dir('.').path)
-module_env.Append(CXXFLAGS='-I ' + Dir('cpython/').path)
-module_env.Append(CXXFLAGS='-I ' + Dir('cpython/Include').path)
-module_env.Append(CXXFLAGS='-I ' + Dir('pybind11/include/').path)
 module_env.Append(CXXFLAGS='-std=c++11')
-module_env.Append(CXXFLAGS='-pthread -DDEBUG=1 -fwrapv -Wall -Wstrict-prototypes -g -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -Bsymbolic-functions -Wformat -Werror=format-security'.split())
+module_env.Append(CXXFLAGS='-pthread -DDEBUG=1 -fwrapv -Wall '
+    '-Wstrict-prototypes -g -fstack-protector-strong -Wformat '
+    '-Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 '
+    '-Bsymbolic-functions -Wformat -Werror=format-security'.split())
 
 # libpythonX.Ym.so.1.0 will be in the same directory as the godot binary,
 # hence we need to inform the binary to look there.

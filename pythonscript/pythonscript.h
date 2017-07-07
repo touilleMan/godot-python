@@ -1,11 +1,10 @@
 #ifndef PYTHONSCRIPT_H
 #define PYTHONSCRIPT_H
 
-#if PYTHONSCRIPT_BACKEND == cpython
-#define BACKEND_CPYTHON
-#else
-#error "Pypy is not supported yet :'-("
-#define BACKEND_PYPY
+#ifndef BACKEND_CPYTHON
+#ifndef BACKEND_PYPY
+#error "one of BACKEND_CPYTHON/BACKEND_PYPY must be defined"
+#endif
 #endif
 
 #include "Python.h"
