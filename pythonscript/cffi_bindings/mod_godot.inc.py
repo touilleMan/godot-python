@@ -96,6 +96,9 @@ def exposed(cls=None, tool=False):
 
     def wrapper(cls):
         global __exposed_classes, __exposed_classes_per_module
+        assert issubclass(cls, BaseObject), (
+            "%s must inherit from a Godot (e.g. `godot.bindings.Node`) "
+            "class to be marked as @exposed" % cls)
         assert cls.__name__ not in __exposed_classes
         assert cls.__module__ not in __exposed_classes_per_module
         cls.__tool = tool
