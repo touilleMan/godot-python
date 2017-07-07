@@ -7,7 +7,7 @@ from functools import partial
 class GlobalConstants:
 
     @classmethod
-    def get_global_constansts(cls):
+    def get_global_constants(cls):
         raw_consts = lib.godot_get_global_constants()
         return Dictionary.build_from_gdobj(raw_consts)
 
@@ -405,7 +405,7 @@ class LazyBindingsModule(ModuleType):
         super().__init__(name, doc=doc)
         # Load global constants
         self.__dict__.update(get_builtins())
-        self.__dict__.update(GlobalConstants.get_global_constansts())
+        self.__dict__.update(GlobalConstants.get_global_constants())
         # Register classe types
         self._available = {name: partial(build_class, name) for name in ClassDB.get_class_list()}
         self._bootstrap_global_singletons()
