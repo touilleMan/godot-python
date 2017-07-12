@@ -58,7 +58,7 @@ class TestVector3:
         ['reflect', Vector3, (Vector3(), )],
         ['rotated', Vector3, (Vector3(), 0.5)],
         ['slide', Vector3, (Vector3(), )],
-        ['snapped', Vector3, (0.5, )],
+        ['snapped', Vector3, (Vector3(), )],
     ], ids=lambda x: x[0])
     def test_methods(self, args):
         v = Vector3()

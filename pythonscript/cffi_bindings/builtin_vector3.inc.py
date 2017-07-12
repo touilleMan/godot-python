@@ -118,13 +118,14 @@ class Vector3(BaseBuiltin):
     def zero(self):
         lib.godot_vector3_zero(self._gd_ptr)
 
-    def snap(self, val):
-        self._check_param_float('val', val)
-        lib.godot_vector3_snap(self._gd_ptr)
+    # TODO: not available yet in GDnative
+    # def snap(self, by):
+    #     self._check_param_float('by', by)
+    #     lib.godot_vector3_snap(self._gd_ptr)
 
-    def snapped(self, val):
-        self._check_param_float('val', val)
-        gd_obj = lib.godot_vector3_snapped(self._gd_ptr, val)
+    def snapped(self, by):
+        self._check_param_type('by', by, Vector3)
+        gd_obj = lib.godot_vector3_snapped(self._gd_ptr, by._gd_ptr)
         return Vector3.build_from_gdobj(gd_obj)
 
     def rotate(self, axis, phi):
