@@ -27,10 +27,13 @@ class TestDynamicBindings:
         assert ml == ml2
         # Of course different objects should be different and equality
         # should not crash with bad given types
-        assert ml != Object()
+        obj = Object()
+        assert ml != obj
         assert ml != None  # noqa
         assert ml != ""
         assert ml != 42
+        # Don't forget to free the Godot Object
+        obj.free()
 
     def test_class(self):
         assert isinstance(Node, type)
