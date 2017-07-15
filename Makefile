@@ -127,6 +127,6 @@ build_python:
 	cd $(PYTHON_DIR) && make -j4
 	cd $(PYTHON_DIR) && make install
 	# Install cffi is a pita...
-	LD_LIBRARY_PATH=$(PYTHON_DIR) $(PIP) install cffi
+	$(PIP) install cffi
 	if ( [ ! -d $(GODOT_DIR)/bin ] ); then mkdir $(GODOT_DIR)/bin; fi
 	cp $(PYTHON_LIB) $(GODOT_DIR)/bin/
