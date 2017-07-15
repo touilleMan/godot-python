@@ -317,6 +317,8 @@ def build_class(classname, binding_classname=None):
         nmspc[constname] = ClassDB.get_integer_constant(classname, constname)
     parentname = ClassDB.get_parent_class(classname)
     if parentname:
+        if parentname in GODOT_SINGLETONS:
+            parentname = '_%s' % parentname
         bases = (getattr(godot_bindings_module, parentname), )
     else:
         bases = (BaseObject, )
@@ -353,50 +355,33 @@ def get_builtins():
     }
 
 
+GODOT_SPECIAL_CLASSES_SINGLETONS = (
+    'ResourceLoader', 'ResourceSaver', 'OS', 'Geometry', 'ClassDB', 'Engine'
+)
+GODOT_REGULAR_CLASSES_SINGLETONS = (
+    'AudioServer', 'GlobalConfig', 'Input', 'InputMap', 'Marshalls', 'Performance',
+    'Physics2DServer', 'PhysicsServer', 'TranslationServer', 'VisualServer'
+)
+GODOT_SINGLETONS = GODOT_SPECIAL_CLASSES_SINGLETONS + GODOT_REGULAR_CLASSES_SINGLETONS
+
+
 # Werkzeug style lazy module
 class LazyBindingsModule(ModuleType):
 
     """Automatically import objects from the modules."""
 
     def _bootstrap_global_singletons(self):
+        # TODO: GlobalConfig doesn't provide a `list_singletons` to load
+        # this dynamically :'-(
         # Special classes generated in `godot/core/core_bind.h`, classname
         # has a "_" prefix
-        for clsname, name in (
-                ('_ResourceLoader', 'ResourceLoader'),
-                ('_ResourceSaver', 'ResourceSaver'),
-                ('_OS', 'OS'),
-                ('_Geometry', 'Geometry'),
-                ('_ClassDB', 'ClassDB'),
-                ('_Engine', 'Engine'),):
+        for name in GODOT_SPECIAL_CLASSES_SINGLETONS:
+            clsname = '_%s' % name
             self._available[name] = partial(build_global, name, clsname)
         # Regular classses, we have to rename the classname with a "_" prefix
         # to give the name to the singleton
-        # TODO: GlobalConfig doesn't provide a `list_singletons` to load
-        # this dynamically :'-(
-        for new_clsname, name in (
-                ('_AudioServer', 'AudioServer'),
-                ('_AudioServer', 'AS'),
-                ('_GlobalConfig', 'GlobalConfig'),
-                ('_IP', 'IP'),
-                ('_Input', 'Input'),
-                ('_InputMap', 'InputMap'),
-                ('_Marshalls', 'Marshalls'),
-                # TODO: seems to have been removed...
-                # ('_PathRemap', 'PathRemap'),
-                ('_Performance', 'Performance'),
-                ('_Physics2DServer', 'Physics2DServer'),
-                ('_Physics2DServer', 'PS2D'),
-                ('_PhysicsServer', 'PhysicsServer'),
-                ('_PhysicsServer', 'PS'),
-                # TODO: seems to have been removed...
-                # ('_SpatialSound2DServer', 'SpatialSound2DServer'),
-                # ('_SpatialSound2DServer', 'SS2D'),
-                # ('_SpatialSoundServer', 'SpatialSoundServer'),
-                # ('_SpatialSoundServer', 'SS'),
-                ('_TranslationServer', 'TranslationServer'),
-                ('_TranslationServer', 'TS'),
-                ('_VisualServer', 'VisualServer'),
-                ('_VisualServer', 'VS')):
+        for name in GODOT_REGULAR_CLASSES_SINGLETONS:
+            new_clsname = '_%s' % name
             if new_clsname not in self._available:
                 self._available[new_clsname] = self._available[name]
             self._available[name] = partial(build_global, name, new_clsname)
