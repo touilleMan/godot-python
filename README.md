@@ -25,6 +25,13 @@ Quickstart
 ----------
 
 0 - Configure the repo
+Beforehand, the repo has CPython as git submodule, don't forget to fetch it:
+```
+$ git clone --recursive https://github.com/touilleMan/godot-python.git
+# Or if you have already cloned the repo
+$ git submodule init && git submodule update
+```
+
 The current repo must have a `godot` directory (can be a symbolic link) pointing
 on the godot's sources, itself having the `pythonscript` directory
 in it `modules/pythonscript`.
