@@ -78,7 +78,7 @@ run_example:
 
 
 compile: $(PYTHON_LIB) $(GDNATIVE_CFFI_BINDINGS)
-	cd $(GODOT_DIR) && scons $(OPTS)
+	cd $(GODOT_DIR) && scons $(OPTS) dev=yes
 
 
 clean:
@@ -122,6 +122,7 @@ $(PYTHON_LIB):
 
 
 build_python:
+	@printf '\033[0;32mRemember to do `sudo apt-get build-dep python3.6` to get optional libraries support.\033[0m\n'
 	cd $(PYTHON_DIR) && ./configure --enable-shared --prefix=$(BUILD_PYTHON_PATH) $(BUILD_PYTHON_OPTS)
 	cd $(PYTHON_DIR) && make -j4
 	cd $(PYTHON_DIR) && make install
