@@ -95,7 +95,8 @@ class Player(Node2D):
 	This is the file's main class which will be made available to Godot. This
 	class must inherit of `godot.Node` or any of it children (i.g.
 	`godot.KinematicBody`).
-	Obviously you can't have two `exposed` class in the same file.
+	Obviously you can't have two `exposed` class in the same file given Godot
+	retreives the class based on the file path alone.
 	"""
 	# Exposed class can define some attributes as export(<type>) to achieve
 	# similar goal than GDSscript's `export` keyword
@@ -115,11 +116,9 @@ class Player(Node2D):
 	def talk(self, msg):
 		print("I'm saying %s" % msg)
 
-	def __init__(self):
+	def _ready(self):
 		# Don't confuse `__init__` with Godot's `_ready` !
 		self._age = 42
-
-	def _ready(self):
 		# Of course you can access property&methods defined in the parent
 		name = self.get_name()
 		print('%s position x=%s, y=%s' % (name, self.position.x, self.position.y))
