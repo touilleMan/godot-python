@@ -4,14 +4,14 @@ import os, glob
 from SCons.Errors import UserError
 
 
-EnsureSConsVersion(0, 14)
-env = Environment()
+EnsureSConsVersion(2, 4)
+env = Environment(**os.environ)
+
 
 if 'GODOT' not in ARGUMENTS:
     raise UserError('GODOT var must point to main Godot source path')
 env.Append(CXXFLAGS='-I' + env.Dir(ARGUMENTS['GODOT']).path)
 
-python_backend = ARGUMENTS.get('GODOT', 'cpython').lower()
 
 python_backend = ARGUMENTS.get('PYTHONSCRIPT_BACKEND', 'cpython').lower()
 if python_backend not in ('cpython', 'pypy'):
@@ -43,12 +43,11 @@ env.Append(CXXFLAGS='-pthread -DDEBUG=1 -fwrapv -Wall '
     '-Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 '
     '-Bsymbolic-functions -Wformat -Werror=format-security'.split())
 
+
 # libpythonX.Ym.so.1.0 will be in the same directory as the godot binary,
 # hence we need to inform the binary to look there.
 env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN'"])
 
-#x86_64-linux-gnu-gcc -pthread -DNDEBUG -g -fwrapv -O2 -Wall -Wstrict-prototypes -g -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -fPIC -I/usr/include/python3.5m -c pythonscriptcffi.c -o ./pythonscriptcffi.o
-#x86_64-linux-gnu-gcc -pthread -shared -Wl,-O1 -Wl,-Bsymbolic-functions -Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,-Bsymbolic-functions -Wl,-z,relro -g -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 ./pythonscriptcffi.o -lpython3.5m -o ./pythonscriptcffi.so
 
 sources = [
     "pythonscript/cffi_bindings/pythonscriptcffi.gen.cpp",
@@ -60,6 +59,5 @@ sources = [
     # "py_instance.cpp",
     # "py_loader.cpp"
 ]
-
 env.Append(LIBS=[python_lib, 'util'])
 env.SharedLibrary('pythonscript', sources)
