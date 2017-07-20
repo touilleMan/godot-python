@@ -2,7 +2,6 @@
 #define PYTHONSCRIPT_API_H
 
 #include "modules/gdnative/godot/gdnative.h"
-#include "pythonscript.h"
 #include "cffi_bindings/api_struct.h"
 
 typedef void *cffi_handle;
