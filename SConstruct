@@ -51,6 +51,7 @@ env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN'"])
 
 sources = [
     "pythonscript/cffi_bindings/pythonscriptcffi.gen.cpp",
+    "pythonscript/yolo/pythonscript.cpp"
     # "register_types.cpp",
     # "py_language.cpp",
     # "py_editor.cpp",
