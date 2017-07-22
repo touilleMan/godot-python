@@ -3,9 +3,9 @@
 
 extern "C" {
 
-#include "modules/nativescript/godot.h"
+#include "modules/pluginscript/pluginscript.h"
 
-extern godot_nativescript_t *godot_nativescript_init();
+extern godot_pluginscript_language_desc_t *godot_pluginscript_init();
 
 }
 
