@@ -7,7 +7,6 @@
 #include "core/os/os.h"
 #include "core/variant.h"
 
-
 bool PyInstance::set(const StringName &p_name, const Variant &p_value) {
 	DEBUG_TRACE_METHOD();
 

@@ -1,8 +1,8 @@
 #include <stdlib.h>
 // Godot imports
-#include "core/project_settings.h"
 #include "core/os/file_access.h"
 #include "core/os/os.h"
+#include "core/project_settings.h"
 // Pythonscript imports
 #include "py_language.h"
 #include "py_script.h"
