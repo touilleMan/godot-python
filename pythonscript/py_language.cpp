@@ -1,6 +1,6 @@
 #include <stdlib.h>
 // Godot imports
-#include "core/global_config.h"
+#include "core/project_settings.h"
 #include "core/os/file_access.h"
 #include "core/os/os.h"
 // Pythonscript imports
@@ -19,12 +19,12 @@ String PyLanguage::get_name() const {
 void PyLanguage::init() {
 	DEBUG_TRACE_METHOD();
 	// Register configuration
-	auto globals = GlobalConfig::get_singleton();
+	auto globals = ProjectSettings::get_singleton();
 	GLOBAL_DEF("python_script/path", "res://;res://lib");
 
 	if (!pybind_init_sys_path_and_argv(
 				String(globals->get("python_script/path")).c_str(),
-				GlobalConfig::get_singleton()->get_resource_path().c_str(),
+				ProjectSettings::get_singleton()->get_resource_path().c_str(),
 				OS::get_singleton()->get_data_dir().c_str())) {
 		ERR_FAIL()
 	}
@@ -58,9 +58,9 @@ void PyLanguage::init() {
 
     //populate singletons
 
-    List<GlobalConfig::Singleton> singletons;
-    GlobalConfig::get_singleton()->get_singletons(&singletons);
-    for(List<GlobalConfig::Singleton>::Element *E=singletons.front();E;E=E->next()) {
+    List<ProjectSettings::Singleton> singletons;
+    ProjectSettings::get_singleton()->get_singletons(&singletons);
+    for(List<ProjectSettings::Singleton>::Element *E=singletons.front();E;E=E->next()) {
 
         _add_global(E->get().name,E->get().ptr);
     }
