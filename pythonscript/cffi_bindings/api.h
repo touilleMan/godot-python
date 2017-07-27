@@ -6,7 +6,8 @@
 
 typedef void *cffi_handle;
 
-extern godot_bool pybind_init_sys_path_and_argv(const wchar_t *pythonpath, const wchar_t *res_path, const wchar_t *data_path);
+extern void pybind_init();
+extern godot_string pybind_get_template_source_code(const godot_string *class_name, const godot_string *base_class_name);
 extern cffi_handle pybind_load_exposed_class_per_module(const wchar_t *modname);
 extern cffi_handle pybind_instanciate_from_classname(const wchar_t *classname);
 extern cffi_handle pybind_wrap_gdobj_with_class(cffi_handle cls_handle, void *gdobj);

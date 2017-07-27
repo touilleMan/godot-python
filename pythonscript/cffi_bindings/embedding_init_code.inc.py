@@ -4,24 +4,51 @@ from pythonscriptcffi import ffi, lib
 
 
 @ffi.def_extern()
-def pybind_init_sys_path_and_argv(pythonpath, res_path, data_path):
-    pythonpath = ffi.string(pythonpath)
-    res_path = ffi.string(res_path)
-    data_path = ffi.string(data_path)
-
+def pybind_init():
     import sys
-    from godot.bindings import OS
-    sys.argv = ["godot"] + OS.get_cmdline_args()
+    from godot.bindings import ProjectSettings, OS
 
+    # Setup default value
+    pythonpath_config_field = "python_script/path"
+    pythonpath_default_value = "res://;res://lib"
+    if not ProjectSettings.has(pythonpath_config_field):
+        ProjectSettings.set(pythonpath_config_field, pythonpath_default_value)
+    ProjectSettings.set_initial_value(pythonpath_config_field, pythonpath_default_value)
+    # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
+    pythonpath = ProjectSettings.get(pythonpath_config_field)
+
+    sys.argv = ["godot"] + OS.get_cmdline_args()
     for p in pythonpath.split(';'):
-        if p.startswith("res://"):
-            p = p.replace("res:/", res_path, 1)
-        elif p.startswith("user://"):
-            p = p.replace("user:/", data_path, 1)
+        p = ProjectSettings.globalize_path(p)
         sys.path.append(p)
 
     print('PYTHON_PATH: %s' % sys.path)
-    return True
+
+
+@ffi.def_extern()
+def pybind_get_template_source_code(class_name, base_class_name):
+    import pdb; pdb.set_trace()
+    class_name = godot_string_to_pyobj(class_name) or "MyExportedCls"
+    base_class_name = godot_string_to_pyobj(base_class_name)
+    src = """from godot import exposed, export
+from godot.bindings import *
+
+
+@exposed
+class %s(%s):
+
+    # member variables here, example:
+    a = export(int)
+    b = export(str)
+
+    def _ready(self):
+        \"\"\"
+        Called every time the node is added to the scene.
+        Initialization here.
+        \"\"\"
+        pass
+""" % (class_name, base_class_name)
+    return godot_string_from_pyobj(src)
 
 
 # Protect python objects passed to C from beeing garbage collected

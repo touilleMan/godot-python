@@ -28,7 +28,7 @@ with open('%s/api_struct.h' % BASEDIR, 'r') as fd:
 
 # Def needed to compile output .cpp file
 ffibuilder.set_source("pythonscriptcffi", """
-#include "modules/gdnative/godot/gdnative.h"
+#include "modules/nativescript/godot_nativescript.h"
 // TODO: MethodFlags not in ldscript headers
 enum MethodFlags {
     METHOD_FLAG_NORMAL=1,

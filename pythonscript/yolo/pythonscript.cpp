@@ -1,14 +1,15 @@
 #include <iostream>
 #include "pythonscript.h"
+#include "Python.h"
+#include "cffi_bindings/api.h"
 
 // Language
 
-static void _pythonscript_init() {
-	std::cout << "init pythonscript !\n";
-}
-
 static void _pythonscript_finish() {
-	std::cout << "finish pythonscript !\n";
+#ifdef BACKEND_CPYTHON
+	// TODO: Do we need to deinit the interpreter ?
+	Py_FinalizeEx();
+#endif
 }
 
 godot_error _pythonscript_execute_file(const godot_string *p_path) {
@@ -53,7 +54,9 @@ godot_string _pythonscript_get_template_source_code(const godot_string *p_class_
 }
 
 
-godot_bool _pythonscript_validate(const godot_string *p_script, int *r_line_error, int *r_col_error, godot_string *r_test_error, const godot_string *p_path, godot_string *r_functions) {
+godot_bool _pythonscript_validate(const godot_string *p_script, int *r_line_error,
+	                              int *r_col_error, godot_string *r_test_error,
+	                              const godot_string *p_path, godot_string *r_functions) {
 	return true;
 }
 
@@ -101,10 +104,10 @@ godot_variant_type _pythonscript_instance_get_property_type(godot_pluginscript_i
 void _pythonscript_instance_notification(godot_pluginscript_instance_handle handle, int p_notification) {
 }
 godot_method_rpc_mode _pythonscript_instance_get_rpc_mode(godot_pluginscript_instance_handle handle, const godot_string *p_method) {
-	return 0;
+	return GODOT_METHOD_RPC_MODE_DISABLED;
 }
 godot_method_rpc_mode _pythonscript_instance_get_rset_mode(godot_pluginscript_instance_handle handle, const godot_string *p_variable) {
-	return 0;
+	return GODOT_METHOD_RPC_MODE_DISABLED;
 }
 
 // Final stuff
@@ -114,19 +117,23 @@ static const char *PYTHONSCRIPT_RESERVED_WORDS[] = {0};
 static const char *PYTHONSCRIPT_COMMENT_DELIMITERS[] = {"#", "\"\"\"\"\"\"", 0};
 static const char *PYTHONSCRIPT_STRING_DELIMITERS[] = {"\" \"", "' '", 0};
 
-godot_pluginscript_language_desc_t *godot_pluginscript_init() {
+godot_pluginscript_language_desc_t *godot_pluginscript_init(const godot_pluginscript_init_options *options) {
+	// TODO: Set PYTHONHOME according
+	// const wchar_t *plugin_path = godot_string_unicode_str(->plugin_path);
+    Py_SetPythonHome(L"/home/emmanuel/projects/godot-python/pythonscript/cpython/build");
+
 	static godot_pluginscript_language_desc_t desc = {
 		.name="Python",
 		.type="Python",
 		.extension="py",
 		.recognized_extensions=PYTHONSCRIPT_RECOGNIZED_EXTENSIONS,
-		.init=_pythonscript_init,
+		.init=pybind_init,
 		.finish=_pythonscript_finish,
 		.reserved_words=PYTHONSCRIPT_RESERVED_WORDS,
 		.comment_delimiters=PYTHONSCRIPT_COMMENT_DELIMITERS,
 		.string_delimiters=PYTHONSCRIPT_STRING_DELIMITERS,
 		.execute_file=_pythonscript_execute_file,
-		.get_template_source_code=_pythonscript_get_template_source_code,
+		.get_template_source_code=pybind_get_template_source_code,
 		.validate=_pythonscript_validate,
 
 		.script_desc={

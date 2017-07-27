@@ -17,7 +17,7 @@ python_backend = ARGUMENTS.get('PYTHONSCRIPT_BACKEND', 'cpython').lower()
 if python_backend not in ('cpython', 'pypy'):
     raise UserError('PYTHONSCRIPT_BACKEND should be `cpython` (default) or `pypy`')
 
-
+env.Append(CCFLAGS="-fcolor-diagnostics -fcolor-diagnostics")
 env.Append(CXXFLAGS='-I' + env.Dir('pythonscript').path)
 
 
