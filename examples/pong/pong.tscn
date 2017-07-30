@@ -18,6 +18,8 @@ texture = ExtResource( 2 )
 [node name="player1" parent="." instance=ExtResource( 3 )]
 
 position = Vector2( 19.9447, 267.036 )
+audio_bus_override = false
+audio_bus_name = "Master"
 
 [node name="sprite" parent="player1"]
 
@@ -26,6 +28,8 @@ modulate = Color( 1, 0, 0.960938, 1 )
 [node name="player2" parent="." instance=ExtResource( 3 )]
 
 position = Vector2( 995.015, 244.876 )
+audio_bus_override = false
+audio_bus_name = "Master"
 
 [node name="sprite" parent="player2"]
 
@@ -34,6 +38,8 @@ modulate = Color( 0, 0.929688, 1, 1 )
 [node name="ball" parent="." instance=ExtResource( 4 )]
 
 position = Vector2( 513.02, 248.2 )
+audio_bus_override = false
+audio_bus_name = "Master"
 
 [node name="score_left" type="Label" parent="."]
 
@@ -41,8 +47,10 @@ margin_left = 96.0
 margin_top = 57.0
 margin_right = 104.0
 margin_bottom = 71.0
+rect_pivot_offset = Vector2( 0, 0 )
 rect_clip_content = false
 mouse_filter = 2
+size_flags_horizontal = 1
 size_flags_vertical = 0
 text = "0"
 align = 1
@@ -56,8 +64,10 @@ margin_left = 907.0
 margin_top = 62.0
 margin_right = 915.0
 margin_bottom = 76.0
+rect_pivot_offset = Vector2( 0, 0 )
 rect_clip_content = false
 mouse_filter = 2
+size_flags_horizontal = 1
 size_flags_vertical = 0
 text = "0"
 align = 1
@@ -72,8 +82,10 @@ margin_left = 60.0
 margin_top = 33.0
 margin_right = 137.0
 margin_bottom = 47.0
+rect_pivot_offset = Vector2( 0, 0 )
 rect_clip_content = false
 mouse_filter = 2
+size_flags_horizontal = 1
 size_flags_vertical = 0
 text = "The Winner!"
 percent_visible = 1.0
@@ -87,8 +99,10 @@ margin_left = 872.0
 margin_top = 41.0
 margin_right = 949.0
 margin_bottom = 55.0
+rect_pivot_offset = Vector2( 0, 0 )
 rect_clip_content = false
 mouse_filter = 2
+size_flags_horizontal = 1
 size_flags_vertical = 0
 text = "The Winner!"
 percent_visible = 1.0

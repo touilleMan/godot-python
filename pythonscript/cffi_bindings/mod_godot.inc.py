@@ -35,6 +35,7 @@ class SignalField:
         return '<%s(%r)>' % (type(self).__name__, self.name)
 
 
+# TODO: this can be greatly improved to make it more pythonic
 class ExportedField:
 
     def __init__(self, type, default=None, name='', hint=0,
@@ -52,20 +53,6 @@ class ExportedField:
             self.rpc = rpc.mod
         else:
             self.rpc = rpc
-
-        self.gd_hint = self.hint
-        self.gd_usage = self.usage
-        self.gd_hint_string = pyobj_to_gdobj(self.hint_string)
-        self.gd_type = py_to_gd_type(self.type)
-        if self.default is not None:
-            self.gd_default = pyobj_to_gdobj(self.default)
-        else:
-            self.gd_default = ffi.NULL
-
-    @property
-    def gd_name(self):
-        # Name is defined lazily when ExportedField is connected to it class
-        return pyobj_to_gdobj(self.name)
 
     def __repr__(self):
         return '<{x.__class__.__name__}(type={x.type}, default={x.default})>'.format(x=self)

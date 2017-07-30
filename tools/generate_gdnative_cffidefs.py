@@ -36,11 +36,11 @@ class CookComplexEnumsVisitor(c_ast.NodeVisitor):
 
 
 def generate(godot_root):
-    nativescript_header = '%s/modules/nativescript/godot_nativescript.h' % godot_root
-    gdnative_include = '%s/modules/gdnative/' % godot_root
-    ast = parse_file(nativescript_header, use_cpp=True, cpp_args=[
+    header = '%s/modules/pluginscript/pluginscript.h' % godot_root
+    include = '%s/modules/pluginscript/' % godot_root
+    ast = parse_file(header, use_cpp=True, cpp_args=[
         '-D__attribute__(x)=',
-        '-I' + gdnative_include,
+        '-I' + include,
         '-I' + godot_root,
         '-I%s/fake_libc_include' % BASEDIR
     ])
