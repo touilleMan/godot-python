@@ -9,7 +9,7 @@ def alloc_with_destructor_factory(type, constructor, destructor):
     def alloc(initialized=True):
         """
         /!\ With `initialized=False`, you must use `lib.godot_*_new` on the
-        result otherwise strang things will happened when destructor kicks in /!\
+        result otherwise strange things will happened when destructor kicks in /!\
         """
         data = allocator(type)
         if initialized:
