@@ -77,15 +77,17 @@ run_example:
 	cd examples/pong && $(GODOT_CMD)
 
 
+# TODO: rename or remove this
 compile: $(PYTHON_LIB) $(GDNATIVE_CFFI_BINDINGS)
 	cd $(GODOT_DIR) && scons $(OPTS) dev=yes
 
 
+pythonscript:
+	scons GODOT=godot
+
+
 clean:
-	rm -f pythonscript/*.o  pythonscript/*.os
-	rm -f pythonscript/cffi_bindings/*.o pythonscript/cffi_bindings/*.os
-	rm -f $(GODOT_DIR)/bin/godot*
-	rm -f $(GODOT_DIR)/bin/libpythonscript*
+	scons GODOT=godot -c
 
 
 veryclean: clean

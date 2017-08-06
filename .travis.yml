@@ -11,10 +11,10 @@ env:
     - LLVM_VERSION=3.8.0
     - LLVM_ARCHIVE_PATH=$HOME/clang+llvm.tar.xz
     # Use commit instead of tag as long as 3.0 is not released
-    - GODOT_REPO=https://github.com/godotengine/godot.git
-    - GODOT_TAG=master  # I like to live dangerously ;-)
-    # - GODOT_REPO=https://github.com/touilleMan/godot.git
-    # - GODOT_TAG=gdnative-clean-and-add-properties
+    # - GODOT_REPO=https://github.com/godotengine/godot.git
+    # - GODOT_TAG=master  # I like to live dangerously ;-)
+    - GODOT_REPO=https://github.com/touilleMan/godot.git
+    - GODOT_TAG=pluginscript
     # Cannot use release given travis's glibc clash with -ffast-math with clang
     # other solution is to set `-D__extern_always_inline="extern __always_inline"`
     - BUILD_EXTRA_OPTS="-j4 target=debug tools=yes module_pythonscript_enabled=yes"
@@ -78,8 +78,11 @@ script:
   - make generate_gdnative_cffidefs
   - make generate_cffi_bindings
   - if [[ "$CXX" == "clang++" ]]; then sh tools/clang-format-travis-check.sh; fi
-  - if [[ "$CXX" == "g++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS CXX=g++-5 CC=gcc-5"; fi
-  - if [[ "$CXX" == "clang++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS use_llvm=yes"; fi
+  - if [[ "$CXX" == "g++" ]]; then make pythonscript; fi
+  - if [[ "$CXX" == "clang++" ]]; then make pythonscript; fi
+  # Given we cannot run godot in headless mode, no need to compile it...
+  # - if [[ "$CXX" == "g++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS CXX=g++-5 CC=gcc-5"; fi
+  # - if [[ "$CXX" == "clang++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS use_llvm=yes"; fi
 # Tests need x11 server with opengl3 or compile godot with platform=server (both not working so far...)
   # - LIBGL_ALWAYS_SOFTWARE=1 make test DEBUG=valgrind EXTRA_OPTS=$TEST_EXTRA_OPTS
   - set +e
