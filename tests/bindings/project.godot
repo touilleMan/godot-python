@@ -1,4 +1,7 @@
+config_version=3
+
 [application]
 
+run/main_scene="res://main.tscn"
 name="godo-bindings-tests"
 main_scene="res://main.tscn"
