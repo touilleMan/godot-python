@@ -137,12 +137,12 @@ def pybind_profiling_stop():
 
 
 @ffi.def_extern()
-def pybind_profiling_get_accumulated_data(godot_array *p_info_arr, int p_info_max):
+def pybind_profiling_get_accumulated_data(info_arr, info_max):
     return 1
 
 
 @ffi.def_extern()
-def pybind_profiling_get_frame_data(godot_array *p_info_arr, int p_info_max):
+def pybind_profiling_get_frame_data(info_arr, info_max):
     return 1
 
 
