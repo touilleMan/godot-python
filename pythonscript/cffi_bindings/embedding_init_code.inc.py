@@ -29,6 +29,8 @@ def connect_handle(obj):
     return handle
 
 
+#### Language ####
+
 @ffi.def_extern()
 def pybind_init():
     import sys
@@ -76,6 +78,80 @@ class %s(%s):
     lib.godot_string_new_unicode_data(r_src, src, -1)
 
 
+#### Language editor ####
+
+@ffi.def_extern()
+def pybind_add_global_constant(name, value):
+    name = godot_string_to_pyobj(name)
+    value = variant_to_pyobj(value)
+    globals()[name] = value
+
+@ffi.def_extern()
+def pybind_debug_get_error():
+    return godot_string_from_pyobj("Nothing")[0]
+
+
+@ffi.def_extern()
+def pybind_debug_get_stack_level_line(level):
+    return 1
+
+
+@ffi.def_extern()
+def pybind_debug_get_stack_level_function(level):
+    return godot_string_from_pyobj("Nothing")[0]
+
+
+@ffi.def_extern()
+def pybind_debug_get_stack_level_source(level):
+    return godot_string_from_pyobj("Nothing")[0]
+
+
+@ffi.def_extern()
+def pybind_debug_get_stack_level_locals(level, locals, values, max_subitems, max_depth):
+    pass
+
+
+@ffi.def_extern()
+def pybind_debug_get_stack_level_members(level, members, values, max_subitems, max_depth):
+    pass
+
+
+@ffi.def_extern()
+def pybind_debug_get_globals(locals, values, max_subitems, max_depth):
+    pass
+
+
+@ffi.def_extern()
+def pybind_debug_parse_stack_level_expression(level, expression, max_subitems, max_depth):
+    return godot_string_from_pyobj("Nothing")[0]
+
+
+@ffi.def_extern()
+def pybind_profiling_start():
+    pass
+
+
+@ffi.def_extern()
+def pybind_profiling_stop():
+    pass
+
+
+@ffi.def_extern()
+def pybind_profiling_get_accumulated_data(godot_array *p_info_arr, int p_info_max):
+    return 1
+
+
+@ffi.def_extern()
+def pybind_profiling_get_frame_data(godot_array *p_info_arr, int p_info_max):
+    return 1
+
+
+
+@ffi.def_extern()
+def pybind_frame():
+    pass
+
+
 def _build_script_manifest(cls):
     from godot.bindings import Dictionary, Array
 
@@ -87,7 +163,6 @@ def _build_script_manifest(cls):
         methinfo['default_args'] = Array()
         methinfo['return'] = None
         methinfo['flags'] = lib.METHOD_FLAG_FROM_SCRIPT
-        print(methinfo)
         return methinfo
 
     def _build_method_info(meth, methname):
@@ -101,7 +176,6 @@ def _build_script_manifest(cls):
         methinfo['return'] = None
         methinfo['flags'] = lib.METHOD_FLAG_FROM_SCRIPT
         methinfo['rpc_mode'] = getattr(meth, '__rpc', lib.GODOT_METHOD_RPC_MODE_DISABLED)
-        print(methinfo)
         return methinfo
 
     def _build_property_info(prop):
@@ -113,7 +187,6 @@ def _build_script_manifest(cls):
         propinfo['usage'] = prop.usage
         propinfo['default_value'] = prop.default
         propinfo['rset_mode'] = prop.rpc
-        print(propinfo)
         return propinfo
 
     manifest = ffi.new('godot_pluginscript_script_manifest*')
@@ -122,7 +195,6 @@ def _build_script_manifest(cls):
     manifest.is_tool = cls.__tool
     lib.godot_dictionary_new(ffi.addressof(manifest.member_lines))
     lib.godot_array_new(ffi.addressof(manifest.methods))
-    print(cls, 'methods')
     methods = Array()
     # TODO: include inherited in exposed methods ? Expose Godot base class' ones ?
     # for methname in vars(cls):
@@ -130,17 +202,14 @@ def _build_script_manifest(cls):
         meth = getattr(cls, methname)
         if not inspect.isfunction(meth) or meth.__name__.startswith('__'):
             continue
-        print(methname, ':', end='')
         methinfo = _build_method_info(meth, methname)
         methods.append(methinfo)
 
-    print(cls, 'signals')
     signals = Array()
     for signal in cls.__signals.values():
         signalinfo = _build_signal_info(signal)
         signals.append(signalinfo)
 
-    print(cls, 'properties')
     properties = Array()
     for prop in cls.__exported.values():
         property_info = _build_property_info(prop)
@@ -245,7 +314,6 @@ def pybind_instance_call_method(handle, p_method, p_args, p_argcount, r_error):
 
     print('[GD->PY] Calling %s on %s ==> %s' % (methname, instance, meth))
     pyargs = [variant_to_pyobj(p_args[i]) for i in range(p_argcount)]
-    # error is an hacky int compressing Variant::CallError values
     try:
         pyret = meth(*pyargs)
         ret = pyobj_to_variant(pyret)

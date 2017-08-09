@@ -4,7 +4,7 @@
 #
 
 .PHONY: all setup run run_example compile clean veryclean generate_gdnative_cffidefs \
-	    generate_cffi_bindings generate_dev_dyn_cffi_bindings build_python
+	    generate_cffi_bindings generate_dev_dyn_cffi_bindings build_python pythonscript
 
 BASEDIR = $(shell pwd)
 GODOT_DIR ?= $(BASEDIR)/godot

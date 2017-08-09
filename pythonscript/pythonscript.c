@@ -3,8 +3,6 @@
 #include "cffi_bindings/api.h"
 #include <dlfcn.h>
 
-// Language
-
 static void _pythonscript_finish() {
 	// TODO: Anyway, this cause a segfault....
 	// #ifdef BACKEND_CPYTHON
@@ -18,25 +16,6 @@ godot_bool _pythonscript_validate(const godot_string *p_script, int *r_line_erro
 		const godot_string *p_path, godot_string *r_functions) {
 	return true;
 }
-
-// Instance
-
-godot_method_rpc_mode _pythonscript_instance_get_rpc_mode(godot_pluginscript_instance_handle handle, const godot_string *p_method) {
-	return GODOT_METHOD_RPC_MODE_DISABLED;
-}
-
-godot_method_rpc_mode _pythonscript_instance_get_rset_mode(godot_pluginscript_instance_handle handle, const godot_string *p_variable) {
-	return GODOT_METHOD_RPC_MODE_DISABLED;
-}
-
-void _pythonscript_instance_refcount_incremented() {
-}
-
-bool _pythonscript_instance_refcount_decremented() {
-	return true;
-}
-
-// Final stuff
 
 static const char *PYTHONSCRIPT_RECOGNIZED_EXTENSIONS[] = { "py", "pyc", "pyo", "pyd", 0 };
 static const char *PYTHONSCRIPT_RESERVED_WORDS[] = {
@@ -100,19 +79,60 @@ godot_pluginscript_language_desc_t *godot_pluginscript_init(const godot_pluginsc
 		.get_template_source_code = pybind_get_template_source_code,
 		.validate = _pythonscript_validate,
 
-		.script_desc = {
-				.init = pybind_script_init,
-				.finish = pybind_script_finish,
+		// Editor functions
+		.add_global_constant = pybind_add_global_constant,
+		.debug_get_error = NULL, // pybind_debug_get_error,
+		.debug_get_stack_level_count = NULL, // pybind_debug_get_stack_level_count,
+		.debug_get_stack_level_line = NULL, // pybind_debug_get_stack_level_line,
+		.debug_get_stack_level_function = NULL, // pybind_debug_get_stack_level_function,
+		.debug_get_stack_level_source = NULL, // pybind_debug_get_stack_level_source,
+		.debug_get_stack_level_locals = NULL, // pybind_debug_get_stack_level_locals,
+		.debug_get_stack_level_members = NULL, // pybind_debug_get_stack_level_members,
+		.debug_get_globals = NULL, // pybind_debug_get_globals,
+		.debug_parse_stack_level_expression = NULL, // pybind_debug_parse_stack_level_expression,
 
-				.instance_desc = {
-						.init = pybind_instance_init,
-						.finish = pybind_instance_finish,
-						.set_prop = pybind_instance_set_prop,
-						.get_prop = pybind_instance_get_prop,
-						.call_method = pybind_instance_call_method,
-						.notification = pybind_instance_notification,
-						.refcount_incremented = NULL,
-						.refcount_decremented = NULL } }
+		.profiling_start = NULL, // pybind_profiling_start,
+		.profiling_stop = NULL, // pybind_profiling_stop,
+		.profiling_get_accumulated_data = NULL, // pybind_profiling_get_accumulated_data,
+		.profiling_get_frame_data = NULL, // pybind_profiling_get_frame_data,
+
+		.frame = NULL, // pybind_frame
+
+		.script_desc = {
+			.init = pybind_script_init,
+			.finish = pybind_script_finish,
+
+			.instance_desc = {
+				.init = pybind_instance_init,
+				.finish = pybind_instance_finish,
+				.set_prop = pybind_instance_set_prop,
+				.get_prop = pybind_instance_get_prop,
+				.call_method = pybind_instance_call_method,
+				.notification = pybind_instance_notification,
+				.refcount_incremented = NULL,
+				.refcount_decremented = NULL
+			}
+		}
 	};
+	if (options->debug) {
+		desc.add_global_constant = pybind_add_global_constant;
+		desc.debug_get_error = pybind_debug_get_error;
+		desc.debug_get_stack_level_count = pybind_debug_get_stack_level_count;
+		desc.debug_get_stack_level_line = pybind_debug_get_stack_level_line;
+		desc.debug_get_stack_level_function = pybind_debug_get_stack_level_function;
+		desc.debug_get_stack_level_source = pybind_debug_get_stack_level_source;
+		desc.debug_get_stack_level_locals = pybind_debug_get_stack_level_locals;
+		desc.debug_get_stack_level_members = pybind_debug_get_stack_level_members;
+		desc.debug_get_globals = pybind_debug_get_globals;
+		desc.debug_parse_stack_level_expression = pybind_debug_parse_stack_level_expression;
+
+		desc.profiling_start = pybind_profiling_start;
+		desc.profiling_stop = pybind_profiling_stop;
+		desc.profiling_get_accumulated_data = pybind_profiling_get_accumulated_data;
+		desc.profiling_get_frame_data = pybind_profiling_get_frame_data;
+
+		desc.frame = pybind_frame;
+	}
+
 	return &desc;
 }
