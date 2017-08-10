@@ -59,14 +59,15 @@ static const char *PYTHONSCRIPT_STRING_DELIMITERS[] = { "\" \"", "' '", 0 };
 
 static void *libpython = NULL;
 
-godot_pluginscript_language_desc_t *godot_pluginscript_init(const godot_pluginscript_init_options *options) {
+godot_pluginscript_language_desc godot_pluginscript_init(const godot_pluginscript_init_options *options) {
 	// Must explicitly open libpython to load all of it symbols
 	libpython = dlopen("libpython3.6m.so.1.0", RTLD_NOW | RTLD_GLOBAL);
 	// TODO: Set PYTHONHOME according
 	// const wchar_t *plugin_path = godot_string_unicode_str(->plugin_path);
 	Py_SetPythonHome(L"/home/emmanuel/projects/godot-python/pythonscript/cpython/build");
 
-	static godot_pluginscript_language_desc_t desc = {
+	godot_pluginscript_language_desc desc = {
+		.data = NULL,
 		.name = "Python",
 		.type = "Python",
 		.extension = "py",
@@ -78,25 +79,6 @@ godot_pluginscript_language_desc_t *godot_pluginscript_init(const godot_pluginsc
 		.string_delimiters = PYTHONSCRIPT_STRING_DELIMITERS,
 		.get_template_source_code = pybind_get_template_source_code,
 		.validate = _pythonscript_validate,
-
-		// Editor functions
-		.add_global_constant = pybind_add_global_constant,
-		.debug_get_error = NULL, // pybind_debug_get_error,
-		.debug_get_stack_level_count = NULL, // pybind_debug_get_stack_level_count,
-		.debug_get_stack_level_line = NULL, // pybind_debug_get_stack_level_line,
-		.debug_get_stack_level_function = NULL, // pybind_debug_get_stack_level_function,
-		.debug_get_stack_level_source = NULL, // pybind_debug_get_stack_level_source,
-		.debug_get_stack_level_locals = NULL, // pybind_debug_get_stack_level_locals,
-		.debug_get_stack_level_members = NULL, // pybind_debug_get_stack_level_members,
-		.debug_get_globals = NULL, // pybind_debug_get_globals,
-		.debug_parse_stack_level_expression = NULL, // pybind_debug_parse_stack_level_expression,
-
-		.profiling_start = NULL, // pybind_profiling_start,
-		.profiling_stop = NULL, // pybind_profiling_stop,
-		.profiling_get_accumulated_data = NULL, // pybind_profiling_get_accumulated_data,
-		.profiling_get_frame_data = NULL, // pybind_profiling_get_frame_data,
-
-		.frame = NULL, // pybind_frame
 
 		.script_desc = {
 			.init = pybind_script_init,
@@ -115,6 +97,13 @@ godot_pluginscript_language_desc_t *godot_pluginscript_init(const godot_pluginsc
 		}
 	};
 	if (options->debug) {
+
+		desc.get_template_source_code = pybind_get_template_source_code;
+		desc.validate = pybind_validate;
+		desc.find_function = pybind_find_function;
+		desc.make_function = pybind_make_function;
+		desc.auto_indent_code = pybind_auto_indent_code;
+
 		desc.add_global_constant = pybind_add_global_constant;
 		desc.debug_get_error = pybind_debug_get_error;
 		desc.debug_get_stack_level_count = pybind_debug_get_stack_level_count;
@@ -134,5 +123,5 @@ godot_pluginscript_language_desc_t *godot_pluginscript_init(const godot_pluginsc
 		desc.frame = pybind_frame;
 	}
 
-	return &desc;
+	return desc;
 }

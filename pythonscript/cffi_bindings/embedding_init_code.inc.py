@@ -53,8 +53,11 @@ def pybind_init():
     print('sys.path: %s' % sys.path)
 
 
+#### Language editor ####
+
+
 @ffi.def_extern()
-def pybind_get_template_source_code(class_name, base_class_name, r_src):
+def pybind_get_template_source_code(class_name, base_class_name):
     class_name = godot_string_to_pyobj(class_name) or "MyExportedCls"
     base_class_name = godot_string_to_pyobj(base_class_name)
     src = """from godot import exposed, export
@@ -75,10 +78,28 @@ class %s(%s):
         \"\"\"
         pass
 """ % (class_name, base_class_name)
-    lib.godot_string_new_unicode_data(r_src, src, -1)
+    return godot_string_from_pyobj(src)[0]
 
 
-#### Language editor ####
+@ffi.def_extern()
+def pybind_validate(script, r_line_error, r_col_error, test_error, path, r_functions):
+    pass
+
+
+@ffi.def_extern()
+def pybind_find_function(function, code):
+    pass
+
+
+@ffi.def_extern()
+def pybind_make_function(class_, name, args):
+    pass
+
+
+@ffi.def_extern()
+def pybind_auto_indent_code(code, from_line, to_line):
+    pass
+
 
 @ffi.def_extern()
 def pybind_add_global_constant(name, value):
@@ -190,7 +211,7 @@ def _build_script_manifest(cls):
         return propinfo
 
     manifest = ffi.new('godot_pluginscript_script_manifest*')
-    manifest.data_handle = connect_handle(cls)
+    manifest.data = connect_handle(cls)
     lib.godot_string_new_unicode_data(ffi.addressof(manifest.name), cls.__name__, -1)
     manifest.is_tool = cls.__tool
     lib.godot_dictionary_new(ffi.addressof(manifest.member_lines))
