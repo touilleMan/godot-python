@@ -113,6 +113,13 @@ def get_exposed_class_per_name(classname):
     return __exposed_classes[classname]
 
 
+def destroy_exposed_classes():
+    global __exposed_classes
+    global __exposed_classes_per_module
+    __exposed_classes.clear()
+    __exposed_classes_per_module.clear()
+
+
 class BuiltinInitPlaceholder:
     __slots__ = ('_gd_ptr', )
 

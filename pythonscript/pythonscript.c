@@ -67,13 +67,13 @@ godot_pluginscript_language_desc godot_pluginscript_init(const godot_pluginscrip
 	Py_SetPythonHome(L"/home/emmanuel/projects/godot-python/pythonscript/cpython/build");
 
 	godot_pluginscript_language_desc desc = {
-		.data = NULL,
+		// .data = NULL,
 		.name = "Python",
 		.type = "Python",
 		.extension = "py",
 		.recognized_extensions = PYTHONSCRIPT_RECOGNIZED_EXTENSIONS,
 		.init = pybind_init,
-		.finish = _pythonscript_finish,
+		.finish = pybind_finish,
 		.reserved_words = PYTHONSCRIPT_RESERVED_WORDS,
 		.comment_delimiters = PYTHONSCRIPT_COMMENT_DELIMITERS,
 		.string_delimiters = PYTHONSCRIPT_STRING_DELIMITERS,

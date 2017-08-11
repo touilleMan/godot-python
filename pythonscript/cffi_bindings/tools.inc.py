@@ -291,7 +291,7 @@ def gdobj_to_pyobj(gdtype, p_gdobj, steal_gdobj=True):
     elif gdtype == lib.GODOT_VARIANT_TYPE_COLOR:
         return Color.build_from_gdobj(p_gdobj)
     elif gdtype == lib.GODOT_VARIANT_TYPE_NODE_PATH:
-        return Node_path.build_from_gdobj(p_gdobj, steal=steal_gdobj)
+        return NodePath.build_from_gdobj(p_gdobj, steal=steal_gdobj)
     elif gdtype == lib.GODOT_VARIANT_TYPE_RID:
         return RID.build_from_gdobj(p_gdobj)
     elif gdtype == lib.GODOT_VARIANT_TYPE_OBJECT:

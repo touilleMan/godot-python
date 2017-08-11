@@ -8,6 +8,7 @@
 typedef void *cffi_handle;
 
 extern void pybind_init();
+extern void pybind_finish();
 
 extern godot_string pybind_get_template_source_code(const godot_string *p_class_name, const godot_string *p_base_class_name);
 extern godot_bool pybind_validate(const godot_string *p_script, int *r_line_error, int *r_col_error, godot_string *r_test_error, const godot_string *p_path, godot_pool_string_array *r_functions);

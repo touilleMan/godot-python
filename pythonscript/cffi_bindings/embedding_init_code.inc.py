@@ -1,3 +1,4 @@
+import gc
 import inspect
 import traceback
 from pythonscriptcffi import ffi, lib
@@ -16,6 +17,9 @@ class ProtectFromGC:
 
     def unregister_by_id(self, id):
         del self._data[id]
+
+    def clear(self):
+        self._data.clear()
 
 
 protect_from_gc = ProtectFromGC()
@@ -50,8 +54,15 @@ def pybind_init():
         p = ProjectSettings.globalize_path(p)
         sys.path.append(p)
 
-    print('sys.path: %s' % sys.path)
+    print('PYTHONPATH: %s' % sys.path)
 
+
+@ffi.def_extern()
+def pybind_finish():
+    # Release Godot objects referenced by python wrappers
+    protect_from_gc.clear()
+    destroy_exposed_classes()
+    gc.collect()
 
 #### Language editor ####
 
@@ -83,7 +94,7 @@ class %s(%s):
 
 @ffi.def_extern()
 def pybind_validate(script, r_line_error, r_col_error, test_error, path, r_functions):
-    pass
+    return 1
 
 
 @ffi.def_extern()
@@ -253,6 +264,7 @@ def pybind_script_init(path, source, r_error):
     # Remove `res://`, `.py` and replace / by .
     modname = path[6:].rsplit('.', 1)[0].replace('/', '.')
     try:
+        # TODO: make sure script reloading works
         __import__(modname)  # Force lazy loading of the module
         cls = get_exposed_class_per_module(modname)
     except:
@@ -287,7 +299,7 @@ def pybind_instance_set_prop(instance_handle, p_name, p_value):
     try:
         pyval = variant_to_pyobj(p_value)
         name = godot_string_to_pyobj(p_name)
-        print('[GD->PY] Set %s to %s (%s)' % (name, pyval, p_value))
+        # print('[GD->PY] Set %s to %s (%s)' % (name, pyval, p_value))
         setattr(instance, name, pyval)
         return True
     except Exception:
@@ -333,16 +345,16 @@ def pybind_instance_call_method(handle, p_method, p_args, p_argcount, r_error):
         # TODO: Keep this object cached instead of recreating everytime
         return pyobj_to_variant(None)[0]
 
-    print('[GD->PY] Calling %s on %s ==> %s' % (methname, instance, meth))
+    # print('[GD->PY] Calling %s on %s ==> %s' % (methname, instance, meth))
     pyargs = [variant_to_pyobj(p_args[i]) for i in range(p_argcount)]
     try:
         pyret = meth(*pyargs)
         ret = pyobj_to_variant(pyret)
         r_error.error = lib.GODOT_CALL_ERROR_CALL_OK
-        print('[GD->PY] result: %s (%s)' % (pyret, ret[0]))
+        # print('[GD->PY] result: %s (%s)' % (pyret, ret[0]))
         return ret[0]
     except NotImplementedError:
-        print('[GD->PY] not implemented !')
+        # print('[GD->PY] not implemented !')
         r_error.error = lib.GODOT_CALL_ERROR_CALL_ERROR_INVALID_METHOD
     except TypeError:
         traceback.print_exc()

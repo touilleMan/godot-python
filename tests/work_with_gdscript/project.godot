@@ -1,4 +1,6 @@
+config_version=3
+
 [application]
 
-name="godo-demo"
-main_scene="res://main.tscn"
+config/name="test:work_with_gdscript"
+run/main_scene="res://main.tscn"

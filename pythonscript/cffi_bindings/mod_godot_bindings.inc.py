@@ -52,7 +52,7 @@ class ClassDB:
 
         def constructor(self):
             gd_classname = godot_string_from_pyobj(classname)
-            # TODO: alloc this on the stack (usign _malloca ?)
+            # TODO: alloc this on the stack (using _malloca ?)
             args = ffi.new("void*[]", [gd_classname])
             ret = godot_variant_alloc()
             lib.godot_method_bind_ptrcall(cls._meth_instance, cls._instance, args, ret)
@@ -191,6 +191,8 @@ class MetaBaseObject(type):
         return type.__new__(cls, name, bases, cooked_nmspc)
 
 
+# TODO: create a BaseReferenceObject which store the variant to avoid
+# garbage collection
 class BaseObject(metaclass=MetaBaseObject):
     __slots__ = ('_gd_ptr', '_gd_var')
 

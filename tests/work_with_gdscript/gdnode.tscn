@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://gdnode.gd" type="Script" id=1]
+
+[node name="Node" type="Node"]
+
+script = ExtResource( 1 )
+overloaded_by_child_prop = "default"
+
+
