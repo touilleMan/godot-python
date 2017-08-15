@@ -119,8 +119,8 @@ godot_pluginscript_language_desc godot_pluginscript_init(const godot_pluginscrip
 		desc.profiling_stop = pybind_profiling_stop;
 		desc.profiling_get_accumulated_data = pybind_profiling_get_accumulated_data;
 		desc.profiling_get_frame_data = pybind_profiling_get_frame_data;
-
-		desc.frame = pybind_frame;
+		// TODO: avoid to go through cffi call if profiling is not on
+		desc.profiling_frame = pybind_profiling_frame;
 	}
 
 	return desc;

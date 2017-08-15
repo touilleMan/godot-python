@@ -158,32 +158,6 @@ def pybind_debug_parse_stack_level_expression(level, expression, max_subitems, m
     return godot_string_from_pyobj("Nothing")[0]
 
 
-@ffi.def_extern()
-def pybind_profiling_start():
-    pass
-
-
-@ffi.def_extern()
-def pybind_profiling_stop():
-    pass
-
-
-@ffi.def_extern()
-def pybind_profiling_get_accumulated_data(info_arr, info_max):
-    return 1
-
-
-@ffi.def_extern()
-def pybind_profiling_get_frame_data(info_arr, info_max):
-    return 1
-
-
-
-@ffi.def_extern()
-def pybind_frame():
-    pass
-
-
 def _build_script_manifest(cls):
     from godot.bindings import Dictionary, Array
 

@@ -49,6 +49,7 @@ enum MethodFlags {
 # (including python functions exposed to C through `@ffi.def_extern()`)
 EMBEDDING_INC_SOURCES = (
     'embedding_init_code.inc.py',
+    'profiler.inc.py',
     'allocator.inc.py',
     'mod_godot.inc.py',
     'builtin_rid.inc.py',

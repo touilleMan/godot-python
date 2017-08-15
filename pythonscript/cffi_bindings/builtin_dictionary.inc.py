@@ -8,7 +8,7 @@ class Dictionary(BaseBuiltinWithGDObjOwnership):
         lib.godot_dictionary_new_copy(cpy_gdobj, gdobj)
         return cpy_gdobj
 
-    def __init__(self, items=None):
+    def __init__(self, items=None, **kwargs):
         if not items:
             self._gd_ptr = godot_dictionary_alloc()
             lib.godot_dictionary_new(self._gd_ptr)
@@ -22,6 +22,8 @@ class Dictionary(BaseBuiltinWithGDObjOwnership):
                 self[k] = v
         else:
             raise TypeError('Param `items` should be of type `dict` or `Dictionary`')
+        for k, v in kwargs.items():
+            self[k] = v
 
     def __repr__(self):
         return "<%s(%s)>" % (type(self).__name__, dict(self))

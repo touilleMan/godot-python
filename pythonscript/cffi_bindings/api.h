@@ -29,10 +29,10 @@ extern godot_string pybind_debug_parse_stack_level_expression(int p_level, const
 
 extern void pybind_profiling_start();
 extern void pybind_profiling_stop();
-extern int pybind_profiling_get_accumulated_data(godot_dictionary *p_info_arr, int p_info_max);
-extern int pybind_profiling_get_frame_data(godot_dictionary *p_info_arr, int p_info_max);
+extern int pybind_profiling_get_accumulated_data(godot_dictionary *r_info, int p_info_max);
+extern int pybind_profiling_get_frame_data(godot_dictionary *r_info, int p_info_max);
 
-extern void pybind_frame();
+extern void pybind_profiling_frame();
 
 extern godot_pluginscript_script_manifest pybind_script_init(const godot_string *path, const godot_string *source, godot_error *r_error);
 extern void pybind_script_finish(godot_pluginscript_script_data *handle);
