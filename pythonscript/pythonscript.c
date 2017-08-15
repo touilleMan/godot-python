@@ -61,10 +61,14 @@ static void *libpython = NULL;
 
 godot_pluginscript_language_desc godot_pluginscript_init(const godot_pluginscript_init_options *options) {
 	// Must explicitly open libpython to load all of it symbols
+#ifdef BACKEND_CPYTHON
 	libpython = dlopen("libpython3.6m.so.1.0", RTLD_NOW | RTLD_GLOBAL);
 	// TODO: Set PYTHONHOME according
 	// const wchar_t *plugin_path = godot_string_unicode_str(->plugin_path);
 	Py_SetPythonHome(L"/home/emmanuel/projects/godot-python/pythonscript/cpython/build");
+#else
+	libpython = dlopen("libpypy3-c.so", RTLD_NOW | RTLD_GLOBAL);
+#endif
 
 	godot_pluginscript_language_desc desc = {
 		// .data = NULL,
