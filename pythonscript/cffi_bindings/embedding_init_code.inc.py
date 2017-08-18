@@ -104,12 +104,31 @@ def pybind_find_function(function, code):
 
 @ffi.def_extern()
 def pybind_make_function(class_, name, args):
-    pass
+    args = PoolStringArray.build_from_gdobj(args, steal=True)
+    name = godot_string_to_pyobj(name)
+    src = ['def %s(' % name]
+    src.append(', '.join([arg.split(':', 1)[0] for arg in args]))
+    src.append('):\n    pass')
+    return ''.join(src)
 
 
 @ffi.def_extern()
 def pybind_auto_indent_code(code, from_line, to_line):
-    pass
+    try:
+        import autopep8
+    except ImportError:
+        print("[Pythonscript] Auto indent requires module `autopep8`, "
+              "install it with `pip install autopep8`")
+    pycode = godot_string_to_pyobj(code).splitlines()
+    before = '\n'.join(pycode[:from_line])
+    to_fix = '\n'.join(pycode[from_line:to_line])
+    after = '\n'.join(pycode[to_line:])
+    fixed = autopep8.fix_code(to_fix)
+    final_code = '\n'.join((before, fixed, after))
+    # TODO: modify code instead of replace it when binding on godot_string
+    # operation is available
+    lib.godot_string_destroy(code)
+    lib.godot_string_new_unicode_data(code, final_code, len(final_code))
 
 
 @ffi.def_extern()
@@ -117,6 +136,7 @@ def pybind_add_global_constant(name, value):
     name = godot_string_to_pyobj(name)
     value = variant_to_pyobj(value)
     globals()[name] = value
+
 
 @ffi.def_extern()
 def pybind_debug_get_error():
