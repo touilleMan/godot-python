@@ -1,3 +1,5 @@
+import os
+import sys
 import gc
 import inspect
 import traceback
@@ -37,9 +39,10 @@ def connect_handle(obj):
 
 @ffi.def_extern()
 def pybind_init():
-    import sys
     from godot.bindings import ProjectSettings, OS
 
+    # Make sure Python starts in the game directory
+    os.chdir(ProjectSettings.globalize_path('res://'))
     # Setup default value
     pythonpath_config_field = "python_script/path"
     pythonpath_default_value = "res://;res://lib"
@@ -53,7 +56,6 @@ def pybind_init():
     for p in pythonpath.split(';'):
         p = ProjectSettings.globalize_path(p)
         sys.path.append(p)
-
     print('PYTHONPATH: %s' % sys.path)
 
 
