@@ -8,6 +8,8 @@
 
 [![Build Status](https://travis-ci.org/touilleMan/godot-python.svg?branch=master)](https://travis-ci.org/touilleMan/godot-python)
 
+Go to branch [pybind11-cpython](https://github.com/touilleMan/godot-python/tree/pybind11-cpython) for more up-to-date work.
+
 Python support for Godot
 
 
