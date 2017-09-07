@@ -8,11 +8,20 @@ compiler:
 
 env:
   global:
+    - LLVM_VERSION=3.8.0
+    - LLVM_ARCHIVE_PATH=$HOME/clang+llvm.tar.xz
     # Use commit instead of tag as long as 3.0 is not released
-    - GODOT_TAG=af3fabeb7745e6f7f4e7fe7a299bdd234fff26a6
+    - GODOT_REPO=https://github.com/godotengine/godot.git
+    - GODOT_TAG=master  # I like to live dangerously ;-)
+    # - GODOT_REPO=https://github.com/touilleMan/godot.git
+    # - GODOT_TAG=gdnative-clean-and-add-properties
     # Cannot use release given travis's glibc clash with -ffast-math with clang
     # other solution is to set `-D__extern_always_inline="extern __always_inline"`
-    - EXTRA_OPTS="-j4 target=debug tools=yes module_pythonscript_enabled=yes"
+    - BUILD_EXTRA_OPTS="-j4 target=debug tools=yes module_pythonscript_enabled=yes"
+    - TEST_EXTRA_OPTS=""
+    - DISPLAY=":99.0"
+    - AUDIODEV="null"
+    - XVFB_OPTS=":99.0 -ac -screen 0 1280x1024x24 -ac +extension GLX +extension RANDR +render -noreset"
   matrix:
     - GODOT_TARGET=x11
     # nothing else yet...
@@ -21,6 +30,8 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
+# Out of order (http://lists.llvm.org/pipermail/llvm-dev/2016-May/100303.html)
+#      - llvm-toolchain-precise
     packages:
       - build-essential
       - scons
@@ -37,15 +48,38 @@ addons:
       # Need gcc > 4.6 for -std=c++11
       - gcc-5
       - g++-5
+#      - clang-3.9
+      - python3
+      - valgrind
+
+before_install:
+  - if [[ "$CXX" == "clang++" ]]; then wget http://llvm.org/releases/$LLVM_VERSION/clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-14.04.tar.xz -O $LLVM_ARCHIVE_PATH; fi
+  - if [[ "$CXX" == "clang++" ]]; then mkdir $HOME/clang+llvm; fi
+  - if [[ "$CXX" == "clang++" ]]; then tar xf $LLVM_ARCHIVE_PATH -C $HOME/clang+llvm --strip-components 1; fi
+  - if [[ "$CXX" == "clang++" ]]; then export PATH=$HOME/clang+llvm/bin:$PATH; fi
+  - if [[ "$CXX" == "clang++" ]]; then clang --version; fi
 
 before_script:
   # Cannot use this with commit id
-  #  - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 https://github.com/godotengine/godot.git
-  - git clone --recursive https://github.com/godotengine/godot.git
+  - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 $GODOT_REPO
+  # - git clone --recursive $GODOT_REPO
+# Dunno why but .gitignore is modified by something...
+  - git --git-dir=godot/.git reset --hard
   - git --git-dir=godot/.git checkout $GODOT_TAG
   - git --git-dir=godot/.git rev-parse HEAD
   - ln -s `pwd`/pythonscript godot/modules/pythonscript
+# Start X11 server
+  - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- $XVFB_OPTS"
+  - sleep 3 # give xvfb some time to start
 
 script:
-  - if [[ "$CXX" == "g++" ]]; then make compile OPTS="platform=$GODOT_TARGET $EXTRA_OPTS CXX=g++-5 CC=gcc-5"; fi
-  - if [[ "$CXX" == "clang++" ]]; then make compile OPTS="platform=$GODOT_TARGET $EXTRA_OPTS use_llvm=yes"; fi
+  - set -e  # Enable fail on first error
+  - 1>/dev/null make build_python  # Python compilation outputs a lot of logs
+  - make generate_gdnative_cffidefs
+  - make generate_cffi_bindings
+  - if [[ "$CXX" == "clang++" ]]; then sh tools/clang-format-travis-check.sh; fi
+  - if [[ "$CXX" == "g++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS CXX=g++-5 CC=gcc-5"; fi
+  - if [[ "$CXX" == "clang++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS use_llvm=yes"; fi
+# Tests need x11 server with opengl3 or compile godot with platform=server (both not working so far...)
+  # - LIBGL_ALWAYS_SOFTWARE=1 make test DEBUG=valgrind EXTRA_OPTS=$TEST_EXTRA_OPTS
+  - set +e

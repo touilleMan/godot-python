@@ -1,0 +1,25 @@
+config_version=3
+[application]
+
+name="Pong Multiplayer"
+main_scene="res://lobby.tscn"
+icon="res://icon.png"
+
+[display]
+
+width=640
+height=400
+stretch_2d=true
+
+[input]
+
+move_up=[ InputEvent(KEY,16777232) ]
+move_down=[ InputEvent(KEY,16777234) ]
+
+[memory]
+
+multithread/thread_rid_pool_prealloc=60
+
+[render]
+
+default_clear_color=Color( 0, 0, 0, 1 )

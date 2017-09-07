@@ -8,3 +8,7 @@
 *.pyc
 build
 godot
+
+# Godot import folders
+.import
+.cache

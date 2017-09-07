@@ -1,126 +1,34 @@
 #include <stdlib.h>
 // Godot imports
-#include "core/globals.h"
-#include "core/os/os.h"
 #include "core/os/file_access.h"
-// Microphython
-#include "micropython/micropython.h"
+#include "core/os/os.h"
+#include "core/project_settings.h"
 // Pythonscript imports
 #include "py_language.h"
 #include "py_script.h"
-#include "bindings/dynamic_binder.h"
-
-
-/************* SCRIPT LANGUAGE **************/
-/************* SCRIPT LANGUAGE **************/
-/************* SCRIPT LANGUAGE **************/
-/************* SCRIPT LANGUAGE **************/
-/************* SCRIPT LANGUAGE **************/
-
+#include "pythonscript.h"
 
 // TODO: Allocate this dynamically ?
 PyLanguage *PyLanguage::singleton = NULL;
 
-
-
 String PyLanguage::get_name() const {
 
-    return "Python";
+	return "Python";
 }
-
-
-/* LANGUAGE FUNCTIONS */
-
-mp_obj_t PyLanguage::get_mp_exposed_class_from_module(const qstr qstr_module_name) {
-    static mp_obj_t mpo_get_exposed_class_per_module = 0;
-    mp_obj_t mpo_exposed_cls = mp_const_none;
-    const auto import_module = [this, &qstr_module_name, &mpo_exposed_cls]() {
-        if (!mpo_get_exposed_class_per_module) {
-            mpo_get_exposed_class_per_module = mp_load_attr(
-                this->_mpo_godot_module, qstr_from_str("get_exposed_class_per_module"));
-        }
-        mpo_exposed_cls = mp_call_function_1(mpo_get_exposed_class_per_module, MP_OBJ_NEW_QSTR(qstr_module_name));
-    };
-    MP_WRAP_CALL(import_module);
-    return mpo_exposed_cls;
-}
-
-
-void _mp_init_sys_path_and_argv(String path) {
-    String resource_path = GlobalConfig::get_singleton()->get_resource_path();
-    String data_dir = OS::get_singleton()->get_data_dir();
-    printf("MITROPYTHON_PATH %s\n", path.utf8().get_data());
-
-    // Init sys.path list
-    auto pathes = path.split(";");
-    mp_uint_t path_num = pathes.size() + 1; // [0] is for current dir (or base dir of the script)
-    mp_obj_t *path_items;
-    mp_obj_list_init(static_cast<mp_obj_list_t*>(MP_OBJ_TO_PTR(mp_sys_path)), path_num);
-    mp_obj_list_get(mp_sys_path, &path_num, &path_items);
-    path_items[0] = MP_OBJ_NEW_QSTR(MP_QSTR_);
-    for (int i=0; i < pathes.size(); ++i) {
-        auto curr_path = pathes[i];
-        if (curr_path.begins_with("res://")) {
-            curr_path = curr_path.replace("res:/", resource_path);
-        }
-        else if (curr_path.begins_with("user://")) {
-            if (data_dir != "") {
-                curr_path = curr_path.replace("user:/", data_dir);
-            };
-            curr_path = curr_path.replace("user://", "");
-        }
-        printf("-> %s\n", curr_path.utf8().get_data());
-        path_items[i+1] = mp_obj_new_str(curr_path.utf8().get_data(), curr_path.length(), false);
-    }
-
-    // Init sys.argv
-    mp_obj_list_init(static_cast<mp_obj_list_t*>(MP_OBJ_TO_PTR(mp_sys_argv)), 0);
-}
-
 
 void PyLanguage::init() {
-    DEBUG_TRACE_METHOD();
-    // Register configuration
-    auto globals = GlobalConfig::get_singleton();
-    GLOBAL_DEF("python_script/stack_size", 40 * 1024);
-    GLOBAL_DEF("python_script/heap_size", 128 * 1024 * 1024);
-    GLOBAL_DEF("python_script/path", "res://;res://lib");
+	DEBUG_TRACE_METHOD();
+	// Register configuration
+	auto globals = ProjectSettings::get_singleton();
+	GLOBAL_DEF("python_script/path", "res://;res://lib");
 
-    // MicroPython init
-    // Initialized stack limit
-    mp_stack_set_limit(globals->get("python_script/stack_size") * (BYTES_PER_WORD / 4));
-    // Initialize heap
-    int heap_size = globals->get("python_script/heap_size");
-    this->_mp_heap = static_cast<char*>(malloc(heap_size));
-    gc_init(this->_mp_heap, this->_mp_heap + heap_size);
-    // Disable automatic garbage collection
-    MP_STATE_MEM(gc_auto_collect_enabled) = 0;
-    // Initialize interpreter
-    mp_init();
-    _mp_init_sys_path_and_argv(globals->get("python_script/path"));
-    // Build the bindings module and store into as part of the main godot module
-    init_bindings();
-    // Load godot python module and connect it to PyLanguage
-    mp_obj_t error = 0;
-    auto import_module = [this]() {
-        // Load the module into micropython
-        qstr qstr_module_path = qstr_from_str("godot");
-        this->_mpo_godot_module = mp_import_name(qstr_module_path, mp_const_none, MP_OBJ_NEW_SMALL_INT(0));
-        mp_store_global(qstr_module_path, this->_mpo_godot_module);
-        // // Retrieve module's exposed class
-        // this->_mpo_exposed_classes_per_module = mp_load_method(
-        //     mpo_godot_module, qstr_from_str("__exposed_classes_per_module"));
-        // TODO: make the bindings creation lazy ?
-        mp_obj_dict_t *mod_globals = static_cast<mp_obj_module_t *>(MP_OBJ_TO_PTR(this->_mpo_godot_module))->globals;
-        auto bindings = GodotBindingsModule::get_singleton();
-        mp_obj_dict_store(MP_OBJ_FROM_PTR(mod_globals), MP_OBJ_NEW_QSTR(qstr_from_str("bindings")), bindings->get_mp_module());
-    };
-    auto handle_ex = [&error](mp_obj_t ex) {
-        mp_obj_print_exception(&mp_plat_print, ex);
-        error = ex;
-    };
-    MP_WRAP_CALL_EX(import_module, handle_ex);
-    ERR_FAIL_COND(error);
+	if (!pybind_init_sys_path_and_argv(
+				String(globals->get("python_script/path")).c_str(),
+				ProjectSettings::get_singleton()->get_resource_path().c_str(),
+				OS::get_singleton()->get_data_dir().c_str())) {
+		ERR_FAIL()
+	}
+
 #if 0
     //populate global constants
     int gcc=GlobalConstants::get_global_constant_count();
@@ -150,58 +58,51 @@ void PyLanguage::init() {
 
     //populate singletons
 
-    List<GlobalConfig::Singleton> singletons;
-    GlobalConfig::get_singleton()->get_singletons(&singletons);
-    for(List<GlobalConfig::Singleton>::Element *E=singletons.front();E;E=E->next()) {
+    List<ProjectSettings::Singleton> singletons;
+    ProjectSettings::get_singleton()->get_singletons(&singletons);
+    for(List<ProjectSettings::Singleton>::Element *E=singletons.front();E;E=E->next()) {
 
         _add_global(E->get().name,E->get().ptr);
     }
 #endif
 }
 
-
 String PyLanguage::get_type() const {
-    DEBUG_TRACE_METHOD();
-    return "Python";
+	DEBUG_TRACE_METHOD();
+	return "Python";
 }
-
 
 String PyLanguage::get_extension() const {
 
-    return "py";
+	return "py";
 }
 
-
-Error PyLanguage::execute_file(const String& p_path)  {
-    DEBUG_TRACE_METHOD();
-    // ??
-    return OK;
+Error PyLanguage::execute_file(const String &p_path) {
+	DEBUG_TRACE_METHOD();
+	// ??
+	return OK;
 }
 
-
-void PyLanguage::finish()  {
-    DEBUG_TRACE_METHOD();
-    mp_deinit();
-    free(this->_mp_heap);
-    GodotBindingsModule::finish();
+void PyLanguage::finish() {
+	DEBUG_TRACE_METHOD();
+#ifdef BACKEND_CPYTHON
+	// TODO: Do we need to deinit the interpreter ?
+	Py_FinalizeEx();
+#endif
 }
-
 
 /* MULTITHREAD FUNCTIONS */
 
-
 /* DEBUGGER FUNCTIONS */
 
-
 PyLanguage::~PyLanguage() {
-    DEBUG_TRACE_METHOD();
-    singleton = NULL;
-    if (lock) {
-        memdelete(lock);
-        lock=NULL;
-    }
+	DEBUG_TRACE_METHOD();
+	singleton = NULL;
+	if (lock) {
+		memdelete(lock);
+		lock = NULL;
+	}
 }
-
 
 #if 0
 struct PyScriptDepSort {
@@ -226,8 +127,6 @@ struct PyScriptDepSort {
 };
 
 void PyLanguage::reload_all_scripts() {
-
-
 
 #ifdef DEBUG_ENABLED
     print_line("RELOAD ALL SCRIPTS");
@@ -265,7 +164,6 @@ void PyLanguage::reload_all_scripts() {
 
 
 void PyLanguage::reload_tool_script(const Ref<Script>& p_script,bool p_soft_reload) {
-
 
 #ifdef DEBUG_ENABLED
 
@@ -380,45 +278,24 @@ void PyLanguage::reload_tool_script(const Ref<Script>& p_script,bool p_soft_relo
         //if instance states were saved, set them!
     }
 
-
 #endif
-}
-
-
-/* EDITOR FUNCTIONS */
-void PyLanguage::get_reserved_words(List<String> *p_words) const  {
-
-    static const char *_reserved_words[]={
-        0};
-
-
-    const char **w=_reserved_words;
-
-
-    while (*w) {
-
-        p_words->push_back(*w);
-        w++;
-    }
-
-    for(int i=0;i<PyFunctions::FUNC_MAX;i++) {
-        p_words->push_back(PyFunctions::get_func_name(PyFunctions::Function(i)));
-    }
-
 }
 
 #endif // if 0
-PyLanguage::PyLanguage() : _mpo_godot_module(mp_const_none) {
-    DEBUG_TRACE_METHOD();
-    ERR_FAIL_COND(this->singleton);
-    this->singleton=this;
+PyLanguage::PyLanguage() {
+	DEBUG_TRACE_METHOD();
+	ERR_FAIL_COND(this->singleton);
+	this->singleton = this;
 
 #ifdef NO_THREADS
-    this->lock=NULL;
+	this->lock = NULL;
 #else
-    this->lock = Mutex::create();
+	this->lock = Mutex::create();
 #endif
 
+#ifdef DEBUG_ENABLED
+	this->profiling = false;
+#endif
 #if 0
     calls=0;
     strings._init = StaticCString::create("_init");

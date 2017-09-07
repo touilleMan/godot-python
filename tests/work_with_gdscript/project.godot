@@ -1,0 +1,4 @@
+[application]
+
+name="godo-demo"
+main_scene="res://main.tscn"

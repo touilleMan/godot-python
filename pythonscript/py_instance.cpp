@@ -1,402 +1,134 @@
 // Pythonscript imports
+#include "py_instance.h"
+#include "cffi_bindings/api.h"
 #include "py_language.h"
 #include "py_script.h"
-#include "py_instance.h"
-#include "bindings/binder.h"
-#include "bindings/dynamic_binder.h"
+// Godot imports
+#include "core/os/os.h"
+#include "core/variant.h"
 
-#if 0
-class ScriptInstance {
-public:
+bool PyInstance::set(const StringName &p_name, const Variant &p_value) {
+	DEBUG_TRACE_METHOD();
 
-
-    virtual bool set(const StringName& p_name, const Variant& p_value)=0;
-    virtual bool get(const StringName& p_name, Variant &r_ret) const=0;
-    virtual void get_property_list(List<PropertyInfo> *p_properties) const=0;
-    virtual Variant::Type get_property_type(const StringName& p_name,bool *r_is_valid=NULL) const=0;
-
-    virtual void get_property_state(List<Pair<StringName,Variant> > &state);
-
-    virtual void get_method_list(List<MethodInfo> *p_list) const=0;
-    virtual bool has_method(const StringName& p_method) const=0;
-    virtual Variant call(const StringName& p_method,VARIANT_ARG_LIST);
-    virtual Variant call(const StringName& p_method,const Variant** p_args,int p_argcount,Variant::CallError &r_error)=0;
-    virtual void call_multilevel(const StringName& p_method,VARIANT_ARG_LIST);
-    virtual void call_multilevel(const StringName& p_method,const Variant** p_args,int p_argcount);
-    virtual void call_multilevel_reversed(const StringName& p_method,const Variant** p_args,int p_argcount);
-    virtual void notification(int p_notification)=0;
-
-    //this is used by script languages that keep a reference counter of their own
-    //you can make make Ref<> not die when it reaches zero, so deleting the reference
-    //depends entirely from the script
-
-    virtual void refcount_incremented() {}
-    virtual bool refcount_decremented() { return true; } //return true if it can die
-
-    virtual Ref<Script> get_script() const=0;
-
-    virtual bool is_placeholder() const { return false; }
-
-    enum RPCMode {
-        RPC_MODE_DISABLED,
-        RPC_MODE_REMOTE,
-        RPC_MODE_SYNC,
-        RPC_MODE_MASTER,
-        RPC_MODE_SLAVE,
-    };
-
-    virtual RPCMode get_rpc_mode(const StringName& p_method) const=0;
-    virtual RPCMode get_rset_mode(const StringName& p_variable) const=0;
-
-    virtual ScriptLanguage *get_language()=0;
-    virtual ~ScriptInstance();
-};
-
-#endif
-
-
-bool PyInstance::set(const StringName& p_name, const Variant& p_value) {
-    DEBUG_TRACE_METHOD();
-
-#if 0
-    //member
-    {
-        const Map<StringName,PyScript::MemberInfo>::Element *E = script->member_indices.find(p_name);
-        if (E) {
-            if (E->get().setter) {
-                const Variant *val=&p_value;
-                Variant::CallError err;
-                call(E->get().setter,&val,1,err);
-                if (err.error==Variant::CallError::CALL_OK) {
-                    return true; //function exists, call was successful
-                }
-            }
-            else
-                members[E->get().index] = p_value;
-            return true;
-        }
-    }
-
-    PyScript *sptr=script.ptr();
-    while(sptr) {
-
-
-        Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyLanguage::get_singleton()->strings._set);
-        if (E) {
-
-            Variant name=p_name;
-            const Variant *args[2]={&name,&p_value};
-
-            Variant::CallError err;
-            Variant ret = E->get()->call(this,(const Variant**)args,2,err);
-            if (err.error==Variant::CallError::CALL_OK && ret.get_type()==Variant::BOOL && ret.operator bool())
-                return true;
-        }
-        sptr = sptr->_base;
-    }
-#endif
-    return false;
+	const wchar_t *propname = String(p_name).c_str();
+	return pybind_set_prop(this->_py_obj, propname, (const godot_variant *)&p_value);
 }
 
+bool PyInstance::get(const StringName &p_name, Variant &r_ret) const {
+	DEBUG_TRACE_METHOD();
 
-bool PyInstance::get(const StringName& p_name, Variant &r_ret) const {
-    DEBUG_TRACE_METHOD();
-
-#if 0
-    const PyScript *sptr=script.ptr();
-    while(sptr) {
-
-        {
-            const Map<StringName,PyScript::MemberInfo>::Element *E = script->member_indices.find(p_name);
-            if (E) {
-                if (E->get().getter) {
-                    Variant::CallError err;
-                    r_ret=const_cast<PyInstance*>(this)->call(E->get().getter,NULL,0,err);
-                    if (err.error==Variant::CallError::CALL_OK) {
-                        return true;
-                    }
-                }
-                r_ret=members[E->get().index];
-                return true; //index found
-
-            }
-        }
-
-        {
-
-            const PyScript *sl = sptr;
-            while(sl) {
-                const Map<StringName,Variant>::Element *E = sl->constants.find(p_name);
-                if (E) {
-                    r_ret=E->get();
-                    return true; //index found
-
-                }
-                sl=sl->_base;
-            }
-        }
-
-        {
-            const Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyLanguage::get_singleton()->strings._get);
-            if (E) {
-
-                Variant name=p_name;
-                const Variant *args[1]={&name};
-
-                Variant::CallError err;
-                Variant ret = const_cast<GDFunction*>(E->get())->call(const_cast<PyInstance*>(this),(const Variant**)args,1,err);
-                if (err.error==Variant::CallError::CALL_OK && ret.get_type()!=Variant::NIL) {
-                    r_ret=ret;
-                    return true;
-                }
-            }
-        }
-        sptr = sptr->_base;
-    }
-#endif
-    return false;
-
+	const wchar_t *propname = String(p_name).c_str();
+	return pybind_get_prop(this->_py_obj, propname, (godot_variant *)&r_ret);
 }
-
 
 Ref<Script> PyInstance::get_script() const {
-    DEBUG_TRACE_METHOD();
+	DEBUG_TRACE_METHOD();
 
-    return this->_script;
+	return this->_script;
 }
-
 
 ScriptLanguage *PyInstance::get_language() {
-    DEBUG_TRACE_METHOD();
+	DEBUG_TRACE_METHOD();
 
-    return PyLanguage::get_singleton();
+	return PyLanguage::get_singleton();
 }
 
+Variant::Type PyInstance::get_property_type(const StringName &p_name, bool *r_is_valid) const {
+	DEBUG_TRACE_METHOD();
 
-Variant::Type PyInstance::get_property_type(const StringName& p_name,bool *r_is_valid) const {
-    DEBUG_TRACE_METHOD();
-
-
-#if 0
-    const PyScript *sptr=script.ptr();
-    while(sptr) {
-
-        if (sptr->member_info.has(p_name)) {
-            if (r_is_valid)
-                *r_is_valid=true;
-            return sptr->member_info[p_name].type;
-        }
-        sptr = sptr->_base;
-    }
-
-    if (r_is_valid)
-        *r_is_valid=false;
-#endif
-    return Variant::NIL;
+	const wchar_t *propname = String(p_name).c_str();
+	Variant::Type prop_type;
+	const bool is_valid = pybind_get_prop_type(this->_py_obj, propname, (int *)&prop_type);
+	if (r_is_valid) {
+		*r_is_valid = is_valid;
+	}
+	return prop_type;
 }
 
 void PyInstance::get_property_list(List<PropertyInfo> *p_properties) const {
-    DEBUG_TRACE_METHOD();
-#if 0
-    // exported members, not doen yet!
-
-    const PyScript *sptr=script.ptr();
-    List<PropertyInfo> props;
-
-    while(sptr) {
-
-
-        const Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyScriptLanguage::get_singleton()->strings._get_property_list);
-        if (E) {
-
-
-            Variant::CallError err;
-            Variant ret = const_cast<GDFunction*>(E->get())->call(const_cast<PyInstance*>(this),NULL,0,err);
-            if (err.error==Variant::CallError::CALL_OK) {
-
-                if (ret.get_type()!=Variant::ARRAY) {
-
-                    ERR_EXPLAIN("Wrong type for _get_property list, must be an array of dictionaries.");
-                    ERR_FAIL();
-                }
-                Array arr = ret;
-                for(int i=0;i<arr.size();i++) {
-
-                    Dictionary d = arr[i];
-                    ERR_CONTINUE(!d.has("name"));
-                    ERR_CONTINUE(!d.has("type"));
-                    PropertyInfo pinfo;
-                    pinfo.type = Variant::Type( d["type"].operator int());
-                    ERR_CONTINUE(pinfo.type<0 || pinfo.type>=Variant::VARIANT_MAX );
-                    pinfo.name = d["name"];
-                    ERR_CONTINUE(pinfo.name=="");
-                    if (d.has("hint"))
-                        pinfo.hint=PropertyHint(d["hint"].operator int());
-                    if (d.has("hint_string"))
-                        pinfo.hint_string=d["hint_string"];
-                    if (d.has("usage"))
-                        pinfo.usage=d["usage"];
-
-                    props.push_back(pinfo);
-
-                }
-
-            }
-        }
-
-        //instance a fake script for editing the values
-
-        Vector<_PyScriptMemberSort> msort;
-        for(Map<StringName,PropertyInfo>::Element *E=sptr->member_info.front();E;E=E->next()) {
-
-            _PyScriptMemberSort ms;
-            ERR_CONTINUE(!sptr->member_indices.has(E->key()));
-            ms.index=sptr->member_indices[E->key()].index;
-            ms.name=E->key();
-            msort.push_back(ms);
-
-        }
-
-        msort.sort();
-        msort.invert();
-        for(int i=0;i<msort.size();i++) {
-
-            props.push_front(sptr->member_info[msort[i].name]);
-
-        }
-#if 0
-        if (sptr->member_functions.has("_get_property_list")) {
-
-            Variant::CallError err;
-            GDFunction *f = const_cast<GDFunction*>(sptr->member_functions["_get_property_list"]);
-            Variant plv = f->call(const_cast<PyInstance*>(this),NULL,0,err);
-
-            if (plv.get_type()!=Variant::ARRAY) {
-
-                ERR_PRINT("_get_property_list: expected array returned");
-            } else {
-
-                Array pl=plv;
-
-                for(int i=0;i<pl.size();i++) {
-
-                    Dictionary p = pl[i];
-                    PropertyInfo pinfo;
-                    if (!p.has("name")) {
-                        ERR_PRINT("_get_property_list: expected 'name' key of type string.")
-                                continue;
-                    }
-                    if (!p.has("type")) {
-                        ERR_PRINT("_get_property_list: expected 'type' key of type integer.")
-                                continue;
-                    }
-                    pinfo.name=p["name"];
-                    pinfo.type=Variant::Type(int(p["type"]));
-                    if (p.has("hint"))
-                        pinfo.hint=PropertyHint(int(p["hint"]));
-                    if (p.has("hint_string"))
-                        pinfo.hint_string=p["hint_string"];
-                    if (p.has("usage"))
-                        pinfo.usage=p["usage"];
-
-
-                    props.push_back(pinfo);
-                }
-            }
-        }
-#endif
-
-        sptr = sptr->_base;
-    }
-
-    //props.invert();
-
-    for (List<PropertyInfo>::Element *E=props.front();E;E=E->next()) {
-
-        p_properties->push_back(E->get());
-    }
-#endif
+	DEBUG_TRACE_METHOD();
+	this->_script.ptr()->get_script_property_list(p_properties);
 }
 
 void PyInstance::get_method_list(List<MethodInfo> *p_list) const {
-    DEBUG_TRACE_METHOD();
-#if 0
-
-    const PyScript *sptr=script.ptr();
-    while(sptr) {
-
-        for (Map<StringName,GDFunction*>::Element *E = sptr->member_functions.front();E;E=E->next()) {
-
-            MethodInfo mi;
-            mi.name=E->key();
-            mi.flags|=METHOD_FLAG_FROM_SCRIPT;
-            for(int i=0;i<E->get()->get_argument_count();i++)
-                mi.arguments.push_back(PropertyInfo(Variant::NIL,"arg"+itos(i)));
-            p_list->push_back(mi);
-        }
-        sptr = sptr->_base;
-    }
-
-#endif
+	DEBUG_TRACE_METHOD();
+	this->_script.ptr()->get_script_method_list(p_list);
 }
 
-bool PyInstance::has_method(const StringName& p_method) const {
-    DEBUG_TRACE_METHOD();
-#if 0
-
-    const PyScript *sptr=script.ptr();
-    while(sptr) {
-        const Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(p_method);
-        if (E)
-            return true;
-        sptr = sptr->_base;
-    }
-
-#endif
-    return false;
+bool PyInstance::has_method(const StringName &p_method) const {
+	DEBUG_TRACE_METHOD();
+	return this->_script.ptr()->has_method(p_method);
 }
 
+// #ifdef DEBUG_ENABLED
+// void godot_method_bind_ptrcall_profiled(godot_method_bind *p_method_bind, godot_object *p_instance, const void **p_args, void *p_ret) {
+//     uint64_t call_time;
+//     uint64_t function_call_time;
 
-Variant PyInstance::call(const StringName& p_method,const Variant** p_args,int p_argcount,Variant::CallError &r_error) {
-    DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
+//     if (GDScriptLanguage::get_singleton()->profiling) {
+//         call_time = OS::get_singleton()->get_ticks_usec();
+//     }
 
-    qstr method_name = qstr_from_str(String(p_method).utf8().get_data());
-    Variant ret;
-    auto call_method = [this, method_name, p_args, p_argcount, &ret]() {
-        mp_obj_t method_obj = mp_load_attr(this->_mpo, method_name);
-        mp_obj_t args[p_argcount];
-        auto bindings = GodotBindingsModule::get_singleton();
-        for (int i = 0; i < p_argcount; ++i) {
-            args[i] = bindings->variant_to_pyobj(*p_args[i]);
-        }
-        mp_obj_t pyobj_ret = mp_call_function_n_kw(method_obj, p_argcount, 0, args);
-        ret = bindings->pyobj_to_variant(pyobj_ret);
-    };
-    auto handle_ex = [&r_error](mp_obj_t ex) {
-        // Godot could try to call some functions even if they don't exist
-        // so don't print any exception here
-        r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
-    };
-    MP_WRAP_CALL_EX(call_method, handle_ex);
-    return ret;
-#if 0
+// 	MethodBind *mb = (MethodBind *)p_method_bind;
+// 	Object *o = (Object *)p_instance;
+//     godot_method_bind_ptrcall(p_method_bind, p_instance, p_args, p_ret);
 
-    //printf("calling %ls:%i method %ls\n", script->get_path().c_str(), -1, String(p_method).c_str());
+//     if (GDScriptLanguage::get_singleton()->profiling) {
+//         function_call_time += OS::get_singleton()->get_ticks_usec() - call_time;
+//     }
+// }
+// #else
+// #define godot_method_bind_ptrcall_profiled godot_method_bind_ptrcall
+// #endif
 
-    PyScript *sptr=script.ptr();
-    while(sptr) {
-        Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(p_method);
-        if (E) {
-            return E->get()->call(this,p_args,p_argcount,r_error);
-        }
-        sptr = sptr->_base;
-    }
-    r_error.error=Variant::CallError::CALL_ERROR_INVALID_METHOD;
-    return Variant();
+Variant PyInstance::call(const StringName &p_method, const Variant **p_args, int p_argcount, Variant::CallError &r_error) {
+	DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
+	// TODO: optimize when calling a Godot method from Godot to avoid param conversion
+	// TODO: precompute p_method lookup for faster access
+	Variant ret;
+#ifdef DEBUG_ENABLED
+
+	uint64_t function_start_time;
+	// uint64_t function_call_time;
+
+	PyLanguage::MethProfile *profile = nullptr;
+	if (PyLanguage::get_singleton()->profiling) {
+		StringName signature = ((PyScript *)this->get_script().ptr())->get_meth_signature(p_method);
+		auto e = PyLanguage::get_singleton()->per_meth_profiling.find(signature);
+		if (e == NULL) {
+			PyLanguage::get_singleton()->per_meth_profiling[signature] = PyLanguage::MethProfile();
+			e = PyLanguage::get_singleton()->per_meth_profiling.find(signature);
+		}
+		profile = &e->value();
+		function_start_time = OS::get_singleton()->get_ticks_usec();
+		profile->frame_call_count++;
+	}
 #endif
+
+	// Instead of passing C++ Variant::CallError object through cffi, we compress
+	// it arguments into a single int, yeah this is a hack ;-)
+	int error = 0;
+	pybind_call_meth(this->_py_obj, String(p_method).c_str(), (void **)p_args, p_argcount, &ret, &error);
+	// TODO handle argument/type attributes
+	r_error.error = (Variant::CallError::Error)(error & 0xFF);
+	if (error) {
+		r_error.argument = (error >> 2) & 0xFF;
+		r_error.expected = (Variant::Type)(error >> 4);
+	}
+
+#ifdef DEBUG_ENABLED
+	if (PyLanguage::get_singleton()->profiling) {
+		uint64_t time_taken = OS::get_singleton()->get_ticks_usec() - function_start_time;
+		profile->frame_total_time += time_taken;
+		profile->frame_self_time += time_taken;
+		// profile->frame_self_time += time_taken - function_call_time;
+	}
+
+#endif
+	return ret;
 }
 
-#if 0  // TODO: Don't rely on default implementations provided by ScriptInstance ?
+#if 0 // TODO: Don't rely on default implementations provided by ScriptInstance ?
 void PyInstance::call_multilevel(const StringName& p_method,const Variant** p_args,int p_argcount) {
     DEBUG_TRACE_METHOD_ARGS(" : " << String(p_method).utf8());
 
@@ -414,7 +146,6 @@ void PyInstance::call_multilevel(const StringName& p_method,const Variant** p_ar
 #endif
 
 }
-
 
 #if 0
 void PyInstance::_ml_call_reversed(PyScript *sptr,const StringName& p_method,const Variant** p_args,int p_argcount) {
@@ -442,115 +173,44 @@ void PyInstance::call_multilevel_reversed(const StringName& p_method,const Varia
     }
 #endif
 }
-#endif  // Multilevel stuff
-
+#endif // Multilevel stuff
 
 void PyInstance::notification(int p_notification) {
-    DEBUG_TRACE_METHOD();
-    // TODO
-
-    // //notification is not virutal, it gets called at ALL levels just like in C.
-    // Variant value=p_notification;
-    // const Variant *args[1]={&value };
-
-    // PyScript *sptr = this->_script.ptr();
-    // while(sptr) {
-    //     Map<StringName,GDFunction*>::Element *E = sptr->member_functions.find(PyScriptLanguage::get_singleton()->strings._notification);
-    //     if (E) {
-    //         Variant::CallError err;
-    //         E->get()->call(this,args,1,err);
-    //         if (err.error!=Variant::CallError::CALL_OK) {
-    //             //print error about notification call
-
-    //         }
-    //     }
-    //     sptr = sptr->_base;
-    // }
-
+	DEBUG_TRACE_METHOD();
+	pybind_notification(this->_py_obj, p_notification);
 }
 
-
-PyInstance::RPCMode PyInstance::get_rpc_mode(const StringName& p_method) const {
-    DEBUG_TRACE_METHOD();
-    // TODO
-
-    // const PyScript *cscript = script.ptr();
-
-    // while(cscript) {
-    //     const Map<StringName,GDFunction*>::Element *E=cscript->member_functions.find(p_method);
-    //     if (E) {
-
-    //         if (E->get()->get_rpc_mode()!=RPC_MODE_DISABLED) {
-    //             return E->get()->get_rpc_mode();
-    //         }
-
-    //     }
-    //     cscript=cscript->_base;
-    // }
-
-    return RPC_MODE_DISABLED;
+PyInstance::RPCMode PyInstance::get_rpc_mode(const StringName &p_method) const {
+	DEBUG_TRACE_METHOD();
+	const wchar_t *methname = String(p_method).c_str();
+	return (PyInstance::RPCMode)pybind_get_rpc_mode(this->_py_obj, methname);
 }
 
-
-PyInstance::RPCMode PyInstance::get_rset_mode(const StringName& p_variable) const {
-    DEBUG_TRACE_METHOD();
-    // TODO
-
-    // const PyScript *cscript = script.ptr();
-
-    // while(cscript) {
-    //     const Map<StringName,PyScript::MemberInfo>::Element *E=cscript->member_indices.find(p_variable);
-    //     if (E) {
-
-    //         if (E->get().rpc_mode) {
-    //             return E->get().rpc_mode;
-    //         }
-
-    //     }
-    //     cscript=cscript->_base;
-    // }
-
-    return RPC_MODE_DISABLED;
+PyInstance::RPCMode PyInstance::get_rset_mode(const StringName &p_variable) const {
+	DEBUG_TRACE_METHOD();
+	const wchar_t *varname = String(p_variable).c_str();
+	return (PyInstance::RPCMode)pybind_get_rset_mode(this->_py_obj, varname);
 }
-
 
 PyInstance::PyInstance() {
-    DEBUG_TRACE_METHOD();
+	DEBUG_TRACE_METHOD();
 }
-
 
 bool PyInstance::init(PyScript *p_script, Object *p_owner) {
-    DEBUG_TRACE_METHOD();
-    bool success = true;
+	DEBUG_TRACE_METHOD();
 
-    this->_owner = p_owner;
-    this->_script = Ref<PyScript>(p_script);
-
-    auto init_instance = [this, p_script, p_owner] {
-        // Actually create an instance inside Python
-        auto type = static_cast<const mp_obj_type_t *>(p_script->get_mpo_exposed_class());
-        // TODO: use DynamicBinder::build_mpo_wrapper ?
-        this->_mpo = mp_obj_instance_make_new(type, 0, 0, NULL);
-        // Script is not a "real" instance of the class is expend, instead it
-        // takes controle of the owner
-        mp_obj_instance_t *inst = static_cast<mp_obj_instance_t *>(MP_OBJ_TO_PTR(this->_mpo));
-        auto self = static_cast<DynamicBinder::mp_godot_bind_t *>(inst->subobj[0]);
-        self->godot_obj = p_owner;
-        self->godot_variant = Variant(p_owner);
-        // Set owner responsible to destroy the instance
-        p_owner->set_script_instance(this);
-    };
-    auto handle_ex = [&success](mp_obj_t ex) {
-        mp_obj_print_exception(&mp_plat_print, ex);
-        success = false;
-    };
-    MP_WRAP_CALL_EX(init_instance, handle_ex);
-
-    return success;
+	this->_owner = p_owner;
+	this->_owner_variant = Variant(p_owner);
+	this->_script = Ref<PyScript>(p_script);
+	this->_py_obj = pybind_wrap_gdobj_with_class(p_script->get_py_exposed_class(), p_owner);
+	if (this->_py_obj == nullptr) {
+		ERR_FAIL_V(false);
+	}
+	p_owner->set_script_instance(this);
+	return true;
 }
 
-
 PyInstance::~PyInstance() {
-    DEBUG_TRACE_METHOD();
-
+	DEBUG_TRACE_METHOD();
+	pybind_release_instance(this->_py_obj);
 }

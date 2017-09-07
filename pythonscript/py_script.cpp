@@ -1,234 +1,240 @@
 // Godot imports
 #include "core/os/file_access.h"
 // Pythonscript imports
-#include "py_script.h"
+#include "cffi_bindings/api.h"
 #include "py_instance.h"
+#include "py_script.h"
+#include "pythonscript.h"
 
+#if DEBUG_ENABLED
+#define __ASSERT_PYSCRIPT_REASON "Cannot retrieve Python class for this script, is you code correct ?"
+#define ASSERT_PYSCRIPT_VALID()                \
+	{                                          \
+		ERR_EXPLAIN(__ASSERT_PYSCRIPT_REASON); \
+		ERR_FAIL_COND(!this->can_instance())   \
+	}
+#define ASSERT_PYSCRIPT_VALID_V(ret)                \
+	{                                               \
+		ERR_EXPLAIN(__ASSERT_PYSCRIPT_REASON);      \
+		ERR_FAIL_COND_V(!this->can_instance(), ret) \
+	}
+#else
+#define ASSERT_PYSCRIPT_VALID()
+#define ASSERT_PYSCRIPT_VALID_V(ret)
+#endif
 
 void PyScript::_bind_methods() {
-    DEBUG_TRACE();
-    // TODO: bind class methods here
-    // ClassDB::bind_native_method(METHOD_FLAGS_DEFAULT, "new", &PyScript::_new, MethodInfo(Variant::OBJECT, "new"));
-    // ClassDB::bind_method(_MD("get_as_byte_code"), &PyScript::get_as_byte_code);
+	DEBUG_TRACE();
+	// TODO: bind class methods here
+	// ClassDB::bind_native_method(METHOD_FLAGS_DEFAULT, "new", &PyScript::_new, MethodInfo(Variant::OBJECT, "new"));
+	// ClassDB::bind_method(_MD("get_as_byte_code"), &PyScript::get_as_byte_code);
 }
 
-
 #ifdef TOOLS_ENABLED
-
 
 void PyScript::_placeholder_erased(PlaceHolderScriptInstance *p_placeholder) {
-    DEBUG_TRACE_METHOD();
-    placeholders.erase(p_placeholder);
+	DEBUG_TRACE_METHOD();
+	placeholders.erase(p_placeholder);
 }
 
 #endif
-
 
 bool PyScript::can_instance() const {
-    DEBUG_TRACE_METHOD_ARGS((this->valid && this->_mpo_exposed_class != mp_const_none ? " true" : " false"));
-    // TODO: think about it...
-    // Only script file defining an exposed class can be instanciated
-    return this->valid && this->_mpo_exposed_class != mp_const_none;
-    // return valid; //script can instance
-    // return this->valid || (!this->tool && !ScriptServer::is_scripting_enabled());
+	DEBUG_TRACE_METHOD_ARGS((this->valid && this->_py_exposed_class ? " true" : " false"));
+	// TODO: think about it...
+	// Only script file defining an exposed class can be instanciated
+	return this->valid && this->_py_exposed_class;
+	// return valid; //script can instance
+	// return this->valid || (!this->tool && !ScriptServer::is_scripting_enabled());
 }
-
 
 Ref<Script> PyScript::get_base_script() const {
-    DEBUG_TRACE_METHOD();
-    if (this->base.ptr()) {
-        return Ref<PyScript>(this->base);
-    } else {
-        return Ref<Script>();
-    }
+	DEBUG_TRACE_METHOD();
+	if (this->base.ptr()) {
+		return Ref<PyScript>(this->base);
+	} else {
+		return Ref<Script>();
+	}
 }
-
 
 StringName PyScript::get_instance_base_type() const {
-    DEBUG_TRACE_METHOD();
-    // if (this->native.is_valid())
-    //     return this->native->get_name();
-    if (this->base.is_valid())
-        return this->base->get_instance_base_type();
-    return StringName();
+	DEBUG_TRACE_METHOD();
+	if (this->base.is_valid())
+		return this->base->get_instance_base_type();
+	return StringName();
 }
 
+void PyScript::update_exports() {
+	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID();
+	if (/*changed &&*/ this->placeholders.size()) { //hm :(
+
+		//update placeholders if any
+		Map<StringName, Variant> propdefvalues;
+		List<PropertyInfo> propinfos;
+		const String *props = (const String *)pybind_get_prop_list(this->_py_exposed_class);
+		for (int i = 0; props[i] != ""; ++i) {
+			const String propname = props[i];
+			pybind_get_prop_default_value(this->_py_exposed_class, propname.c_str(), (godot_variant *)&propdefvalues[propname]);
+			pybind_prop_info raw_info;
+			pybind_get_prop_info(this->_py_exposed_class, propname.c_str(), &raw_info);
+			PropertyInfo info;
+			info.type = (Variant::Type)raw_info.type;
+			info.name = propname;
+			info.hint = (PropertyHint)raw_info.hint;
+			info.hint_string = *(String *)&raw_info.hint_string;
+			info.usage = raw_info.usage;
+			propinfos.push_back(info);
+		}
+		for (Set<PlaceHolderScriptInstance *>::Element *E = placeholders.front(); E; E = E->next()) {
+			E->get()->update(propinfos, propdefvalues);
+		}
+	}
+}
 
 // TODO: rename p_this "p_owner" ?
-ScriptInstance* PyScript::instance_create(Object *p_this) {
-    DEBUG_TRACE_METHOD();
-    if (!this->tool && !ScriptServer::is_scripting_enabled()) {
+ScriptInstance *PyScript::instance_create(Object *p_this) {
+	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID_V(NULL);
+	if (!this->tool && !ScriptServer::is_scripting_enabled()) {
 #ifdef TOOLS_ENABLED
-        //instance a fake script for editing the values
-        //plist.invert();
-
-        /*print_line("CREATING PLACEHOLDER");
-        for(List<PropertyInfo>::Element *E=plist.front();E;E=E->next()) {
-            print_line(E->get().name);
-        }*/
-        PlaceHolderScriptInstance *si = memnew(PlaceHolderScriptInstance(PyLanguage::get_singleton(), Ref<Script>(this), p_this));
-        placeholders.insert(si);
-        //_update_placeholder(si);
-        // _update_exports();
-        return si;
+		//instance a fake script for editing the values
+		PlaceHolderScriptInstance *si = memnew(PlaceHolderScriptInstance(PyLanguage::get_singleton(), Ref<Script>(this), p_this));
+		this->placeholders.insert(si);
+		this->update_exports();
+		return si;
 #else
-        return NULL;
+		return NULL;
 #endif
-    }
+	}
 
-    PyScript *top = this;
-    while(top->base.ptr())
-        top = top->base.ptr();
+	// PyScript *top = this;
+	// while(top->base.ptr())
+	//     top = top->base.ptr();
 
-    // if (top->native.is_valid()) {
-    //     if (!ClassDB::is_type(p_this->get_type_name(),top->native->get_name())) {
-    //         if (ScriptDebugger::get_singleton()) {
-    //             PyLanguage::get_singleton()->debug_break_parse(get_path(),0,"Script inherits from native type '"+String(top->native->get_name())+"', so it can't be instanced in object of type: '"+p_this->get_type()+"'");
-    //         }
-    //         ERR_EXPLAIN("Script inherits from native type '"+String(top->native->get_name())+"', so it can't be instanced in object of type: '"+p_this->get_type()+"'");
-    //         ERR_FAIL_V(NULL);
-    //     }
-    // }
-    // Variant::CallError unchecked_error;
-    // return _create_instance(NULL,0,p_this,p_this->cast_to<Reference>(),unchecked_error);
-    // TODO !!!!
+	// if (top->native.is_valid()) {
+	//     if (!ClassDB::is_type(p_this->get_type_name(),top->native->get_name())) {
+	//         if (ScriptDebugger::get_singleton()) {
+	//             PyLanguage::get_singleton()->debug_break_parse(get_path(),0,"Script inherits from native type '"+String(top->native->get_name())+"', so it can't be instanced in object of type: '"+p_this->get_type()+"'");
+	//         }
+	//         ERR_EXPLAIN("Script inherits from native type '"+String(top->native->get_name())+"', so it can't be instanced in object of type: '"+p_this->get_type()+"'");
+	//         ERR_FAIL_V(NULL);
+	//     }
+	// }
+	// Variant::CallError unchecked_error;
+	// return _create_instance(NULL,0,p_this,p_this->cast_to<Reference>(),unchecked_error);
+	// TODO !!!!
 
-    PyInstance* instance = memnew(PyInstance);
-    const bool success = instance->init(this, p_this);
-    if (success) {
-        this->_instances.insert(instance->get_owner());
-        return instance;
-    } else {
-        memdelete(instance);
-        ERR_FAIL_V(NULL);
-    }
+	PyInstance *instance = memnew(PyInstance);
+	const bool success = instance->init(this, p_this);
+	if (success) {
+		this->_instances.insert(instance->get_owner());
+		return instance;
+	} else {
+		memdelete(instance);
+		ERR_FAIL_V(NULL);
+	}
 }
-
 
 bool PyScript::instance_has(const Object *p_this) const {
-    DEBUG_TRACE_METHOD();
-    return this->_instances.has((Object*)p_this);
+	DEBUG_TRACE_METHOD();
+	return this->_instances.has((Object *)p_this);
 }
-
 
 bool PyScript::has_source_code() const {
-    DEBUG_TRACE_METHOD();
-    return this->source != "";
+	DEBUG_TRACE_METHOD();
+	return this->source != "";
 }
-
 
 String PyScript::get_source_code() const {
-    DEBUG_TRACE_METHOD();
-    return this->source;
+	DEBUG_TRACE_METHOD();
+	return this->source;
 }
 
-
-void PyScript::set_source_code(const String& p_code) {
-    DEBUG_TRACE_METHOD();
-    if (this->source == p_code)
-        return;
-    this->source = p_code;
-// #ifdef TOOLS_ENABLED
-//     source_changed_cache = true;
-//     //print_line("SC CHANGED "+get_path());
-// #endif
+void PyScript::set_source_code(const String &p_code) {
+	DEBUG_TRACE_METHOD();
+	if (this->source == p_code)
+		return;
+	this->source = p_code;
+	// #ifdef TOOLS_ENABLED
+	//     source_changed_cache = true;
+	//     //print_line("SC CHANGED "+get_path());
+	// #endif
 }
 
-
-static const String _to_mp_module_path(const String &p_path) {
-    ERR_EXPLAIN("Bad python script path, must starts by `res://` and ends with `.py`");
-    ERR_FAIL_COND_V(!p_path.begins_with("res://") || !p_path.ends_with(".py"), String());
-    return p_path.substr(6, p_path.length() - 6 - 3).replace("/", ".");
+static const String _resource_to_py_module_path(const String &p_path) {
+	ERR_EXPLAIN("Bad python script path, must starts by `res://` and ends with `.py`");
+	ERR_FAIL_COND_V(!p_path.begins_with("res://") || !p_path.ends_with(".py"), String());
+	return p_path.substr(6, p_path.length() - 6 - 3).replace("/", ".");
 }
-
 
 Error PyScript::reload(bool p_keep_state) {
-    DEBUG_TRACE_METHOD();
-    ERR_FAIL_COND_V(!p_keep_state && this->_instances.size(), ERR_ALREADY_IN_USE);
+	DEBUG_TRACE_METHOD();
+	ERR_FAIL_COND_V(!p_keep_state && this->_instances.size(), ERR_ALREADY_IN_USE);
 
-    this->valid = false;
-    String basedir = this->path;
+	this->valid = false;
+	String basedir = this->path;
 
-    if (basedir=="")
-        basedir=this->get_path();
+	if (basedir == "")
+		basedir = this->get_path();
 
-    if (basedir!="")
-        basedir=basedir.get_base_dir();
+	if (basedir != "")
+		basedir = basedir.get_base_dir();
 
-    // Retrieve the module path in python format from the ressource path
-    const String mp_module_path = _to_mp_module_path(this->path);
-    ERR_FAIL_COND_V(!mp_module_path.length(), ERR_FILE_BAD_PATH);
+	// Retrieve the module path in python format from the resource path
+	const String module_path = _resource_to_py_module_path(this->path);
+	ERR_FAIL_COND_V(!module_path.length(), ERR_FILE_BAD_PATH);
+	this->_py_exposed_class = pybind_load_exposed_class_per_module(module_path.c_str());
+	if (!this->_py_exposed_class) {
+		// Python should have printed an exception explaining the error
+		ERR_FAIL_V(ERR_PARSE_ERROR);
+	}
+	pybind_get_class_name(this->_py_exposed_class, (godot_string *)&this->name);
+	this->tool = pybind_is_tool(this->_py_exposed_class);
+	this->valid = true;
 
-    // Load the module into micropython
-    // TODO: mp_execute_expr should return error with traceback ?
-    // const mp_obj_t ret = mp_execute_expr((String("import ") + mp_module_path).ascii().get_data());
-    // ERR_FAIL_COND_V(ret != mp_const_none, ERR_FILE_UNRECOGNIZED);
+// valid=false;
+// GDParser parser;
+// Error err = parser.parse(source,basedir,false,path);
+// if (err) {
+//     if (ScriptDebugger::get_singleton()) {
+//         PyLanguage::get_singleton()->debug_break_parse(get_path(),parser.get_error_line(),"Parser Error: "+parser.get_error());
+//     }
+//     _err_print_error("PyScript::reload",path.empty()?"built-in":(const char*)path.utf8().get_data(),parser.get_error_line(),("Parse Error: "+parser.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
+//     ERR_FAIL_V(ERR_PARSE_ERROR);
+// }
 
-    mp_obj_t error = 0;
-    qstr qstr_module_path = qstr_from_str(mp_module_path.ascii().get_data());
-    auto import_module = [this, &qstr_module_path]() {
-        // TODO handle deep path for module (e.g. `import foo.bar`)
-        this->_mpo_module = mp_import_name(qstr_module_path, mp_const_none, MP_OBJ_NEW_SMALL_INT(0));
-        mp_store_global(qstr_module_path, this->_mpo_module);
-        this->valid = true;
-    };
-    auto handle_ex = [&error](mp_obj_t ex) {
-        mp_obj_print_exception(&mp_plat_print, ex);
-        error = ex;
-    };
-    MP_WRAP_CALL_EX(import_module, handle_ex);
-    ERR_FAIL_COND_V(error, ERR_COMPILATION_FAILED);
+// bool can_run = ScriptServer::is_scripting_enabled() || parser.is_tool_script();
 
-    // Retrieve module's exposed class or set it to `mp_const_none` if not available
-    this->_mpo_exposed_class = PyLanguage::get_singleton()->get_mp_exposed_class_from_module(qstr_module_path);
+// GDCompiler compiler;
+// err = compiler.compile(&parser,this,p_keep_state);
 
-    // mp_execute_as_module(this->sources)
-    // TODO: load the module and retrieve exposed class here
+// if (err) {
 
-    // valid=false;
-    // GDParser parser;
-    // Error err = parser.parse(source,basedir,false,path);
-    // if (err) {
-    //     if (ScriptDebugger::get_singleton()) {
-    //         PyLanguage::get_singleton()->debug_break_parse(get_path(),parser.get_error_line(),"Parser Error: "+parser.get_error());
-    //     }
-    //     _err_print_error("PyScript::reload",path.empty()?"built-in":(const char*)path.utf8().get_data(),parser.get_error_line(),("Parse Error: "+parser.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
-    //     ERR_FAIL_V(ERR_PARSE_ERROR);
-    // }
+//     if (can_run) {
+//         if (ScriptDebugger::get_singleton()) {
+//             PyLanguage::get_singleton()->debug_break_parse(get_path(),compiler.get_error_line(),"Parser Error: "+compiler.get_error());
+//         }
+//         _err_print_error("PyScript::reload",path.empty()?"built-in":(const char*)path.utf8().get_data(),compiler.get_error_line(),("Compile Error: "+compiler.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
+//         ERR_FAIL_V(ERR_COMPILATION_FAILED);
+//     } else {
+//         return err;
+//     }
+// }
 
+// for(Map<StringName,Ref<PyScript> >::Element *E=subclasses.front();E;E=E->next()) {
 
-    // bool can_run = ScriptServer::is_scripting_enabled() || parser.is_tool_script();
-
-    // GDCompiler compiler;
-    // err = compiler.compile(&parser,this,p_keep_state);
-
-    // if (err) {
-
-    //     if (can_run) {
-    //         if (ScriptDebugger::get_singleton()) {
-    //             PyLanguage::get_singleton()->debug_break_parse(get_path(),compiler.get_error_line(),"Parser Error: "+compiler.get_error());
-    //         }
-    //         _err_print_error("PyScript::reload",path.empty()?"built-in":(const char*)path.utf8().get_data(),compiler.get_error_line(),("Compile Error: "+compiler.get_error()).utf8().get_data(),ERR_HANDLER_SCRIPT);
-    //         ERR_FAIL_V(ERR_COMPILATION_FAILED);
-    //     } else {
-    //         return err;
-    //     }
-    // }
-
-    // for(Map<StringName,Ref<PyScript> >::Element *E=subclasses.front();E;E=E->next()) {
-
-    //     _set_subclass_path(E->get(),path);
-    // }
+//     _set_subclass_path(E->get(),path);
+// }
 
 #ifdef TOOLS_ENABLED
-    /*for (Set<PlaceHolderScriptInstance*>::Element *E=placeholders.front();E;E=E->next()) {
+/*for (Set<PlaceHolderScriptInstance*>::Element *E=placeholders.front();E;E=E->next()) {
 
         _update_placeholder(E->get());
     }*/
 #endif
-    return OK;
+	return OK;
 }
-
 
 #if 0
 
@@ -242,120 +248,76 @@ struct _PyScriptMemberSort {
 
 #endif
 
-
 void PyScript::get_script_method_list(List<MethodInfo> *p_list) const {
-    DEBUG_TRACE_METHOD();
-    // TODO
-    return;
-
-    // for (const Map<StringName,GDFunction*>::Element *E=member_functions.front();E;E=E->next()) {
-    //     MethodInfo mi;
-    //     mi.name=E->key();
-    //     for(int i=0;i<E->get()->get_argument_count();i++) {
-    //         PropertyInfo arg;
-    //         arg.type=Variant::NIL; //variant
-    //         arg.name=E->get()->get_argument_name(i);
-    //         mi.arguments.push_back(arg);
-    //     }
-
-    //     mi.return_val.name="Variant";
-    //     p_list->push_back(mi);
-    // }
+	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID();
+	// TODO: Simple&hacky implementation...
+	const godot_string *prop_names = pybind_get_meth_list(this->_py_exposed_class);
+	int i = 0;
+	const String *pname = (String *)&prop_names[0];
+	while (*pname != "") {
+		MethodInfo mi;
+		mi.name = *pname;
+		mi.flags |= METHOD_FLAG_FROM_SCRIPT; // TODO: copied from gdscript, but think about it...
+		int argcount;
+		if (pybind_get_meth_info(this->_py_exposed_class, pname->c_str(), &argcount)) {
+			for (int i = 0; i < argcount; i++) {
+				mi.arguments.push_back(PropertyInfo(Variant::NIL, "arg" + itos(i)));
+			}
+			p_list->push_back(mi);
+		}
+		pname = (String *)&prop_names[++i];
+	}
 }
-
 
 void PyScript::get_script_property_list(List<PropertyInfo> *p_list) const {
-    DEBUG_TRACE_METHOD();
-    // TODO
-    return;
-
-    // const PyScript *sptr=this;
-    // List<PropertyInfo> props;
-
-    // while(sptr) {
-
-    //     Vector<_PyScriptMemberSort> msort;
-    //     for(Map<StringName,PropertyInfo>::Element *E=sptr->member_info.front();E;E=E->next()) {
-
-    //         _PyScriptMemberSort ms;
-    //         ERR_CONTINUE(!sptr->member_indices.has(E->key()));
-    //         ms.index=sptr->member_indices[E->key()].index;
-    //         ms.name=E->key();
-    //         msort.push_back(ms);
-
-    //     }
-
-    //     msort.sort();
-    //     msort.invert();
-    //     for(int i=0;i<msort.size();i++) {
-
-    //         props.push_front(sptr->member_info[msort[i].name]);
-
-    //     }
-
-    //     sptr = sptr->_base;
-    // }
-
-    // for (List<PropertyInfo>::Element *E=props.front();E;E=E->next()) {
-    //     p_list->push_back(E->get());
-    // }
-
+	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID();
+	const godot_string *prop_names = pybind_get_prop_list(this->_py_exposed_class);
+	int i = 0;
+	const String *pname = (String *)&prop_names[i];
+	while (*pname != "") {
+		pybind_prop_info prop;
+		pybind_get_prop_info(this->_py_exposed_class, pname->c_str(), &prop);
+		PropertyInfo propinfo((Variant::Type)prop.type, *pname, (PropertyHint)prop.hint, *(String *)&prop.hint_string, prop.usage);
+		p_list->push_back(propinfo);
+		pname = (String *)&prop_names[++i];
+	}
 }
 
-
-bool PyScript::has_method(const StringName& p_method) const {
-    DEBUG_TRACE_METHOD();
-    // TODO !
-    return false;
-    // return member_functions.has(p_method);
+bool PyScript::has_method(const StringName &p_method) const {
+	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID_V(false);
+	const wchar_t *methname = String(p_method).c_str();
+	return pybind_has_meth(this->_py_exposed_class, methname);
 }
 
-
-MethodInfo PyScript::get_method_info(const StringName& p_method) const {
-    DEBUG_TRACE_METHOD();
-    // TODO !
-    return MethodInfo();
-    // const Map<StringName,GDFunction*>::Element *E=member_functions.find(p_method);
-    // if (!E)
-    //     return MethodInfo();
-
-    // MethodInfo mi;
-    // mi.name=E->key();
-    // for(int i=0;i<E->get()->get_argument_count();i++) {
-    //     PropertyInfo arg;
-    //     arg.type=Variant::NIL; //variant
-    //     arg.name=E->get()->get_argument_name(i);
-    //     mi.arguments.push_back(arg);
-    // }
-
-    // mi.return_val.name="Variant";
-    // return mi;
-
+MethodInfo PyScript::get_method_info(const StringName &p_method) const {
+	// TODO: Simple&hacky implementation...
+	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID_V(MethodInfo());
+	int argcount;
+	if (!pybind_get_meth_info(this->_py_exposed_class, String(p_method).c_str(), &argcount)) {
+		return MethodInfo();
+	}
+	MethodInfo mi;
+	mi.name = p_method;
+	for (int i = 0; i < argcount; i++) {
+		mi.arguments.push_back(PropertyInfo(Variant::NIL, "arg" + itos(i)));
+	}
+	mi.return_val.name = "Variant";
+	return mi;
 }
 
+bool PyScript::get_property_default_value(const StringName &p_property, Variant &r_value) const {
+	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID_V(false);
 
-bool PyScript::get_property_default_value(const StringName& p_property, Variant &r_value) const {
-    DEBUG_TRACE_METHOD();
-    // TODO
-// #ifdef TOOLS_ENABLED
-
-//     //for (const Map<StringName,Variant>::Element *I=member_default_values.front();I;I=I->next()) {
-//     //  print_line("\t"+String(String(I->key())+":"+String(I->get())));
-//     //}
-//     const Map<StringName,Variant>::Element *E=member_default_values_cache.find(p_property);
-//     if (E) {
-//         r_value=E->get();
-//         return true;
-//     }
-
-//     if (base_cache.is_valid()) {
-//         return base_cache->get_property_default_value(p_property,r_value);
-//     }
-// #endif
-    return false;
-
+#ifdef TOOLS_ENABLED
+	const wchar_t *propname = String(p_property).c_str();
+	return pybind_get_prop_default_value(this->_py_exposed_class, propname, (godot_variant *)&r_value);
+#endif
 }
-
 
 #if 0
 
@@ -526,20 +488,17 @@ void PyScript::_set_subclass_path(Ref<PyScript>& p_sc,const String& p_path) {
 }
 #endif
 
-
 String PyScript::get_node_type() const {
-    DEBUG_TRACE_METHOD();
-    // Even GDscript doesn't know what to put here !
-    return ""; // ?
+	DEBUG_TRACE_METHOD();
+	// Even GDscript doesn't know what to put here !
+	return ""; // ?
 }
-
 
 ScriptLanguage *PyScript::get_language() const {
-    DEBUG_TRACE_METHOD();
+	DEBUG_TRACE_METHOD();
 
-    return PyLanguage::get_singleton();
+	return PyLanguage::get_singleton();
 }
-
 
 #if 0
 
@@ -696,43 +655,40 @@ Error PyScript::load_byte_code(const String& p_path) {
 
 #endif // if 0
 
+Error PyScript::load_source_code(const String &p_path) {
 
-Error PyScript::load_source_code(const String& p_path) {
+	PoolVector<uint8_t> sourcef;
+	Error err;
+	FileAccess *f = FileAccess::open(p_path, FileAccess::READ, &err);
+	if (err) {
 
-    PoolVector<uint8_t> sourcef;
-    Error err;
-    FileAccess *f=FileAccess::open(p_path,FileAccess::READ,&err);
-    if (err) {
+		ERR_FAIL_COND_V(err, err);
+	}
 
-        ERR_FAIL_COND_V(err,err);
-    }
+	int len = f->get_len();
+	sourcef.resize(len + 1);
+	PoolVector<uint8_t>::Write w = sourcef.write();
+	int r = f->get_buffer(w.ptr(), len);
+	f->close();
+	memdelete(f);
+	ERR_FAIL_COND_V(r != len, ERR_CANT_OPEN);
+	w[len] = 0;
 
-    int len = f->get_len();
-    sourcef.resize(len+1);
-    PoolVector<uint8_t>::Write w = sourcef.write();
-    int r = f->get_buffer(w.ptr(),len);
-    f->close();
-    memdelete(f);
-    ERR_FAIL_COND_V(r!=len,ERR_CANT_OPEN);
-    w[len]=0;
+	String s;
+	if (s.parse_utf8((const char *)w.ptr())) {
 
-    String s;
-    if (s.parse_utf8((const char*)w.ptr())) {
+		ERR_EXPLAIN("Script '" + p_path + "' contains invalid unicode (utf-8), so it was not loaded. Please ensure that scripts are saved in valid utf-8 unicode.");
+		ERR_FAIL_V(ERR_INVALID_DATA);
+	}
 
-        ERR_EXPLAIN("Script '"+p_path+"' contains invalid unicode (utf-8), so it was not loaded. Please ensure that scripts are saved in valid utf-8 unicode.");
-        ERR_FAIL_V(ERR_INVALID_DATA);
-    }
-
-    this->source=s;
+	this->source = s;
 #ifdef TOOLS_ENABLED
-    // source_changed_cache=true;
+// source_changed_cache=true;
 #endif
-    //print_line("LSC :"+get_path());
-    this->path=p_path;
-    return OK;
-
+	//print_line("LSC :"+get_path());
+	this->path = p_path;
+	return OK;
 }
-
 
 #if 0
 const Map<StringName,GDFunction*>& PyScript::debug_get_member_functions() const {
@@ -761,93 +717,101 @@ Ref<PyScript> PyScript::get_base() const {
 }
 #endif
 
-
-bool PyScript::has_script_signal(const StringName& p_signal) const {
-    DEBUG_TRACE_METHOD();
-    // TODO
-//     if (_signals.has(p_signal))
-//         return true;
-//     if (base.is_valid()) {
-//         return base->has_script_signal(p_signal);
-//     }
-// #ifdef TOOLS_ENABLED
-//     else if (base_cache.is_valid()){
-//         return base_cache->has_script_signal(p_signal);
-//     }
-
-// #endif
-    return false;
+bool PyScript::has_script_signal(const StringName &p_signal) const {
+	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID_V(false);
+	return pybind_has_signal(this->_py_exposed_class, String(p_signal).c_str());
 }
-
 
 void PyScript::get_script_signal_list(List<MethodInfo> *r_signals) const {
-    DEBUG_TRACE_METHOD();
-    // TODO
-    return;
+	DEBUG_TRACE_METHOD();
+	ASSERT_PYSCRIPT_VALID();
+	// TODO: Simple&hacky implementation...
+	const godot_string *signals = pybind_get_signal_list(this->_py_exposed_class);
+	int i = 0;
+	const String *signal = (String *)&signals[i];
+	while (*signal != "") {
+		MethodInfo mi;
+		mi.name = *signal;
+		int argcount;
+		if (pybind_get_signal_info(this->_py_exposed_class, signal->c_str(), &argcount)) {
+			for (int i = 0; i < argcount; i++) {
+				mi.arguments.push_back(PropertyInfo(Variant::NIL, "arg" + itos(i)));
+			}
+			r_signals->push_back(mi);
+		}
+		signal = (String *)&signals[++i];
+	}
 
-//     for(const Map<StringName,Vector<StringName> >::Element *E=_signals.front();E;E=E->next()) {
+	//     for(const Map<StringName,Vector<StringName> >::Element *E=_signals.front();E;E=E->next()) {
 
-//         MethodInfo mi;
-//         mi.name=E->key();
-//         for(int i=0;i<E->get().size();i++) {
-//             PropertyInfo arg;
-//             arg.name=E->get()[i];
-//             mi.arguments.push_back(arg);
-//         }
-//         r_signals->push_back(mi);
-//     }
+	//         MethodInfo mi;
+	//         mi.name=E->key();
+	//         for(int i=0;i<E->get().size();i++) {
+	//             PropertyInfo arg;
+	//             arg.name=E->get()[i];
+	//             mi.arguments.push_back(arg);
+	//         }
+	//         r_signals->push_back(mi);
+	//     }
 
-//     if (base.is_valid()) {
-//         base->get_script_signal_list(r_signals);
-//     }
-// #ifdef TOOLS_ENABLED
-//     else if (base_cache.is_valid()){
-//         base_cache->get_script_signal_list(r_signals);
-//     }
+	//     if (base.is_valid()) {
+	//         base->get_script_signal_list(r_signals);
+	//     }
+	// #ifdef TOOLS_ENABLED
+	//     else if (base_cache.is_valid()){
+	//         base_cache->get_script_signal_list(r_signals);
+	//     }
 
-// #endif
-
+	// #endif
 }
 
+StringName PyScript::get_meth_signature(StringName p_methname) {
+	StringName signature;
+// TODO: Cache this
+// TODO: Handle line number
+#ifdef DEBUG_ENABLED
+	signature = this->path + "::0::" + this->name + "." + p_methname;
+#endif
+	return signature;
+};
 
-PyScript::PyScript() : tool(false), valid(false), _mpo_exposed_class(mp_const_none), _mpo_module(mp_const_none) {
-    DEBUG_TRACE_METHOD();
+PyScript::PyScript()
+	: tool(false), valid(false) {
+	DEBUG_TRACE_METHOD();
 
-    // _mp_exposed_mp_class = NULL;
-    // _mp_module = NULL;
-    // base = NULL;
+// base = NULL;
 
 #ifdef DEBUG_ENABLED
-    // if (PyLanguage::get_singleton()->lock) {
-    //     PyLanguage::get_singleton()->lock->lock();
-    // }
-    // PyLanguage::get_singleton()->script_list.add(&script_list);
+// if (PyLanguage::get_singleton()->lock) {
+//     PyLanguage::get_singleton()->lock->lock();
+// }
+// PyLanguage::get_singleton()->script_list.add(&script_list);
 
-    // if (PyLanguage::get_singleton()->lock) {
-    //     PyLanguage::get_singleton()->lock->unlock();
-    // }
+// if (PyLanguage::get_singleton()->lock) {
+//     PyLanguage::get_singleton()->lock->unlock();
+// }
 #endif
 }
 
-
 PyScript::~PyScript() {
-    DEBUG_TRACE_METHOD();
-    // for (Map<StringName,GDFunction*>::Element *E=member_functions.front();E;E=E->next()) {
-    //     memdelete( E->get() );
-    // }
+	DEBUG_TRACE_METHOD();
+// for (Map<StringName,GDFunction*>::Element *E=member_functions.front();E;E=E->next()) {
+//     memdelete( E->get() );
+// }
 
-    // for (Map<StringName,Ref<PyScript> >::Element *E=subclasses.front();E;E=E->next()) {
-    //     E->get()->_owner=NULL; //bye, you are no longer owned cause I died
-    // }
+// for (Map<StringName,Ref<PyScript> >::Element *E=subclasses.front();E;E=E->next()) {
+//     E->get()->_owner=NULL; //bye, you are no longer owned cause I died
+// }
 
 #ifdef DEBUG_ENABLED
-    // if (PyLanguage::get_singleton()->lock) {
-    //     PyLanguage::get_singleton()->lock->lock();
-    // }
-    // PyLanguage::get_singleton()->script_list.remove(&script_list);
+// if (PyLanguage::get_singleton()->lock) {
+//     PyLanguage::get_singleton()->lock->lock();
+// }
+// PyLanguage::get_singleton()->script_list.remove(&script_list);
 
-    // if (PyLanguage::get_singleton()->lock) {
-    //     PyLanguage::get_singleton()->lock->unlock();
-    // }
+// if (PyLanguage::get_singleton()->lock) {
+//     PyLanguage::get_singleton()->lock->unlock();
+// }
 #endif
 }
