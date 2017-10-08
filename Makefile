@@ -43,9 +43,10 @@ BUILD_PYTHON_OPTS += --with-pydebug
 endif
 
 # Remove use_llvm and CCFLAGS/CFLAGS if you're still using gcc
-OPTS ?= platform=x11 -j6 use_llvm=yes                    \
-  CCFLAGS=-fcolor-diagnostics CFLAGS=-fcolor-diagnostics \
-  target=debug module_pythonscript_enabled=yes
+OPTS ?= platform=x11 -j6 use_llvm=no target=debug module_pythonscript_enabled=yes
+# OPTS ?= platform=x11 -j6 use_llvm=yes                    \
+#   CCFLAGS=-fcolor-diagnostics CFLAGS=-fcolor-diagnostics \
+#   target=debug module_pythonscript_enabled=yes
 
 OPTS += $(EXTRA_OPTS) PYTHONSCRIPT_BACKEND=$(PYTHONSCRIPT_BACKEND)
 
@@ -83,7 +84,8 @@ compile: $(PYTHON_LIB) $(GDNATIVE_CFFI_BINDINGS)
 
 
 pythonscript:
-	scons GODOT=godot
+	CC=clang scons GODOT=godot PYTHONSCRIPT_BACKEND=$(PYTHONSCRIPT_BACKEND)
+	cp libpythonscript*.so build/pythonscript/
 
 
 clean:
@@ -116,7 +118,10 @@ $(GDNATIVE_CFFIDEFS):
 
 
 generate_gdnative_cffidefs:
-	$(BASEDIR)/tools/generate_gdnative_cffidefs.py --output $(GDNATIVE_CFFIDEFS) $(GODOT_DIR)
+# Wait for gdnative_api_struct.h not to include functions redefined in gdnative_wrappers.h
+# (given the first no longer expose them)
+	$(BASEDIR)/tools/generate_gdnative_cffidefs.py --output $(GDNATIVE_CFFIDEFS) $(GODOT_DIR)/modules/gdnative/include/gdnative_api_struct.gen.h $(GODOT_DIR)
+	sed -i 's/sizeof(void \*)/8/' $(GDNATIVE_CFFIDEFS)  # Quick hack given CFFI cannot parse sizeof otherwise
 
 
 $(PYTHON_LIB):
@@ -130,5 +135,8 @@ build_python:
 	cd $(PYTHON_DIR) && make install
 	# Install cffi is a pita...
 	$(PIP) install cffi
-	if ( [ ! -d $(GODOT_DIR)/bin ] ); then mkdir $(GODOT_DIR)/bin; fi
+
+
+build:
+	if ( [ ! -d build/pythonscript ] ); then mkdir -p build/pythonscript; fi
 	cp $(PYTHON_LIB) $(GODOT_DIR)/bin/

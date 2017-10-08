@@ -1,8 +1,7 @@
 #ifndef PYTHONSCRIPT_API_H
 #define PYTHONSCRIPT_API_H
 
-#include "modules/gdnative/godot/gdnative.h"
-#include "modules/pluginscript/pluginscript.h"
+#include <gdnative_api_struct.gen.h>
 #include "cffi_bindings/api_struct.h"
 
 typedef void *cffi_handle;

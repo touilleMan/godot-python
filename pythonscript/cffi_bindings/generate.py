@@ -26,9 +26,9 @@ with open('%s/api_struct.h' % BASEDIR, 'r') as fd:
     api_struct_src = fd.read()
 
 
-# Def needed to compile output .cpp file
+# Def needed to compile output .c file
 ffibuilder.set_source("pythonscriptcffi", """
-#include "modules/nativescript/godot_nativescript.h"
+#include <gdnative_api_struct.gen.h>
 // TODO: MethodFlags not in ldscript headers
 enum MethodFlags {
     METHOD_FLAG_NORMAL=1,
@@ -42,7 +42,23 @@ enum MethodFlags {
     METHOD_FLAGS_DEFAULT=METHOD_FLAG_NORMAL,
 };
 
-""" + api_src)
+""" + api_src#)
++ """
+static godot_real (*ptrfunc_godot_vector2_distance_to)(const godot_vector2 *p_self, const godot_vector2 *p_to) = godot_vector2_distance_to;
+
+typedef struct {
+    godot_real (*_godot_vector2_distance_to)(const godot_vector2 *p_self, const godot_vector2 *p_to);
+} structfunc_t;
+static structfunc_t structfunc = {
+    ._godot_vector2_distance_to=godot_vector2_distance_to
+};
+godot_real structfunc_godot_vector2_distance_to(const godot_vector2 *p_self, const godot_vector2 *p_to) {
+    return structfunc._godot_vector2_distance_to(p_self, p_to);
+}
+godot_real staticfunc_godot_vector2_distance_to(const godot_vector2 *p_self, const godot_vector2 *p_to) {
+    return ptrfunc_godot_vector2_distance_to(p_self, p_to);
+}
+""")
 
 
 # Python source code embedded and run at init time
@@ -89,7 +105,6 @@ else:
 ffibuilder.embedding_init_code(embedding_init_code)
 
 
-
 # C API exposed to Python
 with open(BASEDIR + '/cdef.gen.h') as fd:
     cdef = fd.read()
@@ -111,12 +126,22 @@ enum MethodFlags {
 // We use malloc to bypass Python garbage collector for Godot Object
 void *malloc(size_t size);
 void free(void *ptr);
-""" + cdef + strip_hashed_src(api_struct_src))
+""" + cdef + strip_hashed_src(api_struct_src)#)
++ """
+extern godot_real (*ptrfunc_godot_vector2_distance_to)(const godot_vector2 *p_self, const godot_vector2 *p_to);
+extern godot_real structfunc_godot_vector2_distance_to(const godot_vector2 *p_self, const godot_vector2 *p_to);
+extern godot_real staticfunc_godot_vector2_distance_to(const godot_vector2 *p_self, const godot_vector2 *p_to);
+
+typedef struct {
+    godot_real (*_godot_vector2_distance_to)(const godot_vector2 *p_self, const godot_vector2 *p_to);
+} structfunc_t;
+extern structfunc_t structfunc;
+""")
 
 
 # Python `@ffi.def_extern()` API exposed to C
 ffibuilder.embedding_api(strip_hashed_src(api_src))
 
 
-# Output .cpp code ready to be compiled ;-)
+# Output .c code ready to be compiled ;-)
 ffibuilder.emit_c_code(BASEDIR + "/pythonscriptcffi.gen.c")

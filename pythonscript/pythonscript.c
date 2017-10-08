@@ -1,15 +1,20 @@
-#include "pythonscript.h"
 #include "Python.h"
-#include "cffi_bindings/api.h"
-#include <dlfcn.h>
 
-static void _pythonscript_finish() {
-	// TODO: Anyway, this cause a segfault....
-	// #ifdef BACKEND_CPYTHON
-	// 	// TODO: Do we need to deinit the interpreter ?
-	// 	Py_FinalizeEx();
-	// #endif
-}
+#include <dlfcn.h>
+#include <wchar.h>
+
+#include "pythonscript.h"
+#include "cffi_bindings/api.h"
+
+#include <gdnative_api_struct.gen.h>
+
+// TODO: Anyway, this cause a segfault....
+// static void _pythonscript_finish() {
+// 	#ifdef BACKEND_CPYTHON
+// 		// TODO: Do we need to deinit the interpreter ?
+// 		Py_FinalizeEx();
+// 	#endif
+// }
 
 godot_bool _pythonscript_validate(const godot_string *p_script, int *r_line_error,
 		int *r_col_error, godot_string *r_test_error,
@@ -57,21 +62,32 @@ static const char *PYTHONSCRIPT_RESERVED_WORDS[] = {
 static const char *PYTHONSCRIPT_COMMENT_DELIMITERS[] = { "#", "\"\"\"\"\"\"", 0 };
 static const char *PYTHONSCRIPT_STRING_DELIMITERS[] = { "\" \"", "' '", 0 };
 
-static void *libpython = NULL;
+void godot_gdnative_init(godot_gdnative_init_options *options) {
+	GDNATIVE_API_INIT(options);
+	godot_string msg;
+	godot_string_new_data(&msg, "Hello world from Pythonscript !", -1);
+	godot_print(&msg);
 
-godot_pluginscript_language_desc godot_pluginscript_init(const godot_pluginscript_init_options *options) {
-	// Must explicitly open libpython to load all of it symbols
+#if 1
+
 #ifdef BACKEND_CPYTHON
-	libpython = dlopen("libpython3.6m.so.1.0", RTLD_NOW | RTLD_GLOBAL);
-	// TODO: Set PYTHONHOME according
-	// const wchar_t *plugin_path = godot_string_unicode_str(->plugin_path);
-	Py_SetPythonHome(L"/home/emmanuel/projects/godot-python/pythonscript/cpython/build");
-#else
-	libpython = dlopen("libpypy3-c.so", RTLD_NOW | RTLD_GLOBAL);
+
+	// Make sure the shared library has all it symbols loaded
+	// (strange bug with libpython3.6 otherwise...)
+	const char *libpath = "/home/emmanuel/projects/godot_test_gdnative/pythonscript/libpython3.6m.so.1.0";
+	void *lib = dlopen(libpath, RTLD_NOW | RTLD_GLOBAL);
+	const char *err = dlerror();
+	// dlopen(godot_string_c_str(options->active_library_path), RTLD_NOW | RTLD_GLOBAL);
+
+	// Retrieve path and set pythonhome
+	static wchar_t pythonhome[256];
+	godot_string _pythonhome = godot_string_get_base_dir(options->active_library_path);
+	wcsncpy(pythonhome, godot_string_unicode_str(&_pythonhome), 256);
+	godot_string_destroy(&_pythonhome);
+	Py_SetPythonHome(pythonhome);
 #endif
 
-	godot_pluginscript_language_desc desc = {
-		// .data = NULL,
+	static godot_pluginscript_language_desc desc = {
 		.name = "Python",
 		.type = "Python",
 		.extension = "py",
@@ -100,7 +116,7 @@ godot_pluginscript_language_desc godot_pluginscript_init(const godot_pluginscrip
 			}
 		}
 	};
-	if (options->debug) {
+	if (options->in_editor) {
 
 		desc.get_template_source_code = pybind_get_template_source_code;
 		desc.validate = pybind_validate;
@@ -126,6 +142,9 @@ godot_pluginscript_language_desc godot_pluginscript_init(const godot_pluginscrip
 		// TODO: avoid to go through cffi call if profiling is not on
 		desc.profiling_frame = pybind_profiling_frame;
 	}
+#endif
+	godot_pluginscript_register_language(&desc);
+}
 
-	return desc;
+void godot_gdnative_terminate() {
 }

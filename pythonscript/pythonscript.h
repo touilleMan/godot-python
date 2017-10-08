@@ -1,8 +1,9 @@
 #ifndef PYTHONSCRIPT_H
 #define PYTHONSCRIPT_H
 
-#include "modules/pluginscript/pluginscript.h"
+#include <gdnative_api_struct.gen.h>
 
-extern godot_pluginscript_language_desc godot_pluginscript_init(const godot_pluginscript_init_options *options);
+void godot_gdnative_init(godot_gdnative_init_options *options);
+void godot_gdnative_terminate();
 
 #endif // PYTHONSCRIPT_H

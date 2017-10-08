@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=2]
+[gd_scene load_steps=10 format=2]
 
 [ext_resource path="res://main.gd" type="Script" id=1]
 [ext_resource path="res://pymain.py" type="Script" id=2]
@@ -7,6 +7,8 @@
 [ext_resource path="res://pysubnode.py" type="Script" id=5]
 [ext_resource path="res://gdnode.gd" type="Script" id=6]
 [ext_resource path="res://gdsubnode.gd" type="Script" id=7]
+[ext_resource path="res://gdnode_with_pyparent.gd" type="Script" id=8]
+[ext_resource path="res://pynode_with_gdparent.py" type="Script" id=9]
 
 [node name="main" type="Node"]
 
@@ -42,5 +44,13 @@ script = ExtResource( 7 )
 prop = null
 overloaded_by_child_prop = "default"
 child_prop = "sub:default"
+
+[node name="gdnode_with_pyparent" type="Node" parent="test"]
+
+script = ExtResource( 8 )
+
+[node name="pynode_with_gdparent" type="Node" parent="test"]
+
+script = ExtResource( 9 )
 
 

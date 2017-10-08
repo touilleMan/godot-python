@@ -46,11 +46,11 @@ def pybind_init():
     # Setup default value
     pythonpath_config_field = "python_script/path"
     pythonpath_default_value = "res://;res://lib"
-    if not ProjectSettings.has(pythonpath_config_field):
-        ProjectSettings.set(pythonpath_config_field, pythonpath_default_value)
+    if not ProjectSettings.has_setting(pythonpath_config_field):
+        ProjectSettings.set_setting(pythonpath_config_field, pythonpath_default_value)
     ProjectSettings.set_initial_value(pythonpath_config_field, pythonpath_default_value)
     # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
-    pythonpath = ProjectSettings.get(pythonpath_config_field)
+    pythonpath = ProjectSettings.get_setting(pythonpath_config_field)
 
     sys.argv = ["godot"] + OS.get_cmdline_args()
     for p in pythonpath.split(';'):
@@ -71,6 +71,7 @@ def pybind_finish():
 
 @ffi.def_extern()
 def pybind_get_template_source_code(class_name, base_class_name):
+    print('==================================>>>TEMPLATE')
     class_name = godot_string_to_pyobj(class_name) or "MyExportedCls"
     base_class_name = godot_string_to_pyobj(base_class_name)
     src = """from godot import exposed, export

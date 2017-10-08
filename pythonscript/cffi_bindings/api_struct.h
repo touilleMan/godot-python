@@ -1,7 +1,7 @@
 #ifndef PYTHONSCRIPT_API_STRUCT_H
 #define PYTHONSCRIPT_API_STRUCT_H
 
-#include "modules/gdnative/godot/gdnative.h"
+#include <gdnative/gdnative.h>
 
 typedef struct {
 	int type;
