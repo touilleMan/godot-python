@@ -57,10 +57,11 @@ def pybind_init():
         p = ProjectSettings.globalize_path(p)
         sys.path.append(p)
     print('PYTHONPATH: %s' % sys.path)
+    return ffi.NULL
 
 
 @ffi.def_extern()
-def pybind_finish():
+def pybind_finish(handle):
     # Release Godot objects referenced by python wrappers
     protect_from_gc.clear()
     destroy_exposed_classes()
@@ -70,7 +71,7 @@ def pybind_finish():
 
 
 @ffi.def_extern()
-def pybind_get_template_source_code(class_name, base_class_name):
+def pybind_get_template_source_code(handle, class_name, base_class_name):
     print('==================================>>>TEMPLATE')
     class_name = godot_string_to_pyobj(class_name) or "MyExportedCls"
     base_class_name = godot_string_to_pyobj(base_class_name)
@@ -96,17 +97,17 @@ class %s(%s):
 
 
 @ffi.def_extern()
-def pybind_validate(script, r_line_error, r_col_error, test_error, path, r_functions):
+def pybind_validate(handle, script, r_line_error, r_col_error, test_error, path, r_functions):
     return 1
 
 
 @ffi.def_extern()
-def pybind_find_function(function, code):
+def pybind_find_function(handle, function, code):
     pass
 
 
 @ffi.def_extern()
-def pybind_make_function(class_, name, args):
+def pybind_make_function(handle, class_, name, args):
     args = PoolStringArray.build_from_gdobj(args, steal=True)
     name = godot_string_to_pyobj(name)
     src = ['def %s(' % name]
@@ -116,7 +117,12 @@ def pybind_make_function(class_, name, args):
 
 
 @ffi.def_extern()
-def pybind_auto_indent_code(code, from_line, to_line):
+def pybind_complete_code(handle, p_code, p_base_path, p_owner, r_options, r_force, r_call_hint):
+    return lib.GODOT_OK
+
+
+@ffi.def_extern()
+def pybind_auto_indent_code(handle, code, from_line, to_line):
     try:
         import autopep8
     except ImportError:
@@ -135,49 +141,49 @@ def pybind_auto_indent_code(code, from_line, to_line):
 
 
 @ffi.def_extern()
-def pybind_add_global_constant(name, value):
+def pybind_add_global_constant(handle, name, value):
     name = godot_string_to_pyobj(name)
     value = variant_to_pyobj(value)
     globals()[name] = value
 
 
 @ffi.def_extern()
-def pybind_debug_get_error():
+def pybind_debug_get_error(handle):
     return godot_string_from_pyobj("Nothing")[0]
 
 
 @ffi.def_extern()
-def pybind_debug_get_stack_level_line(level):
+def pybind_debug_get_stack_level_line(handle, level):
     return 1
 
 
 @ffi.def_extern()
-def pybind_debug_get_stack_level_function(level):
+def pybind_debug_get_stack_level_function(handle, level):
     return godot_string_from_pyobj("Nothing")[0]
 
 
 @ffi.def_extern()
-def pybind_debug_get_stack_level_source(level):
+def pybind_debug_get_stack_level_source(handle, level):
     return godot_string_from_pyobj("Nothing")[0]
 
 
 @ffi.def_extern()
-def pybind_debug_get_stack_level_locals(level, locals, values, max_subitems, max_depth):
+def pybind_debug_get_stack_level_locals(handle, level, locals, values, max_subitems, max_depth):
     pass
 
 
 @ffi.def_extern()
-def pybind_debug_get_stack_level_members(level, members, values, max_subitems, max_depth):
+def pybind_debug_get_stack_level_members(handle, level, members, values, max_subitems, max_depth):
     pass
 
 
 @ffi.def_extern()
-def pybind_debug_get_globals(locals, values, max_subitems, max_depth):
+def pybind_debug_get_globals(handle, locals, values, max_subitems, max_depth):
     pass
 
 
 @ffi.def_extern()
-def pybind_debug_parse_stack_level_expression(level, expression, max_subitems, max_depth):
+def pybind_debug_parse_stack_level_expression(handle, level, expression, max_subitems, max_depth):
     return godot_string_from_pyobj("Nothing")[0]
 
 
@@ -220,7 +226,11 @@ def _build_script_manifest(cls):
 
     manifest = ffi.new('godot_pluginscript_script_manifest*')
     manifest.data = connect_handle(cls)
-    lib.godot_string_new_unicode_data(ffi.addressof(manifest.name), cls.__name__, -1)
+    gdname = godot_string_from_pyobj(cls.__name__)
+    lib.godot_string_name_new(ffi.addressof(manifest.name), gdname)
+    if cls.__bases__ and issubclass(cls.__bases__[0], BaseObject):
+        gdbase = godot_string_from_pyobj(cls.__bases__[0].__name__)
+        lib.godot_string_name_new(ffi.addressof(manifest.base), gdbase)
     manifest.is_tool = cls.__tool
     lib.godot_dictionary_new(ffi.addressof(manifest.member_lines))
     lib.godot_array_new(ffi.addressof(manifest.methods))
@@ -251,7 +261,7 @@ def _build_script_manifest(cls):
 
 
 @ffi.def_extern()
-def pybind_script_init(path, source, r_error):
+def pybind_script_init(handle, path, source, r_error):
     path = godot_string_to_pyobj(path)
     if not path.startswith('res://') or not path.rsplit('.', 1)[-1] in ('py', 'pyc', 'pyo', 'pyd'):
         print("Bad python script path `%s`, must starts by `res://` and ends with `.py/pyc/pyo/pyd`" % path)
@@ -334,7 +344,10 @@ def pybind_instance_notification(instance_handle, notification):
 @ffi.def_extern()
 def pybind_instance_call_method(handle, p_method, p_args, p_argcount, r_error):
     instance = ffi.from_handle(handle)
-    methname = godot_string_to_pyobj(p_method)
+    # TODO: improve this by using a dict lookup using string_name
+    method = lib.godot_string_name_get_name(p_method)
+    methname = godot_string_to_pyobj(ffi.addressof(method))
+    lib.godot_string_destroy(ffi.addressof(method))
     try:
         meth = getattr(instance, methname)
     except AttributeError:

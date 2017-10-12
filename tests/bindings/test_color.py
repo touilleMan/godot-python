@@ -61,8 +61,8 @@ class TestColor:
             Color(*arg)
 
     @pytest.mark.parametrize('args', [
-        ['to_32', int, ()],
-        ['to_ARGB32', int, ()],
+        ['to_rgba32', int, ()],
+        ['to_argb32', int, ()],
         ['gray', float, ()],
         ['inverted', Color, ()],
         ['contrasted', Color, ()],

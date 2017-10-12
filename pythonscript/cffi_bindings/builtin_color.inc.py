@@ -108,11 +108,11 @@ class Color(BaseBuiltin):
 
     # Methods
 
-    def to_32(self):
-        return lib.godot_color_to_32(self._gd_ptr)
+    def to_rgba32(self):
+        return lib.godot_color_to_rgba32(self._gd_ptr)
 
-    def to_ARGB32(self):
-        return lib.godot_color_to_ARGB32(self._gd_ptr)
+    def to_argb32(self):
+        return lib.godot_color_to_argb32(self._gd_ptr)
 
     def gray(self):
         return lib.godot_color_gray(self._gd_ptr)

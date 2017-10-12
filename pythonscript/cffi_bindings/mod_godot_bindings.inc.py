@@ -167,6 +167,9 @@ class MetaBaseObject(type):
         exported = {}
         signals = {}
         cooked_nmspc = {'__exported': exported, '__signals': signals}
+        godot_parent_classes = [b for b in bases if issubclass(b, BaseObject)]
+        if len(godot_parent_classes) > 1:
+            raise RuntimeError('Exported to Godot class cannot inherit more than one Godot class')
         # Retrieve parent exported fields
         for b in bases:
             exported.update(getattr(b, '__exported', {}))

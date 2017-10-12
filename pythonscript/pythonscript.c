@@ -16,12 +16,6 @@
 // 	#endif
 // }
 
-godot_bool _pythonscript_validate(const godot_string *p_script, int *r_line_error,
-		int *r_col_error, godot_string *r_test_error,
-		const godot_string *p_path, godot_pool_string_array *r_functions) {
-	return true;
-}
-
 static const char *PYTHONSCRIPT_RECOGNIZED_EXTENSIONS[] = { "py", "pyc", "pyo", "pyd", 0 };
 static const char *PYTHONSCRIPT_RESERVED_WORDS[] = {
 	"False",
@@ -97,8 +91,8 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 		.reserved_words = PYTHONSCRIPT_RESERVED_WORDS,
 		.comment_delimiters = PYTHONSCRIPT_COMMENT_DELIMITERS,
 		.string_delimiters = PYTHONSCRIPT_STRING_DELIMITERS,
+		.has_named_classes = false,
 		.get_template_source_code = pybind_get_template_source_code,
-		.validate = _pythonscript_validate,
 
 		.script_desc = {
 			.init = pybind_script_init,
@@ -122,6 +116,7 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 		desc.validate = pybind_validate;
 		desc.find_function = pybind_find_function;
 		desc.make_function = pybind_make_function;
+		desc.complete_code = pybind_complete_code;
 		desc.auto_indent_code = pybind_auto_indent_code;
 
 		desc.add_global_constant = pybind_add_global_constant;
