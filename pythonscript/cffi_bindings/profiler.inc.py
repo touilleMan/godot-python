@@ -86,6 +86,7 @@ class Profiler:
             if frame.f_code.co_filename.startswith('<'):
                 return
             if event in ('call', 'c_call'):
+                # TODO generate signature ahead of time and store it into the object
                 signature = '{path}::{line}::{name}'.format(
                     path=frame.f_code.co_filename,
                     line=frame.f_lineno, name=frame.f_code.co_name)
@@ -114,20 +115,20 @@ profiler = Profiler()
 
 
 @ffi.def_extern()
-def pybind_profiling_start():
+def pybind_profiling_start(handle):
     profiler.reset()
     profiler.enabled = True
     sys.setprofile(profiler.get_profilefunc())
 
 
 @ffi.def_extern()
-def pybind_profiling_stop():
+def pybind_profiling_stop(handle):
     profiler.enabled = False
     sys.setprofile(None)
 
 
 @ffi.def_extern()
-def pybind_profiling_get_accumulated_data(info, info_max):
+def pybind_profiling_get_accumulated_data(handle, info, info_max):
     print('get_frame_accumulated_data')
     info = Dictionary.build_from_gdobj(info, steal=True)
     # Sort function to make sure we can display the most consuming ones
@@ -143,22 +144,22 @@ def pybind_profiling_get_accumulated_data(info, info_max):
 
 
 @ffi.def_extern()
-def pybind_profiling_get_frame_data(info, info_max):
+def pybind_profiling_get_frame_data(handle, info, info_max):
     print('get_frame_data')
-    info = Dictionary.build_from_gdobj(info, steal=True)
-    count = 0
-    for signature, profile in profiler.per_meth_profiling.items():
-        if profile.last_frame_call_count:
-            info[signature] = Dictionary(
-                call_count=profile.last_frame_call_count,
-                total_time=int(profile.last_frame_total_time * 1e6),
-                self_time=int(profile.last_frame_self_time * 1e6)
-            )
-            count += 1
-    return count
+    # Sort function to make sure we can display the most consuming ones
+    sorted_and_limited = sorted(profiler.per_meth_profiling.items(),
+                                key=lambda x: -x[1].last_frame_self_time)[:info_max]
+    curr = 0
+    for i, item in enumerate(sorted_and_limited):
+        signature, profile = item
+        lib.godot_string_name_new(ffi.addressof(info[i].signature), gdstring_from_pyobj(signature))
+        info[i].call_count = profile.last_frame_call_count
+        info[i].total_time = int(profile.last_frame_total_time * 1e6)
+        info[i].self_time = int(profile.last_frame_self_time * 1e6)
+    return len(sorted_and_limited)
 
 
 @ffi.def_extern()
-def pybind_profiling_frame():
+def pybind_profiling_frame(handle):
     if profiler.enabled:
         profiler.next_frame()

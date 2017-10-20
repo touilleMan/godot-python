@@ -55,17 +55,16 @@ static const char *PYTHONSCRIPT_RESERVED_WORDS[] = {
 };
 static const char *PYTHONSCRIPT_COMMENT_DELIMITERS[] = { "#", "\"\"\"\"\"\"", 0 };
 static const char *PYTHONSCRIPT_STRING_DELIMITERS[] = { "\" \"", "' '", 0 };
+static godot_pluginscript_language_desc desc;
 
 void godot_gdnative_init(godot_gdnative_init_options *options) {
 	GDNATIVE_API_INIT(options);
+
 	godot_string msg;
 	godot_string_new_data(&msg, "Hello world from Pythonscript !", -1);
 	godot_print(&msg);
 
-#if 1
-
 #ifdef BACKEND_CPYTHON
-
 	// Make sure the shared library has all it symbols loaded
 	// (strange bug with libpython3.6 otherwise...)
 	const char *libpath = "/home/emmanuel/projects/godot_test_gdnative/pythonscript/libpython3.6m.so.1.0";
@@ -81,35 +80,30 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 	Py_SetPythonHome(pythonhome);
 #endif
 
-	static godot_pluginscript_language_desc desc = {
-		.name = "Python",
-		.type = "Python",
-		.extension = "py",
-		.recognized_extensions = PYTHONSCRIPT_RECOGNIZED_EXTENSIONS,
-		.init = pybind_init,
-		.finish = pybind_finish,
-		.reserved_words = PYTHONSCRIPT_RESERVED_WORDS,
-		.comment_delimiters = PYTHONSCRIPT_COMMENT_DELIMITERS,
-		.string_delimiters = PYTHONSCRIPT_STRING_DELIMITERS,
-		.has_named_classes = false,
-		.get_template_source_code = pybind_get_template_source_code,
+	desc.name = "Python";
+	desc.type = "Python";
+	desc.extension = "py";
+	desc.recognized_extensions = PYTHONSCRIPT_RECOGNIZED_EXTENSIONS;
+	desc.init = pybind_init;
+	desc.finish = pybind_finish;
+	desc.reserved_words = PYTHONSCRIPT_RESERVED_WORDS;
+	desc.comment_delimiters = PYTHONSCRIPT_COMMENT_DELIMITERS;
+	desc.string_delimiters = PYTHONSCRIPT_STRING_DELIMITERS;
+	desc.has_named_classes = false;
+	desc.get_template_source_code = pybind_get_template_source_code;
 
-		.script_desc = {
-			.init = pybind_script_init,
-			.finish = pybind_script_finish,
+	desc.script_desc.init = pybind_script_init;
+	desc.script_desc.finish = pybind_script_finish;
 
-			.instance_desc = {
-				.init = pybind_instance_init,
-				.finish = pybind_instance_finish,
-				.set_prop = pybind_instance_set_prop,
-				.get_prop = pybind_instance_get_prop,
-				.call_method = pybind_instance_call_method,
-				.notification = pybind_instance_notification,
-				.refcount_incremented = NULL,
-				.refcount_decremented = NULL
-			}
-		}
-	};
+	desc.script_desc.instance_desc.init = pybind_instance_init;
+	desc.script_desc.instance_desc.finish = pybind_instance_finish;
+	desc.script_desc.instance_desc.set_prop = pybind_instance_set_prop;
+	desc.script_desc.instance_desc.get_prop = pybind_instance_get_prop;
+	desc.script_desc.instance_desc.call_method = pybind_instance_call_method;
+	desc.script_desc.instance_desc.notification = pybind_instance_notification;
+	desc.script_desc.instance_desc.refcount_incremented = NULL;
+	desc.script_desc.instance_desc.refcount_decremented = NULL;
+
 	if (options->in_editor) {
 
 		desc.get_template_source_code = pybind_get_template_source_code;
@@ -137,7 +131,9 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 		// TODO: avoid to go through cffi call if profiling is not on
 		desc.profiling_frame = pybind_profiling_frame;
 	}
-#endif
+}
+
+void godot_gdnative_singleton() {
 	godot_pluginscript_register_language(&desc);
 }
 

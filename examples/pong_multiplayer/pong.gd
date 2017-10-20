@@ -41,7 +41,8 @@ func _ready():
 		
 	if (get_tree().is_network_server()):		
 		#set to not control player 2. since it's master as everything else
-		get_node("player2").set_network_mode(NETWORK_MODE_SLAVE)
+#		get_node("player2").set_network_mode(NETWORK_MODE_SLAVE)
+		get_node("player2").set_network_master(2, true)
 	else:
 		#set to control player 2, as it's slave as everything else
 		get_node("player2").set_network_mode(NETWORK_MODE_MASTER)

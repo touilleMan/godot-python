@@ -1,6 +1,16 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
 config_version=3
+
 [application]
 
+run/main_scene="res://lobby.tscn"
 name="Pong Multiplayer"
 main_scene="res://lobby.tscn"
 icon="res://icon.png"
@@ -11,10 +21,16 @@ width=640
 height=400
 stretch_2d=true
 
+[gdnative]
+
+singletons=[  ]
+
 [input]
 
-move_up=[ InputEvent(KEY,16777232) ]
-move_down=[ InputEvent(KEY,16777234) ]
+move_up=[ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777232,"unicode":0,"echo":false,"script":null)
+ ]
+move_down=[ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777234,"unicode":0,"echo":false,"script":null)
+ ]
 
 [memory]
 

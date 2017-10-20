@@ -29,8 +29,8 @@ extern godot_string pybind_debug_parse_stack_level_expression(godot_pluginscript
 
 extern void pybind_profiling_start(godot_pluginscript_language_data *p_data);
 extern void pybind_profiling_stop(godot_pluginscript_language_data *p_data);
-extern int pybind_profiling_get_accumulated_data(godot_pluginscript_language_data *p_data, godot_dictionary *r_info, int p_info_max);
-extern int pybind_profiling_get_frame_data(godot_pluginscript_language_data *p_data, godot_dictionary *r_info, int p_info_max);
+extern int pybind_profiling_get_accumulated_data(godot_pluginscript_language_data *p_data, godot_pluginscript_profiling_data *r_info, int p_info_max);
+extern int pybind_profiling_get_frame_data(godot_pluginscript_language_data *p_data, godot_pluginscript_profiling_data *r_info, int p_info_max);
 
 extern void pybind_profiling_frame(godot_pluginscript_language_data *p_data);
 
