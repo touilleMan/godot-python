@@ -13,6 +13,9 @@ godot
 .import
 .cache
 
+# Godot runtime logs
+logs
+
 # Scon build artefact
 .sconsign.dblite
 
