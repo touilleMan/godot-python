@@ -9,19 +9,36 @@ from tools.generate_gdnative_cffidefs import generate_cdef
 EnsureSConsVersion(2, 4)
 
 vars = Variables('custom.py', ARGUMENTS)
-vars.Add(EnumVariable('bits', "Target platform bits", '64',
-    allowed_values=('64', '32')
-))
-vars.Add(BoolVariable('dev_dyn', "Load at runtime *.inc.py files instead of embedding them", False))
-vars.Add('PYTHON', "Python executable to use for scripts", '')
+vars.Add(EnumVariable('bits', "Target platform bits", '64', allowed_values=('64', '32')))
+vars.Add(BoolVariable('dev_dyn', "Load at runtime *.inc.py files instead of "
+                                 "embedding them (useful for dev)", False))
+vars.Add('gdnative_include_dir', "Path to GDnative include directory",
+         './godot/modules/gdnative/include')
+vars.Add('gdnative_wrapper_lib', "Path to GDnative wrapper library",
+         './godot/bin/libgdnative_wrapper_code.*.a')
+vars.Add(EnumVariable('backend', "Python interpreter", 'cpython', allowed_values=('cpython', 'pypy')))
+vars.Add('PYTHON', "Python executable to use for scripts (a virtualenv will be"
+                   " created with it in `tools/venv`)", 'python3')
+vars.Add("CC", "C compiler")
+vars.Add("CFLAGS", "Custom flags for the C compiler")
+vars.Add("LINKFLAGS", "Custom flags for the linker")
+
 env = Environment(variables=vars)
 Help(vars.GenerateHelpText(env))
 
 
+### Build dir ###
+
+
+build_dir_name = 'build-%s' % env['backend']
+if env['dev_dyn']:
+    build_dir_name += '-dev_dyn'
+build_dir_name += '-%s' % env['bits']
+build_dir = Dir(build_dir_name)
+
+
 ### Save my eyes plz ###
 
-# for item in sorted(env.Dictionary().items()):
-#     print("construction variable = '%s', value = '%s'" % item)
 
 if 'clang' in env.get('CC'):
     env.Append(CCFLAGS="-fcolor-diagnostics")
@@ -32,44 +49,30 @@ if 'gcc' in env.get('CC'):
 ### GDnative include/wrapper ###
 
 
-if 'GDNATIVE_INCLUDE_DIR' not in ARGUMENTS:
-    print('GDNATIVE_INCLUDE_DIR argument not provided, assuming `./godot/modules/gdnative/include`')
-    ARGUMENTS['GDNATIVE_INCLUDE_DIR'] = './godot/modules/gdnative/include'
-gdnative_include_dir = env.Dir(ARGUMENTS['GDNATIVE_INCLUDE_DIR'])
-if not gdnative_include_dir.exists():
-    raise UserError("Invalid GDNATIVE_INCLUDE_DIR var (%s),  must point to Godot's GDnative include directory" %
-                    gdnative_include_dir)
+try:
+    gdnative_include_dir = env.Dir(glob.glob(env['gdnative_include_dir'])[0])
+except IndexError:
+    raise UserError("Invalid gdnative_include_dir var `%s`,  must point to "
+                    "Godot's GDnative include directory" % env['gdnative_include_dir'])
+try:
+    gdnative_wrapper_lib = env.File(glob.glob(env['gdnative_wrapper_lib'])[0])
+except IndexError:
+    raise UserError("Invalid gdnative_wrapper_lib var `%s`,  must point to"
+                    " Godot's GDnative wrapper static lib" % env['gdnative_wrapper_lib'])
 
-
-if 'GDNATIVE_WRAPPER_LIB' not in ARGUMENTS:
-    print('GDNATIVE_WRAPPER_LIB argument not provided, assuming `./godot/bin/libgdnative_wrapper_code.*.a`')
-    match = glob.glob('./godot/bin/libgdnative_wrapper_code.*.a')
-    ARGUMENTS['GDNATIVE_WRAPPER_LIB'] = match[0] if match else './godot/bin/libgdnative_wrapper_code.*.a'
-gdnative_wrapper_lib = env.File(ARGUMENTS['GDNATIVE_WRAPPER_LIB'])
-if not gdnative_wrapper_lib.exists():
-    raise UserError("Invalid GDNATIVE_WRAPPER_LIB var (%s),  must point to Godot's GDnative wrapper static lib" %
-                    gdnative_wrapper_lib)
-
-
-env.Append(CPPPATH=gdnative_include_dir.path)
+env.Append(CPPPATH=gdnative_include_dir)
 env.Append(LIBS=gdnative_wrapper_lib)
 
 
 ### Python backend ###
 
 
-python_backend = ARGUMENTS.get('PYTHON_BACKEND', 'cpython').lower()
-if python_backend not in ('cpython', 'pypy'):
-    raise UserError('PYTHON_BACKEND should be `cpython` (default) or `pypy`')
-
-
-if python_backend == 'cpython':
+if env['backend'] == 'cpython':
     try:
         python_lib = env.File(glob.glob('pythonscript/cpython/libpython*.so.*')[0])
     except IndexError:
         raise UserError("Cannot find `%s/pythonscript/cpython/libpython*.so.*`, has CPython been compiled ?" % os.getcwd())
-    Command('libpython.so', python_lib, Copy("$TARGET", "$SOURCE"))
-    python_lib = env.File('libpython.so')
+    python_lib = env.Command('%s/libpython.so' % build_dir, python_lib, Copy("$TARGET", "$SOURCE"))
     env.Append(CFLAGS='-I ' + env.Dir('pythonscript/cpython/').path)
     env.Append(CFLAGS='-I ' + env.Dir('pythonscript/cpython/Include').path)
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
@@ -78,17 +81,24 @@ else:  # pypy
         python_lib = env.File('pythonscript/pypy/bin/libpypy3-c.so')
     except IndexError:
         raise UserError("Cannot find `%s/pythonscript/pypy/bin/libpypy3-c.so`." % os.getcwd())
-    env.Command('libpypy-c.so', python_lib, Copy("$TARGET", "$SOURCE"))
-    python_lib = env.File('libpypy-c.so')
+    ptyhon_lib = env.Command('%s/libpypy-c.so' % build_dir, python_lib, Copy("$TARGET", "$SOURCE"))
     env.Append(CFLAGS='-I ' + env.Dir('pythonscript/pypy/include').path)
     env.Append(CFLAGS='-DBACKEND_PYPY')
 
 
-### Generate ###
+### Build venv with CFFI for python scripts ###
 
 
-cdef_gen = env.Command('pythonscript/cffi_bindings/cdef.gen.h', gdnative_include_dir,
-    "${PYTHON} ./tools/generate_gdnative_cffidefs.py ${SOURCE} --output=${TARGET} --bits=${bits}")
+venv_dir = Dir('tools/venv')
+env.Command(venv_dir, None, "${PYTHON} -m virtualenv ${TARGET} && . ${TARGET}/bin/activate && python -m pip install cffi")
+
+
+### Generate cdef and cffi C source ###
+
+
+cdef_gen = env.Command('pythonscript/cffi_bindings/cdef.gen.h', (venv_dir, gdnative_include_dir),
+    ". ${SOURCES[0]}/bin/activate &&" +
+    " python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits}")
 env.Append(HEADER=cdef_gen)
 
 
@@ -97,8 +107,9 @@ if env['dev_dyn']:
 python_inc_srcs = Glob('pythonscript/cffi_bindings/*.inc.py')
 (pythonscriptcffi_gen, ) = env.Command(
     'pythonscript/cffi_bindings/pythonscriptcffi.gen.c',
-    cdef_gen + python_inc_srcs,
-    "${PYTHON} ./pythonscript/cffi_bindings/generate.py --cdef=${SOURCE} --output=${TARGET}" +
+    [venv_dir] + cdef_gen + python_inc_srcs,
+    ". ${SOURCES[0]}/bin/activate &&" +
+    "python ./pythonscript/cffi_bindings/generate.py --cdef=${SOURCES[1]} --output=${TARGET}" +
         (" --dev-dyn" if env['dev_dyn'] else "")
 )
 
@@ -125,4 +136,7 @@ sources = [
 ]
 env.Append(LIBS=[python_lib, 'util'])
 env.Append(LIBPATH='godot/bin/')
-env.SharedLibrary('pythonscript', sources)
+env.SharedLibrary('%s/pythonscript' % build_dir, sources)
+
+
+### Generate build dir ###
