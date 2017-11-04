@@ -1,10 +1,5 @@
-# Bootstrap this script:
-# 1 - create a symlink to godot in this Makefile's dir
-# 2 - create another symlink to pythonscript dir as godot/modules/pythonscript
-#
+.PHONY: all clean test build_godot build_python
 
-.PHONY: all setup run run_example compile clean veryclean generate_gdnative_cffidefs \
-	    generate_cffi_bindings generate_dev_dyn_cffi_bindings build_python pythonscript
 
 BASEDIR = $(shell pwd)
 GODOT_DIR ?= $(BASEDIR)/godot
@@ -42,90 +37,21 @@ GODOT_CMD = $(DEBUG) $(GODOT_BIN) $(EXTRA_OPTS)
 BUILD_PYTHON_OPTS += --with-pydebug
 endif
 
-# Remove use_llvm and CCFLAGS/CFLAGS if you're still using gcc
-OPTS ?= platform=x11 -j6 use_llvm=no target=debug module_pythonscript_enabled=yes
-# OPTS ?= platform=x11 -j6 use_llvm=yes                    \
-#   CCFLAGS=-fcolor-diagnostics CFLAGS=-fcolor-diagnostics \
-#   target=debug module_pythonscript_enabled=yes
-
-OPTS += $(EXTRA_OPTS) PYTHONSCRIPT_BACKEND=$(PYTHONSCRIPT_BACKEND)
-
 
 all:
-	@echo 'Quickstart checklist:'
-	@printf '\033[0;32msetup\033[0m:                      Install pythonscript inside the godot main repo\n'
-	@printf '\033[0;32mbuild_python\033[0m:               Build Python interpreter\n'
-	@printf '\033[0;32mgenerate_gdnative_cffidefs\033[0m: Generate GDnative cdef for CFFI\n'
-	@printf '\033[0;32mgenerate_cffi_bindings\033[0m:     Generate the CFFI bindings source\n'
-	@printf '\033[0;32mcompile\033[0m:                    Compile the Godot project with pythonscript module\n'
-	@printf '\033[0;32mtest\033[0m:                       Run tests and go have a beer ;-)\n'
+	scons backend_path=$(BUILD_PYTHON_PATH)
 
 
-setup:
-ifndef GODOT_TARGET_DIR
-	echo "GODOT_TARGET_DIR must be set to Godot source directory" && exit 1
-else
-	ln -s $(GODOT_TARGET_DIR) $(GODOT_DIR)/godot
-	ln -s $(BASEDIR)/pythonscript $(GODOT_TARGET_DIR)/modules/pythonscript
-endif
-
-
-run:
-	$(GODOT_CMD)
-
-
-run_example:
-	cd examples/pong && $(GODOT_CMD)
-
-
-# TODO: rename or remove this
-compile: $(PYTHON_LIB) $(GDNATIVE_CFFI_BINDINGS)
-	cd $(GODOT_DIR) && scons $(OPTS) dev=yes
-
-
-pythonscript:
-	CC=clang scons GODOT=godot PYTHONSCRIPT_BACKEND=$(PYTHONSCRIPT_BACKEND)
-	cp libpythonscript*.so build/pythonscript/
+build:
+	scons backend_path=$(BUILD_PYTHON_PATH) build
 
 
 clean:
-	scons GODOT=godot -c
+	scons backend_path=$(BUILD_PYTHON_PATH) -c
 
-
-veryclean: clean
-	rm -f $(GDNATIVE_CFFIDEFS)
-	rm -f $(GDNATIVE_CFFI_BINDINGS)
 
 test:
 	cd tests/bindings && $(GODOT_CMD)
-
-
-$(GDNATIVE_CFFI_BINDINGS):
-	make generate_cffi_bindings
-
-
-generate_cffi_bindings: $(PYTHON_LIB) $(GDNATIVE_CFFIDEFS)
-	$(PYTHON) $(BASEDIR)/pythonscript/cffi_bindings/generate.py
-
-
-generate_dev_dyn_cffi_bindings: $(PYTHON_LIB) $(GDNATIVE_CFFIDEFS)
-	$(PYTHON) $(BASEDIR)/pythonscript/cffi_bindings/generate.py --dev-dyn
-	@printf "\033[0;32mPython .inc.py files are now dynamically loaded, don't share the binary !\033[0m\n"
-
-
-$(GDNATIVE_CFFIDEFS):
-	make generate_gdnative_cffidefs
-
-
-generate_gdnative_cffidefs:
-# Wait for gdnative_api_struct.h not to include functions redefined in gdnative_wrappers.h
-# (given the first no longer expose them)
-	$(BASEDIR)/tools/generate_gdnative_cffidefs.py --output $(GDNATIVE_CFFIDEFS) $(GODOT_DIR)/modules/gdnative/include/gdnative_api_struct.gen.h $(GODOT_DIR)
-	sed -i 's/sizeof(void \*)/8/' $(GDNATIVE_CFFIDEFS)  # Quick hack given CFFI cannot parse sizeof otherwise
-
-
-$(PYTHON_LIB):
-	1>/dev/null make build_python
 
 
 build_python:
@@ -135,8 +61,3 @@ build_python:
 	cd $(PYTHON_DIR) && make install
 	# Install cffi is a pita...
 	$(PIP) install cffi
-
-
-build:
-	if ( [ ! -d build/pythonscript ] ); then mkdir -p build/pythonscript; fi
-	cp $(PYTHON_LIB) $(GODOT_DIR)/bin/

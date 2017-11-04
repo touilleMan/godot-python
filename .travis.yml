@@ -11,13 +11,11 @@ env:
     - LLVM_VERSION=3.8.0
     - LLVM_ARCHIVE_PATH=$HOME/clang+llvm.tar.xz
     # Use commit instead of tag as long as 3.0 is not released
-    # - GODOT_REPO=https://github.com/godotengine/godot.git
-    # - GODOT_TAG=master  # I like to live dangerously ;-)
-    - GODOT_REPO=https://github.com/touilleMan/godot.git
-    - GODOT_TAG=pluginscript
+    - GODOT_REPO=https://github.com/godotengine/godot.git
+    - GODOT_TAG=master  # I like to live dangerously ;-)
     # Cannot use release given travis's glibc clash with -ffast-math with clang
     # other solution is to set `-D__extern_always_inline="extern __always_inline"`
-    - BUILD_EXTRA_OPTS="-j4 target=debug tools=yes module_pythonscript_enabled=yes"
+    - GODOT_EXTRA_BUILD_OPTS="-j4 target=debug tools=no gdnative_wrapper=yes"
     - TEST_EXTRA_OPTS=""
     - DISPLAY=":99.0"
     - AUDIODEV="null"
@@ -67,7 +65,6 @@ before_script:
   - git --git-dir=godot/.git reset --hard
   - git --git-dir=godot/.git checkout $GODOT_TAG
   - git --git-dir=godot/.git rev-parse HEAD
-  - ln -s `pwd`/pythonscript godot/modules/pythonscript
 # Start X11 server
   - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- $XVFB_OPTS"
   - sleep 3 # give xvfb some time to start
@@ -75,14 +72,10 @@ before_script:
 script:
   - set -e  # Enable fail on first error
   - 1>/dev/null make build_python  # Python compilation outputs a lot of logs
-  - make generate_gdnative_cffidefs
-  - make generate_cffi_bindings
+  - 1>/dev/null scons -C godot platform=$GODOT_TARGET $GODOT_EXTRA_BUILD_OPTS CXX=g++-5 CC=gcc-5
   - if [[ "$CXX" == "clang++" ]]; then sh tools/clang-format-travis-check.sh; fi
-  - if [[ "$CXX" == "g++" ]]; then make pythonscript; fi
-  - if [[ "$CXX" == "clang++" ]]; then make pythonscript; fi
-  # Given we cannot run godot in headless mode, no need to compile it...
-  # - if [[ "$CXX" == "g++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS CXX=g++-5 CC=gcc-5"; fi
-  # - if [[ "$CXX" == "clang++" ]]; then make compile OPTS="platform=$GODOT_TARGET $BUILD_EXTRA_OPTS use_llvm=yes"; fi
+  # Finally compile pythonscript
+  - scons CC=$CC backend_path=pythonscript/cpython/build build
 # Tests need x11 server with opengl3 or compile godot with platform=server (both not working so far...)
   # - LIBGL_ALWAYS_SOFTWARE=1 make test DEBUG=valgrind EXTRA_OPTS=$TEST_EXTRA_OPTS
   - set +e
