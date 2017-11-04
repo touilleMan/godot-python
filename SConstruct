@@ -16,7 +16,9 @@ vars.Add('gdnative_include_dir', "Path to GDnative include directory",
          './godot/modules/gdnative/include')
 vars.Add('gdnative_wrapper_lib', "Path to GDnative wrapper library",
          './godot/bin/libgdnative_wrapper_code.*.a')
-vars.Add(EnumVariable('backend', "Python interpreter", 'cpython', allowed_values=('cpython', 'pypy')))
+vars.Add(EnumVariable('backend', "Python interpreter to embed", 'cpython',
+         allowed_values=('cpython', 'pypy')))
+vars.Add('backend_path', "Path to Python interpreter to embed", 'cpython')
 vars.Add('PYTHON', "Python executable to use for scripts (a virtualenv will be"
                    " created with it in `tools/venv`)", 'python3')
 vars.Add("CC", "C compiler")
@@ -25,16 +27,6 @@ vars.Add("LINKFLAGS", "Custom flags for the linker")
 
 env = Environment(variables=vars)
 Help(vars.GenerateHelpText(env))
-
-
-### Build dir ###
-
-
-build_dir_name = 'build-%s' % env['backend']
-if env['dev_dyn']:
-    build_dir_name += '-dev_dyn'
-build_dir_name += '-%s' % env['bits']
-build_dir = Dir(build_dir_name)
 
 
 ### Save my eyes plz ###
@@ -67,21 +59,33 @@ env.Append(LIBS=gdnative_wrapper_lib)
 ### Python backend ###
 
 
+try:
+    backend_dir = env.Dir(glob.glob(env['backend_path'])[0])
+except IndexError:
+    raise UserError("Invalid backend_path var `%s`,  must point to "
+                    "a Python build directory" % env['backend_path'])
+
+
 if env['backend'] == 'cpython':
+    # Retrieve path&file whose name depends on CPython version number
+    orig_libpython_path = '%s/lib/libpython*.so.*' % backend_dir
     try:
-        python_lib = env.File(glob.glob('pythonscript/cpython/libpython*.so.*')[0])
+        libpython = env.File(glob.glob(orig_libpython_path)[0])
     except IndexError:
-        raise UserError("Cannot find `%s/pythonscript/cpython/libpython*.so.*`, has CPython been compiled ?" % os.getcwd())
-    python_lib = env.Command('%s/libpython.so' % build_dir, python_lib, Copy("$TARGET", "$SOURCE"))
-    env.Append(CFLAGS='-I ' + env.Dir('pythonscript/cpython/').path)
-    env.Append(CFLAGS='-I ' + env.Dir('pythonscript/cpython/Include').path)
+        raise UserError("Cannot find `%s`, has CPython been compiled ?" % orig_libpython_path)
+    orig_python_include_path = '%s/include/python*/' % backend_dir
+    try:
+        python_include = env.Dir(glob.glob(orig_python_include_path)[0])
+    except IndexError:
+        raise UserError("Cannot find `%s`, has CPython been compiled ?" % orig_python_include_path)
+    env.Append(CFLAGS='-I %s' % python_include)
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
 else:  # pypy
     try:
-        python_lib = env.File('pythonscript/pypy/bin/libpypy3-c.so')
+        libpython = env.File('pythonscript/pypy/bin/libpypy3-c.so')
     except IndexError:
         raise UserError("Cannot find `%s/pythonscript/pypy/bin/libpypy3-c.so`." % os.getcwd())
-    ptyhon_lib = env.Command('%s/libpypy-c.so' % build_dir, python_lib, Copy("$TARGET", "$SOURCE"))
+    ptyhon_lib = env.Command('%s/libpypy-c.so' % build_dir, libpython, Copy("$TARGET", "$SOURCE"))
     env.Append(CFLAGS='-I ' + env.Dir('pythonscript/pypy/include').path)
     env.Append(CFLAGS='-DBACKEND_PYPY')
 
@@ -127,16 +131,25 @@ env.Append(CFLAGS='-pthread -DDEBUG=1 -fwrapv -Wall '
 
 # libpythonX.Ym.so.1.0 will be in the same directory as the godot binary,
 # hence we need to inform the binary to look there.
-env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN'"])
+env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
 
 
 sources = [
     "pythonscript/pythonscript.c",
     pythonscriptcffi_gen,
 ]
-env.Append(LIBS=[python_lib, 'util'])
-env.Append(LIBPATH='godot/bin/')
-env.SharedLibrary('%s/pythonscript' % build_dir, sources)
-
+env.Append(LIBS=[libpython, 'util'])
+pythonscript, = env.SharedLibrary('pythonscript', sources)
+env.Default(pythonscript)
 
 ### Generate build dir ###
+
+build_dir_name = 'build-%s' % env['backend']
+if env['dev_dyn']:
+    build_dir_name += '-dev_dyn'
+build_dir_name += '-%s' % env['bits']
+build = env.Command(build_dir_name, [pythonscript, backend_dir], [
+    Copy("${TARGET}", backend_dir),
+    Copy("${TARGET}/${SOURCES[0].name}", "${SOURCES[0]}")
+])
+env.Alias('build', build)
