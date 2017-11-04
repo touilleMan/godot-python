@@ -98,8 +98,8 @@ env.Append(CFLAGS='-I %s' % python_include)
 
 venv_dir = Dir('tools/venv')
 env.Command(venv_dir, None,
-    "${PYTHON} -m virtualenv ${TARGET} &&" +
-    " . ${TARGET}/bin/activate &&" +
+    "${PYTHON} -m virtualenv ${TARGET} && " +
+    ". ${TARGET}/bin/activate && " +
     "python -m pip install pycparser>=2.18 cffi>=1.11.2")
 
 
@@ -107,8 +107,8 @@ env.Command(venv_dir, None,
 
 
 cdef_gen = env.Command('pythonscript/cffi_bindings/cdef.gen.h', (venv_dir, gdnative_include_dir),
-    ". ${SOURCES[0]}/bin/activate &&" +
-    " python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits}")
+    ". ${SOURCES[0]}/bin/activate && " +
+    "python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits}")
 env.Append(HEADER=cdef_gen)
 
 
@@ -118,7 +118,7 @@ python_inc_srcs = Glob('pythonscript/cffi_bindings/*.inc.py')
 (pythonscriptcffi_gen, ) = env.Command(
     'pythonscript/cffi_bindings/pythonscriptcffi.gen.c',
     [venv_dir] + cdef_gen + python_inc_srcs,
-    ". ${SOURCES[0]}/bin/activate &&" +
+    ". ${SOURCES[0]}/bin/activate && " +
     "python ./pythonscript/cffi_bindings/generate.py --cdef=${SOURCES[1]} --output=${TARGET}" +
         (" --dev-dyn" if env['dev_dyn'] else "")
 )
