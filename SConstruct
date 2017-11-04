@@ -100,8 +100,7 @@ venv_dir = Dir('tools/venv')
 env.Command(venv_dir, None,
     "${PYTHON} -m virtualenv ${TARGET} &&" +
     " . ${TARGET}/bin/activate &&" +
-    "python -m pip install --no-binary pycparser &&" +
-    "python -m pip install cffi")
+    "python -m pip install pycparser>=2.18 cffi>=1.11.2 &&")
 
 
 ### Generate cdef and cffi C source ###
@@ -147,8 +146,13 @@ sources = [
     "pythonscript/pythonscript.c",
     pythonscriptcffi_gen,
 ]
-env.Append(LIBPATH=libpython.dir.path)
-env.Append(LIBS=[libpython.name, 'util'])
+# Dunno with, libcpython wants to be provided as `<path>/libcpython.so.xxx`
+# and libpypy-c wants `-L<path> -lpypy-c.so.xxx`...
+if env['backend'] == 'cpython':
+    env.Append(LIBS=[libpython, 'util'])
+else:  # pypy
+    env.Append(LIBPATH=libpython.dir.path)
+    env.Append(LIBS=[libpython.name, 'util'])
 pythonscript, = env.SharedLibrary('pythonscript', sources)
 env.Default(pythonscript)
 
