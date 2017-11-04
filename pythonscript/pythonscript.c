@@ -60,17 +60,18 @@ static godot_pluginscript_language_desc desc;
 void godot_gdnative_init(godot_gdnative_init_options *options) {
 	GDNATIVE_API_INIT(options);
 
-	godot_string msg;
-	godot_string_new_data(&msg, "Hello world from Pythonscript !", -1);
-	godot_print(&msg);
-
 #ifdef BACKEND_CPYTHON
 	// Make sure the shared library has all it symbols loaded
 	// (strange bug with libpython3.6 otherwise...)
-	const char *libpath = "/home/emmanuel/projects/godot_test_gdnative/pythonscript/libpython3.6m.so.1.0";
-	void *lib = dlopen(libpath, RTLD_NOW | RTLD_GLOBAL);
+	dlopen(godot_string_c_str(options->active_library_path), RTLD_NOW | RTLD_GLOBAL);
 	const char *err = dlerror();
-	// dlopen(godot_string_c_str(options->active_library_path), RTLD_NOW | RTLD_GLOBAL);
+	if (err) {
+		godot_string msg;
+		godot_string_new_data(&msg, err, -1);
+		godot_print(&msg);
+		godot_string_destroy(&msg);
+		return;
+	}
 
 	// Retrieve path and set pythonhome
 	static wchar_t pythonhome[256];
