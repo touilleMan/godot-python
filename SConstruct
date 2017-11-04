@@ -3,10 +3,8 @@ from __future__ import print_function
 import os, glob
 from SCons.Errors import UserError
 
-from tools.generate_gdnative_cffidefs import generate_cdef
 
-
-EnsureSConsVersion(2, 4)
+EnsureSConsVersion(2, 3)
 
 vars = Variables('custom.py', ARGUMENTS)
 vars.Add(EnumVariable('bits', "Target platform bits", '64', allowed_values=('64', '32')))
@@ -78,23 +76,32 @@ if env['backend'] == 'cpython':
         python_include = env.Dir(glob.glob(orig_python_include_path)[0])
     except IndexError:
         raise UserError("Cannot find `%s`, has CPython been compiled ?" % orig_python_include_path)
-    env.Append(CFLAGS='-I %s' % python_include)
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
 else:  # pypy
+    orig_libpython_path = '%s/bin/libpypy3-c.so' % backend_dir
     try:
-        libpython = env.File('pythonscript/pypy/bin/libpypy3-c.so')
+        libpython = env.File(glob.glob(orig_libpython_path)[0])
     except IndexError:
-        raise UserError("Cannot find `%s/pythonscript/pypy/bin/libpypy3-c.so`." % os.getcwd())
-    ptyhon_lib = env.Command('%s/libpypy-c.so' % build_dir, libpython, Copy("$TARGET", "$SOURCE"))
-    env.Append(CFLAGS='-I ' + env.Dir('pythonscript/pypy/include').path)
+        raise UserError("Cannot find `%s`, has Pypy been compiled ?" % orig_libpython_path)
+    orig_python_include_path = '%s/include/' % backend_dir
+    try:
+        python_include = env.Dir(glob.glob(orig_python_include_path)[0])
+    except IndexError:
+        raise UserError("Cannot find `%s`, has Pypy been compiled ?" % orig_python_include_path)
     env.Append(CFLAGS='-DBACKEND_PYPY')
+
+env.Append(CFLAGS='-I %s' % python_include)
 
 
 ### Build venv with CFFI for python scripts ###
 
 
 venv_dir = Dir('tools/venv')
-env.Command(venv_dir, None, "${PYTHON} -m virtualenv ${TARGET} && . ${TARGET}/bin/activate && python -m pip install cffi")
+env.Command(venv_dir, None,
+    "${PYTHON} -m virtualenv ${TARGET} &&" +
+    " . ${TARGET}/bin/activate &&" +
+    "python -m pip install --no-binary pycparser &&" +
+    "python -m pip install cffi")
 
 
 ### Generate cdef and cffi C source ###
@@ -129,20 +136,25 @@ env.Append(CFLAGS='-pthread -DDEBUG=1 -fwrapv -Wall '
     '-Bsymbolic-functions -Wformat -Werror=format-security'.split())
 
 
-# libpythonX.Ym.so.1.0 will be in the same directory as the godot binary,
-# hence we need to inform the binary to look there.
-env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
-
+if env['backend'] == 'cpython':
+    # libpythonX.Ym.so.1.0 will be in the same directory as the godot binary,
+    # hence we need to inform the binary to look there.
+    env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
+else:  # pypy
+    env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/bin'"])
 
 sources = [
     "pythonscript/pythonscript.c",
     pythonscriptcffi_gen,
 ]
-env.Append(LIBS=[libpython, 'util'])
+env.Append(LIBPATH=libpython.dir.path)
+env.Append(LIBS=[libpython.name, 'util'])
 pythonscript, = env.SharedLibrary('pythonscript', sources)
 env.Default(pythonscript)
 
+
 ### Generate build dir ###
+
 
 build_dir_name = 'build-%s' % env['backend']
 if env['dev_dyn']:

@@ -6,6 +6,8 @@ compiler:
   - gcc
   - clang
 
+python: '3.6'
+
 env:
   global:
     - LLVM_VERSION=3.8.0
@@ -46,24 +48,28 @@ addons:
       # Need gcc > 4.6 for -std=c++11
       - gcc-5
       - g++-5
-#      - clang-3.9
       - python3
+      - python3-pip
+#      - clang-3.9
       - valgrind
 
 before_install:
+  - pip3 install virtualenv --user
   - if [[ "$CXX" == "clang++" ]]; then wget http://llvm.org/releases/$LLVM_VERSION/clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-14.04.tar.xz -O $LLVM_ARCHIVE_PATH; fi
   - if [[ "$CXX" == "clang++" ]]; then mkdir $HOME/clang+llvm; fi
   - if [[ "$CXX" == "clang++" ]]; then tar xf $LLVM_ARCHIVE_PATH -C $HOME/clang+llvm --strip-components 1; fi
   - if [[ "$CXX" == "clang++" ]]; then export PATH=$HOME/clang+llvm/bin:$PATH; fi
   - if [[ "$CXX" == "clang++" ]]; then clang --version; fi
+# Needed because scons doesn't inherit the customized $PATH env
+  - if [[ "$CXX" == "clang++" ]]; then export CC=$HOME/clang+llvm/bin/clang; fi
+  - if [[ "$CXX" == "g++" ]]; then export CC=gcc-5; fi
+  - $CC --version
+  - scons --version
 
 before_script:
   # Cannot use this with commit id
   - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 $GODOT_REPO
-  # - git clone --recursive $GODOT_REPO
-# Dunno why but .gitignore is modified by something...
-  - git --git-dir=godot/.git reset --hard
-  - git --git-dir=godot/.git checkout $GODOT_TAG
+  # - git --git-dir=godot/.git --work-tree=godot/ checkout $GODOT_TAG
   - git --git-dir=godot/.git rev-parse HEAD
 # Start X11 server
   - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- $XVFB_OPTS"
