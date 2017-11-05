@@ -71,17 +71,21 @@ before_script:
   - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 $GODOT_REPO
   # - git --git-dir=godot/.git --work-tree=godot/ checkout $GODOT_TAG
   - git --git-dir=godot/.git rev-parse HEAD
+  # Fetch pypy
+  - wget https://bitbucket.org/squeaky/portable-pypy/downloads/pypy3.5-5.9-beta-linux_x86_64-portable.tar.bz2
+  - tar xf pypy3.5-5.9-beta-linux_x86_64-portable.tar.bz2
 # Start X11 server
   - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- $XVFB_OPTS"
   - sleep 3 # give xvfb some time to start
 
 script:
   - set -e  # Enable fail on first error
-  - 1>/dev/null make build_python  # Python compilation outputs a lot of logs
+  # - 1>/dev/null make build_python  # Python compilation outputs a lot of logs
   - 1>/dev/null scons -C godot platform=$GODOT_TARGET $GODOT_EXTRA_BUILD_OPTS CXX=g++-5 CC=gcc-5
   - if [[ "$CXX" == "clang++" ]]; then sh tools/clang-format-travis-check.sh; fi
   # Finally compile pythonscript
-  - scons CC=$CC backend_path=pythonscript/cpython/build build
+  # - scons CC=$CC backend_path=pythonscript/cpython/build build
+  - scons CC=$CC backend=pypy backend_path=pypy3.5-5.9-beta-linux_x86_64-portable build
 # Tests need x11 server with opengl3 or compile godot with platform=server (both not working so far...)
   # - LIBGL_ALWAYS_SOFTWARE=1 make test DEBUG=valgrind EXTRA_OPTS=$TEST_EXTRA_OPTS
   - set +e
