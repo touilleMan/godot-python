@@ -1,0 +1,10 @@
+[gd_resource type="NativeScript" load_steps=2 format=2]
+
+[ext_resource path="res://pythonscript.tres" type="GDNativeLibrary" id=1]
+
+[resource]
+
+resource_name = "pythonscript"
+class_name = "Pythonscript"
+library = ExtResource( 1 )
+

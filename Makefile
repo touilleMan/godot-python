@@ -1,31 +1,13 @@
-.PHONY: all clean test build_godot build_python
+.PHONY: all build clean test build_python
 
 
 BASEDIR = $(shell pwd)
 GODOT_DIR ?= $(BASEDIR)/godot
+BACKEND ?= cpython
+EXTRA_OPTS ?=
 
-PYTHONSCRIPT_BACKEND ?= cpython
-
-ifeq ($(PYTHONSCRIPT_BACKEND),cpython)
-PYTHON_DIR = $(BASEDIR)/pythonscript/cpython
-PYTHON_LIB = $(PYTHON_DIR)/libpython*.so.1.0
-BUILD_PYTHON_PATH = $(PYTHON_DIR)/build
-BUILD_PYTHON_OPTS =
-PYTHON = LD_LIBRARY_PATH=$(BUILD_PYTHON_PATH)/lib $(BUILD_PYTHON_PATH)/bin/python3
-PIP = LD_LIBRARY_PATH=$(BUILD_PYTHON_PATH)/lib $(BUILD_PYTHON_PATH)/bin/pip3
-else
-ifeq ($(PYTHONSCRIPT_BACKEND),pypy)
-PYTHON_DIR = $(BASEDIR)/pythonscript/pypy
-PYTHON_LIB = $(PYTHON_DIR)/bin/libpypy3-c.so
-PYTHON = $(PYTHON_DIR)/bin/pypy3
-PIP =
-else
-$(error PYTHONSCRIPT_BACKEND should be `cpython` (default) or `pypy`)
-endif
-endif
-
-GDNATIVE_CFFIDEFS = $(BASEDIR)/pythonscript/cffi_bindings/cdef.gen.h
-GDNATIVE_CFFI_BINDINGS = $(BASEDIR)/pythonscript/cffi_bindings/pythonscriptcffi.gen.cpp
+SCONS_BIN ?= scons
+SCONS_CMD = $(SCONS_BIN) backend=$(BACKEND) backend_path=$(BACKEND_DIR) $(EXTRA_OPTS)
 
 # Add `LIBGL_ALWAYS_SOFTWARE=1` if you computer sucks with opengl3...
 GODOT_BIN ?= `ls $(GODOT_DIR)/bin/godot* | head -n 1`
@@ -34,30 +16,61 @@ GODOT_CMD = $(GODOT_BIN) $(EXTRA_OPTS)
 else
 DEBUG ?= lldb
 GODOT_CMD = $(DEBUG) $(GODOT_BIN) $(EXTRA_OPTS)
-BUILD_PYTHON_OPTS += --with-pydebug
 endif
 
 
-all:
-	scons backend_path=$(BUILD_PYTHON_PATH)
+all: build
 
 
-build:
-	scons backend_path=$(BUILD_PYTHON_PATH) build
+ifeq ($(BACKEND),cpython)
 
+BUILD_OPTS ?=
+ifdef DEBUG
+BUILD_OPTS += --with-pydebug
+endif
 
-clean:
-	scons backend_path=$(BUILD_PYTHON_PATH) -c
-
-
-test:
-	cd tests/bindings && $(GODOT_CMD)
-
+PYTHON = LD_LIBRARY_PATH=$(BACKEND_DIR)/lib $(BACKEND_DIR)/bin/python3
+PIP = LD_LIBRARY_PATH=$(BACKEND_DIR)/lib $(BACKEND_DIR)/bin/pip3
+PYTHON_SRC_DIR ?= $(BASEDIR)/$(BACKEND)
+BACKEND_DIR ?= $(PYTHON_SRC_DIR)/build
 
 build_python:
 	@printf '\033[0;32mRemember to do `sudo apt-get build-dep python3.6` to get optional libraries support.\033[0m\n'
-	cd $(PYTHON_DIR) && ./configure --enable-shared --prefix=$(BUILD_PYTHON_PATH) $(BUILD_PYTHON_OPTS)
-	cd $(PYTHON_DIR) && make -j4
-	cd $(PYTHON_DIR) && make install
+	cd $(PYTHON_SRC_DIR) && ./configure --enable-shared --prefix=$(BACKEND_DIR) $(BUILD_OPTS)
+	cd $(PYTHON_SRC_DIR) && make -j4
+	cd $(PYTHON_SRC_DIR) && make install
 	# Install cffi is a pita...
 	$(PIP) install cffi
+else
+ifeq ($(BACKEND),pypy)
+BACKEND_DIR ?= $(BASEDIR)/$(BACKEND)
+
+build_python:
+	@printf '\033[0;31mOnly supported for CPython backend.\033[0m\n'
+	exit 1
+else
+$(error PYTHONSCRIPT_BACKEND should be `cpython` (default) or `pypy`)
+endif
+endif
+
+
+build:
+	$(SCONS_CMD) build
+
+
+clean:
+	$(SCONS_CMD) -c
+
+
+veryclean:
+	rm -rf $(BASEDIR)/build*
+
+
+test:
+	$(SCONS_CMD) install-build-symlink
+	cd tests/bindings && $(GODOT_CMD)
+
+
+example:
+	$(SCONS_CMD) install-build-symlink
+	cd examples/pong && $(GODOT_CMD)

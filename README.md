@@ -17,64 +17,64 @@ Overview
 The goal of this project is to provide Python language as scripting module for
 [Godot](http://godotengine.org) game engine.
 
-Not everything is implemented so far, however there is enough to start
-playing/reporting issues ;-)
-
 
 Quickstart
 ----------
 
-0 - Configure the repo
-Beforehand, the repo has CPython as git submodule, don't forget to fetch it:
+0 - Build Godot
+This project needs Godot 3 and it GDnative wrapper static library system.
+Right now this wrapper library is not provided with Godot 3 alpha builds so we
+must compile Godot ourself with the `gdnative_wrapper=yes` option:
+
 ```
-$ git clone --recursive https://github.com/touilleMan/godot-python.git
-# Or if you have already cloned the repo
-$ git submodule init && git submodule update
+$ scons platform=x11 gdnative_wrapper=yes target=debug tools=no
 ```
 
-The current repo must have a `godot` directory (can be a symbolic link) pointing
-on the godot's sources, itself having the `pythonscript` directory
-in it `modules/pythonscript`.
+1 - Choose a Python interpreter
+The project is compatible with both [CPython](https://github.com/python/cpython)
+(default Python implementation) and [Pypy](https://pypy.org/) (alternative
+high performance implementation with a JIT).
+
+For CPython you need to build it yourself:
 ```
-$ make setup GODOT_TARGET_DIR='/path/to/godot_repo'
+$ git clone git@github.com:python/cpython.git cpython-3.6.3
+$ git checkout v3.6.3  # optional, but better use a release version that master tip
+```
+To simplify compilation of cpython you can use the Makefile rule provided:
+```
+$ make build_python PYTHON_SRC_DIR=./cpython-3.6.3
 ```
 
-Basically we should endup with those links:
+For Pypy, things are simpler because you can get precompiled binary. We
+recomand the [portable binaries](https://github.com/squeaky-pl/portable-pypy#portable-pypy-distribution-for-linux)
 ```
-/godot # Godot source repo
-/godot-python # *this* repo
-/godot-python/godot -> /godot
-/godot/modules/pythonscript -> /godot-python/pythonscript
-```
-
-1 - Generate `cdef.gen.h` (Godot's GDnative API header cooked for CFFI)
-```
-$ make generate_gdnative_cffidefs
-```
-Note this step is only useful if GDnative API has changed (should not
-happen really often when Godot 3.0 will be released).
-
-2 - Use CFFI to generate `pythonscriptcffi.cpp`
-```
-$ make generate_cffi_bindings
-```
-Or if you want to be able to modify *.inc.py files without having to recompile
-everytime (useful for dev):
-```
-$ make generate_dev_dyn_cffi_bindings
+$ wget https://bitbucket.org/squeaky/portable-pypy/downloads/pypy3.5-5.9-beta-linux_x86_64-portable.tar.bz2
+$ tar xf pypy3.5-5.9-beta-linux_x86_64-portable.tar.bz2
 ```
 
-4 - Compile CPython & Pythonscript module
-```
-$ make compile
-```
-By default the command uses clang as compiler, have a look at the `Makefile` if
-you want to switch to gcc.
+2 - Compilation
+We use SCons with Python 3 for this task.
 
-5 - Run tests & example
+For CPython:
 ```
-$ make tests
-$ make example
+$ make build BACKEND_DIR=cpython-3.6.3/build
+```
+
+or for pypy:
+```
+$ make build BACKEND_DIR=pypy3.5-5.9-beta-linux_x86_64-portable/ BACKEND=pypy
+```
+
+Note if you want to be able to modify *.inc.py files without having to recompile
+everytime (useful for dev) you can pass the `dev_dyn=true` option to scons.
+```
+$ make build BACKEND_DIR=cpython-3.6.3/build EXTRA_OPTS='dev_dyn=true'
+```
+
+3 - Run tests & example
+```
+$ make build BACKEND_DIR=cpython-3.6.3/build tests
+$ make build BACKEND_DIR=cpython-3.6.3/build example
 ```
 
 
@@ -147,20 +147,13 @@ it own drawback (basically API complexity and compatibility for Micropython,
 C++ craziness and output size for Pybind11) so they just couldn't compete with
 CFFI ;-)
 
-Godot is a C++ game engine, however CFFI only support C API, hence Pythonscript
-module use two interfaces:
-- Godot's default C++ API to expose Pythonscript as a script language
-- [Godot's GDnative](https://godotengine.org/article/dlscript-here) for binding Godot's
-  Classes (Node, Vector2 etc.)
-
-The reason behind GDnative is C++ is a terrible language when it comes to redistribute
-a shared library (unlike in C, output is compiler dependant).
-The long term goal for this project is to only depend on GDnative, this way we
-will be able to distribute Pythonscript as a shared library ready to be loaded
-by the official Godot build !
+CFFI connects with Godot C APIs:
+- [GDnative](https://godotengine.org/article/dlscript-here) for calling Godot functions
+- Pluginscript for registering callback function for Godot
+CFFI connects to Godot C
 
 Map of the code:
-- `py_*.[cpp|h]`: Godot's C++ language classes implementations (i.g. Script, ScriptInstance).
+- `pythonscript.[c|h]`: Godot Pluginscript entry point.
 - `cffi_bindings/api.h`&`cffi_bindings/api_struct.h`: Exposed C api use in the language classes implementations.
 - `cffi_bindings/*.inc.py`: Python code that will be verbatim included in the pythonscript module.
 - `cffi_bindings/builtin_*.inc.py`: Python binding for Godot builtins

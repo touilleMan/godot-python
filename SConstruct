@@ -163,9 +163,20 @@ env.Default(pythonscript)
 build_dir_name = 'build-%s' % env['backend']
 if env['dev_dyn']:
     build_dir_name += '-dev_dyn'
-build_dir_name += '-%s' % env['bits']
-build = env.Command(build_dir_name, [pythonscript, backend_dir], [
-    Copy("${TARGET}", backend_dir),
-    Copy("${TARGET}/${SOURCES[0].name}", "${SOURCES[0]}")
-])
-env.Alias('build', build)
+build_dir_name += '-linux%s' % env['bits']
+
+env.Install(build_dir_name, pythonscript)
+if env['backend'] == 'cpython':
+    env.Install(build_dir_name, '%s/include' % backend_dir)
+    env.Install(build_dir_name, '%s/lib' % backend_dir)
+else:  # pypy
+    env.Install(build_dir_name, '%s/include' % backend_dir)
+    env.Install(build_dir_name, '%s/lib' % backend_dir)
+    env.Install(build_dir_name, '%s/lib_pypy' % backend_dir)
+    env.Install(build_dir_name, '%s/lib-python' % backend_dir)
+    env.Install('%s/lib' % build_dir_name, '%s/bin/libpypy3-c.so' % backend_dir)
+env.Alias('build', build_dir_name)
+
+
+env.Alias('install-build-symlink',
+          env.Command('build-main', build_dir_name, "ln -s ${SOURCE} ${TARGET}"))

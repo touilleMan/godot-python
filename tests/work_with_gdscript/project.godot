@@ -4,3 +4,7 @@ config_version=3
 
 config/name="test:work_with_gdscript"
 run/main_scene="res://main.tscn"
+
+[gdnative]
+
+singletons=[ "res://pythonscript.tres" ]
