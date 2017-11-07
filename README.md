@@ -22,6 +22,7 @@ Quickstart
 ----------
 
 0 - Build Godot
+
 This project needs Godot 3 and it GDnative wrapper static library system.
 Right now this wrapper library is not provided with Godot 3 alpha builds so we
 must compile Godot ourself with the `gdnative_wrapper=yes` option:
@@ -31,6 +32,7 @@ $ scons platform=x11 gdnative_wrapper=yes target=debug tools=no
 ```
 
 1 - Choose a Python interpreter
+
 The project is compatible with both [CPython](https://github.com/python/cpython)
 (default Python implementation) and [Pypy](https://pypy.org/) (alternative
 high performance implementation with a JIT).
@@ -53,6 +55,7 @@ $ tar xf pypy3.5-5.9-beta-linux_x86_64-portable.tar.bz2
 ```
 
 2 - Compilation
+
 We use SCons with Python 3 for this task.
 
 For CPython:
@@ -72,6 +75,7 @@ $ make build BACKEND_DIR=cpython-3.6.3/build EXTRA_OPTS='dev_dyn=true'
 ```
 
 3 - Run tests & example
+
 ```
 $ make build BACKEND_DIR=cpython-3.6.3/build tests
 $ make build BACKEND_DIR=cpython-3.6.3/build example
