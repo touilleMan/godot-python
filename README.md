@@ -77,8 +77,8 @@ $ make build BACKEND_DIR=cpython-3.6.3/build EXTRA_OPTS='dev_dyn=true'
 3 - Run tests & example
 
 ```
-$ make build BACKEND_DIR=cpython-3.6.3/build tests
-$ make build BACKEND_DIR=cpython-3.6.3/build example
+$ make BACKEND_DIR=cpython-3.6.3/build tests
+$ make BACKEND_DIR=cpython-3.6.3/build example
 ```
 
 
