@@ -63,9 +63,9 @@ def variant_to_pyobj(p_gdvar):
     elif gdtype == lib.GODOT_VARIANT_TYPE_QUAT:
         raw = lib.godot_variant_as_quat(p_gdvar)
         return Quat.build_from_gdobj(raw)
-    elif gdtype == lib.GODOT_VARIANT_TYPE_RECT3:
-        raw = lib.godot_variant_as_rect3(p_gdvar)
-        return Rect3.build_from_gdobj(raw)
+    elif gdtype == lib.GODOT_VARIANT_TYPE_AABB:
+        raw = lib.godot_variant_as_aabb(p_gdvar)
+        return AABB.build_from_gdobj(raw)
     elif gdtype == lib.GODOT_VARIANT_TYPE_BASIS:
         raw = lib.godot_variant_as_basis(p_gdvar)
         return Basis.build_from_gdobj(raw)
@@ -151,8 +151,8 @@ def pyobj_to_variant(pyobj, p_gdvar=None):
                 lib.godot_variant_new_plane(p_gdvar, pyobj._gd_ptr)
             elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_QUAT:
                 lib.godot_variant_new_quat(p_gdvar, pyobj._gd_ptr)
-            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_RECT3:
-                lib.godot_variant_new_rect3(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_AABB:
+                lib.godot_variant_new_aabb(p_gdvar, pyobj._gd_ptr)
             elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_BASIS:
                 lib.godot_variant_new_basis(p_gdvar, pyobj._gd_ptr)
             elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_TRANSFORM:
@@ -219,8 +219,8 @@ def new_uninitialized_gdobj(gdtype):
         return godot_plane_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_QUAT:
         return godot_quat_alloc()
-    elif gdtype == lib.GODOT_VARIANT_TYPE_RECT3:
-        return godot_rect3_alloc()
+    elif gdtype == lib.GODOT_VARIANT_TYPE_AABB:
+        return godot_aabb_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_BASIS:
         return godot_basis_alloc()
     elif gdtype == lib.GODOT_VARIANT_TYPE_TRANSFORM:
@@ -282,8 +282,8 @@ def gdobj_to_pyobj(gdtype, p_gdobj, steal_gdobj=True):
         return Plane.build_from_gdobj(p_gdobj)
     elif gdtype == lib.GODOT_VARIANT_TYPE_QUAT:
         return Quat.build_from_gdobj(p_gdobj)
-    elif gdtype == lib.GODOT_VARIANT_TYPE_RECT3:
-        return Rect3.build_from_gdobj(p_gdobj)
+    elif gdtype == lib.GODOT_VARIANT_TYPE_AABB:
+        return AABB.build_from_gdobj(p_gdobj)
     elif gdtype == lib.GODOT_VARIANT_TYPE_BASIS:
         return Basis.build_from_gdobj(p_gdobj)
     elif gdtype == lib.GODOT_VARIANT_TYPE_TRANSFORM:
@@ -359,7 +359,7 @@ GD_PY_TYPES = (
     (lib.GODOT_VARIANT_TYPE_TRANSFORM2D, Transform2D),
     (lib.GODOT_VARIANT_TYPE_PLANE, Plane),
     (lib.GODOT_VARIANT_TYPE_QUAT, Quat),
-    (lib.GODOT_VARIANT_TYPE_RECT3, Rect3),
+    (lib.GODOT_VARIANT_TYPE_AABB, AABB),
     (lib.GODOT_VARIANT_TYPE_BASIS, Basis),
     (lib.GODOT_VARIANT_TYPE_TRANSFORM, Transform),
     (lib.GODOT_VARIANT_TYPE_COLOR, Color),
@@ -405,7 +405,7 @@ def convert_arg(gdtype, argname, arg, to_variant=False):
         lib.GODOT_VARIANT_TYPE_TRANSFORM2D: Transform2D,
         lib.GODOT_VARIANT_TYPE_PLANE: Plane,
         lib.GODOT_VARIANT_TYPE_QUAT: Quat,
-        lib.GODOT_VARIANT_TYPE_RECT3: Rect3,
+        lib.GODOT_VARIANT_TYPE_AABB: AABB,
         lib.GODOT_VARIANT_TYPE_BASIS: Basis,
         lib.GODOT_VARIANT_TYPE_TRANSFORM: Transform,
         lib.GODOT_VARIANT_TYPE_COLOR: Color,

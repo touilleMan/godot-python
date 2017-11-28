@@ -1,0 +1,17 @@
+[general]
+
+singleton=true
+load_once=true
+symbol_prefix="godot_"
+
+[entry]
+
+X11.64="res://pythonscript/libpythonscript.so"
+Windows.64="res://pythonscript/pythonscript.dll"
+OSX.64="res://pythonscript/libpythonscript.dylib"
+
+[dependencies]
+
+X11.64=[]
+Windows=[]
+OSX.64=[]

@@ -342,7 +342,7 @@ def get_builtins():
         'Transform2D': Transform2D,
         'Plane': Plane,
         'Quat': Quat,
-        'Rect3': Rect3,
+        'AABB': AABB,
         'Basis': Basis,
         'Transform': Transform,
         'Color': Color,

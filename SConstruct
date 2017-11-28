@@ -169,6 +169,7 @@ env.Install(build_dir_name, pythonscript)
 if env['backend'] == 'cpython':
     env.Install(build_dir_name, '%s/include' % backend_dir)
     env.Install(build_dir_name, '%s/lib' % backend_dir)
+    # CPython standard library can be compressed to save *a lot* of space
 else:  # pypy
     env.Install(build_dir_name, '%s/include' % backend_dir)
     env.Install(build_dir_name, '%s/lib' % backend_dir)
