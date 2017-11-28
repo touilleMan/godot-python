@@ -14,7 +14,7 @@ Python support for Godot
 Overview
 --------
 
-The goal of this project is to provide Python language as scripting module for
+The goal of this project is to provide Python language support as a scripting module for
 [Godot](http://godotengine.org) game engine.
 
 
@@ -23,7 +23,7 @@ Quickstart
 
 0 - Build Godot
 
-This project needs Godot 3 and it GDnative wrapper static library system.
+This project needs Godot 3 and the GDnative wrapper static library system.
 Right now this wrapper library is not provided with Godot 3 alpha builds so we
 must compile Godot ourself with the `gdnative_wrapper=yes` option:
 
@@ -48,7 +48,7 @@ $ make build_python PYTHON_SRC_DIR=./cpython-3.6.3
 ```
 
 For Pypy, things are simpler because you can get precompiled binary. We
-recomand the [portable binaries](https://github.com/squeaky-pl/portable-pypy#portable-pypy-distribution-for-linux)
+recommend the [portable binaries](https://github.com/squeaky-pl/portable-pypy#portable-pypy-distribution-for-linux)
 ```
 $ wget https://bitbucket.org/squeaky/portable-pypy/downloads/pypy3.5-5.9-beta-linux_x86_64-portable.tar.bz2
 $ tar xf pypy3.5-5.9-beta-linux_x86_64-portable.tar.bz2
@@ -68,7 +68,7 @@ or for pypy:
 $ make build BACKEND_DIR=pypy3.5-5.9-beta-linux_x86_64-portable/ BACKEND=pypy
 ```
 
-Note if you want to be able to modify *.inc.py files without having to recompile
+Note if you want to be able to modify `*.inc.py` files without having to recompile
 everytime (useful for dev) you can pass the `dev_dyn=true` option to scons.
 ```
 $ make build BACKEND_DIR=cpython-3.6.3/build EXTRA_OPTS='dev_dyn=true'
@@ -97,10 +97,10 @@ from godot.bindings import Node2D, Vector2
 class Player(Node2D):
 	"""
 	This is the file's main class which will be made available to Godot. This
-	class must inherit of `godot.Node` or any of it children (i.g.
+	class must inherit from `godot.Node` or any of its children (i.g.
 	`godot.KinematicBody`).
-	Obviously you can't have two `exposed` class in the same file given Godot
-	retreives the class based on the file path alone.
+	Obviously you can't have two `exposed` classes in the same file given Godot
+	retrieves the class based on the file path alone.
 	"""
 	# Exposed class can define some attributes as export(<type>) to achieve
 	# similar goal than GDSscript's `export` keyword
@@ -121,9 +121,9 @@ class Player(Node2D):
 		print("I'm saying %s" % msg)
 
 	def _ready(self):
-		# Don't confuse `__init__` with Godot's `_ready` !
+		# Don't confuse `__init__` with Godot's `_ready`!
 		self._age = 42
-		# Of course you can access property&methods defined in the parent
+		# Of course you can access property & methods defined in the parent
 		name = self.get_name()
 		print('%s position x=%s, y=%s' % (name, self.position.x, self.position.y))
 
@@ -132,7 +132,7 @@ class Player(Node2D):
 
 class Helper:
 	"""
-	Others class are considered as helper and cannot be called from outside
+	Othes classes are considered helpers and cannot be called from outside
 	Python. However they can be imported from another python module.
 	"""
 	...
@@ -146,8 +146,8 @@ Technical internals
 
 The project is built with the awesome [CFFI](https://cffi.readthedocs.io/en/latest/).
 Before that, both [Micropython](https://github.com/micropython/micropython) and
-[Pybind11](https://github.com/pybind/pybind11) has been tried, but each comes with
-it own drawback (basically API complexity and compatibility for Micropython,
+[Pybind11](https://github.com/pybind/pybind11) have been tried, but each comes with
+its own drawback (basically API complexity and compatibility for Micropython,
 C++ craziness and output size for Pybind11) so they just couldn't compete with
 CFFI ;-)
 
