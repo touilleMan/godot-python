@@ -2,12 +2,28 @@ from __future__ import print_function
 import os, glob
 from SCons.Errors import UserError
 
+
 Import('env')
+
 
 env['bits'] = '64'
 env['build_dir'] = Dir('#build/x11-64-%s' % env['backend'])
 
+
+### Godot binary (to run tests) ###
+
+
+env['godot_binary'] = File('godot.x11.opt.64')
+env.Command(env['godot_binary'], None,
+    'curl -L https://github.com/GodotBuilder/godot-builds/releases/' +
+    'download/master_20171129-1/godot.x11.opt.64 -o ${TARGET} && ' +
+    'chmod 750 ${TARGET}'
+)
+env.NoClean(env['godot_binary'])
+
+
 ### GDnative stuff ###
+
 
 env['gdnative_include_dir'] = Dir('../gdnative/include')
 env['gdnative_wrapper_lib'] = File('../gdnative/libgdnative_wrapper_code.x11.opt.64.a')
@@ -25,6 +41,7 @@ env.Append(LIBS=env['gdnative_wrapper_lib'])
 
 
 ### Python interpreter ###
+
 
 if env['backend'] == 'cpython':
     cpython_src = Dir('cpython')

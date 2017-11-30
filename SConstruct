@@ -103,3 +103,12 @@ env.Clean(install_build_symlink, 'build/main')
 env.Depends(install_build_symlink, pythonscript)
 
 env.Default(install_build_symlink)
+
+
+### Run tests ###
+
+env.Command('test', [env['godot_binary'], install_build_symlink],
+    "DISPLAY=0.0 ${SOURCE} --path tests/bindings"
+)
+env.AlwaysBuild('test')
+env.Alias('tests', 'test')
