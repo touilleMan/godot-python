@@ -12,9 +12,9 @@ environment:
   VS: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat
   PYTHON: C:\Python36-x64
   matrix:
-    - PLATFORM: windows-64
+    - TARGET_PLATFORM: windows-64
       ARCH: amd64
-      PYTHON_BACKEND: cpython
+      TARGET_BACKEND: cpython
 
 install:
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
@@ -28,7 +28,7 @@ before_build:
   - cl.exe
 
 build_script:
-  - scons platform=%PLATFORM% backend=%PYTHON_BACKEND%
+  - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND%
 
 # deploy:
 #   description: 'Godot binaries deployed by Travis CI and AppVeyor'
