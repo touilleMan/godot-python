@@ -1,0 +1,41 @@
+image: Visual Studio 2017
+
+# Skip build on normal pushes
+# skip_non_tags: true
+
+# artifacts:
+#   - path: godot\bin\*.exe
+#     name: GodotBinary
+#   - path: godot\bin\*gdnative_wrapper_code*.lib
+#     name: GodotGDNativeWrapper
+
+environment:
+  VS: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat
+  PYTHON: C:\Python36-x64
+  PLATFORM: windows-64
+  PYTHON_BACKEND: cpython
+
+install:
+  - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - pip install --egg scons  # it will fail on AppVeyor without --egg flag
+  - if defined VS call "%VS%" %ARCH%  # if defined - so we can also use mingw
+  - git submodule update --init --recursive # download submodules
+
+before_build:
+  - python --version
+  - scons --version
+  - cl.exe
+
+build_script:
+  - cd godot-python
+  - git rev-parse HEAD
+  - scons platform=%PLATFORM% backend=%PYTHON_BACKEND%
+
+# deploy:
+#   description: 'Godot binaries deployed by Travis CI and AppVeyor'
+#   provider: GitHub
+#   auth_token:
+#     secure: DYTTAkQFPIDq2YL6hPMOttlHdJ9ZL6dYdOtGFIEneO8BTYx6keJRvewsdzgP2QGA
+#   artifact: GodotBinary, GodotGDNativeWrapper
+#   on:
+#     appveyor_repo_tag: true

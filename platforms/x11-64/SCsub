@@ -53,10 +53,7 @@ if env['backend'] == 'cpython':
     cpython_build = Dir('cpython_build')
     # TODO: allow to compile cpython with `--with-pydebug` ?
     # Compile CPython and install cffi through pip
-    cpython_build_env= env.Clone()
-    cpython_build_env['CCCOMSTR'] = 'Compiling cpython'
-
-    cpython_build_env.Command(cpython_build, cpython_src,
+    env.Command(cpython_build, cpython_src,
         "cd ${SOURCE} && " +
         "echo Configuring CPython... && "
         "1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} && " +
@@ -66,7 +63,7 @@ if env['backend'] == 'cpython':
         "1>/dev/null make install && " +
         "LD_LIBRARY_PATH=${TARGET.get_abspath()}/lib ${TARGET.get_abspath()}/bin/pip3 install cffi"
     )
-    cpython_build_env.NoClean(cpython_build)
+    env.NoClean(cpython_build)
 
     env.Command(env['build_dir'], cpython_build,
         "mkdir ${TARGET} && " +
