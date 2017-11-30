@@ -21,16 +21,14 @@ install:
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - pip install --egg scons  # it will fail on AppVeyor without --egg flag
   - if defined VS call "%VS%" %ARCH%  # if defined - so we can also use mingw
-  - git submodule update --init --recursive # download submodules
 
 before_build:
+  - git rev-parse HEAD
   - python --version
   - scons --version
   - cl.exe
 
 build_script:
-  - cd godot-python
-  - git rev-parse HEAD
   - scons platform=%PLATFORM% backend=%PYTHON_BACKEND%
 
 # deploy:
