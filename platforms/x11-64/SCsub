@@ -46,7 +46,7 @@ env.Append(LIBS=env['gdnative_wrapper_lib'])
 if env['backend'] == 'cpython':
     cpython_src = Dir('cpython')
     env.Command(cpython_src, None,
-        "git clone git@github.com:python/cpython.git --depth=1 --branch=v3.6.3 --single-branch ${TARGET}"
+        "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch ${TARGET}"
     )
     env.NoClean(cpython_src)
 
