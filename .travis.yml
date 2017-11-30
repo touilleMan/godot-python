@@ -66,7 +66,7 @@ before_script:
 
 script:
   - set -e  # Enable fail on first error
-  - scons platform=x11-64 backend=$PYTHON_BACKEND
+  - scons platform=x11-64 backend=$PYTHON_BACKEND CC=$CC
 # Tests need x11 server with opengl3 or compile godot with platform=server (both not working so far...)
   # - LIBGL_ALWAYS_SOFTWARE=1 scons DEBUG=valgrind platform=x11-64 backend=$PYTHON_BACKEND test
   - set +e
