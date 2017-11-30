@@ -3,7 +3,7 @@ language: cpp
 sudo: false
 
 compiler:
-  - gcc
+#  - gcc
   - clang
 
 python: '3.6'
@@ -12,19 +12,12 @@ env:
   global:
     - LLVM_VERSION=3.8.0
     - LLVM_ARCHIVE_PATH=$HOME/clang+llvm.tar.xz
-    # Use commit instead of tag as long as 3.0 is not released
-    - GODOT_REPO=https://github.com/godotengine/godot.git
-    - GODOT_TAG=master  # I like to live dangerously ;-)
-    # Cannot use release given travis's glibc clash with -ffast-math with clang
-    # other solution is to set `-D__extern_always_inline="extern __always_inline"`
-    - GODOT_EXTRA_BUILD_OPTS="-j4 target=debug tools=no gdnative_wrapper=yes"
-    - TEST_EXTRA_OPTS=""
     - DISPLAY=":99.0"
     - AUDIODEV="null"
     - XVFB_OPTS=":99.0 -ac -screen 0 1280x1024x24 -ac +extension GLX +extension RANDR +render -noreset"
   matrix:
-    - GODOT_TARGET=x11
-    # nothing else yet...
+    - GODOT_TARGET=x11 PYTHON_BACKEND=cpython
+    - GODOT_TARGET=x11 PYTHON_BACKEND=pypy
 
 addons:
   apt:
@@ -67,25 +60,13 @@ before_install:
   - scons --version
 
 before_script:
-  # Cannot use this with commit id
-  - git clone -b $GODOT_TAG --single-branch  --recursive --depth 1 $GODOT_REPO
-  # - git --git-dir=godot/.git --work-tree=godot/ checkout $GODOT_TAG
-  - git --git-dir=godot/.git rev-parse HEAD
-  # Fetch pypy
-  - wget https://bitbucket.org/squeaky/portable-pypy/downloads/pypy3.5-5.9-beta-linux_x86_64-portable.tar.bz2
-  - tar xf pypy3.5-5.9-beta-linux_x86_64-portable.tar.bz2
 # Start X11 server
   - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- $XVFB_OPTS"
   - sleep 3 # give xvfb some time to start
 
 script:
   - set -e  # Enable fail on first error
-  # - 1>/dev/null make build_python  # Python compilation outputs a lot of logs
-  - 1>/dev/null scons -C godot platform=$GODOT_TARGET $GODOT_EXTRA_BUILD_OPTS CXX=g++-5 CC=gcc-5
-  - if [[ "$CXX" == "clang++" ]]; then sh tools/clang-format-travis-check.sh; fi
-  # Finally compile pythonscript
-  # - scons CC=$CC backend_path=pythonscript/cpython/build build
-  - scons CC=$CC backend=pypy backend_path=pypy3.5-5.9-beta-linux_x86_64-portable build
+  - scons platform=x11-64 backend=$PYTHON_BACKEND
 # Tests need x11 server with opengl3 or compile godot with platform=server (both not working so far...)
-  # - LIBGL_ALWAYS_SOFTWARE=1 make test DEBUG=valgrind EXTRA_OPTS=$TEST_EXTRA_OPTS
+  # - LIBGL_ALWAYS_SOFTWARE=1 scons DEBUG=valgrind platform=x11-64 backend=$PYTHON_BACKEND test
   - set +e
