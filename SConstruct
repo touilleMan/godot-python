@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import print_function
 import os, glob
 from SCons.Errors import UserError
@@ -13,13 +12,8 @@ vars.Add(EnumVariable('platform', "Target platform", '', allowed_values=(
 )))
 vars.Add(BoolVariable('dev_dyn', "Load at runtime *.inc.py files instead of "
                                  "embedding them (useful for dev)", False))
-vars.Add('gdnative_include_dir', "Path to GDnative include directory",
-         './vendors/godot-3.0-dev/include')
-vars.Add('gdnative_wrapper_lib', "Path to GDnative wrapper library",
-         './vendors/godot-3.0-dev/libgdnative_wrapper_code.x11.opt.debug.64.a')
 vars.Add(EnumVariable('backend', "Python interpreter to embed", 'cpython',
          allowed_values=('cpython', 'pypy')))
-vars.Add('backend_path', "Path to Python interpreter to embed", 'cpython')
 vars.Add('PYTHON', "Python executable to use for scripts (a virtualenv will be"
                    " created with it in `tools/venv`)", 'python3')
 vars.Add("CC", "C compiler")
