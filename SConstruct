@@ -7,13 +7,16 @@ from SCons.Errors import UserError
 EnsureSConsVersion(2, 3)
 
 vars = Variables('custom.py', ARGUMENTS)
-vars.Add(EnumVariable('bits', "Target platform bits", '64', allowed_values=('64', '32')))
+vars.Add(EnumVariable('platform', "Target platform", '', allowed_values=(
+    'x11-64',
+    'windows-64',
+)))
 vars.Add(BoolVariable('dev_dyn', "Load at runtime *.inc.py files instead of "
                                  "embedding them (useful for dev)", False))
 vars.Add('gdnative_include_dir', "Path to GDnative include directory",
-         './godot/modules/gdnative/include')
+         './vendors/godot-3.0-dev/include')
 vars.Add('gdnative_wrapper_lib', "Path to GDnative wrapper library",
-         './godot/bin/libgdnative_wrapper_code.*.a')
+         './vendors/godot-3.0-dev/libgdnative_wrapper_code.x11.opt.debug.64.a')
 vars.Add(EnumVariable('backend', "Python interpreter to embed", 'cpython',
          allowed_values=('cpython', 'pypy')))
 vars.Add('backend_path', "Path to Python interpreter to embed", 'cpython')
@@ -27,6 +30,13 @@ env = Environment(variables=vars)
 Help(vars.GenerateHelpText(env))
 
 
+### Plafrom-specific stuff ###
+
+
+Export('env')
+SConscript('platforms/%s/SCsub' % env['platform'])
+
+
 ### Save my eyes plz ###
 
 
@@ -36,63 +46,6 @@ if 'gcc' in env.get('CC'):
     env.Append(CCFLAGS="-fdiagnostics-color=always")
 
 
-### GDnative include/wrapper ###
-
-
-try:
-    gdnative_include_dir = env.Dir(glob.glob(env['gdnative_include_dir'])[0])
-except IndexError:
-    raise UserError("Invalid gdnative_include_dir var `%s`,  must point to "
-                    "Godot's GDnative include directory" % env['gdnative_include_dir'])
-try:
-    gdnative_wrapper_lib = env.File(glob.glob(env['gdnative_wrapper_lib'])[0])
-except IndexError:
-    raise UserError("Invalid gdnative_wrapper_lib var `%s`,  must point to"
-                    " Godot's GDnative wrapper static lib" % env['gdnative_wrapper_lib'])
-
-env.Append(CPPPATH=gdnative_include_dir)
-env.Append(LIBS=gdnative_wrapper_lib)
-
-
-### Python backend ###
-
-
-try:
-    backend_dir = env.Dir(glob.glob(env['backend_path'])[0])
-except IndexError:
-    raise UserError("Invalid backend_path var `%s`,  must point to "
-                    "a Python build directory" % env['backend_path'])
-
-
-if env['backend'] == 'cpython':
-    # Retrieve path&file whose name depends on CPython version number
-    orig_libpython_path = '%s/lib/libpython*.so.*' % backend_dir
-    try:
-        libpython = env.File(glob.glob(orig_libpython_path)[0])
-    except IndexError:
-        raise UserError("Cannot find `%s`, has CPython been compiled ?" % orig_libpython_path)
-    orig_python_include_path = '%s/include/python*/' % backend_dir
-    try:
-        python_include = env.Dir(glob.glob(orig_python_include_path)[0])
-    except IndexError:
-        raise UserError("Cannot find `%s`, has CPython been compiled ?" % orig_python_include_path)
-    env.Append(CFLAGS='-DBACKEND_CPYTHON')
-else:  # pypy
-    orig_libpython_path = '%s/bin/libpypy3-c.so' % backend_dir
-    try:
-        libpython = env.File(glob.glob(orig_libpython_path)[0])
-    except IndexError:
-        raise UserError("Cannot find `%s`, has Pypy been compiled ?" % orig_libpython_path)
-    orig_python_include_path = '%s/include/' % backend_dir
-    try:
-        python_include = env.Dir(glob.glob(orig_python_include_path)[0])
-    except IndexError:
-        raise UserError("Cannot find `%s`, has Pypy been compiled ?" % orig_python_include_path)
-    env.Append(CFLAGS='-DBACKEND_PYPY')
-
-env.Append(CFLAGS='-I %s' % python_include)
-
-
 ### Build venv with CFFI for python scripts ###
 
 
@@ -100,13 +53,13 @@ venv_dir = Dir('tools/venv')
 env.Command(venv_dir, None,
     "${PYTHON} -m virtualenv ${TARGET} && " +
     ". ${TARGET}/bin/activate && " +
-    "python -m pip install pycparser>=2.18 cffi>=1.11.2")
+    "python -m pip install 'pycparser>=2.18' 'cffi>=1.11.2'")
 
 
 ### Generate cdef and cffi C source ###
 
 
-cdef_gen = env.Command('pythonscript/cffi_bindings/cdef.gen.h', (venv_dir, gdnative_include_dir),
+cdef_gen = env.Command('pythonscript/cffi_bindings/cdef.gen.h', (venv_dir, env['gdnative_include_dir']),
     ". ${SOURCES[0]}/bin/activate && " +
     "python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits}")
 env.Append(HEADER=cdef_gen)
@@ -134,49 +87,19 @@ env.Append(CFLAGS='-pthread -DDEBUG=1 -fwrapv -Wall '
     '-Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 '
     '-Bsymbolic-functions -Wformat -Werror=format-security'.split())
 
-
-if env['backend'] == 'cpython':
-    # libpythonX.Ym.so.1.0 will be in the same directory as the godot binary,
-    # hence we need to inform the binary to look there.
-    env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
-else:  # pypy
-    env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/bin'"])
-
 sources = [
     "pythonscript/pythonscript.c",
     pythonscriptcffi_gen,
 ]
-# Dunno with, libcpython wants to be provided as `<path>/libcpython.so.xxx`
-# and libpypy-c wants `-L<path> -lpypy-c.so.xxx`...
-if env['backend'] == 'cpython':
-    env.Append(LIBS=[libpython, 'util'])
-else:  # pypy
-    env.Append(LIBPATH=libpython.dir.path)
-    env.Append(LIBS=[libpython.name, 'util'])
-pythonscript, = env.SharedLibrary('pythonscript', sources)
-env.Default(pythonscript)
+pythonscript, = env.SharedLibrary('%s/pythonscript' % env['build_dir'].path, sources)
 
+env.Clean(pythonscript, env['build_dir'])
 
-### Generate build dir ###
+def SymLink(target, source, env):
+    os.symlink(os.path.abspath(str(source[0])), os.path.abspath(str(target[0])))
+install_build_symlink, = env.Command('build/main', env['build_dir'], SymLink)
+env.Clean(install_build_symlink, 'build/main')
 
+env.Depends(install_build_symlink, pythonscript)
 
-build_dir_name = 'build-%s' % env['backend']
-if env['dev_dyn']:
-    build_dir_name += '-dev_dyn'
-build_dir_name += '-linux%s' % env['bits']
-
-env.Install(build_dir_name, pythonscript)
-if env['backend'] == 'cpython':
-    env.Install(build_dir_name, '%s/include' % backend_dir)
-    env.Install(build_dir_name, '%s/lib' % backend_dir)
-else:  # pypy
-    env.Install(build_dir_name, '%s/include' % backend_dir)
-    env.Install(build_dir_name, '%s/lib' % backend_dir)
-    env.Install(build_dir_name, '%s/lib_pypy' % backend_dir)
-    env.Install(build_dir_name, '%s/lib-python' % backend_dir)
-    env.Install('%s/lib' % build_dir_name, '%s/bin/libpypy3-c.so' % backend_dir)
-env.Alias('build', build_dir_name)
-
-
-env.Alias('install-build-symlink',
-          env.Command('build-main', build_dir_name, "ln -s ${SOURCE} ${TARGET}"))
+env.Default(install_build_symlink)
