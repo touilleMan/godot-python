@@ -88,11 +88,15 @@ sources = [
 pythonscript, = env.SharedLibrary('%s/pythonscript' % env['build_dir'].path, sources)
 
 env.Clean(pythonscript, env['build_dir'])
-
 def SymLink(target, source, env):
+    try:
+        os.unlink(str(target[0]))
+    except Exception:
+        pass
     os.symlink(os.path.abspath(str(source[0])), os.path.abspath(str(target[0])))
 install_build_symlink, = env.Command('build/main', env['build_dir'], SymLink)
 env.Clean(install_build_symlink, 'build/main')
+env.AlwaysBuild(install_build_symlink)
 
 env.Depends(install_build_symlink, pythonscript)
 
@@ -106,3 +110,11 @@ env.Command('test', [env['godot_binary'], install_build_symlink],
 )
 env.AlwaysBuild('test')
 env.Alias('tests', 'test')
+
+
+### Run example ###
+
+env.Command('example', [env['godot_binary'], install_build_symlink],
+    "DISPLAY=0.0 ${SOURCE} --path examples/pong"
+)
+env.AlwaysBuild('example')
