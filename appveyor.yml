@@ -2,7 +2,6 @@ image: Visual Studio 2017
 
 # Skip build on normal pushes
 # skip_non_tags: true
-
 # artifacts:
 #   - path: godot\bin\*.exe
 #     name: GodotBinary
