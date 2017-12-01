@@ -63,7 +63,13 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 #ifdef BACKEND_CPYTHON
 	// Make sure the shared library has all it symbols loaded
 	// (strange bug with libpython3.6 otherwise...)
-	dlopen(godot_string_c_str(options->active_library_path), RTLD_NOW | RTLD_GLOBAL);
+	{
+		const wchar_t *wpath = godot_string_unicode_str(options->active_library_path);
+		const char path[300];
+		wcstombs(path, wpath, 300);
+		dlopen(path, RTLD_NOW | RTLD_GLOBAL);
+	}
+
 	const char *err = dlerror();
 	if (err) {
 		godot_string msg;
@@ -74,11 +80,13 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 	}
 
 	// Retrieve path and set pythonhome
-	static wchar_t pythonhome[256];
-	godot_string _pythonhome = godot_string_get_base_dir(options->active_library_path);
-	wcsncpy(pythonhome, godot_string_unicode_str(&_pythonhome), 256);
-	godot_string_destroy(&_pythonhome);
-	Py_SetPythonHome(pythonhome);
+	{
+		static wchar_t pythonhome[300];
+		godot_string _pythonhome = godot_string_get_base_dir(options->active_library_path);
+		wcsncpy(pythonhome, godot_string_unicode_str(&_pythonhome), 300);
+		godot_string_destroy(&_pythonhome);
+		Py_SetPythonHome(pythonhome);
+	}
 #endif
 
 	desc.name = "Python";
@@ -132,10 +140,10 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 		// TODO: avoid to go through cffi call if profiling is not on
 		desc.profiling_frame = pybind_profiling_frame;
 	}
+	godot_pluginscript_register_language(&desc);
 }
 
 void godot_gdnative_singleton() {
-	godot_pluginscript_register_language(&desc);
 }
 
 void godot_gdnative_terminate() {

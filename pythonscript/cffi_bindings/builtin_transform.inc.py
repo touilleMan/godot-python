@@ -99,22 +99,22 @@ class Transform(BaseBuiltin):
         if isinstance(v, Vector3):
             raw = lib.godot_transform_xform_vector3(self._gd_ptr, v._gd_ptr)
             return Vector3.build_from_gdobj(raw)
-        elif isinstance(v, Rect3):
-            raw = lib.godot_transform_xform_rect3(self._gd_ptr, v._gd_ptr)
-            return Rect3.build_from_gdobj(raw)
+        elif isinstance(v, AABB):
+            raw = lib.godot_transform_xform_aabb(self._gd_ptr, v._gd_ptr)
+            return AABB.build_from_gdobj(raw)
         elif isinstance(v, Plane):
             raw = lib.godot_transform_xform_plane(self._gd_ptr, v._gd_ptr)
             return Plane.build_from_gdobj(raw)
-        raise TypeError('Param `v` should be of type `Plane`, `Rect3` or `Vector3`')
+        raise TypeError('Param `v` should be of type `Plane`, `AABB` or `Vector3`')
 
     def xform_inv(self, v):
         if isinstance(v, Vector3):
             raw = lib.godot_transform_xform_inv_vector3(self._gd_ptr, v._gd_ptr)
             return Vector3.build_from_gdobj(raw)
-        elif isinstance(v, Rect3):
-            raw = lib.godot_transform_xform_inv_rect3(self._gd_ptr, v._gd_ptr)
-            return Rect3.build_from_gdobj(raw)
+        elif isinstance(v, AABB):
+            raw = lib.godot_transform_xform_inv_aabb(self._gd_ptr, v._gd_ptr)
+            return AABB.build_from_gdobj(raw)
         elif isinstance(v, Plane):
             raw = lib.godot_transform_xform_inv_plane(self._gd_ptr, v._gd_ptr)
             return Plane.build_from_gdobj(raw)
-        raise TypeError('Param `v` should be of type `Plane`, `Rect3` or `Vector3`')
+        raise TypeError('Param `v` should be of type `Plane`, `AABB` or `Vector3`')

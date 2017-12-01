@@ -73,7 +73,7 @@ def generate_pythonscriptcffi(output, cdef_path, dev_dyn):
         'builtin_vector3.inc.py',
         'builtin_plane.inc.py',
         'builtin_rect2.inc.py',
-        'builtin_rect3.inc.py',
+        'builtin_aabb.inc.py',
         'builtin_basis.inc.py',
         'builtin_quat.inc.py',
         'builtin_transform2d.inc.py',
