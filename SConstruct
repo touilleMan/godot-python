@@ -11,6 +11,7 @@ vars.Add(EnumVariable('platform', "Target platform", '', allowed_values=(
     'windows-64',
 )))
 vars.Add('godot_binary', "Path to Godot main binary", '')
+vars.Add('debugger', "Run godot with given debugger", '')
 vars.Add('gdnative_include_dir', "Path to GDnative include directory", '')
 vars.Add('gdnative_wrapper_lib', "Path to GDnative wrapper library", '')
 vars.Add(BoolVariable('dev_dyn', "Load at runtime *.inc.py files instead of "
@@ -121,10 +122,12 @@ env.Default(install_build_symlink)
 
 
 ### Run tests ###
+if env['debugger']:
+    test_cmd = "DISPLAY=:0.0 ${debugger} -- ${SOURCE} --path tests/bindings"
+else:
+    test_cmd = "DISPLAY=:0.0 ${SOURCE} --path tests/bindings"
 
-env.Command('test', [env['godot_binary'], install_build_symlink],
-    "DISPLAY=:0.0 ${SOURCE} --path tests/bindings"
-)
+env.Command('test', [env['godot_binary'], install_build_symlink], test_cmd)
 env.AlwaysBuild('test')
 env.Alias('tests', 'test')
 
