@@ -10,6 +10,7 @@ vars.Add(EnumVariable('platform', "Target platform", '', allowed_values=(
     'x11-64',
     'windows-64',
 )))
+vars.Add('godot_binary', "Path to Godot main binary", '')
 vars.Add('gdnative_include_dir', "Path to GDnative include directory", '')
 vars.Add('gdnative_wrapper_lib', "Path to GDnative wrapper library", '')
 vars.Add(BoolVariable('dev_dyn', "Load at runtime *.inc.py files instead of "
@@ -25,6 +26,9 @@ vars.Add("LINKFLAGS", "Custom flags for the linker")
 env = Environment(variables=vars)
 Help(vars.GenerateHelpText(env))
 
+
+if env['godot_binary']:
+    env['godot_binary'] = File(env['godot_binary'])
 if env['gdnative_include_dir']:
     env['gdnative_include_dir'] = Dir(env['gdnative_include_dir'])
 if env['gdnative_wrapper_lib']:
