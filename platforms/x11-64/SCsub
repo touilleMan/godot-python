@@ -93,7 +93,7 @@ else:  # pypy
     )
 
     env.Command(env['build_dir'], backend_src,
-        "mkdir ${TARGET} && " +
+        "mkdir -p ${TARGET} && " +
         "cp -fR ${SOURCE}/include ${TARGET}/include && " +
         "cp -fR ${SOURCE}/lib ${TARGET}/lib && " +
         "cp -fR ${SOURCE}/lib_pypy ${TARGET}/lib_pypy && " +
