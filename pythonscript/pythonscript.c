@@ -57,6 +57,36 @@ static const char *PYTHONSCRIPT_COMMENT_DELIMITERS[] = { "#", "\"\"\"\"\"\"", 0 
 static const char *PYTHONSCRIPT_STRING_DELIMITERS[] = { "\" \"", "' '", 0 };
 static godot_pluginscript_language_desc desc;
 
+
+// To avoid having to go through cffi call if profiling is not on,
+// we use those simple _hook_ functions as a proxy
+// Note _profiling_started should idealy be stored in the p_data pointer,
+// but this would be much more cumbersome (given p_data points on a python
+// object). Anyway, there is only one instance of Pythonscript started so
+// it doesn't really matter.
+
+static bool _profiling_started = false;
+
+
+static void _hook_profiling_start(godot_pluginscript_language_data *p_data) {
+	_profiling_started = true;
+	pybind_profiling_start(p_data);
+}
+
+
+static void _hook_profiling_stop(godot_pluginscript_language_data *p_data) {
+	_profiling_started = true;
+	pybind_profiling_stop(p_data);
+}
+
+
+static void _hook_profiling_frame(godot_pluginscript_language_data *p_data) {
+	if (_profiling_started) {
+		pybind_profiling_frame(p_data);
+	}
+}
+
+
 void godot_gdnative_init(godot_gdnative_init_options *options) {
 	GDNATIVE_API_INIT(options);
 
@@ -133,12 +163,11 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 		desc.debug_get_globals = pybind_debug_get_globals;
 		desc.debug_parse_stack_level_expression = pybind_debug_parse_stack_level_expression;
 
-		desc.profiling_start = pybind_profiling_start;
-		desc.profiling_stop = pybind_profiling_stop;
+		desc.profiling_start = _hook_profiling_start;
+		desc.profiling_stop = _hook_profiling_stop;
 		desc.profiling_get_accumulated_data = pybind_profiling_get_accumulated_data;
 		desc.profiling_get_frame_data = pybind_profiling_get_frame_data;
-		// TODO: avoid to go through cffi call if profiling is not on
-		desc.profiling_frame = pybind_profiling_frame;
+		desc.profiling_frame = _hook_profiling_frame;
 	}
 	godot_pluginscript_register_language(&desc);
 }
