@@ -37,6 +37,7 @@ def connect_handle(obj):
 
 #### Language ####
 
+
 @ffi.def_extern()
 def pybind_init():
     from godot.bindings import ProjectSettings, OS
@@ -56,7 +57,12 @@ def pybind_init():
     for p in pythonpath.split(';'):
         p = ProjectSettings.globalize_path(p)
         sys.path.append(p)
+
+    print('Pythonscript version: %s' % __version__)
+    print('Pythonscript backend: %s %s' %
+        (sys.implementation.name, sys.version.replace('\n', ' ')))
     print('PYTHONPATH: %s' % sys.path)
+
     return ffi.NULL
 
 
@@ -66,6 +72,7 @@ def pybind_finish(handle):
     protect_from_gc.clear()
     destroy_exposed_classes()
     gc.collect()
+
 
 #### Language editor ####
 
