@@ -65,7 +65,7 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 	// (strange bug with libpython3.6 otherwise...)
 	{
 		const wchar_t *wpath = godot_string_unicode_str(options->active_library_path);
-		const char path[300];
+		char path[300];
 		wcstombs(path, wpath, 300);
 		dlopen(path, RTLD_NOW | RTLD_GLOBAL);
 	}
