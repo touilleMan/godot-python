@@ -22,22 +22,18 @@ env.NoClean(env['godot_binary'])
 
 ### GDnative stuff ###
 
-
-env['gdnative_include_dir'] = Dir('../gdnative/include')
-
-
-env['gdnative_wrapper_lib'] = File('../gdnative/gdnative_wrapper_code.windows.opt.64.lib')
-GDNATIVE_WRAPPER_LIB_URL = (
-    'https://github.com/GodotBuilder/godot-builds/releases/'
-    'download/master_20171129-1/gdnative_wrapper_code.windows.opt.64.lib'
-)
-env.Command(env['gdnative_wrapper_lib'], None,
-    'curl -L %s -o ${TARGET}' % GDNATIVE_WRAPPER_LIB_URL
-)
-env.NoClean(env['gdnative_wrapper_lib'])
-
-env.Append(CPPPATH=env['gdnative_include_dir'].path)
-env.Append(LIBS=env['gdnative_wrapper_lib'])
+if not env['gdnative_include_dir']:
+    env['gdnative_include_dir'] = Dir('../gdnative/include')
+if not env['gdnative_wrapper_lib']:
+    env['gdnative_wrapper_lib'] = File('../gdnative/gdnative_wrapper_code.windows.opt.64.lib')
+    GDNATIVE_WRAPPER_LIB_URL = (
+        'https://github.com/GodotBuilder/godot-builds/releases/'
+        'download/master_20171129-1/gdnative_wrapper_code.windows.opt.64.lib'
+    )
+    env.Command(env['gdnative_wrapper_lib'], None,
+        'curl -L %s -o ${TARGET}' % GDNATIVE_WRAPPER_LIB_URL
+    )
+    env.NoClean(env['gdnative_wrapper_lib'])
 
 
 ### Python interpreter ###

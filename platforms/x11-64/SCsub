@@ -24,20 +24,18 @@ env.NoClean(env['godot_binary'])
 
 ### GDnative stuff ###
 
-
-env['gdnative_include_dir'] = Dir('../gdnative/include')
-env['gdnative_wrapper_lib'] = File('../gdnative/libgdnative_wrapper_code.x11.opt.64.a')
-GDNATIVE_WRAPPER_LIB_URL = (
-    'https://github.com/GodotBuilder/godot-builds/releases/'
-    'download/master_20171129-1/libgdnative_wrapper_code.x11.opt.64.a'
-)
-env.Command(env['gdnative_wrapper_lib'], None,
-    'curl -L %s -o ${TARGET}' % GDNATIVE_WRAPPER_LIB_URL
-)
-env.NoClean(env['gdnative_wrapper_lib'])
-
-env.Append(CPPPATH=env['gdnative_include_dir'].path)
-env.Append(LIBS=env['gdnative_wrapper_lib'])
+if not env['gdnative_include_dir']:
+    env['gdnative_include_dir'] = Dir('../gdnative/include')
+if not env['gdnative_wrapper_lib']:
+    env['gdnative_wrapper_lib'] = File('../gdnative/libgdnative_wrapper_code.x11.opt.64.a')
+    GDNATIVE_WRAPPER_LIB_URL = (
+        'https://github.com/GodotBuilder/godot-builds/releases/'
+        'download/master_20171129-1/libgdnative_wrapper_code.x11.opt.64.a'
+    )
+    env.Command(env['gdnative_wrapper_lib'], None,
+        'curl -L %s -o ${TARGET}' % GDNATIVE_WRAPPER_LIB_URL
+    )
+    env.NoClean(env['gdnative_wrapper_lib'])
 
 
 ### Python interpreter ###
@@ -66,9 +64,9 @@ if env['backend'] == 'cpython':
     env.NoClean(cpython_build)
 
     env.Command(env['build_dir'], cpython_build,
-        "mkdir ${TARGET} && " +
-        "cp -R ${SOURCE}/include ${TARGET}/include && " +
-        "cp -R ${SOURCE}/lib ${TARGET}"
+        "mkdir -p ${TARGET} && " +
+        "cp -fR ${SOURCE}/include ${TARGET}/include && " +
+        "cp -fR ${SOURCE}/lib ${TARGET}"
     )
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
     env.Append(CFLAGS='-I %s/include/python3.6m/' % cpython_build.path)
@@ -94,11 +92,11 @@ else:  # pypy
 
     env.Command(env['build_dir'], backend_src,
         "mkdir ${TARGET} && " +
-        "cp -R ${SOURCE}/include ${TARGET}/include && " +
-        "cp -R ${SOURCE}/lib ${TARGET}/lib && " +
-        "cp -R ${SOURCE}/lib_pypy ${TARGET}/lib_pypy && " +
-        "cp -R ${SOURCE}/lib-python ${TARGET}/lib-python && " +
-        "cp -R ${SOURCE}/bin/libpypy3-c.so ${TARGET}/lib"
+        "cp -fR ${SOURCE}/include ${TARGET}/include && " +
+        "cp -fR ${SOURCE}/lib ${TARGET}/lib && " +
+        "cp -fR ${SOURCE}/lib_pypy ${TARGET}/lib_pypy && " +
+        "cp -fR ${SOURCE}/lib-python ${TARGET}/lib-python && " +
+        "cp -fR ${SOURCE}/bin/libpypy3-c.so ${TARGET}/lib"
     )
 
     env.Append(CFLAGS='-DBACKEND_PYPY')

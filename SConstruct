@@ -10,6 +10,8 @@ vars.Add(EnumVariable('platform', "Target platform", '', allowed_values=(
     'x11-64',
     'windows-64',
 )))
+vars.Add('gdnative_include_dir', "Path to GDnative include directory", '')
+vars.Add('gdnative_wrapper_lib', "Path to GDnative wrapper library", '')
 vars.Add(BoolVariable('dev_dyn', "Load at runtime *.inc.py files instead of "
                                  "embedding them (useful for dev)", False))
 vars.Add(EnumVariable('backend', "Python interpreter to embed", 'cpython',
@@ -23,8 +25,13 @@ vars.Add("LINKFLAGS", "Custom flags for the linker")
 env = Environment(variables=vars)
 Help(vars.GenerateHelpText(env))
 
+if env['gdnative_include_dir']:
+    env['gdnative_include_dir'] = Dir(env['gdnative_include_dir'])
+if env['gdnative_wrapper_lib']:
+    env['gdnative_wrapper_lib'] = File(env['gdnative_wrapper_lib'])
 
-### Plafrom-specific stuff ###
+
+### Plaform-specific stuff ###
 
 
 Export('env')
@@ -73,6 +80,8 @@ python_inc_srcs = Glob('pythonscript/cffi_bindings/*.inc.py')
 
 ### Main compilation stuff ###
 
+env.Append(CPPPATH=env['gdnative_include_dir'])
+env.Append(LIBS=env['gdnative_wrapper_lib'])
 
 env.Append(CFLAGS='-I' + env.Dir('pythonscript').path)
 env.Append(CFLAGS='-std=c11')
@@ -86,6 +95,10 @@ sources = [
     pythonscriptcffi_gen,
 ]
 pythonscript, = env.SharedLibrary('%s/pythonscript' % env['build_dir'].path, sources)
+
+
+### Symbolic link used by test and examples projects ###
+
 
 env.Clean(pythonscript, env['build_dir'])
 def SymLink(target, source, env):
@@ -106,7 +119,7 @@ env.Default(install_build_symlink)
 ### Run tests ###
 
 env.Command('test', [env['godot_binary'], install_build_symlink],
-    "DISPLAY=0.0 ${SOURCE} --path tests/bindings"
+    "DISPLAY=:0.0 ${SOURCE} --path tests/bindings"
 )
 env.AlwaysBuild('test')
 env.Alias('tests', 'test')
