@@ -28,6 +28,7 @@ class NodePath(BaseBuiltinWithGDObjOwnership):
         lib.godot_node_path_new(self._gd_ptr, gd_str)
 
     def __eq__(self, other):
+        # Note we could also use `godot_node_path_operator_equal` for this...
         return isinstance(other, NodePath) and self.path == other.path
 
     def __ne__(self, other):
@@ -49,9 +50,9 @@ class NodePath(BaseBuiltinWithGDObjOwnership):
     def get_name_count(self):
         return lib.godot_node_path_get_name_count(self._gd_ptr)
 
-    def get_property(self):
-        prop = lib.godot_node_path_get_property(self._gd_ptr)
-        return godot_string_to_pyobj(ffi.addressof(prop))
+    def get_concatenated_subnames(self):
+        concatenated = lib.godot_node_path_get_concatenated_subnames(self._gd_ptr)
+        return godot_string_to_pyobj(ffi.addressof(concatenated))
 
     def get_subname(self, idx):
         self._check_param_type('idx', idx, int)
