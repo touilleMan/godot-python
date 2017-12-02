@@ -10,7 +10,7 @@ image: Visual Studio 2017
 
 environment:
   VS: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat
-  PYTHON: C:\Python36-x64\python.exe
+  PYTHON: C:\Python36-x64
   matrix:
     - TARGET_PLATFORM: windows-64
       ARCH: amd64
