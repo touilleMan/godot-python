@@ -54,7 +54,7 @@ if env['backend'] == 'cpython':
     # Compile CPython and install cffi through pip
     env.Command(cpython_build, cpython_src,
         "cd ${SOURCE} && " +
-        "PCbuild\\get_externals.bat && " +
+        "PCbuild\\get_externals.bat --python=python && " +
         "PCbuild\\build.bat -p x64"
     )
     env.NoClean(cpython_build)
