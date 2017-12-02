@@ -26,7 +26,7 @@ vars.Add("CC", "C compiler")
 vars.Add("CFLAGS", "Custom flags for the C compiler")
 vars.Add("LINKFLAGS", "Custom flags for the linker")
 
-env = Environment(variables=vars)
+env = Environment(ENV={'PATH': os.environ['PATH']}, variables=vars)
 Help(vars.GenerateHelpText(env))
 
 
