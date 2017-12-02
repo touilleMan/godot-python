@@ -101,7 +101,8 @@ sources = [
     "pythonscript/pythonscript.c",
     pythonscriptcffi_gen,
 ]
-pythonscript, = env.SharedLibrary('%s/pythonscript' % env['build_dir'].path, sources)
+pythonscript = env.SharedLibrary('%s/pythonscript' % env['build_dir'].path, sources)
+print(pythonscript)
 
 
 ### Symbolic link used by test and examples projects ###
