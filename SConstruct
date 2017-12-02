@@ -92,7 +92,7 @@ env.Append(CPPPATH=env['gdnative_include_dir'])
 env.Append(LIBS=env['gdnative_wrapper_lib'])
 
 env.Append(CFLAGS='-I' + env.Dir('pythonscript').path)
-env.Append(CFLAGS='-std=c11')
+# env.Append(CFLAGS='-std=c11')
 # env.Append(CFLAGS='-pthread -DDEBUG=1 -fwrapv -Wall '
 #     '-g -Wdate-time -D_FORTIFY_SOURCE=2 '
 #     '-Bsymbolic-functions -Wformat -Werror=format-security'.split())
