@@ -88,7 +88,6 @@ python_inc_srcs = Glob('pythonscript/cffi_bindings/*.inc.py')
 
 ### Main compilation stuff ###
 
-import pdb; pdb.set_trace()
 env.Append(CPPPATH=env['gdnative_include_dir'])
 env.Append(LIBS=env['gdnative_wrapper_lib'])
 
