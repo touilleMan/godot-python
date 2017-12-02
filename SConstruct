@@ -17,7 +17,7 @@ vars.Add('gdnative_wrapper_lib', "Path to GDnative wrapper library", '')
 vars.Add(BoolVariable('dev_dyn', "Load at runtime *.inc.py files instead of "
                                  "embedding them (useful for dev)", False))
 vars.Add(BoolVariable('compressed_stdlib', "Compress Python std lib as a zip"
-                                           "to save space", True))
+                                           "to save space", False))
 vars.Add(EnumVariable('backend', "Python interpreter to embed", 'cpython',
          allowed_values=('cpython', 'pypy')))
 vars.Add('PYTHON', "Python executable to use for scripts (a virtualenv will be"
