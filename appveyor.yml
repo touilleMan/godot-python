@@ -20,6 +20,8 @@ install:
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - pip install --egg scons  # it will fail on AppVeyor without --egg flag
   - if defined VS call "%VS%" %ARCH%  # if defined - so we can also use mingw
+  - ls %PYTHON%
+  - ls %PYTHON%/Scripts
 
 before_build:
   - git rev-parse HEAD
