@@ -10,7 +10,7 @@ image: Visual Studio 2017
 
 environment:
   VS: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat
-  PYTHON: C:\Python36-x64
+  PYTHON: C:\Python36-x64\python.exe
   matrix:
     - TARGET_PLATFORM: windows-64
       ARCH: amd64
@@ -20,10 +20,6 @@ install:
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - pip install --egg scons  # it will fail on AppVeyor without --egg flag
   - if defined VS call "%VS%" %ARCH%  # if defined - so we can also use mingw
-  - echo %PYTHON%
-  - where python
-  - ls %PYTHON%
-  - ls %PYTHON%/Scripts
 
 before_build:
   - git rev-parse HEAD

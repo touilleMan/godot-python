@@ -49,12 +49,12 @@ if env['backend'] == 'cpython':
     )
     env.NoClean(cpython_src)
 
-    cpython_build = Dir('cpython_build')
+    cpython_build = Dir('cpython/PCBuild/amd64')
     # TODO: allow to compile cpython with `--with-pydebug` ?
     # Compile CPython and install cffi through pip
     env.Command(cpython_build, cpython_src,
         "cd ${SOURCE} && " +
-        "PCbuild\\get_externals.bat --python=python && " +
+        "PCbuild\\get_externals.bat && " +
         "PCbuild\\build.bat -p x64"
     )
     env.NoClean(cpython_build)
@@ -65,7 +65,7 @@ if env['backend'] == 'cpython':
         "cp -R ${SOURCE}\\lib ${TARGET}"
     )
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
-    env.Append(CFLAGS='-I %s/include/python3.6m/' % cpython_build.path)
+    env.Append(CFLAGS='-I %s' % cpython_build.path)
     env.Append(LIBPATH='%s/lib' % cpython_build.path)
     env.Append(LIBS=['python3'])
     env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
