@@ -65,11 +65,25 @@ if env['backend'] == 'cpython':
     )
     env.NoClean(cpython_build)
 
-    env.Command(env['build_dir'], cpython_build,
-        "mkdir -p ${TARGET} && " +
-        "cp -fR ${SOURCE}/include ${TARGET}/include && " +
-        "cp -fR ${SOURCE}/lib ${TARGET}"
-    )
+    if env['compressed_stdlib']:
+        env.Command(env['build_dir'], cpython_build,
+            "mkdir -p ${TARGET} && " +
+            "cp -fR ${SOURCE}/include ${TARGET}/include && " +
+            "cp -fR ${SOURCE}/lib ${TARGET}/lib && " +
+            "find ${TARGET}/ -type d -name '__pycache__' -exec rm -r {} + && " +
+            "mv ${TARGET}/lib/python3.6 ${TARGET}/lib/tmp_python3.6 && " +
+            "mkdir -p ${TARGET}/lib/python3.6 && " +
+            "mv ${TARGET}/lib/tmp_python3.6/lib-dynload/ ${TARGET}/lib/python3.6/lib-dynload && " +
+            "mv ${TARGET}/lib/tmp_python3.6/site-packages/ ${TARGET}/lib/python3.6/site-packages && " +
+            "cd ${TARGET}/lib/tmp_python3.6 && zip -r ../python36.zip . && cd - && " +
+            "rm -r ${TARGET}/lib/tmp_python3.6"
+        )
+    else:
+        env.Command(env['build_dir'], cpython_build,
+            "mkdir -p ${TARGET} && " +
+            "cp -fR ${SOURCE}/include ${TARGET}/include && " +
+            "cp -fR ${SOURCE}/lib ${TARGET}/lib"
+        )
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
     env.Append(CFLAGS='-I %s/include/python3.6m/' % cpython_build.path)
     env.Append(LIBPATH='%s/lib' % cpython_build.path)
@@ -77,6 +91,9 @@ if env['backend'] == 'cpython':
     env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
 
 else:  # pypy
+
+    if env['compressed_stdlib']:
+        raise UserError('Compressed stdlib not supported for pypy yet...')
 
     PYPY_SRC_NAME = 'pypy3.5-5.9-beta-linux_x86_64-portable'
     PYPY_SRC_ARCHIVE = '%s.tar.bz2' % PYPY_SRC_NAME
