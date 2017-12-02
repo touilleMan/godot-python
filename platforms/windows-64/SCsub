@@ -54,15 +54,15 @@ if env['backend'] == 'cpython':
     # Compile CPython and install cffi through pip
     env.Command(cpython_build, cpython_src,
         "cd ${SOURCE} && " +
-        "PCbuild/build.bat -t ${TARGET.get_abspath()} && " +
+        "PCbuild\\build.bat -t ${TARGET.get_abspath()} && " +
         "ls && ls ${TARGET.get_abspath()}"
     )
     env.NoClean(cpython_build)
 
     env.Command(env['build_dir'], cpython_build,
         "mkdir ${TARGET} && " +
-        "cp -R ${SOURCE}/include ${TARGET}/include && " +
-        "cp -R ${SOURCE}/lib ${TARGET}"
+        "cp -R ${SOURCE}\\include ${TARGET}\\include && " +
+        "cp -R ${SOURCE}\\lib ${TARGET}"
     )
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
     env.Append(CFLAGS='-I %s/include/python3.6m/' % cpython_build.path)
