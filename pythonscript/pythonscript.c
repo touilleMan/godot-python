@@ -1,6 +1,8 @@
 #include "Python.h"
 
+#ifndef _WIN32
 #include <dlfcn.h>
+#endif
 #include <wchar.h>
 
 #include "pythonscript.h"
@@ -91,6 +93,7 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 	GDNATIVE_API_INIT(options);
 
 #ifdef BACKEND_CPYTHON
+#ifndef _WIN32
 	// Make sure the shared library has all it symbols loaded
 	// (strange bug with libpython3.6 otherwise...)
 	{
@@ -108,6 +111,7 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 		godot_string_destroy(&msg);
 		return;
 	}
+#endif
 
 	// Retrieve path and set pythonhome
 	{
