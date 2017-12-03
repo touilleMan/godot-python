@@ -50,20 +50,18 @@ if env['backend'] == 'cpython':
         "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch platforms\\windows-64\\cpython && " +
         "${TARGET}\\..\\get_externals.bat --python=python && " +
         "${TARGET}\\..\\build.bat -p x64"
-        " && ls ${TARGET}"
     )
     env.NoClean(cpython_build)
 
     env.Command(env['build_dir'], cpython_build,
-        "mkdir ${TARGET} && " +
-        "cp -R ${SOURCE}\\include ${TARGET}\\include && " +
-        "cp -R ${SOURCE}\\lib ${TARGET}\\lib"
+        "cp -R ${SOURCE} ${TARGET}"
     )
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
-    env.Append(CFLAGS='-I %s\\include' % env['build_dir'].path)
-    env.Append(LIBPATH='%s/lib' % env['build_dir'].path)
+    env.Append(CFLAGS='-I %s\\..\\..\\Include' % cpython_build.path)
+    env.Append(CFLAGS='-I %s\\..\\..' % cpython_build.path)
+    env.Append(LIBPATH=env['build_dir'].path)
     env.Append(LIBS=['python3'])
-    env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
+    env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN'"])
 
 else:  # pypy
     raise UserError("Not supported yet :'-(")
