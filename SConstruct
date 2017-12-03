@@ -59,10 +59,16 @@ if 'gcc' in env.get('CC'):
 
 
 venv_dir = Dir('tools/venv')
-env.Command(venv_dir, None,
-    "${PYTHON} -m virtualenv ${TARGET} && " +
-    ". ${TARGET}/bin/activate && " +
-    "${PYTHON} -m pip install 'pycparser>=2.18' 'cffi>=1.11.2'")
+if os.uname().sysname == 'Windows':
+    env.Command(venv_dir, None,
+        "${PYTHON} -m virtualenv ${TARGET} && " +
+        "${TARGET}\\Scripts\\activate.bat && " +
+        "${PYTHON} -m pip install 'pycparser>=2.18' 'cffi>=1.11.2'")
+else:
+    env.Command(venv_dir, None,
+        "${PYTHON} -m virtualenv ${TARGET} && " +
+        ". ${TARGET}/bin/activate && " +
+        "${PYTHON} -m pip install 'pycparser>=2.18' 'cffi>=1.11.2'")
 
 
 ### Generate cdef and cffi C source ###
