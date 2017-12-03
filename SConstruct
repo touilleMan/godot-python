@@ -63,7 +63,7 @@ if os.name == 'nt':
     env.Command(venv_dir, None,
         "${PYTHON} -m virtualenv ${TARGET} && " +
         "${TARGET}\\Scripts\\activate.bat && " +
-        "${PYTHON} -m pip install 'pycparser>=2.18' 'cffi>=1.11.2'")
+        "${PYTHON} -m pip install --egg 'pycparser>=2.18' 'cffi>=1.11.2'")
 else:
     env.Command(venv_dir, None,
         "${PYTHON} -m virtualenv ${TARGET} && " +
