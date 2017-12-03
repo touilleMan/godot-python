@@ -45,19 +45,15 @@ if not env['gdnative_wrapper_lib']:
 if env['backend'] == 'cpython':
     cpython_src = Dir('cpython')
     env.Command(cpython_src, None,
-        "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch ${TARGET}"
+        "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch ${TARGET} && " +
+        "${TARGET}\\PCbuild\\get_externals.bat --python=python && " +
+        "${TARGET}\\PCbuild\\build.bat -p x64"
     )
     env.NoClean(cpython_src)
 
+    # Build dir is within the source dir... which is something scons hates !
+    # So we merge the two steps together
     cpython_build = Dir('cpython/PCBuild/amd64')
-    # TODO: allow to compile cpython with `--with-pydebug` ?
-    # Compile CPython and install cffi through pip
-    env.Command(cpython_build, cpython_src,
-        "cd ${SOURCE} && " +
-        "PCbuild\\get_externals.bat --python=python && " +
-        "PCbuild\\build.bat -p x64"
-    )
-    env.NoClean(cpython_build)
 
     env.Command(env['build_dir'], cpython_build,
         "mkdir ${TARGET} && " +
