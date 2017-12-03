@@ -62,7 +62,7 @@ venv_dir = Dir('tools/venv')
 env.Command(venv_dir, None,
     "${PYTHON} -m virtualenv ${TARGET} && " +
     ". ${TARGET}/bin/activate && " +
-    "python -m pip install 'pycparser>=2.18' 'cffi>=1.11.2'")
+    "${PYTHON} -m pip install 'pycparser>=2.18' 'cffi>=1.11.2'")
 
 
 ### Generate cdef and cffi C source ###

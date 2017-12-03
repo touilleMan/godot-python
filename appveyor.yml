@@ -28,7 +28,7 @@ before_build:
   - cl.exe
 
 build_script:
-  - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% --tree=all
+  - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% python=python --tree=all
 
 # deploy:
 #   description: 'Godot binaries deployed by Travis CI and AppVeyor'
