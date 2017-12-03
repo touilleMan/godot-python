@@ -44,16 +44,17 @@ if not env['gdnative_wrapper_lib']:
 
 if env['backend'] == 'cpython':
     cpython_src = Dir('cpython')
+    # Build dir is within the source dir... which is something scons hates !
+    # So we merge the two steps together.
+    cpython_build = Dir('cpython/PCBuild/amd64')
     env.Command(cpython_src, None,
         "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch ${TARGET} && " +
         "${TARGET}\\PCbuild\\get_externals.bat --python=python && " +
         "${TARGET}\\PCbuild\\build.bat -p x64"
     )
     env.NoClean(cpython_src)
+    env.Command(cpython_build, cpython_src, 'ls ${SOURCE}; ls ${TARGET}; echo ok')
 
-    # Build dir is within the source dir... which is something scons hates !
-    # So we merge the two steps together
-    cpython_build = Dir('cpython/PCBuild/amd64')
 
     env.Command(env['build_dir'], cpython_build,
         "mkdir ${TARGET} && " +
