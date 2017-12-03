@@ -48,18 +48,19 @@ if env['backend'] == 'cpython':
     cpython_build = Dir('cpython/PCBuild/amd64')
     env.Command(cpython_build, None,
         "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch ${TARGET} && " +
-        "${TARGET}\\PCbuild\\get_externals.bat --python=python && " +
-        "${TARGET}\\PCbuild\\build.bat -p x64"
+        "cpython\\PCbuild\\get_externals.bat --python=python && " +
+        "cpython\\PCbuild\\build.bat -p x64"
+        " && ls ${TARGET}"
     )
     env.NoClean(cpython_build)
 
     env.Command(env['build_dir'], cpython_build,
         "mkdir ${TARGET} && " +
         "cp -R ${SOURCE}\\include ${TARGET}\\include && " +
-        "cp -R ${SOURCE}\\lib ${TARGET}"
+        "cp -R ${SOURCE}\\lib ${TARGET}\\lib"
     )
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
-    env.Append(CFLAGS='-I %s' % env['build_dir'].path)
+    env.Append(CFLAGS='-I %s\\include' % env['build_dir'].path)
     env.Append(LIBPATH='%s/lib' % env['build_dir'].path)
     env.Append(LIBS=['python3'])
     env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
