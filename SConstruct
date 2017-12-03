@@ -63,10 +63,10 @@ if os.name == 'nt':
     env.Command(venv_dir, None,
         "${PYTHON} -m virtualenv ${TARGET} && " +
         "${TARGET}\\Scripts\\activate.bat && " +
-        "${PYTHON} -m pip install pycparser cffi")
+        "python -m pip install pycparser cffi")
 else:
     env.Command(venv_dir, None,
-        "${PYTHON} -m virtualenv ${TARGET} && " +
+        "python -m virtualenv ${TARGET} && " +
         ". ${TARGET}/bin/activate && " +
         "${PYTHON} -m pip install 'pycparser>=2.18' 'cffi>=1.11.2'")
 
@@ -74,22 +74,36 @@ else:
 ### Generate cdef and cffi C source ###
 
 
-cdef_gen = env.Command('pythonscript/cffi_bindings/cdef.gen.h', (venv_dir, env['gdnative_include_dir']),
-    ". ${SOURCES[0]}/bin/activate && " +
-    "python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits}")
+if os.name == 'nt':
+    cdef_gen = env.Command('pythonscript/cffi_bindings/cdef.gen.h', (venv_dir, env['gdnative_include_dir']),
+        "${SOURCES[0]}\\Scripts\\activate.bat && " +
+        "python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits}")
+else:
+    cdef_gen = env.Command('pythonscript/cffi_bindings/cdef.gen.h', (venv_dir, env['gdnative_include_dir']),
+        ". ${SOURCES[0]}/bin/activate && " +
+        "python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits}")
 env.Append(HEADER=cdef_gen)
 
 
 if env['dev_dyn']:
     print("\033[0;32mPython .inc.py files are dynamically loaded (dev_dyn=True), don't share the binary !\033[0m\n")
 python_inc_srcs = Glob('pythonscript/cffi_bindings/*.inc.py')
-(pythonscriptcffi_gen, ) = env.Command(
-    'pythonscript/cffi_bindings/pythonscriptcffi.gen.c',
-    [venv_dir] + cdef_gen + python_inc_srcs,
-    ". ${SOURCES[0]}/bin/activate && " +
-    "python ./pythonscript/cffi_bindings/generate.py --cdef=${SOURCES[1]} --output=${TARGET}" +
-        (" --dev-dyn" if env['dev_dyn'] else "")
-)
+if os.name == 'nt':
+    (pythonscriptcffi_gen, ) = env.Command(
+        'pythonscript/cffi_bindings/pythonscriptcffi.gen.c',
+        [venv_dir] + cdef_gen + python_inc_srcs,
+        "${SOURCES[0]}\\Scripts\\activate.bat && " +
+        "python ./pythonscript/cffi_bindings/generate.py --cdef=${SOURCES[1]} --output=${TARGET}" +
+            (" --dev-dyn" if env['dev_dyn'] else "")
+    )
+else:
+    (pythonscriptcffi_gen, ) = env.Command(
+        'pythonscript/cffi_bindings/pythonscriptcffi.gen.c',
+        [venv_dir] + cdef_gen + python_inc_srcs,
+        ". ${SOURCES[0]}/bin/activate && " +
+        "python ./pythonscript/cffi_bindings/generate.py --cdef=${SOURCES[1]} --output=${TARGET}" +
+            (" --dev-dyn" if env['dev_dyn'] else "")
+    )
 
 
 ### Main compilation stuff ###
