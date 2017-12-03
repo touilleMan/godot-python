@@ -53,8 +53,6 @@ if env['backend'] == 'cpython':
         "${TARGET}\\PCbuild\\build.bat -p x64"
     )
     env.NoClean(cpython_src)
-    env.Command(cpython_build, cpython_src, 'ls ${SOURCE}; ls ${TARGET}; echo ok')
-
 
     env.Command(env['build_dir'], cpython_build,
         "mkdir ${TARGET} && " +
@@ -62,8 +60,8 @@ if env['backend'] == 'cpython':
         "cp -R ${SOURCE}\\lib ${TARGET}"
     )
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
-    env.Append(CFLAGS='-I %s' % cpython_build.path)
-    env.Append(LIBPATH='%s/lib' % cpython_build.path)
+    env.Append(CFLAGS='-I %s' % env['build_dir'].path)
+    env.Append(LIBPATH='%s/lib' % env['build_dir'].path)
     env.Append(LIBS=['python3'])
     env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
 
