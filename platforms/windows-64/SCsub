@@ -47,7 +47,7 @@ if env['backend'] == 'cpython':
     # So we merge the two steps together.
     cpython_build = Dir('cpython/PCBuild/amd64')
     env.Command(cpython_build, None,
-        "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch ${TARGET}\\..\\.. && " +
+        "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch ${TARGET}\\..\\..\\..\\cpython && " +
         "${TARGET}\\..\\get_externals.bat --python=python && " +
         "${TARGET}\\..\\build.bat -p x64"
         " && ls ${TARGET}"
