@@ -59,7 +59,7 @@ if 'gcc' in env.get('CC'):
 
 
 venv_dir = Dir('tools/venv')
-if os.uname().sysname == 'Windows':
+if os.name == 'nt':
     env.Command(venv_dir, None,
         "${PYTHON} -m virtualenv ${TARGET} && " +
         "${TARGET}\\Scripts\\activate.bat && " +
