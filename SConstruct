@@ -20,6 +20,7 @@ vars.Add(BoolVariable('compressed_stdlib', "Compress Python std lib as a zip"
                                            "to save space", False))
 vars.Add(EnumVariable('backend', "Python interpreter to embed", 'cpython',
          allowed_values=('cpython', 'pypy')))
+vars.Add('gdnative_parse_cpp', "Preprocessor to use for parsing GDnative includes", 'cpp')
 vars.Add('PYTHON', "Python executable to use for scripts (a virtualenv will be"
                    " created with it in `tools/venv`)", 'python3')
 vars.Add("CC", "C compiler")
@@ -77,11 +78,11 @@ else:
 if os.name == 'nt':
     cdef_gen = env.Command('pythonscript/cffi_bindings/cdef.gen.h', (venv_dir, env['gdnative_include_dir']),
         "${SOURCES[0]}\\Scripts\\activate.bat && " +
-        "python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits}")
+        "python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits} --cpp='${gdnative_parse_cpp}'")
 else:
     cdef_gen = env.Command('pythonscript/cffi_bindings/cdef.gen.h', (venv_dir, env['gdnative_include_dir']),
         ". ${SOURCES[0]}/bin/activate && " +
-        "python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits}")
+        "python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits} --cpp='${gdnative_parse_cpp}'")
 env.Append(HEADER=cdef_gen)
 
 

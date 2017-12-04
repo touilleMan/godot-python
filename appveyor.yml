@@ -10,6 +10,7 @@ image: Visual Studio 2017
 
 environment:
   VS: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat
+  CPP: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1 -E
   PYTHON: C:\Python36-x64
   matrix:
     - TARGET_PLATFORM: windows-64
@@ -28,7 +29,7 @@ before_build:
   - cl.exe
 
 build_script:
-  - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python --tree=all
+  - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python --tree=all gdnative_parse_cpp="%CPP%"
 
 # deploy:
 #   description: 'Godot binaries deployed by Travis CI and AppVeyor'
