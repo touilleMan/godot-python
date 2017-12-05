@@ -18,9 +18,10 @@ environment:
       TARGET_BACKEND: cpython
 
 install:
-  - ls C:\Libraries\llvm-5.0.0
-  - ls C:\Program Files\LLVM\bin
-  - ls C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1
+  - ls "C:\Libraries\llvm-5.0.0\bin"
+  - ls "C:\Program Files\LLVM\bin"
+  - ls "C:\mingw-w64\"
+  - ls "C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1"
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - pip install --egg scons  # it will fail on AppVeyor without --egg flag
   - if defined VS call "%VS%" %ARCH%  # if defined - so we can also use mingw
