@@ -26,7 +26,7 @@ before_build:
   - git rev-parse HEAD
   - python --version
   - scons --version
-  - clang.exe
+  - clang.exe --version
   - cl.exe
 
 build_script:
