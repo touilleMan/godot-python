@@ -78,8 +78,9 @@ else:
 if os.name == 'nt':
     cdef_gen = env.Command('pythonscript/cffi_bindings/cdef.gen.h', (venv_dir, env['gdnative_include_dir']),
         "${SOURCES[0]}\\Scripts\\activate.bat && " +
-        "python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits} --cpp=\"${gdnative_parse_cpp}\"")
+        "python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits} --cpp=\"${gdnative_parse_cpp}\"" +
         " && more +4580 pythonscript\\cffi_bindings\\pythonscriptcffi.gen.c"
+    )
 else:
     cdef_gen = env.Command('pythonscript/cffi_bindings/cdef.gen.h', (venv_dir, env['gdnative_include_dir']),
         ". ${SOURCES[0]}/bin/activate && " +
