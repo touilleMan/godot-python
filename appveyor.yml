@@ -10,7 +10,7 @@ image: Visual Studio 2017
 
 environment:
   VS: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat
-  CPP: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1 -E
+  CPP: clang.exe -E
   PYTHON: C:\Python36-x64
   matrix:
     - TARGET_PLATFORM: windows-64
@@ -18,10 +18,6 @@ environment:
       TARGET_BACKEND: cpython
 
 install:
-  - ls "C:\Libraries\llvm-5.0.0\bin"
-  - ls "C:\Program Files\LLVM\bin"
-  - ls "C:\mingw-w64\"
-  - ls "C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1"
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - pip install --egg scons  # it will fail on AppVeyor without --egg flag
   - if defined VS call "%VS%" %ARCH%  # if defined - so we can also use mingw
