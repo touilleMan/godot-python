@@ -27,7 +27,7 @@ before_build:
   - python --version
   - scons --version
   - clang.exe --version
-  - cl.exe
+  # - cl.exe
 
 build_script:
   - scons CC=clang.exe platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python --tree=all gdnative_parse_cpp="%CPP%"
