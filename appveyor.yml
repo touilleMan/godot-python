@@ -20,16 +20,17 @@ environment:
 install:
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - pip install --egg scons  # it will fail on AppVeyor without --egg flag
-  - if defined VS call "%VS%" %ARCH%  # if defined - so we can also use mingw
+  # - if defined VS call "%VS%" %ARCH%  # if defined - so we can also use mingw
 
 before_build:
   - git rev-parse HEAD
   - python --version
   - scons --version
+  - clang.exe
   - cl.exe
 
 build_script:
-  - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python --tree=all gdnative_parse_cpp="%CPP%"
+  - scons CC=clang.exe platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python --tree=all gdnative_parse_cpp="%CPP%"
 
 # deploy:
 #   description: 'Godot binaries deployed by Travis CI and AppVeyor'

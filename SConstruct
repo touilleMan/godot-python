@@ -96,7 +96,6 @@ if os.name == 'nt':
         "${SOURCES[0]}\\Scripts\\activate.bat && " +
         "python ./pythonscript/cffi_bindings/generate.py --cdef=${SOURCES[1]} --output=${TARGET}" +
             (" --dev-dyn" if env['dev_dyn'] else "")
-        + " && more +4580 pythonscript\\cffi_bindings\\pythonscriptcffi.gen.c"
     )
 else:
     (pythonscriptcffi_gen, ) = env.Command(
