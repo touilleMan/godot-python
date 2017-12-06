@@ -30,7 +30,8 @@ before_build:
   # - cl.exe
 
 build_script:
-  - scons LINK=clang.exe CC=clang.exe platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python gdnative_parse_cpp="%CPP%"
+  - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python gdnative_parse_cpp="%CPP%"
+  # - scons LINK=clang.exe CC=clang.exe platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python gdnative_parse_cpp="%CPP%"
 
 # deploy:
 #   description: 'Godot binaries deployed by Travis CI and AppVeyor'
