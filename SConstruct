@@ -27,7 +27,7 @@ vars.Add("CC", "C compiler")
 vars.Add("CFLAGS", "Custom flags for the C compiler")
 vars.Add("LINKFLAGS", "Custom flags for the linker")
 
-env = Environment(ENV=os.environ, variables=vars)
+env = Environment(ENV=os.environ, variables=vars, tools = ['gcc', 'g++', 'gnulink'])
 # env.AppendENVPath('PATH', os.getenv('PATH'))
 Help(vars.GenerateHelpText(env))
 
