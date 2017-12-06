@@ -28,8 +28,16 @@ vars.Add("CFLAGS", "Custom flags for the C compiler")
 vars.Add("LINK", "linker")
 vars.Add("LINKFLAGS", "Custom flags for the linker")
 
-env = Environment(ENV=os.environ, variables=vars, tools = ['gcc', 'g++', 'gnulink'])
+env = Environment(ENV=os.environ, variables=vars)
 # env.AppendENVPath('PATH', os.getenv('PATH'))
+
+
+if os.name != 'nt':
+    # By default windows tools are msvc compiler & shitty family, but
+    # we have to compile with clang/mingw
+    env['TOOLS'] = ['gcc', 'g++', 'gnulink']
+
+
 Help(vars.GenerateHelpText(env))
 
 
@@ -61,51 +69,53 @@ if 'gcc' in env.get('CC'):
 
 
 venv_dir = Dir('tools/venv')
+
+
+def _create_env_python_command(env, init_venv):
+    def _python_command(targets, sources, command, pre_init=None):
+        commands = [pre_init, init_venv, command]
+        return env.Command(targets, sources, ' && '.join([x for x in commands if x]))
+    env.PythonCommand = _python_command
+
+
 if os.name == 'nt':
-    env.Command(venv_dir, None,
-        "${PYTHON} -m virtualenv ${TARGET} && " +
-        "${TARGET}\\Scripts\\activate.bat && " +
-        "python -m pip install pycparser cffi")
+    _create_env_python_command(env, "%s\\Scripts\\activate.bat" % venv_dir.path)
 else:
-    env.Command(venv_dir, None,
-        "python -m virtualenv ${TARGET} && " +
-        ". ${TARGET}/bin/activate && " +
-        "${PYTHON} -m pip install 'pycparser>=2.18' 'cffi>=1.11.2'")
+    _create_env_python_command(env, ". %s/bin/activate" % venv_dir.path)
+
+
+env.PythonCommand(
+    targets=venv_dir,
+    sources=None,
+    pre_init='${PYTHON} -m virtualenv ${TARGET}',
+    command='${PYTHON} -m pip install "pycparser>=2.18" "cffi>=1.11.2"',
+)
 
 
 ### Generate cdef and cffi C source ###
 
 
-if os.name == 'nt':
-    cdef_gen = env.Command('pythonscript/cffi_bindings/cdef.gen.h', (venv_dir, env['gdnative_include_dir']),
-        "${SOURCES[0]}\\Scripts\\activate.bat && " +
-        "python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits} --cpp=\"${gdnative_parse_cpp}\"")
-else:
-    cdef_gen = env.Command('pythonscript/cffi_bindings/cdef.gen.h', (venv_dir, env['gdnative_include_dir']),
-        ". ${SOURCES[0]}/bin/activate && " +
-        "python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} --output=${TARGET} --bits=${bits} --cpp='${gdnative_parse_cpp}'")
+cdef_gen = env.PythonCommand(
+    targets='pythonscript/cffi_bindings/cdef.gen.h',
+    sources=(venv_dir, env['gdnative_include_dir']),
+    command=('python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} '
+             '--output=${TARGET} --bits=${bits} --cpp="${gdnative_parse_cpp}"')
+)
 env.Append(HEADER=cdef_gen)
 
 
 if env['dev_dyn']:
     print("\033[0;32mPython .inc.py files are dynamically loaded (dev_dyn=True), don't share the binary !\033[0m\n")
 python_inc_srcs = Glob('pythonscript/cffi_bindings/*.inc.py')
-if os.name == 'nt':
-    (pythonscriptcffi_gen, ) = env.Command(
-        'pythonscript/cffi_bindings/pythonscriptcffi.gen.c',
-        [venv_dir] + cdef_gen + python_inc_srcs,
-        "${SOURCES[0]}\\Scripts\\activate.bat && " +
-        "python ./pythonscript/cffi_bindings/generate.py --cdef=${SOURCES[1]} --output=${TARGET}" +
-            (" --dev-dyn" if env['dev_dyn'] else "")
-    )
-else:
-    (pythonscriptcffi_gen, ) = env.Command(
-        'pythonscript/cffi_bindings/pythonscriptcffi.gen.c',
-        [venv_dir] + cdef_gen + python_inc_srcs,
-        ". ${SOURCES[0]}/bin/activate && " +
-        "python ./pythonscript/cffi_bindings/generate.py --cdef=${SOURCES[1]} --output=${TARGET}" +
-            (" --dev-dyn" if env['dev_dyn'] else "")
-    )
+
+
+(pythonscriptcffi_gen, ) = env.PythonCommand(
+    targets='pythonscript/cffi_bindings/pythonscriptcffi.gen.c',
+    sources=[venv_dir] + cdef_gen + python_inc_srcs,
+    command=('python ./pythonscript/cffi_bindings/generate.py '
+             '--cdef=${SOURCES[1]} --output=${TARGET}' +
+             (" --dev-dyn" if env['dev_dyn'] else ""))
+)
 
 
 ### Main compilation stuff ###
@@ -147,10 +157,13 @@ env.Default(install_build_symlink)
 
 
 ### Run tests ###
+
+
 if env['debugger']:
     test_cmd = "DISPLAY=:0.0 ${debugger} -- ${SOURCE} --path tests/bindings"
 else:
     test_cmd = "DISPLAY=:0.0 ${SOURCE} --path tests/bindings"
+
 
 env.Command('test', [env['godot_binary'], install_build_symlink], test_cmd)
 env.AlwaysBuild('test')
@@ -159,7 +172,11 @@ env.Alias('tests', 'test')
 
 ### Run example ###
 
+
 env.Command('example', [env['godot_binary'], install_build_symlink],
     "DISPLAY=0.0 ${SOURCE} --path examples/pong"
 )
 env.AlwaysBuild('example')
+
+
+print(env.Dump())
