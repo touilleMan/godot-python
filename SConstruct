@@ -32,7 +32,7 @@ env = Environment(ENV=os.environ, variables=vars)
 # env.AppendENVPath('PATH', os.getenv('PATH'))
 
 
-if os.name != 'nt':
+if os.name == 'nt':
     # By default windows tools are msvc compiler & shitty family, but
     # we have to compile with clang/mingw
     env['TOOLS'] = ['gcc', 'g++', 'gnulink']
