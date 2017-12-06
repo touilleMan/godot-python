@@ -1,4 +1,4 @@
-image: Visual Studio 2017
+image: Visual Studio 2015
 
 # Skip build on normal pushes
 # skip_non_tags: true
@@ -19,7 +19,10 @@ environment:
 
 install:
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - set "PATH=C:\\mingw-w64\\x86_64-6.3.0-posix-seh-rt_v5-rev1\\bin;%PATH%"
   - pip install --egg scons  # it will fail on AppVeyor without --egg flag
+  - ls "C:\\mingw-w64\\x86_64-6.3.0-posix-seh-rt_v5-rev1"
+  - ls "C:\\mingw-w64\\x86_64-6.3.0-posix-seh-rt_v5-rev1\\bin"
   # - if defined VS call "%VS%" %ARCH%  # if defined - so we can also use mingw
 
 before_build:
@@ -30,6 +33,7 @@ before_build:
   # - cl.exe
 
 build_script:
+  - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python gdnative_parse_cpp="%CPP%" pythonscript/pythonscript.os
   - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python gdnative_parse_cpp="%CPP%"
   # - scons LINK=clang.exe CC=clang.exe platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python gdnative_parse_cpp="%CPP%"
 
