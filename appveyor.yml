@@ -19,9 +19,9 @@ environment:
 
 install:
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-  - set "PATH=C:\\mingw-w64\\x86_64-6.3.0-posix-seh-rt_v5-rev1\\mingw64;%PATH%"
+  - set "PATH=C:\\mingw-w64\\x86_64-6.3.0-posix-seh-rt_v5-rev1\\mingw64\\bin;%PATH%"
   - pip install --egg scons  # it will fail on AppVeyor without --egg flag
-  - ls "C:\\mingw-w64\\x86_64-6.3.0-posix-seh-rt_v5-rev1\\mingw64"
+  - ls "C:\\mingw-w64\\x86_64-6.3.0-posix-seh-rt_v5-rev1\\mingw64\\bin"
   - ls "C:\\MinGW\\bin"
   # - if defined VS call "%VS%" %ARCH%  # if defined - so we can also use mingw
 
