@@ -25,6 +25,7 @@ vars.Add('PYTHON', "Python executable to use for scripts (a virtualenv will be"
                    " created with it in `tools/venv`)", 'python3')
 vars.Add("CC", "C compiler")
 vars.Add("CFLAGS", "Custom flags for the C compiler")
+vars.Add("LINK", "linker")
 vars.Add("LINKFLAGS", "Custom flags for the linker")
 
 env = Environment(ENV=os.environ, variables=vars, tools = ['gcc', 'g++', 'gnulink'])
