@@ -50,21 +50,19 @@ if env['backend'] == 'cpython':
         "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch platforms\\windows-64\\cpython && " +
         "${TARGET}\\..\\get_externals.bat --python=python && " +
         "${TARGET}\\..\\build.bat -p x64"
-        + " && ls ${TARGET}\\..\\.."
-        + " && ls ${TARGET}\\..\\..\\Include"
-        + " && ls ${TARGET}\\..\\..\\Lib"
     )
     env.NoClean(cpython_build)
 
     env.Command(env['build_dir'], cpython_build,
         "cp -R ${SOURCE} ${TARGET}"
+        + " && ls ${TARGET}"
     )
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
     env.Append(CFLAGS='-I %s\\..\\..' % cpython_build.path)
     env.Append(CFLAGS='-I %s\\..\\..\\Include' % cpython_build.path)
     env.Append(CFLAGS='-I %s\\..\\..\\PC' % cpython_build.path)
     env.Append(LIBPATH=env['build_dir'].path)
-    env.Append(LIBS=['python3.6m'])
+    env.Append(LIBS=['python3.6'])
     env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN'"])
 
 else:  # pypy
