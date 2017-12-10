@@ -37,6 +37,7 @@ def connect_handle(obj):
 
 #### Language ####
 
+
 @ffi.def_extern()
 def pybind_init():
     from godot.bindings import ProjectSettings, OS
@@ -56,7 +57,12 @@ def pybind_init():
     for p in pythonpath.split(';'):
         p = ProjectSettings.globalize_path(p)
         sys.path.append(p)
+
+    print('Pythonscript version: %s' % __version__)
+    print('Pythonscript backend: %s %s' %
+        (sys.implementation.name, sys.version.replace('\n', ' ')))
     print('PYTHONPATH: %s' % sys.path)
+
     return ffi.NULL
 
 
@@ -66,6 +72,7 @@ def pybind_finish(handle):
     protect_from_gc.clear()
     destroy_exposed_classes()
     gc.collect()
+
 
 #### Language editor ####
 
@@ -274,7 +281,7 @@ def pybind_script_init(handle, path, source, r_error):
         # TODO: make sure script reloading works
         __import__(modname)  # Force lazy loading of the module
         cls = get_exposed_class_per_module(modname)
-    except:
+    except Exception:
         r_error[0] = lib.GODOT_ERR_PARSE_ERROR
         raise
     r_error[0] = lib.GODOT_OK
@@ -372,6 +379,6 @@ def pybind_instance_call_method(handle, p_method, p_args, p_argcount, r_error):
         r_error.error = lib.GODOT_CALL_ERROR_CALL_ERROR_INVALID_ARGUMENT
         r_error.argument = 1
         r_error.expected = lib.GODOT_VARIANT_TYPE_NIL
-    # Something bad occured, return an default None variant
-    # TODO: Keep this object cached instead of recreating everytime
+    # Something bad occured, return a default None variant
+    # TODO: Keep this object cached instead of recreating it everytime
     return pyobj_to_variant(None)[0]

@@ -187,7 +187,7 @@ def pyobj_to_variant(pyobj, p_gdvar=None):
             lib.godot_variant_new_object(p_gdvar, pyobj._gd_ptr)
         else:
             raise TypeError("Cannot convert `%s` to Godot's Variant" % pyobj)
-    except:
+    except BaseException:
         # Must init the variant anyway to avoid segfault in it destructor
         lib.godot_variant_new_nil(p_gdvar)
         raise

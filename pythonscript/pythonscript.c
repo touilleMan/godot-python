@@ -1,6 +1,8 @@
 #include "Python.h"
 
+#ifndef _WIN32
 #include <dlfcn.h>
+#endif
 #include <wchar.h>
 
 #include "pythonscript.h"
@@ -57,16 +59,50 @@ static const char *PYTHONSCRIPT_COMMENT_DELIMITERS[] = { "#", "\"\"\"\"\"\"", 0 
 static const char *PYTHONSCRIPT_STRING_DELIMITERS[] = { "\" \"", "' '", 0 };
 static godot_pluginscript_language_desc desc;
 
+
+// To avoid having to go through cffi call if profiling is not on,
+// we use those simple _hook_ functions as a proxy
+// Note _profiling_started should idealy be stored in the p_data pointer,
+// but this would be much more cumbersome (given p_data points on a python
+// object). Anyway, there is only one instance of Pythonscript started so
+// it doesn't really matter.
+
+static bool _profiling_started = false;
+
+
+static void _hook_profiling_start(godot_pluginscript_language_data *p_data) {
+	_profiling_started = true;
+	pybind_profiling_start(p_data);
+}
+
+
+static void _hook_profiling_stop(godot_pluginscript_language_data *p_data) {
+	_profiling_started = true;
+	pybind_profiling_stop(p_data);
+}
+
+
+static void _hook_profiling_frame(godot_pluginscript_language_data *p_data) {
+	if (_profiling_started) {
+		pybind_profiling_frame(p_data);
+	}
+}
+
+
 void godot_gdnative_init(godot_gdnative_init_options *options) {
 	GDNATIVE_API_INIT(options);
 
 #ifdef BACKEND_CPYTHON
+#ifndef _WIN32
 	// Make sure the shared library has all it symbols loaded
 	// (strange bug with libpython3.6 otherwise...)
-	const wchar_t *wpath = godot_string_unicode_str(options->active_library_path);
-	const char path[300];
-	wcstombs(path, wpath, 300);
-	dlopen(path, RTLD_NOW | RTLD_GLOBAL);
+	{
+		const wchar_t *wpath = godot_string_unicode_str(options->active_library_path);
+		char path[300];
+		wcstombs(path, wpath, 300);
+		dlopen(path, RTLD_NOW | RTLD_GLOBAL);
+	}
+
 	const char *err = dlerror();
 	if (err) {
 		godot_string msg;
@@ -75,13 +111,16 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 		godot_string_destroy(&msg);
 		return;
 	}
+#endif
 
 	// Retrieve path and set pythonhome
-	static wchar_t pythonhome[256];
-	godot_string _pythonhome = godot_string_get_base_dir(options->active_library_path);
-	wcsncpy(pythonhome, godot_string_unicode_str(&_pythonhome), 256);
-	godot_string_destroy(&_pythonhome);
-	Py_SetPythonHome(pythonhome);
+	{
+		static wchar_t pythonhome[300];
+		godot_string _pythonhome = godot_string_get_base_dir(options->active_library_path);
+		wcsncpy(pythonhome, godot_string_unicode_str(&_pythonhome), 300);
+		godot_string_destroy(&_pythonhome);
+		Py_SetPythonHome(pythonhome);
+	}
 #endif
 
 	desc.name = "Python";
@@ -128,12 +167,11 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 		desc.debug_get_globals = pybind_debug_get_globals;
 		desc.debug_parse_stack_level_expression = pybind_debug_parse_stack_level_expression;
 
-		desc.profiling_start = pybind_profiling_start;
-		desc.profiling_stop = pybind_profiling_stop;
+		desc.profiling_start = _hook_profiling_start;
+		desc.profiling_stop = _hook_profiling_stop;
 		desc.profiling_get_accumulated_data = pybind_profiling_get_accumulated_data;
 		desc.profiling_get_frame_data = pybind_profiling_get_frame_data;
-		// TODO: avoid to go through cffi call if profiling is not on
-		desc.profiling_frame = pybind_profiling_frame;
+		desc.profiling_frame = _hook_profiling_frame;
 	}
 	godot_pluginscript_register_language(&desc);
 }

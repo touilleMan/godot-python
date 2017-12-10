@@ -36,13 +36,15 @@ class CookComplexEnumsVisitor(c_ast.NodeVisitor):
                 pass
 
 
-def _generate_cdef(gdnative_include, bits):
+def _generate_cdef(gdnative_include, bits, cpp):
     header = '%s/gdnative_api_struct.gen.h' % gdnative_include
-    ast = parse_file(header, use_cpp=True, cpp_args=[
+    cpp_path, *cpp_args = cpp.split()
+    cpp_args += [
         '-D__attribute__(x)=',
         '-I' + gdnative_include,
         '-I%s/fake_libc_include' % BASEDIR
-    ])
+    ]
+    ast = parse_file(header, use_cpp=True, cpp_path=cpp_path, cpp_args=cpp_args)
     v = CookComplexEnumsVisitor()
     v.visit(ast)
     generator = c_generator.CGenerator()
@@ -62,9 +64,9 @@ def _generate_cdef(gdnative_include, bits):
     )
 
 
-def generate_cdef(output, gdnativedir, bits):
+def generate_cdef(output, gdnativedir, bits, cpp):
     with open(output, 'w') as fd:
-        fd.write(_generate_cdef(gdnativedir, bits))
+        fd.write(_generate_cdef(gdnativedir, bits, cpp))
 
 
 if __name__ == '__main__':
@@ -73,5 +75,6 @@ if __name__ == '__main__':
     parser.add_argument('gdnative', help='Path to Godot GDnative folder')
     parser.add_argument('--output', '-o', default='cdef.gen.h')
     parser.add_argument('--bits', '-b', choices=['32', '64'], default='64')
+    parser.add_argument('--cpp', help='Preprocessor command', default='cpp')
     args = parser.parse_args()
-    generate_cdef(args.output, args.gdnative, args.bits)
+    generate_cdef(args.output, args.gdnative, args.bits, args.cpp)
