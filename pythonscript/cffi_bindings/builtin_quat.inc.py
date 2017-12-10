@@ -49,7 +49,7 @@ class Quat(BaseBuiltin):
         if not isinstance(other, Quat):
             return NotImplemented
         ret = Quat()
-        ret._gd_ptr[0] = lib.godot_quat_operator_substract(self._gd_ptr, other._gd_ptr)
+        ret._gd_ptr[0] = lib.godot_quat_operator_subtract(self._gd_ptr, other._gd_ptr)
         return ret
 
     def __truediv__(self, val):

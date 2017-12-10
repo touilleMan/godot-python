@@ -38,7 +38,7 @@ class Vector3(BaseBuiltin):
 
     def __sub__(self, val):
         if isinstance(val, Vector3):
-            gd_obj = lib.godot_vector3_operator_substract(self._gd_ptr, val._gd_ptr)
+            gd_obj = lib.godot_vector3_operator_subtract(self._gd_ptr, val._gd_ptr)
             return Vector3.build_from_gdobj(gd_obj)
         else:
             return NotImplemented

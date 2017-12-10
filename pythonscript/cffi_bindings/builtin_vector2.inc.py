@@ -34,7 +34,7 @@ class Vector2(BaseBuiltin):
 
     def __sub__(self, val):
         if isinstance(val, Vector2):
-            gd_obj = lib.godot_vector2_operator_substract(self._gd_ptr, val._gd_ptr)
+            gd_obj = lib.godot_vector2_operator_subtract(self._gd_ptr, val._gd_ptr)
             return Vector2.build_from_gdobj(gd_obj)
         else:
             return NotImplemented
