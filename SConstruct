@@ -14,6 +14,7 @@ vars.Add('godot_binary', "Path to Godot main binary", '')
 vars.Add('debugger', "Run godot with given debugger", '')
 vars.Add('gdnative_include_dir', "Path to GDnative include directory", '')
 vars.Add('gdnative_wrapper_lib', "Path to GDnative wrapper library", '')
+vars.Add(BoolVariable('dump_env', "Dump Scons environment.", False))
 vars.Add(BoolVariable('dev_dyn', "Load at runtime *.inc.py files instead of "
                                  "embedding them (useful for dev)", False))
 vars.Add(BoolVariable('compressed_stdlib', "Compress Python std lib as a zip"
@@ -179,4 +180,5 @@ env.Command('example', [env['godot_binary'], install_build_symlink],
 env.AlwaysBuild('example')
 
 
-print(env.Dump())
+if env['dump_env']:
+    print(env.Dump())
