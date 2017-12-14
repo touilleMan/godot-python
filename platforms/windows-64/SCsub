@@ -8,6 +8,7 @@ Import('env')
 
 env['bits'] = '64'
 env['build_dir'] = Dir('#build/windows-64-%s' % env['backend'])
+env.Append(CFLAGS='-m64')
 
 
 ### Godot binary (to run tests) ###
