@@ -65,7 +65,7 @@ class Basis(BaseBuiltin):
 
     def __sub__(self, val):
         if isinstance(val, Basis):
-            gd_obj = lib.godot_basis_operator_substract(self._gd_ptr, val._gd_ptr)
+            gd_obj = lib.godot_basis_operator_subtract(self._gd_ptr, val._gd_ptr)
             return Basis.build_from_gdobj(gd_obj)
         else:
             return NotImplemented
