@@ -13,8 +13,11 @@ environment:
   CPP: gcc.exe -E
   PYTHON: C:\Python36-x64
   matrix:
-    - TARGET_PLATFORM: windows-64
-      ARCH: amd64
+    # - TARGET_PLATFORM: windows-64
+    #   ARCH: amd64
+    #   TARGET_BACKEND: cpython
+    - TARGET_PLATFORM: windows-32
+      ARCH: wind32
       TARGET_BACKEND: cpython
 
 install:
@@ -37,8 +40,10 @@ build_script:
 on_failure:
   - appveyor PushArtifact pythonscript\pythonscript.o
   - appveyor PushArtifact pythonscript\cffi_bindings\pythonscriptcffi.gen.o
-  - appveyor PushArtifact build\windows-64-cpython\python36.lib
-  - appveyor PushArtifact platforms\gdnative\gdnative_wrapper_code.windows.opt.64.lib
+  - appveyor PushArtifact build\windows-32-cpython\python36.lib
+  - appveyor PushArtifact platforms\gdnative\gdnative_wrapper_code.windows.opt.32.lib
+  # - appveyor PushArtifact build\windows-64-cpython\python36.lib
+  # - appveyor PushArtifact platforms\gdnative\gdnative_wrapper_code.windows.opt.64.lib
 
 # deploy:
 #   description: 'Godot binaries deployed by Travis CI and AppVeyor'
