@@ -9,6 +9,7 @@ vars = Variables('custom.py', ARGUMENTS)
 vars.Add(EnumVariable('platform', "Target platform", '', allowed_values=(
     'x11-64',
     'windows-64',
+    'windows-32',
 )))
 vars.Add('godot_binary', "Path to Godot main binary", '')
 vars.Add('debugger', "Run godot with given debugger", '')
