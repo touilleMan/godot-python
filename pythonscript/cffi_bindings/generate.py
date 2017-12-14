@@ -41,23 +41,7 @@ def generate_pythonscriptcffi(output, cdef_path, dev_dyn):
         METHOD_FLAGS_DEFAULT=METHOD_FLAG_NORMAL,
     };
 
-    """ + api_src#)
-    + """
-    static godot_real (*ptrfunc_godot_vector2_distance_to)(const godot_vector2 *p_self, const godot_vector2 *p_to) = godot_vector2_distance_to;
-
-    typedef struct {
-        godot_real (*_godot_vector2_distance_to)(const godot_vector2 *p_self, const godot_vector2 *p_to);
-    } structfunc_t;
-    static structfunc_t structfunc = {
-        ._godot_vector2_distance_to=godot_vector2_distance_to
-    };
-    godot_real structfunc_godot_vector2_distance_to(const godot_vector2 *p_self, const godot_vector2 *p_to) {
-        return structfunc._godot_vector2_distance_to(p_self, p_to);
-    }
-    godot_real staticfunc_godot_vector2_distance_to(const godot_vector2 *p_self, const godot_vector2 *p_to) {
-        return ptrfunc_godot_vector2_distance_to(p_self, p_to);
-    }
-    """)
+    """ + api_src)
 
     # Python source code embedded and run at init time
     # (including python functions exposed to C through `@ffi.def_extern()`)
@@ -123,16 +107,7 @@ def generate_pythonscriptcffi(output, cdef_path, dev_dyn):
     // We use malloc to bypass Python garbage collector for Godot Object
     void *malloc(size_t size);
     void free(void *ptr);
-    """ + cdef + strip_hashed_src(api_struct_src) + """
-    extern godot_real (*ptrfunc_godot_vector2_distance_to)(const godot_vector2 *p_self, const godot_vector2 *p_to);
-    extern godot_real structfunc_godot_vector2_distance_to(const godot_vector2 *p_self, const godot_vector2 *p_to);
-    extern godot_real staticfunc_godot_vector2_distance_to(const godot_vector2 *p_self, const godot_vector2 *p_to);
-
-    typedef struct {
-        godot_real (*_godot_vector2_distance_to)(const godot_vector2 *p_self, const godot_vector2 *p_to);
-    } structfunc_t;
-    extern structfunc_t structfunc;
-    """)
+    """ + cdef + strip_hashed_src(api_struct_src))
 
     # Python `@ffi.def_extern()` API exposed to C
     ffibuilder.embedding_api(strip_hashed_src(api_src))
