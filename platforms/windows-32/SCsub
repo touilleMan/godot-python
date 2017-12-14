@@ -66,7 +66,8 @@ if env['backend'] == 'cpython':
     env.Append(CFLAGS='-I %s\\..\\..\\PC' % cpython_build.path)
     env.Append(LIBPATH=env['build_dir'].path)
     env.Append(LIBS=['python36'])
-    env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN'"])
+    env.Append(LINKFLAGS="-Wl,-rpath,'$$ORIGIN'")
+    env.Append(LINKFLAGS='-pthread')
 
 else:  # pypy
     raise UserError("Not supported yet :'-(")

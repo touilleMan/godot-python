@@ -66,36 +66,8 @@ if env['backend'] == 'cpython':
     env.Append(CFLAGS='-I %s\\..\\..\\PC' % cpython_build.path)
     env.Append(LIBPATH=env['build_dir'].path)
     env.Append(LIBS=['python36'])
-    env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN'"])
+    env.Append(LINKFLAGS="-Wl,-rpath,'$$ORIGIN'")
+    env.Append(LINKFLAGS='-pthread')
 
 else:  # pypy
     raise UserError("Not supported yet :'-(")
-
-    # PYPY_SRC_NAME = 'pypy3.5-5.9-beta-linux_x86_64-portable'
-    # PYPY_SRC_ARCHIVE = '%s.tar.bz2' % PYPY_SRC_NAME
-    # PYPY_SRC_ARCHIVE_URL = 'https://bitbucket.org/squeaky/portable-pypy/downloads/%s' % PYPY_SRC_ARCHIVE
-
-    # backend_src = Dir(PYPY_SRC_NAME)
-
-    # env.Command(PYPY_SRC_ARCHIVE, None,
-    #     "curl -L %s -o ${TARGET}" % PYPY_SRC_ARCHIVE_URL
-    # )
-    # env.NoClean(PYPY_SRC_ARCHIVE)
-    # env.Command(backend_src, PYPY_SRC_ARCHIVE,
-    #     "tar xf ${SOURCE} -C ${TARGET.srcdir}"
-    # )
-
-    # env.Command(env['build_dir'], backend_src,
-    #     "mkdir ${TARGET} && " +
-    #     "cp -R ${SOURCE}/include ${TARGET}/include && " +
-    #     "cp -R ${SOURCE}/lib ${TARGET}/lib && " +
-    #     "cp -R ${SOURCE}/lib_pypy ${TARGET}/lib_pypy && " +
-    #     "cp -R ${SOURCE}/lib-python ${TARGET}/lib-python && " +
-    #     "cp -R ${SOURCE}/bin/libpypy3-c.so ${TARGET}/lib"
-    # )
-
-    # env.Append(CFLAGS='-DBACKEND_PYPY')
-    # env.Append(CFLAGS='-I %s/include' % backend_src.path)
-    # env.Append(LIBPATH='%s/bin' % backend_src.path)
-    # env.Append(LIBS=['pypy3-c'])
-    # env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
