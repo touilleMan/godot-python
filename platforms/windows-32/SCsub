@@ -59,7 +59,6 @@ if env['backend'] == 'cpython':
         + " && ls ${TARGET}"
     )
     env.Append(CFLAGS='-pthread')
-    env.Append(CFLAGS='-DMS_WIN32')
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
     env.Append(CFLAGS='-I %s\\..\\..' % cpython_build.path)
     env.Append(CFLAGS='-I %s\\..\\..\\Include' % cpython_build.path)
