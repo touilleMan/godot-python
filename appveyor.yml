@@ -41,6 +41,7 @@ on_failure:
   - appveyor PushArtifact pythonscript\pythonscript.o
   - appveyor PushArtifact pythonscript\cffi_bindings\pythonscriptcffi.gen.o
   - appveyor PushArtifact build\windows-32-cpython\python36.lib
+  - appveyor PushArtifact build\windows-32-cpython\python36.dll
   - appveyor PushArtifact platforms\gdnative\gdnative_wrapper_code.windows.opt.32.lib
   # - appveyor PushArtifact build\windows-64-cpython\python36.lib
   # - appveyor PushArtifact platforms\gdnative\gdnative_wrapper_code.windows.opt.64.lib
