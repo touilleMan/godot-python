@@ -150,7 +150,7 @@ sources = [
     "pythonscript/pythonscript.c",
     cffi_bindings_gen,
 ]
-libpythonscript, = env.SharedLibrary('pythonscript/pythonscript', sources)
+libpythonscript = env.SharedLibrary('pythonscript/pythonscript', sources)
 
 
 ### Generate build dir ###
@@ -166,6 +166,9 @@ if env['backend'] == 'cpython':
     if env['compressed_stdlib']:
         raise UserError("Not supported yet :'-(")
     else:
+        print(libpythonscript)
+        if not hasattr(libpythonscript, 'path'):
+            libpythonscript = libpythonscript[0]
         env.Command(
             env['build_dir'],
             python_godot_module_srcs + [env['cpython_build'], libpythonscript],
