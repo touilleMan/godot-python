@@ -43,14 +43,6 @@ vars.Add("LINK", "linker")
 vars.Add("LINKFLAGS", "Custom flags for the linker")
 
 
-if os.name == 'nt':
-    # By default windows tools are msvc compiler & shitty family, but
-    # we have to compile with clang/mingw
-    env = Environment(ENV=os.environ, variables=vars, tools=['mingw'])
-else:
-    env = Environment(ENV=os.environ, variables=vars)
-
-
 # env.AppendENVPath('PATH', os.getenv('PATH'))
 Help(vars.GenerateHelpText(env))
 
