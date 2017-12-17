@@ -31,6 +31,7 @@ before_build:
   - python --version
   - scons --version
   - clang --version
+  - cl.exe
 
 build_script:
   - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python gdnative_parse_cpp="%CPP%"
