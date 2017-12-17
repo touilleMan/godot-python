@@ -1,4 +1,4 @@
-image: Visual Studio 2015
+image: Visual Studio 2017
 
 # Skip build on normal pushes
 # skip_non_tags: true
@@ -24,9 +24,7 @@ install:
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - set "PATH=C:\\mingw-w64\\x86_64-6.3.0-posix-seh-rt_v5-rev1\\mingw64\\bin;%PATH%"
   - pip install --egg scons  # it will fail on AppVeyor without --egg flag
-  # Cannot use msvc due to Python source code embedding in to
-  # `pythonscriptcffi.gen.c` as a string bigger than 65k bytes...
-  # - if defined VS call "%VS%" %ARCH%  # if defined - so we can also use mingw
+  - if defined VS call "%VS%" %ARCH%  # if defined - so we can also use mingw
 
 before_build:
   - git rev-parse HEAD

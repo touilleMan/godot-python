@@ -158,11 +158,13 @@ libpythonscript, = env.SharedLibrary('pythonscript/pythonscript', sources)
 
 python_godot_module_srcs = env.Glob('pythonscript/embedded/**/*.py')
 
+# /!\ Work in progress... /!\
+
 # build_dir = env.Install(env['build_dir'], libpythonscript)
 if env['backend'] == 'cpython':
     build_deps = []
     if env['compressed_stdlib']:
-        pass
+        raise UserError("Not supported yet :'-(")
     else:
         env.Command(
             env['build_dir'],
@@ -213,7 +215,7 @@ if env['backend'] == 'cpython':
     # env.Depends(build_dir, build_deps)
     # env.Clean(build_dir, build_deps)
 else:  # pypy
-    pass
+    raise UserError("Not supported yet :'-(")
 
 # env.Default(build_dir)
 # build_dir = env.Command(env['build_dir'], [libpythonscript, cpython_build])

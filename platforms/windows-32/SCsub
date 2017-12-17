@@ -58,10 +58,10 @@ if env['backend'] == 'cpython':
     )
     env.NoClean(cpython_build)
 
-    env.Command(env['build_dir'], cpython_build,
-        "cp -R ${SOURCE} ${TARGET}"
-        + " && ls ${TARGET}"
-    )
+    # env.Command(env['build_dir'], cpython_build,
+    #     "cp -R ${SOURCE} ${TARGET}"
+    #     + " && ls ${TARGET}"
+    # )
     env.Append(CFLAGS='-pthread')
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
     env.Append(CFLAGS='-I %s\\..\\..' % cpython_build.path)
