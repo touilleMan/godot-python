@@ -71,6 +71,7 @@ if env['backend'] == 'cpython':
     env.Append(LIBPATH=cpython_build.path)
     env.Append(LIBS=['python36'])
     env.Append(LINKFLAGS=['/MACHINE:X86'])
+    env.Append(CFLAGS=['/MACHINE:X86'])
 
 else:  # pypy
     raise UserError("Not supported yet :'-(")
