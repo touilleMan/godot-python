@@ -12,7 +12,6 @@ Import('env')
 
 env['bits'] = '64'
 env['build_dir'] = Dir('#build/windows-64-%s' % env['backend'])
-env.Append(CFLAGS='-m64')
 
 
 ### Godot binary (to run tests) ###
@@ -58,11 +57,10 @@ if env['backend'] == 'cpython':
     )
     env.NoClean(cpython_build)
 
-    env.Command(env['build_dir'], cpython_build,
-        "cp -R ${SOURCE} ${TARGET}"
-        + " && ls ${TARGET}"
-    )
-    env.Append(CFLAGS='-pthread')
+    # env.Command(env['build_dir'], cpython_build,
+    #     "cp -R ${SOURCE} ${TARGET}"
+    #     + " && ls ${TARGET}"
+    # )
     env.Append(CFLAGS='-DMS_WIN64')
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
     env.Append(CFLAGS='-I %s\\..\\..' % cpython_build.path)
@@ -70,8 +68,6 @@ if env['backend'] == 'cpython':
     env.Append(CFLAGS='-I %s\\..\\..\\PC' % cpython_build.path)
     env.Append(LIBPATH=env['build_dir'].path)
     env.Append(LIBS=['python36'])
-    env.Append(LINKFLAGS="-Wl,-rpath,'$$ORIGIN'")
-    env.Append(LINKFLAGS='-pthread')
 
 else:  # pypy
     raise UserError("Not supported yet :'-(")

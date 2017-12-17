@@ -12,7 +12,6 @@ Import('env')
 
 env['bits'] = '32'
 env['build_dir'] = Dir('#build/windows-32-%s' % env['backend'])
-env.Append(CFLAGS='-m32')
 
 
 ### Godot binary (to run tests) ###
@@ -71,7 +70,6 @@ if env['backend'] == 'cpython':
     env.Append(LIBPATH=cpython_build.path)
     env.Append(LIBS=['python36'])
     env.Append(LINKFLAGS=['/MACHINE:X86'])
-    env.Append(CFLAGS=['/MACHINE:X86'])
 
 else:  # pypy
     raise UserError("Not supported yet :'-(")

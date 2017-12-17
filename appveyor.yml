@@ -13,12 +13,12 @@ environment:
   CPP: clang -E
   PYTHON: C:\Python36-x64
   matrix:
-    # - TARGET_PLATFORM: windows-64
-    #   ARCH: amd64
-    #   TARGET_BACKEND: cpython
-    - TARGET_PLATFORM: windows-32
-      ARCH: x86
+    - TARGET_PLATFORM: windows-64
+      ARCH: amd64
       TARGET_BACKEND: cpython
+    # - TARGET_PLATFORM: windows-32
+    #   ARCH: x86
+    #   TARGET_BACKEND: cpython
 
 install:
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
