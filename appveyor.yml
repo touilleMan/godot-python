@@ -36,11 +36,18 @@ build_script:
   - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python gdnative_parse_cpp="%CPP%"
 
 on_failure:
-  - appveyor PushArtifact pythonscript\pythonscript.o
-  - appveyor PushArtifact pythonscript\cffi_bindings\pythonscriptcffi.gen.o
+  # - appveyor PushArtifact pythonscript\pythonscript.o
+  # - appveyor PushArtifact pythonscript\cffi_bindings\pythonscriptcffi.gen.o
+  # - appveyor PushArtifact build\windows-32-cpython\python36.lib
+  # - appveyor PushArtifact build\windows-32-cpython\python36.dll
+  # - appveyor PushArtifact platforms\gdnative\gdnative_wrapper_code.windows.opt.32.lib
+
+  - appveyor PushArtifact platforms\gdnative\gdnative_wrapper_code.windows.opt.32.lib
+  - appveyor PushArtifact pythonscript\pythonscript.obj
+  - appveyor PushArtifact pythonscript\cffi_bindings.gen.obj
   - appveyor PushArtifact build\windows-32-cpython\python36.lib
   - appveyor PushArtifact build\windows-32-cpython\python36.dll
-  - appveyor PushArtifact platforms\gdnative\gdnative_wrapper_code.windows.opt.32.lib
+
   # - appveyor PushArtifact build\windows-64-cpython\python36.lib
   # - appveyor PushArtifact platforms\gdnative\gdnative_wrapper_code.windows.opt.64.lib
 
