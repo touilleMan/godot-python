@@ -7,7 +7,7 @@
 *.so.*
 *.pyc
 build
-godot
+/godot
 
 # Godot import folders
 .import

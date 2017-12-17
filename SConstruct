@@ -5,6 +5,18 @@ from SCons.Errors import UserError
 
 EnsureSConsVersion(2, 3)
 
+
+def SymLink(target, source, env):
+    """
+    Scons doesn't provide cross-platform symlink out of the box
+    """
+    try:
+        os.unlink(str(target[0]))
+    except Exception:
+        pass
+    os.symlink(os.path.abspath(str(source[0])), os.path.abspath(str(target[0])))
+
+
 vars = Variables('custom.py', ARGUMENTS)
 vars.Add(EnumVariable('platform', "Target platform", '', allowed_values=(
     'x11-64',
@@ -98,7 +110,7 @@ env.PythonCommand(
 
 
 cdef_gen = env.PythonCommand(
-    targets='pythonscript/cffi_bindings/cdef.gen.h',
+    targets='pythonscript/cdef.gen.h',
     sources=(venv_dir, env['gdnative_include_dir']),
     command=('python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} '
              '--output=${TARGET} --bits=${bits} --cpp="${gdnative_parse_cpp}"')
@@ -108,19 +120,22 @@ env.Append(HEADER=cdef_gen)
 
 if env['dev_dyn']:
     print("\033[0;32mPython .inc.py files are dynamically loaded (dev_dyn=True), don't share the binary !\033[0m\n")
-python_inc_srcs = Glob('pythonscript/cffi_bindings/*.inc.py')
 
 
-(pythonscriptcffi_gen, ) = env.PythonCommand(
-    targets='pythonscript/cffi_bindings/pythonscriptcffi.gen.c',
-    sources=[venv_dir] + cdef_gen + python_inc_srcs,
-    command=('python ./pythonscript/cffi_bindings/generate.py '
+python_embedded_srcs = env.Glob('pythonscript/embedded/*.inc.py')
+
+
+(cffi_bindings_gen, ) = env.PythonCommand(
+    targets='pythonscript/cffi_bindings.gen.c',
+    sources=[venv_dir] + cdef_gen + python_embedded_srcs,
+    command=('python ./pythonscript/generate_cffi_bindings.py '
              '--cdef=${SOURCES[1]} --output=${TARGET}' +
              (" --dev-dyn" if env['dev_dyn'] else ""))
 )
 
 
 ### Main compilation stuff ###
+
 
 env.Append(CPPPATH=env['gdnative_include_dir'])
 env.Append(LIBS=env['gdnative_wrapper_lib'])
@@ -133,27 +148,86 @@ env.Append(CFLAGS='-I' + env.Dir('pythonscript').path)
 
 sources = [
     "pythonscript/pythonscript.c",
-    pythonscriptcffi_gen,
+    cffi_bindings_gen,
 ]
-pythonscript = env.SharedLibrary('%s/pythonscript' % env['build_dir'].path, sources)
-print(pythonscript)
+libpythonscript, = env.SharedLibrary('pythonscript/pythonscript', sources)
+
+
+### Generate build dir ###
+
+
+python_godot_module_srcs = env.Glob('pythonscript/embedded/**/*.py')
+
+# build_dir = env.Install(env['build_dir'], libpythonscript)
+if env['backend'] == 'cpython':
+    build_deps = []
+    if env['compressed_stdlib']:
+        pass
+    else:
+        env.Command(
+            env['build_dir'],
+            python_godot_module_srcs + [env['cpython_build'], libpythonscript],
+            [
+                Delete('$TARGET'),
+                Mkdir('$TARGET'),
+                Copy('$TARGET', libpythonscript.path),
+                Copy('$TARGET/include', '%s/include' % env['cpython_build']),
+                Copy('$TARGET/lib', '%s/lib' % env['cpython_build']),
+
+                Copy('%s/godot' % env['build_site_packages'], 'pythonscript/embedded/godot'),
+            ]
+        )
+        # build_godot_module = env.Dir('%s/godot' % env['build_site_packages'])
+        # if env['dev_dyn']:
+        #     build_godot_module = env.Command(None, None, [
+        #         lambda x, y: SymLink(build_godot_module.path, env['build_dir'].path),
+        #     ])
+        #     env.Depends(build_dir, build_godot_module)
+        # else:
+        #     build_python_godot_module = env.Command(build_godot_module, env['build_dir'], [
+        #         Delete(build_godot_module.path),
+        #         Copy(build_godot_module.path, 'pythonscript/embedded/godot'),
+        #     ])
+
+        # env.Depends(
+        #     env['build_dir'],
+        #     python_godot_module_srcs + [env['cpython_build'], libpythonscript]
+        # )
+    env.Clean(env['build_dir'], env['build_dir'].path)
+        # build_deps += env.Install('%s/include' % env['build_dir'], env.Glob('%s/include/*' % env['cpython_build']))
+        # build_deps += env.Install('%s/lib/' % env['build_dir'], env.Glob('%s/lib/*' % env['cpython_build']))
+        # if env['dev_dyn']:
+        #     build_deps += env.Command(
+        #         '%s/godot' % env['build_site_packages'],
+        #         'pythonscript/embedded/godot',
+        #         SymLink
+        #     )
+        # else:
+        #     build_godot_module = env.Install(
+        #         env['build_site_packages'],
+        #         'pythonscript/embedded/godot'
+        #     )
+        #     # TODO: doesn't work !
+        #     env.Depends(build_godot_module, python_godot_module_srcs)
+        #     build_deps += build_godot_module
+    # env.Depends(build_dir, build_deps)
+    # env.Clean(build_dir, build_deps)
+else:  # pypy
+    pass
+
+# env.Default(build_dir)
+# build_dir = env.Command(env['build_dir'], [libpythonscript, cpython_build])
 
 
 ### Symbolic link used by test and examples projects ###
 
 
-env.Clean(pythonscript, env['build_dir'])
-def SymLink(target, source, env):
-    try:
-        os.unlink(str(target[0]))
-    except Exception:
-        pass
-    os.symlink(os.path.abspath(str(source[0])), os.path.abspath(str(target[0])))
+# env.Clean(pythonscript, env['build_dir'])
 install_build_symlink, = env.Command('build/main', env['build_dir'], SymLink)
 env.Clean(install_build_symlink, 'build/main')
 env.AlwaysBuild(install_build_symlink)
 
-env.Depends(install_build_symlink, pythonscript)
+# env.Depends(install_build_symlink, pythonscript)
 
 env.Default(install_build_symlink)
 

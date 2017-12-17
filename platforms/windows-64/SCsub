@@ -1,3 +1,7 @@
+# Worth reading:
+# https://docs.python.org/3/faq/windows.html#how-can-i-embed-python-into-a-windows-application
+# tl;dr: onyl msvc is supported to link against pythonxx.dll
+
 from __future__ import print_function
 import os, glob
 from SCons.Errors import UserError

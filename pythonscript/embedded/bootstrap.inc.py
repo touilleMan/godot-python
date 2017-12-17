@@ -5,6 +5,18 @@ import inspect
 import traceback
 from pythonscriptcffi import ffi, lib
 
+from godot import __version__, get_exposed_class_per_module
+from godot.hazmat.base import destroy_exposed_classes, BaseObject
+from godot.hazmat.profiler import Profiler
+from godot.hazmat.tools import (
+    godot_string_to_pyobj,
+    godot_string_from_pyobj,
+    py_to_gd_type,
+    variant_to_pyobj,
+    pyobj_to_variant,
+)
+from godot.bindings import PoolStringArray, Dictionary, Array, ProjectSettings, OS
+
 
 # Protect python objects passed to C from beeing garbage collected
 class ProtectFromGC:
@@ -40,8 +52,6 @@ def connect_handle(obj):
 
 @ffi.def_extern()
 def pybind_init():
-    from godot.bindings import ProjectSettings, OS
-
     # Make sure Python starts in the game directory
     os.chdir(ProjectSettings.globalize_path('res://'))
     # Setup default value
@@ -195,7 +205,6 @@ def pybind_debug_parse_stack_level_expression(handle, level, expression, max_sub
 
 
 def _build_script_manifest(cls):
-    from godot.bindings import Dictionary, Array
 
     def _build_signal_info(signal):
         methinfo = Dictionary()
@@ -382,3 +391,59 @@ def pybind_instance_call_method(handle, p_method, p_args, p_argcount, r_error):
     # Something bad occured, return a default None variant
     # TODO: Keep this object cached instead of recreating it everytime
     return pyobj_to_variant(None)[0]
+
+
+### Profiler ###
+
+
+profiler = Profiler()
+
+
+@ffi.def_extern()
+def pybind_profiling_start(handle):
+    profiler.reset()
+    profiler.enabled = True
+    sys.setprofile(profiler.get_profilefunc())
+
+
+@ffi.def_extern()
+def pybind_profiling_stop(handle):
+    profiler.enabled = False
+    sys.setprofile(None)
+
+
+@ffi.def_extern()
+def pybind_profiling_get_accumulated_data(handle, info, info_max):
+    print('get_frame_accumulated_data')
+    info = Dictionary.build_from_gdobj(info, steal=True)
+    # Sort function to make sure we can display the most consuming ones
+    sorted_and_limited = sorted(profiler.per_meth_profiling.items(),
+                                key=lambda x: -x[1].self_time)[:info_max]
+    for signature, profile in sorted_and_limited:
+        info[signature] = Dictionary(
+            call_count=profile.call_count,
+            total_time=int(profile.total_time * 1e6),
+            self_time=int(profile.self_time * 1e6)
+        )
+    return len(sorted_and_limited)
+
+
+@ffi.def_extern()
+def pybind_profiling_get_frame_data(handle, info, info_max):
+    print('get_frame_data')
+    # Sort function to make sure we can display the most consuming ones
+    sorted_and_limited = sorted(profiler.per_meth_profiling.items(),
+                                key=lambda x: -x[1].last_frame_self_time)[:info_max]
+    for i, item in enumerate(sorted_and_limited):
+        signature, profile = item
+        lib.godot_string_name_new(ffi.addressof(info[i].signature), godot_string_from_pyobj(signature))
+        info[i].call_count = profile.last_frame_call_count
+        info[i].total_time = int(profile.last_frame_total_time * 1e6)
+        info[i].self_time = int(profile.last_frame_self_time * 1e6)
+    return len(sorted_and_limited)
+
+
+@ffi.def_extern()
+def pybind_profiling_frame(handle):
+    if profiler.enabled:
+        profiler.next_frame()

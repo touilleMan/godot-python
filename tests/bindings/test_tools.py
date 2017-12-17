@@ -1,11 +1,11 @@
 import pytest
 
 from godot.bindings import Array, Dictionary
-from godot._tools import (
+from godot.hazmat.tools import (
     variant_to_pyobj, pyobj_to_variant, gdobj_to_pyobj, pyobj_to_gdobj, gd_to_py_type,
     py_to_gd_type, godot_string_to_pyobj
 )
-from pythonscriptcffi import ffi, lib
+from pythonscriptcffi import lib
 
 # @pytest.mark.parametrize('arg', [
 #     None,
