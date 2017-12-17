@@ -61,6 +61,8 @@ if env['backend'] == 'cpython':
     #     "cp -R ${SOURCE} ${TARGET}"
     #     + " && ls ${TARGET}"
     # )
+    env['build_site_packages'] = Dir('%s/lib/python3.6/site-packages' % env['build_dir'])
+    env['cpython_build'] = cpython_build
     env.Append(CFLAGS='-DMS_WIN64')
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
     env.Append(CFLAGS='-I %s\\..\\..' % cpython_build.path)
