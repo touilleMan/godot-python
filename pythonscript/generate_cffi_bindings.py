@@ -90,7 +90,7 @@ def generate_cffi_bindings(output, cdef_path, dev_dyn):
     """ + cdef + strip_hashed_src(api_struct_src))
 
     # Python `@ffi.def_extern()` API exposed to C
-    ffibuilder.embedding_api(strip_hashed_src(api_src))
+    ffibuilder.embedding_api(strip_hashed_src(api_src).replace('DLL_EXPORT', ''))
 
     # Output .c code ready to be compiled ;-)
     ffibuilder.emit_c_code(output)

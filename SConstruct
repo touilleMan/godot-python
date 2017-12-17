@@ -145,7 +145,7 @@ sources = [
     "pythonscript/pythonscript.c",
     cffi_bindings_gen,
 ]
-libpythonscript, *_ = env.SharedLibrary('pythonscript/pythonscript', sources)
+libpythonscript = env.SharedLibrary('pythonscript/pythonscript', sources)[0]
 
 
 ### Generate build dir ###
