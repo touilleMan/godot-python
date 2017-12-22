@@ -28,6 +28,9 @@ before_build:
 build_script:
   - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python
       gdnative_parse_cpp="%CPP%" release_suffix=%APPVEYOR_REPO_TAG_NAME% release
+  - ls
+  - ls build
+  - ls platforms
 
 on_failure:
   - appveyor PushArtifact C:\projects\godot-python\platforms\windows-64\cpython\PCBuild\amd64
