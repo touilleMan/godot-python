@@ -130,7 +130,7 @@ typedef struct godot_gdnative_core_api_struct {
 	godot_vector2 (*godot_vector2_abs)(const godot_vector2 *p_self);
 	godot_vector2 (*godot_vector2_clamped)(const godot_vector2 *p_self, const godot_real p_length);
 	godot_vector2 (*godot_vector2_operator_add)(const godot_vector2 *p_self, const godot_vector2 *p_b);
-	godot_vector2 (*godot_vector2_operator_substract)(const godot_vector2 *p_self, const godot_vector2 *p_b);
+	godot_vector2 (*godot_vector2_operator_subtract)(const godot_vector2 *p_self, const godot_vector2 *p_b);
 	godot_vector2 (*godot_vector2_operator_multiply_vector)(const godot_vector2 *p_self, const godot_vector2 *p_b);
 	godot_vector2 (*godot_vector2_operator_multiply_scalar)(const godot_vector2 *p_self, const godot_real p_b);
 	godot_vector2 (*godot_vector2_operator_divide_vector)(const godot_vector2 *p_self, const godot_vector2 *p_b);
@@ -165,7 +165,7 @@ typedef struct godot_gdnative_core_api_struct {
 	godot_quat (*godot_quat_cubic_slerp)(const godot_quat *p_self, const godot_quat *p_b, const godot_quat *p_pre_a, const godot_quat *p_post_b, const godot_real p_t);
 	godot_quat (*godot_quat_operator_multiply)(const godot_quat *p_self, const godot_real p_b);
 	godot_quat (*godot_quat_operator_add)(const godot_quat *p_self, const godot_quat *p_b);
-	godot_quat (*godot_quat_operator_substract)(const godot_quat *p_self, const godot_quat *p_b);
+	godot_quat (*godot_quat_operator_subtract)(const godot_quat *p_self, const godot_quat *p_b);
 	godot_quat (*godot_quat_operator_divide)(const godot_quat *p_self, const godot_real p_b);
 	godot_bool (*godot_quat_operator_equal)(const godot_quat *p_self, const godot_quat *p_b);
 	godot_quat (*godot_quat_operator_neg)(const godot_quat *p_self);
@@ -196,7 +196,7 @@ typedef struct godot_gdnative_core_api_struct {
 	void (*godot_basis_set_row)(godot_basis *p_self, const godot_int p_row, const godot_vector3 *p_value);
 	godot_bool (*godot_basis_operator_equal)(const godot_basis *p_self, const godot_basis *p_b);
 	godot_basis (*godot_basis_operator_add)(const godot_basis *p_self, const godot_basis *p_b);
-	godot_basis (*godot_basis_operator_substract)(const godot_basis *p_self, const godot_basis *p_b);
+	godot_basis (*godot_basis_operator_subtract)(const godot_basis *p_self, const godot_basis *p_b);
 	godot_basis (*godot_basis_operator_multiply_vector)(const godot_basis *p_self, const godot_basis *p_b);
 	godot_basis (*godot_basis_operator_multiply_scalar)(const godot_basis *p_self, const godot_real p_b);
 	void (*godot_vector3_new)(godot_vector3 *r_dest, const godot_real p_x, const godot_real p_y, const godot_real p_z);
@@ -226,7 +226,7 @@ typedef struct godot_gdnative_core_api_struct {
 	godot_vector3 (*godot_vector3_bounce)(const godot_vector3 *p_self, const godot_vector3 *p_n);
 	godot_vector3 (*godot_vector3_reflect)(const godot_vector3 *p_self, const godot_vector3 *p_n);
 	godot_vector3 (*godot_vector3_operator_add)(const godot_vector3 *p_self, const godot_vector3 *p_b);
-	godot_vector3 (*godot_vector3_operator_substract)(const godot_vector3 *p_self, const godot_vector3 *p_b);
+	godot_vector3 (*godot_vector3_operator_subtract)(const godot_vector3 *p_self, const godot_vector3 *p_b);
 	godot_vector3 (*godot_vector3_operator_multiply_vector)(const godot_vector3 *p_self, const godot_vector3 *p_b);
 	godot_vector3 (*godot_vector3_operator_multiply_scalar)(const godot_vector3 *p_self, const godot_real p_b);
 	godot_vector3 (*godot_vector3_operator_divide_vector)(const godot_vector3 *p_self, const godot_vector3 *p_b);
@@ -799,6 +799,7 @@ typedef struct godot_gdnative_core_api_struct {
 	void (*godot_method_bind_ptrcall)(godot_method_bind *p_method_bind, godot_object *p_instance, const void **p_args, void *p_ret);
 	godot_variant (*godot_method_bind_call)(godot_method_bind *p_method_bind, godot_object *p_instance, const godot_variant **p_args, const int p_arg_count, godot_variant_call_error *p_call_error);
 	godot_class_constructor (*godot_get_class_constructor)(const char *p_classname);
+	godot_dictionary (*godot_get_global_constants)();
 	void (*godot_register_native_call_type)(const char *call_type, native_call_cb p_callback);
 	void *(*godot_alloc)(int p_bytes);
 	void *(*godot_realloc)(void *p_ptr, int p_bytes);
