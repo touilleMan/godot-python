@@ -166,58 +166,11 @@ python_godot_module_srcs = env.Glob('pythonscript/embedded/**/*.py')
 # /!\ Work in progress... /!\
 
 if env['backend'] == 'cpython':
-    def generate_build_dir(target, source, env):
-        target = target[0]
-        cpython_build = source[0]
-        libpythonscript = source[1]
-        godot_embedded = source[2]
-
-        if os.path.isdir(target.path):
-            shutil.rmtree(target.path)
-        os.mkdir(target.path)
-
-        def c(subpath):
-            return os.path.join(cpython_build.abspath, subpath)
-
-        def p(subpath=''):
-            return os.path.join(target.abspath, 'pythonscript', subpath)
-
-        os.mkdir(p())
-
-        shutil.copy(libpythonscript.path, p())
-
-        if os.path.isdir(c('include')):
-            # Windows build of CPython doesn't contain include dir
-            shutil.copytree(c('include'), p('include'))
-
-        # Remove __pycache__ to save lots of space
-        for root, dirs, files in os.walk(c('lib')):
-            if '__pycache__' in dirs:
-                shutil.rmtree(os.path.join(root, '__pycache__'))
-
-        shutil.copytree(c('lib'), p('lib'))
-        if env['compressed_stdlib']:
-            shutil.move(p('lib/python3.6'), p('lib/tmp_python3.6'))
-            os.mkdir(p('lib/python3.6'))
-            shutil.move(p('lib/tmp_python3.6/lib-dynload'), p('lib/python3.6/lib-dynload'))
-            shutil.move(p('lib/tmp_python3.6/site-packages'), p('lib/python3.6/site-packages'))
-            shutil.make_archive(
-                base_name=p('lib/python36'),
-                format='zip',
-                root_dir=p('lib/tmp_python3.6'),
-            )
-            shutil.rmtree(p('lib/tmp_python3.6'))
-
-        if env['dev_dyn']:
-            os.symlink(godot_embedded.abspath, p('lib/python3.6/site-packages/godot'))
-        else:
-            shutil.copytree(godot_embedded.path, p('lib/python3.6/site-packages/godot'))
-
     build_deps = []
     env.Command(
         env['build_dir'],
         [env['cpython_build'], libpythonscript, Dir('#pythonscript/embedded/godot')] + python_godot_module_srcs,
-        generate_build_dir
+        env['generate_build_dir']
     )
     env.Clean(env['build_dir'], env['build_dir'].path)
 else:  # pypy

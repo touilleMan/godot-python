@@ -3,7 +3,7 @@
 # tl;dr: onyl msvc is supported to link against pythonxx.dll
 
 from __future__ import print_function
-import os, glob
+import os, glob, shutil
 from SCons.Errors import UserError
 
 
@@ -54,6 +54,34 @@ if env['backend'] == 'cpython':
     )
     env.NoClean(cpython_build)
 
+    def generate_build_dir(target, source, env):
+        target = target[0]
+        cpython_build = source[0]
+        libpythonscript = source[1]
+        godot_embedded = source[2]
+
+        if os.path.isdir(target.path):
+            shutil.rmtree(target.path)
+        os.mkdir(target.path)
+
+        def c(subpath=''):
+            return os.path.join(cpython_build.abspath, subpath)
+
+        def p(subpath=''):
+            return os.path.join(target.abspath, 'pythonscript', subpath)
+
+        shutil.copytree(c(), p())
+        shutil.copy(libpythonscript.path, p())
+
+        if env['compressed_stdlib']:
+            raise UserError("Not supported yet :'-(")
+
+        if env['dev_dyn']:
+            raise UserError("Not supported yet :'-(")
+        else:
+            shutil.copytree(godot_embedded.path, p('lib/python3.6/site-packages/godot'))
+
+    env['generate_build_dir'] = generate_build_dir
     env['build_site_packages'] = Dir('%s/lib/python3.6/site-packages' % env['build_dir'])
     env['cpython_build'] = cpython_build
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
