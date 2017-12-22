@@ -36,10 +36,14 @@ on_failure:
   - appveyor PushArtifact C:\projects\godot-python\platforms\windows-64\cpython\PCBuild\amd64
   - appveyor PushArtifact build
 
+artifacts:
+  - path: godot-python-*.zip
+    name: GodotPythonRelease
+
 deploy:
   provider: GitHub
   auth_token:
     secure: l4e/x4qkjGlFQtgm2QDM6ix8T7Ry4DtSIRjRBHnwwPuiyCFJ6Z1y7JRh9fF2eFIo
-  artifact: /godot-python-.*\.zip/
+  artifact: GodotPythonRelease
   on:
     appveyor_repo_tag: true
