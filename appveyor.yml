@@ -29,6 +29,9 @@ build_script:
   - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python
       gdnative_parse_cpp="%CPP%" release_suffix=%APPVEYOR_REPO_TAG_NAME% release
 
+on_failure:
+  - appveyor PushArtifact build
+
 deploy:
   provider: GitHub
   auth_token:
