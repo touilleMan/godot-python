@@ -72,8 +72,8 @@ script:
   - set +e
 
 before_deploy:
-  - export BUILD_NAME=godot-python-$GODOT_TARGET-$PYTHON_BACKEND-$TRAVIS_BRANCH
-  - mv `ls build | grep -v main | head -n 1` $BUILD_NAME
+  - export BUILD_NAME=`cd build && ls | grep -v main | head -n 1`
+  - mv build/$BUILD_NAME $BUILD_NAME
   - tar -cjf $BUILD_NAME.tar.bz2 $BUILD_NAME
 
 deploy:

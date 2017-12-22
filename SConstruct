@@ -23,6 +23,7 @@ vars.Add(EnumVariable('platform', "Target platform", '', allowed_values=(
     'windows-64',
     'windows-32',
 )))
+vars.Add(BoolVariable('show_build_dir', "Display build dir and leave", False))
 vars.Add('godot_binary', "Path to Godot main binary", '')
 vars.Add('debugger', "Run godot with given debugger", '')
 vars.Add('gdnative_include_dir', "Path to GDnative include directory", '')
@@ -63,6 +64,15 @@ if env['gdnative_wrapper_lib']:
 
 Export('env')
 SConscript('platforms/%s/SCsub' % env['platform'])
+
+
+
+### Disply build dir (useful for CI) ###
+
+
+if env['show_build_dir']:
+    print(env['build_dir'])
+    raise SystemExit()
 
 
 ### Save my eyes plz ###

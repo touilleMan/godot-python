@@ -1,13 +1,5 @@
 image: Visual Studio 2017
 
-# Skip build on normal pushes
-# skip_non_tags: true
-# artifacts:
-#   - path: godot\bin\*.exe
-#     name: GodotBinary
-#   - path: godot\bin\*gdnative_wrapper_code*.lib
-#     name: GodotGDNativeWrapper
-
 environment:
   VS: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat
   CPP: clang -E
@@ -36,25 +28,10 @@ before_build:
 build_script:
   - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python gdnative_parse_cpp="%CPP%"
 
-on_failure:
-  # - appveyor PushArtifact pythonscript\pythonscript.o
-  # - appveyor PushArtifact pythonscript\cffi_bindings\pythonscriptcffi.gen.o
-  # - appveyor PushArtifact build\windows-32-cpython\python36.lib
-  # - appveyor PushArtifact build\windows-32-cpython\python36.dll
-  # - appveyor PushArtifact platforms\gdnative\gdnative_wrapper_code.windows.opt.32.lib
-
-  - appveyor PushArtifact platforms\gdnative\gdnative_wrapper_code.windows.opt.32.lib
-  - appveyor PushArtifact pythonscript\pythonscript.obj
-  - appveyor PushArtifact pythonscript\cffi_bindings.gen.obj
-  - appveyor PushArtifact platforms\windows-32\cpython\PCBuild\win32\python36.lib
-  - appveyor PushArtifact platforms\windows-32\cpython\PCBuild\win32\python36.dll
-  - appveyor PushArtifact platforms\windows-32\cpython\PCBuild\win32\python36.exp
-
-# deploy:
-#   description: 'Godot binaries deployed by Travis CI and AppVeyor'
-#   provider: GitHub
-#   auth_token:
-#     secure: DYTTAkQFPIDq2YL6hPMOttlHdJ9ZL6dYdOtGFIEneO8BTYx6keJRvewsdzgP2QGA
-#   artifact: GodotBinary, GodotGDNativeWrapper
-#   on:
-#     appveyor_repo_tag: true
+deploy:
+  provider: GitHub
+  auth_token:
+    secure: l4e/x4qkjGlFQtgm2QDM6ix8T7Ry4DtSIRjRBHnwwPuiyCFJ6Z1y7JRh9fF2eFIo
+  artifact: build/windows-*
+  on:
+    appveyor_repo_tag: true
