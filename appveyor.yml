@@ -37,6 +37,6 @@ deploy:
   provider: GitHub
   auth_token:
     secure: l4e/x4qkjGlFQtgm2QDM6ix8T7Ry4DtSIRjRBHnwwPuiyCFJ6Z1y7JRh9fF2eFIo
-  artifact: /godot-python-*.zip/
+  artifact: /godot-python-.*\.zip/
   on:
     appveyor_repo_tag: true
