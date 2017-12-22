@@ -80,4 +80,4 @@ deploy:
   file: godot-python-*.zip
   on:
     repo: touilleMan/godot-python
-tags: true
+    tags: true
