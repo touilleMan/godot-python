@@ -24,6 +24,7 @@ vars.Add(EnumVariable('platform', "Target platform", '', allowed_values=(
     'windows-32',
 )))
 vars.Add(BoolVariable('show_build_dir', "Display build dir and leave", False))
+vars.Add('release_suffix', "Suffix to add to the release archive", 'wip')
 vars.Add('godot_binary', "Path to Godot main binary", '')
 vars.Add('debugger', "Run godot with given debugger", '')
 vars.Add('gdnative_include_dir', "Path to GDnative include directory", '')
@@ -175,35 +176,42 @@ if env['backend'] == 'cpython':
             shutil.rmtree(target.path)
         os.mkdir(target.path)
 
-        shutil.copy(libpythonscript.path, target.path)
+        def c(subpath):
+            return os.path.join(cpython_build.abspath, subpath)
 
-        include_src = '%s/include' % cpython_build
-        if os.path.isdir(include_src):
+        def p(subpath=''):
+            return os.path.join(target.abspath, 'pythonscript', subpath)
+
+        os.mkdir(p())
+
+        shutil.copy(libpythonscript.path, p())
+
+        if os.path.isdir(c('include')):
             # Windows build of CPython doesn't contain include dir
-            shutil.copytree(include_src, '%s/include' % target)
+            shutil.copytree(c('include'), p('include'))
 
         # Remove __pycache__ to save lots of space
-        for root, dirs, files in os.walk('%s/lib' % cpython_build.path):
+        for root, dirs, files in os.walk(c('lib')):
             if '__pycache__' in dirs:
                 shutil.rmtree(os.path.join(root, '__pycache__'))
 
-        shutil.copytree('%s/lib' % cpython_build.path, '%s/lib' % target)
+        shutil.copytree(c('lib'), p('lib'))
         if env['compressed_stdlib']:
-            shutil.move('%s/lib/python3.6' % target, '%s/lib/tmp_python3.6' % target)
-            os.mkdir('%s/lib/python3.6' % target)
-            shutil.move('%s/lib/tmp_python3.6/lib-dynload' % target, '%s/lib/python3.6/lib-dynload' % target)
-            shutil.move('%s/lib/tmp_python3.6/site-packages' % target, '%s/lib/python3.6/site-packages' % target)
+            shutil.move(p('lib/python3.6'), p('lib/tmp_python3.6'))
+            os.mkdir(p('lib/python3.6'))
+            shutil.move(p('lib/tmp_python3.6/lib-dynload'), p('lib/python3.6/lib-dynload'))
+            shutil.move(p('lib/tmp_python3.6/site-packages'), p('lib/python3.6/site-packages'))
             shutil.make_archive(
-                base_name='%s/lib/python36' % target.abspath,
+                base_name=p('lib/python36'),
                 format='zip',
-                root_dir='%s/lib/tmp_python3.6' % target,
+                root_dir=p('lib/tmp_python3.6'),
             )
-            shutil.rmtree('%s/lib/tmp_python3.6' % target.path)
+            shutil.rmtree(p('lib/tmp_python3.6'))
 
         if env['dev_dyn']:
-            os.symlink(godot_embedded.abspath, '%s/lib/python3.6/site-packages/godot' % target)
+            os.symlink(godot_embedded.abspath, p('lib/python3.6/site-packages/godot'))
         else:
-            shutil.copytree(godot_embedded.path, '%s/lib/python3.6/site-packages/godot' % target)
+            shutil.copytree(godot_embedded.path, p('lib/python3.6/site-packages/godot'))
 
     build_deps = []
     env.Command(
@@ -248,3 +256,22 @@ env.Command('example', [env['godot_binary'], install_build_symlink],
 )
 env.AlwaysBuild('example')
 
+
+### Release (because I'm scare to do that with windows cmd on appveyor...) ###
+
+def generate_release(target, source, env):
+    base_name, format = target[0].abspath.rsplit('.', 1)
+    shutil.make_archive(
+        base_name,
+        format,
+        base_dir='pythonscript',
+        root_dir=source[0].abspath
+    )
+
+release = env.Command(
+    '#godot-python-${release_suffix}-${platform}.zip',
+    env['build_dir'],
+    generate_release
+)
+env.Alias('release', release)
+env.AlwaysBuild('release')
