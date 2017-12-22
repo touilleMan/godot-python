@@ -54,10 +54,6 @@ if env['backend'] == 'cpython':
     )
     env.NoClean(cpython_build)
 
-    # env.Command(env['build_dir'], cpython_build,
-    #     "cp -R ${SOURCE} ${TARGET}"
-    #     + " && ls ${TARGET}"
-    # )
     env['build_site_packages'] = Dir('%s/lib/python3.6/site-packages' % env['build_dir'])
     env['cpython_build'] = cpython_build
     env.Append(CFLAGS='/DBACKEND_CPYTHON')

@@ -1,5 +1,5 @@
 from __future__ import print_function
-import os, glob
+import os, glob, shutil
 from SCons.Errors import UserError
 
 
@@ -30,7 +30,6 @@ vars.Add('gdnative_include_dir', "Path to GDnative include directory", '')
 vars.Add('gdnative_wrapper_lib', "Path to GDnative wrapper library", '')
 vars.Add('godot_release_base_url', 'URL to the godot builder release to use',
          'https://github.com/GodotBuilder/godot-builds/releases/download/master_20171220-2')
-vars.Add(BoolVariable('dump_env', "Dump Scons environment.", False))
 vars.Add(BoolVariable('dev_dyn', "Load at runtime *.inc.py files instead of "
                                  "embedding them (useful for dev)", False))
 vars.Add(BoolVariable('compressed_stdlib', "Compress Python std lib as a zip"
@@ -165,76 +164,64 @@ python_godot_module_srcs = env.Glob('pythonscript/embedded/**/*.py')
 
 # /!\ Work in progress... /!\
 
-# build_dir = env.Install(env['build_dir'], libpythonscript)
 if env['backend'] == 'cpython':
+    def generate_build_dir(target, source, env):
+        target = target[0]
+        cpython_build = source[0]
+        libpythonscript = source[1]
+        godot_embedded = source[2]
+
+        if os.path.isdir(target.path):
+            shutil.rmtree(target.path)
+        os.mkdir(target.path)
+
+        shutil.copy(libpythonscript.path, target.path)
+
+        include_src = '%s/include' % cpython_build
+        if os.path.isdir(include_src):
+            # Windows build of CPython doesn't contain include dir
+            shutil.copytree(include_src, '%s/include' % target)
+
+        # Remove __pycache__ to save lots of space
+        for root, dirs, files in os.walk('%s/lib' % cpython_build.path):
+            if '__pycache__' in dirs:
+                shutil.rmtree(os.path.join(root, '__pycache__'))
+
+        shutil.copytree('%s/lib' % cpython_build.path, '%s/lib' % target)
+        if env['compressed_stdlib']:
+            shutil.move('%s/lib/python3.6' % target, '%s/lib/tmp_python3.6' % target)
+            os.mkdir('%s/lib/python3.6' % target)
+            shutil.move('%s/lib/tmp_python3.6/lib-dynload' % target, '%s/lib/python3.6/lib-dynload' % target)
+            shutil.move('%s/lib/tmp_python3.6/site-packages' % target, '%s/lib/python3.6/site-packages' % target)
+            shutil.make_archive(
+                base_name='%s/lib/python36' % target.abspath,
+                format='zip',
+                root_dir='%s/lib/tmp_python3.6' % target,
+            )
+            shutil.rmtree('%s/lib/tmp_python3.6' % target.path)
+
+        if env['dev_dyn']:
+            os.symlink(godot_embedded.abspath, '%s/lib/python3.6/site-packages/godot' % target)
+        else:
+            shutil.copytree(godot_embedded.path, '%s/lib/python3.6/site-packages/godot' % target)
+
     build_deps = []
-    if env['compressed_stdlib']:
-        raise UserError("Not supported yet :'-(")
-    else:
-        env.Command(
-            env['build_dir'],
-            python_godot_module_srcs + [env['cpython_build'], libpythonscript],
-            [
-                Delete('$TARGET'),
-                Mkdir('$TARGET'),
-                Copy('$TARGET', libpythonscript.path),
-                Copy('$TARGET/include', '%s/include' % env['cpython_build']),
-                Copy('$TARGET/lib', '%s/lib' % env['cpython_build']),
-
-                Copy('%s/godot' % env['build_site_packages'], 'pythonscript/embedded/godot'),
-            ]
-        )
-        # build_godot_module = env.Dir('%s/godot' % env['build_site_packages'])
-        # if env['dev_dyn']:
-        #     build_godot_module = env.Command(None, None, [
-        #         lambda x, y: SymLink(build_godot_module.path, env['build_dir'].path),
-        #     ])
-        #     env.Depends(build_dir, build_godot_module)
-        # else:
-        #     build_python_godot_module = env.Command(build_godot_module, env['build_dir'], [
-        #         Delete(build_godot_module.path),
-        #         Copy(build_godot_module.path, 'pythonscript/embedded/godot'),
-        #     ])
-
-        # env.Depends(
-        #     env['build_dir'],
-        #     python_godot_module_srcs + [env['cpython_build'], libpythonscript]
-        # )
+    env.Command(
+        env['build_dir'],
+        [env['cpython_build'], libpythonscript, Dir('#pythonscript/embedded/godot')] + python_godot_module_srcs,
+        generate_build_dir
+    )
     env.Clean(env['build_dir'], env['build_dir'].path)
-        # build_deps += env.Install('%s/include' % env['build_dir'], env.Glob('%s/include/*' % env['cpython_build']))
-        # build_deps += env.Install('%s/lib/' % env['build_dir'], env.Glob('%s/lib/*' % env['cpython_build']))
-        # if env['dev_dyn']:
-        #     build_deps += env.Command(
-        #         '%s/godot' % env['build_site_packages'],
-        #         'pythonscript/embedded/godot',
-        #         SymLink
-        #     )
-        # else:
-        #     build_godot_module = env.Install(
-        #         env['build_site_packages'],
-        #         'pythonscript/embedded/godot'
-        #     )
-        #     # TODO: doesn't work !
-        #     env.Depends(build_godot_module, python_godot_module_srcs)
-        #     build_deps += build_godot_module
-    # env.Depends(build_dir, build_deps)
-    # env.Clean(build_dir, build_deps)
 else:  # pypy
     raise UserError("Not supported yet :'-(")
-
-# env.Default(build_dir)
-# build_dir = env.Command(env['build_dir'], [libpythonscript, cpython_build])
 
 
 ### Symbolic link used by test and examples projects ###
 
 
-# env.Clean(pythonscript, env['build_dir'])
 install_build_symlink, = env.Command('build/main', env['build_dir'], SymLink)
 env.Clean(install_build_symlink, 'build/main')
 env.AlwaysBuild(install_build_symlink)
-
-# env.Depends(install_build_symlink, pythonscript)
 
 env.Default(install_build_symlink)
 
@@ -261,6 +248,3 @@ env.Command('example', [env['godot_binary'], install_build_symlink],
 )
 env.AlwaysBuild('example')
 
-
-if env['dump_env']:
-    print(env.Dump())
