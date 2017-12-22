@@ -80,6 +80,7 @@ deploy:
   provider: releases
   api_key:
     secure: IGucQcPBy6g10GiyLXb25AU4Ie3NwiWJlbgL3maY9gt7hPrYXa9EhmpXqxZMVw5Kv3mShnqlIKb3QcDCS0iuJBD7i++HX32brA3fhlehSea9V5cbp+uZT+bO4ZVdd7lOr9pTNsbN3ny7Dow125EoO4/D897oJc2NSGe1ul5Kgn285H87vC9KdtOxzErk3Jcf/4UO+qFMCtMKfShQa8bHgKGJ/QMvlVtfNWRLzGSp+SMCH6O2mKrCpbPcCajzRc4jH/rZE8AcpoUwMBfvMvT1y0c/1qXsRh5d98aGMgctXTehxv13YNbx6hsOFXU1Kn5xQF+nzHeZQmUQjWO81JflYmrm3yG4nbX9DdoIzg4zHVVXEN69xZPvyyH1dh8G8b3eDag7faFidNA6qmbQ978hRaDWOnwwzWBkEc19Ah6pYIrmwHPO5nq+mmzGIfcfJCIspRe7cv//Ab6eZxJnhK2g20AbIRvcIEL1o1OU+CsBfZcFouD7j2fD8K99HhRNJTIomx9SyHTAvwBTzRUKFNGjAW6TCrRilfV68VS5wRmjVYbpq8RJYQNG/NIjTgx+7H8L9XKb9fe+hYU2vHolUIFgZAvoFqeThJC/EcynBpbiSe6A4x3yadrZ8taLYEXPVYyoJQXlgjGgfSi7j98LdbFWEojNvbyMh2dnHwyz0YXfTK8=
+  skip_cleanup: true
   file: "$BUILD_NAME.tar.bz2"
   on:
     repo: touilleMan/godot-python
