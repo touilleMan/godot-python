@@ -81,6 +81,7 @@ if env['backend'] == 'cpython':
         os.mkdir(p())
 
         shutil.copy(libpythonscript.path, p())
+        open(p('.gdignore'), 'w').close()
 
         if os.path.isdir(c('include')):
             # Windows build of CPython doesn't contain include dir

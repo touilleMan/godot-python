@@ -72,14 +72,15 @@ if env['backend'] == 'cpython':
 
         shutil.copytree(c(), p())
         shutil.copy(libpythonscript.path, p())
+        open(p('.gdignore'), 'w').close()
 
         if env['compressed_stdlib']:
             raise UserError("Not supported yet :'-(")
 
         if env['dev_dyn']:
-            raise UserError("Not supported yet :'-(")
+            os.symlink(godot_embedded.abspath, p('godot'))
         else:
-            shutil.copytree(godot_embedded.path, p('lib/python3.6/site-packages/godot'))
+            shutil.copytree(godot_embedded.path, p('godot'))
 
     env['generate_build_dir'] = generate_build_dir
     env['build_site_packages'] = Dir('%s/lib/python3.6/site-packages' % env['build_dir'])
