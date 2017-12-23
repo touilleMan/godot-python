@@ -71,7 +71,16 @@ if env['backend'] == 'cpython':
             os.path.join(target.abspath, 'vcruntime140.dll')
         )
         # Install cffi through pip
-        subprocess.call('cd %s && python.exe -m pip install cffi' % target.abspath, shell=True)
+        subprocess.call(
+            'cd %s && ' % target.abspath +
+            'set PYTHONPATH=%s\\site-packages&& ' % target.abspath +
+            ' python.exe -m pip install cffi',
+            shell=True
+        )
+        subprocess.call(
+            'echo ================== %s ===== && ' % target.abspath +
+            'dir %s' % target.abspath
+        )
     env.Command(cpython_build, CPYTHON_SRC_ARCHIVE,
         generate_cpython_build
     )
@@ -103,7 +112,7 @@ if env['backend'] == 'cpython':
     env['generate_build_dir'] = generate_build_dir
     env['backend_dep'] = cpython_build
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
-    env.Append(CFLAGS='-I %s\\include' % cpython_extra_dir.path)
+    env.Append(CFLAGS='-I ' + os.path.join(cpython_extra_dir.abspath, 'include'))
     env.Append(LIBPATH=cpython_build.path)
     env.Append(LIBS=['python36'])
 
