@@ -169,7 +169,7 @@ if env['backend'] == 'cpython':
     build_deps = []
     env.Command(
         env['build_dir'],
-        [env['cpython_build'], libpythonscript, Dir('#pythonscript/embedded/godot')] + python_godot_module_srcs,
+        [env['backend_dep'], libpythonscript, Dir('#pythonscript/embedded/godot')] + python_godot_module_srcs,
         env['generate_build_dir']
     )
     env.Clean(env['build_dir'], env['build_dir'].path)

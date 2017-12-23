@@ -4,6 +4,8 @@
 
 from __future__ import print_function
 import os, glob, shutil
+import zipfile
+import subprocess
 from SCons.Errors import UserError
 
 
@@ -44,13 +46,28 @@ if not env['gdnative_wrapper_lib']:
 
 
 if env['backend'] == 'cpython':
-    # Build dir is within the source dir... which is something scons hates !
-    # So we merge the two steps together.
-    cpython_build = Dir('cpython/PCBuild/amd64')
-    env.Command(cpython_build, None,
-        "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch platforms\\windows-64\\cpython && " +
-        "${TARGET}\\..\\get_externals.bat --python=python && " +
-        "${TARGET}\\..\\build.bat -p x64"
+    CPYTHON_SRC_NAME = 'python-3.6.4-embed-amd64'
+    CPYTHON_SRC_ARCHIVE = File('%s.zip' % CPYTHON_SRC_NAME)
+    CPYTHON_SRC_ARCHIVE_URL = 'https://www.python.org/ftp/python/3.6.4/%s' % CPYTHON_SRC_ARCHIVE
+    cpython_extra_dir = Dir('python-3.6.4-extras')
+
+    env.Command(CPYTHON_SRC_ARCHIVE, None,
+        "curl -L %s -o ${TARGET}" % CPYTHON_SRC_ARCHIVE_URL
+    )
+    env.NoClean(CPYTHON_SRC_ARCHIVE)
+
+    cpython_build = Dir(CPYTHON_SRC_NAME)
+    def generate_cpython_build(target, source, env):
+        target = target[0]
+        zip_ref = zipfile.ZipFile(source[0].abspath, 'r')
+        zip_ref.extractall(target.abspath)
+        zip_ref.close()
+        shutil.copytree('%s/site-packages' % cpython_extra_dir, '%s/site-packages' % target)
+        shutil.copy('%s/vcruntime140.dll' % cpython_extra_dir, '%s/vcruntime140.dll' % target)
+        # Install cffi through pip
+        subprocess.call('cd %s && python.exe -m pip install cffi' % target.abspath, shell=True)
+    env.Command(cpython_build, CPYTHON_SRC_ARCHIVE,
+        generate_cpython_build
     )
     env.NoClean(cpython_build)
 
@@ -64,18 +81,13 @@ if env['backend'] == 'cpython':
             shutil.rmtree(target.path)
         os.mkdir(target.path)
 
-        def c(subpath=''):
-            return os.path.join(cpython_build.abspath, subpath)
-
         def p(subpath=''):
             return os.path.join(target.abspath, 'pythonscript', subpath)
 
-        shutil.copytree(c(), p())
+        shutil.copytree(cpython_build.abspath, p())
+
         shutil.copy(libpythonscript.path, p())
         open(p('.gdignore'), 'w').close()
-
-        if env['compressed_stdlib']:
-            raise UserError("Not supported yet :'-(")
 
         if env['dev_dyn']:
             os.symlink(godot_embedded.abspath, p('godot'))
@@ -83,12 +95,9 @@ if env['backend'] == 'cpython':
             shutil.copytree(godot_embedded.path, p('godot'))
 
     env['generate_build_dir'] = generate_build_dir
-    env['build_site_packages'] = Dir('%s/lib/python3.6/site-packages' % env['build_dir'])
-    env['cpython_build'] = cpython_build
+    env['backend_dep'] = cpython_build
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
-    env.Append(CFLAGS='-I %s\\..\\..' % cpython_build.path)
-    env.Append(CFLAGS='-I %s\\..\\..\\Include' % cpython_build.path)
-    env.Append(CFLAGS='-I %s\\..\\..\\PC' % cpython_build.path)
+    env.Append(CFLAGS='-I %s\\include' % cpython_extra_dir.path)
     env.Append(LIBPATH=cpython_build.path)
     env.Append(LIBS=['python36'])
 

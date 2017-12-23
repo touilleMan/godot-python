@@ -83,9 +83,7 @@ if env['backend'] == 'cpython':
         shutil.copy(libpythonscript.path, p())
         open(p('.gdignore'), 'w').close()
 
-        if os.path.isdir(c('include')):
-            # Windows build of CPython doesn't contain include dir
-            shutil.copytree(c('include'), p('include'))
+        shutil.copytree(c('include'), p('include'))
 
         # Remove __pycache__ to save lots of space
         for root, dirs, files in os.walk(c('lib')):
@@ -111,8 +109,7 @@ if env['backend'] == 'cpython':
             shutil.copytree(godot_embedded.path, p('lib/python3.6/site-packages/godot'))
 
     env['generate_build_dir'] = generate_build_dir
-    env['build_site_packages'] = Dir('%s/lib/python3.6/site-packages' % env['build_dir'])
-    env['cpython_build'] = cpython_build
+    env['backend_dep'] = cpython_build
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
     env.Append(CFLAGS='-I %s/include/python3.6m/' % cpython_build.path)
     env.Append(LIBPATH='%s/lib' % cpython_build.path)
@@ -134,6 +131,7 @@ else:  # pypy
     env.Command(backend_src, PYPY_SRC_ARCHIVE,
         "tar xf ${SOURCE} -C ${TARGET.srcdir}"
     )
+    env.NoClean(backend_src)
 
     env.Command(env['build_dir'], backend_src,
         "mkdir -p ${TARGET} && " +
@@ -144,7 +142,6 @@ else:  # pypy
         "cp -fR ${SOURCE}/bin/libpypy3-c.so ${TARGET}/lib"
     )
 
-    env['build_site_packages'] = Dir('%s/lib-python/lib-python/3/site-packages' % env['build_dir'])
     env.Append(CFLAGS='-DBACKEND_PYPY')
     env.Append(CFLAGS='-I %s/include' % backend_src.path)
     env.Append(LIBPATH='%s/bin' % backend_src.path)

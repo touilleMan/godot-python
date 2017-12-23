@@ -83,7 +83,6 @@ if env['backend'] == 'cpython':
             shutil.copytree(godot_embedded.path, p('godot'))
 
     env['generate_build_dir'] = generate_build_dir
-    env['build_site_packages'] = Dir('%s/lib/python3.6/site-packages' % env['build_dir'])
     env['cpython_build'] = cpython_build
     env.Append(CFLAGS='/DBACKEND_CPYTHON')
     env.Append(CFLAGS='/I %s\\..\\..' % cpython_build.path)
