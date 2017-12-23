@@ -62,8 +62,14 @@ if env['backend'] == 'cpython':
         zip_ref = zipfile.ZipFile(source[0].abspath, 'r')
         zip_ref.extractall(target.abspath)
         zip_ref.close()
-        shutil.copytree('%s/site-packages' % cpython_extra_dir, '%s/site-packages' % target)
-        shutil.copy('%s/vcruntime140.dll' % cpython_extra_dir, '%s/vcruntime140.dll' % target)
+        shutil.copytree(
+            os.path.join(cpython_extra_dir.abspath, 'site-packages'),
+            os.path.join(target.abspath, 'site-packages')
+        )
+        shutil.copy(
+            os.path.join(cpython_extra_dir.abspath, 'vcruntime140.dll'),
+            os.path.join(target.abspath, 'vcruntime140.dll')
+        )
         # Install cffi through pip
         subprocess.call('cd %s && python.exe -m pip install cffi' % target.abspath, shell=True)
     env.Command(cpython_build, CPYTHON_SRC_ARCHIVE,
