@@ -77,10 +77,9 @@ if env['backend'] == 'cpython':
             ' python.exe -m pip install cffi',
             shell=True
         )
-        subprocess.call(
-            'echo ================== %s ===== && ' % target.abspath +
-            'dir %s' % target.abspath
-        )
+        subprocess.call('echo ================== %s ===== && ' % target.abspath)
+        subprocess.call('dir %s' % target.abspath)
+        subprocess.call('ls %s' % target.abspath)
     env.Command(cpython_build, CPYTHON_SRC_ARCHIVE,
         generate_cpython_build
     )
