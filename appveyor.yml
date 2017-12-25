@@ -33,7 +33,7 @@ build_script:
   - ls platforms
 
 on_failure:
-  - 7z -tzip a CPythonBuild.zip PushArtifact platforms\windows-64\cpython
+  - 7z -tzip a CPythonBuild.zip platforms\windows-64\cpython
   - appveyor PushArtifact CPythonBuild.zip
   - 7z -tzip a GodotPythonBuild.zip build
   - appveyor PushArtifact GodotPythonBuild.zip
