@@ -192,9 +192,9 @@ env.Default(install_build_symlink)
 
 
 if env['debugger']:
-    test_cmd = "DISPLAY=:0.0 ${debugger} -- ${SOURCE} --path tests/bindings"
+    test_cmd = "${debugger} -- ${SOURCE} --path tests/bindings"
 else:
-    test_cmd = "DISPLAY=:0.0 ${SOURCE} --path tests/bindings"
+    test_cmd = "${SOURCE} --path tests/bindings"
 
 
 env.Command('test', [env['godot_binary'], install_build_symlink], test_cmd)

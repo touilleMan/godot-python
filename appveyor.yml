@@ -32,6 +32,10 @@ build_script:
   - ls build
   - ls platforms
 
+test:
+  - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python
+      gdnative_parse_cpp="%CPP%" release_suffix=%APPVEYOR_REPO_TAG_NAME% test
+
 on_failure:
   # - 7z -tzip a CPythonBuild.zip platforms\windows-64\cpython
   # - appveyor PushArtifact CPythonBuild.zip
