@@ -4,6 +4,7 @@
 
 from __future__ import print_function
 import os, glob, shutil
+import subprocess
 from SCons.Errors import UserError
 
 
@@ -48,9 +49,14 @@ if env['backend'] == 'cpython':
     # So we merge the two steps together.
     cpython_build = Dir('cpython/PCBuild/amd64')
     env.Command(cpython_build, None,
-        "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch platforms\\windows-64\\cpython && " +
-        "${TARGET}\\..\\get_externals.bat --python=python && " +
-        "${TARGET}\\..\\build.bat -p x64"
+        # Cheat to accelerate the appveyor build during debug...
+        "mkdir tmp && cd tmp && " +
+        "curl -L https://ci.appveyor.com/api/buildjobs/y9olueiv5xhc67yw/artifacts/CPythonBuild.zip -o CPythonBuild.zip && " +
+        "unzip CPythonBuild.zip && " +
+        "mv platforms/windows-64/cpython ../platforms/windows-64/"
+        # "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch platforms\\windows-64\\cpython && " +
+        # "${TARGET}\\..\\get_externals.bat --python=python && " +
+        # "${TARGET}\\..\\build.bat -p x64"
     )
     env.NoClean(cpython_build)
 
@@ -70,15 +76,43 @@ if env['backend'] == 'cpython':
         def p(subpath=''):
             return os.path.join(target.abspath, 'pythonscript', *subpath.split('/'))
 
-        shutil.copytree(c(), p())
+        for pyd in glob.glob(c('*.pyd')):
+            shutil.copy(pyd, p())
+        for pyd in glob.glob(c('*.dll')):
+            shutil.copy(pyd, p())
+        shutil.copy(c('python.exe'), p())
+        shutil.copy(c('pythonw.exe'), p())
+
         shutil.copy(libpythonscript.path, p())
         open(p('.gdignore'), 'w').close()
 
+        # Remove __pycache__ to save lots of space
+        for root, dirs, files in os.walk(c('../../Lib')):
+            if '__pycache__' in dirs:
+                shutil.rmtree(os.path.join(root, '__pycache__'))
+
+        shutil.copytree(c('../../Lib'), p('lib'))
 
         if env['compressed_stdlib']:
-            raise UserError("Not supported yet :'-(")
+            shutil.make_archive(
+                base_name=p('python36'),
+                format='zip',
+                root_dir=p('lib'),
+            )
+            shutil.rmtree(p('lib'))
+            os.mkdir(p('lib/'))
 
-        shutil.copy(c('../../../python-3.6.4-extras/site-packages'), p('lib'))
+        print('$ python.exe --version')
+        subprocess.call('python.exe --version', cwd=p(), shell=True)
+        print('$ python.exe -m ensurepip')
+        subprocess.call('python.exe -m ensurepip', cwd=p(), shell=True)
+        print('$ python.exe -m pip install cffi')
+        subprocess.call('python.exe -m pip install cffi', cwd=p(), shell=True)
+
+        # shutil.copy(c('../../../python-3.6.4-extras/pip'), p('lib/pip'))
+        # shutil.copy(c('../../../python-3.6.4-extras/setuptools'), p('lib/setuptools'))
+        # shutil.copy(c('../../../python-3.6.4-extras/pkg_resources'), p('lib/pkg_resources'))
+
         if env['dev_dyn']:
             os.symlink(godot_embedded.abspath, p('lib/godot'))
         else:
