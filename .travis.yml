@@ -16,7 +16,8 @@ env:
     - AUDIODEV="null"
     - XVFB_OPTS=":99.0 -ac -screen 0 1280x1024x24 -ac +extension GLX +extension RANDR +render -noreset"
   matrix:
-    - GODOT_TARGET=x11 PYTHON_BACKEND=cpython
+    - TARGET_PLATFORM=x11-64 PYTHON_BACKEND=cpython
+    - TARGET_PLATFORM=x11-32 PYTHON_BACKEND=cpython
     # - GODOT_TARGET=x11 PYTHON_BACKEND=pypy
 
 addons:
@@ -66,9 +67,9 @@ before_script:
 
 script:
   - set -e  # Enable fail on first error
-  - scons platform=x11-64 backend=$PYTHON_BACKEND CC=$CC release_suffix=$TRAVIS_BRANCH release
+  - scons platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC release_suffix=$TRAVIS_BRANCH release
 # Tests need x11 server with opengl3 or compile godot with platform=server (both not working so far...)
-  # - LIBGL_ALWAYS_SOFTWARE=1 scons debugger=valgrind platform=x11-64 backend=$PYTHON_BACKEND CC=$CC test
+  # - LIBGL_ALWAYS_SOFTWARE=1 scons debugger=valgrind platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC test
   - set +e
 
 deploy:

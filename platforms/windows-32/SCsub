@@ -4,6 +4,7 @@
 
 from __future__ import print_function
 import os, glob, shutil
+import subprocess
 from SCons.Errors import UserError
 
 
@@ -65,30 +66,66 @@ if env['backend'] == 'cpython':
         os.mkdir(target.path)
 
         def c(subpath=''):
-            return os.path.join(cpython_build.abspath, subpath)
+            return os.path.join(cpython_build.abspath, *subpath.split('/'))
 
         def p(subpath=''):
-            return os.path.join(target.abspath, 'pythonscript', subpath)
+            return os.path.join(target.abspath, 'pythonscript', *subpath.split('/'))
 
-        shutil.copytree(c(), p())
+        os.mkdir(p())
+        for pyd in glob.glob(c('*.pyd')):
+            shutil.copy(pyd, p())
+        for pyd in glob.glob(c('*.dll')):
+            shutil.copy(pyd, p())
+        shutil.copy(c('python.exe'), p())
+        shutil.copy(c('pythonw.exe'), p())
+
         shutil.copy(libpythonscript.path, p())
         open(p('.gdignore'), 'w').close()
 
+        # Remove __pycache__ to save lots of space
+        for root, dirs, files in os.walk(c('../../Lib')):
+            if '__pycache__' in dirs:
+                shutil.rmtree(os.path.join(root, '__pycache__'))
+
+        shutil.copytree(c('../../Lib'), p('lib'))
+
         if env['compressed_stdlib']:
-            raise UserError("Not supported yet :'-(")
+            shutil.make_archive(
+                base_name=p('python36'),
+                format='zip',
+                root_dir=p('lib'),
+            )
+            shutil.rmtree(p('lib'))
+            os.mkdir(p('lib/'))
+
+        def _run_or_die(cmd):
+            run = subprocess.Popen(
+                cmd.split(), cwd=p(), shell=True,
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE
+            )
+            ret = run.wait()
+            if ret:
+                stdout, stderr = run.communicate()
+                raise RuntimeError(
+                    'ERROR: `%s` returned %s\n'
+                    ' ===== stdout =====\n%s\n\n'
+                    ' ===== stderr =====\n%s' % (cmd, ret, stdout, stderr))
+
+        _run_or_die('python.exe -m ensurepip')
+        _run_or_die('python.exe -m pip install cffi')
 
         if env['dev_dyn']:
-            os.symlink(godot_embedded.abspath, p('godot'))
+            os.symlink(godot_embedded.abspath, p('lib/godot'))
         else:
-            shutil.copytree(godot_embedded.path, p('godot'))
+            shutil.copytree(godot_embedded.path, p('lib/godot'))
 
     env['generate_build_dir'] = generate_build_dir
     env['build_site_packages'] = Dir('%s/lib/python3.6/site-packages' % env['build_dir'])
     env['cpython_build'] = cpython_build
-    env.Append(CFLAGS='/DBACKEND_CPYTHON')
-    env.Append(CFLAGS='/I %s\\..\\..' % cpython_build.path)
-    env.Append(CFLAGS='/I %s\\..\\..\\Include' % cpython_build.path)
-    env.Append(CFLAGS='/I %s\\..\\..\\PC' % cpython_build.path)
+    env.Append(CFLAGS='-DBACKEND_CPYTHON')
+    env.Append(CFLAGS='-I %s\\..\\..' % cpython_build.path)
+    env.Append(CFLAGS='-I %s\\..\\..\\Include' % cpython_build.path)
+    env.Append(CFLAGS='-I %s\\..\\..\\PC' % cpython_build.path)
     env.Append(LIBPATH=cpython_build.path)
     env.Append(LIBS=['python36'])
     env.Append(LINKFLAGS=['/MACHINE:X86'])

@@ -20,6 +20,7 @@ def SymLink(target, source, env):
 vars = Variables('custom.py', ARGUMENTS)
 vars.Add(EnumVariable('platform', "Target platform", '', allowed_values=(
     'x11-64',
+    'x11-32',
     'windows-64',
     'windows-32',
 )))
