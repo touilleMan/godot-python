@@ -76,9 +76,8 @@ if env['backend'] == 'cpython':
         def p(subpath=''):
             return os.path.join(target.abspath, 'pythonscript', *subpath.split('/'))
 
-        print('copy pyd %s -->%s', (c('*.pyd'), type(c('*.pyd'))))
+        os.mkdir(p())
         for pyd in glob.glob(c('*.pyd')):
-            print(pyd, '--->', type(pyd), '--->', p())
             shutil.copy(pyd, p())
         print('copy dll')
         for pyd in glob.glob(c('*.dll')):
