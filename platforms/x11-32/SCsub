@@ -53,7 +53,7 @@ if env['backend'] == 'cpython':
     env.Command(cpython_build, cpython_src,
         "cd ${SOURCE} && " +
         "echo Configuring CPython... && "
-        "1>/dev/null ./configure --host=i686-pc-linux-gnu --enable-shared --prefix=${TARGET.get_abspath()} && " +
+        "1>/dev/null ./configure --build=x86_64-pc-linux-gnu --host=i686-pc-linux-gnu --enable-shared --prefix=${TARGET.get_abspath()} && " +
         "echo Building CPython... && "
         "1>/dev/null make -j4 && " +
         "echo Installing CPython in ${TARGET.get_abspath()}... && "
