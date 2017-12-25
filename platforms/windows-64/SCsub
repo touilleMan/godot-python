@@ -52,7 +52,7 @@ if env['backend'] == 'cpython':
         # Cheat to accelerate the appveyor build during debug...
         "mkdir tmp && cd tmp && " +
         "curl -L https://ci.appveyor.com/api/buildjobs/y9olueiv5xhc67yw/artifacts/CPythonBuild.zip -o CPythonBuild.zip && " +
-        "unzip CPythonBuild.zip && " +
+        "unzip -q CPythonBuild.zip && " +
         "mv platforms/windows-64/cpython ../platforms/windows-64/"
         # "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch platforms\\windows-64\\cpython && " +
         # "${TARGET}\\..\\get_externals.bat --python=python && " +
