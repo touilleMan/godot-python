@@ -48,6 +48,7 @@ vars.Add("LINKFLAGS", "Custom flags for the linker")
 
 env = Environment(ENV=os.environ, variables=vars)
 # env.AppendENVPath('PATH', os.getenv('PATH'))
+# env.AppendENVPath('DISPLAY', os.getenv('DISPLAY'))
 Help(vars.GenerateHelpText(env))
 
 
@@ -205,7 +206,7 @@ env.Alias('tests', 'test')
 
 
 env.Command('example', [env['godot_binary'], install_build_symlink],
-    "DISPLAY=0.0 ${SOURCE} --path examples/pong"
+    "${SOURCE} --path examples/pong"
 )
 env.AlwaysBuild('example')
 
