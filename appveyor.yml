@@ -26,7 +26,7 @@ before_build:
   - cl.exe
 
 build_script:
-  - scons --debug=stacktrace platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python
+  - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python
       gdnative_parse_cpp="%CPP%" release_suffix=%APPVEYOR_REPO_TAG_NAME% release
   - ls
   - ls build
