@@ -76,13 +76,18 @@ if env['backend'] == 'cpython':
         def p(subpath=''):
             return os.path.join(target.abspath, 'pythonscript', *subpath.split('/'))
 
+        print('copy pyd')
         for pyd in glob.glob(c('*.pyd')):
             shutil.copy(pyd, p())
+        print('copy dll')
         for pyd in glob.glob(c('*.dll')):
             shutil.copy(pyd, p())
+        print('copy python.exe')
         shutil.copy(c('python.exe'), p())
+        print('copy pythonw.exe')
         shutil.copy(c('pythonw.exe'), p())
 
+        print('copy libpythonscript')
         shutil.copy(libpythonscript.path, p())
         open(p('.gdignore'), 'w').close()
 
