@@ -164,19 +164,12 @@ libpythonscript = env.SharedLibrary('pythonscript/pythonscript', sources)[0]
 
 
 python_godot_module_srcs = env.Glob('pythonscript/embedded/**/*.py')
-
-# /!\ Work in progress... /!\
-
-if env['backend'] == 'cpython':
-    build_deps = []
-    env.Command(
-        env['build_dir'],
-        [env['cpython_build'], libpythonscript, Dir('#pythonscript/embedded/godot')] + python_godot_module_srcs,
-        env['generate_build_dir']
-    )
-    env.Clean(env['build_dir'], env['build_dir'].path)
-else:  # pypy
-    raise UserError("Not supported yet :'-(")
+env.Command(
+    env['build_dir'],
+    [env['backend_dir'], libpythonscript, Dir('#pythonscript/embedded/godot')] + python_godot_module_srcs,
+    env['generate_build_dir']
+)
+env.Clean(env['build_dir'], env['build_dir'].path)
 
 
 ### Symbolic link used by test and examples projects ###

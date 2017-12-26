@@ -13,6 +13,7 @@ Import('env')
 
 env['bits'] = '32'
 env['build_dir'] = Dir('#build/windows-32-%s' % env['backend'])
+env.Append(LINKFLAGS=['/MACHINE:X86'])
 
 
 ### Godot binary (to run tests) ###
@@ -120,15 +121,57 @@ if env['backend'] == 'cpython':
             shutil.copytree(godot_embedded.path, p('lib/godot'))
 
     env['generate_build_dir'] = generate_build_dir
-    env['build_site_packages'] = Dir('%s/lib/python3.6/site-packages' % env['build_dir'])
-    env['cpython_build'] = cpython_build
+    env['backend_dir'] = cpython_build
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
     env.Append(CFLAGS='-I %s\\..\\..' % cpython_build.path)
     env.Append(CFLAGS='-I %s\\..\\..\\Include' % cpython_build.path)
     env.Append(CFLAGS='-I %s\\..\\..\\PC' % cpython_build.path)
     env.Append(LIBPATH=cpython_build.path)
     env.Append(LIBS=['python36'])
-    env.Append(LINKFLAGS=['/MACHINE:X86'])
 
 else:  # pypy
-    raise UserError("Not supported yet :'-(")
+    PYPY_SRC_NAME = 'pypy3-v5.10.0-win32'
+    PYPY_SRC_ARCHIVE = '%s.zip' % PYPY_SRC_NAME
+    PYPY_SRC_ARCHIVE_URL = 'https://bitbucket.org/pypy/pypy/downloads/%s' % PYPY_SRC_ARCHIVE
+
+    backend_src = Dir(PYPY_SRC_NAME)
+
+    env.Command(PYPY_SRC_ARCHIVE, None,
+        "curl -L %s -o ${TARGET}" % PYPY_SRC_ARCHIVE_URL
+    )
+    env.NoClean(PYPY_SRC_ARCHIVE)
+    env.Command(backend_src, PYPY_SRC_ARCHIVE,
+        "unzip ${SOURCE} -d ${TARGET.srcdir}"
+    )
+
+    def generate_build_dir(target, source, env):
+        target = target[0]
+        pypy_build = source[0]
+        libpythonscript = source[1]
+        godot_embedded = source[2]
+
+        if os.path.isdir(target.path):
+            shutil.rmtree(target.path)
+        os.mkdir(target.path)
+
+        def c(subpath=''):
+            return os.path.join(pypy_build.abspath, *subpath.split('/'))
+
+        def p(subpath=''):
+            return os.path.join(target.abspath, 'pythonscript', *subpath.split('/'))
+
+        shutil.copytree(c(), p())
+        shutil.copy(libpythonscript.path, p())
+        open(p('.gdignore'), 'w').close()
+
+        if env['dev_dyn']:
+            os.symlink(godot_embedded.abspath, p('site-packages/godot'))
+        else:
+            shutil.copytree(godot_embedded.path, p('site-packages/godot'))
+
+    env['generate_build_dir'] = generate_build_dir
+    env.Append(CFLAGS='-DBACKEND_PYPY')
+    env.Append(CFLAGS='-I %s/include' % backend_src.path)
+    env.Append(LIBPATH='%s/libs' % backend_src.path)
+    env.Append(LIBPATH=backend_src.path)
+    env.Append(LIBS=['pypy3-c'])
