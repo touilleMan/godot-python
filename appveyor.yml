@@ -5,24 +5,20 @@ environment:
   CPP: clang -E
   matrix:
     - TARGET_PLATFORM: windows-64
-      PLATFORM: x64
       ARCH: amd64
       TARGET_BACKEND: cpython
       PYTHON: C:\Python36-x64
     - TARGET_PLATFORM: windows-32
-      PLATFORM: x86
-      ARCH: x86
+      ARCH: amd64_x86
       TARGET_BACKEND: cpython
       PYTHON: C:\Python36
     # Pypy doesn't support windows 64bits
     # - TARGET_PLATFORM: windows-64
-    #   PLATFORM: x64
     #   ARCH: amd64
     #   TARGET_BACKEND: pypy
     #   PYTHON: C:\Python36-x64
     - TARGET_PLATFORM: windows-32
-      PLATFORM: x86
-      ARCH: x86
+      ARCH: amd64_x86
       TARGET_BACKEND: pypy
       PYTHON: C:\Python36
 
