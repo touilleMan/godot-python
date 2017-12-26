@@ -46,8 +46,9 @@ vars.Add("CFLAGS", "Custom flags for the C compiler")
 vars.Add("LINK", "linker")
 vars.Add("LINKFLAGS", "Custom flags for the linker")
 
-
-env = Environment(ENV=os.environ, variables=vars)
+env = os.environ.copy()
+env['MSVC_USE_SCRIPT'] = None
+env = Environment(ENV=env, variables=vars)
 # env.AppendENVPath('PATH', os.getenv('PATH'))
 # env.AppendENVPath('DISPLAY', os.getenv('DISPLAY'))
 Help(vars.GenerateHelpText(env))
