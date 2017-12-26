@@ -36,6 +36,7 @@ before_build:
   - cl.exe
 
 build_script:
+  - set SCONS_MSCOMMON_DEBUG=-
   - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python
       gdnative_parse_cpp="%CPP%" release_suffix=%APPVEYOR_REPO_TAG_NAME% backend
   # Don't ask why, but it seems CPython compilation make msvc to switch back to 64bits
