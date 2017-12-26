@@ -3,20 +3,28 @@ image: Visual Studio 2017
 environment:
   VS: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat
   CPP: clang -E
-  PYTHON: C:\Python36-x64
   matrix:
     - TARGET_PLATFORM: windows-64
+      PLATFORM: x64
       ARCH: amd64
       TARGET_BACKEND: cpython
+      PYTHON: C:\Python36-x64
     - TARGET_PLATFORM: windows-32
+      PLATFORM: x86
       ARCH: x86
       TARGET_BACKEND: cpython
-    - TARGET_PLATFORM: windows-64
-      ARCH: amd64
-      TARGET_BACKEND: pypy
+      PYTHON: C:\Python36
+    # Pypy doesn't support windows 64bits
+    # - TARGET_PLATFORM: windows-64
+    #   PLATFORM: x64
+    #   ARCH: amd64
+    #   TARGET_BACKEND: pypy
+    #   PYTHON: C:\Python36-x64
     - TARGET_PLATFORM: windows-32
+      PLATFORM: x86
       ARCH: x86
       TARGET_BACKEND: pypy
+      PYTHON: C:\Python36
 
 install:
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"

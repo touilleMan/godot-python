@@ -134,6 +134,8 @@ if env['backend'] == 'cpython':
     env.Append(LIBS=['python36'])
 
 else:  # pypy
+    raise UserError("PyPy does not support 64-bit on Windows.  Use Win32 :'-(")
+
     PYPY_SRC_NAME = 'pypy3-v5.10.0-win32'
     PYPY_SRC_ARCHIVE = '%s.zip' % PYPY_SRC_NAME
     PYPY_SRC_ARCHIVE_URL = 'https://bitbucket.org/pypy/pypy/downloads/%s' % PYPY_SRC_ARCHIVE
@@ -145,7 +147,7 @@ else:  # pypy
     )
     env.NoClean(PYPY_SRC_ARCHIVE)
     env.Command(pypy_build, PYPY_SRC_ARCHIVE,
-        "unzip ${SOURCE} -d ${TARGET.srcdir}"
+        "unzip -q ${SOURCE} -d ${TARGET.srcdir}"
     )
 
 
