@@ -40,6 +40,10 @@ addons:
       - libssl-dev
       - libxinerama-dev
       - libxrandr-dev
+      # Needed to cross-compile x86 on amd64
+      - libc6-dev-i386
+      - libx32gcc-7-dev
+      - gcc-7-multilib
       # Need gcc > 4.6 for -std=c++11 and >= 7 for LTO 6.0 (used by gnative wrapper)
       - gcc-7
       - g++-7

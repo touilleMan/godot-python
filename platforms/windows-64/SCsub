@@ -138,15 +138,16 @@ else:  # pypy
     PYPY_SRC_ARCHIVE = '%s.zip' % PYPY_SRC_NAME
     PYPY_SRC_ARCHIVE_URL = 'https://bitbucket.org/pypy/pypy/downloads/%s' % PYPY_SRC_ARCHIVE
 
-    backend_src = Dir(PYPY_SRC_NAME)
+    pypy_build = Dir(PYPY_SRC_NAME)
 
     env.Command(PYPY_SRC_ARCHIVE, None,
         "curl -L %s -o ${TARGET}" % PYPY_SRC_ARCHIVE_URL
     )
     env.NoClean(PYPY_SRC_ARCHIVE)
-    env.Command(backend_src, PYPY_SRC_ARCHIVE,
+    env.Command(pypy_build, PYPY_SRC_ARCHIVE,
         "unzip ${SOURCE} -d ${TARGET.srcdir}"
     )
+
 
     def generate_build_dir(target, source, env):
         target = target[0]
@@ -174,8 +175,9 @@ else:  # pypy
             shutil.copytree(godot_embedded.path, p('site-packages/godot'))
 
     env['generate_build_dir'] = generate_build_dir
+    env['backend_dir'] = pypy_build
     env.Append(CFLAGS='-DBACKEND_PYPY')
-    env.Append(CFLAGS='-I %s/include' % backend_src.path)
-    env.Append(LIBPATH='%s/libs' % backend_src.path)
-    env.Append(LIBPATH=backend_src.path)
+    env.Append(CFLAGS='-I %s/include' % pypy_build.path)
+    env.Append(LIBPATH='%s/libs' % pypy_build.path)
+    env.Append(LIBPATH=pypy_build.path)
     env.Append(LIBS=['pypy3-c'])
