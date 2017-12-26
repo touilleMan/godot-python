@@ -13,7 +13,7 @@ Import('env')
 
 env['bits'] = '64'
 env['build_dir'] = Dir('#build/windows-64-%s' % env['backend'])
-
+env['TARGET_ARCH'] = 'amd64'
 
 ### Godot binary (to run tests) ###
 

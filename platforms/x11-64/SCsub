@@ -9,6 +9,7 @@ Import('env')
 env['bits'] = '64'
 env['build_dir'] = Dir('#build/x11-64-%s' % env['backend'])
 env.Append(CFLAGS='-m64')
+env.Append(LINKFLAGS='-m64')
 
 
 ### Godot binary (to run tests) ###
