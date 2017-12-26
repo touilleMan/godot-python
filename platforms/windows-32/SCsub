@@ -13,7 +13,6 @@ Import('env')
 
 env['bits'] = '32'
 env['build_dir'] = Dir('#build/windows-32-%s' % env['backend'])
-env.Append(MSVC_USE_SCRIPT=None)
 
 
 ### Godot binary (to run tests) ###
