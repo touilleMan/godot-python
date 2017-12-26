@@ -143,6 +143,7 @@ python_embedded_srcs = env.Glob('pythonscript/embedded/*.inc.py')
 
 ### Main compilation stuff ###
 
+env.Alias('backend', env['backend_dir'])
 
 env.Append(CPPPATH=env['gdnative_include_dir'])
 env.Append(LIBS=env['gdnative_wrapper_lib'])
