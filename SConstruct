@@ -217,7 +217,7 @@ def generate_release(target, source, env):
     )
 
 release = env.Command(
-    '#godot-python-${release_suffix}-${platform}.zip',
+    '#godot-python-${release_suffix}-${platform}-${backend}.zip',
     env['build_dir'],
     generate_release
 )
