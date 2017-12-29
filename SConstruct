@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os, glob, shutil
+from functools import partial
 from SCons.Errors import UserError
 
 
@@ -163,11 +164,19 @@ libpythonscript = env.SharedLibrary('pythonscript/pythonscript', sources)[0]
 ### Generate build dir ###
 
 
+def do_or_die(func, *args, **kwargs):
+    try:
+        return func(*args, **kwargs)
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        raise UserError('ERROR: %s' % exc)
+
 python_godot_module_srcs = env.Glob('pythonscript/embedded/**/*.py')
 env.Command(
     env['build_dir'],
     [env['backend_dir'], libpythonscript, Dir('#pythonscript/embedded/godot')] + python_godot_module_srcs,
-    env['generate_build_dir']
+    partial(do_or_die, env['generate_build_dir'])
 )
 env.Clean(env['build_dir'], env['build_dir'].path)
 
