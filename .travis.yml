@@ -53,6 +53,7 @@ addons:
       - valgrind
 
 before_install:
+  - pyenv shell 3.6.3
   - pip3 install virtualenv --user
   - if [[ "$CXX" == "clang++" ]]; then wget http://llvm.org/releases/$LLVM_VERSION/clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-14.04.tar.xz -O $LLVM_ARCHIVE_PATH; fi
   - if [[ "$CXX" == "clang++" ]]; then mkdir $HOME/clang+llvm; fi
@@ -62,7 +63,6 @@ before_install:
 # Needed because scons doesn't inherit the customized $PATH env
   - if [[ "$CXX" == "clang++" ]]; then export CC=$HOME/clang+llvm/bin/clang; fi
   - if [[ "$CXX" == "g++" ]]; then export CC=gcc-7; fi
-  - pyenv shell 3.6.3
   - python --version
   - $CC --version
   - scons --version

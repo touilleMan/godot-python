@@ -42,8 +42,9 @@ build_script:
       gdnative_parse_cpp="%CPP%" release_suffix=%APPVEYOR_REPO_TAG_NAME% release
 
 after_build:
-  - ls -l build/main
-  - du -sh build/main
+  - ls -l build
+  - ls -l build/windows-*
+  - du -sh build/
   - ls -l godot-python-*.zip
 #   - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python
 #       gdnative_parse_cpp="%CPP%" release_suffix=%APPVEYOR_REPO_TAG_NAME% test
