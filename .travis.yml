@@ -6,7 +6,7 @@ compiler:
  - gcc
   # - clang
 
-python: '3.6.3'
+python: '3.6'
 
 env:
   global:
@@ -62,6 +62,7 @@ before_install:
 # Needed because scons doesn't inherit the customized $PATH env
   - if [[ "$CXX" == "clang++" ]]; then export CC=$HOME/clang+llvm/bin/clang; fi
   - if [[ "$CXX" == "g++" ]]; then export CC=gcc-7; fi
+  - pyenv shell 3.6.3
   - python --version
   - $CC --version
   - scons --version
