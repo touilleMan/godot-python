@@ -1,5 +1,6 @@
 from __future__ import print_function
-import os, glob, shutil
+import os, shutil
+from datetime import datetime
 from functools import partial
 from SCons.Errors import UserError
 
@@ -162,6 +163,26 @@ libpythonscript = env.SharedLibrary('pythonscript/pythonscript', sources)[0]
 
 
 ### Generate build dir ###
+
+
+def extract_version():
+    with open('pythonscript/embedded/godot/__init__.py') as fd:
+        versionline = next(l for l in fd.readlines() if l.startswith('__version__ = '))
+        return eval(versionline[14:])
+
+
+def generate_build_dir_hook(path):
+    shutil.copy('extras/pythonscript.gdnlib', os.path.join(path, 'pythonscript.gdnlib'))
+    shutil.copy('extras/release_LICENSE.txt', os.path.join(path, 'LICENSE.txt'))
+    with open('extras/release_README.txt') as fd:
+        readme = fd.read().format(
+            version=extract_version(),
+            date=datetime.utcnow().strftime('%Y-%m-%d')
+        )
+    with open(os.path.join(path, 'README.txt'), 'w') as fd:
+        fd.write(readme)
+
+env['generate_build_dir_hook'] = generate_build_dir_hook
 
 
 def do_or_die(func, *args, **kwargs):

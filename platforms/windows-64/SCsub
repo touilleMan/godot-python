@@ -124,6 +124,9 @@ if env['backend'] == 'cpython':
         else:
             shutil.copytree(godot_embedded.path, p('lib/godot'))
 
+        if 'generate_build_dir_hook' in env:
+            env['generate_build_dir_hook'](target.abspath)
+
     env['generate_build_dir'] = generate_build_dir
     env['backend_dir'] = cpython_build
     env.Append(CFLAGS='-DBACKEND_CPYTHON')
@@ -168,6 +171,8 @@ else:  # pypy
             return os.path.join(target.abspath, 'pythonscript', *subpath.split('/'))
 
         shutil.copytree(c(), p())
+        os.unlink(p('LICENSE'))
+        os.unlink(p('README.rst'))
         shutil.copy(libpythonscript.path, p())
         open(p('.gdignore'), 'w').close()
 
@@ -175,6 +180,9 @@ else:  # pypy
             os.symlink(godot_embedded.abspath, p('site-packages/godot'))
         else:
             shutil.copytree(godot_embedded.path, p('site-packages/godot'))
+
+        if 'generate_build_dir_hook' in env:
+            env['generate_build_dir_hook'](target.abspath)
 
     env['generate_build_dir'] = generate_build_dir
     env['backend_dir'] = pypy_build

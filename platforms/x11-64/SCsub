@@ -93,6 +93,8 @@ if env['backend'] == 'cpython':
             if '__pycache__' in dirs:
                 shutil.rmtree(os.path.join(root, '__pycache__'))
 
+        shutil.copytree(c('bin'), p('bin'))
+
         shutil.copytree(c('lib'), p('lib'))
         if env['compressed_stdlib']:
             shutil.move(p('lib/python3.6'), p('lib/tmp_python3.6'))
@@ -110,6 +112,9 @@ if env['backend'] == 'cpython':
             os.symlink(godot_embedded.abspath, p('lib/python3.6/site-packages/godot'))
         else:
             shutil.copytree(godot_embedded.path, p('lib/python3.6/site-packages/godot'))
+
+        if 'generate_build_dir_hook' in env:
+            env['generate_build_dir_hook'](target.abspath)
 
     env['generate_build_dir'] = generate_build_dir
     env['backend_dir'] = cpython_build
@@ -152,6 +157,8 @@ else:  # pypy
             return os.path.join(target.abspath, 'pythonscript', *subpath.split('/'))
 
         shutil.copytree(c(), p())
+        os.unlink(p('LICENSE'))
+        os.unlink(p('README.rst'))
         shutil.copy(libpythonscript.path, p())
         open(p('.gdignore'), 'w').close()
 
@@ -159,6 +166,9 @@ else:  # pypy
             os.symlink(godot_embedded.abspath, p('site-packages/godot'))
         else:
             shutil.copytree(godot_embedded.path, p('site-packages/godot'))
+
+        if 'generate_build_dir_hook' in env:
+            env['generate_build_dir_hook'](target.abspath)
 
     env['generate_build_dir'] = generate_build_dir
     env['backend_dir'] = pypy_build

@@ -1,0 +1,815 @@
++---------------------------------------------------------------------------+
+|                               Godot Python                                |
++---------------------------------------------------------------------------+
+
+Copyright (c) 2016 by Emmanuel Leblond.
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+
++---------------------------------------------------------------------------+
+|                                  Pypy                                     |
++---------------------------------------------------------------------------+
+
+
+License
+=======
+
+Except when otherwise stated (look for LICENSE files in directories or
+information at the beginning of each file) all software and documentation in
+the 'rpython', 'pypy', 'ctype_configure', 'dotviewer', 'demo', 'lib_pypy',
+'py', and '_pytest' directories is licensed as follows: 
+
+    The MIT License
+
+    Permission is hereby granted, free of charge, to any person 
+    obtaining a copy of this software and associated documentation 
+    files (the "Software"), to deal in the Software without 
+    restriction, including without limitation the rights to use, 
+    copy, modify, merge, publish, distribute, sublicense, and/or 
+    sell copies of the Software, and to permit persons to whom the 
+    Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included 
+    in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
+    THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+    DEALINGS IN THE SOFTWARE.
+
+
+PyPy Copyright holders 2003-2017
+----------------------------------- 
+
+Except when otherwise stated (look for LICENSE files or information at
+the beginning of each file) the files in the 'pypy' directory are each
+copyrighted by one or more of the following people and organizations:    
+
+  Armin Rigo
+  Maciej Fijalkowski
+  Carl Friedrich Bolz-Tereick
+  Amaury Forgeot d'Arc
+  Antonio Cuni
+  Matti Picus
+  Samuele Pedroni
+  Ronan Lamy
+  Alex Gaynor
+  Philip Jenvey
+  Brian Kearns
+  Richard Plangger
+  Michael Hudson
+  Manuel Jacob
+  David Schneider
+  Holger Krekel
+  Christian Tismer
+  Hakan Ardo
+  Benjamin Peterson
+  Anders Chrigstrom
+  Wim Lavrijsen
+  Eric van Riet Paap
+  Richard Emslie
+  Remi Meier
+  Alexander Schremmer
+  Dan Villiom Podlaski Christiansen
+  Lukas Diekmann
+  Sven Hager
+  Anders Lehmann
+  Aurelien Campeas
+  Niklaus Haldimann
+  Camillo Bruni
+  Laura Creighton
+  Romain Guillebert
+  Toon Verwaest
+  Leonardo Santagada
+  Seo Sanghyeon
+  Ronny Pfannschmidt
+  Justin Peel
+  Raffael Tfirst
+  David Edelsohn
+  Anders Hammarquist
+  Jakub Gustak
+  Gregor Wegberg
+  Guido Wesdorp
+  Lawrence Oluyede
+  Bartosz Skowron
+  Daniel Roberts
+  Adrien Di Mascio
+  Niko Matsakis
+  Alexander Hesse
+  Ludovic Aubry
+  Jacob Hallen
+  Jason Creighton
+  Mark Young
+  Alex Martelli
+  Spenser Bauman
+  Michal Bendowski
+  stian
+  Jan de Mooij
+  Tyler Wade
+  Vincent Legoll
+  Michael Foord
+  Stephan Diehl
+  Stefano Rivera
+  Jean-Paul Calderone
+  Stefan Schwarzer
+  Tomek Meka
+  Valentino Volonghi
+  Patrick Maupin
+  Devin Jeanpierre
+  Bob Ippolito
+  Bruno Gola
+  David Malcolm
+  Squeaky
+  Edd Barrett
+  Timo Paulssen
+  Marius Gedminas
+  Nicolas Truessel
+  Alexandre Fayolle
+  Simon Burton
+  Martin Matusiak
+  Laurence Tratt
+  Wenzhu Man
+  Konstantin Lopuhin
+  John Witulski
+  Greg Price
+  Ivan Sichmann Freitas
+  Dario Bertini
+  Jeremy Thurgood
+  Mark Pearse
+  Simon Cross
+  Tobias Pape
+  Andreas Stührk
+  Jean-Philippe St. Pierre
+  Guido van Rossum
+  Pavel Vinogradov
+  Paweł Piotr Przeradowski
+  William Leslie
+  marky1991
+  Ilya Osadchiy
+  Tobias Oberstein
+  Paul deGrandis
+  Boris Feigin
+  Taavi Burns
+  Adrian Kuhn
+  tav
+  Georg Brandl
+  Bert Freudenberg
+  Stian Andreassen
+  Wanja Saatkamp
+  Mike Blume
+  Joannah Nanjekye
+  Gerald Klix
+  Oscar Nierstrasz
+  Rami Chowdhury
+  Stefan H. Muller
+  Tim Felgentreff
+  Eugene Oden
+  Dodan Mihai
+  Jeff Terrace
+  Henry Mason
+  Vasily Kuznetsov
+  Preston Timmons
+  David Ripton
+  Dusty Phillips
+  Lukas Renggli
+  Guenter Jantzen
+  Jasper Schulz
+  Ned Batchelder
+  Amit Regmi
+  Anton Gulenko
+  Sergey Matyunin
+  Andrew Chambers
+  Nicolas Chauvat
+  Andrew Durdin
+  Ben Young
+  Michael Schneider
+  Nicholas Riley
+  Jason Chu
+  Igor Trindade Oliveira
+  Yichao Yu
+  Michael Twomey
+  Rocco Moretti
+  Gintautas Miliauskas
+  Lucian Branescu Mihaila
+  Mariano Anaya
+  anatoly techtonik
+  Karl Bartel
+  Stefan Beyer
+  Gabriel Lavoie
+  Jared Grubb
+  Alecsandru Patrascu
+  Olivier Dormond
+  Wouter van Heyst
+  Sebastian Pawluś
+  Brian Dorsey
+  Victor Stinner
+  Andrews Medina
+  Aaron Iles
+  p_zieschang@yahoo.de
+  Toby Watson
+  Daniel Patrick
+  Stuart Williams
+  Antoine Pitrou
+  Christian Hudon
+  Justas Sadzevicius
+  Neil Shepperd
+  Michael Cheng
+  Mikael Schönenberg
+  Stanislaw Halik
+  Mihnea Saracin
+  Berkin Ilbeyi
+  Gasper Zejn
+  Faye Zhao
+  Elmo Mäntynen
+  Anders Qvist
+  Corbin Simpson
+  Chirag Jadwani
+  Jonathan David Riehl
+  Beatrice During
+  Alex Perry
+  Robert Zaremba
+  Alan McIntyre
+  Alexander Sedov
+  Vaibhav Sood
+  Reuben Cummings
+  Attila Gobi
+  Christopher Pope
+  Tristan Arthur
+  Christian Tismer 
+  Dan Stromberg
+  Carl Meyer
+  Florin Papa
+  Jens-Uwe Mager
+  Valentina Mukhamedzhanova
+  Stefano Parmesan
+  touilleMan
+  Marc Abramowitz
+  Arjun Naik
+  Aaron Gallagher
+  Alexis Daboville
+  Pieter Zieschang
+  Karl Ramm
+  Lukas Vacek
+  Omer Katz
+  Jacek Generowicz
+  Sylvain Thenault
+  Jakub Stasiak
+  Andrew Dalke
+  Alejandro J. Cura
+  Vladimir Kryachko
+  Gabriel
+  Mark Williams
+  Kunal Grover
+  Nathan Taylor
+  Travis Francis Athougies
+  Yasir Suhail
+  Sergey Kishchenko
+  Martin Blais
+  Lutz Paelike
+  Ian Foote
+  Philipp Rustemeuer
+  Catalin Gabriel Manciu
+  Jacob Oscarson
+  Ryan Gonzalez
+  Kristjan Valur Jonsson
+  Lucio Torre
+  Richard Lancaster
+  Dan Buch
+  Lene Wagner
+  Tomo Cocoa
+  David Lievens
+  Neil Blakey-Milner
+  Henrik Vendelbo
+  Lars Wassermann
+  Ignas Mikalajunas
+  Christoph Gerum
+  Miguel de Val Borro
+  Artur Lisiecki
+  afteryu
+  Toni Mattis
+  Laurens Van Houtven
+  Bobby Impollonia
+  Roberto De Ioris
+  Jeong YunWon
+  Christopher Armstrong
+  Aaron Tubbs
+  Vasantha Ganesh K
+  Jason Michalski
+  Markus Holtermann
+  Andrew Thompson
+  Yusei Tahara
+  Ruochen Huang
+  Fabio Niephaus
+  Akira Li
+  Gustavo Niemeyer
+  Rafał Gałczyński
+  Logan Chien
+  Lucas Stadler
+  roberto@goyle
+  Matt Bogosian
+  Yury V. Zaytsev
+  florinpapa
+  Anders Sigfridsson
+  Nikolay Zinov
+  rafalgalczynski@gmail.com
+  Joshua Gilbert
+  Anna Katrina Dominguez
+  Kim Jin Su
+  Amber Brown
+  Anthony Sottile
+  Nate Bragg
+  Ben Darnell
+  Juan Francisco Cantero Hurtado
+  Godefroid Chappelle
+  Julian Berman
+  Michael Hudson-Doyle
+  Floris Bruynooghe
+  Stephan Busemann
+  Dan Colish
+  timo
+  Volodymyr Vladymyrov
+  Daniel Neuhäuser
+  Flavio Percoco
+  halgari
+  Jim Baker
+  Chris Lambacher
+  coolbutuseless@gmail.com
+  Mike Bayer
+  Rodrigo Araújo
+  Daniil Yarancev
+  Min RK
+  OlivierBlanvillain
+  Jonas Pfannschmidt
+  Zearin
+  Andrey Churin
+  Dan Crosta
+  reubano@gmail.com
+  Stanisław Halik
+  Julien Phalip
+  Roman Podoliaka
+  Eli Stevens
+  Boglarka Vezer
+  PavloKapyshin
+  Tomer Chachamu
+  Christopher Groskopf
+  Asmo Soinio
+  Antony Lee
+  Jim Hunziker
+  shoma hosaka
+  Buck Golemon
+  Iraklis D.
+  JohnDoe
+  yrttyr
+  Michael Chermside
+  Anna Ravencroft
+  remarkablerocket
+  Petre Vijiac
+  Berker Peksag
+  Christian Muirhead
+  soareschen
+  Matthew Miller
+  Konrad Delong
+  Dinu Gherman
+  pizi
+  James Robert
+  Armin Ronacher
+  Diana Popa
+  Mads Kiilerich
+  Brett Cannon
+  aliceinwire
+  Zooko Wilcox-O Hearn
+  James Lan
+  jiaaro
+  Markus Unterwaditzer
+  Kristoffer Kleine
+  Graham Markall
+  Dan Loewenherz
+  werat
+  Niclas Olofsson
+  Chris Pressey
+  Tobias Diaz
+  Nikolaos-Digenis Karagiannis
+  Kurt Griffiths
+  Ben Mather
+  Donald Stufft
+  Dan Sanders
+  Jason Madden
+  Yaroslav Fedevych
+  Even Wiik Thomassen
+  Stefan Marr
+
+  Heinrich-Heine University, Germany 
+  Open End AB (formerly AB Strakt), Sweden
+  merlinux GmbH, Germany 
+  tismerysoft GmbH, Germany 
+  Logilab Paris, France 
+  DFKI GmbH, Germany 
+  Impara, Germany
+  Change Maker, Sweden 
+  University of California Berkeley, USA
+  Google Inc.
+  King's College London
+
+The PyPy Logo as used by http://speed.pypy.org and others was created
+by Samuel Reis and is distributed on terms of Creative Commons Share Alike
+License.
+ 
+License for 'lib-python/2.7'
+============================
+
+Except when otherwise stated (look for LICENSE files or copyright/license
+information at the beginning of each file) the files in the 'lib-python/2.7'
+directory are all copyrighted by the Python Software Foundation and licensed
+under the terms that you can find here: https://docs.python.org/2/license.html
+
+License for 'pypy/module/unicodedata/'
+======================================
+
+The following files are from the website of The Unicode Consortium
+at http://www.unicode.org/.  For the terms of use of these files, see
+http://www.unicode.org/terms_of_use.html .  Or they are derived from
+files from the above website, and the same terms of use apply.
+
+    CompositionExclusions-*.txt
+    EastAsianWidth-*.txt
+    LineBreak-*.txt
+    UnicodeData-*.txt
+    UnihanNumeric-*.txt
+
+License for 'dotviewer/font/'
+=============================
+
+Copyright (C) 2008 The Android Open Source Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+  
+     http://www.apache.org/licenses/LICENSE-2.0
+  
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+Detailed license information is contained in the NOTICE file in the
+directory.
+
+
+Licenses and Acknowledgements for Incorporated Software
+=======================================================
+
+This section is an incomplete, but growing list of licenses and
+acknowledgements for third-party software incorporated in the PyPy
+distribution.
+
+License for 'Tcl/Tk'
+--------------------
+
+This copy of PyPy contains library code that may, when used, result in
+the Tcl/Tk library to be loaded.  PyPy also includes code that may be
+regarded as being a copy of some parts of the Tcl/Tk header files.
+You may see a copy of the License for Tcl/Tk in the file
+`lib_pypy/_tkinter/license.terms` included here.
+
+License for 'bzip2'
+-------------------
+
+This copy of PyPy may be linked (dynamically or statically) with the
+bzip2 library.  You may see a copy of the License for bzip2/libbzip2 at
+
+    http://www.bzip.org/1.0.5/bzip2-manual-1.0.5.html
+
+License for 'openssl'
+---------------------
+
+This copy of PyPy may be linked (dynamically or statically) with the
+openssl library.  You may see a copy of the License for OpenSSL at
+
+    https://www.openssl.org/source/license.html
+
+License for '_gdbm'
+------------------
+
+The _gdbm module includes code from gdbm.h, which is distributed under
+the terms of the GPL license version 2 or any later version.  Thus the
+_gdbm module, provided in the file lib_pypy/_gdbm.py, is redistributed
+under the terms of the GPL license as well.
+
+License for 'rpython/rlib/rvmprof/src'
+--------------------------------------
+
+The code is based on gperftools. You may see a copy of the License for it at
+
+    https://github.com/gperftools/gperftools/blob/master/COPYING
+
+License for 'liblzma and 'lzmaffi'
+----------------------------------
+
+This copy of PyPy may be linked (dynamically or statically) with the
+liblzma library, which was put in the "public domain":
+
+    http://tukaani.org/xz/
+
+The cffi bindings to liblzma (in lib_pypy/_lzma.py) are derived from
+the lzmaffi project which is distributed under a BSD license:
+
+    https://pypi.python.org/pypi/lzmaffi/0.3.0
+
+
++---------------------------------------------------------------------------+
+|                                 CPython                                   |
++---------------------------------------------------------------------------+
+
+
+A. HISTORY OF THE SOFTWARE
+==========================
+
+Python was created in the early 1990s by Guido van Rossum at Stichting
+Mathematisch Centrum (CWI, see http://www.cwi.nl) in the Netherlands
+as a successor of a language called ABC.  Guido remains Python's
+principal author, although it includes many contributions from others.
+
+In 1995, Guido continued his work on Python at the Corporation for
+National Research Initiatives (CNRI, see http://www.cnri.reston.va.us)
+in Reston, Virginia where he released several versions of the
+software.
+
+In May 2000, Guido and the Python core development team moved to
+BeOpen.com to form the BeOpen PythonLabs team.  In October of the same
+year, the PythonLabs team moved to Digital Creations, which became
+Zope Corporation.  In 2001, the Python Software Foundation (PSF, see
+https://www.python.org/psf/) was formed, a non-profit organization
+created specifically to own Python-related Intellectual Property.
+Zope Corporation was a sponsoring member of the PSF.
+
+All Python releases are Open Source (see http://www.opensource.org for
+the Open Source Definition).  Historically, most, but not all, Python
+releases have also been GPL-compatible; the table below summarizes
+the various releases.
+
+    Release         Derived     Year        Owner       GPL-
+                    from                                compatible? (1)
+
+    0.9.0 thru 1.2              1991-1995   CWI         yes
+    1.3 thru 1.5.2  1.2         1995-1999   CNRI        yes
+    1.6             1.5.2       2000        CNRI        no
+    2.0             1.6         2000        BeOpen.com  no
+    1.6.1           1.6         2001        CNRI        yes (2)
+    2.1             2.0+1.6.1   2001        PSF         no
+    2.0.1           2.0+1.6.1   2001        PSF         yes
+    2.1.1           2.1+2.0.1   2001        PSF         yes
+    2.1.2           2.1.1       2002        PSF         yes
+    2.1.3           2.1.2       2002        PSF         yes
+    2.2 and above   2.1.1       2001-now    PSF         yes
+
+Footnotes:
+
+(1) GPL-compatible doesn't mean that we're distributing Python under
+    the GPL.  All Python licenses, unlike the GPL, let you distribute
+    a modified version without making your changes open source.  The
+    GPL-compatible licenses make it possible to combine Python with
+    other software that is released under the GPL; the others don't.
+
+(2) According to Richard Stallman, 1.6.1 is not GPL-compatible,
+    because its license has a choice of law clause.  According to
+    CNRI, however, Stallman's lawyer has told CNRI's lawyer that 1.6.1
+    is "not incompatible" with the GPL.
+
+Thanks to the many outside volunteers who have worked under Guido's
+direction to make these releases possible.
+
+
+B. TERMS AND CONDITIONS FOR ACCESSING OR OTHERWISE USING PYTHON
+===============================================================
+
+PYTHON SOFTWARE FOUNDATION LICENSE VERSION 2
+--------------------------------------------
+
+1. This LICENSE AGREEMENT is between the Python Software Foundation
+("PSF"), and the Individual or Organization ("Licensee") accessing and
+otherwise using this software ("Python") in source or binary form and
+its associated documentation.
+
+2. Subject to the terms and conditions of this License Agreement, PSF hereby
+grants Licensee a nonexclusive, royalty-free, world-wide license to reproduce,
+analyze, test, perform and/or display publicly, prepare derivative works,
+distribute, and otherwise use Python alone or in any derivative version,
+provided, however, that PSF's License Agreement and PSF's notice of copyright,
+i.e., "Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
+2011, 2012, 2013, 2014, 2015, 2016, 2017 Python Software Foundation; All Rights
+Reserved" are retained in Python alone or in any derivative version prepared by
+Licensee.
+
+3. In the event Licensee prepares a derivative work that is based on
+or incorporates Python or any part thereof, and wants to make
+the derivative work available to others as provided herein, then
+Licensee hereby agrees to include in any such work a brief summary of
+the changes made to Python.
+
+4. PSF is making Python available to Licensee on an "AS IS"
+basis.  PSF MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
+IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, PSF MAKES NO AND
+DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR FITNESS
+FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF PYTHON WILL NOT
+INFRINGE ANY THIRD PARTY RIGHTS.
+
+5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
+FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS AS
+A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON,
+OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
+
+6. This License Agreement will automatically terminate upon a material
+breach of its terms and conditions.
+
+7. Nothing in this License Agreement shall be deemed to create any
+relationship of agency, partnership, or joint venture between PSF and
+Licensee.  This License Agreement does not grant permission to use PSF
+trademarks or trade name in a trademark sense to endorse or promote
+products or services of Licensee, or any third party.
+
+8. By copying, installing or otherwise using Python, Licensee
+agrees to be bound by the terms and conditions of this License
+Agreement.
+
+
+BEOPEN.COM LICENSE AGREEMENT FOR PYTHON 2.0
+-------------------------------------------
+
+BEOPEN PYTHON OPEN SOURCE LICENSE AGREEMENT VERSION 1
+
+1. This LICENSE AGREEMENT is between BeOpen.com ("BeOpen"), having an
+office at 160 Saratoga Avenue, Santa Clara, CA 95051, and the
+Individual or Organization ("Licensee") accessing and otherwise using
+this software in source or binary form and its associated
+documentation ("the Software").
+
+2. Subject to the terms and conditions of this BeOpen Python License
+Agreement, BeOpen hereby grants Licensee a non-exclusive,
+royalty-free, world-wide license to reproduce, analyze, test, perform
+and/or display publicly, prepare derivative works, distribute, and
+otherwise use the Software alone or in any derivative version,
+provided, however, that the BeOpen Python License is retained in the
+Software, alone or in any derivative version prepared by Licensee.
+
+3. BeOpen is making the Software available to Licensee on an "AS IS"
+basis.  BEOPEN MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
+IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, BEOPEN MAKES NO AND
+DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR FITNESS
+FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF THE SOFTWARE WILL NOT
+INFRINGE ANY THIRD PARTY RIGHTS.
+
+4. BEOPEN SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF THE
+SOFTWARE FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS
+AS A RESULT OF USING, MODIFYING OR DISTRIBUTING THE SOFTWARE, OR ANY
+DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
+
+5. This License Agreement will automatically terminate upon a material
+breach of its terms and conditions.
+
+6. This License Agreement shall be governed by and interpreted in all
+respects by the law of the State of California, excluding conflict of
+law provisions.  Nothing in this License Agreement shall be deemed to
+create any relationship of agency, partnership, or joint venture
+between BeOpen and Licensee.  This License Agreement does not grant
+permission to use BeOpen trademarks or trade names in a trademark
+sense to endorse or promote products or services of Licensee, or any
+third party.  As an exception, the "BeOpen Python" logos available at
+http://www.pythonlabs.com/logos.html may be used according to the
+permissions granted on that web page.
+
+7. By copying, installing or otherwise using the software, Licensee
+agrees to be bound by the terms and conditions of this License
+Agreement.
+
+
+CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1
+---------------------------------------
+
+1. This LICENSE AGREEMENT is between the Corporation for National
+Research Initiatives, having an office at 1895 Preston White Drive,
+Reston, VA 20191 ("CNRI"), and the Individual or Organization
+("Licensee") accessing and otherwise using Python 1.6.1 software in
+source or binary form and its associated documentation.
+
+2. Subject to the terms and conditions of this License Agreement, CNRI
+hereby grants Licensee a nonexclusive, royalty-free, world-wide
+license to reproduce, analyze, test, perform and/or display publicly,
+prepare derivative works, distribute, and otherwise use Python 1.6.1
+alone or in any derivative version, provided, however, that CNRI's
+License Agreement and CNRI's notice of copyright, i.e., "Copyright (c)
+1995-2001 Corporation for National Research Initiatives; All Rights
+Reserved" are retained in Python 1.6.1 alone or in any derivative
+version prepared by Licensee.  Alternately, in lieu of CNRI's License
+Agreement, Licensee may substitute the following text (omitting the
+quotes): "Python 1.6.1 is made available subject to the terms and
+conditions in CNRI's License Agreement.  This Agreement together with
+Python 1.6.1 may be located on the Internet using the following
+unique, persistent identifier (known as a handle): 1895.22/1013.  This
+Agreement may also be obtained from a proxy server on the Internet
+using the following URL: http://hdl.handle.net/1895.22/1013".
+
+3. In the event Licensee prepares a derivative work that is based on
+or incorporates Python 1.6.1 or any part thereof, and wants to make
+the derivative work available to others as provided herein, then
+Licensee hereby agrees to include in any such work a brief summary of
+the changes made to Python 1.6.1.
+
+4. CNRI is making Python 1.6.1 available to Licensee on an "AS IS"
+basis.  CNRI MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
+IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, CNRI MAKES NO AND
+DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR FITNESS
+FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF PYTHON 1.6.1 WILL NOT
+INFRINGE ANY THIRD PARTY RIGHTS.
+
+5. CNRI SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
+1.6.1 FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS AS
+A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON 1.6.1,
+OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
+
+6. This License Agreement will automatically terminate upon a material
+breach of its terms and conditions.
+
+7. This License Agreement shall be governed by the federal
+intellectual property law of the United States, including without
+limitation the federal copyright law, and, to the extent such
+U.S. federal law does not apply, by the law of the Commonwealth of
+Virginia, excluding Virginia's conflict of law provisions.
+Notwithstanding the foregoing, with regard to derivative works based
+on Python 1.6.1 that incorporate non-separable material that was
+previously distributed under the GNU General Public License (GPL), the
+law of the Commonwealth of Virginia shall govern this License
+Agreement only as to issues arising under or with respect to
+Paragraphs 4, 5, and 7 of this License Agreement.  Nothing in this
+License Agreement shall be deemed to create any relationship of
+agency, partnership, or joint venture between CNRI and Licensee.  This
+License Agreement does not grant permission to use CNRI trademarks or
+trade name in a trademark sense to endorse or promote products or
+services of Licensee, or any third party.
+
+8. By clicking on the "ACCEPT" button where indicated, or by copying,
+installing or otherwise using Python 1.6.1, Licensee agrees to be
+bound by the terms and conditions of this License Agreement.
+
+        ACCEPT
+
+
+CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2
+--------------------------------------------------
+
+Copyright (c) 1991 - 1995, Stichting Mathematisch Centrum Amsterdam,
+The Netherlands.  All rights reserved.
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in
+supporting documentation, and that the name of Stichting Mathematisch
+Centrum or CWI not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior
+permission.
+
+STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE
+FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+
++---------------------------------------------------------------------------+
+|                               Afterword                                   |
++---------------------------------------------------------------------------+
+
+
+
+
+...
+
+
+
+
+You didn't read a thing, didn't you ? ¯\(ツ)/¯
