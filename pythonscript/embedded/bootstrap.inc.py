@@ -287,13 +287,16 @@ def pybind_script_init(handle, path, source, r_error):
     # Remove `res://`, `.py` and replace / by .
     modname = path[6:].rsplit('.', 1)[0].replace('/', '.')
     try:
-        # TODO: make sure script reloading works
         __import__(modname)  # Force lazy loading of the module
+        # TODO: make sure script reloading works
         cls = get_exposed_class_per_module(modname)
     except Exception:
+        # If we are here it could be because the file doesn't exists
+        # or (more possibly) the file content is not a valid python (or
+        # miss an exposed class)
         r_error[0] = lib.GODOT_ERR_PARSE_ERROR
         # Obliged to return the structure, but no need in init it
-        return ffi.new('godot_pluginscript_script_manifest*')
+        return ffi.new('godot_pluginscript_script_manifest*')[0]
     r_error[0] = lib.GODOT_OK
     return _build_script_manifest(cls)[0]
 
