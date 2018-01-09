@@ -6,7 +6,7 @@
 #include <wchar.h>
 
 #include "pythonscript.h"
-#include "cffi_bindings/api.h"
+#include "cffi_bindings_api.h"
 
 #include <gdnative_api_struct.gen.h>
 

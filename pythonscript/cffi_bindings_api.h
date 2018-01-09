@@ -2,7 +2,7 @@
 #define PYTHONSCRIPT_API_H
 
 #include <gdnative_api_struct.gen.h>
-#include "cffi_bindings/api_struct.h"
+#include "cffi_bindings_api_struct.h"
 
 #ifdef _WIN32
 #define DLL_EXPORT __declspec(dllexport)
