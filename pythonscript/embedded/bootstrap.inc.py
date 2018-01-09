@@ -292,7 +292,8 @@ def pybind_script_init(handle, path, source, r_error):
         cls = get_exposed_class_per_module(modname)
     except Exception:
         r_error[0] = lib.GODOT_ERR_PARSE_ERROR
-        raise
+        # Obliged to return the structure, but no need in init it
+        return ffi.new('godot_pluginscript_script_manifest*')
     r_error[0] = lib.GODOT_OK
     return _build_script_manifest(cls)[0]
 
