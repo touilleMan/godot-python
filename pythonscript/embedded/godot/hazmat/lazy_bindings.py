@@ -73,7 +73,7 @@ class ClassDB:
         unordered = []
         for i in range(lib.godot_pool_string_array_size(ret)):
             godot_str = lib.godot_pool_string_array_get(ret, i)
-            raw_str = lib.godot_string_unicode_str(ffi.addressof(godot_str))
+            raw_str = lib.godot_string_wide_str(ffi.addressof(godot_str))
             unordered.append(ffi.string(raw_str))
 
         # Order class to have a parent defined before their children
@@ -172,7 +172,7 @@ class ClassDB:
         lib.godot_method_bind_ptrcall(cls._meth_get_integer_constant_list, cls._instance, args, ret)
         for i in range(lib.godot_pool_string_array_size(ret)):
             godot_str = lib.godot_pool_string_array_get(ret, i)
-            raw_str = lib.godot_string_unicode_str(ffi.addressof(godot_str))
+            raw_str = lib.godot_string_wide_str(ffi.addressof(godot_str))
             consts.append(ffi.string(raw_str))
         return consts
 
@@ -193,7 +193,7 @@ class ClassDB:
         gd_classname = godot_string_from_pyobj(classname)
         args = ffi.new("godot_string**", gd_classname)
         lib.godot_method_bind_ptrcall(cls._meth_get_parent_class, cls._instance, ffi.cast("void**", args), ret)
-        raw_str = lib.godot_string_unicode_str(ret)
+        raw_str = lib.godot_string_wide_str(ret)
         return ffi.string(raw_str)
 
 

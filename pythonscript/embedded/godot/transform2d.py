@@ -37,7 +37,7 @@ class Transform2D(BaseBuiltin):
 
     def __repr__(self):
         gd_repr = lib.godot_transform2d_as_string(self._gd_ptr)
-        raw_str = lib.godot_string_unicode_str(ffi.addressof(gd_repr))
+        raw_str = lib.godot_string_wide_str(ffi.addressof(gd_repr))
         return "<%s(%s)>" % (type(self).__name__, ffi.string(raw_str))
 
     def __mul__(self, other):

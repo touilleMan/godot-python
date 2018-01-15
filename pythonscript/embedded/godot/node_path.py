@@ -44,7 +44,7 @@ class NodePath(BaseBuiltinWithGDObjOwnership):
     @property
     def path(self):
         gd_repr = lib.godot_node_path_as_string(self._gd_ptr)
-        return ffi.string(lib.godot_string_unicode_str(ffi.addressof(gd_repr)))
+        return ffi.string(lib.godot_string_wide_str(ffi.addressof(gd_repr)))
 
     def get_name(self, idx):
         self._check_param_type('idx', idx, int)

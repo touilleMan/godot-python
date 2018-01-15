@@ -52,8 +52,8 @@ class TestArray:
         arr2 = arr + [3]  # __add__
         assert arr2 == Array([0, 1, 'two', 3])
         # Test __radd__ as well
-        arr3 = [b'-1'] + arr
-        assert arr3 == Array([b'-1', 0, 1, 'two'])
+        arr3 = ['-1'] + arr
+        assert arr3 == Array(['-1', 0, 1, 'two'])
 
     @pytest.mark.parametrize('arg', [
         None,

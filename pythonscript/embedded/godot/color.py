@@ -21,7 +21,7 @@ class Color(BaseBuiltin):
 
     def __repr__(self):
         # gdstr = lib.godot_color_as_string(self._gd_ptr)
-        # color = ffi.string(lib.godot_string_unicode_str(ffi.addressof(gdstr)))
+        # color = ffi.string(lib.godot_string_wide_str(ffi.addressof(gdstr)))
         return "<%s(r=%s, g=%s, b=%s, a=%s)>" % (type(self).__name__, self.r, self.g, self.b, self.a)
 
     def __eq__(self, other):
@@ -141,4 +141,4 @@ class Color(BaseBuiltin):
 
     def to_html(self, with_alpha=True):
         gdstr = lib.godot_color_to_html(self._gd_ptr, with_alpha)
-        return ffi.string(lib.godot_string_unicode_str(ffi.addressof(gdstr)))
+        return ffi.string(lib.godot_string_wide_str(ffi.addressof(gdstr)))

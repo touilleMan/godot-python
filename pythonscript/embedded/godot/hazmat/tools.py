@@ -43,19 +43,20 @@ from .recursive import godot_bindings_module
 
 
 def godot_string_to_pyobj(p_gdstring):
-    raw_str = lib.godot_string_unicode_str(p_gdstring)
+    raw_str = lib.godot_string_wide_str(p_gdstring)
     return ffi.string(raw_str)
 
 
 def godot_string_from_pyobj(pystr):
     if isinstance(pystr, str):
         gdstr = godot_string_alloc()
-        lib.godot_string_new_unicode_data(gdstr, pystr, len(pystr))
-    elif isinstance(pystr, bytes):
-        gdstr = godot_string_alloc()
-        lib.godot_string_new_data(gdstr, pystr, len(pystr))
+        lib.godot_string_new_with_wide_string(gdstr, pystr, len(pystr))
+    # TODO: bytes should be accepted as Godot string ?
+    # elif isinstance(pystr, bytes):
+    #     gdstr = godot_string_alloc()
+    #     lib.godot_string_new_data(gdstr, pystr, len(pystr))
     else:
-        raise TypeError('`pystr` must be `str` or `bytes`')
+        raise TypeError('`pystr` must be of type `str`')
     return gdstr
 
 
@@ -161,14 +162,14 @@ def pyobj_to_variant(pyobj, p_gdvar=None):
         elif (isinstance(pyobj, float)):
             lib.godot_variant_new_real(p_gdvar, pyobj)
         elif (isinstance(pyobj, str)):
-            gdstr = ffi.new("godot_string*")
-            pyobj_as_bytes = pyobj.encode()
-            lib.godot_string_new_data(gdstr, pyobj_as_bytes, len(pyobj_as_bytes))
+            gdstr = godot_string_alloc()
+            lib.godot_string_new_with_wide_string(gdstr, pyobj, len(pyobj))
             lib.godot_variant_new_string(p_gdvar, gdstr)
-        elif (isinstance(pyobj, bytes)):
-            gdstr = ffi.new("godot_string*")
-            lib.godot_string_new_data(gdstr, pyobj, len(pyobj))
-            lib.godot_variant_new_string(p_gdvar, gdstr)
+        # TODO: bytes should be accepted as Godot string ?
+        # elif (isinstance(pyobj, bytes)):
+        #     gdstr = godot_string_alloc()
+        #     lib.godot_string_new_data(gdstr, pyobj, len(pyobj))
+        #     lib.godot_variant_new_string(p_gdvar, gdstr)
         elif isinstance(pyobj, BaseBuiltin):
             if pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_VECTOR2:
                 lib.godot_variant_new_vector2(p_gdvar, pyobj._gd_ptr)
@@ -362,7 +363,7 @@ def pyobj_to_gdobj(pyobj, steal_gdobj=True):
         return godot_real_alloc(pyobj)
     elif isinstance(pyobj, str):
         gdobj = godot_string_alloc()
-        lib.godot_string_new_unicode_data(gdobj, pyobj, -1)
+        lib.godot_string_new_with_wide_string(gdobj, pyobj, -1)
         return gdobj
     elif isinstance(pyobj, BaseBuiltinWithGDObjOwnership):
         if steal_gdobj:

@@ -97,7 +97,7 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 	// Make sure the shared library has all it symbols loaded
 	// (strange bug with libpython3.6 otherwise...)
 	{
-		const wchar_t *wpath = godot_string_unicode_str(options->active_library_path);
+		const wchar_t *wpath = godot_string_wide_str(options->active_library_path);
 		char path[300];
 		wcstombs(path, wpath, 300);
 		dlopen(path, RTLD_NOW | RTLD_GLOBAL);
@@ -105,8 +105,11 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 
 	const char *err = dlerror();
 	if (err) {
+		const size_t n = strlen(err);
+		wchar_t werr[n];
+		mbstowcs(werr, err, n);
 		godot_string msg;
-		godot_string_new_data(&msg, err, -1);
+		godot_string_new_with_wide_string(&msg, werr, -1);
 		godot_print(&msg);
 		godot_string_destroy(&msg);
 		return;
@@ -117,7 +120,7 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 	{
 		static wchar_t pythonhome[300];
 		godot_string _pythonhome = godot_string_get_base_dir(options->active_library_path);
-		wcsncpy(pythonhome, godot_string_unicode_str(&_pythonhome), 300);
+		wcsncpy(pythonhome, godot_string_wide_str(&_pythonhome), 300);
 		godot_string_destroy(&_pythonhome);
 		Py_SetPythonHome(pythonhome);
 	}
