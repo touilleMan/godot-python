@@ -246,8 +246,15 @@ def _build_script_manifest(cls):
     # TODO: should be able to use lib.godot_string_new_with_wide_string directly
     gdname = godot_string_from_pyobj(cls.__name__)
     lib.godot_string_name_new(ffi.addressof(manifest.name), gdname)
-    if cls.__bases__ and issubclass(cls.__bases__[0], BaseObject):
-        gdbase = godot_string_from_pyobj(cls.__bases__[0].__name__)
+    if cls.__bases__:
+        # Only one Godot parent class (checked at class definition time)
+        godot_parent_class = next((b for b in cls.__bases__ if issubclass(b, BaseObject)))
+        if godot_parent_class.__dict__.get('__is_godot_native_class'):
+            path = godot_parent_class.__name__
+        else:
+            # Pluginscript wants us to return the parent as a path
+            path = 'res://%s.py' % '/'.join(cls.__bases__[0].__module__.split('.'))
+        gdbase = godot_string_from_pyobj(path)
         lib.godot_string_name_new(ffi.addressof(manifest.base), gdbase)
     manifest.is_tool = cls.__tool
     lib.godot_dictionary_new(ffi.addressof(manifest.member_lines))
@@ -296,6 +303,7 @@ def pybind_script_init(handle, path, source, r_error):
         # If we are here it could be because the file doesn't exists
         # or (more possibly) the file content is not a valid python (or
         # miss an exposed class)
+        traceback.print_exc()
         r_error[0] = lib.GODOT_ERR_PARSE_ERROR
         # Obliged to return the structure, but no need in init it
         return ffi.new('godot_pluginscript_script_manifest*')[0]

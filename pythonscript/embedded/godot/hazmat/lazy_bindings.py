@@ -210,7 +210,7 @@ def build_method(classname, meth):
         # def bind(self, *args):
         #     raise NotImplementedError("Method %s.%s is virtual" % (classname, methname))
     elif meth['flags'] & lib.METHOD_FLAG_VARARG:
-        # Vararg methods are not support by ptrcall, must use slower dynamic mode instead
+        # Vararg methods are not supported by ptrcall, must use slower dynamic mode instead
         rettype = meth['return']['type']
         fixargs_count = len(meth['args'])
 
@@ -263,6 +263,7 @@ def build_property(classname, prop):
 def build_class(godot_bindings_module, classname, binding_classname=None):
     binding_classname = binding_classname or classname
     nmspc = {
+        '__is_godot_native_class': True,
         '__slots__': (),
         '_gd_name': classname,
         '_gd_constructor': ClassDB.get_class_constructor(classname)
