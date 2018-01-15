@@ -47,16 +47,22 @@ def godot_string_to_pyobj(p_gdstring):
     return ffi.string(raw_str)
 
 
+def godot_string_from_pyobj_for_ffi_return(pystr):
+    """
+    /!\ Don't use me unless you have good reason /!\
+    Resulting godot_string object will not call godot_string_destroy
+    when garbage collected. This is useful when a copy of this object is
+    passed as a return value to Godot (which will be then responsible to
+    actually call the destructor).
+    """
+    gdstr = ffi.new('godot_string*')
+    lib.godot_string_new_with_wide_string(gdstr, pystr, len(pystr))
+    return gdstr
+
+
 def godot_string_from_pyobj(pystr):
-    if isinstance(pystr, str):
-        gdstr = godot_string_alloc()
-        lib.godot_string_new_with_wide_string(gdstr, pystr, len(pystr))
-    # TODO: bytes should be accepted as Godot string ?
-    # elif isinstance(pystr, bytes):
-    #     gdstr = godot_string_alloc()
-    #     lib.godot_string_new_data(gdstr, pystr, len(pystr))
-    else:
-        raise TypeError('`pystr` must be of type `str`')
+    gdstr = godot_string_alloc(initialized=False)
+    lib.godot_string_new_with_wide_string(gdstr, pystr, len(pystr))
     return gdstr
 
 
@@ -165,11 +171,6 @@ def pyobj_to_variant(pyobj, p_gdvar=None):
             gdstr = godot_string_alloc()
             lib.godot_string_new_with_wide_string(gdstr, pyobj, len(pyobj))
             lib.godot_variant_new_string(p_gdvar, gdstr)
-        # TODO: bytes should be accepted as Godot string ?
-        # elif (isinstance(pyobj, bytes)):
-        #     gdstr = godot_string_alloc()
-        #     lib.godot_string_new_data(gdstr, pyobj, len(pyobj))
-        #     lib.godot_variant_new_string(p_gdvar, gdstr)
         elif isinstance(pyobj, BaseBuiltin):
             if pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_VECTOR2:
                 lib.godot_variant_new_vector2(p_gdvar, pyobj._gd_ptr)

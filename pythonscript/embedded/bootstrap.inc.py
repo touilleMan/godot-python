@@ -11,6 +11,7 @@ from godot.hazmat.profiler import Profiler
 from godot.hazmat.tools import (
     godot_string_to_pyobj,
     godot_string_from_pyobj,
+    godot_string_from_pyobj_for_ffi_return,
     py_to_gd_type,
     variant_to_pyobj,
     pyobj_to_variant,
@@ -110,7 +111,7 @@ class %s(%s):
         \"\"\"
         pass
 """ % (class_name, base_class_name)
-    return godot_string_from_pyobj(src)[0]
+    return godot_string_from_pyobj_for_ffi_return(src)[0]
 
 
 @ffi.def_extern()
@@ -166,7 +167,7 @@ def pybind_add_global_constant(handle, name, value):
 
 @ffi.def_extern()
 def pybind_debug_get_error(handle):
-    return godot_string_from_pyobj("Nothing")[0]
+    return godot_string_from_pyobj_for_ffi_return("Nothing")[0]
 
 
 @ffi.def_extern()
@@ -176,12 +177,12 @@ def pybind_debug_get_stack_level_line(handle, level):
 
 @ffi.def_extern()
 def pybind_debug_get_stack_level_function(handle, level):
-    return godot_string_from_pyobj("Nothing")[0]
+    return godot_string_from_pyobj_for_ffi_return("Nothing")[0]
 
 
 @ffi.def_extern()
 def pybind_debug_get_stack_level_source(handle, level):
-    return godot_string_from_pyobj("Nothing")[0]
+    return godot_string_from_pyobj_for_ffi_return("Nothing")[0]
 
 
 @ffi.def_extern()
@@ -201,7 +202,7 @@ def pybind_debug_get_globals(handle, locals, values, max_subitems, max_depth):
 
 @ffi.def_extern()
 def pybind_debug_parse_stack_level_expression(handle, level, expression, max_subitems, max_depth):
-    return godot_string_from_pyobj("Nothing")[0]
+    return godot_string_from_pyobj_for_ffi_return("Nothing")[0]
 
 
 def _build_script_manifest(cls):
@@ -242,6 +243,7 @@ def _build_script_manifest(cls):
 
     manifest = ffi.new('godot_pluginscript_script_manifest*')
     manifest.data = connect_handle(cls)
+    # TODO: should be able to use lib.godot_string_new_with_wide_string directly
     gdname = godot_string_from_pyobj(cls.__name__)
     lib.godot_string_name_new(ffi.addressof(manifest.name), gdname)
     if cls.__bases__ and issubclass(cls.__bases__[0], BaseObject):
@@ -440,6 +442,7 @@ def pybind_profiling_get_frame_data(handle, info, info_max):
                                 key=lambda x: -x[1].last_frame_self_time)[:info_max]
     for i, item in enumerate(sorted_and_limited):
         signature, profile = item
+        # TODO: should be able to use lib.godot_string_new_with_wide_string directly
         lib.godot_string_name_new(ffi.addressof(info[i].signature), godot_string_from_pyobj(signature))
         info[i].call_count = profile.last_frame_call_count
         info[i].total_time = int(profile.last_frame_total_time * 1e6)
