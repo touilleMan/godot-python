@@ -7,6 +7,7 @@
             \/            \/                        \/                \/            \/ 
 
 [![Build Status](https://travis-ci.org/touilleMan/godot-python.svg?branch=master)](https://travis-ci.org/touilleMan/godot-python)
+[![Build status](https://ci.appveyor.com/api/projects/status/1y8gifqjoru07e2n/branch/master?svg=true)](https://ci.appveyor.com/project/touilleMan/godot-python/branch/master)
 
 Python support for Godot
 
