@@ -24,7 +24,7 @@ stretch_2d=true
 
 [gdnative]
 
-singletons=[ "res://pythonscript.tres" ]
+singletons=[ "res://pythonscript.gdnlib" ]
 
 [input]
 

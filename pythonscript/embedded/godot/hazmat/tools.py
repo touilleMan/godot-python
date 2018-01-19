@@ -469,6 +469,8 @@ def convert_arg(gdtype, argname, arg, to_variant=False):
         except ValueError:
             raise TypeError('`%s` must be of type float or int' % argname)
     elif gdtype == lib.GODOT_VARIANT_TYPE_NODE_PATH:
+        from godot.node_path import NodePath, str_to_gd_node_path
+
         if not isinstance(arg, NodePath):
             if isinstance(arg, str):
                 return str_to_gd_node_path(arg, to_variant=to_variant)
