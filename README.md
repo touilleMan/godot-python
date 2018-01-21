@@ -22,65 +22,98 @@ The goal of this project is to provide Python language support as a scripting mo
 Quickstart
 ----------
 
-0 - Build Godot
+Head to the [Releases](https://github.com/touilleMan/godot-python/releases) page and download the 
+latest version for your platform.
 
-This project needs Godot 3 and the GDnative wrapper static library system.
-Right now this wrapper library is not provided with Godot 3 alpha builds so we
-must compile Godot ourself with the `gdnative_wrapper=yes` option:
+Building
+--------
 
-```
-$ scons platform=x11 gdnative_wrapper=yes target=debug tools=no
-```
+To build the project from source, first checkout the repo or download the 
+latest tarball.
 
-1 - Choose a Python interpreter
 
-The project is compatible with both [CPython](https://github.com/python/cpython)
-(default Python implementation) and [Pypy](https://pypy.org/) (alternative
-high performance implementation with a JIT).
+### Build Requirements
 
-For CPython you need to build it yourself:
-```
-$ git clone git@github.com:python/cpython.git cpython-3.6.3
-$ git checkout v3.6.3  # optional, but better use a release version that master tip
-```
-To simplify compilation of cpython you can use the Makefile rule provided:
-```
-$ make build_python PYTHON_SRC_DIR=./cpython-3.6.3
-```
-
-For Pypy, things are simpler because you can get precompiled binary. We
-recommend the [portable binaries](https://github.com/squeaky-pl/portable-pypy#portable-pypy-distribution-for-linux)
-```
-$ wget https://bitbucket.org/squeaky/portable-pypy/downloads/pypy3.5-5.9-beta-linux_x86_64-portable.tar.bz2
-$ tar xf pypy3.5-5.9-beta-linux_x86_64-portable.tar.bz2
-```
-
-2 - Compilation
-
-We use SCons with Python 3 for this task.
-
-For CPython:
-```
-$ make build BACKEND_DIR=cpython-3.6.3/build
-```
-
-or for pypy:
-```
-$ make build BACKEND_DIR=pypy3.5-5.9-beta-linux_x86_64-portable/ BACKEND=pypy
-```
-
-Note if you want to be able to modify `*.inc.py` files without having to recompile
-everytime (useful for dev) you can pass the `dev_dyn=true` option to scons.
-```
-$ make build BACKEND_DIR=cpython-3.6.3/build EXTRA_OPTS='dev_dyn=true'
-```
-
-3 - Run tests & example
+On a fresh Ubuntu install, you will need to install these:
 
 ```
-$ make BACKEND_DIR=cpython-3.6.3/build tests
-$ make BACKEND_DIR=cpython-3.6.3/build example
+$ apt install build-essential scons python3 python3-pip curl git
+$ pip3 install virtualenv --user
 ```
+
+If you are using CPython as your backend, you will need additional 
+libraries to build from source. The simplest way is to uncomment the 
+main deb-src in `/etc/apt/sources.list`:
+ 
+```
+deb-src http://archive.ubuntu.com/ubuntu/ artful main
+```
+ 
+and instruct apt to install the needed packages:
+
+```
+$ apt update
+$ apt build-dep python3.6
+```
+
+See the [Python Developer's Guide](https://devguide.python.org/setup/#build-dependencies) 
+for instructions on additional platforms.
+
+### Running the build
+
+From your `godot-python` directory:
+
+
+```bash
+godot-python$ scons platform=x11-64 backend=cpython release
+```
+
+Valid platforms are `x11-64`, `x11-32`, `windows-64`, `windows-32`. Check Travis 
+or Appveyor links above to see the current status of your platform.
+
+Valid backends are `cpython`, `pypy`.
+
+This command will download the pinned version of the Godot GDNative wrapper 
+library (defined in SConstruct and platform specific SCSub files). It will then 
+download a pinned pypy release binary or checkout cpython, move to a pinned 
+commit and build cpython from source. It will generate the CFFI bindings and 
+compile the shared library for your platform. The output of this command 
+is a zip file which are shared on the release page.
+
+### Testing your build
+
+```bash
+godot-python$ scons platform=x11-64 backend=cpython test
+```
+
+This will run pytests defined in `tests/bindings` inside the Godot environment. 
+If not present, will download a precompiled Godot binary 
+(defined in SConstruct and platform specific SCSub files) to and set the 
+correct library path for the GDNative wrapper.
+
+### Running the example project
+
+```bash
+godot-python$ scons platform=x11-64 backend=cpython example
+```
+
+This will run the converted pong example in `examples/pong` inside the Godot 
+environment. If not present, will download a precompiled Godot binary 
+(defined in SConstruct) to and set the correct library path for the GDNative wrapper.
+
+
+### Using a local Godot version
+
+If you have a pre-existing version of godot, you can instruct the build script to 
+use that the static library and binary for building and tests.
+
+```
+godot-python$ scons platform=x11-64 backend=cpython godot_binary=../godot/bin/godot.x11.opt.64 gdnative_wrapper_lib=../godot/modules/include/libgdnative_wrapper_code.x11.opt.64.a
+```
+
+### Additional build options
+
+You check out all the build options [in this file](https://github.com/touilleMan/godot-python/blob/master/SConstruct#L23).
 
 
 API
@@ -100,8 +133,8 @@ class Player(Node2D):
 	This is the file's main class which will be made available to Godot. This
 	class must inherit from `godot.Node` or any of its children (i.g.
 	`godot.KinematicBody`).
-	Obviously you can't have two `exposed` classes in the same file given Godot
-	retrieves the class based on the file path alone.
+	
+	Because Godot scripts only accept file paths, you can't have two `exposed` classes in the same file.
 	"""
 	# Exposed class can define some attributes as export(<type>) to achieve
 	# similar goal than GDSscript's `export` keyword
