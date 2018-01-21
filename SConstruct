@@ -33,7 +33,7 @@ vars.Add('debugger', "Run godot with given debugger", '')
 vars.Add('gdnative_include_dir', "Path to GDnative include directory", '')
 vars.Add('gdnative_wrapper_lib', "Path to GDnative wrapper library", '')
 vars.Add('godot_release_base_url', 'URL to the godot builder release to use',
-         'https://github.com/GodotBuilder/godot-builds/releases/download/master_20180113-2')
+         'https://github.com/GodotBuilder/godot-builds/releases/download/master_20180119-1')
 vars.Add(BoolVariable('dev_dyn', "Load at runtime *.inc.py files instead of "
                                  "embedding them (useful for dev)", False))
 vars.Add(BoolVariable('compressed_stdlib', "Compress Python std lib as a zip"
