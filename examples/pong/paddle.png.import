@@ -4,6 +4,14 @@ importer="texture"
 type="StreamTexture"
 path="res://.import/paddle.png-0e798fb0912613386507c9904d5cc01a.stex"
 
+[deps]
+
+source_file="res://paddle.png"
+source_md5="946d462749230c01dcc1c69371ed119b"
+
+dest_files=[ "res://.import/paddle.png-0e798fb0912613386507c9904d5cc01a.stex" ]
+dest_md5="e18266d9d9f0297d46e09900306d2ce5"
+
 [params]
 
 compress/mode=0

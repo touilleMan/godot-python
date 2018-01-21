@@ -1,7 +1,7 @@
 import pytest
 
 from godot.bindings import (
-    Object, Node, Viewport, EditorPlugin, LineEdit,
+    Object, Node, Viewport, LineEdit,
     Engine, _Engine, KEY_ESCAPE, OK, FAILED)
 
 
@@ -37,10 +37,6 @@ class TestDynamicBindings:
 
     def test_class(self):
         assert isinstance(Node, type)
-
-    def test_class_constants(self):
-        assert hasattr(EditorPlugin, 'CONTAINER_TOOLBAR')
-        assert isinstance(EditorPlugin.CONTAINER_TOOLBAR, int)
 
     def test_class_inheritance(self):
         assert issubclass(Node, Object)
