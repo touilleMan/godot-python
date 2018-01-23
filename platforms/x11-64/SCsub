@@ -16,9 +16,9 @@ env.Append(LINKFLAGS='-m64')
 
 
 if not env['godot_binary']:
-    env['godot_binary'] = File('godot.x11.opt.64')
+    env['godot_binary'] = File('godot.x11.opt.debug.64')
     env.Command(env['godot_binary'], None,
-        'curl -L %s/godot.x11.opt.64 -o ${TARGET} && chmod 750 ${TARGET}' %
+        'curl -L %s/godot.x11.opt.debug.64 -o ${TARGET} && chmod 750 ${TARGET}' %
             env['godot_release_base_url']
     )
     env.NoClean(env['godot_binary'])

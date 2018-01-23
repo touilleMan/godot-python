@@ -19,9 +19,9 @@ env['build_dir'] = Dir('#build/windows-32-%s' % env['backend'])
 
 
 if not env['godot_binary']:
-    env['godot_binary'] = File('godot.windows.opt.32.exe')
+    env['godot_binary'] = File('godot.windows.opt.debug.32.exe')
     env.Command(env['godot_binary'], None,
-        'curl -L %s/godot.windows.opt.32.exe -o ${TARGET}' %
+        'curl -L %s/godot.windows.opt.debug.32.exe -o ${TARGET}' %
             env['godot_release_base_url']
     )
     env.NoClean(env['godot_binary'])
