@@ -354,8 +354,17 @@ class LazyBindingsModule(ModuleType):
                 self._available[new_clsname] = self._available[name]
             self._available[name] = partial(build_global, self, name, new_clsname)
 
+    def _ensure_godot_instrospection_availability(self):
+        # Just pick one method and check if it contains introspection info or not
+        if ClassDB.get_class_methods('_OS')[0]['flags'] is None:
+            raise RuntimeError(
+                'Godot introspection is required for Python, use release-debug or '
+                'tools version of Godot (i.e. `godot.x11.tools.64`)')
+
     def __init__(self, name, doc=None):
         super().__init__(name, doc=doc)
+        # First and firemost: make sure Godot introspection is available
+        self._ensure_godot_instrospection_availability()
         # Load global constants
         self.__dict__.update(get_builtins())
         self.__dict__.update(GlobalConstants.get_global_constants())
