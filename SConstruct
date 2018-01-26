@@ -25,6 +25,7 @@ vars.Add(EnumVariable('platform', "Target platform", '', allowed_values=(
     'x11-32',
     'windows-64',
     'windows-32',
+    'osx-64',
 )))
 vars.Add(BoolVariable('show_build_dir', "Display build dir and leave", False))
 vars.Add('release_suffix', "Suffix to add to the release archive", 'wip')
