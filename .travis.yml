@@ -18,12 +18,13 @@ env:
     - BITS=32 PYTHON_BACKEND=pypy
 
 matrix:
-  exclude:
+  allow_failures:
     # TODO: fix x11-32 ! (use docker for the build ?)
     - os: linux
-      BITS: 32
+      env: BITS=32
+  exclude:
     - os: osx
-      BITS: 32
+      env: BITS=32
 
 addons:
   apt:
