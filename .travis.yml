@@ -18,10 +18,10 @@ env:
     - BITS=32 PYTHON_BACKEND=pypy
 
 matrix:
-  allow_failures:
-    # TODO: fix x11-32 ! (use docker for the build ?)
-    - BITS: 32
   exclude:
+    # TODO: fix x11-32 ! (use docker for the build ?)
+    - os: linux
+      BITS: 32
     - os: osx
       BITS: 32
 
@@ -59,7 +59,7 @@ addons:
 before_install:
 # See https://github.com/pyenv/pyenv/issues/228
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then eval "$(pyenv init -)"; fi
-  - pyenv shell 3.6.3
+  - pyenv shell 3.6
   - pip3 install virtualenv --user
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew install scons; fi;
 # Needed because scons doesn't inherit the customized $PATH env
