@@ -36,6 +36,7 @@ vars.Add('godot_release_base_url', 'URL to the godot builder release to use',
          'https://github.com/GodotBuilder/godot-builds/releases/download/master_20180122-1')
 vars.Add(BoolVariable('dev_dyn', "Load at runtime *.inc.py files instead of "
                                  "embedding them (useful for dev)", False))
+vars.Add(BoolVariable('debug', "Enable debug stuff, prevent symbol stripping etc.", False))
 vars.Add(BoolVariable('compressed_stdlib', "Compress Python std lib as a zip"
                                            "to save space", False))
 vars.Add(EnumVariable('backend', "Python interpreter to embed", 'cpython',
@@ -150,10 +151,12 @@ env.Append(CPPPATH=env['gdnative_include_dir'])
 env.Append(LIBS=env['gdnative_wrapper_lib'])
 
 env.Append(CFLAGS='-I' + env.Dir('pythonscript').path)
-# env.Append(CFLAGS='-std=c11')
-# env.Append(CFLAGS='-pthread -DDEBUG=1 -fwrapv -Wall '
-#     '-g -Wdate-time -D_FORTIFY_SOURCE=2 '
-#     '-Bsymbolic-functions -Wformat -Werror=format-security'.split())
+env.Append(CFLAGS='-Werror -Wall'.split())
+if env['debug']:
+    env.Append(CFLAGS='-g -ggdb'.split())
+else:
+    env.Append(CFLAGS='-O2'.split())
+    env.Append(LINKFLAGS='-s'.split())
 
 sources = [
     "pythonscript/pythonscript.c",

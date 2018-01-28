@@ -54,11 +54,11 @@ if env['backend'] == 'cpython':
     env.Command(cpython_build, cpython_src,
         "cd ${SOURCE} && " +
         "echo Configuring CPython... && "
-        "./configure --build=x86_64-pc-linux-gnu --host=i686-pc-linux-gnu --enable-shared --prefix=${TARGET.get_abspath()} && " +
+        "1>/dev/null LDFLAGS=-s ./configure --build=x86_64-pc-linux-gnu --host=i686-pc-linux-gnu --enable-shared --prefix=${TARGET.get_abspath()} && " +
         "echo Building CPython... && "
-        "make -j4 && " +
+        "1>/dev/null make -j4 && " +
         "echo Installing CPython in ${TARGET.get_abspath()}... && "
-        "make install && " +
+        "1>/dev/null make install && " +
         "LD_LIBRARY_PATH=${TARGET.get_abspath()}/lib ${TARGET.get_abspath()}/bin/pip3 install cffi"
     )
     env.NoClean(cpython_build)
