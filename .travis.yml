@@ -21,10 +21,14 @@ matrix:
   allow_failures:
     # TODO: fix x11-32 ! (use docker for the build ?)
     - os: linux
-      env: BITS=32
+      env: BITS=32 PYTHON_BACKEND=pypy
+    - os: linux
+      env: BITS=32 PYTHON_BACKEND=cpython
   exclude:
     - os: osx
-      env: BITS=32
+      env: BITS=32 PYTHON_BACKEND=pypy
+    - os: osx
+      env: BITS=32 PYTHON_BACKEND=cpython
 
 addons:
   apt:
@@ -59,15 +63,9 @@ addons:
 
 before_install:
   - python --version
-  - which python
-  - which python3 || echo nope
-  - ls -l $( dirname `which python` )
-  - ls -l $( dirname `which python3` )  || echo nope
-# See https://github.com/pyenv/pyenv/issues/228
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then eval "$(pyenv init -)"; fi
-  - pyenv shell 3.5
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew install python3 scons; fi;
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pyenv shell 3.6 ; fi
   - pip3 install virtualenv --user
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew install scons; fi;
 # Needed because scons doesn't inherit the customized $PATH env
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CC=gcc-7; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export TARGET_PLATFORM=x11-$BITS; fi
