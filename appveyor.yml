@@ -22,6 +22,12 @@ environment:
       TARGET_BACKEND: pypy
       PYTHON: C:\Python36
 
+matrix:
+  allow_failures:
+    # TODO: ask Armin why pypy includes are not provided within the release...
+    - TARGET_PLATFORM: windows-32
+      TARGET_BACKEND: pypy
+
 install:
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   # - set "PATH=C:\\mingw-w64\\x86_64-6.3.0-posix-seh-rt_v5-rev1\\mingw64\\bin;%PATH%"
