@@ -2,8 +2,6 @@ language: cpp
 
 sudo: false
 
-python: '3.6'
-
 os:
   - linux
   - osx
@@ -72,10 +70,8 @@ before_install:
 
 before_script:
 # Start X11 server
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; |
-      /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- $XVFB_OPTS
-      sleep 3 # give xvfb some time to start
-    fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- $XVFB_OPTS; fi;
+  - sleep 3 # give xvfb some time to start
 
 
 script:
