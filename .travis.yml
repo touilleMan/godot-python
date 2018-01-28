@@ -69,7 +69,7 @@ before_install:
 # Needed because scons doesn't inherit the customized $PATH env
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CC=gcc-7; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CPP=cpp; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export CPP="clang -E"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export CPP="'clang -E'"; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export TARGET_PLATFORM=x11-$BITS; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export TARGET_PLATFORM=osx-$BITS; fi
   - python --version
