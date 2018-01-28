@@ -68,8 +68,6 @@ before_install:
   - pip3 install virtualenv --user
 # Needed because scons doesn't inherit the customized $PATH env
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CC=gcc-7; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CPP=cpp; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export CPP="'clang -E'"; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export TARGET_PLATFORM=x11-$BITS; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export TARGET_PLATFORM=osx-$BITS; fi
   - python --version
@@ -84,7 +82,8 @@ before_script:
 
 script:
   - set -e  # Enable fail on first error
-  - scons platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC gdnative_parse_cpp=$CPP release_suffix=$TRAVIS_BRANCH release
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then scons platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC gdnative_parse_cpp="clang -E" release_suffix=$TRAVIS_BRANCH release; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scons platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC release_suffix=$TRAVIS_BRANCH release; fi
 # Tests need x11 server with opengl3 or compile godot with platform=server (both not working so far...)
   # - LIBGL_ALWAYS_SOFTWARE=1 scons debugger=valgrind platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC test
   - set +e
