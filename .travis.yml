@@ -57,6 +57,8 @@ addons:
       - valgrind
 
 before_install:
+# See https://github.com/pyenv/pyenv/issues/228
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then eval "$(pyenv init -)"; fi
   - pyenv shell 3.6.3
   - pip3 install virtualenv --user
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew install scons; fi;
@@ -64,8 +66,6 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CC=gcc-7; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export TARGET_PLATFORM=x11-$BITS; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export TARGET_PLATFORM=osx-$BITS; fi
-# See https://github.com/pyenv/pyenv/issues/228
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then eval "$(pyenv init -)"; fi
   - python --version
   - $CC --version
   - scons --version
