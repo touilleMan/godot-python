@@ -64,6 +64,8 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; export CC=gcc-7; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; export TARGET_PLATFORM=x11-$BITS; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; export TARGET_PLATFORM=osx-$BITS; fi
+# See https://github.com/pyenv/pyenv/issues/228
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; eval "$(pyenv init -)"; fi
   - python --version
   - $CC --version
   - scons --version
