@@ -34,9 +34,11 @@ latest tarball.
 
 ### Build Requirements
 
+#### Linux
+
 On a fresh Ubuntu install, you will need to install these:
 
-```
+```bash
 $ apt install build-essential scons python3 python3-pip curl git
 $ pip3 install virtualenv --user
 ```
@@ -51,13 +53,27 @@ deb-src http://archive.ubuntu.com/ubuntu/ artful main
  
 and instruct apt to install the needed packages:
 
-```
+```bash
 $ apt update
 $ apt build-dep python3.6
 ```
 
 See the [Python Developer's Guide](https://devguide.python.org/setup/#build-dependencies) 
 for instructions on additional platforms.
+
+#### MacOS
+
+With MacOS, you will need XCode installed and install the command line tools. 
+
+```
+$ xcode-select --install
+```
+
+If you are using CPython as your backend, you will need openssl. To install with Homebrew:
+
+```
+$ brew install opensll
+```
 
 ### Running the build
 
@@ -68,7 +84,7 @@ From your `godot-python` directory:
 godot-python$ scons platform=x11-64 backend=cpython release
 ```
 
-Valid platforms are `x11-64`, `x11-32`, `windows-64`, `windows-32`. Check Travis 
+Valid platforms are `x11-64`, `x11-32`, `windows-64`, `windows-32` and `osx-64`. Check Travis 
 or Appveyor links above to see the current status of your platform.
 
 Valid backends are `cpython`, `pypy`.
@@ -79,6 +95,14 @@ download a pinned pypy release binary or checkout cpython, move to a pinned
 commit and build cpython from source. It will generate the CFFI bindings and 
 compile the shared library for your platform. The output of this command 
 is a zip file which are shared on the release page.
+
+#### MacOS Adttional Requirement
+
+For MacOS, you will need to customize our cpp to use clang. Your final command will look like:
+
+```bash
+godot-python$ scons platform=osx-64 backend=cpython gdnative_parse_cpp="clang -E" release
+```
 
 ### Testing your build
 
