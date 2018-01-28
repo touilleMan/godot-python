@@ -2,24 +2,30 @@ language: cpp
 
 sudo: false
 
-compiler:
- - gcc
-  # - clang
-
 python: '3.6'
+
+os:
+  - linux
+  - osx
 
 env:
   global:
-    - LLVM_VERSION=3.8.0
-    - LLVM_ARCHIVE_PATH=$HOME/clang+llvm.tar.xz
     - DISPLAY=":99.0"
     - AUDIODEV="null"
     - XVFB_OPTS=":99.0 -ac -screen 0 1280x1024x24 -ac +extension GLX +extension RANDR +render -noreset"
   matrix:
-    - TARGET_PLATFORM=x11-64 PYTHON_BACKEND=cpython
-    - TARGET_PLATFORM=x11-32 PYTHON_BACKEND=cpython
-    - TARGET_PLATFORM=x11-64 PYTHON_BACKEND=pypy
-    - TARGET_PLATFORM=x11-32 PYTHON_BACKEND=pypy
+    - BITS=64 PYTHON_BACKEND=cpython
+    - BITS=64 PYTHON_BACKEND=pypy
+    - BITS=32 PYTHON_BACKEND=cpython
+    - BITS=32 PYTHON_BACKEND=pypy
+
+matrix:
+  allow_failures:
+    # TODO: fix x11-32 ! (use docker for the build ?)
+    - BITS: 32
+  exclude:
+    - os: osx
+      BITS: 32
 
 addons:
   apt:
@@ -55,22 +61,22 @@ addons:
 before_install:
   - pyenv shell 3.6.3
   - pip3 install virtualenv --user
-  - if [[ "$CXX" == "clang++" ]]; then wget http://llvm.org/releases/$LLVM_VERSION/clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-14.04.tar.xz -O $LLVM_ARCHIVE_PATH; fi
-  - if [[ "$CXX" == "clang++" ]]; then mkdir $HOME/clang+llvm; fi
-  - if [[ "$CXX" == "clang++" ]]; then tar xf $LLVM_ARCHIVE_PATH -C $HOME/clang+llvm --strip-components 1; fi
-  - if [[ "$CXX" == "clang++" ]]; then export PATH=$HOME/clang+llvm/bin:$PATH; fi
-  - if [[ "$CXX" == "clang++" ]]; then clang --version; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew install scons; fi;
 # Needed because scons doesn't inherit the customized $PATH env
-  - if [[ "$CXX" == "clang++" ]]; then export CC=$HOME/clang+llvm/bin/clang; fi
-  - if [[ "$CXX" == "g++" ]]; then export CC=gcc-7; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; export CC=gcc-7; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; export TARGET_PLATFORM=x11-$BITS; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; export TARGET_PLATFORM=osx-$BITS; fi
   - python --version
   - $CC --version
   - scons --version
 
 before_script:
 # Start X11 server
-  - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- $XVFB_OPTS"
-  - sleep 3 # give xvfb some time to start
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; |
+      /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- $XVFB_OPTS
+      sleep 3 # give xvfb some time to start
+    fi
+
 
 script:
   - set -e  # Enable fail on first error
