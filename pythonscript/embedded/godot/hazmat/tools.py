@@ -155,9 +155,20 @@ def variant_to_pyobj(p_gdvar):
         raise TypeError("Unknown Variant type `%s` (this should never happen !)" % gdtype)
 
 
-def pyobj_to_variant(pyobj, p_gdvar=None):
-    # `initialized=False` means we MUST manually init this by hand no matter what
-    p_gdvar = p_gdvar if p_gdvar else godot_variant_alloc(initialized=False)
+def pyobj_to_variant(pyobj, p_gdvar=None, for_ffi_return=False):
+    """
+    `initialized=False` means we MUST manually init this by hand no matter what
+
+    `for_ffi_return=True` means the returned variant won't have it destructor called
+    once it is garbage collected by python.
+    This is typically what we want when we pass the variant object by copy as a
+    return value to Godot (which is then in charge of calling the destructor itself).
+    """
+    if not p_gdvar:
+        if for_ffi_return:
+            p_gdvar = ffi.new('godot_variant*')
+        else:
+            p_gdvar = godot_variant_alloc(initialized=False)
     try:
         if pyobj is None:
             lib.godot_variant_new_nil(p_gdvar)

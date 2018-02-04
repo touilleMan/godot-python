@@ -383,13 +383,13 @@ def pybind_instance_call_method(handle, p_method, p_args, p_argcount, r_error):
     except AttributeError:
         r_error.error = lib.GODOT_CALL_ERROR_CALL_ERROR_INVALID_METHOD
         # TODO: Keep this object cached instead of recreating everytime
-        return pyobj_to_variant(None)[0]
+        return pyobj_to_variant(None, for_ffi_return=True)[0]
 
     # print('[GD->PY] Calling %s on %s ==> %s' % (methname, instance, meth))
     pyargs = [variant_to_pyobj(p_args[i]) for i in range(p_argcount)]
     try:
         pyret = meth(*pyargs)
-        ret = pyobj_to_variant(pyret)
+        ret = pyobj_to_variant(pyret, for_ffi_return=True)
         r_error.error = lib.GODOT_CALL_ERROR_CALL_OK
         # print('[GD->PY] result: %s (%s)' % (pyret, ret[0]))
         return ret[0]
@@ -404,7 +404,7 @@ def pybind_instance_call_method(handle, p_method, p_args, p_argcount, r_error):
         r_error.expected = lib.GODOT_VARIANT_TYPE_NIL
     # Something bad occured, return a default None variant
     # TODO: Keep this object cached instead of recreating it everytime
-    return pyobj_to_variant(None)[0]
+    return pyobj_to_variant(None, for_ffi_return=True)[0]
 
 
 ### Profiler ###
