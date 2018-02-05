@@ -16,6 +16,7 @@ from godot.hazmat.tools import (
     variant_to_pyobj,
     pyobj_to_variant,
 )
+from godot.hazmat.io import enable_capture_io_streams
 from godot.bindings import PoolStringArray, Dictionary, Array, ProjectSettings, OS
 
 
@@ -63,6 +64,13 @@ def pybind_init():
     ProjectSettings.set_initial_value(pythonpath_config_field, pythonpath_default_value)
     # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
     pythonpath = ProjectSettings.get_setting(pythonpath_config_field)
+
+    io_capture_config_field = "python_script/io_streams_capture"
+    if not ProjectSettings.has_setting(io_capture_config_field):
+        ProjectSettings.set_setting(io_capture_config_field, True)
+    ProjectSettings.set_initial_value(io_capture_config_field, True)
+    if ProjectSettings.get_setting(io_capture_config_field):
+        enable_capture_io_streams()
 
     sys.argv = ["godot"] + OS.get_cmdline_args()
     for p in pythonpath.split(';'):
