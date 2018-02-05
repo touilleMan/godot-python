@@ -7,7 +7,7 @@ from pythonscriptcffi import ffi
 from godot import __version__
 from godot.hazmat.base import destroy_exposed_classes
 from godot.hazmat.io import enable_capture_io_streams
-from godot.hazmat.ffi.gc_protector import protect_from_gc
+from godot.hazmat.gc_protector import protect_from_gc
 from godot.bindings import OS, ProjectSettings
 
 

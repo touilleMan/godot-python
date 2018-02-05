@@ -3,7 +3,7 @@ import traceback
 
 from pythonscriptcffi import ffi, lib
 
-from godot.hazmat.ffi.gc_protector import protect_from_gc, connect_handle
+from godot.hazmat.gc_protector import protect_from_gc, connect_handle
 from godot.hazmat.tools import (
     godot_string_to_pyobj,
     variant_to_pyobj,
