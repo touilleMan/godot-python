@@ -52,35 +52,38 @@ def connect_handle(obj):
 #### Language ####
 
 
+def _setup_config_entry(name, default_value):
+    if not ProjectSettings.has_setting(name):
+        ProjectSettings.set_setting(name, default_value)
+    ProjectSettings.set_initial_value(name, default_value)
+    # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
+    return ProjectSettings.get_setting(name)
+
+
 @ffi.def_extern()
 def pybind_init():
     # Make sure Python starts in the game directory
     os.chdir(ProjectSettings.globalize_path('res://'))
-    # Setup default value
-    pythonpath_config_field = "python_script/path"
-    pythonpath_default_value = "res://;res://lib"
-    if not ProjectSettings.has_setting(pythonpath_config_field):
-        ProjectSettings.set_setting(pythonpath_config_field, pythonpath_default_value)
-    ProjectSettings.set_initial_value(pythonpath_config_field, pythonpath_default_value)
-    # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
-    pythonpath = ProjectSettings.get_setting(pythonpath_config_field)
 
-    io_capture_config_field = "python_script/io_streams_capture"
-    if not ProjectSettings.has_setting(io_capture_config_field):
-        ProjectSettings.set_setting(io_capture_config_field, True)
-    ProjectSettings.set_initial_value(io_capture_config_field, True)
-    if ProjectSettings.get_setting(io_capture_config_field):
-        enable_capture_io_streams()
-
+    # Pass argv arguments
     sys.argv = ["godot"] + OS.get_cmdline_args()
+
+    # Update PYTHONPATH according to configuration
+    pythonpath = _setup_config_entry("python_script/path", "res://;res://lib")
     for p in pythonpath.split(';'):
         p = ProjectSettings.globalize_path(p)
         sys.path.append(p)
 
-    print('Pythonscript version: %s' % __version__)
-    print('Pythonscript backend: %s %s' %
-        (sys.implementation.name, sys.version.replace('\n', ' ')))
-    print('PYTHONPATH: %s' % sys.path)
+    # Redirect stdout/stderr to have it in the Godot editor console
+    if _setup_config_entry("python_script/io_streams_capture", True):
+        enable_capture_io_streams()
+
+    # Finally display informative stuff ;-)
+    if _setup_config_entry("python_script/print_startup_info", True):
+        print('Pythonscript version: %s' % __version__)
+        print('Pythonscript backend: %s %s' %
+              (sys.implementation.name, sys.version.replace('\n', ' ')))
+        print('PYTHONPATH: %s' % sys.path)
 
     return ffi.NULL
 
