@@ -1,11 +1,11 @@
 from pythonscriptcffi import lib, ffi
 
-from .hazmat.base import BaseBuiltin
-from .hazmat.allocator import godot_transform_alloc
-from .basis import Basis
-from .vector3 import Vector3
-from .aabb import AABB
-from .plane import Plane
+from godot.hazmat.base import BaseBuiltin
+from godot.hazmat.allocator import godot_transform_alloc
+from godot.basis import Basis
+from godot.vector3 import Vector3
+from godot.aabb import AABB
+from godot.plane import Plane
 
 
 class Transform(BaseBuiltin):

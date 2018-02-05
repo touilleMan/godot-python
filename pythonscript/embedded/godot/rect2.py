@@ -1,8 +1,8 @@
 from pythonscriptcffi import lib, ffi
 
-from .hazmat.base import BaseBuiltin
-from .hazmat.allocator import godot_rect2_alloc
-from .vector2 import Vector2
+from godot.hazmat.base import BaseBuiltin
+from godot.hazmat.allocator import godot_rect2_alloc
+from godot.vector2 import Vector2
 
 
 class Rect2(BaseBuiltin):

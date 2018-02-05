@@ -1,7 +1,7 @@
 import sys
 
-from .hazmat.lazy_bindings import LazyBindingsModule
-from .hazmat.recursive import godot_bindings_module
+from godot.hazmat.lazy_bindings import LazyBindingsModule
+from godot.hazmat.recursive import godot_bindings_module
 
 
 godot_bindings_module.__class__ = LazyBindingsModule

@@ -2,8 +2,8 @@ from types import ModuleType
 from pythonscriptcffi import ffi, lib
 from functools import partial
 
-from .base import BaseObject
-from .allocator import (
+from godot.hazmat.base import BaseObject
+from godot.hazmat.allocator import (
     godot_pool_string_array_alloc,
     godot_variant_alloc,
     godot_array_alloc,
@@ -11,7 +11,7 @@ from .allocator import (
     godot_string_alloc,
     godot_int_alloc,
 )
-from .tools import (
+from godot.hazmat.tools import (
     variant_to_pyobj,
     pyobj_to_variant,
     new_uninitialized_gdobj,
@@ -19,21 +19,21 @@ from .tools import (
     convert_arg,
     godot_string_from_pyobj,
 )
-from ..vector2 import Vector2
-from ..rect2 import Rect2
-from ..vector3 import Vector3
-from ..transform2d import Transform2D
-from ..plane import Plane
-from ..quat import Quat
-from ..aabb import AABB
-from ..basis import Basis
-from ..transform import Transform
-from ..color import Color
-from ..node_path import NodePath
-from ..rid import RID
-from ..dictionary import Dictionary
-from ..array import Array
-from ..pool_arrays import (
+from godot.vector2 import Vector2
+from godot.rect2 import Rect2
+from godot.vector3 import Vector3
+from godot.transform2d import Transform2D
+from godot.plane import Plane
+from godot.quat import Quat
+from godot.aabb import AABB
+from godot.basis import Basis
+from godot.transform import Transform
+from godot.color import Color
+from godot.node_path import NodePath
+from godot.rid import RID
+from godot.dictionary import Dictionary
+from godot.array import Array
+from godot.pool_arrays import (
     PoolByteArray,
     PoolIntArray,
     PoolRealArray,

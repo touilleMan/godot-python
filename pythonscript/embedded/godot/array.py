@@ -1,9 +1,9 @@
 from pythonscriptcffi import lib, ffi
 
-from .hazmat.base import BaseBuiltinWithGDObjOwnership
-from .hazmat.allocator import godot_array_alloc
-from .hazmat.tools import variant_to_pyobj, pyobj_to_variant
-from .pool_arrays import (
+from godot.hazmat.base import BaseBuiltinWithGDObjOwnership
+from godot.hazmat.allocator import godot_array_alloc
+from godot.hazmat.tools import variant_to_pyobj, pyobj_to_variant
+from godot.pool_arrays import (
     PoolColorArray,
     PoolVector3Array,
     PoolVector2Array,

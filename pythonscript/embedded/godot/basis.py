@@ -1,9 +1,9 @@
 from pythonscriptcffi import lib
 
-from .hazmat.base import BaseBuiltin
-from .hazmat.allocator import godot_basis_alloc
-from .vector3 import Vector3
-from .quat import Quat
+from godot.hazmat.base import BaseBuiltin
+from godot.hazmat.allocator import godot_basis_alloc
+from godot.vector3 import Vector3
+from godot.quat import Quat
 
 
 class Basis(BaseBuiltin):

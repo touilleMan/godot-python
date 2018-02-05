@@ -1,7 +1,7 @@
 from pythonscriptcffi import lib
 
-from .hazmat.base import BaseBuiltin
-from .hazmat.allocator import godot_vector2_alloc
+from godot.hazmat.base import BaseBuiltin
+from godot.hazmat.allocator import godot_vector2_alloc
 
 
 class Vector2(BaseBuiltin):

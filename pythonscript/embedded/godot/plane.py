@@ -1,9 +1,9 @@
 from pythonscriptcffi import lib
 
-from .hazmat.base import BaseBuiltin
-from .hazmat.allocator import godot_plane_alloc
+from godot.hazmat.base import BaseBuiltin
+from godot.hazmat.allocator import godot_plane_alloc
 
-from .vector3 import Vector3
+from godot.vector3 import Vector3
 
 
 class Plane(BaseBuiltin):

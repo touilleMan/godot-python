@@ -1,9 +1,9 @@
 from pythonscriptcffi import lib, ffi
 
-from .hazmat.base import BaseBuiltin
-from .hazmat.allocator import godot_transform2d_alloc
-from .vector2 import Vector2
-from .rect2 import Rect2
+from godot.hazmat.base import BaseBuiltin
+from godot.hazmat.allocator import godot_transform2d_alloc
+from godot.vector2 import Vector2
+from godot.rect2 import Rect2
 
 
 class Transform2D(BaseBuiltin):

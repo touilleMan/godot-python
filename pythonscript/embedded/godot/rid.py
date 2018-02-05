@@ -1,7 +1,7 @@
 from pythonscriptcffi import lib
 
-from .hazmat.base import BaseBuiltin
-from .hazmat.allocator import godot_rid_alloc
+from godot.hazmat.base import BaseBuiltin
+from godot.hazmat.allocator import godot_rid_alloc
 
 
 class RID(BaseBuiltin):
@@ -15,7 +15,7 @@ class RID(BaseBuiltin):
     def __init__(self, from_=None):
         self._gd_ptr = godot_rid_alloc()
         if from_:
-            from .bindings import Resource
+            from godot.bindings import Resource
             self._check_param_type('from_', from_, Resource)
             lib.godot_rid_new_with_resource(self._gd_ptr, from_._gd_ptr)
 

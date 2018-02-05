@@ -1,12 +1,12 @@
 from collections.abc import MutableSequence
 from pythonscriptcffi import lib, ffi
 
-from .hazmat.base import BaseBuiltinWithGDObjOwnership
-from .hazmat.tools import godot_string_to_pyobj, pyobj_to_gdobj
-from .hazmat import allocator
-from .color import Color
-from .vector2 import Vector2
-from .vector3 import Vector3
+from godot.hazmat.base import BaseBuiltinWithGDObjOwnership
+from godot.hazmat.tools import godot_string_to_pyobj, pyobj_to_gdobj
+from godot.hazmat import allocator
+from godot.color import Color
+from godot.vector2 import Vector2
+from godot.vector3 import Vector3
 
 
 class BasePoolArray(BaseBuiltinWithGDObjOwnership, MutableSequence):

@@ -1,8 +1,8 @@
 from pythonscriptcffi import lib, ffi
 
-from .hazmat.base import BaseBuiltinWithGDObjOwnership
-from .hazmat.allocator import godot_node_path_alloc, godot_variant_alloc
-from .hazmat.tools import pyobj_to_gdobj, godot_string_to_pyobj
+from godot.hazmat.base import BaseBuiltinWithGDObjOwnership
+from godot.hazmat.allocator import godot_node_path_alloc, godot_variant_alloc
+from godot.hazmat.tools import pyobj_to_gdobj, godot_string_to_pyobj
 
 
 def str_to_gd_node_path(path, to_variant=False):

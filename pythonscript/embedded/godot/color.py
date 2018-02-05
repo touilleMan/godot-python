@@ -1,7 +1,7 @@
 from pythonscriptcffi import lib, ffi
 
-from .hazmat.base import BaseBuiltin
-from .hazmat.allocator import godot_color_alloc
+from godot.hazmat.base import BaseBuiltin
+from godot.hazmat.allocator import godot_color_alloc
 
 
 class Color(BaseBuiltin):

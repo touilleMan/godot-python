@@ -1,8 +1,8 @@
 from pythonscriptcffi import lib
 
-from .hazmat.base import BaseBuiltin
-from .hazmat.allocator import godot_quat_alloc
-from .vector3 import Vector3
+from godot.hazmat.base import BaseBuiltin
+from godot.hazmat.allocator import godot_quat_alloc
+from godot.vector3 import Vector3
 
 
 class Quat(BaseBuiltin):

@@ -1,4 +1,4 @@
-from .hazmat.base import (
+from godot.hazmat.base import (
     signal, export, exposed, get_exposed_class_per_module, get_exposed_class_per_name,
     rpcmaster, rpcslave, rpcremote, rpcsync,
 )

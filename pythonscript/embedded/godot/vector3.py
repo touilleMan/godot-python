@@ -1,7 +1,7 @@
 from pythonscriptcffi import lib
 
-from .hazmat.base import BaseBuiltin
-from .hazmat.allocator import godot_vector3_alloc
+from godot.hazmat.base import BaseBuiltin
+from godot.hazmat.allocator import godot_vector3_alloc
 
 
 class Vector3(BaseBuiltin):
@@ -177,13 +177,13 @@ class Vector3(BaseBuiltin):
         return lib.godot_vector3_dot(self._gd_ptr, b._gd_ptr)
 
     def outer(self, b):
-        from .basis import Basis
+        from godot.basis import Basis
         self._check_param_type('b', b, Vector3)
         gd_obj = lib.godot_vector3_outer(self._gd_ptr, b._gd_ptr)
         return Basis.build_from_gdobj(gd_obj)
 
     def to_diagonal_matrix(self):
-        from .basis import Basis
+        from godot.basis import Basis
         gd_obj = lib.godot_vector3_to_diagonal_matrix(self._gd_ptr)
         return Basis.build_from_gdobj(gd_obj)
 

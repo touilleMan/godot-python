@@ -1,7 +1,7 @@
 from pythonscriptcffi import ffi, lib
 
-from .base import BaseBuiltin, BaseObject, BaseBuiltinWithGDObjOwnership
-from .allocator import (
+from godot.hazmat.base import BaseBuiltin, BaseObject, BaseBuiltinWithGDObjOwnership
+from godot.hazmat.allocator import (
     godot_variant_alloc,
     godot_bool_alloc,
     godot_int_alloc,
@@ -30,7 +30,7 @@ from .allocator import (
     godot_pool_vector3_array_alloc,
     godot_pool_color_array_alloc,
 )
-from .recursive import godot_bindings_module
+from godot.hazmat.recursive import godot_bindings_module
 
 
 # A bit of naming:

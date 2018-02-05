@@ -1,9 +1,9 @@
 from pythonscriptcffi import lib, ffi
 
-from .hazmat.base import BaseBuiltinWithGDObjOwnership
-from .hazmat.allocator import godot_dictionary_alloc
-from .hazmat.tools import pyobj_to_variant, variant_to_pyobj, godot_string_to_pyobj
-from .array import Array
+from godot.hazmat.base import BaseBuiltinWithGDObjOwnership
+from godot.hazmat.allocator import godot_dictionary_alloc
+from godot.hazmat.tools import pyobj_to_variant, variant_to_pyobj, godot_string_to_pyobj
+from godot.array import Array
 
 
 class Dictionary(BaseBuiltinWithGDObjOwnership):
