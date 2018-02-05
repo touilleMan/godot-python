@@ -2,9 +2,9 @@ import sys
 import pdb
 from io import RawIOBase
 
-from godot.hazmat.tools import godot_string_from_pyobj
-
 from pythonscriptcffi import lib
+
+from godot.hazmat.tools import godot_string_from_pyobj
 
 
 # TODO: really not optimized implementation...
