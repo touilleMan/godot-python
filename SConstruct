@@ -22,6 +22,13 @@ def SymLink(target, source, env):
         raise UserError("Can't create symlink (%s -> %s): %s" % (str(source[0]), os.path.abspath(str(target[0])), e))
 
 
+def script_converter(str, env):
+    """Allowed values are True, False, and a script path"""
+    if str in ('False', 'false', '0'):
+        return False
+    if str in ('True', 'true', '1'):
+        return True
+    return str
 
 vars = Variables('custom.py', ARGUMENTS)
 vars.Add(EnumVariable('platform', "Target platform", '', allowed_values=(
@@ -52,8 +59,14 @@ vars.Add("CC", "C compiler")
 vars.Add("CFLAGS", "Custom flags for the C compiler")
 vars.Add("LINK", "linker")
 vars.Add("LINKFLAGS", "Custom flags for the linker")
+vars.Add("TARGET_ARCH", "Target architecture (Windows only) -- x86, x86_64, ia64. Default: host arch.")
+vars.Add("MSVC_VERSION", "MSVC version to use (Windows only) -- version num X.Y. Default: highest installed.")
+vars.Add("MSVC_USE_SCRIPT", "Set to True to let SCons find compiler (with MSVC_VERSION and TARGET_ARCH), "
+         "False to use cmd.exe env (MSVC_VERSION and TARGET_ARCH will be ignored), "
+         "or vcvarsXY.bat script name to use.",
+         default=False, converter=script_converter)
 
-env = Environment(ENV=os.environ, variables=vars, MSVC_USE_SCRIPT=False)
+env = Environment(ENV=os.environ, variables=vars)
 # env.AppendENVPath('PATH', os.getenv('PATH'))
 # env.Append('DISPLAY', os.getenv('DISPLAY'))
 Help(vars.GenerateHelpText(env))
