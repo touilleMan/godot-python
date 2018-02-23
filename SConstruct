@@ -16,7 +16,11 @@ def SymLink(target, source, env):
         os.unlink(str(target[0]))
     except Exception:
         pass
-    os.symlink(os.path.abspath(str(source[0])), os.path.abspath(str(target[0])))
+    try:
+        os.symlink(os.path.abspath(str(source[0])), os.path.abspath(str(target[0])))
+    except Exception as e:
+        raise UserError("Can't create symlink (%s -> %s): %s" % (str(source[0]), os.path.abspath(str(target[0])), e))
+
 
 
 vars = Variables('custom.py', ARGUMENTS)
