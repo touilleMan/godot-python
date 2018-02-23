@@ -12,6 +12,8 @@ from godot.hazmat.tools import (
 )
 from godot.bindings import Dictionary, Array
 
+# Set to True to show script loading progress
+verbose = True
 
 def _build_script_manifest(cls):
 
@@ -96,6 +98,7 @@ def _build_script_manifest(cls):
 @ffi.def_extern()
 def pybind_script_init(handle, path, source, r_error):
     path = godot_string_to_pyobj(path)
+    if verbose: print("Loading python script from %s", path)
     if not path.startswith('res://') or not path.rsplit('.', 1)[-1] in ('py', 'pyc', 'pyo', 'pyd'):
         print("Bad python script path `%s`, must starts by `res://` and ends with `.py/pyc/pyo/pyd`" % path)
         r_error[0] = lib.GODOT_ERR_FILE_BAD_PATH
@@ -111,7 +114,7 @@ def pybind_script_init(handle, path, source, r_error):
         # If we are here it could be because the file doesn't exists
         # or (more possibly) the file content is not a valid python (or
         # miss an exposed class)
-        traceback.print_exc()
+        print("Got exception loading %s (%s): %s" % (path, modname, traceback.format_exc()))
         r_error[0] = lib.GODOT_ERR_PARSE_ERROR
         # Obliged to return the structure, but no need in init it
         return ffi.new('godot_pluginscript_script_manifest*')[0]

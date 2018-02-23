@@ -28,9 +28,14 @@ class GodotIO(RawIOBase):
             self.godot_func(g_b)
             self.buffer = ''
 
-
 godot_stdout_io = GodotIO(lib.godot_print)
-godot_stderr_io = GodotIO(lib.godot_print_error)
+# Note: godot_print_error takes 4 args: descr, func, file, line.
+# So GodotIO.write/flush would need to call it like that.
+# But we don't have func/file/line here.
+# Also, python calls write() at fairly random points with substrings of
+# the actual message, so trying to structure the output with
+# godot_print_error doesn't work well. Just use godot_print for now.
+godot_stderr_io = GodotIO(lib.godot_print)
 vanilla_Pdb = pdb.Pdb
 
 
