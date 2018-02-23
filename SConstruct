@@ -120,7 +120,7 @@ env.PythonCommand(
 
 cdef_gen = env.PythonCommand(
     targets='pythonscript/cdef.gen.h',
-    sources=(venv_dir, env['gdnative_include_dir']),
+    sources=(venv_dir, '$gdnative_include_dir'),
     command=('python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} '
              '--output=${TARGET} --bits=${bits} --cpp="${gdnative_parse_cpp}"')
 )
@@ -145,12 +145,11 @@ python_embedded_srcs = env.Glob('pythonscript/embedded/*.inc.py')
 
 ### Main compilation stuff ###
 
-env.Alias('backend', env['backend_dir'])
+env.Alias('backend', '$backend_dir')
 
-env.Append(CPPPATH=env['gdnative_include_dir'])
-env.Append(LIBS=env['gdnative_wrapper_lib'])
+env.AppendUnique(CPPPATH=['#', '$gdnative_include_dir'])
+env.Append(LIBS='$gdnative_wrapper_lib')
 
-env.Append(CFLAGS='-I' + env.Dir('pythonscript').path)
 # env.Append(CFLAGS='-std=c11')
 # env.Append(CFLAGS='-pthread -DDEBUG=1 -fwrapv -Wall '
 #     '-g -Wdate-time -D_FORTIFY_SOURCE=2 '
@@ -196,18 +195,18 @@ def do_or_die(func, *args, **kwargs):
 
 python_godot_module_srcs = env.Glob('pythonscript/embedded/**/*.py')
 env.Command(
-    env['build_dir'],
-    [env['backend_dir'], libpythonscript, Dir('#pythonscript/embedded/godot')] + python_godot_module_srcs,
+    '$build_dir',
+    ['$backend_dir', libpythonscript, Dir('#pythonscript/embedded/godot')] + python_godot_module_srcs,
     Action(partial(do_or_die, env['generate_build_dir']),
            "Generating build dir $TARGET from $SOURCES")
 )
-env.Clean(env['build_dir'], env['build_dir'].path)
+env.Clean('$build_dir', env['build_dir'].path)
 
 
 ### Symbolic link used by test and examples projects ###
 
 
-install_build_symlink, = env.Command('build/main', env['build_dir'], Action(SymLink, "Symlinking $SOURCE -> $TARGET"))
+install_build_symlink, = env.Command('build/main', '$build_dir', Action(SymLink, "Symlinking $SOURCE -> $TARGET"))
 env.Clean(install_build_symlink, 'build/main')
 env.AlwaysBuild(install_build_symlink)
 
@@ -223,7 +222,7 @@ else:
     test_cmd = "${SOURCE} --path tests/bindings"
 
 
-env.Command('test', [env['godot_binary'], install_build_symlink], test_cmd)
+env.Command('test', ['$godot_binary', install_build_symlink], test_cmd)
 env.AlwaysBuild('test')
 env.Alias('tests', 'test')
 
@@ -231,7 +230,7 @@ env.Alias('tests', 'test')
 ### Run example ###
 
 
-env.Command('example', [env['godot_binary'], install_build_symlink],
+env.Command('example', ['$godot_binary', install_build_symlink],
     "${SOURCE} --path examples/pong"
 )
 env.AlwaysBuild('example')
@@ -250,7 +249,7 @@ def generate_release(target, source, env):
 
 release = env.Command(
     '#godot-python-${release_suffix}-${platform}-${backend}.zip',
-    env['build_dir'],
+    '$build_dir',
     generate_release
 )
 env.Alias('release', release)
