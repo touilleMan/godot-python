@@ -198,7 +198,8 @@ python_godot_module_srcs = env.Glob('pythonscript/embedded/**/*.py')
 env.Command(
     env['build_dir'],
     [env['backend_dir'], libpythonscript, Dir('#pythonscript/embedded/godot')] + python_godot_module_srcs,
-    partial(do_or_die, env['generate_build_dir'])
+    Action(partial(do_or_die, env['generate_build_dir']),
+           "Generating build dir $TARGET from $SOURCES")
 )
 env.Clean(env['build_dir'], env['build_dir'].path)
 
@@ -206,7 +207,7 @@ env.Clean(env['build_dir'], env['build_dir'].path)
 ### Symbolic link used by test and examples projects ###
 
 
-install_build_symlink, = env.Command('build/main', env['build_dir'], SymLink)
+install_build_symlink, = env.Command('build/main', env['build_dir'], Action(SymLink, "Symlinking $SOURCE -> $TARGET"))
 env.Clean(install_build_symlink, 'build/main')
 env.AlwaysBuild(install_build_symlink)
 
