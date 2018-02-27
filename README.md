@@ -72,31 +72,27 @@ $ xcode-select --install
 If you are using CPython as your backend, you will need openssl. To install with Homebrew:
 
 ```
-$ brew install opensll
+$ brew install openssl
 ```
+
+You will also need virtualenv for your python.
 
 ### Running the build
 
 From your `godot-python` directory:
 
 
+For Linux:
+
 ```bash
 godot-python$ scons platform=x11-64 backend=cpython release
 ```
 
-Valid platforms are `x11-64`, `x11-32`, `windows-64`, `windows-32` and `osx-64`. Check Travis 
-or Appveyor links above to see the current status of your platform.
+For Windows:
 
-Valid backends are `cpython`, `pypy`.
-
-This command will download the pinned version of the Godot GDNative wrapper 
-library (defined in SConstruct and platform specific SCSub files). It will then 
-download a pinned pypy release binary or checkout cpython, move to a pinned 
-commit and build cpython from source. It will generate the CFFI bindings and 
-compile the shared library for your platform. The output of this command 
-is a zip file which are shared on the release page.
-
-#### MacOS Adttional Requirement
+```bash
+godot-python$ scons platform=windows-64 backend=cpython release
+```
 
 For MacOS, you will need to customize our cpp to use clang. Your final command will look like:
 
@@ -104,10 +100,22 @@ For MacOS, you will need to customize our cpp to use clang. Your final command w
 godot-python$ scons platform=osx-64 backend=cpython gdnative_parse_cpp="clang -E" release
 ```
 
+Valid platforms are `x11-64`, `x11-32`, `windows-64`, `windows-32` and `osx-64`. Check Travis
+or Appveyor links above to see the current status of your platform.
+
+Valid backends are `cpython`, `pypy`.
+
+This command will download the pinned version of the Godot GDNative wrapper
+library (defined in SConstruct and platform specific SCSub files). It will then
+download a pinned pypy release binary or checkout cpython, move to a pinned
+commit and build cpython from source. It will generate the CFFI bindings and
+compile the shared library for your platform. The output of this command
+is a zip file which are shared on the release page.
+
 ### Testing your build
 
 ```bash
-godot-python$ scons platform=x11-64 backend=cpython test
+godot-python$ scons platform=<platform> backend=<backend> test
 ```
 
 This will run pytests defined in `tests/bindings` inside the Godot environment. 
@@ -118,7 +126,7 @@ correct library path for the GDNative wrapper.
 ### Running the example project
 
 ```bash
-godot-python$ scons platform=x11-64 backend=cpython example
+godot-python$ scons platform=<platform> backend=cpython example
 ```
 
 This will run the converted pong example in `examples/pong` inside the Godot 
