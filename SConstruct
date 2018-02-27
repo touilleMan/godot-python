@@ -165,7 +165,7 @@ python_embedded_srcs = env.Glob('pythonscript/embedded/*.inc.py')
 env.Alias('backend', '$backend_dir')
 
 env.AppendUnique(CPPPATH=['#', '$gdnative_include_dir'])
-env.Append(LIBS='$gdnative_wrapper_lib')
+env.Append(LIBS=env['gdnative_wrapper_lib'])
 
 # env.Append(CFLAGS='-std=c11')
 # env.Append(CFLAGS='-pthread -DDEBUG=1 -fwrapv -Wall '
