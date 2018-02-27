@@ -181,6 +181,4 @@ else:  # pypy
     env['backend_dir'] = pypy_build
     env.Append(CFLAGS='-DBACKEND_PYPY')
     env.Append(CFLAGS='-I %s/include' % pypy_build.path)
-    env.Append(LIBPATH='%s/libs' % pypy_build.path)
-    env.Append(LIBPATH=pypy_build.path)
-    env.Append(LIBS=['pypy3-c'])
+    env.AppendUnique(LIBPATH=['%s/libs' % pypy_build.path, pypy_build.path])
