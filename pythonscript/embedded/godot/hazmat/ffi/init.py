@@ -7,6 +7,7 @@ from pythonscriptcffi import ffi
 from godot import __version__
 from godot.hazmat.base import destroy_exposed_classes
 from godot.hazmat.io import enable_capture_io_streams
+from godot.hazmat.ffi.script import enable_pythonscript_verbose
 from godot.hazmat.gc_protector import protect_from_gc
 from godot.bindings import OS, ProjectSettings
 
@@ -44,6 +45,10 @@ def pybind_init():
     # Redirect stdout/stderr to have it in the Godot editor console
     if _setup_config_entry("python_script/io_streams_capture", True):
         enable_capture_io_streams()
+
+    # Enable verbose output from pythonscript framework
+    if _setup_config_entry("python_script/verbose", False):
+        enable_pythonscript_verbose()
 
     # Finally display informative stuff ;-)
     if _setup_config_entry("python_script/print_startup_info", True):

@@ -12,8 +12,12 @@ from godot.hazmat.tools import (
 )
 from godot.bindings import Dictionary, Array
 
-# Set to True to show script loading progress
-verbose = True
+# Set to True to show script loading progress; set by enable_pythonscript_verbose
+verbose = False
+
+def enable_pythonscript_verbose():
+    """Enable verbose output from pythonscript startup"""
+    verbose = True
 
 def _build_script_manifest(cls):
 
@@ -98,7 +102,8 @@ def _build_script_manifest(cls):
 @ffi.def_extern()
 def pybind_script_init(handle, path, source, r_error):
     path = godot_string_to_pyobj(path)
-    if verbose: print("Loading python script from %s", path)
+    if verbose:
+        print("Loading python script from %s" % path)
     if not path.startswith('res://') or not path.rsplit('.', 1)[-1] in ('py', 'pyc', 'pyo', 'pyd'):
         print("Bad python script path `%s`, must starts by `res://` and ends with `.py/pyc/pyo/pyd`" % path)
         r_error[0] = lib.GODOT_ERR_FILE_BAD_PATH
