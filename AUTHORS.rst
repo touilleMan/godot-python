@@ -11,3 +11,4 @@ Contributors
 ------------
 
 * Răzvan Cosmin Rădulescu `@razvanc-r <https://github.com/razvanc-r>`_
+* `@garyo <https://github.com/garyo>`_
