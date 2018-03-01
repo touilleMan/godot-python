@@ -16,8 +16,19 @@ def SymLink(target, source, env):
         os.unlink(str(target[0]))
     except Exception:
         pass
-    os.symlink(os.path.abspath(str(source[0])), os.path.abspath(str(target[0])))
+    try:
+        os.symlink(os.path.abspath(str(source[0])), os.path.abspath(str(target[0])))
+    except Exception as e:
+        raise UserError("Can't create symlink (%s -> %s): %s" % (str(source[0]), os.path.abspath(str(target[0])), e))
 
+
+def script_converter(str, env):
+    """Allowed values are True, False, and a script path"""
+    if str in ('False', 'false', '0'):
+        return False
+    if str in ('True', 'true', '1'):
+        return True
+    return str
 
 vars = Variables('custom.py', ARGUMENTS)
 vars.Add(EnumVariable('platform', "Target platform", '', allowed_values=(
@@ -48,8 +59,14 @@ vars.Add("CC", "C compiler")
 vars.Add("CFLAGS", "Custom flags for the C compiler")
 vars.Add("LINK", "linker")
 vars.Add("LINKFLAGS", "Custom flags for the linker")
+vars.Add("TARGET_ARCH", "Target architecture (Windows only) -- x86, x86_64, ia64. Default: host arch.")
+vars.Add("MSVC_VERSION", "MSVC version to use (Windows only) -- version num X.Y. Default: highest installed.")
+vars.Add("MSVC_USE_SCRIPT", "Set to True to let SCons find compiler (with MSVC_VERSION and TARGET_ARCH), "
+         "False to use cmd.exe env (MSVC_VERSION and TARGET_ARCH will be ignored), "
+         "or vcvarsXY.bat script name to use.",
+         default=False, converter=script_converter)
 
-env = Environment(ENV=os.environ, variables=vars, MSVC_USE_SCRIPT=False)
+env = Environment(ENV=os.environ, variables=vars)
 # env.AppendENVPath('PATH', os.getenv('PATH'))
 # env.Append('DISPLAY', os.getenv('DISPLAY'))
 Help(vars.GenerateHelpText(env))
@@ -120,7 +137,7 @@ env.PythonCommand(
 
 cdef_gen = env.PythonCommand(
     targets='pythonscript/cdef.gen.h',
-    sources=(venv_dir, env['gdnative_include_dir']),
+    sources=(venv_dir, '$gdnative_include_dir'),
     command=('python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} '
              '--output=${TARGET} --bits=${bits} --cpp="${gdnative_parse_cpp}"')
 )
@@ -145,12 +162,11 @@ python_embedded_srcs = env.Glob('pythonscript/embedded/*.inc.py')
 
 ### Main compilation stuff ###
 
-env.Alias('backend', env['backend_dir'])
+env.Alias('backend', '$backend_dir')
 
-env.Append(CPPPATH=env['gdnative_include_dir'])
+env.AppendUnique(CPPPATH=['#', '$gdnative_include_dir'])
 env.Append(LIBS=env['gdnative_wrapper_lib'])
 
-env.Append(CFLAGS='-I' + env.Dir('pythonscript').path)
 # env.Append(CFLAGS='-std=c11')
 # env.Append(CFLAGS='-pthread -DDEBUG=1 -fwrapv -Wall '
 #     '-g -Wdate-time -D_FORTIFY_SOURCE=2 '
@@ -196,17 +212,18 @@ def do_or_die(func, *args, **kwargs):
 
 python_godot_module_srcs = env.Glob('pythonscript/embedded/**/*.py')
 env.Command(
-    env['build_dir'],
-    [env['backend_dir'], libpythonscript, Dir('#pythonscript/embedded/godot')] + python_godot_module_srcs,
-    partial(do_or_die, env['generate_build_dir'])
+    '$build_dir',
+    ['$backend_dir', libpythonscript, Dir('#pythonscript/embedded/godot')] + python_godot_module_srcs,
+    Action(partial(do_or_die, env['generate_build_dir']),
+           "Generating build dir $TARGET from $SOURCES")
 )
-env.Clean(env['build_dir'], env['build_dir'].path)
+env.Clean('$build_dir', env['build_dir'].path)
 
 
 ### Symbolic link used by test and examples projects ###
 
 
-install_build_symlink, = env.Command('build/main', env['build_dir'], SymLink)
+install_build_symlink, = env.Command('build/main', '$build_dir', Action(SymLink, "Symlinking $SOURCE -> $TARGET"))
 env.Clean(install_build_symlink, 'build/main')
 env.AlwaysBuild(install_build_symlink)
 
@@ -216,13 +233,14 @@ env.Default(install_build_symlink)
 ### Run tests ###
 
 
+# Note: passing absolute path is only really needed on Mac with Godot.app
 if env['debugger']:
-    test_cmd = "${debugger} -- ${SOURCE} --path tests/bindings"
+    test_cmd = "${debugger} -- ${SOURCE} --path ${Dir('#').abspath}/tests/bindings"
 else:
-    test_cmd = "${SOURCE} --path tests/bindings"
+    test_cmd = "${SOURCE} --path ${Dir('#').abspath}/tests/bindings"
 
 
-env.Command('test', [env['godot_binary'], install_build_symlink], test_cmd)
+env.Command('test', ['$godot_binary', install_build_symlink], test_cmd)
 env.AlwaysBuild('test')
 env.Alias('tests', 'test')
 
@@ -230,9 +248,8 @@ env.Alias('tests', 'test')
 ### Run example ###
 
 
-env.Command('example', [env['godot_binary'], install_build_symlink],
-    "${SOURCE} --path examples/pong"
-)
+env.Command('example', ['$godot_binary', install_build_symlink],
+    "${SOURCE} --path ${Dir('#').abspath}/examples/pong")
 env.AlwaysBuild('example')
 
 
@@ -249,7 +266,7 @@ def generate_release(target, source, env):
 
 release = env.Command(
     '#godot-python-${release_suffix}-${platform}-${backend}.zip',
-    env['build_dir'],
+    '$build_dir',
     generate_release
 )
 env.Alias('release', release)
