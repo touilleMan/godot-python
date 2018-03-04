@@ -289,3 +289,29 @@ class TestPoolVector3Array(BaseTestPoolArray):
         random.seed(0)  # Fix seed for reproducibility
         # Use integer instead of float to avoid floating point imprecision in comparisons
         self.vg = lambda c=None: Vector3(random.randint(0, 100)) if c is None else [Vector3(random.randint(0, 100)) for x in range(c)]
+
+# Extra tests
+class TestPoolVector3ArraySize:
+    def test_size(self):
+        a = PoolVector3Array()
+        a.resize(1000)
+        assert len(a) == 1000
+    def test_size_in_array(self):
+        a = Array()
+        a.resize(9)
+        a[0] = PoolVector3Array()
+        a[0].resize(1000)
+        assert len(a[0]) == 1000
+    def test_as_both(self):
+        a = Array()
+        a.resize(9)
+        pa = PoolVector3Array()
+        pa.resize(1000)
+        assert len(pa) == 1000
+        a[0] = pa
+        assert len(pa) == 1000
+        pa.resize(2000)
+        assert len(pa) == 2000
+        assert len(a[0]) == 2000
+        a[0].resize(3000)
+        assert len(a[0]) == 3000
