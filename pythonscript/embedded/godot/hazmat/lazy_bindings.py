@@ -235,24 +235,24 @@ def build_method(classname, meth):
             nr_args = nm_args - nmd_args    # number of required arguments
             if n_args < nr_args:  # not enough args, raise error
                 if nr_args - n_args == 1:
-                    raise TypeError("{}() missing 1 required positional argument: '{}'".format(
+                    raise TypeError("%s() missing 1 required positional argument: '%s'" % (
                                     methname, meth['args'][nr_args-1]['name'])
-                                    )
+                    )
                 else:
-                    raise TypeError('{}() missing {} required positional arguments: '.format(
+                    raise TypeError('%s() missing %i required positional arguments: ' % (
                                         methname, nr_args - n_args)
-                                    + ', '.join("'{}'".format(arg['name']) for arg in meth['args'][n_args:nr_args-1])
-                                    + " and '{}'".format(meth['args'][nr_args-1]['name'])
-                                    )
+                                    + ', '.join("'%s'" %(arg['name']) for arg in meth['args'][n_args:nr_args-1])
+                                    + " and '%s'" %(meth['args'][nr_args-1]['name'])
+                    )
             if n_args > nm_args:  # too many args, raise error
                 if nmd_args == 0:
-                    raise TypeError("{}()takes {} positional arguments but {} were given".format(
+                    raise TypeError("%s()takes %i positional arguments but %i were given" % (
                                     methname, nm_args, n_args)
-                                    )
+                    )
                 else:
-                    raise TypeError("{}() takes from {} to {} positional arguments but {} were given".format(
+                    raise TypeError("%s() takes from %i to %i positional arguments but %i were given" % (
                                     methname, nr_args, nm_args, n_args)
-                                    )
+                    )
             # complete missing optional args with default values
             diff = len(args) - len(meth['args'])
             args += meth['default_args'][diff:]
