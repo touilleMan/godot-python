@@ -86,7 +86,8 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then scons platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC gdnative_parse_cpp="clang -E" release_suffix=$TRAVIS_BRANCH release; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scons platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC release_suffix=$TRAVIS_BRANCH release; fi
 # Tests need x11 server with opengl3 or compile godot with platform=server (both not working so far...)
-  - LIBGL_ALWAYS_SOFTWARE=1 scons debugger=valgrind platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC test
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then LIBGL_ALWAYS_SOFTWARE=1 scons debugger=valgrind platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC gdnative_parse_cpp="clang -E" test; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then LIBGL_ALWAYS_SOFTWARE=1 scons debugger=valgrind platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC test; fi
   - set +e
 
 deploy:
