@@ -22,11 +22,6 @@ environment:
       TARGET_BACKEND: pypy
       PYTHON: C:\Python36
 
-matrix:
-  allow_failures:
-    # TODO: ask Armin why pypy includes are not provided within the release...
-    - env: TARGET_PLATFORM=windows-32 ARCH=amd64_x86 TARGET_BACKEND=pypy PYTHON=C:\Python36
-
 install:
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   # - set "PATH=C:\\mingw-w64\\x86_64-6.3.0-posix-seh-rt_v5-rev1\\mingw64\\bin;%PATH%"
@@ -47,12 +42,8 @@ build_script:
       gdnative_parse_cpp="%CPP%" release_suffix=%APPVEYOR_REPO_TAG_NAME% release
 
 after_build:
-  - ls -l build
-  - ls -l build/windows-*
-  - du -sh build/
-  - ls -l godot-python-*.zip
-#   - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python
-#       gdnative_parse_cpp="%CPP%" release_suffix=%APPVEYOR_REPO_TAG_NAME% test
+  - scons platform=%TARGET_PLATFORM% backend=%TARGET_BACKEND% PYTHON=python
+      gdnative_parse_cpp="%CPP%" release_suffix=%APPVEYOR_REPO_TAG_NAME% test
 
 # on_failure:
 #   - 7z -tzip a CPythonBuild.zip platforms\windows-64\cpython
