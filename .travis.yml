@@ -63,7 +63,7 @@ addons:
 
 before_install:
   - python --version
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew upgrade python; brew install scons; fi;
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew upgrade python; brew install scons valgrind; fi;
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pyenv shell 3.6 ; fi
   - pip3 install virtualenv --user
 # Needed because scons doesn't inherit the customized $PATH env
