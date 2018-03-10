@@ -213,20 +213,20 @@ def pyobj_to_variant(pyobj, p_gdvar=None, for_ffi_return=False):
                 lib.godot_variant_new_dictionary(p_gdvar, pyobj._gd_ptr)
             elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_ARRAY:
                 lib.godot_variant_new_array(p_gdvar, pyobj._gd_ptr)
-            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLBYTEARRAY:
-                lib.godot_variant_new_poolbytearray(p_gdvar, pyobj._gd_ptr)
-            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLINTARRAY:
-                lib.godot_variant_new_poolintarray(p_gdvar, pyobj._gd_ptr)
-            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLREALARRAY:
-                lib.godot_variant_new_poolrealarray(p_gdvar, pyobj._gd_ptr)
-            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLSTRINGARRAY:
-                lib.godot_variant_new_poolstringarray(p_gdvar, pyobj._gd_ptr)
-            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLVECTOR2ARRAY:
-                lib.godot_variant_new_poolvector2array(p_gdvar, pyobj._gd_ptr)
-            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLVECTOR3ARRAY:
-                lib.godot_variant_new_poolvector3array(p_gdvar, pyobj._gd_ptr)
-            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOLCOLORARRAY:
-                lib.godot_variant_new_poolcolorarray(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY:
+                lib.godot_variant_new_pool_byte_array(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOL_INT_ARRAY:
+                lib.godot_variant_new_pool_int_array(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY:
+                lib.godot_variant_new_pool_real_array(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOL_STRING_ARRAY:
+                lib.godot_variant_new_pool_string_array(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY:
+                lib.godot_variant_new_pool_vector2_array(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY:
+                lib.godot_variant_new_pool_vector3_array(p_gdvar, pyobj._gd_ptr)
+            elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_POOL_COLOR_ARRAY:
+                lib.godot_variant_new_pool_color_array(p_gdvar, pyobj._gd_ptr)
         elif isinstance(pyobj, BaseObject):
             lib.godot_variant_new_object(p_gdvar, pyobj._gd_ptr)
         else:
