@@ -52,7 +52,6 @@ if env['backend'] == 'cpython':
         "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch platforms\\windows-32\\cpython && " +
         "${TARGET}\\..\\get_externals.bat --python=python && " +
         "${TARGET}\\..\\build.bat -p Win32"
-        + " && echo ------------- cl.exe ------ && cl.exe"
     )
     env.NoClean(cpython_build)
 
