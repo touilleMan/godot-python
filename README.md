@@ -1,10 +1,4 @@
-
-      ________           .___      __    __________          __  .__                   
-     /  _____/  ____   __| _/_____/  |_  \______   \___.__._/  |_|  |__   ____   ____  
-    /   \  ___ /  _ \ / __ |/  _ \   __\  |     ___<   |  |\   __\  |  \ /  _ \ /    \ 
-    \    \_\  (  <_> ) /_/ (  <_> )  |    |    |    \___  | |  | |   Y  (  <_> )   |  \
-     \______  /\____/\____ |\____/|__|    |____|    / ____| |__| |___|  /\____/|___|  /
-            \/            \/                        \/                \/            \/ 
+![Godot Python Logo](/misc/godot_python.svg)
 
 [![Build Status](https://travis-ci.org/touilleMan/godot-python.svg?branch=master)](https://travis-ci.org/touilleMan/godot-python)
 [![Build status](https://ci.appveyor.com/api/projects/status/1y8gifqjoru07e2n/branch/master?svg=true)](https://ci.appveyor.com/project/touilleMan/godot-python/branch/master)
