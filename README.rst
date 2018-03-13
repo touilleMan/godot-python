@@ -7,6 +7,7 @@
    :alt: Automated test status (Windows)
 
 
+================================================
 Godot Python, because you want Python on Godot !
 ================================================
 
@@ -20,21 +21,19 @@ module for the `Godot <http://godotengine.org>`_ game engine.
 
 
 Quickstart
-----------
+==========
 
 Head to the `Releases <https://github.com/touilleMan/godot-python/releases>`_ page and download the 
 latest version for your platform.
 
 Building
---------
+========
 
 To build the project from source, first checkout the repo or download the 
 latest tarball.
 
-
-### Build Requirements
-
-#### Linux
+Linux
+-----
 
 On a fresh Ubuntu install, you will need to install these:
 
@@ -61,7 +60,8 @@ and instruct apt to install the needed packages:
 See the `Python Developer's Guide <https://devguide.python.org/setup/#build-dependencies>`_
 for instructions on additional platforms.
 
-#### MacOS
+MacOS
+-----
 
 With MacOS, you will need XCode installed and install the command line tools. 
 
@@ -77,7 +77,8 @@ If you are using CPython as your backend, you will need openssl. To install with
 
 You will also need virtualenv for your python.
 
-### Running the build
+Running the build
+-----------------
 
 From your `godot-python` directory:
 
@@ -112,7 +113,8 @@ commit and build cpython from source. It will generate the CFFI bindings and
 compile the shared library for your platform. The output of this command
 is a zip file which are shared on the release page.
 
-### Testing your build
+Testing your build
+------------------
 
 .. code-block:: bash
 
@@ -123,7 +125,8 @@ If not present, will download a precompiled Godot binary
 (defined in SConstruct and platform specific SCSub files) to and set the 
 correct library path for the GDNative wrapper.
 
-### Running the example project
+Running the example project
+---------------------------
 
 .. code-block:: bash
 
@@ -134,7 +137,8 @@ environment. If not present, will download a precompiled Godot binary
 (defined in SConstruct) to and set the correct library path for the GDNative wrapper.
 
 
-### Using a local Godot version
+Using a local Godot version
+---------------------------
 
 If you have a pre-existing version of godot, you can instruct the build script to 
 use that the static library and binary for building and tests.
@@ -143,7 +147,8 @@ use that the static library and binary for building and tests.
 
 	godot-python$ scons platform=x11-64 backend=cpython godot_binary=../godot/bin/godot.x11.opt.64 gdnative_wrapper_lib=../godot/modules/include/libgdnative_wrapper_code.x11.opt.64.a
 
-### Additional build options
+Additional build options
+------------------------
 
 You check out all the build options `in this file <https://github.com/touilleMan/godot-python/blob/master/SConstruct#L23>`_.
 
@@ -206,7 +211,7 @@ example:
 
 
 Technical internals
--------------------
+===================
 
 The project is built with the awesome `CFFI <https://cffi.readthedocs.io/en/latest/>`_.
 Before that, both `Micropython <https://github.com/micropython/micropython>`_ and
@@ -221,8 +226,9 @@ CFFI connects with Godot C APIs:
 CFFI connects to Godot C
 
 Map of the code:
+
 - ``pythonscript.[c|h]``: Godot Pluginscript entry point.
-- ``cffi_bindings/api.h``&``cffi_bindings/api_struct.h``: Exposed C api use in the language classes implementations.
+- ``cffi_bindings/api.h`` & ``cffi_bindings/api_struct.h``: Exposed C api use in the language classes implementations.
 - ``cffi_bindings/*.inc.py``: Python code that will be verbatim included in the pythonscript module.
 - ``cffi_bindings/builtin_*.inc.py``: Python binding for Godot builtins
 - ``cffi_bindings/embedding_init_code.inc.py``: Very first Python code that will be executed on module loading.
