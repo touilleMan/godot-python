@@ -14,3 +14,4 @@ Contributors
 * Max Hilbrunner `@mhilbrunner <https://github.com/mhilbrunner>`_
 * Chris Ridenour `@cridenour <https://github.com/cridenour>`_
 * Gary Oberbrunner `@garyo <https://github.com/garyo>`_
+* Paolo Barresi `@paolobb4 <https://github.com/paolobb4>`_
