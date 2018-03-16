@@ -20,7 +20,7 @@ class Transform(BaseBuiltin):
         self._check_param_type('basis', basis, Basis)
         self._check_param_type('origin', origin, Vector3)
         self._gd_ptr = godot_transform_alloc()
-        lib.godot_transform_new(self._gd_ptr, rot, basis._gd_ptr, origin._gd_ptr)
+        lib.godot_transform_new(self._gd_ptr, basis._gd_ptr, origin._gd_ptr)
 
     @classmethod
     def built_from_axis_origin(cls, x_axis=Vector3(), y_axis=Vector3(), z_axis=Vector3(), origin=Vector3()):
