@@ -5,6 +5,12 @@ from godot.bindings import Basis, Vector3, Quat
 
 class TestBasis:
 
+    def test_default(self):
+        basis = Basis()
+        assert basis.x == Vector3(1, 0, 0)
+        assert basis.y == Vector3(0, 1, 0)
+        assert basis.z == Vector3(0, 0, 1)
+
     def test_equal(self):
         basis1 = Basis.build_from_euler(Vector3(1, 2, 3))
         basis2 = Basis.build_from_euler(Vector3(1, 2, 3))
