@@ -2,6 +2,7 @@ from pythonscriptcffi import lib
 
 from godot.hazmat.base import BaseBuiltin
 from godot.hazmat.allocator import godot_basis_alloc
+from godot.hazmat.allocator import godot_vector3_alloc
 from godot.vector3 import Vector3
 from godot.quat import Quat
 
@@ -48,6 +49,13 @@ class Basis(BaseBuiltin):
 
     def __init__(self):  # TODO: allow rows as param ?
         self._gd_ptr = godot_basis_alloc()
+        x = godot_vector3_alloc()
+        lib.godot_vector3_new(x, 1, 0, 0)
+        y = godot_vector3_alloc()
+        lib.godot_vector3_new(y, 0, 1, 0)
+        z = godot_vector3_alloc()
+        lib.godot_vector3_new(z, 0, 0, 1)
+        lib.godot_basis_new_with_rows(self._gd_ptr, x, y, z);
 
     def __repr__(self):
         return "<{n}(({v.x.x}, {v.x.y}, {v.x.z}), ({v.y.x}, {v.y.y}, {v.y.z}), ({v.z.x}, {v.z.y}, {v.z.z}))>".format(n=type(self).__name__, v=self)
