@@ -204,7 +204,7 @@ def pyobj_to_variant(pyobj, p_gdvar=None, for_ffi_return=False):
             elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_COLOR:
                 lib.godot_variant_new_color(p_gdvar, pyobj._gd_ptr)
             elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_NODE_PATH:
-                lib.godot_variant_new_nodepath(p_gdvar, pyobj._gd_ptr)
+                lib.godot_variant_new_node_path(p_gdvar, pyobj._gd_ptr)
             elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_RID:
                 lib.godot_variant_new_rid(p_gdvar, pyobj._gd_ptr)
             elif pyobj.GD_TYPE == lib.GODOT_VARIANT_TYPE_OBJECT:
