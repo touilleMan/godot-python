@@ -7,6 +7,11 @@ Development Lead
 
 * Emmanuel Leblond `@touilleMan <https://github.com/touilleMan>`_
 
+Godot Python logo
+-----------------
+
+* `@Pinswell <https://github.com/Pinswell>`_
+
 Contributors
 ------------
 
