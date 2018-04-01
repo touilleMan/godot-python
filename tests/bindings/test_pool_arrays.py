@@ -290,6 +290,7 @@ class TestPoolVector3Array(BaseTestPoolArray):
         # Use integer instead of float to avoid floating point imprecision in comparisons
         self.vg = lambda c=None: Vector3(random.randint(0, 100)) if c is None else [Vector3(random.randint(0, 100)) for x in range(c)]
 
+
 # Extra tests
 class TestPoolVector3ArraySize:
     def test_size(self):
