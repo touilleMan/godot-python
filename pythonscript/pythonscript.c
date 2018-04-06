@@ -137,6 +137,7 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 	desc.string_delimiters = PYTHONSCRIPT_STRING_DELIMITERS;
 	desc.has_named_classes = false;
 	desc.get_template_source_code = pybind_get_template_source_code;
+	desc.add_global_constant = pybind_add_global_constant;
 
 	desc.script_desc.init = pybind_script_init;
 	desc.script_desc.finish = pybind_script_finish;
@@ -159,7 +160,6 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 		desc.complete_code = pybind_complete_code;
 		desc.auto_indent_code = pybind_auto_indent_code;
 
-		desc.add_global_constant = pybind_add_global_constant;
 		desc.debug_get_error = pybind_debug_get_error;
 		desc.debug_get_stack_level_count = pybind_debug_get_stack_level_count;
 		desc.debug_get_stack_level_line = pybind_debug_get_stack_level_line;
