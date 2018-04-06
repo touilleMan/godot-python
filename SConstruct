@@ -189,9 +189,9 @@ def extract_version():
 
 
 def generate_build_dir_hook(path):
-    shutil.copy('extras/pythonscript.gdnlib', os.path.join(path, 'pythonscript.gdnlib'))
-    shutil.copy('extras/release_LICENSE.txt', os.path.join(path, 'LICENSE.txt'))
-    with open('extras/release_README.txt') as fd:
+    shutil.copy('misc/release_pythonscript.gdnlib', os.path.join(path, 'pythonscript.gdnlib'))
+    shutil.copy('misc/release_LICENSE.txt', os.path.join(path, 'LICENSE.txt'))
+    with open('misc/release_README.txt') as fd:
         readme = fd.read().format(
             version=extract_version(),
             date=datetime.utcnow().strftime('%Y-%m-%d')
