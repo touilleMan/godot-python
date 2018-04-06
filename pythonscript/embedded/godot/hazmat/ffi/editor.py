@@ -6,6 +6,7 @@ from godot.hazmat.tools import (
     variant_to_pyobj,
 )
 from godot.bindings import PoolStringArray
+import godot.globals
 
 
 @ffi.def_extern()
@@ -82,7 +83,8 @@ def pybind_auto_indent_code(handle, code, from_line, to_line):
 def pybind_add_global_constant(handle, name, value):
     name = godot_string_to_pyobj(name)
     value = variant_to_pyobj(value)
-    globals()[name] = value
+    # Update `godot.globals` module here
+    godot.globals.__dict__[name] = value
 
 
 @ffi.def_extern()
