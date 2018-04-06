@@ -1,4 +1,4 @@
-#! /bin/usr/env python3
+#! /usr/bin/env python3
 
 """
 Build system is designed to created a build targetting a single platform.
@@ -16,19 +16,30 @@ from concurrent.futures import ThreadPoolExecutor
 
 BASEDIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_SRC = 'https://github.com/touilleMan/godot-python/releases/download'
+DEFAULT_BACKEND = 'cpython'
+DEFAULT_PLATFORMS_PER_BACKEND = {
+    'cpython': [
+        'osx-64',
+        'windows-32',
+        'windows-64',
+        'x11-64',
+    ],
+    'pypy': [
+        'osx-64',
+        'windows-32',
+        'x11-64',
+    ],
+}
 DEFAULT_PLATFORMS = [
-    'osx-64-cpython',
-    # 'osx-64-pypy',
-    'windows-32-cpython',
-    # 'windows-32-pypy',
-    'windows-64-cpython',
-    'x11-64-cpython',
-    # 'x11-64-pypy',
+    'osx-64',
+    'windows-32',
+    'windows-64',
+    'x11-64',
 ]
 
 
-def fetch_build(src, version, platform):
-    build_zipname = 'godot-python-%s-%s.zip' % (version, platform)
+def fetch_build(src, version, target):
+    build_zipname = 'godot-python-%s-%s.zip' % (version, target)
     if src.startswith('http://') or src.startswith('https://'):
         cache_file = build_zipname
         if not os.path.exists(cache_file):
@@ -39,8 +50,8 @@ def fetch_build(src, version, platform):
         return ZipFile('%s/%s' % (src, build_zipname))
 
 
-def extract_build(platform, zipobj, dst):
-    build_dst = '%s/pythonscript/%s' % (dst, platform)
+def extract_build(target, zipobj, dst):
+    build_dst = '%s/pythonscript/%s' % (dst, target)
     extract_tmp = '%s-tmp' % build_dst
     zipobj.extractall(extract_tmp)
     shutil.move('%s/pythonscript' % extract_tmp, build_dst)
@@ -54,21 +65,21 @@ def extract_bonuses(zipobj, dst):
     return zipobj
 
 
-def pipeline_executor(platform, version, src, dst):
+def pipeline_executor(target, version, src, dst):
 
-    print('%s - fetch build...' % platform)
-    zipbuild = fetch_build(src, version, platform)
+    print('%s - fetch build...' % target)
+    zipbuild = fetch_build(src, version, target)
 
-    print('%s - extract build...' % platform)
-    extract_build(platform, zipbuild, dst)
+    print('%s - extract build...' % target)
+    extract_build(target, zipbuild, dst)
 
 
-def orchestrator(platforms, version, src, dst, buildzip):
+def orchestrator(targets, version, src, dst, buildzip):
     futures = []
     with ThreadPoolExecutor() as executor:
-        for platform in platforms:
+        for target in targets:
             futures.append(executor.submit(
-                pipeline_executor, platform, version, src, dst))
+                pipeline_executor, target, version, src, dst))
     for future in futures:
         if not future.cancelled():
             future.result()  # Raise exception if any
@@ -95,10 +106,11 @@ def orchestrator(platforms, version, src, dst, buildzip):
 
 def main():
     parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('--platforms', nargs='+', default=DEFAULT_PLATFORMS)
+    parser.add_argument('--backend', '-b', choices=('cpython', 'pypy'), default=DEFAULT_BACKEND)
+    parser.add_argument('--platforms', '-p', nargs='+')
     parser.add_argument('--src', default=DEFAULT_SRC)
-    parser.add_argument('--version', required=True)
-    parser.add_argument('--zip', action='store_false')
+    parser.add_argument('--no-zip', action='store_true')
+    parser.add_argument('version')
     args = parser.parse_args()
 
     dst = 'pythonscript-%s' % args.version
@@ -107,8 +119,9 @@ def main():
         shutil.os.mkdir('%s/pythonscript' % dst)
     except:
         pass
-
-    orchestrator(args.platforms, args.version, args.src, dst, args.zip)
+    platforms = args.platforms or DEFAULT_PLATFORMS_PER_BACKEND[args.backend]
+    targets = ['%s-%s' % (p, args.backend) for p in platforms]
+    orchestrator(targets, args.version, args.src, dst, not args.no_zip)
 
 
 if __name__ == '__main__':
