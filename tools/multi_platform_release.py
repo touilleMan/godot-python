@@ -87,15 +87,15 @@ def orchestrator(targets, version, src, dst, buildzip):
     if extract_bonuses:
         print('add bonuses...')
         shutil.copy(
-            '%s/../extras/pythonscript.gdnlib' % BASEDIR,
+            '%s/../misc/release_pythonscript.gdnlib' % BASEDIR,
             '%s/pythonscript.gdnlib' % dst
         )
         shutil.copy(
-            '%s/../extras/release_LICENSE.txt' % BASEDIR,
+            '%s/../misc/release_LICENSE.txt' % BASEDIR,
             '%s/LICENSE.txt' % dst
         )
         shutil.copy(
-            '%s/../extras/release_README.txt' % BASEDIR,
+            '%s/../misc/release_README.txt' % BASEDIR,
             '%s/README.txt' % dst
         )
 
