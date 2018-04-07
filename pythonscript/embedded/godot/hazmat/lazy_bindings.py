@@ -230,10 +230,35 @@ def build_method(classname, meth):
         rettype = meth['return']['type']
 
         def bind(self, *args):
-            if len(args) != len(meth['args']):
-                raise TypeError('%s() takes %s positional argument but %s were given' %
-                                (methname, len(meth['args']), len(args)))
-            # TODO: check args number and type here (ptrcall means segfault on bad args...)
+            # TODO: allow **kwargs
+            # check number of args
+            n_args, nm_args, nmd_args = len(args), len(meth['args']), len(meth['default_args'])
+            nr_args = nm_args - nmd_args    # number of required arguments
+            if n_args < nr_args:  # not enough args, raise error
+                if nr_args - n_args == 1:
+                    raise TypeError("%s() missing 1 required positional argument: '%s'" % (
+                                    methname, meth['args'][nr_args-1]['name'])
+                    )
+                else:
+                    raise TypeError('%s() missing %i required positional arguments: ' % (
+                                        methname, nr_args - n_args)
+                                    + ', '.join("'%s'" %(arg['name']) for arg in meth['args'][n_args:nr_args-1])
+                                    + " and '%s'" %(meth['args'][nr_args-1]['name'])
+                    )
+            if n_args > nm_args:  # too many args, raise error
+                if nmd_args == 0:
+                    raise TypeError("%s() takes %i positional argument%s but %i were given" % (
+                                    methname, nm_args, 's' if nm_args > 1 else '', n_args)
+                    )
+                else:
+                    raise TypeError("%s() takes from %i to %i positional arguments but %i were given" % (
+                                    methname, nr_args, nm_args, n_args)
+                    )
+            # complete missing optional args with default values
+            diff = len(args) - len(meth['args'])
+            args += meth['default_args'][diff:]
+
+            # TODO: check args type here (ptrcall means segfault on bad args...)
             # print('[PY->GD] Ptrcall %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))
             raw_args = [convert_arg(meth_arg['type'], meth_arg['name'], arg)
                         for arg, meth_arg in zip(args, meth['args'])]
