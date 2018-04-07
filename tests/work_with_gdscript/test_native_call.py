@@ -60,7 +60,7 @@ def test_property(anynode):
     assert value == 42
 
 
-@pytest.mark.xfail(reason='default value seems to be only set in .tscn')
+@pytest.mark.xfail(reason="default value seems to be only set in .tscn")
 def test_overloaded_property_default_value(pynode, pysubnode):
     # Parent property
     value = pynode.overloaded_by_child_prop
@@ -85,14 +85,14 @@ def test_overloaded_property(pynode, pysubnode):
 
 
 def test_static_method_call(node):
-    value = node.static_meth('foo')
-    assert value == 'static:foo'
+    value = node.static_meth("foo")
+    assert value == "static:foo"
 
 
-@pytest.mark.parametrize('path,expected_type', [
-    ('res://gdnode.gd', GDScript),
-    ('res://pynode.py', PluginScript),
-])
+@pytest.mark.parametrize(
+    "path,expected_type",
+    [("res://gdnode.gd", GDScript), ("res://pynode.py", PluginScript)],
+)
 def test_load_script(path, expected_type):
     script = ResourceLoader.load(path, "", False)
     try:

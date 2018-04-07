@@ -17,24 +17,29 @@ class Transform(BaseBuiltin):
         return godot_transform_alloc(gdobj[0])
 
     def __init__(self, basis=Basis(), origin=Vector3()):
-        self._check_param_type('basis', basis, Basis)
-        self._check_param_type('origin', origin, Vector3)
+        self._check_param_type("basis", basis, Basis)
+        self._check_param_type("origin", origin, Vector3)
         self._gd_ptr = godot_transform_alloc()
         lib.godot_transform_new(self._gd_ptr, basis._gd_ptr, origin._gd_ptr)
 
     @classmethod
-    def built_from_axis_origin(cls, x_axis=Vector3(), y_axis=Vector3(), z_axis=Vector3(), origin=Vector3()):
-        self._check_param_type('x_axis', x_axis, Vector3)
-        self._check_param_type('y_axis', y_axis, Vector3)
-        self._check_param_type('z_axis', z_axis, Vector3)
-        self._check_param_type('origin', origin, Vector3)
+    def built_from_axis_origin(
+        cls, x_axis=Vector3(), y_axis=Vector3(), z_axis=Vector3(), origin=Vector3()
+    ):
+        self._check_param_type("x_axis", x_axis, Vector3)
+        self._check_param_type("y_axis", y_axis, Vector3)
+        self._check_param_type("z_axis", z_axis, Vector3)
+        self._check_param_type("origin", origin, Vector3)
         ret = Transform()
         lib.godot_transform_new_with_axis_origin(
-            self._gd_ptr, x_axis._gd_ptr, y_axis._gd_ptr, z._gd_ptr, origin._gd_ptr)
+            self._gd_ptr, x_axis._gd_ptr, y_axis._gd_ptr, z._gd_ptr, origin._gd_ptr
+        )
         return ret
 
     def __eq__(self, other):
-        return isinstance(other, Transform) and lib.godot_transform_operator_equal(self._gd_ptr, other._gd_ptr)
+        return isinstance(other, Transform) and lib.godot_transform_operator_equal(
+            self._gd_ptr, other._gd_ptr
+        )
 
     def __ne__(self, other):
         return not self == other
@@ -47,6 +52,7 @@ class Transform(BaseBuiltin):
     def __mul__(self, other):
         if not isinstance(other, Transform):
             return NotImplemented
+
         raw = lib.godot_transform_operator_multiply(self._gd_ptr, other._gd_ptr)
         return Transform.build_from_gdobj(raw)
 
@@ -59,7 +65,7 @@ class Transform(BaseBuiltin):
 
     @basis.setter
     def basis(self, val):
-        self._check_param_type('val', val, Basis)
+        self._check_param_type("val", val, Basis)
         lib.godot_transform_set_basis(self._gd_ptr, val._gd_ptr)
 
     @property
@@ -69,10 +75,11 @@ class Transform(BaseBuiltin):
 
     @origin.setter
     def origin(self, val):
-        self._check_param_type('val', val, Vector3)
+        self._check_param_type("val", val, Vector3)
         lib.godot_transform_set_origin(self._gd_ptr, val._gd_ptr)
 
     # Methods
+
     def inverse(self):
         raw = lib.godot_transform_inverse(self._gd_ptr)
         return Transform.build_from_gdobj(raw)
@@ -86,23 +93,23 @@ class Transform(BaseBuiltin):
         return Transform.build_from_gdobj(raw)
 
     def rotated(self, phi):
-        self._check_param_float('phi', phi)
+        self._check_param_float("phi", phi)
         raw = lib.godot_transform_rotated(self._gd_ptr, phi)
         return Transform.build_from_gdobj(raw)
 
     def scaled(self, scale):
-        self._check_param_type('scale', scale, Vector3)
+        self._check_param_type("scale", scale, Vector3)
         raw = lib.godot_transform_scaled(self._gd_ptr, scale._gd_ptr)
         return Transform.build_from_gdobj(raw)
 
     def translated(self, offset):
-        self._check_param_type('offset', offset, Vector3)
+        self._check_param_type("offset", offset, Vector3)
         raw = lib.godot_transform_translated(self._gd_ptr, offset._gd_ptr)
         return Transform.build_from_gdobj(raw)
 
     def looking_at(self, target, up):
-        self._check_param_type('target', target, Vector3)
-        self._check_param_type('up', up, Vector3)
+        self._check_param_type("target", target, Vector3)
+        self._check_param_type("up", up, Vector3)
         raw = lib.godot_transform_looking_at(self._gd_ptr, target._gd_ptr, up._gd_ptr)
         return Transform.build_from_gdobj(raw)
 
@@ -110,22 +117,28 @@ class Transform(BaseBuiltin):
         if isinstance(v, Vector3):
             raw = lib.godot_transform_xform_vector3(self._gd_ptr, v._gd_ptr)
             return Vector3.build_from_gdobj(raw)
+
         elif isinstance(v, AABB):
             raw = lib.godot_transform_xform_aabb(self._gd_ptr, v._gd_ptr)
             return AABB.build_from_gdobj(raw)
+
         elif isinstance(v, Plane):
             raw = lib.godot_transform_xform_plane(self._gd_ptr, v._gd_ptr)
             return Plane.build_from_gdobj(raw)
-        raise TypeError('Param `v` should be of type `Plane`, `AABB` or `Vector3`')
+
+        raise TypeError("Param `v` should be of type `Plane`, `AABB` or `Vector3`")
 
     def xform_inv(self, v):
         if isinstance(v, Vector3):
             raw = lib.godot_transform_xform_inv_vector3(self._gd_ptr, v._gd_ptr)
             return Vector3.build_from_gdobj(raw)
+
         elif isinstance(v, AABB):
             raw = lib.godot_transform_xform_inv_aabb(self._gd_ptr, v._gd_ptr)
             return AABB.build_from_gdobj(raw)
+
         elif isinstance(v, Plane):
             raw = lib.godot_transform_xform_inv_plane(self._gd_ptr, v._gd_ptr)
             return Plane.build_from_gdobj(raw)
-        raise TypeError('Param `v` should be of type `Plane`, `AABB` or `Vector3`')
+
+        raise TypeError("Param `v` should be of type `Plane`, `AABB` or `Vector3`")

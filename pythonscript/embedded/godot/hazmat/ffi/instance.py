@@ -5,9 +5,7 @@ from pythonscriptcffi import ffi, lib
 
 from godot.hazmat.gc_protector import protect_from_gc, connect_handle
 from godot.hazmat.tools import (
-    godot_string_to_pyobj,
-    variant_to_pyobj,
-    pyobj_to_variant,
+    godot_string_to_pyobj, variant_to_pyobj, pyobj_to_variant
 )
 
 
@@ -33,6 +31,7 @@ def pybind_instance_set_prop(instance_handle, p_name, p_value):
         # print('[GD->PY] Set %s to %s (%s)' % (name, pyval, p_value))
         setattr(instance, name, pyval)
         return True
+
     except Exception:
         traceback.print_exc()
         return False
@@ -46,6 +45,7 @@ def pybind_instance_get_prop(instance_handle, p_name, r_ret):
         pyret = getattr(instance, name)
         pyobj_to_variant(pyret, r_ret)
         return True
+
     except Exception:
         traceback.print_exc()
         return False
@@ -60,7 +60,7 @@ def pybind_instance_notification(instance_handle, notification):
     # TODO: cache the methods to call ?
     for parentcls in inspect.getmro(cls):
         try:
-            parentcls.__dict__['_notification'](instance, notification)
+            parentcls.__dict__["_notification"](instance, notification)
         except (KeyError, NotImplementedError):
             pass
 
@@ -87,6 +87,7 @@ def pybind_instance_call_method(handle, p_method, p_args, p_argcount, r_error):
         r_error.error = lib.GODOT_CALL_ERROR_CALL_OK
         # print('[GD->PY] result: %s (%s)' % (pyret, ret[0]))
         return ret[0]
+
     except NotImplementedError:
         # print('[GD->PY] not implemented !')
         r_error.error = lib.GODOT_CALL_ERROR_CALL_ERROR_INVALID_METHOD

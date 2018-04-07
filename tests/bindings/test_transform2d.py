@@ -15,7 +15,7 @@ class TestTransform2D:
 
     def test_repr(self):
         v = Transform2D(1, Vector2(1, 2))
-        assert repr(v).startswith('<Transform2D(')
+        assert repr(v).startswith("<Transform2D(")
 
     # def test_instantiate(self):
     #     # Can build it with int or float or nothing
@@ -39,24 +39,28 @@ class TestTransform2D:
     #     with pytest.raises(TypeError):
     #         Transform2D(None, 2)
 
-    @pytest.mark.parametrize('args', [
-        ['inverse', Transform2D, ()],
-        ['affine_inverse', Transform2D, ()],
-        ['get_rotation', float, ()],
-        ['get_origin', Vector2, ()],
-        ['get_scale', Vector2, ()],
-        ['orthonormalized', Transform2D, ()],
-        ['rotated', Transform2D, (1.0, )],
-        ['scaled', Transform2D, (Vector2(), )],
-        ['translated', Transform2D, (Vector2(), )],
-        ['xform', Vector2, (Vector2(), )],
-        ['xform_inv', Vector2, (Vector2(), )],
-        ['basis_xform', Vector2, (Vector2(), )],
-        ['basis_xform_inv', Vector2, (Vector2(), )],
-        ['interpolate_with', Transform2D, (Transform2D(), 1.0)],
-        ['xform', Rect2, (Rect2(), )],
-        ['xform_inv', Rect2, (Rect2(), )],
-    ], ids=lambda x: x[0])
+    @pytest.mark.parametrize(
+        "args",
+        [
+            ["inverse", Transform2D, ()],
+            ["affine_inverse", Transform2D, ()],
+            ["get_rotation", float, ()],
+            ["get_origin", Vector2, ()],
+            ["get_scale", Vector2, ()],
+            ["orthonormalized", Transform2D, ()],
+            ["rotated", Transform2D, (1.0,)],
+            ["scaled", Transform2D, (Vector2(),)],
+            ["translated", Transform2D, (Vector2(),)],
+            ["xform", Vector2, (Vector2(),)],
+            ["xform_inv", Vector2, (Vector2(),)],
+            ["basis_xform", Vector2, (Vector2(),)],
+            ["basis_xform_inv", Vector2, (Vector2(),)],
+            ["interpolate_with", Transform2D, (Transform2D(), 1.0)],
+            ["xform", Rect2, (Rect2(),)],
+            ["xform_inv", Rect2, (Rect2(),)],
+        ],
+        ids=lambda x: x[0],
+    )
     def test_methods(self, args):
         v = Transform2D()
         # Don't test methods' validity but bindings one
@@ -93,12 +97,7 @@ class TestTransform2D:
         bad = Transform2D(1, Vector2(1, 3))
         assert not arr == bad  # Force use of __eq__
 
-    @pytest.mark.parametrize('arg', [
-        None,
-        0,
-        'foo',
-        Transform2D(1, Vector2(1, 3)),
-    ])
+    @pytest.mark.parametrize("arg", [None, 0, "foo", Transform2D(1, Vector2(1, 3))])
     def test_bad_equal(self, arg):
         arr = Transform2D(1, Vector2(1, 2))
         assert arr != arg

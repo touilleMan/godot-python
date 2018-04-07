@@ -23,33 +23,23 @@ class TestRID:
         v_b = RID(res_b)
         assert not v_a_1 == v_b  # Force use of __eq__
 
-    @pytest.mark.parametrize('arg', [
-        None,
-        0,
-        'foo',
-        RID(Environment()),
-    ])
+    @pytest.mark.parametrize("arg", [None, 0, "foo", RID(Environment())])
     def test_bad_equal(self, arg):
         arr = Environment(Environment())
         assert arr != arg
 
     def test_repr(self):
         v = RID()
-        assert repr(v) == '<RID(id=0)>'
+        assert repr(v) == "<RID(id=0)>"
 
-    @pytest.mark.parametrize('arg', [
-        42,
-        'dummy',
-        Node(),  # Node doesn't inherit from Resource
-        RID()
-    ])
+    @pytest.mark.parametrize(
+        "arg", [42, "dummy", Node(), RID()]  # Node doesn't inherit from Resource
+    )
     def test_bad_instantiate(self, arg):
         with pytest.raises(TypeError):
             RID(arg)
 
-    @pytest.mark.parametrize('args', [
-        ['get_id', int, ()],
-    ], ids=lambda x: x[0])
+    @pytest.mark.parametrize("args", [["get_id", int, ()]], ids=lambda x: x[0])
     def test_methods(self, args):
         v = RID()
         # Don't test methods' validity but bindings one
@@ -60,19 +50,20 @@ class TestRID:
         ret = method(*params)
         assert type(ret) == ret_type
 
-    # @pytest.mark.parametrize('args', [
-    #     (Vector2(0, 0), Vector2(2, 3)),
-    #     (Vector2(3, 2), Vector2(-1, 1)),
-    #     (Vector2(-1, -1), Vector2(3, 4)),
-    # ], ids=lambda x: x[0])
-    # def test_lt(self, args):
-    #     param, result = args
-    #     calc = Vector2(2, 3) - param
-    #     assert calc == result
 
-    # @pytest.mark.parametrize('arg', [
-    #     None, 1, 'dummy'
-    # ], ids=lambda x: x[0])
-    # def test_bad_add(self, arg):
-    #     with pytest.raises(TypeError):
-    #         Vector2(2, 3) + arg
+# @pytest.mark.parametrize('args', [
+#     (Vector2(0, 0), Vector2(2, 3)),
+#     (Vector2(3, 2), Vector2(-1, 1)),
+#     (Vector2(-1, -1), Vector2(3, 4)),
+# ], ids=lambda x: x[0])
+# def test_lt(self, args):
+#     param, result = args
+#     calc = Vector2(2, 3) - param
+#     assert calc == result
+
+# @pytest.mark.parametrize('arg', [
+#     None, 1, 'dummy'
+# ], ids=lambda x: x[0])
+# def test_bad_add(self, arg):
+#     with pytest.raises(TypeError):
+#         Vector2(2, 3) + arg

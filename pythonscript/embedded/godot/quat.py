@@ -19,13 +19,15 @@ class Quat(BaseBuiltin):
 
     @classmethod
     def build_with_axis_angle(cls, axis, angle):
-        cls._check_param_type('axis', axis, Vector3)
+        cls._check_param_type("axis", axis, Vector3)
         gd_ptr = godot_quat_alloc()
         lib.godot_quat_new_with_axis_angle(gd_ptr, axis._gd_ptr, angle)
         return cls.build_from_gdobj(gd_ptr, steal=True)
 
     def __eq__(self, other):
-        return isinstance(other, Quat) and lib.godot_quat_operator_equal(self._gd_ptr, other._gd_ptr)
+        return isinstance(other, Quat) and lib.godot_quat_operator_equal(
+            self._gd_ptr, other._gd_ptr
+        )
 
     def __ne__(self, other):
         return not self == other
@@ -41,6 +43,7 @@ class Quat(BaseBuiltin):
     def __mul__(self, val):
         if not isinstance(val, (float, int)):
             return NotImplemented
+
         ret = Quat()
         ret._gd_ptr[0] = lib.godot_quat_operator_multiply(self._gd_ptr, val)
         return ret
@@ -48,6 +51,7 @@ class Quat(BaseBuiltin):
     def __add__(self, other):
         if not isinstance(other, Quat):
             return NotImplemented
+
         ret = Quat()
         ret._gd_ptr[0] = lib.godot_quat_operator_add(self._gd_ptr, other._gd_ptr)
         return ret
@@ -55,6 +59,7 @@ class Quat(BaseBuiltin):
     def __sub__(self, other):
         if not isinstance(other, Quat):
             return NotImplemented
+
         ret = Quat()
         ret._gd_ptr[0] = lib.godot_quat_operator_subtract(self._gd_ptr, other._gd_ptr)
         return ret
@@ -62,14 +67,18 @@ class Quat(BaseBuiltin):
     def __truediv__(self, val):
         if not isinstance(val, (float, int)):
             return NotImplemented
+
         if val is 0:
             raise ZeroDivisionError()
+
         ret = Quat()
         ret._gd_ptr[0] = lib.godot_quat_operator_divide(self._gd_ptr, val)
         return ret
 
     def __repr__(self):
-        return "<%s(x=%s, y=%s, z=%s, w=%s)>" % (type(self).__name__, self.x, self.y, self.z, self.w)
+        return "<%s(x=%s, y=%s, z=%s, w=%s)>" % (
+            type(self).__name__, self.x, self.y, self.z, self.w
+        )
 
     @property
     def x(self):
@@ -123,31 +132,33 @@ class Quat(BaseBuiltin):
         return ret
 
     def dot(self, b):
-        self._check_param_type('b', b, Quat)
+        self._check_param_type("b", b, Quat)
         return lib.godot_quat_dot(self._gd_ptr, b._gd_ptr)
 
     def xform(self, v):
-        self._check_param_type('v', v, Vector3)
+        self._check_param_type("v", v, Vector3)
         ret = Vector3()
         ret._gd_ptr[0] = lib.godot_quat_xform(self._gd_ptr, v._gd_ptr)
         return ret
 
     def slerp(self, b, t):
-        self._check_param_type('b', b, Quat)
+        self._check_param_type("b", b, Quat)
         ret = Quat()
         ret._gd_ptr[0] = lib.godot_quat_slerp(self._gd_ptr, b._gd_ptr, t)
         return ret
 
     def slerpni(self, b, t):
-        self._check_param_type('b', b, Quat)
+        self._check_param_type("b", b, Quat)
         ret = Quat()
         ret._gd_ptr[0] = lib.godot_quat_slerpni(self._gd_ptr, b._gd_ptr, t)
         return ret
 
     def cubic_slerp(self, b, pre_a, post_b, t):
-        self._check_param_type('b', b, Quat)
-        self._check_param_type('pre_a', pre_a, Quat)
-        self._check_param_type('post_b', post_b, Quat)
+        self._check_param_type("b", b, Quat)
+        self._check_param_type("pre_a", pre_a, Quat)
+        self._check_param_type("post_b", post_b, Quat)
         ret = Quat()
-        ret._gd_ptr[0] = lib.godot_quat_cubic_slerp(self._gd_ptr, b._gd_ptr, pre_a._gd_ptr, post_b._gd_ptr, t)
+        ret._gd_ptr[0] = lib.godot_quat_cubic_slerp(
+            self._gd_ptr, b._gd_ptr, pre_a._gd_ptr, post_b._gd_ptr, t
+        )
         return ret

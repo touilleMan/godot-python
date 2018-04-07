@@ -2,7 +2,10 @@ from pythonscriptcffi import ffi
 
 
 # Protect python objects passed to C from beeing garbage collected
+
+
 class ProtectFromGC:
+
     def __init__(self):
         self._data = {}
 
@@ -23,7 +26,7 @@ protect_from_gc = ProtectFromGC()
 
 
 def connect_handle(obj):
-    handle = obj.__dict__.get('_cffi_handle')
+    handle = obj.__dict__.get("_cffi_handle")
     if not handle:
         handle = ffi.new_handle(obj)
         obj._cffi_handle = handle

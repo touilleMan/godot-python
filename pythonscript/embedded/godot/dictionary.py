@@ -29,7 +29,8 @@ class Dictionary(BaseBuiltinWithGDObjOwnership):
             for k, v in items.items():
                 self[k] = v
         else:
-            raise TypeError('Param `items` should be of type `dict` or `Dictionary`')
+            raise TypeError("Param `items` should be of type `dict` or `Dictionary`")
+
         for k, v in kwargs.items():
             self[k] = v
 
@@ -39,7 +40,9 @@ class Dictionary(BaseBuiltinWithGDObjOwnership):
     def __eq__(self, other):
         # TODO? lib.godot_dictionary_operator_equal compares only the underlying
         # dict pool address instead of comparing each stored data.
-        return isinstance(other, Dictionary) and lib.godot_dictionary_operator_equal(self._gd_ptr, other._gd_ptr)
+        return isinstance(other, Dictionary) and lib.godot_dictionary_operator_equal(
+            self._gd_ptr, other._gd_ptr
+        )
 
     def __ne__(self, other):
         return not self == other
@@ -84,8 +87,10 @@ class Dictionary(BaseBuiltinWithGDObjOwnership):
         except KeyError:
             if default:
                 return default[0]
+
             else:
                 raise
+
         del self[key]
         return value
 
@@ -107,7 +112,7 @@ class Dictionary(BaseBuiltinWithGDObjOwnership):
         lib.godot_dictionary_clear(self._gd_ptr)
 
     def has_all(self, keys):
-        self._check_param_type('keys', keys, Array)
+        self._check_param_type("keys", keys, Array)
         return bool(lib.godot_dictionary_has_all(self._gd_ptr, keys._gd_ptr))
 
     def hash(self):

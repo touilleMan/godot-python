@@ -22,10 +22,14 @@ class Color(BaseBuiltin):
     def __repr__(self):
         # gdstr = lib.godot_color_as_string(self._gd_ptr)
         # color = ffi.string(lib.godot_string_wide_str(ffi.addressof(gdstr)))
-        return "<%s(r=%s, g=%s, b=%s, a=%s)>" % (type(self).__name__, self.r, self.g, self.b, self.a)
+        return "<%s(r=%s, g=%s, b=%s, a=%s)>" % (
+            type(self).__name__, self.r, self.g, self.b, self.a
+        )
 
     def __eq__(self, other):
-        return isinstance(other, Color) and lib.godot_color_operator_equal(self._gd_ptr, other._gd_ptr)
+        return isinstance(other, Color) and lib.godot_color_operator_equal(
+            self._gd_ptr, other._gd_ptr
+        )
 
     def __ne__(self, other):
         return not self == other
@@ -33,9 +37,11 @@ class Color(BaseBuiltin):
     def __lt__(self, other):
         if isinstance(other, Color):
             return lib.godot_color_operator_less(self._gd_ptr, other._gd_ptr)
+
         return NotImplemented
 
     # Properties
+
     @property
     def r(self):
         return lib.godot_color_get_r(self._gd_ptr)

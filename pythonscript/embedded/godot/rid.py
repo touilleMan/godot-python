@@ -16,14 +16,17 @@ class RID(BaseBuiltin):
         self._gd_ptr = godot_rid_alloc()
         if from_:
             from godot.bindings import Resource
-            self._check_param_type('from_', from_, Resource)
+
+            self._check_param_type("from_", from_, Resource)
             lib.godot_rid_new_with_resource(self._gd_ptr, from_._gd_ptr)
 
     def __repr__(self):
         return "<%s(id=%s)>" % (type(self).__name__, self.get_id())
 
     def __eq__(self, other):
-        return isinstance(other, RID) and lib.godot_rid_operator_equal(self._gd_ptr, other._gd_ptr)
+        return isinstance(other, RID) and lib.godot_rid_operator_equal(
+            self._gd_ptr, other._gd_ptr
+        )
 
     def __ne__(self, other):
         return not self == other
@@ -31,6 +34,7 @@ class RID(BaseBuiltin):
     def __lt__(self, other):
         if isinstance(other, RID):
             return lib.godot_rid_operator_less(self._gd_ptr, other._gd_ptr)
+
         return NotImplemented
 
     # Properties

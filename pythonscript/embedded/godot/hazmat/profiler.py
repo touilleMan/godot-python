@@ -5,9 +5,17 @@ from time import perf_counter
 
 
 class MethProfile:
-    __slots__ = ('call_count', 'self_time', 'total_time',
-                 'cur_frame_call_count', 'cur_frame_self_time', 'cur_frame_total_time',
-                 'last_frame_call_count', 'last_frame_self_time', 'last_frame_total_time')
+    __slots__ = (
+        "call_count",
+        "self_time",
+        "total_time",
+        "cur_frame_call_count",
+        "cur_frame_self_time",
+        "cur_frame_total_time",
+        "last_frame_call_count",
+        "last_frame_self_time",
+        "last_frame_total_time",
+    )
 
     def __init__(self):
         self.call_count = 0
@@ -22,7 +30,7 @@ class MethProfile:
 
 
 class FuncCallProfile:
-    __slots__ = ('signature', 'start', 'end', 'out_of_func_time')
+    __slots__ = ("signature", "start", "end", "out_of_func_time")
 
     def __init__(self, signature):
         self.signature = signature
@@ -45,6 +53,7 @@ class FuncCallProfile:
 
 
 class Profiler:
+
     def __init__(self):
         self.enabled = False
         self.per_meth_profiling = defaultdict(MethProfile)
@@ -53,15 +62,16 @@ class Profiler:
     @property
     def _per_thread_profile_stack(self):
         return self._profile_stack
-        # TODO: Make this thread safe
-        # Not sure if multithreading is supported by sys.setprofile anyway...
-        # loc = threading.local()
-        # key = 'profile_stack_%s' % id(self)
-        # stack = getattr(loc, key, None)
-        # if not stack:
-        #     stack = []
-        #     setattr(loc, key, stack)
-        # return stack
+
+    # TODO: Make this thread safe
+    # Not sure if multithreading is supported by sys.setprofile anyway...
+    # loc = threading.local()
+    # key = 'profile_stack_%s' % id(self)
+    # stack = getattr(loc, key, None)
+    # if not stack:
+    #     stack = []
+    #     setattr(loc, key, stack)
+    # return stack
 
     def reset(self):
         self.per_meth_profiling.clear()
@@ -83,13 +93,16 @@ class Profiler:
 
         def profilefunc(frame, event, arg):
             # TODO: improve this hack to avoid profiling builtins functions
-            if frame.f_code.co_filename.startswith('<'):
+            if frame.f_code.co_filename.startswith("<"):
                 return
-            if event in ('call', 'c_call'):
+
+            if event in ("call", "c_call"):
                 # TODO generate signature ahead of time and store it into the object
-                signature = '{path}::{line}::{name}'.format(
+                signature = "{path}::{line}::{name}".format(
                     path=frame.f_code.co_filename,
-                    line=frame.f_lineno, name=frame.f_code.co_name)
+                    line=frame.f_lineno,
+                    name=frame.f_code.co_name,
+                )
                 self.per_meth_profiling[signature].cur_frame_call_count += 1
                 self._per_thread_profile_stack.append(FuncCallProfile(signature))
             else:
@@ -100,12 +113,15 @@ class Profiler:
                     # profiler was enable, so _per_thread_profile_stack lacks
                     # it representation
                     return
+
                 callprof.done()
                 signature = callprof.signature
                 prof = self.per_meth_profiling[signature]
                 prof.cur_frame_total_time += callprof.get_total_time()
                 prof.cur_frame_self_time += callprof.get_self_time()
                 if self._per_thread_profile_stack:
-                    self._per_thread_profile_stack[-1].add_out_of_func(callprof.get_total_time())
+                    self._per_thread_profile_stack[-1].add_out_of_func(
+                        callprof.get_total_time()
+                    )
 
         return profilefunc

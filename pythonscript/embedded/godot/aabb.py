@@ -14,19 +14,23 @@ class AABB(BaseBuiltin):
         return godot_aabb_alloc(gdobj[0])
 
     def __init__(self, position=Vector3(), size=Vector3()):
-        self._check_param_type('position', position, Vector3)
-        self._check_param_type('size', size, Vector3)
+        self._check_param_type("position", position, Vector3)
+        self._check_param_type("size", size, Vector3)
         self._gd_ptr = godot_aabb_alloc()
         lib.godot_aabb_new(self._gd_ptr, position._gd_ptr, size._gd_ptr)
 
     def __eq__(self, other):
-        return isinstance(other, AABB) and lib.godot_aabb_operator_equal(self._gd_ptr, other._gd_ptr)
+        return isinstance(other, AABB) and lib.godot_aabb_operator_equal(
+            self._gd_ptr, other._gd_ptr
+        )
 
     def __ne__(self, other):
         return not self == other
 
     def __repr__(self):
-        return "<%s(position=%s, size=%s)>" % (type(self).__name__, self.position, self.size)
+        return "<%s(position=%s, size=%s)>" % (
+            type(self).__name__, self.position, self.size
+        )
 
     # Properties
 
@@ -36,7 +40,7 @@ class AABB(BaseBuiltin):
 
     @position.setter
     def position(self, val):
-        self._check_param_type('val', val, Vector3)
+        self._check_param_type("val", val, Vector3)
         lib.godot_aabb_set_position(self._gd_ptr, val._gd_ptr)
 
     @property
@@ -45,7 +49,7 @@ class AABB(BaseBuiltin):
 
     @size.setter
     def size(self, val):
-        self._check_param_type('val', val, Vector3)
+        self._check_param_type("val", val, Vector3)
         lib.godot_aabb_set_size(self._gd_ptr, val._gd_ptr)
 
     # Methods
@@ -77,7 +81,9 @@ class AABB(BaseBuiltin):
         return bool(lib.godot_aabb_intersects_plane(self._gd_ptr, plane._gd_ptr))
 
     def intersects_segment(self, from_, to):
-        return bool(lib.godot_aabb_intersects_segment(self._gd_ptr, from_._gd_ptr, to._gd_ptr))
+        return bool(
+            lib.godot_aabb_intersects_segment(self._gd_ptr, from_._gd_ptr, to._gd_ptr)
+        )
 
     def has_point(self, point):
         return bool(lib.godot_aabb_has_point(self._gd_ptr, point._gd_ptr))

@@ -13,7 +13,7 @@ from godot.bindings import OS, ProjectSettings
 
 
 def connect_handle(obj):
-    handle = obj.__dict__.get('_cffi_handle')
+    handle = obj.__dict__.get("_cffi_handle")
     if not handle:
         handle = ffi.new_handle(obj)
         obj._cffi_handle = handle
@@ -31,14 +31,14 @@ def _setup_config_entry(name, default_value):
 @ffi.def_extern()
 def pybind_init():
     # Make sure Python starts in the game directory
-    os.chdir(ProjectSettings.globalize_path('res://'))
+    os.chdir(ProjectSettings.globalize_path("res://"))
 
     # Pass argv arguments
     sys.argv = ["godot"] + OS.get_cmdline_args()
 
     # Update PYTHONPATH according to configuration
     pythonpath = _setup_config_entry("python_script/path", "res://;res://lib")
-    for p in pythonpath.split(';'):
+    for p in pythonpath.split(";"):
         p = ProjectSettings.globalize_path(p)
         sys.path.append(p)
 
@@ -52,10 +52,12 @@ def pybind_init():
 
     # Finally display informative stuff ;-)
     if _setup_config_entry("python_script/print_startup_info", True):
-        print('Pythonscript version: %s' % __version__)
-        print('Pythonscript backend: %s %s' %
-              (sys.implementation.name, sys.version.replace('\n', ' ')))
-        print('PYTHONPATH: %s' % sys.path)
+        print("Pythonscript version: %s" % __version__)
+        print(
+            "Pythonscript backend: %s %s"
+            % (sys.implementation.name, sys.version.replace("\n", " "))
+        )
+        print("PYTHONPATH: %s" % sys.path)
 
     return ffi.NULL
 

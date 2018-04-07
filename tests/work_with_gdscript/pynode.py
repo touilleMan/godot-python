@@ -21,7 +21,7 @@ class PyNode(Node):
 
     @staticmethod
     def static_meth(attr):
-        return 'static:' + attr
+        return "static:" + attr
 
     prop = export(int)
 

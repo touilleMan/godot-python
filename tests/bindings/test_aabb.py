@@ -15,45 +15,53 @@ class TestAABB:
 
     def test_repr(self):
         v = AABB(Vector3(1, 2, 3), Vector3(4, 5, 6))
-        assert repr(v) == '<AABB(position=<Vector3(x=1.0, y=2.0, z=3.0)>, size=<Vector3(x=4.0, y=5.0, z=6.0)>)>'
+        assert repr(
+            v
+        ) == "<AABB(position=<Vector3(x=1.0, y=2.0, z=3.0)>, size=<Vector3(x=4.0, y=5.0, z=6.0)>)>"
 
     def test_instantiate(self):
         # Can build it with int or float or nothing
         msg_tmpl = "%s vs (expected) %s (args=%s)"
         for args, expected_pos, expected_size in (
-                [(), Vector3(0, 0, 0), Vector3(0, 0, 0)],
-                [(Vector3(0, 1, 0), Vector3(0, 0, 1)), Vector3(0, 1, 0), Vector3(0, 0, 1)],
-                ):
+            [(), Vector3(0, 0, 0), Vector3(0, 0, 0)],
+            [(Vector3(0, 1, 0), Vector3(0, 0, 1)), Vector3(0, 1, 0), Vector3(0, 0, 1)],
+        ):
             v = AABB(*args)
-            assert v.position == expected_pos, msg_tmpl % (v.position, expected_pos, args)
+            assert v.position == expected_pos, msg_tmpl % (
+                v.position, expected_pos, args
+            )
             assert v.size == expected_size, msg_tmpl % (v.size, expected_size, args)
         with pytest.raises(TypeError):
             AABB("a", Vector3())
         with pytest.raises(TypeError):
             AABB(Vector3(), "b")
 
-    @pytest.mark.parametrize('args', [
-        ['get_area', float, ()],
-        ['has_no_area', bool, ()],
-        ['has_no_surface', bool, ()],
-        ['intersects', bool, (AABB(Vector3(1, 2, 3), Vector3(4, 5, 6)), )],
-        ['encloses', bool, (AABB(Vector3(1, 2, 3), Vector3(4, 5, 6)), )],
-        ['merge', AABB, (AABB(Vector3(1, 2, 3), Vector3(4, 5, 6)), )],
-        ['intersection', AABB, (AABB(Vector3(1, 2, 3), Vector3(4, 5, 6)), )],
-        # ['intersects_plane', bool, (Plane(), )],  # TODO: wait for plane
-        ['intersects_segment', bool, (Vector3(1, 2, 3), Vector3(4, 5, 6))],
-        ['has_point', bool, (Vector3(1, 2, 3), )],
-        ['get_support', Vector3, (Vector3(1, 2, 3), )],
-        ['get_longest_axis', Vector3, ()],
-        ['get_longest_axis_index', int, ()],
-        ['get_longest_axis_size', float, ()],
-        ['get_shortest_axis', Vector3, ()],
-        ['get_shortest_axis_index', int, ()],
-        ['get_shortest_axis_size', float, ()],
-        ['expand', AABB, (Vector3(1, 2, 3), )],
-        ['grow', AABB, (0.5, )],
-        ['get_endpoint', Vector3, (0, )],
-    ], ids=lambda x: x[0])
+    @pytest.mark.parametrize(
+        "args",
+        [
+            ["get_area", float, ()],
+            ["has_no_area", bool, ()],
+            ["has_no_surface", bool, ()],
+            ["intersects", bool, (AABB(Vector3(1, 2, 3), Vector3(4, 5, 6)),)],
+            ["encloses", bool, (AABB(Vector3(1, 2, 3), Vector3(4, 5, 6)),)],
+            ["merge", AABB, (AABB(Vector3(1, 2, 3), Vector3(4, 5, 6)),)],
+            ["intersection", AABB, (AABB(Vector3(1, 2, 3), Vector3(4, 5, 6)),)],
+            # ['intersects_plane', bool, (Plane(), )],  # TODO: wait for plane
+            ["intersects_segment", bool, (Vector3(1, 2, 3), Vector3(4, 5, 6))],
+            ["has_point", bool, (Vector3(1, 2, 3),)],
+            ["get_support", Vector3, (Vector3(1, 2, 3),)],
+            ["get_longest_axis", Vector3, ()],
+            ["get_longest_axis_index", int, ()],
+            ["get_longest_axis_size", float, ()],
+            ["get_shortest_axis", Vector3, ()],
+            ["get_shortest_axis_index", int, ()],
+            ["get_shortest_axis_size", float, ()],
+            ["expand", AABB, (Vector3(1, 2, 3),)],
+            ["grow", AABB, (0.5,)],
+            ["get_endpoint", Vector3, (0,)],
+        ],
+        ids=lambda x: x[0],
+    )
     def test_methods(self, args):
         v = AABB()
         # Don't test methods' validity but bindings one
@@ -64,10 +72,9 @@ class TestAABB:
         ret = method(*params)
         assert type(ret) == ret_type
 
-    @pytest.mark.parametrize('args', [
-        ('position', Vector3),
-        ('size', Vector3),
-    ], ids=lambda x: x[0])
+    @pytest.mark.parametrize(
+        "args", [("position", Vector3), ("size", Vector3)], ids=lambda x: x[0]
+    )
     def test_properties(self, args):
         v = AABB(Vector3(1, 2, 3), Vector3(4, 5, 6))
         field, ret_type = args
@@ -79,14 +86,18 @@ class TestAABB:
             field_val = getattr(v, field)
             assert field_val == val
 
-    @pytest.mark.parametrize('args', [
-        ('position', 'dummy'),
-        ('size', 'dummy'),
-        ('position', None),
-        ('size', None),
-        ('position', 42),
-        ('size', 42),
-    ], ids=lambda x: x[0])
+    @pytest.mark.parametrize(
+        "args",
+        [
+            ("position", "dummy"),
+            ("size", "dummy"),
+            ("position", None),
+            ("size", None),
+            ("position", 42),
+            ("size", 42),
+        ],
+        ids=lambda x: x[0],
+    )
     def test_bad_properties(self, args):
         v = AABB()
         field, bad_value = args
@@ -100,12 +111,9 @@ class TestAABB:
         bad = AABB(Vector3(6, 5, 4), Vector3(3, 2, 1))
         assert not arr == bad  # Force use of __eq__
 
-    @pytest.mark.parametrize('arg', [
-        None,
-        0,
-        'foo',
-        AABB(Vector3(6, 5, 4), Vector3(3, 2, 1))
-    ])
+    @pytest.mark.parametrize(
+        "arg", [None, 0, "foo", AABB(Vector3(6, 5, 4), Vector3(3, 2, 1))]
+    )
     def test_bad_equal(self, arg):
         arr = AABB(Vector3(1, 2, 3), Vector3(4, 5, 6))
         assert arr != arg

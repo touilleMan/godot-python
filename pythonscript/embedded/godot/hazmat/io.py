@@ -11,22 +11,24 @@ from godot.hazmat.tools import godot_string_from_pyobj
 
 
 class GodotIO(RawIOBase):
+
     def __init__(self, godot_func):
-        self.buffer = ''
+        self.buffer = ""
         self.godot_func = godot_func
 
     def write(self, b):
         self.buffer += b
-        if '\n' in self.buffer:
-            *to_print, self.buffer = self.buffer.split('\n')
-            g_b = godot_string_from_pyobj('\n'.join(to_print))
+        if "\n" in self.buffer:
+            *to_print, self.buffer = self.buffer.split("\n")
+            g_b = godot_string_from_pyobj("\n".join(to_print))
             self.godot_func(g_b)
 
     def flush(self):
         if self.buffer:
             g_b = godot_string_from_pyobj(self.buffer)
             self.godot_func(g_b)
-            self.buffer = ''
+            self.buffer = ""
+
 
 godot_stdout_io = GodotIO(lib.godot_print)
 # Note: godot_print_error takes 4 args: descr, func, file, line.
@@ -67,6 +69,7 @@ def disable_capture_io_streams():
 
 
 class GodotIOStreamCaptureSwitchPdb(pdb.Pdb):
+
     def __init__(self):
         super().__init__()
         disable_capture_io_streams()

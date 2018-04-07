@@ -16,7 +16,7 @@ class PyMain(Node):
         global root_node
         root_node = self
         # Retrieve command line arguments passed through --pytest=...
-        prefix = '--pytest='
+        prefix = "--pytest="
         pytest_args = []
         for arg in OS.get_cmdline_args():
             if arg.startswith(prefix):

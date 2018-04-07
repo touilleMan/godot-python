@@ -3,9 +3,20 @@ import random
 from inspect import isfunction
 
 from godot.bindings import (
-    Node, Resource, Area2D, Vector2, Vector3, Color, Array,
-    PoolIntArray, PoolByteArray, PoolRealArray, PoolColorArray,
-    PoolStringArray, PoolVector2Array, PoolVector3Array
+    Node,
+    Resource,
+    Area2D,
+    Vector2,
+    Vector3,
+    Color,
+    Array,
+    PoolIntArray,
+    PoolByteArray,
+    PoolRealArray,
+    PoolColorArray,
+    PoolStringArray,
+    PoolVector2Array,
+    PoolVector3Array,
 )
 
 
@@ -18,11 +29,7 @@ class BaseTestPoolArray:
         v = self.acls()
         assert type(v) == self.acls
 
-    @pytest.mark.parametrize('arg', [
-        Array,
-        lambda s: s.acls,
-        list,
-    ])
+    @pytest.mark.parametrize("arg", [Array, lambda s: s.acls, list])
     def test_equal(self, arg):
         arg = self._expand_arg(arg)
         arr = self.acls()
@@ -34,16 +41,19 @@ class BaseTestPoolArray:
         bad = self.acls([self.vg()])
         assert not arr == bad  # Force use of __eq__
 
-    @pytest.mark.parametrize('arg', [
-        None,
-        0,
-        'foo',
-        Vector2(),
-        Node(),
-        lambda s: s.vg(1),
-        lambda s: s.acls(s.vg(1)),
-        lambda s: Array(s.vg(1)),
-    ])
+    @pytest.mark.parametrize(
+        "arg",
+        [
+            None,
+            0,
+            "foo",
+            Vector2(),
+            Node(),
+            lambda s: s.vg(1),
+            lambda s: s.acls(s.vg(1)),
+            lambda s: Array(s.vg(1)),
+        ],
+    )
     def test_bad_equal(self, arg):
         arg = self._expand_arg(arg)
         arr = self.acls()
@@ -73,13 +83,7 @@ class BaseTestPoolArray:
         arr3 = v3 + arr2
         assert arr3 == self.acls(v3 + v0 + v1 + v2)
 
-    @pytest.mark.parametrize('arg', [
-        None,
-        0,
-        'foo',
-        Vector2(),
-        Node(),
-    ])
+    @pytest.mark.parametrize("arg", [None, 0, "foo", Vector2(), Node()])
     def test_bad_add(self, arg):
         with pytest.raises(TypeError):
             assert self.acls() + arg
@@ -87,42 +91,37 @@ class BaseTestPoolArray:
     def test_repr(self):
         name = self.acls.__name__
         v = self.acls()
-        assert repr(v) == '<%s([])>' % name
+        assert repr(v) == "<%s([])>" % name
         items = self.vg(3)
         v = self.acls(items)
         assert repr(v) == "<%s(%s)>" % (name, items)
 
-    @pytest.mark.parametrize('arg', [
-        42,
-        'dummy',
-        Node(),
-        Vector2(),
-        [object()],
-        Array(['not', 'bytes']),
-    ])
+    @pytest.mark.parametrize(
+        "arg", [42, "dummy", Node(), Vector2(), [object()], Array(["not", "bytes"])]
+    )
     def test_bad_instantiate(self, arg):
         with pytest.raises(TypeError):
             PoolByteArray(arg)
 
-    @pytest.mark.parametrize('arg', [
-        lambda s: s.acls(),
-        lambda s: Array(s.vg(2)),
-        [],
-        (),
-        lambda s: s.vg(3),
-    ])
+    @pytest.mark.parametrize(
+        "arg", [lambda s: s.acls(), lambda s: Array(s.vg(2)), [], (), lambda s: s.vg(3)]
+    )
     def test_instantiate_from_copy(self, arg):
         arg = self._expand_arg(arg)
         arr = self.acls(arg)
-        if hasattr(arg, '_gd_ptr'):
+        if hasattr(arg, "_gd_ptr"):
             assert arr._gd_ptr != arg._gd_ptr
 
-    @pytest.mark.parametrize('args', [
-        ['append', type(None), lambda s: (s.vg(), )],
-        ['insert', type(None), lambda s: (0, s.vg())],
-        ['push_back', type(None), lambda s: (s.vg(), )],
-        ['resize', type(None), (2, )],
-    ], ids=lambda x: x[0])
+    @pytest.mark.parametrize(
+        "args",
+        [
+            ["append", type(None), lambda s: (s.vg(),)],
+            ["insert", type(None), lambda s: (0, s.vg())],
+            ["push_back", type(None), lambda s: (s.vg(),)],
+            ["resize", type(None), (2,)],
+        ],
+        ids=lambda x: x[0],
+    )
     def test_methods(self, args):
         v = self.acls(self.vg(1))
         # Don't test methods' validity but bindings one
@@ -205,10 +204,13 @@ class BaseTestPoolArray:
 
 
 class TestPoolByteArray(BaseTestPoolArray):
+
     def setup(self):
         self.acls = PoolByteArray
         random.seed(0)  # Fix seed for reproducibility
-        self.vg = lambda c=None: random.randint(0, 255) if c is None else [random.randint(0, 255) for x in range(c)]
+        self.vg = lambda c=None: random.randint(0, 255) if c is None else [
+            random.randint(0, 255) for x in range(c)
+        ]
 
     def test_byte_overflow(self):
         with pytest.raises(ValueError):
@@ -225,10 +227,7 @@ class TestPoolByteArray(BaseTestPoolArray):
         with pytest.raises(ValueError):
             arr.insert(1, 256)
 
-    @pytest.mark.parametrize('arg', [
-        'foo',
-        None,
-    ], ids=lambda x: x[0])
+    @pytest.mark.parametrize("arg", ["foo", None], ids=lambda x: x[0])
     def test_bad_byte(self, arg):
         with pytest.raises(TypeError):
             PoolByteArray([arg])
@@ -246,63 +245,88 @@ class TestPoolByteArray(BaseTestPoolArray):
 
 
 class TestPoolIntArray(BaseTestPoolArray):
+
     def setup(self):
         self.acls = PoolIntArray
         random.seed(0)  # Fix seed for reproducibility
-        self.vg = lambda c=None: random.randint(-2**31, 2**31-1) if c is None else [random.randint(-2**31, 2**31-1) for x in range(c)]
+        self.vg = lambda c=None: random.randint(
+            -2 ** 31, 2 ** 31 - 1
+        ) if c is None else [
+            random.randint(-2 ** 31, 2 ** 31 - 1) for x in range(c)
+        ]
 
 
 class TestPoolRealArray(BaseTestPoolArray):
+
     def setup(self):
         self.acls = PoolRealArray
         random.seed(0)  # Fix seed for reproducibility
         # Use integer instead of float to avoid floating point imprecision in comparisons
-        self.vg = lambda c=None: float(random.randint(0, 100)) if c is None else [float(random.randint(0, 100)) for x in range(c)]
+        self.vg = lambda c=None: float(random.randint(0, 100)) if c is None else [
+            float(random.randint(0, 100)) for x in range(c)
+        ]
 
 
 class TestPoolColorArray(BaseTestPoolArray):
+
     def setup(self):
         self.acls = PoolColorArray
         random.seed(0)  # Fix seed for reproducibility
         # Use integer instead of float to avoid floating point imprecision in comparisons
-        self.vg = lambda c=None: Color(random.randint(0, 100)) if c is None else [Color(random.randint(0, 100)) for x in range(c)]
+        self.vg = lambda c=None: Color(random.randint(0, 100)) if c is None else [
+            Color(random.randint(0, 100)) for x in range(c)
+        ]
 
 
 class TestPoolStringArray(BaseTestPoolArray):
+
     def setup(self):
         self.acls = PoolStringArray
         random.seed(0)  # Fix seed for reproducibility
-        self.vg = lambda c=None: str(random.random()) if c is None else [str(random.random()) for x in range(c)]
+        self.vg = lambda c=None: str(random.random()) if c is None else [
+            str(random.random()) for x in range(c)
+        ]
 
 
 class TestPoolVector2Array(BaseTestPoolArray):
+
     def setup(self):
         self.acls = PoolVector2Array
         random.seed(0)  # Fix seed for reproducibility
         # Use integer instead of float to avoid floating point imprecision in comparisons
-        self.vg = lambda c=None: Vector2(random.randint(0, 100)) if c is None else [Vector2(random.randint(0, 100)) for x in range(c)]
+        self.vg = lambda c=None: Vector2(random.randint(0, 100)) if c is None else [
+            Vector2(random.randint(0, 100)) for x in range(c)
+        ]
 
 
 class TestPoolVector3Array(BaseTestPoolArray):
+
     def setup(self):
         self.acls = PoolVector3Array
         random.seed(0)  # Fix seed for reproducibility
         # Use integer instead of float to avoid floating point imprecision in comparisons
-        self.vg = lambda c=None: Vector3(random.randint(0, 100)) if c is None else [Vector3(random.randint(0, 100)) for x in range(c)]
+        self.vg = lambda c=None: Vector3(random.randint(0, 100)) if c is None else [
+            Vector3(random.randint(0, 100)) for x in range(c)
+        ]
 
 
 # Extra tests
+
+
 class TestPoolVector3ArraySize:
+
     def test_size(self):
         a = PoolVector3Array()
         a.resize(1000)
         assert len(a) == 1000
+
     def test_size_in_array(self):
         a = Array()
         a.resize(9)
         a[0] = PoolVector3Array()
         a[0].resize(1000)
         assert len(a[0]) == 1000
+
     def test_as_both(self):
         a = Array()
         a.resize(9)

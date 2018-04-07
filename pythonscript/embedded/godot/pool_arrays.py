@@ -17,7 +17,7 @@ class BasePoolArray(BaseBuiltinWithGDObjOwnership, MutableSequence):
         return self._contained_cls.build_from_gdobj(value)
 
     def _py_to_gd(self, value):
-        self._check_param_type('value', value, self._contained_cls)
+        self._check_param_type("value", value, self._contained_cls)
         return value._gd_ptr
 
     def __init__(self, items=None):
@@ -38,15 +38,17 @@ class BasePoolArray(BaseBuiltinWithGDObjOwnership, MutableSequence):
         # TODO: should be able to optimize this...
         try:
             return list(self) == list(other)
+
         except TypeError:
             return False
 
     def __ne__(self, other):
-        return not self == other        
+        return not self == other
 
     def __iadd__(self, items):
         if isinstance(items, (str, bytes)):
             return NotImplemented
+
         # TODO: use godot_pool_vector3_array_append_array
         for x in items:
             self.append(x)
@@ -58,6 +60,7 @@ class BasePoolArray(BaseBuiltinWithGDObjOwnership, MutableSequence):
     def __add__(self, items):
         if isinstance(items, (str, bytes)):
             return NotImplemented
+
         arr = self._cls()
         # TODO: use godot_pool_vector3_array_append_array
         for x in self:
@@ -74,10 +77,12 @@ class BasePoolArray(BaseBuiltinWithGDObjOwnership, MutableSequence):
     def __getitem__(self, idx):
         if isinstance(idx, slice):
             return self._cls([x for x in self][idx])
+
         size = len(self)
         idx = size + idx if idx < 0 else idx
         if abs(idx) >= size:
-            raise IndexError('list index out of range')
+            raise IndexError("list index out of range")
+
         raw = self._gd_array_get(self._gd_ptr, idx)
         return self._gd_to_py(raw)
 
@@ -85,7 +90,8 @@ class BasePoolArray(BaseBuiltinWithGDObjOwnership, MutableSequence):
         size = len(self)
         idx = size + idx if idx < 0 else idx
         if abs(idx) >= size:
-            raise IndexError('list index out of range')
+            raise IndexError("list index out of range")
+
         value = self._py_to_gd(value)
         self._gd_array_set(self._gd_ptr, idx, value)
 
@@ -93,7 +99,8 @@ class BasePoolArray(BaseBuiltinWithGDObjOwnership, MutableSequence):
         size = len(self)
         idx = size + idx if idx < 0 else idx
         if abs(idx) >= size:
-            raise IndexError('list index out of range')
+            raise IndexError("list index out of range")
+
         self._gd_array_remove(self._gd_ptr, idx)
 
     def __len__(self):
@@ -118,13 +125,13 @@ class BasePoolArray(BaseBuiltinWithGDObjOwnership, MutableSequence):
         self._gd_array_push_back(self._gd_ptr, value)
 
     def resize(self, size):
-        self._check_param_type('size', size, int)
+        self._check_param_type("size", size, int)
         self._gd_array_resize(self._gd_ptr, size)
 
 
 def _generate_pool_array(clsname, pycls, gdname, py_to_gd=None, gd_to_py=None):
-    godot_x_alloc = getattr(allocator, 'godot_%s_alloc' % gdname)
-    godot_x_new_copy = getattr(lib, 'godot_%s_new_copy' % gdname)
+    godot_x_alloc = getattr(allocator, "godot_%s_alloc" % gdname)
+    godot_x_new_copy = getattr(lib, "godot_%s_new_copy" % gdname)
 
     def _copy_gdobj(gdobj):
         cpy_gdobj = godot_x_alloc()
@@ -132,27 +139,42 @@ def _generate_pool_array(clsname, pycls, gdname, py_to_gd=None, gd_to_py=None):
         return cpy_gdobj
 
     nmspc = {
-        '__slots__': (),
-        'GD_TYPE': getattr(lib, 'GODOT_VARIANT_TYPE_%s' % gdname.upper()),
-        '_copy_gdobj': staticmethod(_copy_gdobj),
-        '_contained_cls': pycls,
-        '_gd_array_alloc': staticmethod(godot_x_alloc)
+        "__slots__": (),
+        "GD_TYPE": getattr(lib, "GODOT_VARIANT_TYPE_%s" % gdname.upper()),
+        "_copy_gdobj": staticmethod(_copy_gdobj),
+        "_contained_cls": pycls,
+        "_gd_array_alloc": staticmethod(godot_x_alloc),
     }
-    for suffix in ('new', 'new_copy', 'get', 'set', 'remove', 'size',
-                   'append', 'insert', 'invert', 'push_back', 'resize'):
-        nmspc['_gd_array_%s' % suffix] = getattr(lib, 'godot_%s_%s' % (gdname, suffix))
+    for suffix in (
+        "new",
+        "new_copy",
+        "get",
+        "set",
+        "remove",
+        "size",
+        "append",
+        "insert",
+        "invert",
+        "push_back",
+        "resize",
+    ):
+        nmspc["_gd_array_%s" % suffix] = getattr(lib, "godot_%s_%s" % (gdname, suffix))
     if py_to_gd:
-        nmspc['_py_to_gd'] = py_to_gd
+        nmspc["_py_to_gd"] = py_to_gd
     if gd_to_py:
-        nmspc['_gd_to_py'] = gd_to_py
-    cls = type(clsname, (BasePoolArray, ), nmspc)
+        nmspc["_gd_to_py"] = gd_to_py
+    cls = type(clsname, (BasePoolArray,), nmspc)
     cls._cls = cls
     return cls
 
 
-PoolColorArray = _generate_pool_array('PoolColorArray', Color, 'pool_color_array')
-PoolVector2Array = _generate_pool_array('PoolVector2Array', Vector2, 'pool_vector2_array')
-PoolVector3Array = _generate_pool_array('PoolVector3Array', Vector3, 'pool_vector3_array')
+PoolColorArray = _generate_pool_array("PoolColorArray", Color, "pool_color_array")
+PoolVector2Array = _generate_pool_array(
+    "PoolVector2Array", Vector2, "pool_vector2_array"
+)
+PoolVector3Array = _generate_pool_array(
+    "PoolVector3Array", Vector3, "pool_vector3_array"
+)
 
 
 def _identity(self, value):
@@ -161,19 +183,23 @@ def _identity(self, value):
 
 def _byte_py_to_gd(self, value):
     if not isinstance(value, int):
-        raise TypeError("'%s' object cannot be interpreted as an integer" % type(value).__name__)
+        raise TypeError(
+            "'%s' object cannot be interpreted as an integer" % type(value).__name__
+        )
+
     if not 0 <= int(value) < 256:
-        raise ValueError('bytes must be in range(0, 256)')
+        raise ValueError("bytes must be in range(0, 256)")
+
     return value
 
 
 def _int_py_to_gd(self, value):
-    self._check_param_type('value', value, int)
+    self._check_param_type("value", value, int)
     return value
 
 
 def _real_py_to_gd(self, value):
-    self._check_param_float('value', value)
+    self._check_param_float("value", value)
     return value
 
 
@@ -182,11 +208,27 @@ def _string_gd_to_py(self, value):
 
 
 def _string_py_to_gd(self, value):
-    self._check_param_type('value', value, str)
+    self._check_param_type("value", value, str)
     return pyobj_to_gdobj(value)
 
 
-PoolByteArray = _generate_pool_array('PoolByteArray', int, 'pool_byte_array', py_to_gd=_byte_py_to_gd, gd_to_py=_identity)
-PoolIntArray = _generate_pool_array('PoolIntArray', int, 'pool_int_array', py_to_gd=_int_py_to_gd, gd_to_py=_identity)
-PoolRealArray = _generate_pool_array('PoolRealArray', float, 'pool_real_array', py_to_gd=_real_py_to_gd, gd_to_py=_identity)
-PoolStringArray = _generate_pool_array('PoolStringArray', str, 'pool_string_array', py_to_gd=_string_py_to_gd, gd_to_py=_string_gd_to_py)
+PoolByteArray = _generate_pool_array(
+    "PoolByteArray", int, "pool_byte_array", py_to_gd=_byte_py_to_gd, gd_to_py=_identity
+)
+PoolIntArray = _generate_pool_array(
+    "PoolIntArray", int, "pool_int_array", py_to_gd=_int_py_to_gd, gd_to_py=_identity
+)
+PoolRealArray = _generate_pool_array(
+    "PoolRealArray",
+    float,
+    "pool_real_array",
+    py_to_gd=_real_py_to_gd,
+    gd_to_py=_identity,
+)
+PoolStringArray = _generate_pool_array(
+    "PoolStringArray",
+    str,
+    "pool_string_array",
+    py_to_gd=_string_py_to_gd,
+    gd_to_py=_string_gd_to_py,
+)
