@@ -62,13 +62,18 @@ if env["backend"] == "cpython":
     env.Command(
         cpython_build,
         cpython_src,
-        "cd ${SOURCE} && " + "echo Configuring CPython... && "
-        '1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} CPPFLAGS="-I/usr/local/opt/openssl/include" LDFLAGS="-L/usr/local/opt/openssl/lib" && '
-        + "echo Building CPython... && "
-        "1>/dev/null make -j4 && "
-        + "echo Installing CPython in ${TARGET.get_abspath()}... && "
-        "1>/dev/null make install && "
-        + "LD_LIBRARY_PATH=${TARGET.get_abspath()}/lib ${TARGET.get_abspath()}/bin/pip3 install cffi",
+        [
+          "cd ${SOURCE} && " + "echo Configuring CPython... && "
+          '1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} CPPFLAGS="-I/usr/local/opt/openssl/include" LDFLAGS="-L/usr/local/opt/openssl/lib" && '
+          + "echo Building CPython... && "
+          "1>/dev/null make -j4 && "
+          + "echo Installing CPython in ${TARGET.get_abspath()}... && "
+          "1>/dev/null make install && "
+          + "LD_LIBRARY_PATH=${TARGET.get_abspath()}/lib ${TARGET.get_abspath()}/bin/pip3 install cffi",
+          Chmod("%s/lib/libpython3.6m.dylib" % cpython_build.abspath, 0600),
+          "install_name_tool -id @loader_path/lib/libpython3.6m.dylib " +
+          "%s/lib/libpython3.6m.dylib" % cpython_build.abspath
+        ]
     )
     env.NoClean(cpython_build)
 
