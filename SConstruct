@@ -335,7 +335,6 @@ env.AlwaysBuild("release")
 
 
 black_cmd = "black pythonscript tools/*.py tests/*/*.py SConstruct platforms/*/SCsub"
-autoformat = env.PythonCommand("autoformat", None, black_cmd)
+autoformat = env.PythonCommand("autoformat", [venv_dir], black_cmd)
 env.Alias("black", autoformat)
-env.AlwaysBuild("black")
-checkformat = env.PythonCommand("checkstyle", None, black_cmd + " --check")
+env.PythonCommand("checkstyle", [venv_dir], black_cmd + " --check")
