@@ -209,6 +209,7 @@ python_embedded_srcs = env.Glob("pythonscript/embedded/*.inc.py")
 
 ### Main compilation stuff ###
 
+
 env.Alias("backend", "$backend_dir")
 
 env.AppendUnique(CPPPATH=["#", "$gdnative_include_dir"])
@@ -234,7 +235,7 @@ def extract_version():
 
 def generate_build_dir_hook(path):
     shutil.copy(
-        "misc/release_pythonscript.gdnlib", os.path.join(path, "pythonscript.gdnlib")
+        "misc/single_build_pythonscript.gdnlib", os.path.join(path, "pythonscript.gdnlib")
     )
     shutil.copy("misc/release_LICENSE.txt", os.path.join(path, "LICENSE.txt"))
     with open("misc/release_README.txt") as fd:
@@ -330,6 +331,7 @@ env.AlwaysBuild("release")
 
 
 ### Auto-format codebase ###
+
 
 black_cmd = "black pythonscript tools/*.py tests/*/*.py SConstruct platforms/*/SCsub"
 autoformat = env.PythonCommand("autoformat", None, black_cmd)
