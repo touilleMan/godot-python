@@ -82,7 +82,7 @@ before_script:
 
 script:
   - set -e  # Enable fail on first error
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scons checkstyle; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scons platform=$TARGET_PLATFORM checkstyle; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then scons platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC gdnative_parse_cpp="clang -E" release_suffix=$TRAVIS_BRANCH release; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scons platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC release_suffix=$TRAVIS_BRANCH release; fi
 # Tests need x11 server with opengl3 or compile godot with platform=server (both not working so far...)
