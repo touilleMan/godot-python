@@ -11,11 +11,11 @@ import godot.globals
 
 @ffi.def_extern()
 def pybind_get_template_source_code(handle, class_name, base_class_name):
-    print('==================================>>>TEMPLATE')
     class_name = godot_string_to_pyobj(class_name) or "MyExportedCls"
     base_class_name = godot_string_to_pyobj(base_class_name)
     src = """from godot import exposed, export
 from godot.bindings import *
+from godot.globals import *
 
 
 @exposed
