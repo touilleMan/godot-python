@@ -7,4 +7,4 @@ run/main_scene="res://main.tscn"
 
 [gdnative]
 
-singletons=[ "res://pythonscript.tres" ]
+singletons=[ "res://pythonscript.gdnlib" ]
