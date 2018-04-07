@@ -230,6 +230,7 @@ def build_method(classname, meth):
         rettype = meth['return']['type']
 
         def bind(self, *args):
+            # TODO: allow **kwargs
             # check number of args
             n_args, nm_args, nmd_args = len(args), len(meth['args']), len(meth['default_args'])
             nr_args = nm_args - nmd_args    # number of required arguments
@@ -246,8 +247,8 @@ def build_method(classname, meth):
                     )
             if n_args > nm_args:  # too many args, raise error
                 if nmd_args == 0:
-                    raise TypeError("%s()takes %i positional arguments but %i were given" % (
-                                    methname, nm_args, n_args)
+                    raise TypeError("%s() takes %i positional argument%s but %i were given" % (
+                                    methname, nm_args, 's' if nm_args > 1 else '', n_args)
                     )
                 else:
                     raise TypeError("%s() takes from %i to %i positional arguments but %i were given" % (
