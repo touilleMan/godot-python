@@ -128,7 +128,7 @@ env.PythonCommand(
     targets=venv_dir,
     sources=None,
     pre_init='${PYTHON} -m virtualenv ${TARGET}',
-    command='${PYTHON} -m pip install "pycparser>=2.18" "cffi>=1.11.2"',
+    command='${PYTHON} -m pip install "pycparser>=2.18" "cffi>=1.11.2" black',
 )
 
 
@@ -271,3 +271,20 @@ release = env.Command(
 )
 env.Alias('release', release)
 env.AlwaysBuild('release')
+
+
+### Auto-format codebase ###
+
+black_cmd = 'black pythonscript tools/*.py tests/*/*.py SConstruct platforms/*/SCsub'
+autoformat = env.PythonCommand(
+    'autoformat',
+    None,
+    black_cmd
+)
+env.Alias('black', autoformat)
+env.AlwaysBuild('black')
+checkformat = env.PythonCommand(
+    'checkstyle',
+    None,
+    black_cmd + ' --check'
+)

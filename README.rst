@@ -6,6 +6,10 @@
    :target: https://ci.appveyor.com/project/touilleMan/godot-python/branch/master
    :alt: Automated test status (Windows)
 
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/ambv/black
+   :alt: Code style: black
+
 
 ================================================
 Godot Python, because you want Python on Godot !
