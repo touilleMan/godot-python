@@ -235,7 +235,8 @@ def extract_version():
 
 def generate_build_dir_hook(path):
     shutil.copy(
-        "misc/single_build_pythonscript.gdnlib", os.path.join(path, "pythonscript.gdnlib")
+        "misc/single_build_pythonscript.gdnlib",
+        os.path.join(path, "pythonscript.gdnlib"),
     )
     shutil.copy("misc/release_LICENSE.txt", os.path.join(path, "LICENSE.txt"))
     with open("misc/release_README.txt") as fd:
