@@ -70,7 +70,7 @@ if env["backend"] == "cpython":
             + "echo Installing CPython in ${TARGET.get_abspath()}... && "
             "1>/dev/null make install && "
             + "LD_LIBRARY_PATH=${TARGET.get_abspath()}/lib ${TARGET.get_abspath()}/bin/pip3 install cffi",
-            Chmod("%s/lib/libpython3.6m.dylib" % cpython_build.abspath, 0600),
+            Chmod("%s/lib/libpython3.6m.dylib" % cpython_build.abspath, 0o600),
             "install_name_tool -id @loader_path/lib/libpython3.6m.dylib " +
             "%s/lib/libpython3.6m.dylib" % cpython_build.abspath
         ]
