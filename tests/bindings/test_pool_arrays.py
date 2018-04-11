@@ -340,3 +340,20 @@ class TestPoolVector3ArraySize:
         assert len(a[0]) == 2000
         a[0].resize(3000)
         assert len(a[0]) == 3000
+
+
+class TestPoolArrayRawAccess:
+
+    def test_raw_access(self):
+        arr = PoolIntArray()
+        arr.resize(30)
+
+        with arr.raw_access() as ptr:
+            for i in range(30):
+                ptr[i] = i
+        assert arr == [i for i in range(30)]
+
+        # Also test read access
+        with arr.raw_access() as ptr:
+            for i in range(30):
+                assert ptr[i] == i

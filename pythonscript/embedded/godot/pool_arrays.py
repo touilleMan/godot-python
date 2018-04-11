@@ -1,4 +1,5 @@
 from collections.abc import MutableSequence
+from contextlib import contextmanager
 from pythonscriptcffi import lib, ffi
 
 from godot.hazmat.base import BaseBuiltinWithGDObjOwnership
@@ -106,6 +107,15 @@ class BasePoolArray(BaseBuiltinWithGDObjOwnership, MutableSequence):
     def __len__(self):
         return self._gd_array_size(self._gd_ptr)
 
+    @contextmanager
+    def raw_access(self):
+        write_access = self._gd_array_write(self._gd_ptr)
+        try:
+            yield self._gd_array_write_access_ptr(write_access)
+
+        finally:
+            self._gd_array_write_access_destroy(write_access)
+
     # Methods
 
     def append(self, value):
@@ -157,6 +167,10 @@ def _generate_pool_array(clsname, pycls, gdname, py_to_gd=None, gd_to_py=None):
         "invert",
         "push_back",
         "resize",
+        # Raw access APIs
+        "write",
+        "write_access_ptr",
+        "write_access_destroy",
     ):
         nmspc["_gd_array_%s" % suffix] = getattr(lib, "godot_%s_%s" % (gdname, suffix))
     if py_to_gd:
