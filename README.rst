@@ -27,8 +27,11 @@ module for the `Godot <http://godotengine.org>`_ game engine.
 Quickstart
 ==========
 
-Head to the `Releases <https://github.com/touilleMan/godot-python/releases>`_ page and download the 
-latest version for your platform.
+By order of simplicity:
+
+- Directly download the project from within Godot with the asset library tab.
+- You can also download manually [here](https://godotengine.org/asset-library/asset/179) (CPython backend) and [there](https://godotengine.org/asset-library/asset/192) (for Pypy backend).
+- Finally you can also head to the project [release page](https://github.com/touilleMan/godot-python/releases) if you want to only download one specific platform build
 
 Building
 ========
