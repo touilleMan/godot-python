@@ -26,8 +26,8 @@ class TestRect2:
             [(1, 2, 1, 2), Vector2(1, 2), Vector2(1, 2)],
         ):
             v = Rect2(*args)
-            assert v.position == expected_pos, msg_tmpl % (
-                v.position, expected_pos, args
+            assert v.position == expected_pos, (
+                msg_tmpl % (v.position, expected_pos, args)
             )
             assert v.size == expected_size, msg_tmpl % (v.size, expected_size, args)
         with pytest.raises(TypeError):

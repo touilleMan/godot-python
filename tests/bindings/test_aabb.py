@@ -15,9 +15,10 @@ class TestAABB:
 
     def test_repr(self):
         v = AABB(Vector3(1, 2, 3), Vector3(4, 5, 6))
-        assert repr(
-            v
-        ) == "<AABB(position=<Vector3(x=1.0, y=2.0, z=3.0)>, size=<Vector3(x=4.0, y=5.0, z=6.0)>)>"
+        assert (
+            repr(v)
+            == "<AABB(position=<Vector3(x=1.0, y=2.0, z=3.0)>, size=<Vector3(x=4.0, y=5.0, z=6.0)>)>"
+        )
 
     def test_instantiate(self):
         # Can build it with int or float or nothing
@@ -27,8 +28,8 @@ class TestAABB:
             [(Vector3(0, 1, 0), Vector3(0, 0, 1)), Vector3(0, 1, 0), Vector3(0, 0, 1)],
         ):
             v = AABB(*args)
-            assert v.position == expected_pos, msg_tmpl % (
-                v.position, expected_pos, args
+            assert v.position == expected_pos, (
+                msg_tmpl % (v.position, expected_pos, args)
             )
             assert v.size == expected_size, msg_tmpl % (v.size, expected_size, args)
         with pytest.raises(TypeError):

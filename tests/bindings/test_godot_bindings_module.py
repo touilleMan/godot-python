@@ -28,45 +28,49 @@ class TestGodotBindingsModuleMethodCalls:
 
         with pytest.raises(TypeError) as exc:
             node.get_child()
-        assert str(
-            exc.value
-        ) == "get_child() missing 1 required positional argument: 'idx'"
+        assert (
+            str(exc.value)
+            == "get_child() missing 1 required positional argument: 'idx'"
+        )
 
     def test_call_too_few_args(self):
         node = bindings.Node()
 
         with pytest.raises(TypeError) as exc:
             node.move_child()
-        assert str(
-            exc.value
-        ) == "move_child() missing 2 required positional arguments: 'child_node' and 'to_position'"
+        assert (
+            str(exc.value)
+            == "move_child() missing 2 required positional arguments: 'child_node' and 'to_position'"
+        )
 
     def test_call_with_defaults_and_too_few_args(self):
         node = bindings.Node()
 
         with pytest.raises(TypeError) as exc:
             node.add_child()
-        assert str(
-            exc.value
-        ) == "add_child() missing 1 required positional argument: 'node'"
+        assert (
+            str(exc.value)
+            == "add_child() missing 1 required positional argument: 'node'"
+        )
 
     def test_call_too_many_args(self):
         node = bindings.Node()
 
         with pytest.raises(TypeError) as exc:
             node.get_child(1, 2)
-        assert str(
-            exc.value
-        ) == "get_child() takes 1 positional argument but 2 were given"
+        assert (
+            str(exc.value) == "get_child() takes 1 positional argument but 2 were given"
+        )
 
     def test_call_with_default_and_too_many_args(self):
         node = bindings.Node()
 
         with pytest.raises(TypeError) as exc:
             node.add_child(1, 2, 3)
-        assert str(
-            exc.value
-        ) == "add_child() takes from 1 to 2 positional arguments but 3 were given"
+        assert (
+            str(exc.value)
+            == "add_child() takes from 1 to 2 positional arguments but 3 were given"
+        )
 
     def test_call_with_defaults(self):
         node = bindings.Node()
