@@ -30,8 +30,8 @@ Quickstart
 By order of simplicity:
 
 - Directly download the project from within Godot with the asset library tab.
-- You can also download manually [here](https://godotengine.org/asset-library/asset/179) (CPython backend) and [there](https://godotengine.org/asset-library/asset/192) (for Pypy backend).
-- Finally you can also head to the project [release page](https://github.com/touilleMan/godot-python/releases) if you want to only download one specific platform build
+- You can also download manually `here <https://godotengine.org/asset-library/asset/179>`_ (CPython backend) and `there <https://godotengine.org/asset-library/asset/192>`_ (for Pypy backend).
+- Finally you can also head to the project `release page <https://github.com/touilleMan/godot-python/releases>`_ if you want to only download one specific platform build
 
 Building
 ========
