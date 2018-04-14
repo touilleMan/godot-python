@@ -309,7 +309,8 @@ env.Command(
 )
 env.AlwaysBuild("tests/work_with_gdscript")
 env.AlwaysBuild("tests")
-env.Alias("test", "tests")
+# env.Alias("test", "tests")
+env.Command("test", ["$godot_binary", install_build_symlink], "${SOURCE} --version")
 
 
 ### Run example ###
