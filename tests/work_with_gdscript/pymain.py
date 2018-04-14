@@ -1,5 +1,6 @@
 # TODO: - test GDScript static functions
 #       - allow inheritance from GDScript class
+import os
 import pytest
 
 from godot import exposed
@@ -17,9 +18,10 @@ class PyMain(Node):
         root_node = self
         # Retrieve command line arguments passed through --pytest=...
         prefix = "--pytest="
-        pytest_args = []
+        # Filter to avoid scanning `plugins` and `lib` directories
+        pytest_args = [x for x in os.listdir() if x.startswith("test_")]
         for arg in OS.get_cmdline_args():
             if arg.startswith(prefix):
-                pytest_args += arg[len(prefix):].split()
+                pytest_args += arg[len(prefix):].split(",")
         # Run tests here
         return pytest.main(pytest_args)

@@ -291,14 +291,25 @@ env.Default(install_build_symlink)
 
 # Note: passing absolute path is only really needed on Mac with Godot.app
 if env["debugger"]:
-    test_cmd = "${debugger} -- ${SOURCE} --path ${Dir('#').abspath}/tests/bindings"
+    test_base_cmd = "${debugger} -- ${SOURCE} --path ${Dir('#').abspath}/tests/"
 else:
-    test_cmd = "${SOURCE} --path ${Dir('#').abspath}/tests/bindings"
+    test_base_cmd = "${SOURCE} --path ${Dir('#').abspath}/tests/"
 
 
-env.Command("test", ["$godot_binary", install_build_symlink], test_cmd)
-env.AlwaysBuild("test")
-env.Alias("tests", "test")
+env.Command(
+    "tests/bindings",
+    ["$godot_binary", install_build_symlink],
+    test_base_cmd + "bindings",
+)
+env.AlwaysBuild("tests/bindings")
+env.Command(
+    "tests/work_with_gdscript",
+    ["$godot_binary", install_build_symlink],
+    test_base_cmd + "work_with_gdscript",
+)
+env.AlwaysBuild("tests/work_with_gdscript")
+env.AlwaysBuild("tests")
+env.Alias("test", "tests")
 
 
 ### Run example ###
