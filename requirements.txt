@@ -3,4 +3,5 @@
 xmltodict>=0.11.0
 pycparser>=2.18
 cffi>=1.11.2
+Jinja2>=2.10
 black

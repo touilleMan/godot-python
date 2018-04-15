@@ -167,11 +167,11 @@ else:
 
 env.PythonCommand(
     targets=venv_dir,
-    sources='requirements.txt',
+    sources="requirements.txt",
     pre_init="${PYTHON} -m virtualenv ${TARGET}",
-    command='${PYTHON} -m pip install -r ${SOURCE}',
+    command="${PYTHON} -m pip install -r ${SOURCE}",
 )
-env.Alias('init', venv_dir)
+env.Alias("init", venv_dir)
 
 
 ### Generate cdef and cffi C source ###
