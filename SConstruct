@@ -167,10 +167,11 @@ else:
 
 env.PythonCommand(
     targets=venv_dir,
-    sources=None,
+    sources='requirements.txt',
     pre_init="${PYTHON} -m virtualenv ${TARGET}",
-    command='${PYTHON} -m pip install "pycparser>=2.18" "cffi>=1.11.2" black',
+    command='${PYTHON} -m pip install -r ${SOURCE}',
 )
+env.Alias('init', venv_dir)
 
 
 ### Generate cdef and cffi C source ###
