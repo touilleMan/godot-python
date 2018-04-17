@@ -1,0 +1,60 @@
+{% from 'tools.j2' import render_docstring, render_call_args %}
+
+{% macro render_class(cls) -%}
+
+class {{ cls.name | fix_name }}:
+    {{ render_docstring(cls.name) | indent(width=4) }}
+
+{%- for constant_name, constant_value in cls.constants.items() -%}
+{%- if not constant_is_enum(cls.enums, constant_name) %}
+    {{ render_docstring(cls.name + '.' + constant_name) | indent(width=4) }}
+    {{ constant_name | fix_name }} = {{ constant_value }}
+{%- endif -%}
+{%- endfor -%}
+
+{%- for enum in cls.enums -%}
+    {{ render_docstring(cls.name + '.' + enum.name) | indent(width=4) }}
+    class {{ enum.name | fix_name }}(Enum):
+{%- for enum_entry_name, enum_entry_value in enum['values'].items() %}
+        {{ render_docstring(cls.name + '.' + enum.name + '.' + enum_entry_name) | indent(width=4) }}
+        {{ enum_entry_name }} = {{ enum_entry_value }}
+{%- endfor -%}
+{%- endfor -%}
+
+{%- for signal in cls.signals -%}
+    {{ render_docstring(cls.name + '.' + signal.name) | indent(width=4) }}
+    # Signal {{ signal.name | fix_name }}
+{%- endfor -%}
+
+{%- for prop in cls.properties %}
+{%- set prop_name = prop.name | fix_name %}
+
+    @property
+    def {{ prop_name }}(self):
+        {{ render_docstring(cls.name + '.' + prop.name) | indent(width=8) }}
+        pass
+
+    @{{ prop_name }}.setter
+    def {{ prop_name }}(self, value):
+        gd_propname = godot_string_from_pyobj({{ prop.getter}})
+        ret = godot_variant_alloc()
+        lib.godot_variant_new_nil(ret)
+        args = ffi.new("void*[]", [self._gd_ptr, gd_propname])
+        lib.godot_method_bind_ptrcall(
+            cls._meth_get_property, cls._instance, args, ret
+        )
+        return variant_to_pyobj(ret)
+{%- endfor -%}
+
+{%- for method in cls.methods %}
+
+    def {{ method.name | fix_name }}({{ render_call_args(method.args) }}):
+        {{ render_docstring(cls.name + '.' + method.name) | indent(width=8) }}
+        pass
+{%- endfor -%}
+
+{%- if not cls.constants and not cls.signals and not cls.members and not cls.methods %}
+    pass
+{%- endif -%}
+
+{%- endmacro %}

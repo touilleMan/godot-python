@@ -1,0 +1,8 @@
+{% from 'tools.j2' import render_docstring, render_call_args %}
+
+{% macro render_singleton(singleton) -%}
+
+# TODO: implement {{ singleton.name }}
+{# {{ singleton.name }} = {{ singleton.name }}(lib.godot_global_get_singleton(b'{{ singleton.name }}') #}
+
+{%- endmacro %}

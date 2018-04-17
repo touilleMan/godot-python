@@ -1,0 +1,19 @@
+{% macro render_docstring(key) -%}
+{%- set txt = retrieve_docstring(key) -%}
+
+{%- if txt -%}
+"""
+{{ txt | wordwrap }}
+"""
+{%- endif -%}
+
+{%- endmacro %}
+
+{% macro render_call_args(args) -%}
+
+self
+{%- for arg in args -%}
+, {{ arg.name }}
+{%- endfor -%}
+
+{%- endmacro %}
