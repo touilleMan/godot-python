@@ -1,4 +1,5 @@
-{% from 'tools.j2' import render_docstring, render_call_args %}
+{% from 'tools.j2' import render_docstring %}
+{% from 'method.j2' import render_method %}
 
 {% macro render_class(cls) -%}
 
@@ -44,14 +45,11 @@ class {{ cls.name | fix_name }}:
             cls._meth_get_property, cls._instance, args, ret
         )
         return variant_to_pyobj(ret)
-{%- endfor -%}
+{%- endfor %}
 
-{%- for method in cls.methods %}
-
-    def {{ method.name | fix_name }}({{ render_call_args(method.args) }}):
-        {{ render_docstring(cls.name + '.' + method.name) | indent(width=8) }}
-        pass
-{%- endfor -%}
+{% for method in cls.methods -%}
+    {{ render_method(cls, method) | indent(width=4) }}
+{% endfor -%}
 
 {%- if not cls.constants and not cls.signals and not cls.members and not cls.methods %}
     pass

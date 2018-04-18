@@ -1,0 +1,11 @@
+{% from 'tools.j2' import render_docstring, render_call_args %}
+
+{% macro render_method(cls, method) %}
+def {{ method.name | fix_name }}({{ render_call_args(method.args) }}):
+    {{ render_docstring(cls.name + '.' + method.name) | indent(width=4) }}
+{%- if method.is_virtual -%}
+    raise NotImplementedError
+{%- else -%}
+    pass
+{%- endif -%}
+{%- endmacro %}
