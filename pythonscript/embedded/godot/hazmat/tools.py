@@ -93,7 +93,7 @@ def variant_to_pyobj(p_gdvar):
         return godot_bindings_module.Vector2.build_from_gdobj(raw)
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_RECT2:
-        raw = lib.godot_variant_as_rec2(p_gdvar)
+        raw = lib.godot_variant_as_rect2(p_gdvar)
         return godot_bindings_module.Rect2.build_from_gdobj(raw)
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR3:
