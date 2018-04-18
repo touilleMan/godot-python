@@ -36,7 +36,7 @@ By order of simplicity:
 Building
 ========
 
-To build the project from source, first checkout the repo or download the 
+To build the project from source, first checkout the repo or download the
 latest tarball.
 
 Linux
@@ -49,14 +49,14 @@ On a fresh Ubuntu install, you will need to install these:
 	$ apt install build-essential scons python3 python3-pip curl git
 	$ pip3 install virtualenv --user
 
-If you are using CPython as your backend, you will need additional 
-libraries to build from source. The simplest way is to uncomment the 
+If you are using CPython as your backend, you will need additional
+libraries to build from source. The simplest way is to uncomment the
 main deb-src in `/etc/apt/sources.list`:
- 
+
 .. code-block:: bash
 
 	deb-src http://archive.ubuntu.com/ubuntu/ artful main
- 
+
 and instruct apt to install the needed packages:
 
 .. code-block:: bash
@@ -70,7 +70,7 @@ for instructions on additional platforms.
 MacOS
 -----
 
-With MacOS, you will need XCode installed and install the command line tools. 
+With MacOS, you will need XCode installed and install the command line tools.
 
 .. code-block:: bash
 
@@ -127,9 +127,9 @@ Testing your build
 
 	godot-python$ scons platform=<platform> backend=<backend> test
 
-This will run pytests defined in `tests/bindings` inside the Godot environment. 
-If not present, will download a precompiled Godot binary 
-(defined in SConstruct and platform specific SCSub files) to and set the 
+This will run pytests defined in `tests/bindings` inside the Godot environment.
+If not present, will download a precompiled Godot binary
+(defined in SConstruct and platform specific SCSub files) to and set the
 correct library path for the GDNative wrapper.
 
 Running the example project
@@ -139,15 +139,15 @@ Running the example project
 
 	godot-python$ scons platform=<platform> backend=cpython example
 
-This will run the converted pong example in `examples/pong` inside the Godot 
-environment. If not present, will download a precompiled Godot binary 
+This will run the converted pong example in `examples/pong` inside the Godot
+environment. If not present, will download a precompiled Godot binary
 (defined in SConstruct) to and set the correct library path for the GDNative wrapper.
 
 
 Using a local Godot version
 ---------------------------
 
-If you have a pre-existing version of godot, you can instruct the build script to 
+If you have a pre-existing version of godot, you can instruct the build script to
 use that the static library and binary for building and tests.
 
 .. code-block:: bash
@@ -178,7 +178,7 @@ example:
 		This is the file's main class which will be made available to Godot. This
 		class must inherit from `godot.Node` or any of its children (i.g.
 		`godot.KinematicBody`).
-		
+
 		Because Godot scripts only accept file paths, you can't have two `exposed` classes in the same file.
 		"""
 		# Exposed class can define some attributes as export(<type>) to achieve
@@ -254,3 +254,55 @@ FAQ
 
 This can be done using "Attach to Local Process", but first you have to change the Godot binary filename to include :code:`python`, for example :code:`Godot_v3.0.2-stable_win64.exe` to :code:`python_Godot_v3.0.2-stable_win64.exe`.
 For more detailed guide and explanation see this `external blog post <https://medium.com/@prokopst/debugging-godot-python-with-pycharm-b5f9dd2cf769>`_.
+
+**How can I autoload a python script without attaching it to a Node?**
+
+In your :code:`project.godot` file, add the following section::
+
+  [autoload]
+  autoloadpy="*res://autoload.py"
+
+In addition to the usual::
+
+  [gdnative]
+  singletons=[ "res://pythonscript.gdnlib" ]
+
+You can use any name for the python file and the class name
+:code:`autoloadpy`.
+
+Then :code:`autoload.py` can expose a Node::
+
+  from godot import exposed, export
+  from godot.bindings import *
+
+  @exposed
+  class autoload(Node):
+
+      def hi(self, to):
+          return 'Hello %s from Python !' % to
+
+which can then be called from your gdscript code as an attribute of
+the :code:`autoloadpy` class (use the name defined in your :code:`project.godot`)::
+
+  print(autoloadpy.hi('root'))
+
+**How can I efficiently access PoolArrays?**
+
+:code:`PoolIntArray`, :code:`PoolFloatArray`, :code:`PoolVector3Array`
+and the other pool arrays can't be accessed directly because they must
+be locked in memory first. Use the :code:`arr.raw_access()` context
+manager to lock it::
+
+  arr = PoolIntArray() # create the array
+  arr.resize(10000)
+
+  with arr.raw_access() as ptr:
+      for i in range(10000):
+          ptr[i] = i # this is fast
+
+  # read access:
+  with arr.raw_access() as ptr:
+      for i in range(10000):
+          assert ptr[i] == i # so is this
+
+See the `godot-python issue <https://github.com/touilleMan/godot-python/issues/84>`_.
