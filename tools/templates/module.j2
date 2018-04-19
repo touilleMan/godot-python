@@ -37,10 +37,13 @@ __GODOT_API_VERSION__ = '{{ godot_api_version }}'
 # Classes
 {% for cls in classes %}
 
-
+{% if cls.singleton %}
+{{ render_singleton(cls) }}
+{% else %}
 {{ render_class(cls) }}
+{% endif %}
 
-{%- endfor %}
+{% endfor %}
 
 
 # Globals constants
@@ -51,8 +54,5 @@ __GODOT_API_VERSION__ = '{{ godot_api_version }}'
 
 # Singletons
 {% for singleton in singletons %}
-
-
-{{ render_singleton(singleton) }}
 
 {%- endfor -%}

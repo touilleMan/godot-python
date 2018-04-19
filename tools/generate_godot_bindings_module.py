@@ -57,8 +57,6 @@ def generate_godot_bindings(api, pretty=True, no_docstring=False):
     for cls_api in api["content"]:
         if cls_api["name"] == "GlobalConstants":
             constants = cls_api["constants"]
-        elif cls_api["singleton"]:
-            singletons.append(cls_api)
         else:
             classes.append(cls_api)
 
