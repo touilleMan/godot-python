@@ -4,6 +4,8 @@ import os
 import keyword
 import json
 import argparse
+from collections import OrderedDict
+
 import jinja2
 import black
 
@@ -46,6 +48,33 @@ def constant_is_enum(enums, constant):
 env.globals["constant_is_enum"] = constant_is_enum
 
 
+def sort_classes_by_inheritance(classes):
+    """
+    Python is sensitive to order of classes when doing inheritance, this function makes sure it's all ordered by
+    inheritance.
+    """
+    classes_by_name = {klass["name"]: klass for klass in classes}
+    ordered_classes = OrderedDict()
+
+    for klass in classes:
+        current_class = klass
+        inheritance_list = [klass]
+
+        while True:
+            base_class = current_class.get("base_class")
+
+            if base_class:
+                current_class = classes_by_name[base_class]
+                inheritance_list.append(current_class)
+            else:
+                break
+
+        for klass in reversed(inheritance_list):
+            ordered_classes[klass["name"]] = klass
+
+    return list(ordered_classes.values())
+
+
 def generate_godot_bindings(api, pretty=True, no_docstring=False):
 
     print("Generating bindings...")
@@ -59,6 +88,8 @@ def generate_godot_bindings(api, pretty=True, no_docstring=False):
             constants = cls_api["constants"]
         else:
             classes.append(cls_api)
+
+    classes = sort_classes_by_inheritance(classes)
 
     # Render module
     rendered = env.get_template("module.j2").render(
