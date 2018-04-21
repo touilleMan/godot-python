@@ -3,7 +3,7 @@
 
 {% macro render_class(cls) -%}
 
-class {{ cls.name | fix_name }}:
+class {{ cls.name | fix_name }}({{ cls.base_class | fix_name }}):
     {{ render_docstring(cls.name) | indent(width=4) }}
 
 {%- for constant_name, constant_value in cls.constants.items() -%}
