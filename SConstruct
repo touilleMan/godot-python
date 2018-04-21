@@ -286,6 +286,15 @@ env.AlwaysBuild(install_build_symlink)
 env.Default(install_build_symlink)
 
 
+### Download godot binary ###
+
+
+godot_binary, = env.Command(
+    'build/godot', '$godot_binary', Action(SymLink, "Symlinking $SOURCE -> $TARGET")
+)
+env.Alias('godot_binary', godot_binary)
+
+
 ### Run tests ###
 
 
