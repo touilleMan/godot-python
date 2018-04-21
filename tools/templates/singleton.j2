@@ -2,7 +2,6 @@
 
 {% macro render_singleton(singleton) -%}
 
-# TODO: implement {{ singleton.name }}
-{# {{ singleton.name }} = {{ singleton.name }}(lib.godot_global_get_singleton(b'{{ singleton.name }}') #}
+{{ singleton.name }} = {{ singleton.name }}(lib.godot_global_get_singleton(b'{{ singleton.name }}'))
 
 {%- endmacro %}

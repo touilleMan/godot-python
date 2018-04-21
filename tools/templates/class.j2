@@ -3,8 +3,28 @@
 
 {% macro render_class(cls) -%}
 
+{%- if not cls.base_class -%}
+class {{ cls.name | fix_name }}(BaseObject):
+{%- else -%}
 class {{ cls.name | fix_name }}({{ cls.base_class | fix_name }}):
+{%- endif %}
     {{ render_docstring(cls.name) | indent(width=4) }}
+    __is_godot_native_class = True
+    __slots__ = ()
+    _gd_name = "{{ cls.name }}"
+    _gd_constructor = ClassDB.get_class_constructor("{{ cls.name }}")
+
+    def _gd_constructor(self):
+        gd_classname = godot_string_from_pyobj("{{ cls.name }}")
+        # TODO: alloc this on the stack (using _malloca ?)
+        args = ffi.new("void*[]", [gd_classname])
+        ret = godot_variant_alloc()
+        lib.godot_method_bind_ptrcall(_meth_instance, _instance, args, ret)
+        objret = lib.godot_variant_as_object(ret)
+        # Quick'n dirty fix to prevent Ressource objects from beeing automatically
+        # freed when the variant is destroyed given it holds the only ref on it
+        self._gd_var = ret
+        return objret
 
 {%- for constant_name, constant_value in cls.constants.items() -%}
 {%- if not constant_is_enum(cls.enums, constant_name) %}
@@ -33,16 +53,24 @@ class {{ cls.name | fix_name }}({{ cls.base_class | fix_name }}):
     @property
     def {{ prop_name }}(self):
         {{ render_docstring(cls.name + '.' + prop.name) | indent(width=8) }}
-        pass
-
-    @{{ prop_name }}.setter
-    def {{ prop_name }}(self, value):
-        gd_propname = godot_string_from_pyobj({{ prop.getter}})
+        gd_propname = godot_string_from_pyobj("{{ prop.name }}")
         ret = godot_variant_alloc()
         lib.godot_variant_new_nil(ret)
         args = ffi.new("void*[]", [self._gd_ptr, gd_propname])
         lib.godot_method_bind_ptrcall(
-            cls._meth_get_property, cls._instance, args, ret
+            _meth_get_property, _instance, args, ret
+        )
+        return variant_to_pyobj(ret)
+
+    @{{ prop_name }}.setter
+    def {{ prop_name }}(self, value):
+        gd_propname = godot_string_from_pyobj("{{ prop.name }}")
+        gd_value = pyobj_to_variant(value)
+        args = ffi.new("void*[]", [self._gd_ptr, gd_propname, gd_value])
+        ret = godot_variant_alloc()
+        lib.godot_variant_new_nil(ret)
+        lib.godot_method_bind_ptrcall(
+            _meth_set_property, _instance, args, ret
         )
         return variant_to_pyobj(ret)
 {%- endfor %}

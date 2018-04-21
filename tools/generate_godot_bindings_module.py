@@ -87,6 +87,8 @@ def generate_godot_bindings(api, pretty=True, no_docstring=False):
         if cls_api["name"] == "GlobalConstants":
             constants = cls_api["constants"]
         else:
+            if cls_api["singleton"]:
+                singletons.append(cls_api)
             classes.append(cls_api)
 
     classes = sort_classes_by_inheritance(classes)

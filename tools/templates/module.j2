@@ -34,6 +34,34 @@ from godot.pool_arrays import (
 __GODOT_API_VERSION__ = '{{ godot_api_version }}'
 
 
+_instance = lib.godot_global_get_singleton(b"ClassDB")
+_meth_instance = lib.godot_method_bind_get_method(b"_ClassDB", b"instance")
+_meth_get_class_list = lib.godot_method_bind_get_method(
+    b"_ClassDB", b"get_class_list"
+)
+_meth_get_method_list = lib.godot_method_bind_get_method(
+    b"_ClassDB", b"class_get_method_list"
+)
+_meth_get_parent_class = lib.godot_method_bind_get_method(
+    b"_ClassDB", b"get_parent_class"
+)
+_meth_get_property_list = lib.godot_method_bind_get_method(
+    b"_ClassDB", b"class_get_property_list"
+)
+_meth_get_property = lib.godot_method_bind_get_method(
+    b"_ClassDB", b"class_get_property"
+)
+_meth_set_property = lib.godot_method_bind_get_method(
+    b"_ClassDB", b"class_set_property"
+)
+_meth_get_integer_constant_list = lib.godot_method_bind_get_method(
+    b"_ClassDB", b"class_get_integer_constant_list"
+)
+_meth_get_integer_constant = lib.godot_method_bind_get_method(
+    b"_ClassDB", b"class_get_integer_constant"
+)
+
+
 # Classes
 {% for cls in classes %}
 
@@ -54,5 +82,5 @@ __GODOT_API_VERSION__ = '{{ godot_api_version }}'
 
 # Singletons
 {% for singleton in singletons %}
-
+{{ render_singleton(singleton) }}
 {%- endfor -%}
