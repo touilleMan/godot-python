@@ -290,9 +290,9 @@ env.Default(install_build_symlink)
 
 
 godot_binary, = env.Command(
-    'build/godot', '$godot_binary', Action(SymLink, "Symlinking $SOURCE -> $TARGET")
+    "build/godot", "$godot_binary", Action(SymLink, "Symlinking $SOURCE -> $TARGET")
 )
-env.Alias('godot_binary', godot_binary)
+env.Alias("godot_binary", godot_binary)
 
 
 ### Run tests ###
