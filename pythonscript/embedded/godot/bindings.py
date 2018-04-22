@@ -1,5 +1,5 @@
 try:
-    from godot._bindings import *
+    from godot._static_bindings import *  # noqa
 except ImportError:
     import sys
 

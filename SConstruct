@@ -46,6 +46,7 @@ vars.Add(
     )
 )
 vars.Add(BoolVariable("show_build_dir", "Display build dir and leave", False))
+vars.Add(BoolVariable("static_bindings", "Use static bindings", False))
 vars.Add("release_suffix", "Suffix to add to the release archive", "wip")
 vars.Add("godot_binary", "Path to Godot main binary", "")
 vars.Add("debugger", "Run godot with given debugger", "")
@@ -172,6 +173,32 @@ env.PythonCommand(
     command="${PYTHON} -m pip install -r ${SOURCE}",
 )
 env.Alias("init", venv_dir)
+
+
+### Generate Godot API JSON dump and static bindings module
+
+env.PythonCommand(
+    targets="platforms/godot_api.gen.json",
+    sources=(venv_dir, "$godot_binary"),
+    command=(
+        "python ./tools/generate_godot_api_json.py ${SOURCES[1]} --output=${TARGET}"
+    ),
+)
+
+if not env["static_bindings"]:
+    env.AlwaysBuild(
+        Command(
+            "pythonscript/embedded/godot/_static_bindings.py", [], Delete("$TARGET")
+        )
+    )
+else:
+    env.PythonCommand(
+        targets="pythonscript/embedded/godot/_static_bindings.py",
+        sources=(venv_dir, "platforms/godot_api.gen.json"),
+        command=(
+            "python ./tools/generate_godot_bindings_module.py ${SOURCES[1]} --output=${TARGET}"
+        ),
+    )
 
 
 ### Generate cdef and cffi C source ###
