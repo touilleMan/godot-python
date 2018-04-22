@@ -320,6 +320,7 @@ class TestPoolVector3ArraySize:
         a.resize(1000)
         assert len(a) == 1000
 
+    @pytest.mark.xfail
     def test_size_in_array(self):
         a = Array()
         a.resize(9)
@@ -327,6 +328,7 @@ class TestPoolVector3ArraySize:
         a[0].resize(1000)
         assert len(a[0]) == 1000
 
+    @pytest.mark.xfail
     def test_as_both(self):
         a = Array()
         a.resize(9)
