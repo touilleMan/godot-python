@@ -16,11 +16,11 @@ env.Append(LINKFLAGS="-m64")
 
 
 if not env["godot_binary"]:
-    env["godot_binary"] = File("godot.osx.opt.debug.fat")
+    env["godot_binary"] = File("godot.osx.opt.tools.fat")
     env.Command(
         env["godot_binary"],
         None,
-        "curl -L %s/godot.osx.opt.debug.fat -o ${TARGET} && chmod 750 ${TARGET}"
+        "curl -L %s/godot.osx.opt.tools.fat -o ${TARGET} && chmod 750 ${TARGET}"
         % env["godot_release_base_url"],
     )
     env.NoClean(env["godot_binary"])
