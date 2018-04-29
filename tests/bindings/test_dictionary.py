@@ -102,6 +102,13 @@ class TestDictionary:
         with pytest.raises(TypeError):
             del v[object()]
 
+    def test_update(self):
+        v = Dictionary({'a': 1, 'b': 2, 'c': 3})
+        v.update({'a': 'one', 'd': 'four'})
+        v.update(Dictionary({'b': 'two', 'e': 'five'}))
+        assert set(v.keys()) == {'a', 'b', 'c', 'd', 'e'}
+        assert set(v.values()) == {'one', 'two', 3, 'four', 'five'}
+
     def test_contains(self):
         v = Dictionary({"a": 1, 2: "foo", 0.5: Vector2()})
         assert "a" in v

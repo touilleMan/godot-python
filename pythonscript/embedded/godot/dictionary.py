@@ -80,6 +80,12 @@ class Dictionary(BaseBuiltinWithGDObjOwnership):
         lib.godot_dictionary_new_copy(gd_ptr, self._gd_ptr)
         return Dictionary.build_from_gdobj(gd_ptr, steal=True)
 
+    def update(self, items):
+        if not isinstance(items, (Dictionary, dict)):
+            raise TypeError("Param `items` should be of type `dict` or `Dictionary`")
+        for k, v in items.items():
+            self[k] = v
+
     def pop(self, *args):
         key, *default = args
         try:
