@@ -55,9 +55,6 @@ class BasePoolArray(BaseBuiltinWithGDObjOwnership, MutableSequence):
             self.append(x)
         return self
 
-    def __radd__(self, items):
-        return self._cls(items) + self
-
     def __add__(self, items):
         if isinstance(items, (str, bytes)):
             return NotImplemented

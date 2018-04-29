@@ -78,10 +78,18 @@ class BaseTestPoolArray:
         v2 = self.vg(1)
         arr2 = arr + v2  # __add__
         assert arr2 == self.acls(v0 + v1 + v2)
-        # Test __radd__ as well
-        v3 = self.vg(1)
-        arr3 = v3 + arr2
-        assert arr3 == self.acls(v3 + v0 + v1 + v2)
+        # Also test list's __iadd__
+        values = [self.vg() for _ in range(3)]
+        arr3 = [values[0]]
+        pba = self.acls(values[1:])
+        arr3 += pba
+        assert arr3 == values
+        # list.__add__ only works with other lists
+        with pytest.raises(TypeError):
+            [values[0]] + pba
+        arr4 = [values[0]] + list(pba)
+        assert arr4 == values
+
 
     @pytest.mark.parametrize("arg", [None, 0, "foo", Vector2(), Node()])
     def test_bad_add(self, arg):
@@ -313,6 +321,7 @@ class TestPoolVector3Array(BaseTestPoolArray):
 # Extra tests
 
 
+@pytest.mark.xfail
 class TestPoolVector3ArraySize:
 
     def test_size(self):

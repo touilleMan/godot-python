@@ -308,7 +308,7 @@ def build_method(classname, meth):
 
             # complete missing optional args with default values
             diff = len(args) - len(meth["args"])
-            args += meth["default_args"][diff:]
+            args = args + tuple(meth["default_args"][diff:])
 
             # TODO: check args type here (ptrcall means segfault on bad args...)
             # print('[PY->GD] Ptrcall %s.%s (%s) on %s with %s' % (classname, methname, meth, self, args))

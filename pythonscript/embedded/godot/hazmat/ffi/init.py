@@ -34,7 +34,7 @@ def pybind_init():
     os.chdir(ProjectSettings.globalize_path("res://"))
 
     # Pass argv arguments
-    sys.argv = ["godot"] + OS.get_cmdline_args()
+    sys.argv = ["godot"] + list(OS.get_cmdline_args())
 
     # Update PYTHONPATH according to configuration
     pythonpath = _setup_config_entry("python_script/path", "res://;res://lib")

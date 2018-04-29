@@ -63,9 +63,15 @@ class TestArray:
         assert arr == Array([0, 1, "two"])
         arr2 = arr + [3]  # __add__
         assert arr2 == Array([0, 1, "two", 3])
-        # Test __radd__ as well
-        arr3 = ["-1"] + arr
-        assert arr3 == Array(["-1", 0, 1, "two"])
+        # Also test list's __iadd__
+        arr3 = ["-1"]
+        arr3 += arr
+        assert arr3 == ["-1", 0, 1, "two"]
+        # list.__add__ only works with other lists
+        with pytest.raises(TypeError):
+            ["-1"] + arr
+        arr4 = ["-1"] + list(arr)
+        assert arr4 == ["-1", 0, 1, "two"]
 
     @pytest.mark.parametrize("arg", [None, 0, "foo", Vector2(), Node()])
     def test_bad_add(self, arg):

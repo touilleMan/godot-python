@@ -118,9 +118,6 @@ class Array(BaseBuiltinWithGDObjOwnership):
             self.append(x)
         return self
 
-    def __radd__(self, items):
-        return Array(items) + self
-
     def __add__(self, items):
         if isinstance(items, (str, bytes)):
             return NotImplemented
