@@ -260,6 +260,7 @@ def build_method(classname, meth):
                 methbind, self._gd_ptr, vavaargs, len(args), ffi.NULL
             )
             ret = variant_to_pyobj(ffi.addressof(varret))
+            lib.godot_variant_destroy(ffi.addressof(varret))
             # print('[PY->GD] returned:', ret)
             return ret
 

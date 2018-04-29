@@ -86,7 +86,9 @@ def variant_to_pyobj(p_gdvar):
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_STRING:
         raw = lib.godot_variant_as_string(p_gdvar)
-        return godot_string_to_pyobj(ffi.addressof(raw))
+        ret = godot_string_to_pyobj(ffi.addressof(raw))
+        lib.godot_string_destroy(ffi.addressof(raw))
+        return ret
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_VECTOR2:
         raw = lib.godot_variant_as_vector2(p_gdvar)
@@ -129,8 +131,9 @@ def variant_to_pyobj(p_gdvar):
         return godot_bindings_module.Color.build_from_gdobj(raw)
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_NODE_PATH:
-        raw = lib.godot_variant_as_node_path(p_gdvar)
-        return godot_bindings_module.NodePath.build_from_gdobj(raw)
+        p_raw = godot_node_path_alloc(initialized=False)
+        p_raw[0] = lib.godot_variant_as_node_path(p_gdvar)
+        return godot_bindings_module.NodePath.build_from_gdobj(p_raw, steal=True)
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_RID:
         raw = lib.godot_variant_as_rid(p_gdvar)
@@ -143,40 +146,49 @@ def variant_to_pyobj(p_gdvar):
         return getattr(godot_bindings_module, tmpobj.get_class())(p_raw)
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_DICTIONARY:
-        raw = lib.godot_variant_as_dictionary(p_gdvar)
-        return godot_bindings_module.Dictionary.build_from_gdobj(raw)
+        p_raw = godot_dictionary_alloc(initialized=False)
+        p_raw[0] = lib.godot_variant_as_dictionary(p_gdvar)
+        return godot_bindings_module.Dictionary.build_from_gdobj(p_raw, steal=True)
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_ARRAY:
-        raw = lib.godot_variant_as_array(p_gdvar)
-        return godot_bindings_module.Array.build_from_gdobj(raw)
+        p_raw = godot_array_alloc(initialized=False)
+        p_raw[0] = lib.godot_variant_as_array(p_gdvar)
+        return godot_bindings_module.Array.build_from_gdobj(p_raw, steal=True)
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY:
-        raw = lib.godot_variant_as_pool_byte_array(p_gdvar)
-        return godot_bindings_module.PoolByteArray.build_from_gdobj(raw)
+        p_raw = godot_pool_byte_array_alloc(initialized=False)
+        p_raw[0] = lib.godot_variant_as_pool_byte_array(p_gdvar)
+        return godot_bindings_module.PoolByteArray.build_from_gdobj(p_raw, steal=True)
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_INT_ARRAY:
-        raw = lib.godot_variant_as_pool_int_array(p_gdvar)
-        return godot_bindings_module.PoolIntArray.build_from_gdobj(raw)
+        p_raw = godot_pool_int_array_alloc(initialized=False)
+        p_raw[0] = lib.godot_variant_as_pool_int_array(p_gdvar)
+        return godot_bindings_module.PoolIntArray.build_from_gdobj(p_raw, steal=True)
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY:
-        raw = lib.godot_variant_as_pool_real_array(p_gdvar)
-        return godot_bindings_module.PoolRealArray.build_from_gdobj(raw)
+        p_raw = godot_pool_real_array_alloc(initialized=False)
+        p_raw[0] = lib.godot_variant_as_pool_real_array(p_gdvar)
+        return godot_bindings_module.PoolRealArray.build_from_gdobj(p_raw, steal=True)
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_STRING_ARRAY:
-        raw = lib.godot_variant_as_pool_string_array(p_gdvar)
-        return godot_bindings_module.PoolStringArray.build_from_gdobj(raw)
+        p_raw = godot_pool_string_array_alloc(initialized=False)
+        p_raw[0] = lib.godot_variant_as_pool_string_array(p_gdvar)
+        return godot_bindings_module.PoolStringArray.build_from_gdobj(p_raw, steal=True)
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY:
-        raw = lib.godot_variant_as_pool_vector2_array(p_gdvar)
-        return godot_bindings_module.PoolVector2Array.build_from_gdobj(raw)
+        p_raw = godot_pool_vector2_array_alloc(initialized=False)
+        p_raw[0] = lib.godot_variant_as_pool_vector2_array(p_gdvar)
+        return godot_bindings_module.PoolVector2Array.build_from_gdobj(p_raw, steal=True)
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY:
-        raw = lib.godot_variant_as_pool_vector3_array(p_gdvar)
-        return godot_bindings_module.PoolVector3Array.build_from_gdobj(raw)
+        p_raw = godot_pool_vector3_array_alloc(initialized=False)
+        p_raw[0] = lib.godot_variant_as_pool_vector3_array(p_gdvar)
+        return godot_bindings_module.PoolVector3Array.build_from_gdobj(p_raw, steal=True)
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_COLOR_ARRAY:
-        raw = lib.godot_variant_as_pool_color_array(p_gdvar)
-        return godot_bindings_module.PoolColorArray.build_from_gdobj(raw)
+        p_raw = godot_pool_color_array_alloc(initialized=False)
+        p_raw[0] = lib.godot_variant_as_pool_color_array(p_gdvar)
+        return godot_bindings_module.PoolColorArray.build_from_gdobj(p_raw, steal=True)
 
     else:
         raise TypeError(
@@ -208,7 +220,7 @@ def pyobj_to_variant(pyobj, p_gdvar=None, for_ffi_return=False):
         elif (isinstance(pyobj, float)):
             lib.godot_variant_new_real(p_gdvar, pyobj)
         elif (isinstance(pyobj, str)):
-            gdstr = godot_string_alloc()
+            gdstr = godot_string_alloc(initialized=False)
             lib.godot_string_new_with_wide_string(gdstr, pyobj, len(pyobj))
             lib.godot_variant_new_string(p_gdvar, gdstr)
         elif isinstance(pyobj, BaseBuiltin):
@@ -486,7 +498,7 @@ def pyobj_to_gdobj(pyobj, steal_gdobj=True):
         return godot_real_alloc(pyobj)
 
     elif isinstance(pyobj, str):
-        gdobj = godot_string_alloc()
+        gdobj = godot_string_alloc(initialized=False)
         lib.godot_string_new_with_wide_string(gdobj, pyobj, -1)
         return gdobj
 

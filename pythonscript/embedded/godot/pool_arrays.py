@@ -141,7 +141,7 @@ def _generate_pool_array(clsname, pycls, gdname, py_to_gd=None, gd_to_py=None):
     godot_x_new_copy = getattr(lib, "godot_%s_new_copy" % gdname)
 
     def _copy_gdobj(gdobj):
-        cpy_gdobj = godot_x_alloc()
+        cpy_gdobj = godot_x_alloc(initialized=False)
         godot_x_new_copy(cpy_gdobj, gdobj)
         return cpy_gdobj
 

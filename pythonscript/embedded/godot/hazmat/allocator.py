@@ -53,7 +53,7 @@ godot_string_alloc = alloc_with_destructor_factory(
 )
 godot_node_path_alloc = alloc_with_destructor_factory(
     "godot_node_path*",
-    lambda path=godot_string_alloc(): lib.godot_node_path_new,
+    lambda data, path=godot_string_alloc(): lib.godot_node_path_new(data, path),
     lib.godot_node_path_destroy,
 )
 godot_dictionary_alloc = alloc_with_destructor_factory(
