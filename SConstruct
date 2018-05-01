@@ -1,5 +1,7 @@
 from __future__ import print_function
-import os, shutil
+import re
+import os
+import shutil
 from datetime import datetime
 from functools import partial
 from SCons.Errors import UserError
@@ -119,6 +121,9 @@ if env["gdnative_include_dir"]:
 if env["gdnative_wrapper_lib"]:
     env["gdnative_wrapper_lib"] = File(env["gdnative_wrapper_lib"])
 
+env["build_name"] = '%s-%s' % (env['platform'], env["backend"])
+env["build_dir"] = Dir("#build/%s" % env["build_name"])
+
 
 ### Plaform-specific stuff ###
 
@@ -234,11 +239,15 @@ def extract_version():
 
 
 def generate_build_dir_hook(path):
-    shutil.copy(
-        "misc/single_build_pythonscript.gdnlib",
-        os.path.join(path, "pythonscript.gdnlib"),
-    )
+    with open("misc/single_build_pythonscript.gdnlib") as fd:
+        gdnlib = fd.read().replace(env['build_name'], '')
+        # Single platform vs multi-platform one have not the same layout
+        gdnlib = re.sub(r'(res://pythonscript/)(x11|windows|osx)-(64|32)-(cpython|pypy)/', r'\1', gdnlib)
+    with open(os.path.join(path, "pythonscript.gdnlib"), "w") as fd:
+        fd.write(gdnlib)
+
     shutil.copy("misc/release_LICENSE.txt", os.path.join(path, "LICENSE.txt"))
+
     with open("misc/release_README.txt") as fd:
         readme = fd.read().format(
             version=extract_version(), date=datetime.utcnow().strftime("%Y-%m-%d")
@@ -338,7 +347,7 @@ env.AlwaysBuild("example")
 def generate_release(target, source, env):
     base_name, format = target[0].abspath.rsplit(".", 1)
     shutil.make_archive(
-        base_name, format, base_dir="pythonscript", root_dir=source[0].abspath
+        base_name, format, root_dir=source[0].abspath
     )
 
 

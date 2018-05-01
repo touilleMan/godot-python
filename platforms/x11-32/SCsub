@@ -7,7 +7,6 @@ Import("env")
 
 
 env["bits"] = "32"
-env["build_dir"] = Dir("#build/x11-32-%s" % env["backend"])
 env.Append(CFLAGS="-m32")
 env.Append(LINKFLAGS="-m32")
 

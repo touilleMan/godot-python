@@ -7,6 +7,7 @@ multip-platform release.
 """
 
 import argparse
+import datetime
 import os
 import shutil
 from urllib.request import urlretrieve
@@ -21,7 +22,6 @@ DEFAULT_PLATFORMS_PER_BACKEND = {
     "cpython": ["osx-64", "windows-32", "windows-64", "x11-64"],
     "pypy": ["osx-64", "windows-32", "x11-64"],
 }
-DEFAULT_PLATFORMS = ["osx-64", "windows-32", "windows-64", "x11-64"]
 
 
 def fetch_build(src, version, target):
@@ -50,12 +50,6 @@ def extract_build(target, zipobj, dst):
     return zipobj
 
 
-def extract_bonuses(zipobj, dst):
-    zipobj.extract("README.txt", dst)
-    zipobj.extract("LICENSE.txt", dst)
-    return zipobj
-
-
 def pipeline_executor(target, version, src, dst):
 
     print("%s - fetch build..." % target)
@@ -76,14 +70,18 @@ def orchestrator(targets, version, src, dst, buildzip):
         if not future.cancelled():
             future.result()  # Raise exception if any
 
-    if extract_bonuses:
-        print("add bonuses...")
-        shutil.copy(
-            "%s/../misc/release_pythonscript.gdnlib" % BASEDIR,
-            "%s/pythonscript.gdnlib" % dst,
+    print("add bonuses...")
+    shutil.copy(
+        "%s/../misc/release_pythonscript.gdnlib" % BASEDIR,
+        "%s/pythonscript.gdnlib" % dst,
+    )
+    shutil.copy("%s/../misc/release_LICENSE.txt" % BASEDIR, "%s/LICENSE.txt" % dst)
+    with open("%s/../misc/release_README.txt" % BASEDIR) as fd:
+        readme = fd.read().format(
+            version=version, date=datetime.utcnow().strftime("%Y-%m-%d")
         )
-        shutil.copy("%s/../misc/release_LICENSE.txt" % BASEDIR, "%s/LICENSE.txt" % dst)
-        shutil.copy("%s/../misc/release_README.txt" % BASEDIR, "%s/README.txt" % dst)
+    with open("%s/README.txt" % dst, 'w') as fd:
+        fd.write(readme)
 
     if buildzip:
         print("zipping result...")
@@ -105,7 +103,7 @@ def main():
     try:
         shutil.os.mkdir(dst)
         shutil.os.mkdir("%s/pythonscript" % dst)
-    except:
+    except Exception:
         pass
     platforms = args.platforms or DEFAULT_PLATFORMS_PER_BACKEND[args.backend]
     targets = ["%s-%s" % (p, args.backend) for p in platforms]
