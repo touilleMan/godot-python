@@ -121,7 +121,7 @@ if env["gdnative_include_dir"]:
 if env["gdnative_wrapper_lib"]:
     env["gdnative_wrapper_lib"] = File(env["gdnative_wrapper_lib"])
 
-env["build_name"] = '%s-%s' % (env['platform'], env["backend"])
+env["build_name"] = "%s-%s" % (env["platform"], env["backend"])
 env["build_dir"] = Dir("#build/%s" % env["build_name"])
 
 
@@ -240,9 +240,13 @@ def extract_version():
 
 def generate_build_dir_hook(path):
     with open("misc/single_build_pythonscript.gdnlib") as fd:
-        gdnlib = fd.read().replace(env['build_name'], '')
+        gdnlib = fd.read().replace(env["build_name"], "")
         # Single platform vs multi-platform one have not the same layout
-        gdnlib = re.sub(r'(res://pythonscript/)(x11|windows|osx)-(64|32)-(cpython|pypy)/', r'\1', gdnlib)
+        gdnlib = re.sub(
+            r"(res://pythonscript/)(x11|windows|osx)-(64|32)-(cpython|pypy)/",
+            r"\1",
+            gdnlib,
+        )
     with open(os.path.join(path, "pythonscript.gdnlib"), "w") as fd:
         fd.write(gdnlib)
 
@@ -346,9 +350,7 @@ env.AlwaysBuild("example")
 
 def generate_release(target, source, env):
     base_name, format = target[0].abspath.rsplit(".", 1)
-    shutil.make_archive(
-        base_name, format, root_dir=source[0].abspath
-    )
+    shutil.make_archive(base_name, format, root_dir=source[0].abspath)
 
 
 release = env.Command(

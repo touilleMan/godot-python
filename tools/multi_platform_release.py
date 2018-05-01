@@ -80,7 +80,7 @@ def orchestrator(targets, version, src, dst, buildzip):
         readme = fd.read().format(
             version=version, date=datetime.utcnow().strftime("%Y-%m-%d")
         )
-    with open("%s/README.txt" % dst, 'w') as fd:
+    with open("%s/README.txt" % dst, "w") as fd:
         fd.write(readme)
 
     if buildzip:
