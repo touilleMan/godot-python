@@ -7,7 +7,7 @@ multip-platform release.
 """
 
 import argparse
-import datetime
+from datetime import datetime
 import os
 import shutil
 from urllib.request import urlretrieve

@@ -235,7 +235,7 @@ libpythonscript = env.SharedLibrary("pythonscript/pythonscript", sources)[0]
 def extract_version():
     with open("pythonscript/embedded/godot/__init__.py") as fd:
         versionline = next(l for l in fd.readlines() if l.startswith("__version__ = "))
-        return eval(versionline[14:])
+        return "v" + eval(versionline[14:])
 
 
 def generate_build_dir_hook(path):
