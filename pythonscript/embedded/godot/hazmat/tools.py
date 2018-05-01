@@ -178,12 +178,16 @@ def variant_to_pyobj(p_gdvar):
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY:
         p_raw = godot_pool_vector2_array_alloc(initialized=False)
         p_raw[0] = lib.godot_variant_as_pool_vector2_array(p_gdvar)
-        return godot_bindings_module.PoolVector2Array.build_from_gdobj(p_raw, steal=True)
+        return godot_bindings_module.PoolVector2Array.build_from_gdobj(
+            p_raw, steal=True
+        )
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY:
         p_raw = godot_pool_vector3_array_alloc(initialized=False)
         p_raw[0] = lib.godot_variant_as_pool_vector3_array(p_gdvar)
-        return godot_bindings_module.PoolVector3Array.build_from_gdobj(p_raw, steal=True)
+        return godot_bindings_module.PoolVector3Array.build_from_gdobj(
+            p_raw, steal=True
+        )
 
     elif gdtype == lib.GODOT_VARIANT_TYPE_POOL_COLOR_ARRAY:
         p_raw = godot_pool_color_array_alloc(initialized=False)

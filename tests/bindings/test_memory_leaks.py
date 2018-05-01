@@ -42,6 +42,7 @@ def test_base_dynamic_memory_leak_check():
 
 
 def test_base_builtin_memory_leak():
+
     def fn():
         v = bindings.Vector3()
         v.x = 42
@@ -51,21 +52,23 @@ def test_base_builtin_memory_leak():
 
 
 def test_dictionary_memory_leak():
+
     def fn():
         v = bindings.Dictionary()
-        v['foo'] = OS
-        v.update({'a': 1, 'b': 2.0, 'c': 'three'})
-        v['foo']
+        v["foo"] = OS
+        v.update({"a": 1, "b": 2.0, "c": "three"})
+        v["foo"]
         [x for x in v.items()]
-        del v['a']
+        del v["a"]
 
     check_memory_leak(fn)
 
 
 def test_array_memory_leak():
+
     def fn():
         v = bindings.Array()
-        v.append('x')
+        v.append("x")
         v += [1, 2, 3]
         v[0]
         [x for x in v]
@@ -74,6 +77,7 @@ def test_array_memory_leak():
 
 
 def test_pool_int_array_memory_leak():
+
     def fn():
         v = bindings.PoolIntArray()
         v.append(42)
@@ -84,6 +88,7 @@ def test_pool_int_array_memory_leak():
 
 
 def test_pool_string_array_memory_leak():
+
     def fn():
         v = bindings.PoolStringArray()
         v.append("fooo")
@@ -94,6 +99,7 @@ def test_pool_string_array_memory_leak():
 
 
 def test_object_memory_leak():
+
     def fn():
         v = bindings.Node()
         v.free()

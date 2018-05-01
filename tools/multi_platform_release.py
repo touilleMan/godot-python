@@ -33,7 +33,7 @@ def fetch_build(src, version, target):
             urlretrieve(
                 url,
                 filename=build_zipname,
-                reporthook=lambda *args: print(".", end="", flush=True)
+                reporthook=lambda *args: print(".", end="", flush=True),
             )
         return ZipFile(cache_file)
 

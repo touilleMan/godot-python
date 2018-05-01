@@ -90,7 +90,6 @@ class BaseTestPoolArray:
         arr4 = [values[0]] + list(pba)
         assert arr4 == values
 
-
     @pytest.mark.parametrize("arg", [None, 0, "foo", Vector2(), Node()])
     def test_bad_add(self, arg):
         with pytest.raises(TypeError):

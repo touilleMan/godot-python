@@ -6,7 +6,9 @@ from pythonscriptcffi import ffi, lib
 from godot.hazmat.base import BaseObject, get_exposed_class_per_module
 from godot.hazmat.gc_protector import connect_handle
 from godot.hazmat.tools import (
-    godot_string_to_pyobj, godot_string_from_pyobj, py_to_gd_type
+    godot_string_to_pyobj,
+    godot_string_from_pyobj,
+    py_to_gd_type,
 )
 from godot.bindings import Dictionary, Array
 

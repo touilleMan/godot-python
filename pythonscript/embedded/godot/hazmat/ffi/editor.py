@@ -1,7 +1,9 @@
 from pythonscriptcffi import ffi, lib
 
 from godot.hazmat.tools import (
-    godot_string_to_pyobj, godot_string_from_pyobj_for_ffi_return, variant_to_pyobj
+    godot_string_to_pyobj,
+    godot_string_from_pyobj_for_ffi_return,
+    variant_to_pyobj,
 )
 from godot.bindings import PoolStringArray
 import godot.globals

@@ -1,7 +1,16 @@
 import pytest
 
 from godot.bindings import (
-    Object, Node, Viewport, Input, LineEdit, Engine, _Engine, KEY_ESCAPE, OK, FAILED
+    Object,
+    Node,
+    Viewport,
+    Input,
+    LineEdit,
+    Engine,
+    _Engine,
+    KEY_ESCAPE,
+    OK,
+    FAILED,
 )
 
 
