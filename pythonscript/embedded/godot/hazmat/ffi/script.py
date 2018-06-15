@@ -12,12 +12,14 @@ from godot.hazmat.tools import (
 )
 from godot.bindings import Dictionary, Array
 
+
 # Set to True to show script loading progress; set by enable_pythonscript_verbose
 verbose = False
 
 
 def enable_pythonscript_verbose():
     """Enable verbose output from pythonscript startup"""
+    global verbose
     verbose = True
 
 
