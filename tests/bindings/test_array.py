@@ -17,7 +17,6 @@ from godot.bindings import (
 
 
 class TestArray:
-
     def test_base(self):
         v = Array()
         assert type(v) == Array

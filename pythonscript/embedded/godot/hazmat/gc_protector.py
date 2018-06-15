@@ -5,7 +5,6 @@ from pythonscriptcffi import ffi
 
 
 class ProtectFromGC:
-
     def __init__(self):
         self._data = {}
 

@@ -143,7 +143,9 @@ if env["backend"] == "cpython":
 else:  # pypy
     PYPY_SRC_NAME = "pypy3-v5.10.0-win32"
     PYPY_SRC_ARCHIVE = "%s.zip" % PYPY_SRC_NAME
-    PYPY_SRC_ARCHIVE_URL = "https://bitbucket.org/pypy/pypy/downloads/%s" % PYPY_SRC_ARCHIVE
+    PYPY_SRC_ARCHIVE_URL = (
+        "https://bitbucket.org/pypy/pypy/downloads/%s" % PYPY_SRC_ARCHIVE
+    )
 
     pypy_build = Dir(PYPY_SRC_NAME)
 

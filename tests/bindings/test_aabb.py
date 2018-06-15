@@ -4,7 +4,6 @@ from godot.bindings import AABB, Vector3, Plane
 
 
 class TestAABB:
-
     def test_base(self):
         v = AABB(Vector3(1, 2, 3), Vector3(4, 5, 6))
         assert type(v) == AABB
@@ -28,8 +27,10 @@ class TestAABB:
             [(Vector3(0, 1, 0), Vector3(0, 0, 1)), Vector3(0, 1, 0), Vector3(0, 0, 1)],
         ):
             v = AABB(*args)
-            assert v.position == expected_pos, (
-                msg_tmpl % (v.position, expected_pos, args)
+            assert v.position == expected_pos, msg_tmpl % (
+                v.position,
+                expected_pos,
+                args,
             )
             assert v.size == expected_size, msg_tmpl % (v.size, expected_size, args)
         with pytest.raises(TypeError):

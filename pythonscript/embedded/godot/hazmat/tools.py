@@ -217,13 +217,13 @@ def pyobj_to_variant(pyobj, p_gdvar=None, for_ffi_return=False):
     try:
         if pyobj is None:
             lib.godot_variant_new_nil(p_gdvar)
-        elif (isinstance(pyobj, bool)):
+        elif isinstance(pyobj, bool):
             lib.godot_variant_new_bool(p_gdvar, pyobj)
-        elif (isinstance(pyobj, int)):
+        elif isinstance(pyobj, int):
             lib.godot_variant_new_int(p_gdvar, pyobj)
-        elif (isinstance(pyobj, float)):
+        elif isinstance(pyobj, float):
             lib.godot_variant_new_real(p_gdvar, pyobj)
-        elif (isinstance(pyobj, str)):
+        elif isinstance(pyobj, str):
             gdstr = godot_string_alloc(initialized=False)
             lib.godot_string_new_with_wide_string(gdstr, pyobj, len(pyobj))
             lib.godot_variant_new_string(p_gdvar, gdstr)

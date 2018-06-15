@@ -14,7 +14,6 @@ __exposed_classes_per_module = {}
 
 
 class RPCMode:
-
     def __init__(self, mod, modname):
         self.mod = mod
         self.modname = modname
@@ -36,7 +35,6 @@ rpcsync = RPCMode(lib.GODOT_METHOD_RPC_MODE_SYNC, "sync")
 
 
 class SignalField:
-
     def __init__(self, name):
         self.name = name
 
@@ -48,7 +46,6 @@ class SignalField:
 
 
 class ExportedField:
-
     def __init__(
         self,
         type,
@@ -104,7 +101,6 @@ def signal(name=None):
 
 
 def exposed(cls=None, tool=False):
-
     def wrapper(cls):
         global __exposed_classes, __exposed_classes_per_module
         assert issubclass(cls, BaseObject), (

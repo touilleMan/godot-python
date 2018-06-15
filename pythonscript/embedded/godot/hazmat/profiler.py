@@ -53,7 +53,6 @@ class FuncCallProfile:
 
 
 class Profiler:
-
     def __init__(self):
         self.enabled = False
         self.per_meth_profiling = defaultdict(MethProfile)
@@ -90,7 +89,6 @@ class Profiler:
             meth_profile.cur_frame_total_time = 0
 
     def get_profilefunc(self):
-
         def profilefunc(frame, event, arg):
             # TODO: improve this hack to avoid profiling builtins functions
             if frame.f_code.co_filename.startswith("<"):

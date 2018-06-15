@@ -4,7 +4,6 @@ from godot.bindings import Basis, Vector3, Quat
 
 
 class TestBasis:
-
     def test_default(self):
         basis = Basis()
         assert basis.x == Vector3(1, 0, 0)

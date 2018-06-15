@@ -4,7 +4,6 @@ from pythonscriptcffi import ffi, lib
 
 
 def alloc_with_destructor_factory(type, constructor, destructor):
-
     def free(data):
         destructor(data)
         lib.free(data)

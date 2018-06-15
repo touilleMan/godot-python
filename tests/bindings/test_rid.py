@@ -4,7 +4,6 @@ from godot.bindings import RID, Environment, Node
 
 
 class TestRID:
-
     def test_base(self):
         v = RID()
         assert type(v) == RID

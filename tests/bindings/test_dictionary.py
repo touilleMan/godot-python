@@ -5,7 +5,6 @@ from godot.bindings import Dictionary, Node, Resource, Area2D, Vector2, Array
 
 
 class TestDictionary:
-
     def test_base(self):
         v = Dictionary()
         assert type(v) == Dictionary

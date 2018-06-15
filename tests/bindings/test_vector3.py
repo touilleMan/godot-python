@@ -4,7 +4,6 @@ from godot.bindings import Vector3
 
 
 class TestVector3:
-
     def test_base(self):
         v = Vector3()
         assert isinstance(v, Vector3)

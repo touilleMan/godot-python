@@ -4,7 +4,6 @@ from godot.bindings import Color, Vector2, Node
 
 
 class TestColor:
-
     def test_base(self):
         v = Color()
         assert type(v) == Color

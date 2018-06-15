@@ -32,7 +32,8 @@ class %s(%s):
         \"\"\"
         pass
 """ % (
-        class_name, base_class_name
+        class_name,
+        base_class_name,
     )
     return godot_string_from_pyobj_for_ffi_return(src)[0]
 

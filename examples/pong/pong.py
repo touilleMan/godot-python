@@ -1,4 +1,4 @@
-from godot import exposed, signal
+from godot import exposed, signal, export
 from godot.bindings import Node2D
 
 
@@ -7,7 +7,8 @@ SCORE_TO_WIN = 10
 
 @exposed
 class Pong(Node2D):
-
+    a = export(int)
+    b = export(str, default='foo')
     game_finished = signal()
 
     def _ready(self):

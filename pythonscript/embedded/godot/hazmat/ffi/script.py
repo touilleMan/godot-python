@@ -24,7 +24,6 @@ def enable_pythonscript_verbose():
 
 
 def _build_script_manifest(cls):
-
     def _build_signal_info(signal):
         methinfo = Dictionary()
         methinfo["name"] = signal.name
@@ -113,9 +112,11 @@ def pybind_script_init(handle, path, source, r_error):
     path = godot_string_to_pyobj(path)
     if verbose:
         print("Loading python script from %s" % path)
-    if (
-        not path.startswith("res://")
-        or not path.rsplit(".", 1)[-1] in ("py", "pyc", "pyo", "pyd")
+    if not path.startswith("res://") or not path.rsplit(".", 1)[-1] in (
+        "py",
+        "pyc",
+        "pyo",
+        "pyd",
     ):
         print(
             "Bad python script path `%s`, must starts by `res://` and ends with `.py/pyc/pyo/pyd`"

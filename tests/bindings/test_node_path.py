@@ -4,7 +4,6 @@ from godot.bindings import NodePath, Vector3
 
 
 class TestNodePath:
-
     def test_equal(self):
         v1 = NodePath("parent/child")
         v2 = NodePath("parent/child")

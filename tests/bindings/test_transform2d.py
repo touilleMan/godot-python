@@ -4,7 +4,6 @@ from godot.bindings import Transform2D, Vector2, Rect2
 
 
 class TestTransform2D:
-
     def test_base(self):
         v = Transform2D()
         assert type(v) == Transform2D

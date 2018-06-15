@@ -12,7 +12,6 @@ root_node = None
 
 @exposed
 class PyMain(Node):
-
     def run_tests(self):
         global root_node
         root_node = self
@@ -22,6 +21,6 @@ class PyMain(Node):
         pytest_args = [x for x in os.listdir() if x.startswith("test_")]
         for arg in OS.get_cmdline_args():
             if arg.startswith(prefix):
-                pytest_args += arg[len(prefix):].split(",")
+                pytest_args += arg[len(prefix) :].split(",")
         # Run tests here
         return pytest.main(pytest_args)

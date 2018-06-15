@@ -11,7 +11,6 @@ from godot.hazmat.tools import godot_string_from_pyobj
 
 
 class GodotIO(RawIOBase):
-
     def __init__(self, godot_func):
         self.buffer = ""
         self.godot_func = godot_func
@@ -69,7 +68,6 @@ def disable_capture_io_streams():
 
 
 class GodotIOStreamCaptureSwitchPdb(pdb.Pdb):
-
     def __init__(self):
         super().__init__()
         disable_capture_io_streams()

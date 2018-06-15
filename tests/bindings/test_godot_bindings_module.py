@@ -4,7 +4,6 @@ from godot import bindings
 
 
 class TestGodotBindingsModule:
-
     def test_expose_contains_constant(self):
         assert "OK" in dir(bindings)
         assert "OK" in bindings.__all__
@@ -22,7 +21,6 @@ class TestGodotBindingsModule:
 
 
 class TestGodotBindingsModuleMethodCalls:
-
     def test_call_one_arg_short(self):
         node = bindings.Node()
 

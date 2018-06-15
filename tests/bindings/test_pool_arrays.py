@@ -21,7 +21,6 @@ from godot.bindings import (
 
 
 class BaseTestPoolArray:
-
     def _expand_arg(self, arg):
         return arg(self) if isfunction(arg) else arg
 
@@ -211,13 +210,14 @@ class BaseTestPoolArray:
 
 
 class TestPoolByteArray(BaseTestPoolArray):
-
     def setup(self):
         self.acls = PoolByteArray
         random.seed(0)  # Fix seed for reproducibility
-        self.vg = lambda c=None: random.randint(0, 255) if c is None else [
-            random.randint(0, 255) for x in range(c)
-        ]
+        self.vg = (
+            lambda c=None: random.randint(0, 255)
+            if c is None
+            else [random.randint(0, 255) for x in range(c)]
+        )
 
     def test_byte_overflow(self):
         with pytest.raises(ValueError):
@@ -252,69 +252,73 @@ class TestPoolByteArray(BaseTestPoolArray):
 
 
 class TestPoolIntArray(BaseTestPoolArray):
-
     def setup(self):
         self.acls = PoolIntArray
         random.seed(0)  # Fix seed for reproducibility
-        self.vg = lambda c=None: random.randint(
-            -2 ** 31, 2 ** 31 - 1
-        ) if c is None else [
-            random.randint(-2 ** 31, 2 ** 31 - 1) for x in range(c)
-        ]
+        self.vg = (
+            lambda c=None: random.randint(-2 ** 31, 2 ** 31 - 1)
+            if c is None
+            else [random.randint(-2 ** 31, 2 ** 31 - 1) for x in range(c)]
+        )
 
 
 class TestPoolRealArray(BaseTestPoolArray):
-
     def setup(self):
         self.acls = PoolRealArray
         random.seed(0)  # Fix seed for reproducibility
         # Use integer instead of float to avoid floating point imprecision in comparisons
-        self.vg = lambda c=None: float(random.randint(0, 100)) if c is None else [
-            float(random.randint(0, 100)) for x in range(c)
-        ]
+        self.vg = (
+            lambda c=None: float(random.randint(0, 100))
+            if c is None
+            else [float(random.randint(0, 100)) for x in range(c)]
+        )
 
 
 class TestPoolColorArray(BaseTestPoolArray):
-
     def setup(self):
         self.acls = PoolColorArray
         random.seed(0)  # Fix seed for reproducibility
         # Use integer instead of float to avoid floating point imprecision in comparisons
-        self.vg = lambda c=None: Color(random.randint(0, 100)) if c is None else [
-            Color(random.randint(0, 100)) for x in range(c)
-        ]
+        self.vg = (
+            lambda c=None: Color(random.randint(0, 100))
+            if c is None
+            else [Color(random.randint(0, 100)) for x in range(c)]
+        )
 
 
 class TestPoolStringArray(BaseTestPoolArray):
-
     def setup(self):
         self.acls = PoolStringArray
         random.seed(0)  # Fix seed for reproducibility
-        self.vg = lambda c=None: str(random.random()) if c is None else [
-            str(random.random()) for x in range(c)
-        ]
+        self.vg = (
+            lambda c=None: str(random.random())
+            if c is None
+            else [str(random.random()) for x in range(c)]
+        )
 
 
 class TestPoolVector2Array(BaseTestPoolArray):
-
     def setup(self):
         self.acls = PoolVector2Array
         random.seed(0)  # Fix seed for reproducibility
         # Use integer instead of float to avoid floating point imprecision in comparisons
-        self.vg = lambda c=None: Vector2(random.randint(0, 100)) if c is None else [
-            Vector2(random.randint(0, 100)) for x in range(c)
-        ]
+        self.vg = (
+            lambda c=None: Vector2(random.randint(0, 100))
+            if c is None
+            else [Vector2(random.randint(0, 100)) for x in range(c)]
+        )
 
 
 class TestPoolVector3Array(BaseTestPoolArray):
-
     def setup(self):
         self.acls = PoolVector3Array
         random.seed(0)  # Fix seed for reproducibility
         # Use integer instead of float to avoid floating point imprecision in comparisons
-        self.vg = lambda c=None: Vector3(random.randint(0, 100)) if c is None else [
-            Vector3(random.randint(0, 100)) for x in range(c)
-        ]
+        self.vg = (
+            lambda c=None: Vector3(random.randint(0, 100))
+            if c is None
+            else [Vector3(random.randint(0, 100)) for x in range(c)]
+        )
 
 
 # Extra tests
@@ -322,7 +326,6 @@ class TestPoolVector3Array(BaseTestPoolArray):
 
 @pytest.mark.xfail
 class TestPoolVector3ArraySize:
-
     def test_size(self):
         a = PoolVector3Array()
         a.resize(1000)
@@ -351,7 +354,6 @@ class TestPoolVector3ArraySize:
 
 
 class TestPoolArrayRawAccess:
-
     def test_raw_access(self):
         arr = PoolIntArray()
         arr.resize(30)

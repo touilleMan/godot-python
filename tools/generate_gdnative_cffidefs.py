@@ -16,7 +16,6 @@ BASEDIR = path.dirname(path.abspath(__file__))
 
 
 class CookComplexEnumsVisitor(c_ast.NodeVisitor):
-
     def visit_Enum(self, node):
         if not node.values:
             return

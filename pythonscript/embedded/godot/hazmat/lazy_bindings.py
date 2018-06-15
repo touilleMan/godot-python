@@ -45,7 +45,6 @@ from godot.pool_arrays import (
 
 
 class GlobalConstants:
-
     @classmethod
     def get_global_constants(cls):
         raw_consts = lib.godot_get_global_constants()
@@ -107,7 +106,6 @@ class ClassDB:
 
     @classmethod
     def get_class_constructor(cls, classname):
-
         def constructor(self):
             gd_classname = godot_string_from_pyobj(classname)
             # TODO: alloc this on the stack (using _malloca ?)
@@ -271,8 +269,10 @@ def build_method(classname, meth):
         def bind(self, *args):
             # TODO: allow **kwargs
             # check number of args
-            n_args, nm_args, nmd_args = len(args), len(meth["args"]), len(
-                meth["default_args"]
+            n_args, nm_args, nmd_args = (
+                len(args),
+                len(meth["args"]),
+                len(meth["default_args"]),
             )
             nr_args = nm_args - nmd_args  # number of required arguments
             if n_args < nr_args:  # not enough args, raise error
@@ -288,10 +288,9 @@ def build_method(classname, meth):
                         % (methname, nr_args - n_args)
                         + ", ".join(
                             "'%s'" % (arg["name"])
-                            for arg in meth["args"][n_args:nr_args - 1]
+                            for arg in meth["args"][n_args : nr_args - 1]
                         )
-                        + " and '%s'"
-                        % (meth["args"][nr_args - 1]["name"])
+                        + " and '%s'" % (meth["args"][nr_args - 1]["name"])
                     )
 
             if n_args > nm_args:  # too many args, raise error
@@ -408,7 +407,12 @@ def get_builtins():
 
 
 GODOT_SPECIAL_CLASSES_SINGLETONS = (
-    "ResourceLoader", "ResourceSaver", "OS", "Geometry", "ClassDB", "Engine"
+    "ResourceLoader",
+    "ResourceSaver",
+    "OS",
+    "Geometry",
+    "ClassDB",
+    "Engine",
 )
 GODOT_REGULAR_CLASSES_SINGLETONS = (
     "AudioServer",

@@ -4,7 +4,6 @@ from godot.bindings import Transform, Basis, Vector3
 
 
 class TestTransform3D:
-
     def test_base(self):
         v = Transform()
         assert type(v) == Transform

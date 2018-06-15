@@ -23,7 +23,11 @@ class Color(BaseBuiltin):
         # gdstr = lib.godot_color_as_string(self._gd_ptr)
         # color = ffi.string(lib.godot_string_wide_str(ffi.addressof(gdstr)))
         return "<%s(r=%s, g=%s, b=%s, a=%s)>" % (
-            type(self).__name__, self.r, self.g, self.b, self.a
+            type(self).__name__,
+            self.r,
+            self.g,
+            self.b,
+            self.a,
         )
 
     def __eq__(self, other):

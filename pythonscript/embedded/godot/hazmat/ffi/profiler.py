@@ -30,9 +30,7 @@ def pybind_profiling_get_accumulated_data(handle, info, info_max):
     # Sort function to make sure we can display the most consuming ones
     sorted_and_limited = sorted(
         profiler.per_meth_profiling.items(), key=lambda x: -x[1].self_time
-    )[
-        :info_max
-    ]
+    )[:info_max]
     for signature, profile in sorted_and_limited:
         info[signature] = Dictionary(
             call_count=profile.call_count,
@@ -48,9 +46,7 @@ def pybind_profiling_get_frame_data(handle, info, info_max):
     # Sort function to make sure we can display the most consuming ones
     sorted_and_limited = sorted(
         profiler.per_meth_profiling.items(), key=lambda x: -x[1].last_frame_self_time
-    )[
-        :info_max
-    ]
+    )[:info_max]
     for i, item in enumerate(sorted_and_limited):
         signature, profile = item
         # TODO: should be able to use lib.godot_string_new_with_wide_string directly

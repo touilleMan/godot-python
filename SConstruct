@@ -156,7 +156,6 @@ venv_dir = Dir("tools/venv")
 
 
 def _create_env_python_command(env, init_venv):
-
     def _python_command(targets, sources, command, pre_init=None):
         commands = [pre_init, init_venv, command]
         return env.Command(targets, sources, " && ".join([x for x in commands if x]))
@@ -365,7 +364,7 @@ env.AlwaysBuild("release")
 ### Auto-format codebase ###
 
 
-black_cmd = "pip install -U black && black pythonscript tools/*.py tests/*/*.py SConstruct platforms/*/SCsub"
+black_cmd = "pip install black==18.6b2 && black pythonscript tools/*.py tests/*/*.py SConstruct platforms/*/SCsub"
 autoformat = env.PythonCommand("autoformat", [venv_dir], black_cmd)
 env.Alias("black", autoformat)
 env.PythonCommand("checkstyle", [venv_dir], black_cmd + " --check")

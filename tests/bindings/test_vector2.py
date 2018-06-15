@@ -4,7 +4,6 @@ from godot.bindings import Vector2
 
 
 class TestVector2:
-
     def test_base(self):
         v = Vector2()
         assert type(v) == Vector2
@@ -21,7 +20,10 @@ class TestVector2:
         # Can build it with int or float or nothing
         msg_tmpl = "%s vs (expected) %s (args=%s)"
         for args, expected_x, expected_y in (
-            [(), 0, 0], [(0.5, 0.5), 0.5, 0.5], [(1, 2), 1, 2], [(1,), 1, 0]
+            [(), 0, 0],
+            [(0.5, 0.5), 0.5, 0.5],
+            [(1, 2), 1, 2],
+            [(1,), 1, 0],
         ):
             v = Vector2(*args)
             assert v.x == expected_x, msg_tmpl % (v.x, expected_x, args)

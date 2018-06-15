@@ -29,7 +29,9 @@ class AABB(BaseBuiltin):
 
     def __repr__(self):
         return "<%s(position=%s, size=%s)>" % (
-            type(self).__name__, self.position, self.size
+            type(self).__name__,
+            self.position,
+            self.size,
         )
 
     # Properties

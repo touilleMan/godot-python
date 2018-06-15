@@ -4,7 +4,6 @@ from godot.bindings import Plane, Vector3, Plane
 
 
 class TestPlane:
-
     def test_base(self):
         v = Plane(Vector3(1, 2, 3), 0.5)
         assert type(v) == Plane
@@ -21,7 +20,8 @@ class TestPlane:
         # Can build it with int or float or nothing
         msg_tmpl = "%s vs (expected) %s"
         for expected_normal, expected_d in (
-            [Vector3(0, 0, 0), 0], [Vector3(1, 2, 3), 1]
+            [Vector3(0, 0, 0), 0],
+            [Vector3(1, 2, 3), 1],
         ):
             v = Plane(expected_normal, expected_d)
             assert v.normal == expected_normal, msg_tmpl % (v.normal, expected_normal)
@@ -35,11 +35,14 @@ class TestPlane:
         # Can build it with int or float or nothing
         msg_tmpl = "%s vs (expected) %s (args=%s)"
         for args, expected_normal, expected_d in (
-            [(), Vector3(0, 0, 0), 0], [(1, 2, 3, 4), Vector3(1, 2, 3), 4]
+            [(), Vector3(0, 0, 0), 0],
+            [(1, 2, 3, 4), Vector3(1, 2, 3), 4],
         ):
             v = Plane.build_from_reals(*args)
-            assert v.normal == expected_normal, (
-                msg_tmpl % (v.normal, expected_normal, args)
+            assert v.normal == expected_normal, msg_tmpl % (
+                v.normal,
+                expected_normal,
+                args,
             )
             assert v.d == expected_d, msg_tmpl % (v.d, expected_d, args)
         with pytest.raises(TypeError):
@@ -68,8 +71,10 @@ class TestPlane:
                 pytest.approx(v.normal.y),
                 pytest.approx(v.normal.z),
             )
-            assert normal == expected_normal, (
-                msg_tmpl % (v.normal, expected_normal, args)
+            assert normal == expected_normal, msg_tmpl % (
+                v.normal,
+                expected_normal,
+                args,
             )
             assert v.d == expected_d, msg_tmpl % (v.d, expected_d, args)
         with pytest.raises(TypeError):

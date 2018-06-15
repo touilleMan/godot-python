@@ -77,7 +77,11 @@ class Quat(BaseBuiltin):
 
     def __repr__(self):
         return "<%s(x=%s, y=%s, z=%s, w=%s)>" % (
-            type(self).__name__, self.x, self.y, self.z, self.w
+            type(self).__name__,
+            self.x,
+            self.y,
+            self.z,
+            self.w,
         )
 
     @property

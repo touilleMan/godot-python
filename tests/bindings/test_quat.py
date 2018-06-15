@@ -4,7 +4,6 @@ from godot.bindings import Quat, Vector3
 
 
 class TestQuat:
-
     def test_base(self):
         v = Quat()
         assert type(v) == Quat

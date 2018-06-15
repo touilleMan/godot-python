@@ -1,48 +1,46 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://pong.py" type="Script" id=1]
 [ext_resource path="res://separator.png" type="Texture" id=2]
 [ext_resource path="res://paddle.tscn" type="PackedScene" id=3]
-[ext_resource path="res://ball.tscn" type="PackedScene" id=4]
+[ext_resource path="res://paddle.gd" type="Script" id=4]
+[ext_resource path="res://ball.tscn" type="PackedScene" id=5]
 
 [node name="pong" type="Node2D" index="0"]
-
 script = ExtResource( 1 )
+b = "foo"
+a = null
 
 [node name="separator" type="Sprite" parent="." index="0"]
-
 position = Vector2( 512.309, 298.233 )
 scale = Vector2( 1.04883, 1.4884 )
 texture = ExtResource( 2 )
 
 [node name="player1" parent="." index="1" instance=ExtResource( 3 )]
-
 position = Vector2( 19.9447, 267.036 )
 audio_bus_override = false
 audio_bus_name = "Master"
+script = ExtResource( 4 )
 
 [node name="sprite" parent="player1" index="0"]
-
 modulate = Color( 1, 0, 0.960938, 1 )
 
 [node name="player2" parent="." index="2" instance=ExtResource( 3 )]
-
 position = Vector2( 995.015, 244.876 )
 audio_bus_override = false
 audio_bus_name = "Master"
+left = true
+action_prefix = ""
 
 [node name="sprite" parent="player2" index="0"]
-
 modulate = Color( 0, 0.929688, 1, 1 )
 
-[node name="ball" parent="." index="3" instance=ExtResource( 4 )]
-
+[node name="ball" parent="." index="3" instance=ExtResource( 5 )]
 position = Vector2( 513.02, 248.2 )
 audio_bus_override = false
 audio_bus_name = "Master"
 
 [node name="score_left" type="Label" parent="." index="4"]
-
 anchor_left = 0.0
 anchor_top = 0.0
 anchor_right = 0.0
@@ -52,6 +50,7 @@ margin_top = 57.0
 margin_right = 104.0
 margin_bottom = 71.0
 rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
 mouse_filter = 2
 mouse_default_cursor_shape = 0
 size_flags_horizontal = 1
@@ -63,7 +62,6 @@ lines_skipped = 0
 max_lines_visible = -1
 
 [node name="score_right" type="Label" parent="." index="5"]
-
 anchor_left = 0.0
 anchor_top = 0.0
 anchor_right = 0.0
@@ -73,6 +71,7 @@ margin_top = 62.0
 margin_right = 915.0
 margin_bottom = 76.0
 rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
 mouse_filter = 2
 mouse_default_cursor_shape = 0
 size_flags_horizontal = 1
@@ -84,7 +83,6 @@ lines_skipped = 0
 max_lines_visible = -1
 
 [node name="winner_left" type="Label" parent="." index="6"]
-
 visible = false
 anchor_left = 0.0
 anchor_top = 0.0
@@ -95,6 +93,7 @@ margin_top = 33.0
 margin_right = 137.0
 margin_bottom = 47.0
 rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
 mouse_filter = 2
 mouse_default_cursor_shape = 0
 size_flags_horizontal = 1
@@ -105,7 +104,6 @@ lines_skipped = 0
 max_lines_visible = -1
 
 [node name="winner_right" type="Label" parent="." index="7"]
-
 visible = false
 anchor_left = 0.0
 anchor_top = 0.0
@@ -116,6 +114,7 @@ margin_top = 41.0
 margin_right = 949.0
 margin_bottom = 55.0
 rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
 mouse_filter = 2
 mouse_default_cursor_shape = 0
 size_flags_horizontal = 1
@@ -127,4 +126,5 @@ max_lines_visible = -1
 
 
 [editable path="player1"]
+
 [editable path="player2"]

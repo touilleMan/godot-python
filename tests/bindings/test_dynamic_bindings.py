@@ -15,7 +15,6 @@ from godot.bindings import (
 
 
 class TestDynamicBindings:
-
     def test_singletons(self):
         assert isinstance(Engine, _Engine)
         assert callable(Engine.get_main_loop)
