@@ -1,5 +1,3 @@
-import imp
-import sys
 import builtins
 
 from pythonscriptcffi import lib, ffi
