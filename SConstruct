@@ -206,7 +206,6 @@ python_embedded_srcs = env.Glob("pythonscript/embedded/*.inc.py")
     command=(
         "python ./pythonscript/generate_cffi_bindings.py "
         "--cdef=${SOURCES[1]} --output=${TARGET}"
-        + (" --dev-dyn" if env["dev_dyn"] else "")
     ),
 )
 
