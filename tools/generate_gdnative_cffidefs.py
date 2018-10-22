@@ -56,6 +56,10 @@ def _generate_cdef(gdnative_include, bits, cpp):
     first_line = next(
         i for i, line in enumerate(splitted_src) if "godot" in line.lower()
     )
+    for line in splitted_src[:first_line:-1]:
+        first_line -= 1
+        if re.match(r"[;/}]+", line):
+            break
     src = splitted_src[first_line:]
     # CFFI cannot parse sizeof, so we have to processe it here
     wordsize = str(8 if bits == "64" else 4)
