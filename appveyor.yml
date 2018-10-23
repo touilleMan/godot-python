@@ -30,6 +30,8 @@ matrix:
 install:
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   # - set "PATH=C:\\mingw-w64\\x86_64-6.3.0-posix-seh-rt_v5-rev1\\mingw64\\bin;%PATH%"
+  - pip install setuptools
+  - pip install wheel
   - pip install scons
   - if defined VS call "%VS%" %ARCH%  # if defined - so we can also use mingw
 
