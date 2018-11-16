@@ -62,11 +62,11 @@ if env["backend"] == "cpython":
         cpython_build,
         cpython_src,
         "cd ${SOURCE} && " + "echo Configuring CPython... && "
-        "./configure --build=x86_64-pc-linux-gnu --host=i686-pc-linux-gnu --enable-shared --prefix=${TARGET.get_abspath()} && "
+        "./configure --build=x86_64-linux-gnu --host=i686-linux-gnu --enable-shared --disable-ipv6 --with-zlib --with-ssl --without-ensurepip ac_cv_file__dev_ptmx=no ac_cv_file__dev_ptc=no --prefix=${TARGET.get_abspath()} && "
         + "echo Building CPython... && "
         "make -j4 && " + "echo Installing CPython in ${TARGET.get_abspath()}... && "
         "make install && "
-        + "LD_LIBRARY_PATH=${TARGET.get_abspath()}/lib ${TARGET.get_abspath()}/bin/pip3 install cffi",
+        + "export LD_LIBRARY_PATH=${TARGET.get_abspath()}/lib:LD_LIBRARY_PATH && curl -s https://bootstrap.pypa.io/get-pip.py | ${TARGET.get_abspath()}/bin/python3 && ${TARGET.get_abspath()}/bin/pip3 install cffi",
     )
     env.NoClean(cpython_build)
 
