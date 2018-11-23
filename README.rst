@@ -76,11 +76,11 @@ With MacOS, you will need XCode installed and install the command line tools.
 
 	$ xcode-select --install
 
-If you are using CPython as your backend, you will need openssl. To install with Homebrew:
+If you are using CPython as your backend, you will need these. To install with Homebrew:
 
 .. code-block:: bash
 
-	$ brew install openssl
+	$ brew install python3 scons openssl zlib
 
 You will also need virtualenv for your python.
 
