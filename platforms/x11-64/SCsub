@@ -138,7 +138,7 @@ if env["backend"] == "cpython":
 
 else:  # pypy
 
-    PYPY_SRC_NAME = "pypy3-v5.10.0-linux64"
+    PYPY_SRC_NAME = "pypy3-v6.0.0-linux64"
     PYPY_SRC_ARCHIVE = "%s.tar.bz2" % PYPY_SRC_NAME
     PYPY_SRC_ARCHIVE_URL = (
         "https://bitbucket.org/pypy/pypy/downloads/%s" % PYPY_SRC_ARCHIVE
