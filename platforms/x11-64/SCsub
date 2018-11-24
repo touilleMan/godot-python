@@ -51,7 +51,7 @@ if env["backend"] == "cpython":
     env.Command(
         cpython_src,
         None,
-        "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.6.3 --single-branch ${TARGET}",
+        "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.7.1 --single-branch ${TARGET}",
     )
     env.NoClean(cpython_src)
 
@@ -62,7 +62,7 @@ if env["backend"] == "cpython":
         cpython_build,
         cpython_src,
         "cd ${SOURCE} && " + "echo Configuring CPython... && "
-        "1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} && "
+        "1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} --with-openssl=/usr && "
         + "echo Building CPython... && "
         "1>/dev/null make -j4 && "
         + "echo Installing CPython in ${TARGET.get_abspath()}... && "
@@ -105,25 +105,25 @@ if env["backend"] == "cpython":
 
         shutil.copytree(c("lib"), p("lib"))
         if env["compressed_stdlib"]:
-            shutil.move(p("lib/python3.6"), p("lib/tmp_python3.6"))
-            os.mkdir(p("lib/python3.6"))
+            shutil.move(p("lib/python3.7"), p("lib/tmp_python3.7"))
+            os.mkdir(p("lib/python3.7"))
             shutil.move(
-                p("lib/tmp_python3.6/lib-dynload"), p("lib/python3.6/lib-dynload")
+                p("lib/tmp_python3.7/lib-dynload"), p("lib/python3.7/lib-dynload")
             )
             shutil.move(
-                p("lib/tmp_python3.6/site-packages"), p("lib/python3.6/site-packages")
+                p("lib/tmp_python3.7/site-packages"), p("lib/python3.7/site-packages")
             )
             shutil.make_archive(
-                base_name=p("lib/python36"),
+                base_name=p("lib/python37"),
                 format="zip",
-                root_dir=p("lib/tmp_python3.6"),
+                root_dir=p("lib/tmp_python3.7"),
             )
-            shutil.rmtree(p("lib/tmp_python3.6"))
+            shutil.rmtree(p("lib/tmp_python3.7"))
 
         if env["dev_dyn"]:
-            os.symlink(godot_embedded.abspath, p("lib/python3.6/site-packages/godot"))
+            os.symlink(godot_embedded.abspath, p("lib/python3.7/site-packages/godot"))
         else:
-            shutil.copytree(godot_embedded.path, p("lib/python3.6/site-packages/godot"))
+            shutil.copytree(godot_embedded.path, p("lib/python3.7/site-packages/godot"))
 
         if "generate_build_dir_hook" in env:
             env["generate_build_dir_hook"](target.abspath)
@@ -131,9 +131,9 @@ if env["backend"] == "cpython":
     env["generate_build_dir"] = generate_build_dir
     env["backend_dir"] = cpython_build
     env.Append(CFLAGS="-DBACKEND_CPYTHON")
-    env.Append(CFLAGS="-I %s/include/python3.6m/" % cpython_build.path)
+    env.Append(CFLAGS="-I %s/include/python3.7m/" % cpython_build.path)
     env.Append(LIBPATH="%s/lib" % cpython_build.path)
-    env.Append(LIBS=["python3.6m"])
+    env.Append(LIBS=["python3.7m"])
     env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
 
 else:  # pypy
