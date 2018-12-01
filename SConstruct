@@ -184,7 +184,7 @@ cdef_gen = env.PythonCommand(
     targets="pythonscript/cdef.gen.h",
     sources=(venv_dir, "$gdnative_include_dir"),
     command=(
-        "python ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} "
+        "${PYTHON} ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} "
         '--output=${TARGET} --bits=${bits} --cpp="${gdnative_parse_cpp}"'
     ),
 )
@@ -204,7 +204,7 @@ python_embedded_srcs = env.Glob("pythonscript/embedded/*.inc.py")
     targets="pythonscript/cffi_bindings.gen.c",
     sources=[venv_dir] + cdef_gen + python_embedded_srcs,
     command=(
-        "python ./pythonscript/generate_cffi_bindings.py "
+        "${PYTHON} ./pythonscript/generate_cffi_bindings.py "
         "--cdef=${SOURCES[1]} --output=${TARGET}"
     ),
 )
