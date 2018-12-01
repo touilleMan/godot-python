@@ -56,7 +56,7 @@ if env["backend"] == "cpython":
     env.Command(
         cpython_build,
         None,
-        "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.7.1 --single-branch platforms\\windows-64\\cpython && "
+        "git clone https://github.com/python/cpython.git --depth=1 --branch=v${CPYTHON_VERSION} --single-branch platforms\\windows-64\\cpython && "
         + "${TARGET}\\..\\get_externals.bat --python=python && "
         + "${TARGET}\\..\\build.bat -p x64",
     )
