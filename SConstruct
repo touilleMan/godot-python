@@ -79,6 +79,14 @@ vars.Add(
     )
 )
 vars.Add(
+    EnumVariable(
+        "CPYTHON_VERSION",
+        "CPython version to use for the backend",
+        "3.7.1",
+        allowed_values=("3.5.6", "3.6.7", "3.7.1"),
+    )
+)
+vars.Add(
     "gdnative_parse_cpp", "Preprocessor to use for parsing GDnative includes", "cpp"
 )
 vars.Add(
