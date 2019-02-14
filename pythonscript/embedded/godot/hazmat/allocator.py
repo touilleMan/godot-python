@@ -28,8 +28,8 @@ def alloc_with_destructor_factory(type, constructor, destructor):
 
 # Simplest types
 godot_bool_alloc = partial(ffi.new, "godot_bool*")
-godot_int_alloc = partial(ffi.new, "godot_int*")
-godot_real_alloc = partial(ffi.new, "godot_real*")
+godot_int_alloc = partial(ffi.new, "long long*")
+godot_real_alloc = partial(ffi.new, "double*")
 godot_object_alloc = partial(ffi.new, "godot_object**")
 # Allocation of struct with no destructor
 godot_vector3_alloc = partial(ffi.new, "godot_vector3*")
