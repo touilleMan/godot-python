@@ -86,7 +86,7 @@ class TestVector2:
         assert hasattr(v, field)
         field_val = getattr(v, field)
         assert type(field_val) == ret_type
-        for val in (0, 10, 10., 42.5):
+        for val in (0, 10, 10.0, 42.5):
             setattr(v, field, val)
             field_val = getattr(v, field)
             assert field_val == val
@@ -193,7 +193,7 @@ class TestVector2:
         "args",
         [
             (1, Vector2(2, 3)),
-            (.5, Vector2(4, 6)),
+            (0.5, Vector2(4, 6)),
             (2, Vector2(1, 1.5)),
             (Vector2(1, 1), Vector2(2, 3)),
             (Vector2(2, 3), Vector2(1, 1)),

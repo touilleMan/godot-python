@@ -110,7 +110,7 @@ class TestColor:
         field_val = getattr(v, field)
         assert type(field_val) == ret_type
         if ret_type is float:
-            vals = (0, 10, 10., 42.5)
+            vals = (0, 10, 10.0, 42.5)
         else:
             vals = (0, 10, 0xFF)
         for val in vals:

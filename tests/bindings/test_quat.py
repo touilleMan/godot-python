@@ -86,7 +86,7 @@ class TestQuat:
         assert hasattr(v, field)
         field_val = getattr(v, field)
         assert type(field_val) == ret_type
-        for val in (0, 10, 10., 42.5):
+        for val in (0, 10, 10.0, 42.5):
             setattr(v, field, val)
             field_val = getattr(v, field)
             assert pytest.approx(field_val) == val
@@ -192,7 +192,7 @@ class TestQuat:
 
     @pytest.mark.parametrize(
         "args",
-        [(1, Quat(2, 3, 4, 5)), (.5, Quat(4, 6, 8, 10)), (2, Quat(1, 1.5, 2, 2.5))],
+        [(1, Quat(2, 3, 4, 5)), (0.5, Quat(4, 6, 8, 10)), (2, Quat(1, 1.5, 2, 2.5))],
         ids=lambda x: x[0],
     )
     def test_div(self, args):

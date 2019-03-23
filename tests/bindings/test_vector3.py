@@ -83,7 +83,7 @@ class TestVector3:
         assert hasattr(v, field)
         field_val = getattr(v, field)
         assert isinstance(field_val, ret_type)
-        val = 10.
+        val = 10.0
         setattr(v, field, val)
         field_val = getattr(v, field)
         assert field_val == val
@@ -127,7 +127,7 @@ class TestVector3:
         "args",
         [
             (1, Vector3(2, 3, 4)),
-            (.5, Vector3(4, 6, 8)),
+            (0.5, Vector3(4, 6, 8)),
             (2, Vector3(1, 1.5, 2)),
             (Vector3(1, 1, 1), Vector3(2, 3, 4)),
             (Vector3(2, 3, 4), Vector3(1, 1, 1)),
