@@ -2,40 +2,24 @@ from __future__ import print_function
 import re
 import os
 import shutil
+import glob
 from datetime import datetime
 from functools import partial
 from SCons.Errors import UserError
 
 
-EnsureSConsVersion(2, 3)
+EnsureSConsVersion(3, 0)
 
 
-def SymLink(target, source, env):
-    """
-    Scons doesn't provide cross-platform symlink out of the box
-    """
-    try:
-        os.unlink(str(target[0]))
-    except Exception:
-        pass
-    try:
-        os.symlink(os.path.abspath(str(source[0])), os.path.abspath(str(target[0])))
-    except Exception as e:
-        raise UserError(
-            "Can't create symlink (%s -> %s): %s"
-            % (str(source[0]), os.path.abspath(str(target[0])), e)
-        )
-
-
-def script_converter(str, env):
+def script_converter(val, env):
     """Allowed values are True, False, and a script path"""
-    if str in ("False", "false", "0"):
+    if val in ("False", "false", "0"):
         return False
 
-    if str in ("True", "true", "1"):
+    if val in ("True", "true", "1"):
         return True
 
-    return str
+    return val
 
 
 vars = Variables("custom.py", ARGUMENTS)
@@ -52,7 +36,6 @@ vars.Add("release_suffix", "Suffix to add to the release archive", "wip")
 vars.Add("godot_binary", "Path to Godot main binary", "")
 vars.Add("debugger", "Run godot with given debugger", "")
 vars.Add("gdnative_include_dir", "Path to GDnative include directory", "")
-vars.Add("gdnative_wrapper_lib", "Path to GDnative wrapper library", "")
 vars.Add(
     "godot_release_base_url",
     "URL to the godot builder release to use",
@@ -68,14 +51,6 @@ vars.Add(
 vars.Add(
     BoolVariable(
         "compressed_stdlib", "Compress Python std lib as a zip" "to save space", False
-    )
-)
-vars.Add(
-    EnumVariable(
-        "backend",
-        "Python interpreter to embed",
-        "cpython",
-        allowed_values=("cpython", "pypy"),
     )
 )
 vars.Add(
@@ -108,31 +83,68 @@ vars.Add(
     converter=script_converter,
 )
 
+
 env = Environment(ENV=os.environ, variables=vars)
 # env.AppendENVPath('PATH', os.getenv('PATH'))
 # env.Append('DISPLAY', os.getenv('DISPLAY'))
 Help(vars.GenerateHelpText(env))
 
 
+def SymLink(target, source, env):
+    """
+    Scons doesn't provide cross-platform symlink out of the box
+    """
+    abs_src = os.path.abspath(str(source[0]))
+    abs_trg = os.path.abspath(str(target[0]))
+    try:
+        os.unlink(abs_trg)
+    except Exception:
+        pass
+    try:
+        os.symlink(abs_src, abs_trg)
+    except Exception as e:
+        raise UserError(f"Can't create symlink ({abs_src} -> {abs_trg}): {e}")
+
+
+env.Append(BUILDERS={"SymLink": SymLink})
+
+
+def Glob(env, pattern):
+    """
+    Scons Glob is rather limited
+    """
+    return [File(x) for x in glob.glob(pattern, recursive=True)]
+
+
+env.AddMethod(Glob, "Glob")
+
+
+if env["dev_dyn"]:
+    print(
+        "\033[0;32mBuild with a symlink on `pythonsript/godot` module"
+        " (dev_dyn=True), don't share the binary !\033[0m\n"
+    )
+
+
 if env["godot_binary"]:
     env["godot_binary"] = File(env["godot_binary"])
 if env["gdnative_include_dir"]:
     env["gdnative_include_dir"] = Dir(env["gdnative_include_dir"])
-if env["gdnative_wrapper_lib"]:
-    env["gdnative_wrapper_lib"] = File(env["gdnative_wrapper_lib"])
+else:
+    env["gdnative_include_dir"] = Dir("godot_headers")
 
-env["build_name"] = "%s-%s" % (env["platform"], env["backend"])
-env["build_dir"] = Dir("#build/%s" % env["build_name"])
+env["build_name"] = f"pythonscript-{env['platform']}"
+env["build_dir"] = Dir(f"#build/{env['build_name']}")
 
 
 ### Plaform-specific stuff ###
 
 
 Export("env")
-SConscript("platforms/%s/SCsub" % env["platform"])
+SConscript(f"platforms/{env['platform']}/SCsub")
 
 
-### Disply build dir (useful for CI) ###
+### Display build dir (useful for CI) ###
 
 
 if env["show_build_dir"]:
@@ -149,91 +161,84 @@ if "gcc" in env.get("CC"):
     env.Append(CCFLAGS="-fdiagnostics-color=always")
 
 
-### Build venv with CFFI for python scripts ###
+### Setup Cython builder ###
 
 
-venv_dir = Dir("tools/venv")
+CythonToC = Builder(action="cython -3 $SOURCE", suffix=".c", src_suffix=".pyx")
+env.Append(BUILDERS={"CythonToC": CythonToC})
 
 
-def _create_env_python_command(env, init_venv):
-    def _python_command(targets, sources, command, pre_init=None):
-        commands = [pre_init, init_venv, command]
-        return env.Command(targets, sources, " && ".join([x for x in commands if x]))
-
-    env.PythonCommand = _python_command
+def cythonizer(env, source):
+    c_source = env.CythonToC(source)
+    libs = [env.File(x.abspath.rsplit('.', 1)[0]) for x in source]
+    return env.SharedLibrary(libs, c_source, LIBPREFIX="")
 
 
-if os.name == "nt":
-    _create_env_python_command(env, "%s\\Scripts\\activate.bat" % venv_dir.path)
-else:
-    _create_env_python_command(env, ". %s/bin/activate" % venv_dir.path)
+env.AddMethod(cythonizer, "Cython")
 
 
-env.PythonCommand(
-    targets=venv_dir,
-    sources=None,
-    pre_init="${PYTHON} -m virtualenv ${TARGET}",
-    command='${PYTHON} -m pip install "pycparser>=2.18" "cffi>=1.11.2"',
+### Generate godot api .h -> .pxd ###
+
+# TODO: autopxd doesn't work out of the box, hence
+# `gdnative_api_struct.pxd` has been customized after generation
+# gdnative_pxd = env.PythonCommand(
+#     target="pythonscript/gdnative_api_struct.pxd",
+#     source=(
+#         venv_dir,
+#         env['godot_headers'],
+#         "%s/gdnative_api_struct.gen.h" % env['godot_headers']
+#     )
+#     command=(
+#         "autopxd -I ${SOURCES[1]} ${SOURCES[2]} -o ${TARGET}"
+#     ),
+# )
+gdnative_pxd = File("pythonscript/gdnative_api_struct.pxd")
+
+
+### Generate pythonscript.c ###
+
+pythonscript_pxi = env.Glob("pythonscript/*.pxi")
+pythonscript_c, _ = env.CythonToC(
+    target=("pythonscript/pythonscript.c", "pythonscript/pythonscript_api.h"),
+    source="pythonscript/pythonscript.pyx",
 )
+env.Depends(pythonscript_c, gdnative_pxd)
+env.Depends(pythonscript_c, pythonscript_pxi)
 
-
-### Generate cdef and cffi C source ###
-
-
-cdef_gen = env.PythonCommand(
-    targets="pythonscript/cdef.gen.h",
-    sources=(venv_dir, "$gdnative_include_dir"),
-    command=(
-        "${PYTHON} ./tools/generate_gdnative_cffidefs.py ${SOURCES[1]} "
-        '--output=${TARGET} --bits=${bits} --cpp="${gdnative_parse_cpp}"'
-    ),
-)
-env.Append(HEADER=cdef_gen)
-
-
-if env["dev_dyn"]:
-    print(
-        "\033[0;32mPython .inc.py files are dynamically loaded (dev_dyn=True), don't share the binary !\033[0m\n"
-    )
-
-
-python_embedded_srcs = env.Glob("pythonscript/embedded/*.inc.py")
-
-
-(cffi_bindings_gen,) = env.PythonCommand(
-    targets="pythonscript/cffi_bindings.gen.c",
-    sources=[venv_dir] + cdef_gen + python_embedded_srcs,
-    command=(
-        "${PYTHON} ./pythonscript/generate_cffi_bindings.py "
-        "--cdef=${SOURCES[1]} --output=${TARGET}"
-    ),
-)
-
-
-### Main compilation stuff ###
+### Compile libpythonscript.so ###
 
 
 env.Alias("backend", "$backend_dir")
 
 env.AppendUnique(CPPPATH=["#", "$gdnative_include_dir"])
-env.Append(LIBS=env["gdnative_wrapper_lib"])
 
 # env.Append(CFLAGS='-std=c11')
 # env.Append(CFLAGS='-pthread -DDEBUG=1 -fwrapv -Wall '
 #     '-g -Wdate-time -D_FORTIFY_SOURCE=2 '
 #     '-Bsymbolic-functions -Wformat -Werror=format-security'.split())
 
-sources = ["pythonscript/pythonscript.c", cffi_bindings_gen]
+sources = [pythonscript_c, "pythonscript/pythonscript_hook.c"]
 libpythonscript = env.SharedLibrary("pythonscript/pythonscript", sources)[0]
+
+
+### Collect and build `pythonscript/godot` module ###
+
+
+pythonscript_godot_srcs = [
+    *env.Glob("pythonscript/godot/**/*.py"),
+    *env.Glob("pythonscript/godot/**/*.pxd"),
+    *env.Cython(env.Glob("pythonscript/godot/**/*.pyx")),
+]
 
 
 ### Generate build dir ###
 
 
 def extract_version():
-    with open("pythonscript/embedded/godot/__init__.py") as fd:
-        versionline = next(l for l in fd.readlines() if l.startswith("__version__ = "))
-        return "v" + eval(versionline[14:])
+    # Hold my beer...
+    gl = {}
+    exec(open("pythonscript/godot/_version.py").read(), gl)
+    return gl["__version__"]
 
 
 def generate_build_dir_hook(path):
@@ -272,11 +277,10 @@ def do_or_die(func, *args, **kwargs):
         raise UserError("ERROR: %s" % exc)
 
 
-python_godot_module_srcs = env.Glob("pythonscript/embedded/**/*.py")
 env.Command(
     "$build_dir",
-    ["$backend_dir", libpythonscript, Dir("#pythonscript/embedded/godot")]
-    + python_godot_module_srcs,
+    ["$backend_dir", libpythonscript, Dir("#pythonscript/godot")]
+    + pythonscript_godot_srcs,
     Action(
         partial(do_or_die, env["generate_build_dir"]),
         "Generating build dir $TARGET from $SOURCES",
@@ -343,7 +347,7 @@ env.Command(
 env.AlwaysBuild("example")
 
 
-### Release (because I'm scare to do that with windows cmd on appveyor...) ###
+### Release (because I'm scared to do that with windows cmd on appveyor...) ###
 
 
 def generate_release(target, source, env):
@@ -363,7 +367,7 @@ env.AlwaysBuild("release")
 ### Auto-format codebase ###
 
 
-black_cmd = "pip install black==18.6b2 && black pythonscript tools/*.py tests/*/*.py SConstruct platforms/*/SCsub"
-autoformat = env.PythonCommand("autoformat", [venv_dir], black_cmd)
+black_cmd = "black pythonscript tools/*.py tests/*/*.py SConstruct platforms/*/SCsub"
+autoformat = env.Command("autoformat", [], black_cmd)
 env.Alias("black", autoformat)
-env.PythonCommand("checkstyle", [venv_dir], black_cmd + " --check")
+env.Command("checkstyle", [], black_cmd + " --check")

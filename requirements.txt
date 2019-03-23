@@ -1,0 +1,4 @@
+scons==3.0.4
+cython==0.29.6
+black==19.3b0
+autopxd==1.0.0
