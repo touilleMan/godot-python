@@ -56,7 +56,8 @@ def generate_build_dir(target, source, env):
     target = target[0]
     cpython_build = source[0]
     libpythonscript = source[1]
-    godot_embedded = source[2]
+    godot_module = source[2]
+    _godot_module = source[3]
 
     if os.path.isdir(target.path):
         shutil.rmtree(target.path)
@@ -98,9 +99,11 @@ def generate_build_dir(target, source, env):
         shutil.rmtree(p("lib/tmp_python3.7"))
 
     if env["dev_dyn"]:
-        os.symlink(godot_embedded.abspath, p("lib/python3.7/site-packages/godot"))
+        os.symlink(_godot_module.abspath, p("lib/python3.7/site-packages/"))
+        os.symlink(godot_module.abspath, p("lib/python3.7/site-packages/godot"))
     else:
-        shutil.copytree(godot_embedded.path, p("lib/python3.7/site-packages/godot"))
+        shutil.copy(_godot_module.path, p("lib/python3.7/site-packages/"))
+        shutil.copytree(godot_module.path, p("lib/python3.7/site-packages/godot"))
 
     if "generate_build_dir_hook" in env:
         env["generate_build_dir_hook"](target.abspath)

@@ -11,7 +11,7 @@
 
 #include <gdnative_api_struct.gen.h>
 
-#include "pythonscript_api.h"
+#include "_godot_api.h"
 
 
 // TODO: Anyway, this cause a segfault....
@@ -21,6 +21,8 @@
 //      Py_FinalizeEx();
 //  #endif
 // }
+
+static godot_gdnative_core_api_struct pythonscript_gdapi;
 
 
 static const char *PYTHONSCRIPT_RECOGNIZED_EXTENSIONS[] = { "py", "pyc", "pyo", "pyd", 0 };
@@ -95,11 +97,15 @@ static bool _profiling_started = false;
 
 
 void godot_gdnative_init(godot_gdnative_init_options *options) {
+    const godot_gdnative_core_api_struct *gdapi = options->api_struct;
+
 #ifndef _WIN32
     // Make sure the shared library has all it symbols loaded
     // (strange bug with libpython3.6 otherwise...)
     {
-        const wchar_t *wpath = godot_string_wide_str(options->active_library_path);
+        const wchar_t *wpath = gdapi->godot_string_wide_str(
+            options->active_library_path
+        );
         char path[300];
         wcstombs(path, wpath, 300);
         dlopen(path, RTLD_NOW | RTLD_GLOBAL);
@@ -111,9 +117,9 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
         wchar_t werr[n];
         mbstowcs(werr, err, n);
         godot_string msg;
-        godot_string_new_with_wide_string(&msg, werr, -1);
-        godot_print(&msg);
-        godot_string_destroy(&msg);
+        gdapi->godot_string_new_with_wide_string(&msg, werr, -1);
+        gdapi->godot_print(&msg);
+        gdapi->godot_string_destroy(&msg);
         return;
     }
 #endif
@@ -123,9 +129,11 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
     // Retrieve path and set pythonhome
     {
         static wchar_t pythonhome[300];
-        godot_string _pythonhome = godot_string_get_base_dir(options->active_library_path);
-        wcsncpy(pythonhome, godot_string_wide_str(&_pythonhome), 300);
-        godot_string_destroy(&_pythonhome);
+        godot_string _pythonhome = gdapi->godot_string_get_base_dir(
+            options->active_library_path
+        );
+        wcsncpy(pythonhome, gdapi->godot_string_wide_str(&_pythonhome), 300);
+        gdapi->godot_string_destroy(&_pythonhome);
         Py_SetPythonHome(pythonhome);
     }
     // // Add current dir to PYTHONPATH
@@ -138,22 +146,27 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
     // printf("==>%ls\n", Py_GetPath());
 
     Py_SetProgramName(L"godot");
-    Py_InitializeEx(1);
-    int ret = import_pythonscript();
+    // Initialize interpreter but skip initialization registration of signal handlers
+    Py_InitializeEx(0);
+    int ret = import__godot();
     if (ret != 0){
+        printf("====>%i\n", ret);
         godot_string msg;
-        godot_string_new_with_wide_string(&msg, L"Cannot load pythonscript module", -1);
-        godot_print(&msg);
-        godot_string_destroy(&msg);
+        gdapi->godot_string_new_with_wide_string(
+            &msg, L"Cannot load pythonscript module", -1
+        );
+        gdapi->godot_print(&msg);
+        gdapi->godot_string_destroy(&msg);
         return;
     }
+    pythonscript_register_gdapi(options->api_struct);
 
     desc.name = "Python";
     desc.type = "Python";
     desc.extension = "py";
     desc.recognized_extensions = PYTHONSCRIPT_RECOGNIZED_EXTENSIONS;
     desc.init = pythonscript_init;
-    // desc.finish = pythonscript_finish;
+    desc.finish = pythonscript_finish;
     desc.reserved_words = PYTHONSCRIPT_RESERVED_WORDS;
     desc.comment_delimiters = PYTHONSCRIPT_COMMENT_DELIMITERS;
     desc.string_delimiters = PYTHONSCRIPT_STRING_DELIMITERS;
@@ -205,4 +218,5 @@ void godot_gdnative_singleton() {
 }
 
 void godot_gdnative_terminate() {
+    Py_Finalize();
 }

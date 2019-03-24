@@ -164,16 +164,32 @@ if "gcc" in env.get("CC"):
 ### Setup Cython builder ###
 
 
-CythonToC = Builder(action="cython -3 $SOURCE", suffix=".c", src_suffix=".pyx")
-env.Append(BUILDERS={"CythonToC": CythonToC})
+def _append_html_target(target, source, env):
+    def _html(file):
+        no_suffix = file.get_path().rsplit('.')[0]
+        return f"{no_suffix}.html"
+    return target + [_html(x) for x in target if x.get_suffix() == '.c'], source
+
+env.Append(
+    BUILDERS={
+        "CythonToC": Builder(
+            action="cython -3 $SOURCE", suffix=".c", src_suffix=".pyx",
+            # emitter = _append_html_target
+        ),
+    }
+)
+
+def cython_compile(env, source):
+    libs = [x.abspath.rsplit('.', 1)[0] for x in source]
+    return  env.SharedLibrary(libs, source, LIBPREFIX="")
 
 
-def cythonizer(env, source):
-    c_source = env.CythonToC(source)
-    libs = [env.File(x.abspath.rsplit('.', 1)[0]) for x in source]
-    return env.SharedLibrary(libs, c_source, LIBPREFIX="")
+def cythonizer(env, source, target=()):
+    c_source = env.CythonToC(target, source)
+    return [cython_c_compile(env, c_source), *bonus_targets]
 
 
+env.AddMethod(cython_compile, "CythonCompile")
 env.AddMethod(cythonizer, "Cython")
 
 
@@ -195,15 +211,34 @@ env.AddMethod(cythonizer, "Cython")
 gdnative_pxd = File("pythonscript/gdnative_api_struct.pxd")
 
 
-### Generate pythonscript.c ###
+### Collect and build `pythonscript/godot` module ###
 
-pythonscript_pxi = env.Glob("pythonscript/*.pxi")
-pythonscript_c, _ = env.CythonToC(
-    target=("pythonscript/pythonscript.c", "pythonscript/pythonscript_api.h"),
-    source="pythonscript/pythonscript.pyx",
+
+pythonscript_godot_c_srcs = [
+    x for x in env.CythonToC(env.Glob("pythonscript/godot/**/*.pyx"))
+    if x.get_suffix() == '.c'
+]
+pythonscript_godot_targets = [
+    *env.Glob("pythonscript/godot/**/*.py"),
+    *env.Glob("pythonscript/godot/**/*.pxd"),
+    *env.CythonCompile(pythonscript_godot_c_srcs),
+]
+
+
+### Build `pythonscript/_godot` module ###
+
+# pythonscript_godot_bootstrap = env.Cython("pythonscript/_godot.pyx")
+pythonscript__godot_c_scrs = env.CythonToC(
+    source="pythonscript/_godot.pyx",
+    target=("pythonscript/_godot.c", "pythonscript/_godot_api.h")
 )
-env.Depends(pythonscript_c, gdnative_pxd)
-env.Depends(pythonscript_c, pythonscript_pxi)
+env.Depends(pythonscript__godot_c_scrs, gdnative_pxd)
+env.Depends(pythonscript__godot_c_scrs, env.Glob("pythonscript/*.pxi"))
+pythonscript__godot_c, pythonscript__godot_api_h, *_ = pythonscript__godot_c_scrs
+pythonscript__godot_targets = env.CythonCompile(
+    source=[pythonscript__godot_c]
+)
+
 
 ### Compile libpythonscript.so ###
 
@@ -217,19 +252,8 @@ env.AppendUnique(CPPPATH=["#", "$gdnative_include_dir"])
 #     '-g -Wdate-time -D_FORTIFY_SOURCE=2 '
 #     '-Bsymbolic-functions -Wformat -Werror=format-security'.split())
 
-sources = [pythonscript_c, "pythonscript/pythonscript_hook.c"]
-libpythonscript = env.SharedLibrary("pythonscript/pythonscript", sources)[0]
-
-
-### Collect and build `pythonscript/godot` module ###
-
-
-pythonscript_godot_srcs = [
-    *env.Glob("pythonscript/godot/**/*.py"),
-    *env.Glob("pythonscript/godot/**/*.pxd"),
-    *env.Cython(env.Glob("pythonscript/godot/**/*.pyx")),
-]
-
+libpythonscript = env.SharedLibrary("pythonscript/pythonscript", "pythonscript/pythonscript.c")[0]
+env.Depends(libpythonscript, pythonscript__godot_api_h)
 
 ### Generate build dir ###
 
@@ -279,8 +303,13 @@ def do_or_die(func, *args, **kwargs):
 
 env.Command(
     "$build_dir",
-    ["$backend_dir", libpythonscript, Dir("#pythonscript/godot")]
-    + pythonscript_godot_srcs,
+    [
+        "$backend_dir",
+        libpythonscript,
+        Dir("#pythonscript/godot"),
+        *pythonscript__godot_targets,
+        *pythonscript_godot_targets,
+    ],
     Action(
         partial(do_or_die, env["generate_build_dir"]),
         "Generating build dir $TARGET from $SOURCES",
@@ -332,6 +361,12 @@ env.Command(
     test_base_cmd + "work_with_gdscript",
 )
 env.AlwaysBuild("tests/work_with_gdscript")
+env.Command(
+    "tests/helloworld",
+    ["$godot_binary", install_build_symlink],
+    test_base_cmd + "helloworld",
+)
+env.AlwaysBuild("tests/helloworld")
 env.AlwaysBuild("tests")
 env.Alias("test", "tests")
 
