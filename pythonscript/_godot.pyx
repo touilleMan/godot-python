@@ -1,3 +1,5 @@
+include "_godot_editor.pxi"
+
 from gdnative_api_struct cimport godot_gdnative_core_api_struct, godot_pluginscript_language_data
 
 

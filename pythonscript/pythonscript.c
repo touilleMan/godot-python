@@ -150,7 +150,6 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
     Py_InitializeEx(0);
     int ret = import__godot();
     if (ret != 0){
-        printf("====>%i\n", ret);
         godot_string msg;
         gdapi->godot_string_new_with_wide_string(
             &msg, L"Cannot load pythonscript module", -1
@@ -171,7 +170,7 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
     desc.comment_delimiters = PYTHONSCRIPT_COMMENT_DELIMITERS;
     desc.string_delimiters = PYTHONSCRIPT_STRING_DELIMITERS;
     desc.has_named_classes = false;
-    // desc.get_template_source_code = pythonscript_get_template_source_code;
+    desc.get_template_source_code = pythonscript_get_template_source_code;
     // desc.add_global_constant = pythonscript_add_global_constant;
 
     // desc.script_desc.init = pythonscript_script_init;
