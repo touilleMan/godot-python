@@ -1,13 +1,41 @@
+# cython: c_string_type=unicode, c_string_encoding=utf8
+
 from libc.stddef cimport wchar_t
 
+from gdnative_api_struct cimport (
+    godot_pluginscript_language_data,
+    godot_string,
+    godot_bool,
+    godot_array,
+    godot_pool_string_array,
+    godot_object,
+    godot_variant,
+    godot_error
+)
 from _godot cimport gdapi
-from gdnative_api_struct cimport godot_pluginscript_language_data, godot_string
+import godot
+
+
+cdef object godot_string_to_pyobj(const godot_string *p_gdstr):
+    return <char*>gdapi.godot_string_wide_str(p_gdstr)
+
+
+cdef godot_string pyobj_to_godot_string(object pystr):
+    cdef godot_string gdstr;
+    gdapi.godot_string_new_with_wide_string(
+        &gdstr, <wchar_t*><char*>pystr, len(pystr)
+    )
+    return gdstr
+
+
+cdef object variant_to_pyobj(const godot_variant *p_gdvar):
+    return None
 
 
 cdef api godot_string pythonscript_get_template_source_code(
-    godot_pluginscript_language_data* p_data,
-    const godot_string* p_class_name,
-    const godot_string* p_base_class_name
+    godot_pluginscript_language_data *p_data,
+    const godot_string *p_class_name,
+    const godot_string *p_base_class_name
 ):
     # TODO: Cython consider wchat_t not portable, hence on linux we do
     # dirty cast between `wchar_t *` band `char *`. This is likely to
@@ -43,16 +71,25 @@ class {}({}):
     return ret
 
 
-# @ffi.def_extern()
-# def pybind_validate(
-#     handle, script, r_line_error, r_col_error, test_error, path, r_functions
-# ):
-#     return 1
+cdef api godot_bool pythonscript_validate(
+    godot_pluginscript_language_data *p_data,
+    const godot_string *p_script,
+    int *r_line_error,
+    int *r_col_error,
+    godot_string *r_test_error,
+    const godot_string *p_path,
+    godot_pool_string_array *r_functions
+):
+    return True
 
 
-# @ffi.def_extern()
-# def pybind_find_function(handle, function, code):
-#     pass
+
+cdef api int pythonscript_find_function(
+    godot_pluginscript_language_data *p_data,
+    const godot_string *p_function,
+    const godot_string *p_code
+):
+    return 0
 
 
 # @ffi.def_extern()
@@ -65,11 +102,16 @@ class {}({}):
 #     return "".join(src)
 
 
-# @ffi.def_extern()
-# def pybind_complete_code(
-#     handle, p_code, p_base_path, p_owner, r_options, r_force, r_call_hint
-# ):
-#     return lib.GODOT_OK
+cdef api godot_error pythonscript_complete_code(
+    godot_pluginscript_language_data *p_data,
+    const godot_string *p_code,
+    const godot_string *p_base_path,
+    godot_object *p_owner,
+    godot_array *r_options,
+    godot_bool *r_force,
+    godot_string *r_call_hint
+):
+    return godot_error.GODOT_OK
 
 
 # @ffi.def_extern()
@@ -92,13 +134,15 @@ class {}({}):
 #     lib.godot_string_destroy(code)
 #     lib.godot_string_new_unicode_data(code, final_code, len(final_code))
 
-
-# @ffi.def_extern()
-# def pybind_add_global_constant(handle, name, value):
-#     name = godot_string_to_pyobj(name)
-#     value = variant_to_pyobj(value)
-#     # Update `godot.globals` module here
-#     godot.globals.__dict__[name] = value
+cdef api void pythonscript_add_global_constant(
+    godot_pluginscript_language_data *p_data,
+    const godot_string *p_variable,
+    const godot_variant *p_value
+):
+    name = godot_string_to_pyobj(p_variable)
+    value = variant_to_pyobj(p_value)
+    # Update `godot.globals` module here
+    godot.globals.__dict__[name] = value
 
 
 # @ffi.def_extern()

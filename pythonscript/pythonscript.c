@@ -170,8 +170,7 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
     desc.comment_delimiters = PYTHONSCRIPT_COMMENT_DELIMITERS;
     desc.string_delimiters = PYTHONSCRIPT_STRING_DELIMITERS;
     desc.has_named_classes = false;
-    desc.get_template_source_code = pythonscript_get_template_source_code;
-    // desc.add_global_constant = pythonscript_add_global_constant;
+    desc.add_global_constant = pythonscript_add_global_constant;
 
     // desc.script_desc.init = pythonscript_script_init;
     // desc.script_desc.finish = pythonscript_script_finish;
@@ -185,13 +184,13 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
     // desc.script_desc.instance_desc.refcount_incremented = NULL;
     // desc.script_desc.instance_desc.refcount_decremented = NULL;
 
-    // if (options->in_editor) {
+    if (options->in_editor) {
 
-    //  desc.get_template_source_code = pythonscript_get_template_source_code;
-    //  desc.validate = pythonscript_validate;
-    //  desc.find_function = pythonscript_find_function;
+     desc.get_template_source_code = pythonscript_get_template_source_code;
+     desc.validate = pythonscript_validate;
+     desc.find_function = pythonscript_find_function;
     //  desc.make_function = pythonscript_make_function;
-    //  desc.complete_code = pythonscript_complete_code;
+     desc.complete_code = pythonscript_complete_code;
     //  desc.auto_indent_code = pythonscript_auto_indent_code;
 
     //  desc.debug_get_error = pythonscript_debug_get_error;
@@ -209,8 +208,8 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
     //  desc.profiling_get_accumulated_data = pythonscript_profiling_get_accumulated_data;
     //  desc.profiling_get_frame_data = pythonscript_profiling_get_frame_data;
     //  desc.profiling_frame = _hook_profiling_frame;
-    // }
-    // godot_pluginscript_register_language(&desc);
+    }
+    godot_pluginscript_register_language(&desc);
 }
 
 void godot_gdnative_singleton() {
