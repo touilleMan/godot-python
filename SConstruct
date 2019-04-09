@@ -180,7 +180,12 @@ env.Append(
 )
 
 def cython_compile(env, source):
-    libs = [x.abspath.rsplit('.', 1)[0] for x in source]
+    def _strip_extension(item):
+        for extension in ('.gen.c', '.c'):
+            if item.endswith(extension):
+                return item[:-len(extension)]
+
+    libs = [_strip_extension(x.abspath) for x in source]
     return  env.SharedLibrary(libs, source, LIBPREFIX="")
 
 
@@ -253,7 +258,7 @@ env.AppendUnique(CPPPATH=["#", "$gdnative_include_dir"])
 #     '-Bsymbolic-functions -Wformat -Werror=format-security'.split())
 
 libpythonscript = env.SharedLibrary("pythonscript/pythonscript", "pythonscript/pythonscript.c")[0]
-env.Depends(libpythonscript, pythonscript__godot_api_h)
+env.Depends("pythonscript/pythonscript.c", pythonscript__godot_api_h)
 
 ### Generate build dir ###
 

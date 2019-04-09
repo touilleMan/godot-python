@@ -35,6 +35,9 @@ pythonscript/cffi_bindings/cdef.gen.h
 pythonscript/cdef.gen.h
 pythonscript/cffi_bindings/pythonscriptcffi.gen.c
 pythonscript/cffi_bindings.gen.c
+pythonscript/_godot.c
+pythonscript/_godot_api.h
+pythonscript/godot/**/*.c
 
 # scons stuff
 custom.py
