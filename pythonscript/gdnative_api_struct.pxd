@@ -4,7 +4,7 @@ from libc.stdint cimport uint8_t, uint64_t, int64_t, uint32_t
 from libc.stddef cimport wchar_t
 
 
-cdef extern from "gdnative_api_struct.gen.h":
+cdef extern from "gdnative_api_struct.gen.h" nogil:
 
     ctypedef enum godot_error:
         GODOT_OK
