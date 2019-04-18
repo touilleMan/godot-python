@@ -3,7 +3,7 @@
 """
 Build system is designed to created a build targetting a single platform.
 This script aims at bundle together multiple builds to generate a final
-multip-platform release.
+multi-platform release.
 """
 
 import argparse
