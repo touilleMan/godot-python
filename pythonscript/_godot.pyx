@@ -1,4 +1,7 @@
 include "_godot_editor.pxi"
+include "_godot_profiling.pxi"
+include "_godot_script.pxi"
+include "_godot_instance.pxi"
 
 from gdnative_api_struct cimport (
     godot_gdnative_api_struct,

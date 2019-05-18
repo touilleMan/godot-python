@@ -22,9 +22,6 @@
 //  #endif
 // }
 
-static godot_gdnative_core_api_struct pythonscript_gdapi;
-
-
 static const char *PYTHONSCRIPT_RECOGNIZED_EXTENSIONS[] = { "py", "pyc", "pyo", "pyd", 0 };
 static const char *PYTHONSCRIPT_RESERVED_WORDS[] = {
     "False",
@@ -67,35 +64,6 @@ static const char *PYTHONSCRIPT_STRING_DELIMITERS[] = { "\" \"", "' '", 0 };
 static godot_pluginscript_language_desc desc;
 
 
-// To avoid having to go through cffi call if profiling is not on,
-// we use those simple _hook_ functions as a proxy
-// Note _profiling_started should idealy be stored in the p_data pointer,
-// but this would be much more cumbersome (given p_data points on a python
-// object). Anyway, there is only one instance of Pythonscript started so
-// it doesn't really matter.
-
-static bool _profiling_started = false;
-
-
-// static void _hook_profiling_start(godot_pluginscript_language_data *p_data) {
-//  _profiling_started = true;
-//  pythonscript_profiling_start(p_data);
-// }
-
-
-// static void _hook_profiling_stop(godot_pluginscript_language_data *p_data) {
-//  _profiling_started = true;
-//  pythonscript_profiling_stop(p_data);
-// }
-
-
-// static void _hook_profiling_frame(godot_pluginscript_language_data *p_data) {
-//  if (_profiling_started) {
-//      pythonscript_profiling_frame(p_data);
-//  }
-// }
-
-
 const godot_gdnative_ext_pluginscript_api_struct *load_pluginscript_ext(const godot_gdnative_init_options *options) {
     for (int i = 0; i < options->api_struct->num_extensions; i++) {
         const godot_gdnative_api_struct *ext = options->api_struct->extensions[i];
@@ -103,6 +71,7 @@ const godot_gdnative_ext_pluginscript_api_struct *load_pluginscript_ext(const go
             return (const godot_gdnative_ext_pluginscript_api_struct *)ext;
         }
     }
+    return NULL;
 }
 
 
@@ -191,42 +160,42 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
     desc.has_named_classes = false;
     desc.add_global_constant = pythonscript_add_global_constant;
 
-    // desc.script_desc.init = pythonscript_script_init;
-    // desc.script_desc.finish = pythonscript_script_finish;
+    desc.script_desc.init = pythonscript_script_init;
+    desc.script_desc.finish = pythonscript_script_finish;
 
-    // desc.script_desc.instance_desc.init = pythonscript_instance_init;
-    // desc.script_desc.instance_desc.finish = pythonscript_instance_finish;
-    // desc.script_desc.instance_desc.set_prop = pythonscript_instance_set_prop;
-    // desc.script_desc.instance_desc.get_prop = pythonscript_instance_get_prop;
-    // desc.script_desc.instance_desc.call_method = pythonscript_instance_call_method;
-    // desc.script_desc.instance_desc.notification = pythonscript_instance_notification;
-    // desc.script_desc.instance_desc.refcount_incremented = NULL;
-    // desc.script_desc.instance_desc.refcount_decremented = NULL;
+    desc.script_desc.instance_desc.init = pythonscript_instance_init;
+    desc.script_desc.instance_desc.finish = pythonscript_instance_finish;
+    desc.script_desc.instance_desc.set_prop = pythonscript_instance_set_prop;
+    desc.script_desc.instance_desc.get_prop = pythonscript_instance_get_prop;
+    desc.script_desc.instance_desc.call_method = pythonscript_instance_call_method;
+    desc.script_desc.instance_desc.notification = pythonscript_instance_notification;
+    desc.script_desc.instance_desc.refcount_incremented = NULL;
+    desc.script_desc.instance_desc.refcount_decremented = NULL;
 
     if (options->in_editor) {
 
         desc.get_template_source_code = pythonscript_get_template_source_code;
         desc.validate = pythonscript_validate;
         desc.find_function = pythonscript_find_function;
-        // desc.make_function = pythonscript_make_function;
+        desc.make_function = pythonscript_make_function;
         desc.complete_code = pythonscript_complete_code;
-        //  desc.auto_indent_code = pythonscript_auto_indent_code;
+        desc.auto_indent_code = pythonscript_auto_indent_code;
 
-        //  desc.debug_get_error = pythonscript_debug_get_error;
-        //  desc.debug_get_stack_level_count = pythonscript_debug_get_stack_level_count;
-        //  desc.debug_get_stack_level_line = pythonscript_debug_get_stack_level_line;
-        //  desc.debug_get_stack_level_function = pythonscript_debug_get_stack_level_function;
-        //  desc.debug_get_stack_level_source = pythonscript_debug_get_stack_level_source;
-        //  desc.debug_get_stack_level_locals = pythonscript_debug_get_stack_level_locals;
-        //  desc.debug_get_stack_level_members = pythonscript_debug_get_stack_level_members;
-        //  desc.debug_get_globals = pythonscript_debug_get_globals;
-        //  desc.debug_parse_stack_level_expression = pythonscript_debug_parse_stack_level_expression;
+        desc.debug_get_error = pythonscript_debug_get_error;
+        desc.debug_get_stack_level_count = pythonscript_debug_get_stack_level_count;
+        desc.debug_get_stack_level_line = pythonscript_debug_get_stack_level_line;
+        desc.debug_get_stack_level_function = pythonscript_debug_get_stack_level_function;
+        desc.debug_get_stack_level_source = pythonscript_debug_get_stack_level_source;
+        desc.debug_get_stack_level_locals = pythonscript_debug_get_stack_level_locals;
+        desc.debug_get_stack_level_members = pythonscript_debug_get_stack_level_members;
+        desc.debug_get_globals = pythonscript_debug_get_globals;
+        desc.debug_parse_stack_level_expression = pythonscript_debug_parse_stack_level_expression;
 
-        //  desc.profiling_start = _hook_profiling_start;
-        //  desc.profiling_stop = _hook_profiling_stop;
-        //  desc.profiling_get_accumulated_data = pythonscript_profiling_get_accumulated_data;
-        //  desc.profiling_get_frame_data = pythonscript_profiling_get_frame_data;
-        //  desc.profiling_frame = _hook_profiling_frame;
+        desc.profiling_start = pythonscript_profiling_start;
+        desc.profiling_stop = pythonscript_profiling_stop;
+        desc.profiling_get_accumulated_data = pythonscript_profiling_get_accumulated_data;
+        desc.profiling_get_frame_data = pythonscript_profiling_get_frame_data;
+        desc.profiling_frame = pythonscript_profiling_frame;
     }
     pluginscriptapi->godot_pluginscript_register_language(&desc);
 }

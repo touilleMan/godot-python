@@ -10,7 +10,8 @@ from gdnative_api_struct cimport (
     godot_pool_string_array,
     godot_object,
     godot_variant,
-    godot_error
+    godot_error,
+    godot_dictionary
 )
 from _godot cimport gdapi
 import godot
@@ -80,8 +81,7 @@ cdef api godot_bool pythonscript_validate(
     const godot_string *p_path,
     godot_pool_string_array *r_functions
 ):
-    return True
-
+    pass
 
 
 cdef api int pythonscript_find_function(
@@ -92,14 +92,22 @@ cdef api int pythonscript_find_function(
     return 0
 
 
-# @ffi.def_extern()
-# def pybind_make_function(handle, class_, name, args):
+cdef api godot_string pythonscript_make_function(
+    godot_pluginscript_language_data *p_data,
+    const godot_string *p_class,
+    const godot_string *p_name,
+    const godot_pool_string_array *p_args
+):
 #     args = PoolStringArray.build_from_gdobj(args, steal=True)
 #     name = godot_string_to_pyobj(name)
 #     src = ["def %s(" % name]
 #     src.append(", ".join([arg.split(":", 1)[0] for arg in args]))
 #     src.append("):\n    pass")
 #     return "".join(src)
+    cdef godot_string ret
+    cdef bytes src = b"def dummy():\n    pass\n"
+    gdapi.godot_string_new_with_wide_string(&ret, <wchar_t*><char*>src, len(src))
+    return ret
 
 
 cdef api godot_error pythonscript_complete_code(
@@ -114,8 +122,12 @@ cdef api godot_error pythonscript_complete_code(
     return godot_error.GODOT_OK
 
 
-# @ffi.def_extern()
-# def pybind_auto_indent_code(handle, code, from_line, to_line):
+cdef api void pythonscript_auto_indent_code(
+    godot_pluginscript_language_data *p_data,
+    godot_string *p_code,
+    int p_from_line,
+    int p_to_line
+):
 #     try:
 #         import autopep8
 #     except ImportError:
@@ -133,6 +145,8 @@ cdef api godot_error pythonscript_complete_code(
 #     # operation is available
 #     lib.godot_string_destroy(code)
 #     lib.godot_string_new_unicode_data(code, final_code, len(final_code))
+    pass
+
 
 cdef api void pythonscript_add_global_constant(
     godot_pluginscript_language_data *p_data,
@@ -145,47 +159,94 @@ cdef api void pythonscript_add_global_constant(
     godot.globals.__dict__[name] = value
 
 
-# @ffi.def_extern()
-# def pybind_debug_get_error(handle):
+cdef api godot_string pythonscript_debug_get_error(
+    godot_pluginscript_language_data *p_data
+):
 #     return godot_string_from_pyobj_for_ffi_return("Nothing")[0]
+    pass
 
 
-# @ffi.def_extern()
-# def pybind_debug_get_stack_level_line(handle, level):
-#     return 1
+cdef api int pythonscript_debug_get_stack_level_count(
+    godot_pluginscript_language_data *p_data
+):
+    return 1
 
 
-# @ffi.def_extern()
-# def pybind_debug_get_stack_level_function(handle, level):
+cdef api int pythonscript_debug_get_stack_level_line(
+    godot_pluginscript_language_data *p_data,
+    int p_level
+):
+    return 1
+
+
+cdef api godot_string pythonscript_debug_get_stack_level_function(
+    godot_pluginscript_language_data *p_data,
+    int p_level
+):
 #     return godot_string_from_pyobj_for_ffi_return("Nothing")[0]
+    pass
 
 
-# @ffi.def_extern()
-# def pybind_debug_get_stack_level_source(handle, level):
+cdef api godot_string pythonscript_debug_get_stack_level_source(
+    godot_pluginscript_language_data *p_data,
+    int p_level
+):
 #     return godot_string_from_pyobj_for_ffi_return("Nothing")[0]
+    pass
 
 
-# @ffi.def_extern()
-# def pybind_debug_get_stack_level_locals(
-#     handle, level, locals, values, max_subitems, max_depth
-# ):
-#     pass
+cdef api void pythonscript_debug_get_stack_level_locals(
+    godot_pluginscript_language_data *p_data,
+    int p_level,
+    godot_pool_string_array *p_locals,
+    godot_array *p_values,
+    int p_max_subitems,
+    int p_max_depth
+):
+    pass
 
 
-# @ffi.def_extern()
-# def pybind_debug_get_stack_level_members(
-#     handle, level, members, values, max_subitems, max_depth
-# ):
-#     pass
+cdef api void pythonscript_debug_get_stack_level_members(
+    godot_pluginscript_language_data *p_data,
+    int p_level,
+    godot_pool_string_array *p_members,
+    godot_array *p_values,
+    int p_max_subitems,
+    int p_max_depth
+):
+    pass
 
 
-# @ffi.def_extern()
-# def pybind_debug_get_globals(handle, locals, values, max_subitems, max_depth):
-#     pass
+cdef api void pythonscript_debug_get_globals(
+    godot_pluginscript_language_data *p_data,
+    godot_pool_string_array *p_locals,
+    godot_array *p_values,
+    int p_max_subitems,
+    int p_max_depth
+):
+    pass
 
 
-# @ffi.def_extern()
-# def pybind_debug_parse_stack_level_expression(
-#     handle, level, expression, max_subitems, max_depth
-# ):
+cdef api godot_string pythonscript_debug_parse_stack_level_expression(
+    godot_pluginscript_language_data *p_data,
+    int p_level,
+    const godot_string *p_expression,
+    int p_max_subitems,
+    int p_max_depth
+):
 #     return godot_string_from_pyobj_for_ffi_return("Nothing")[0]
+    pass
+
+
+cdef api void pythonscript_get_public_functions(
+    godot_pluginscript_language_data *p_data,
+    godot_array *r_functions
+):
+    pass
+
+
+cdef api void pythonscript_get_public_constants(
+    godot_pluginscript_language_data *p_data,
+    godot_dictionary *r_constants
+):
+    pass
