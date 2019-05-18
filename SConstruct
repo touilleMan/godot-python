@@ -170,6 +170,7 @@ def _append_html_target(target, source, env):
         return f"{no_suffix}.html"
     return target + [_html(x) for x in target if x.get_suffix() == '.c'], source
 
+
 env.Append(
     BUILDERS={
         "CythonToC": Builder(
@@ -259,6 +260,7 @@ env.AppendUnique(CPPPATH=["#", "$gdnative_include_dir"])
 
 libpythonscript = env.SharedLibrary("pythonscript/pythonscript", "pythonscript/pythonscript.c")[0]
 env.Depends("pythonscript/pythonscript.c", pythonscript__godot_api_h)
+
 
 ### Generate build dir ###
 
