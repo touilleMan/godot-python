@@ -49,6 +49,12 @@ cdef api void pythonscript_register_gdapi(const godot_gdnative_init_options *opt
             print(f"Pythonscript: Unknown extension type `{ext.type}`")
 
 
+cdef api void pythonscript_print_banner():
+    import sys
+    import godot
+    print(f"Pythonscript {godot.__version__} (CPython {sys.version}")
+
+
 cdef api godot_pluginscript_language_data *pythonscript_init():
     return NULL
 

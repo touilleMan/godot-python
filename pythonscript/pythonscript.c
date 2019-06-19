@@ -76,14 +76,22 @@ const godot_gdnative_ext_pluginscript_api_struct *load_pluginscript_ext(const go
 
 
 void godot_gdnative_init(godot_gdnative_init_options *options) {
+    #define GD_PRINT(c_msg) { \
+        godot_string gd_msg; \
+        gdapi->godot_string_new_with_wide_string( \
+            &gd_msg, c_msg, -1); \
+        gdapi->godot_print(&gd_msg); \
+        gdapi->godot_string_destroy(&gd_msg); \
+    }
+
+    #define GD_ERROR_PRINT(msg) { \
+        gdapi->godot_print_error(msg, __func__, __FILE__, __LINE__); \
+    }
+
     const godot_gdnative_core_api_struct *gdapi = options->api_struct;
     const godot_gdnative_ext_pluginscript_api_struct *pluginscriptapi = load_pluginscript_ext(options);
     if (!pluginscriptapi) {
-        godot_string msg;
-        gdapi->godot_string_new_with_wide_string(
-            &msg, L"Cannot load Pythonscript: pluginscript extension not available", -1);
-        gdapi->godot_print(&msg);
-        gdapi->godot_string_destroy(&msg);
+        GD_ERROR_PRINT("Pluginscript extension not available");
         return;
     }
 
@@ -101,13 +109,7 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
 
     const char *err = dlerror();
     if (err) {
-        const size_t n = strlen(err);
-        wchar_t werr[n];
-        mbstowcs(werr, err, n);
-        godot_string msg;
-        gdapi->godot_string_new_with_wide_string(&msg, werr, -1);
-        gdapi->godot_print(&msg);
-        gdapi->godot_string_destroy(&msg);
+        GD_ERROR_PRINT(err);
         return;
     }
 #endif
@@ -138,14 +140,10 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
     Py_InitializeEx(0);
     int ret = import__godot();
     if (ret != 0){
-        godot_string msg;
-        gdapi->godot_string_new_with_wide_string(
-            &msg, L"Cannot load pythonscript module", -1
-        );
-        gdapi->godot_print(&msg);
-        gdapi->godot_string_destroy(&msg);
+        GD_ERROR_PRINT("Cannot load godot python module");
         return;
     }
+    pythonscript_print_banner();
     pythonscript_register_gdapi(options);
 
     desc.name = "Python";
