@@ -3,7 +3,7 @@ include "_godot_profiling.pxi"
 include "_godot_script.pxi"
 include "_godot_instance.pxi"
 
-from gdnative_api_struct cimport (
+from godot.gdnative_api_struct cimport (
     godot_gdnative_api_struct,
     godot_gdnative_init_options,
     godot_gdnative_core_api_struct,

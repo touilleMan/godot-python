@@ -2,7 +2,7 @@
 
 from libc.stddef cimport wchar_t
 
-from gdnative_api_struct cimport (
+from godot.gdnative_api_struct cimport (
     godot_pluginscript_language_data,
     godot_string,
     godot_bool,

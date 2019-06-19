@@ -1,4 +1,4 @@
-from gdnative_api_struct cimport (
+from godot.gdnative_api_struct cimport (
     godot_gdnative_core_api_struct,
     godot_gdnative_ext_nativescript_api_struct,
     godot_gdnative_ext_pluginscript_api_struct,
