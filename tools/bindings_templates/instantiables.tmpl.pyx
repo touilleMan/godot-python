@@ -50,9 +50,9 @@ cdef class _{{ item["name"] }}({{ item["base_class"] }}):
 
     # Methods
 {% for method in item["methods"] %}
-    cpdef {{ method["return_type"] }} {{ method["name"] }}(
+    cpdef {{ cook_godot_type(method["return_type"]) }} {{ method["name"] }}(
 {%- for arg in method["arguments"] %}
-        {{ arg["type"] }} {{ arg["name"] }},
+        {{ cook_godot_type(arg["type"]) }} {{ arg["name"] }},
 {%- endfor %}
     ):
         pass
@@ -60,11 +60,11 @@ cdef class _{{ item["name"] }}({{ item["base_class"] }}):
     # Properties
 {% for prop in item["properties"] %}
     @property
-    def {{ prop["return_type"] }} {{ prop["name"] }}(self):
+    def {{ cook_godot_type(prop["type"]) }} {{ prop["name"] }}(self):
         return self.{{ prop["getter"] }}()
 
     @{{ prop["name"] }}.setter
-    def {{ prop["return_type"] }} {{ prop["name"] }}(self, val):
+    def {{ prop["name"] }}(self, {{ cook_godot_type(prop["type"]) }} val):
         self.{{ prop["getter"] }}(val)
 {% endfor %}
 
