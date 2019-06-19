@@ -1,6 +1,8 @@
 import os
 import argparse
 import json
+import re
+from keyword import iskeyword
 from jinja2 import Environment, FileSystemLoader
 
 
@@ -8,24 +10,95 @@ BASEDIR = os.path.dirname(__file__)
 env = Environment(loader=FileSystemLoader(f"{BASEDIR}/bindings_templates"))
 
 
-GD_TYPES = {"enum.Error": "godot_error", "enum.Vector3::Axis": "godot_vector3_axis"}
+GD_TYPES = {
+    "void": "void",
+    "bool": "godot_bool",
+    "int": "godot_int",
+    "float": "godot_real",
+    "enum.Error": "godot_error",
+    "enum.Vector3::Axis": "godot_vector3_axis",
+    "Variant": "godot_variant",
+    "String": "godot_string",
+    "Transform2D": "godot_transform2d",
+}
 
 
-def cook_godot_type(raw_type):
-    if not raw_type.startswith("enum."):
-        return raw_type
-    else:
+def camel_to_snake(name):
+    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+
+def patch_data(data):
+    for item in data:
+        # TODO: BulletPhysicsServer is not marked as a singleton but inherits PhysicsServer
+        if item["name"] == "BulletPhysicsServer":
+            item["singleton"] = True
+    return data
+
+
+def build_class_renames(data):
+    renames = {"": ""}
+    for item in data:
+        old_name = item["name"]
+        if item["singleton"]:
+            new_name = f"_{old_name}"
+        else:
+            new_name = old_name
+        renames[old_name] = new_name
+    return renames
+
+
+def cook_data(data):
+    class_renames = build_class_renames(data)
+
+    def _cook_type(type_):
         try:
-            return GD_TYPES[raw_type]
+            return class_renames[type_]
         except KeyError:
-            return "int"
+            try:
+                return GD_TYPES[type_]
+            except KeyError:
+                if type_.startswith("enum."):
+                    return "godot_int"
+                else:
+                    return f"godot_{camel_to_snake(type_)}"
+
+    def _cook_name(name):
+        if iskeyword(name):
+            return f"{name}_"
+        else:
+            return name
+
+    for item in data:
+        item["base_class"] = class_renames[item["base_class"]]
+        item["name"] = class_renames[item["name"]]
+
+        for meth in item["methods"]:
+            meth["name"] = _cook_name(meth["name"])
+            meth["return_type"] = _cook_type(meth["return_type"])
+            for arg in meth["arguments"]:
+                arg["name"] = _cook_name(arg["name"])
+                arg["type"] = _cook_type(arg["type"])
+
+        for prop in item["properties"]:
+            prop["name"] = _cook_name(prop["name"])
+            prop["type"] = _cook_type(prop["type"])
+
+        for signal in item["signals"]:
+            signal["name"] = _cook_name(signal["name"])
+            for arg in signal["arguments"]:
+                arg["name"] = _cook_name(arg["name"])
+                arg["type"] = _cook_type(arg["type"])
+
+    return data
 
 
 def generate_bindings(output_path, input_path):
     with open(input_path, "r") as fd:
         data = json.load(fd)
+    data = cook_data(data)
     template = env.get_template("bindings.tmpl.pyx")
-    out = template.render(data=data, cook_godot_type=cook_godot_type)
+    out = template.render(data=data)
     with open(output_path, "w") as fd:
         fd.write(out)
 

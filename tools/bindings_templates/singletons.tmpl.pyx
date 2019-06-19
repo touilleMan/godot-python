@@ -1,6 +1,6 @@
 {%- macro iter_singletons(data) -%}
 {%- for item in data -%}
-{%- if item["singleton"] -%}
+{%- if item["singleton"] and item["name"] != "GlobalConstants" -%}
 {{ caller(item) }}
 {%- endif -%}
 {%- endfor -%}

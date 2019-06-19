@@ -1,6 +1,8 @@
 {%- macro iter_instanciables(data) -%}
 {%- for item in data -%}
+{%- if item["name"] != "GlobalConstants" -%}
 {{ caller(item) }}
+{%- endif -%}
 {%- endfor -%}
 {%- endmacro -%}
 
@@ -11,13 +13,11 @@
 cdef godot_class_constructor __{{ item["name"] }}_constructor = NULL
 {% endif -%}
 
-{%- if not item["singleton"] %}
 cdef class {{ item["name"] }}({{ item["base_class"] }}):
-{% else %}
-cdef class _{{ item["name"] }}({{ item["base_class"] }}):
-{% endif %}
+{%- if not item["base_class"] %}
     cdef godot_object *_ptr
     cdef bint _ptr_owner
+{%- endif %}
 
     def __init__(self):
 {%- if item["singleton"] %}
@@ -50,21 +50,26 @@ cdef class _{{ item["name"] }}({{ item["base_class"] }}):
 
     # Methods
 {% for method in item["methods"] %}
-    cpdef {{ cook_godot_type(method["return_type"]) }} {{ method["name"] }}(
+    cpdef {{ method["return_type"] }} {{ method["name"] }}(self,
 {%- for arg in method["arguments"] %}
-        {{ cook_godot_type(arg["type"]) }} {{ arg["name"] }},
+        {{ arg["type"] }} {{ arg["name"] }},
 {%- endfor %}
     ):
         pass
 {% endfor %}
     # Properties
 {% for prop in item["properties"] %}
+{#
+TODO: some properties has / in there name
+TODO: some properties pass a parameter to the setter/getter
+TODO: see PinJoint.params/bias for a good example
+#}
     @property
-    def {{ cook_godot_type(prop["type"]) }} {{ prop["name"] }}(self):
+    def {{ prop["name"].replace('/', '_') }}(self):
         return self.{{ prop["getter"] }}()
 
-    @{{ prop["name"] }}.setter
-    def {{ prop["name"] }}(self, {{ cook_godot_type(prop["type"]) }} val):
+    @{{ prop["name"].replace('/', '_') }}.setter
+    def {{ prop["name"].replace('/', '_') }}(self, val):
         self.{{ prop["getter"] }}(val)
 {% endfor %}
 
