@@ -49,6 +49,9 @@ def build_class_renames(data):
 
 
 def cook_data(data):
+    classes = []
+    constants = {}
+
     class_renames = build_class_renames(data)
 
     def _cook_type(type_):
@@ -64,12 +67,19 @@ def cook_data(data):
                     return f"godot_{camel_to_snake(type_)}"
 
     def _cook_name(name):
-        if iskeyword(name):
+        if iskeyword(name) or name in ('char', 'bool', 'int', 'float', 'short'):
             return f"{name}_"
         else:
             return name
 
     for item in data:
+        if item['name'] == 'GlobalConstants':
+            constants = item["constants"]
+            continue
+
+        if item['singleton']:
+            item['singleton_name'] = item['name']
+
         item["base_class"] = class_renames[item["base_class"]]
         item["name"] = class_renames[item["name"]]
 
@@ -90,15 +100,17 @@ def cook_data(data):
                 arg["name"] = _cook_name(arg["name"])
                 arg["type"] = _cook_type(arg["type"])
 
-    return data
+        classes.append(item)
+
+    return classes, constants
 
 
 def generate_bindings(output_path, input_path):
     with open(input_path, "r") as fd:
-        data = json.load(fd)
-    data = cook_data(data)
+        raw_data = json.load(fd)
+    classes, constants = cook_data(raw_data)
     template = env.get_template("bindings.tmpl.pyx")
-    out = template.render(data=data)
+    out = template.render(classes=classes, constants=constants)
     with open(output_path, "w") as fd:
         fd.write(out)
 

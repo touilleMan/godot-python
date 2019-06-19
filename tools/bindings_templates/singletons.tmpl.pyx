@@ -1,22 +1,13 @@
-{%- macro iter_singletons(data) -%}
-{%- for item in data -%}
-{%- if item["singleton"] and item["name"] != "GlobalConstants" -%}
-{{ caller(item) }}
+{%- macro iter_singletons(classes) -%}
+{%- for cls in classes -%}
+{%- if cls["singleton"] -%}
+{{ caller(cls) }}
 {%- endif -%}
 {%- endfor -%}
 {%- endmacro -%}
 
-{%- call(item) iter_singletons(data) %}
-cdef godot_object *__singleton__{{item["name"]}}
+{%- call(cls) iter_singletons(classes) %}
+{{ cls["singleton_name"] }} = {{ cls["name"] }}.from_ptr(
+	godot_global_get_singleton("{{ cls['singleton_name'] }}")
+)
 {%- endcall %}
-
-
-cdef init_singletons():
-{%- call(item) iter_singletons(data) %}
-    global __singleton__{{item["name"]}}
-{%- endcall %}
-{% call(item) iter_singletons(data) %}
-    __singleton__{{item["name"]}} = _{{ item["name"] }}.from_ptr(
-    	godot_global_get_singleton("{{ item["name"] }}")
-    )
-{%- endcall -%}
