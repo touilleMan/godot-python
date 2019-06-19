@@ -162,8 +162,10 @@ cdef api void pythonscript_add_global_constant(
 cdef api godot_string pythonscript_debug_get_error(
     godot_pluginscript_language_data *p_data
 ):
-#     return godot_string_from_pyobj_for_ffi_return("Nothing")[0]
-    pass
+    cdef godot_string ret
+    cdef bytes src = b"Nothing"
+    gdapi.godot_string_new_with_wide_string(&ret, <wchar_t*><char*>src, len(src))
+    return ret
 
 
 cdef api int pythonscript_debug_get_stack_level_count(
@@ -183,16 +185,20 @@ cdef api godot_string pythonscript_debug_get_stack_level_function(
     godot_pluginscript_language_data *p_data,
     int p_level
 ):
-#     return godot_string_from_pyobj_for_ffi_return("Nothing")[0]
-    pass
+    cdef godot_string ret
+    cdef bytes src = b"Nothing"
+    gdapi.godot_string_new_with_wide_string(&ret, <wchar_t*><char*>src, len(src))
+    return ret
 
 
 cdef api godot_string pythonscript_debug_get_stack_level_source(
     godot_pluginscript_language_data *p_data,
     int p_level
 ):
-#     return godot_string_from_pyobj_for_ffi_return("Nothing")[0]
-    pass
+    cdef godot_string ret
+    cdef bytes src = b"Nothing"
+    gdapi.godot_string_new_with_wide_string(&ret, <wchar_t*><char*>src, len(src))
+    return ret
 
 
 cdef api void pythonscript_debug_get_stack_level_locals(
@@ -234,8 +240,10 @@ cdef api godot_string pythonscript_debug_parse_stack_level_expression(
     int p_max_subitems,
     int p_max_depth
 ):
-#     return godot_string_from_pyobj_for_ffi_return("Nothing")[0]
-    pass
+    cdef godot_string ret
+    cdef bytes src = b"Nothing"
+    gdapi.godot_string_new_with_wide_string(&ret, <wchar_t*><char*>src, len(src))
+    return ret
 
 
 cdef api void pythonscript_get_public_functions(
