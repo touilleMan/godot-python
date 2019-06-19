@@ -1,7 +1,7 @@
 {%- for cls in classes -%}
 
 {%- if not cls["singleton"] %}
-cdef godot_class_constructor __{{ cls["name"] }}_constructor = NULL
+cdef godot_class_constructor __{{ cls["name"] }}_constructor = godot_get_class_constructor("{{ cls['name'] }}")
 {% endif -%}
 
 cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
@@ -66,16 +66,3 @@ TODO: see PinJoint.params/bias for a good example
 {% endfor %}
 
 {% endfor %}
-
-
-cdef _init_constructors():
-{%- for cls in classes %}
-{%- if not cls["singleton"] %}
-    global __{{ cls["name"] }}_constructor
-{%- endif %}
-{%- endfor %}
-{%- for cls in classes %}
-{%- if not cls["singleton"] %}
-    __{{ cls["name"] }}_constructor = godot_get_class_constructor("{{ cls['name'] }}")
-{%- endif %}
-{%- endfor %}
