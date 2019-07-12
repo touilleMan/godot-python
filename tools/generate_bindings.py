@@ -23,6 +23,24 @@ GD_TYPES = {
 }
 
 
+SAMPLE_CLASSES = {
+    "Object",
+    "Input",
+    "InputMap",
+    "MainLoop",
+    "Node",
+    "Reference",
+    "__ClassDB",
+    "__Engine",
+    "__Geometry",
+    "__JSON",
+    "__OS",
+    "__ResourceLoader",
+    "__ResourceSaver",
+    "__VisualScriptEditor",
+}
+
+
 def camel_to_snake(name):
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
@@ -67,18 +85,18 @@ def cook_data(data):
                     return f"godot_{camel_to_snake(type_)}"
 
     def _cook_name(name):
-        if iskeyword(name) or name in ('char', 'bool', 'int', 'float', 'short'):
+        if iskeyword(name) or name in ("char", "bool", "int", "float", "short"):
             return f"{name}_"
         else:
             return name
 
     for item in data:
-        if item['name'] == 'GlobalConstants':
+        if item["name"] == "GlobalConstants":
             constants = item["constants"]
             continue
 
-        if item['singleton']:
-            item['singleton_name'] = item['name']
+        if item["singleton"]:
+            item["singleton_name"] = item["name"]
 
         item["base_class"] = class_renames[item["base_class"]]
         item["name"] = class_renames[item["name"]]
@@ -105,10 +123,12 @@ def cook_data(data):
     return classes, constants
 
 
-def generate_bindings(output_path, input_path):
+def generate_bindings(output_path, input_path, sample):
     with open(input_path, "r") as fd:
         raw_data = json.load(fd)
     classes, constants = cook_data(raw_data)
+    if sample:
+        classes = [klass for klass in classes if klass["name"] in SAMPLE_CLASSES]
     template = env.get_template("bindings.tmpl.pyx")
     out = template.render(classes=classes, constants=constants)
     with open(output_path, "w") as fd:
@@ -121,5 +141,6 @@ if __name__ == "__main__":
         "--input", "-i", help="Path to Godot api.json file", default="api.json"
     )
     parser.add_argument("--output", "-o", default="godot_bindings_gen.pyx")
+    parser.add_argument("--sample", action="store_true")
     args = parser.parse_args()
-    generate_bindings(args.output, args.input)
+    generate_bindings(args.output, args.input, args.sample)

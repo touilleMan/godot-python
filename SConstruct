@@ -50,6 +50,11 @@ vars.Add(
 )
 vars.Add(
     BoolVariable(
+        "sample", "Generate only a subset of the bindings (faster build time)", False
+    )
+)
+vars.Add(
+    BoolVariable(
         "compressed_stdlib", "Compress Python std lib as a zip" "to save space", False
     )
 )
@@ -238,11 +243,13 @@ env.AlwaysBuild("generate_gdnative_api_struct")
 
 ### Generate pythonscript/godot/bindings.pyx ###
 
-
+sample_opt = "--sample" if env["sample"] else ""
 godot_bindings_pyx, = env.Command(
     target="pythonscript/godot/bindings.pyx",
     source=("%s/api.json" % env["gdnative_include_dir"],),
-    action=("python tools/generate_bindings.py  -i ${SOURCES} -o ${TARGET}"),
+    action=(
+        "python tools/generate_bindings.py  -i ${SOURCES} -o ${TARGET} " + sample_opt
+    ),
 )
 env.Depends(
     godot_bindings_pyx,
@@ -260,17 +267,21 @@ cython_env.Append(CFLAGS="-Wno-unused")
 # `bindings.pyx` is a special snowflake given it size and autogeneration
 cython_bindings_env = cython_env.Clone()
 cython_bindings_env.Append(CFLAGS="-Os")
-cython_bindings_env.Append(LINKFLAGS='-Wl,--strip-all')
+cython_bindings_env.Append(LINKFLAGS="-Wl,--strip-all")
 
 pythonscript_godot_pyx_compiled = [
-    *[cython_env.Cython(src) for src in env.Glob("pythonscript/godot/**.pyx") if src != godot_bindings_pyx],
-    cython_bindings_env.Cython(godot_bindings_pyx)
+    *[
+        cython_env.Cython(src)
+        for src in env.Glob("pythonscript/godot/**.pyx")
+        if src != godot_bindings_pyx
+    ],
+    cython_bindings_env.Cython(godot_bindings_pyx),
 ]
 env.Depends(pythonscript_godot_pyx_compiled, gdnative_api_struct_pxd)
 pythonscript_godot_targets = [
     *env.Glob("pythonscript/godot/**.py"),
     *env.Glob("pythonscript/godot/**.pxd"),
-    *pythonscript_godot_pyx_compiled
+    *pythonscript_godot_pyx_compiled,
 ]
 
 
