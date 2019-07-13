@@ -1,4 +1,7 @@
-{%- for cls in classes -%}
+{% from 'property.tmpl.pyx' import render_property -%}
+{% from 'method.tmpl.pyx' import render_method -%}
+
+{% macro render_class(cls) -%}
 
 {%- if not cls["singleton"] %}
 cdef godot_class_constructor __{{ cls["name"] }}_constructor = godot_get_class_constructor("{{ cls['name'] }}")
@@ -42,27 +45,11 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
     # Methods
 {# TODO: Use typing for params&return #}
 {% for method in cls["methods"] %}
-    def {{ method["name"] }}(self,
-{%- for arg in method["arguments"] %}
-        {{ arg["name"] }},
-{%- endfor %}
-    ):
-        pass
+{{ render_method(method) | indent(first=True, width=4) }}
 {% endfor %}
     # Properties
 {% for prop in cls["properties"] %}
-{#
-TODO: some properties has / in there name
-TODO: some properties pass a parameter to the setter/getter
-TODO: see PinJoint.params/bias for a good example
-#}
-    @property
-    def {{ prop["name"].replace('/', '_') }}(self):
-        return self.{{ prop["getter"] }}()
-
-    @{{ prop["name"].replace('/', '_') }}.setter
-    def {{ prop["name"].replace('/', '_') }}(self, val):
-        self.{{ prop["getter"] }}(val)
+{{ render_property(prop) | indent(first=True, width=4) }}
 {% endfor %}
 
-{% endfor %}
+{%- endmacro -%}
