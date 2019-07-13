@@ -103,7 +103,14 @@ def generate_build_dir(target, source, env):
         os.symlink(godot_module.abspath, p("lib/python3.7/site-packages/godot"))
     else:
         shutil.copy(_godot_module.path, p("lib/python3.7/site-packages/"))
-        shutil.copytree(godot_module.path, p("lib/python3.7/site-packages/godot"))
+        os.mkdir(p("lib/python3.7/site-packages/godot"))
+        for src in (
+            godot_module.glob("*.py")
+            + godot_module.glob("*.so")
+            + godot_module.glob("*.pxd")
+        ):
+            shutil.copy(src.abspath, p("lib/python3.7/site-packages/godot"))
+        # shutil.copytree(godot_module.path, p("lib/python3.7/site-packages/godot"))
 
     if "generate_build_dir_hook" in env:
         env["generate_build_dir_hook"](target.abspath)
