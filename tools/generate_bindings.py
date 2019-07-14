@@ -7,7 +7,11 @@ from jinja2 import Environment, FileSystemLoader
 
 
 BASEDIR = os.path.dirname(__file__)
-env = Environment(loader=FileSystemLoader(f"{BASEDIR}/bindings_templates"))
+env = Environment(
+    loader=FileSystemLoader(f"{BASEDIR}/bindings_templates"),
+    trim_blocks=True,
+    lstrip_blocks=True,
+)
 
 
 GD_TYPES = {
@@ -25,20 +29,67 @@ GD_TYPES = {
 
 SAMPLE_CLASSES = {
     "Object",
-    "Input",
-    "InputMap",
-    "MainLoop",
-    "Node",
+    # "Input",
+    # "InputMap",
+    # "MainLoop",
+    # "Node",
     "Reference",
-    "__ClassDB",
-    "__Engine",
-    "__Geometry",
-    "__JSON",
+    # "MultiplayerAPI",
+    # "SceneTree",
+    # "Viewport",
+    # "__ClassDB",
+    # "__Engine",
+    # "__Geometry",
+    # "__JSON",
     "__OS",
-    "__ResourceLoader",
-    "__ResourceSaver",
-    "__VisualScriptEditor",
+    # "__ResourceLoader",
+    # "__ResourceSaver",
+    # "__VisualScriptEditor",
 }
+
+SUPPORTED_TYPES = {"void", "godot_bool", "godot_int"}
+
+
+def strip_unsupported_stuff(classes):
+    for klass in classes:
+        methods = []
+        for meth in klass["methods"]:
+            if meth["is_editor"]:
+                continue
+            if meth["is_noscript"]:
+                continue
+            if meth["is_const"]:
+                continue
+            if meth["is_reverse"]:
+                continue
+            if meth["is_virtual"]:
+                continue
+            if meth["has_varargs"]:
+                continue
+            if meth["is_from_script"]:
+                continue
+            if meth["return_type"] not in SUPPORTED_TYPES:
+                continue
+            if [arg for arg in meth["arguments"] if arg["type"] not in SUPPORTED_TYPES]:
+                continue
+            methods.append(meth)
+        klass["methods"] = methods
+
+        properties = []
+        for prop in klass["properties"]:
+            if prop["type"] not in SUPPORTED_TYPES:
+                continue
+            properties.append(prop)
+        klass["properties"] = properties
+
+        signals = []
+        for signal in klass["signals"]:
+            if [
+                arg for arg in signal["arguments"] if arg["type"] not in SUPPORTED_TYPES
+            ]:
+                continue
+            signals.append(signal)
+        klass["signals"] = signals
 
 
 def camel_to_snake(name):
@@ -74,15 +125,15 @@ def cook_data(data):
 
     def _cook_type(type_):
         try:
-            return class_renames[type_]
+            return (True, class_renames[type_])
         except KeyError:
             try:
-                return GD_TYPES[type_]
+                return (False, GD_TYPES[type_])
             except KeyError:
                 if type_.startswith("enum."):
-                    return "godot_int"
+                    return (False, "godot_int")
                 else:
-                    return f"godot_{camel_to_snake(type_)}"
+                    return (False, f"godot_{camel_to_snake(type_)}")
 
     def _cook_name(name):
         if iskeyword(name) or name in ("char", "bool", "int", "float", "short"):
@@ -103,20 +154,22 @@ def cook_data(data):
 
         for meth in item["methods"]:
             meth["name"] = _cook_name(meth["name"])
-            meth["return_type"] = _cook_type(meth["return_type"])
+            meth["return_type_is_binding"], meth["return_type"] = _cook_type(
+                meth["return_type"]
+            )
             for arg in meth["arguments"]:
                 arg["name"] = _cook_name(arg["name"])
-                arg["type"] = _cook_type(arg["type"])
+                arg["type_is_binding"], arg["type"] = _cook_type(arg["type"])
 
         for prop in item["properties"]:
             prop["name"] = _cook_name(prop["name"])
-            prop["type"] = _cook_type(prop["type"])
+            prop["type_is_binding"], prop["type"] = _cook_type(prop["type"])
 
         for signal in item["signals"]:
             signal["name"] = _cook_name(signal["name"])
             for arg in signal["arguments"]:
                 arg["name"] = _cook_name(arg["name"])
-                arg["type"] = _cook_type(arg["type"])
+                arg["type_is_binding"], arg["type"] = _cook_type(arg["type"])
 
         classes.append(item)
 
@@ -129,9 +182,27 @@ def generate_bindings(output_path, input_path, sample):
     classes, constants = cook_data(raw_data)
     if sample:
         classes = [klass for klass in classes if klass["name"] in SAMPLE_CLASSES]
+    strip_unsupported_stuff(classes)
+
     template = env.get_template("bindings.tmpl.pyx")
     out = template.render(classes=classes, constants=constants)
     with open(output_path, "w") as fd:
+        #         out = """
+        # import _godot
+        # cdef class Object:
+        #     pass
+        #         """
+        fd.write(out)
+
+    pxd_output_path = output_path.rsplit(".", 1)[0] + ".pxd"
+    template = env.get_template("bindings.tmpl.pxd")
+    out = template.render(classes=classes, constants=constants)
+    with open(pxd_output_path, "w") as fd:
+        #         out = """
+        # cdef class Object:
+        #     pass
+
+        # """
         fd.write(out)
 
 

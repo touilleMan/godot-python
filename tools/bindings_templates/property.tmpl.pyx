@@ -4,16 +4,16 @@ TODO: some properties pass a parameter to the setter/getter
 TODO: see PinJoint.params/bias for a good example
 #}
 
-{% macro render_property(prop) -%}
+{% macro render_property(prop) %}
 
 @property
 def {{ prop["name"].replace('/', '_') }}(self):
     return self.{{ prop["getter"] }}()
 
-{%- if prop["setter"] %}
+{% if prop["setter"] %}
 @{{ prop["name"].replace('/', '_') }}.setter
 def {{ prop["name"].replace('/', '_') }}(self, val):
     self.{{ prop["setter"] }}(val)
-{%- endif -%}
+{% endif %}
 
-{%- endmacro -%}
+{% endmacro %}

@@ -1,4 +1,3 @@
-# Global constants
-{%- for key, value in constants.items() %}
+{% for key, value in constants.items() %}
 {{key}} = {{value}}
-{%- endfor -%}
+{% endfor %}

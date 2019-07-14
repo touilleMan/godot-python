@@ -14,7 +14,6 @@ from godot.gdnative_api_struct cimport (
     godot_dictionary
 )
 from _godot cimport gdapi
-import godot
 
 
 cdef object godot_string_to_pyobj(const godot_string *p_gdstr):
@@ -156,6 +155,7 @@ cdef api void pythonscript_add_global_constant(
     name = godot_string_to_pyobj(p_variable)
     value = variant_to_pyobj(p_value)
     # Update `godot.globals` module here
+    import godot
     godot.globals.__dict__[name] = value
 
 

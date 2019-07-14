@@ -2,7 +2,7 @@
 
 cimport cython
 
-from godot.gdnative_api_struct cimport godot_vector2, godot_real
+from .gdnative_api_struct cimport godot_vector2, godot_real
 
 
 @cython.final

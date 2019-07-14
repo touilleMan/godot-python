@@ -1,33 +1,35 @@
-{% from 'property.tmpl.pyx' import render_property -%}
-{% from 'method.tmpl.pyx' import render_method -%}
+{% from 'property.tmpl.pyx' import render_property %}
+{% from 'method.tmpl.pyx' import render_method, render_method_bind_register %}
 
-{% macro render_class(cls) -%}
+{# TODO: Handle signals #}
+{% macro render_class(cls) %}
 
-{%- if not cls["singleton"] %}
-cdef godot_class_constructor __{{ cls["name"] }}_constructor = godot_get_class_constructor("{{ cls['name'] }}")
-{% endif -%}
+{% if not cls["singleton"] %}
+cdef godot_class_constructor __{{ cls["name"] }}_constructor = gdapi.godot_get_class_constructor("{{ cls['name'] }}")
+{% endif %}
+
+{% for method in cls["methods"] %}
+{{ render_method_bind_register(cls, method) }}
+{% endfor %}
 
 cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
-{%- if not cls["base_class"] %}
-    cdef godot_object *_ptr
-    cdef bint _ptr_owner
-
+{% if not cls["base_class"] %}
     def __dealloc__(self):
         # De-allocate if not null and flag is set
         if self._ptr is not NULL and self._ptr_owner is True:
-            godot_object_destroy(self._ptr)
+            gdapi.godot_object_destroy(self._ptr)
             self._ptr = NULL
-{%- endif %}
+{% endif %}
 
     def __init__(self):
-{%- if cls["singleton"] %}
+{% if cls["singleton"] %}
         raise RuntimeError(f"{type(self)} is a singleton, cannot initialize it.")
-{%- else %}
+{% else %}
         self._ptr = __{{ cls["name"] }}_constructor()
         if self._ptr is NULL:
             raise MemoryError
         self._ptr_owner = True
-{%- endif %}
+{% endif %}
 
     @staticmethod
     cdef {{ cls["name"] }} from_ptr(godot_object *_ptr, bint owner=False):
@@ -39,17 +41,17 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 
     # Constants
 {% for key, value in cls["constants"].items() %}
-    {{key}} = {{value}}
-{%- endfor %}
+    {{ key }} = {{ value }}
+{% endfor %}
 
     # Methods
 {# TODO: Use typing for params&return #}
 {% for method in cls["methods"] %}
-{{ render_method(method) | indent(first=True, width=4) }}
+    {{ render_method(cls, method) | indent }}
 {% endfor %}
     # Properties
 {% for prop in cls["properties"] %}
-{{ render_property(prop) | indent(first=True, width=4) }}
+    {{ render_property(prop) | indent }}
 {% endfor %}
 
-{%- endmacro -%}
+{% endmacro %}

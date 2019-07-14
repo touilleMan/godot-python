@@ -244,8 +244,8 @@ env.AlwaysBuild("generate_gdnative_api_struct")
 ### Generate pythonscript/godot/bindings.pyx ###
 
 sample_opt = "--sample" if env["sample"] else ""
-godot_bindings_pyx, = env.Command(
-    target="pythonscript/godot/bindings.pyx",
+godot_bindings_pyx, godot_bindings_pxd = env.Command(
+    target=("pythonscript/godot/bindings.pyx", "pythonscript/godot/bindings.pxd"),
     source=("%s/api.json" % env["gdnative_include_dir"],),
     action=(
         "python tools/generate_bindings.py  -i ${SOURCES} -o ${TARGET} " + sample_opt
@@ -253,7 +253,7 @@ godot_bindings_pyx, = env.Command(
 )
 env.Depends(
     godot_bindings_pyx,
-    ["tools/generate_bindings.py", env.Glob("tools/bindings_templates/**.pyx")],
+    ["tools/generate_bindings.py", env.Glob("tools/bindings_templates/*")],
 )
 env.Alias("generate_godot_bindings", godot_bindings_pyx)
 
@@ -272,15 +272,16 @@ cython_bindings_env.Append(LINKFLAGS="-Wl,--strip-all")
 pythonscript_godot_pyx_compiled = [
     *[
         cython_env.Cython(src)
-        for src in env.Glob("pythonscript/godot/**.pyx")
+        for src in env.Glob("pythonscript/godot/*.pyx")
         if src != godot_bindings_pyx
     ],
     cython_bindings_env.Cython(godot_bindings_pyx),
 ]
 env.Depends(pythonscript_godot_pyx_compiled, gdnative_api_struct_pxd)
+env.Depends(pythonscript_godot_pyx_compiled, godot_bindings_pxd)
 pythonscript_godot_targets = [
-    *env.Glob("pythonscript/godot/**.py"),
-    *env.Glob("pythonscript/godot/**.pxd"),
+    *env.Glob("pythonscript/godot/*.py"),
+    *env.Glob("pythonscript/godot/*.pxd"),
     *pythonscript_godot_pyx_compiled,
 ]
 

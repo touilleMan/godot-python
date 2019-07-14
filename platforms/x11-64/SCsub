@@ -99,7 +99,10 @@ def generate_build_dir(target, source, env):
         shutil.rmtree(p("lib/tmp_python3.7"))
 
     if env["dev_dyn"]:
-        os.symlink(_godot_module.abspath, p("lib/python3.7/site-packages/"))
+        os.symlink(
+            _godot_module.abspath,
+            p("lib/python3.7/site-packages/" + _godot_module.name),
+        )
         os.symlink(godot_module.abspath, p("lib/python3.7/site-packages/godot"))
     else:
         shutil.copy(_godot_module.path, p("lib/python3.7/site-packages/"))

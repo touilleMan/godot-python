@@ -34,7 +34,8 @@ logs
 pythonscript/_godot.c
 pythonscript/_godot_api.h
 pythonscript/godot/**/*.c
-pythonscript/godot/bindings/*_gen.pxi
+pythonscript/godot/bindings.pxd
+pythonscript/godot/bindings.pyx
 
 # scons stuff
 custom.py

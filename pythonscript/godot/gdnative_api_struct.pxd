@@ -1803,7 +1803,7 @@ cdef extern from "gdnative_api_struct.gen.h" nogil:
 
     godot_method_bind* godot_method_bind_get_method(char* p_classname, char* p_methodname)
 
-    void godot_method_bind_ptrcall(godot_method_bind* p_method_bind, godot_object* p_instance, void** p_args, void* p_ret)
+    void godot_method_bind_ptrcall(godot_method_bind* p_method_bind, godot_object* p_instance, const void** p_args, void* p_ret)
 
     godot_variant godot_method_bind_call(godot_method_bind* p_method_bind, godot_object* p_instance, godot_variant** p_args, int p_arg_count, godot_variant_call_error* p_call_error)
 
