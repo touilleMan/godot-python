@@ -1,6 +1,8 @@
 from ._version import __version__
 from .tags import (
-    exposed, signal, export,
+    exposed,
+    signal,
+    export,
     rpcdisabled,
     rpcremote,
     rpcmaster,

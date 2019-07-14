@@ -115,7 +115,7 @@ def build_class_renames(data):
         # In api.json, some singletons have underscore and others don't (
         # e.g. ARVRServer vs _OS). But to access them with `get_singleton_object`
         # we always need the name without underscore...
-        if item["singleton"] and not old_name.startswith('_'):
+        if item["singleton"] and not old_name.startswith("_"):
             new_name = f"_{old_name}"
         else:
             new_name = old_name
@@ -183,12 +183,12 @@ def cook_data(data):
     # Order classes by inheritance
     inheritances = defaultdict(list)
     for klass in classes:
-        inheritances[klass['base_class']].append(klass)
+        inheritances[klass["base_class"]].append(klass)
     sorted_classes = [*inheritances[""]]
     todo_base_classes = [*inheritances[""]]
     while todo_base_classes:
         base_class = todo_base_classes.pop()
-        children_classes = inheritances[base_class['name']]
+        children_classes = inheritances[base_class["name"]]
         todo_base_classes += children_classes
         sorted_classes += children_classes
 
