@@ -3,6 +3,7 @@ import argparse
 import json
 import re
 from keyword import iskeyword
+from collections import defaultdict
 from jinja2 import Environment, FileSystemLoader
 
 
@@ -34,17 +35,19 @@ SAMPLE_CLASSES = {
     # "MainLoop",
     # "Node",
     "Reference",
+    "ARVRInterface",
+    "ARVRInterfaceGDNative",
     # "MultiplayerAPI",
     # "SceneTree",
     # "Viewport",
-    # "__ClassDB",
-    # "__Engine",
-    # "__Geometry",
-    # "__JSON",
-    "__OS",
-    # "__ResourceLoader",
-    # "__ResourceSaver",
-    # "__VisualScriptEditor",
+    # "_ClassDB",
+    # "_Engine",
+    # "_Geometry",
+    # "_JSON",
+    "_OS",
+    # "_ResourceLoader",
+    # "_ResourceSaver",
+    # "_VisualScriptEditor",
 }
 
 SUPPORTED_TYPES = {"void", "godot_bool", "godot_int"}
@@ -149,12 +152,12 @@ def cook_data(data):
             constants = item["constants"]
             continue
 
+        item["base_class"] = class_renames[item["base_class"]]
+        item["name"] = class_renames[item["name"]]
+
         if item["singleton"]:
             # Strip the leading underscore
             item["singleton_name"] = item["name"][1:]
-
-        item["base_class"] = class_renames[item["base_class"]]
-        item["name"] = class_renames[item["name"]]
 
         for meth in item["methods"]:
             meth["name"] = _cook_name(meth["name"])
@@ -177,7 +180,19 @@ def cook_data(data):
 
         classes.append(item)
 
-    return classes, constants
+    # Order classes by inheritance
+    inheritances = defaultdict(list)
+    for klass in classes:
+        inheritances[klass['base_class']].append(klass)
+    sorted_classes = [*inheritances[""]]
+    todo_base_classes = [*inheritances[""]]
+    while todo_base_classes:
+        base_class = todo_base_classes.pop()
+        children_classes = inheritances[base_class['name']]
+        todo_base_classes += children_classes
+        sorted_classes += children_classes
+
+    return sorted_classes, constants
 
 
 def generate_bindings(output_path, input_path, sample):
@@ -191,22 +206,12 @@ def generate_bindings(output_path, input_path, sample):
     template = env.get_template("bindings.tmpl.pyx")
     out = template.render(classes=classes, constants=constants)
     with open(output_path, "w") as fd:
-        #         out = """
-        # import _godot
-        # cdef class Object:
-        #     pass
-        #         """
         fd.write(out)
 
     pxd_output_path = output_path.rsplit(".", 1)[0] + ".pxd"
     template = env.get_template("bindings.tmpl.pxd")
     out = template.render(classes=classes, constants=constants)
     with open(pxd_output_path, "w") as fd:
-        #         out = """
-        # cdef class Object:
-        #     pass
-
-        # """
         fd.write(out)
 
 
