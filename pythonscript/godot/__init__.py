@@ -1,18 +1,16 @@
 from ._version import __version__
-from . import bindings
-
-# from .tags import (
-#     exposed, signal, export,
-#     rpcdisabled,
-#     rpcremote,
-#     rpcmaster,
-#     rpcpuppet,
-#     rpcslave,
-#     rpcremotesync,
-#     rpcsync,
-#     rpcmastersync,
-#     rpcpuppetsync,
-# )
+from .tags import (
+    exposed, signal, export,
+    rpcdisabled,
+    rpcremote,
+    rpcmaster,
+    rpcpuppet,
+    rpcslave,
+    rpcremotesync,
+    rpcsync,
+    rpcmastersync,
+    rpcpuppetsync,
+)
 from .vector2 import Vector2
 
 

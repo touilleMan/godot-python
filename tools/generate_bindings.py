@@ -109,7 +109,10 @@ def build_class_renames(data):
     renames = {"": ""}
     for item in data:
         old_name = item["name"]
-        if item["singleton"]:
+        # In api.json, some singletons have underscore and others don't (
+        # e.g. ARVRServer vs _OS). But to access them with `get_singleton_object`
+        # we always need the name without underscore...
+        if item["singleton"] and not old_name.startswith('_'):
             new_name = f"_{old_name}"
         else:
             new_name = old_name
@@ -147,7 +150,8 @@ def cook_data(data):
             continue
 
         if item["singleton"]:
-            item["singleton_name"] = item["name"]
+            # Strip the leading underscore
+            item["singleton_name"] = item["name"][1:]
 
         item["base_class"] = class_renames[item["base_class"]]
         item["name"] = class_renames[item["name"]]

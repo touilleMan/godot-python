@@ -24,6 +24,8 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
     def __init__(self):
 {% if cls["singleton"] %}
         raise RuntimeError(f"{type(self)} is a singleton, cannot initialize it.")
+{% elif not cls["instanciable"] %}
+        raise RuntimeError(f"{type(self)} is not instanciable.")
 {% else %}
         self._ptr = __{{ cls["name"] }}_constructor()
         if self._ptr is NULL:
@@ -34,7 +36,7 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
     @staticmethod
     cdef {{ cls["name"] }} from_ptr(godot_object *_ptr, bint owner=False):
         # Call to __new__ bypasses __init__ constructor
-        cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__()
+        cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
         wrapper._ptr = _ptr
         wrapper._ptr_owner = owner
         return wrapper

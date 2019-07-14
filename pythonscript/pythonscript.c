@@ -148,8 +148,8 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
         GD_ERROR_PRINT("Cannot load godot python module");
         return;
     }
-    pythonscript_print_banner();
     pythonscript_register_gdapi(options);
+    pythonscript_print_banner();
 
     desc.name = "Python";
     desc.type = "Python";
