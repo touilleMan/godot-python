@@ -13,7 +13,11 @@ def {{ prop["name"].replace('/', '_') }}(self):
 {% if prop["setter"] %}
 @{{ prop["name"].replace('/', '_') }}.setter
 def {{ prop["name"].replace('/', '_') }}(self, val):
-    self.{{ prop["setter"] }}(val)
+    self.{{ prop["setter"] }}(
+{%- if prop["index"] != -1 -%}
+{{ prop["index"] }},
+{%- endif -%}
+        val)
 {% endif %}
 
 {% endmacro %}
