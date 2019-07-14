@@ -125,7 +125,6 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
         wcsncpy(pythonhome, gdapi->godot_string_wide_str(&_pythonhome), 300);
         gdapi->godot_string_destroy(&_pythonhome);
         Py_SetPythonHome(pythonhome);
-        printf("++>%ls\n", pythonhome);
     }
     // TODO: site.USER_SITE seems to point to an invalid location in ~/.local
     // // Add current dir to PYTHONPATH
@@ -140,9 +139,6 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
     Py_SetProgramName(L"godot");
     // Initialize interpreter but skip initialization registration of signal handlers
     Py_InitializeEx(0);
-    PyRun_SimpleString("import sys\nprint('////', sys.path)\n");
-    PyRun_SimpleString("import site\nprint('~~~',  site.USER_SITE)\n");
-    // PyRun_SimpleString("import _godot\nprint('~~~',  _godot)\n");
     int ret = import__godot();
     if (ret != 0){
         GD_ERROR_PRINT("Cannot load godot python module");
