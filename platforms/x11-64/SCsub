@@ -1,5 +1,5 @@
 from __future__ import print_function
-import os, glob, shutil
+import os, glob, shutil, subprocess
 from SCons.Errors import UserError
 
 
@@ -13,15 +13,25 @@ env.Append(LINKFLAGS="-m64")
 
 ### Godot binary (to run tests) ###
 
+# fixes pypy on fedora
+# https://mail.python.org/pipermail/pypy-dev/2010-December/006588.html
+if not os.path.isfile('/lib64/libbz2.so.1.0'):
+    if os.path.isfile('/usr/lib64/libbz2.so'):
+        subprocess.check_call(['sudo','ln', '-s', '/usr/lib64/libbz2.so', '/lib64/libbz2.so.1.0'])
 
 if not env["godot_binary"]:
-    env["godot_binary"] = File("godot.x11.opt.debug.64")
-    env.Command(
-        env["godot_binary"],
-        None,
-        "curl -L %s/godot.x11.opt.debug.64 -o ${TARGET} && chmod 750 ${TARGET}"
-        % env["godot_release_base_url"],
-    )
+    if os.path.isfile(os.path.expanduser('~/godot/bin/godot.x11.tools.64')):
+        env["godot_binary"] = File(os.path.expanduser('~/godot/bin/godot.x11.tools.64'))
+    elif os.path.isfile('/usr/bin/godot'):
+        env["godot_binary"] = File("/usr/bin/godot")
+    else:
+        env["godot_binary"] = File("godot.x11.opt.debug.64")
+        env.Command(
+            env["godot_binary"],
+            None,
+            "curl -L %s/godot.x11.opt.debug.64 -o ${TARGET} && chmod 750 ${TARGET}"
+            % env["godot_release_base_url"],
+        )
     env.NoClean(env["godot_binary"])
 
 
