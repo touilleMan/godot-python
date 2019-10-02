@@ -26,15 +26,15 @@ class Transform(BaseBuiltin):
     def built_from_axis_origin(
         cls, x_axis=Vector3(), y_axis=Vector3(), z_axis=Vector3(), origin=Vector3()
     ):
-        self._check_param_type("x_axis", x_axis, Vector3)
-        self._check_param_type("y_axis", y_axis, Vector3)
-        self._check_param_type("z_axis", z_axis, Vector3)
-        self._check_param_type("origin", origin, Vector3)
-        ret = Transform()
+        cls._check_param_type("x_axis", x_axis, Vector3)
+        cls._check_param_type("y_axis", y_axis, Vector3)
+        cls._check_param_type("z_axis", z_axis, Vector3)
+        cls._check_param_type("origin", origin, Vector3)
+        gd_ptr = godot_transform_alloc()
         lib.godot_transform_new_with_axis_origin(
-            self._gd_ptr, x_axis._gd_ptr, y_axis._gd_ptr, z._gd_ptr, origin._gd_ptr
+            gd_ptr, x_axis._gd_ptr, y_axis._gd_ptr, z_axis._gd_ptr, origin._gd_ptr
         )
-        return ret
+        return cls.build_from_gdobj(gd_ptr, steal=True)
 
     def __eq__(self, other):
         return isinstance(other, Transform) and lib.godot_transform_operator_equal(
