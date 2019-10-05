@@ -39,19 +39,39 @@ Building
 To build the project from source, first checkout the repo or download the
 latest tarball.
 
+Godot-Python requires Python >= 3.6 and a C compiler.
+
+
+Godot GDNative header
+---------------------
+
+
+The Godot GDNative headers are provided as git submodule:
+
+.. code-block:: bash
+
+	$ git submodule init
+	$ git submodule update
+
+Alternatly, you can get them `from github <https://github.com/GodotNativeTools/godot_headers>`_.
+
+
 Linux
 -----
+
 
 On a fresh Ubuntu install, you will need to install these:
 
 .. code-block:: bash
 
-	$ apt install build-essential scons python3 python3-pip curl git
-	$ pip3 install virtualenv --user
+	$ apt install python3 python3-pip python3-venv build-essential
 
-If you are using CPython as your backend, you will need additional
-libraries to build from source. The simplest way is to uncomment the
-main deb-src in `/etc/apt/sources.list`:
+On top of that build the CPython interpreter requires development headers
+of it `extension modules <https://devguide.python.org/setup/#install-dependencies>`_
+(for instance if you lack sqlite dev headers, your Godot-Python build won't
+contain the sqlite3 python module)
+
+The simplest way is to uncomment the main deb-src in `/etc/apt/sources.list`:
 
 .. code-block:: bash
 
@@ -67,6 +87,7 @@ and instruct apt to install the needed packages:
 See the `Python Developer's Guide <https://devguide.python.org/setup/#build-dependencies>`_
 for instructions on additional platforms.
 
+
 MacOS
 -----
 
@@ -80,64 +101,112 @@ If you are using CPython as your backend, you will need these. To install with H
 
 .. code-block:: bash
 
-	$ brew install python3 scons openssl zlib
+	$ brew install python3 openssl zlib
 
 You will also need virtualenv for your python.
 
+
+Windows
+-------
+
+
+Install VisualStudio and Python3, then submit a PR to improve this paragraph ;-)
+
+
+Create the virtual env
+----------------------
+
+Godot-Python build system is heavily based on Python (mainly scons, cython and jinja2).
+Hence we have to create a Python virtual env to install all those dependencies
+without clashing with your global Python configuration.
+
+
+.. code-block:: bash
+
+	$ cd <godot-python-dir>
+	godot-python$ python3 -m venv venv
+
+
+Now with should activate the virtual env, this is something you should do
+every time you want to use the virtual env.
+
+For Linux/MacOS:
+
+.. code-block:: bash
+
+	godot-python$ . ./venv/bin/activate
+
+For Windows:
+
+.. code-block:: bash
+
+	godot-python$ ./venv/bin/activate.bat
+
+
+Finally we can install dependencies:
+
+.. code-block:: bash
+
+	godot-python$ pip install -r requirements.txt
+
+
 Running the build
 -----------------
-
-From your `godot-python` directory:
 
 
 For Linux:
 
 .. code-block:: bash
 
-	godot-python$ scons platform=x11-64 backend=cpython release
+	godot-python$ scons platform=x11-64 release
 
 For Windows:
 
 .. code-block:: bash
 
-	godot-python$ scons platform=windows-64 backend=cpython release
+	godot-python$ scons platform=windows-64 release
 
 For MacOS, you will need to customize our cpp to use clang. Your final command will look like:
 
 .. code-block:: bash
 
-	godot-python$ scons platform=osx-64 backend=cpython gdnative_parse_cpp="clang -E" release
+	godot-python$ scons platform=osx-64 gdnative_parse_cpp="clang -E" release
 
 Valid platforms are `x11-64`, `x11-32`, `windows-64`, `windows-32` and `osx-64`. Check Travis
 or Appveyor links above to see the current status of your platform.
 
-Valid backends are `cpython`, `pypy`.
+This command will checkout CPython repo, move to a pinned commit and build
+CPython from source.
 
-This command will download the pinned version of the Godot GDNative wrapper
-library (defined in SConstruct and platform specific SCSub files). It will then
-download a pinned pypy release binary or checkout cpython, move to a pinned
-commit and build cpython from source. It will generate the CFFI bindings and
-compile the shared library for your platform. The output of this command
-is a zip file which are shared on the release page.
+It will then generate ``pythonscript/godot/bindings.pyx`` (Godot api bindings)
+from GDNative's ``api.json`` and compile it.
+This part is long and really memory demanding so be patient ;-)
+When hacking godot-python you can heavily speedup this step by passing
+``sample=true`` to scons in order to build only a small subset of the bindings.
+
+Eventually the rest of the source will be compiled and a zip build archive
+will be available in the build directory.
+
 
 Testing your build
 ------------------
 
 .. code-block:: bash
 
-	godot-python$ scons platform=<platform> backend=<backend> test
+	godot-python$ scons platform=<platform> test
 
 This will run pytests defined in `tests/bindings` inside the Godot environment.
 If not present, will download a precompiled Godot binary
 (defined in SConstruct and platform specific SCSub files) to and set the
 correct library path for the GDNative wrapper.
 
+
 Running the example project
 ---------------------------
 
 .. code-block:: bash
 
-	godot-python$ scons platform=<platform> backend=cpython example
+	godot-python$ scons platform=<platform> example
 
 This will run the converted pong example in `examples/pong` inside the Godot
 environment. If not present, will download a precompiled Godot binary
@@ -152,7 +221,8 @@ use that the static library and binary for building and tests.
 
 .. code-block:: bash
 
-	godot-python$ scons platform=x11-64 backend=cpython godot_binary=../godot/bin/godot.x11.opt.64 gdnative_wrapper_lib=../godot/modules/include/libgdnative_wrapper_code.x11.opt.64.a
+	godot-python$ scons platform=x11-64 godot_binary=../godot/bin/godot.x11.opt.64
+
 
 Additional build options
 ------------------------
@@ -215,36 +285,6 @@ example:
 		Python. However they can be imported from another python module.
 		"""
 		...
-
-
-Technical internals
-===================
-
-The project is built with the awesome `CFFI <https://cffi.readthedocs.io/en/latest/>`_.
-Before that, both `Micropython <https://github.com/micropython/micropython>`_ and
-`Pybind11 <https://github.com/pybind/pybind11>`_ have been tried, but each comes with
-its own drawback (basically API complexity and compatibility for Micropython,
-C++ craziness and output size for Pybind11) so they just couldn't compete with
-CFFI ;-)
-
-CFFI connects with Godot C APIs:
-- `GDnative <https://godotengine.org/article/dlscript-here>`_ for calling Godot functions
-- Pluginscript for registering callback function for Godot
-CFFI connects to Godot C
-
-Map of the code:
-
-- ``pythonscript.[c|h]``: Godot Pluginscript entry point.
-- ``cffi_bindings/api.h`` & ``cffi_bindings/api_struct.h``: Exposed C api use in the language classes implementations.
-- ``cffi_bindings/*.inc.py``: Python code that will be verbatim included in the pythonscript module.
-- ``cffi_bindings/builtin_*.inc.py``: Python binding for Godot builtins
-- ``cffi_bindings/embedding_init_code.inc.py``: Very first Python code that will be executed on module loading.
-- ``cffi_bindings/mod_godot.inc.py``: Python ``godot`` module code.
-- ``cffi_bindings/mod_godot_bindings.inc.py``: Python ``godot.bindings`` module code.
-- ``cffi_bindings/cdef.gen.h``: C Godot's GDnative API ready to be used by the CFFI generator.
-  This file is generated by ``tools/generate_gdnative_cffidefs.py``.
-- ``cffi_bindings/pythonscriptcffi.cpp``: Pythonscript module output by the CFFI generator.
-  This file is generated by ``cffi_bindings/generate.py``.
 
 
 FAQ
