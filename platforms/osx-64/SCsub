@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os, glob, shutil
 from SCons.Errors import UserError
 
@@ -25,180 +24,108 @@ if not env["godot_binary"]:
     env.NoClean(env["godot_binary"])
 
 
-### GDnative stuff ###
-
-
-if not env["gdnative_include_dir"]:
-    env["gdnative_include_dir"] = Dir("../gdnative/include")
-if not env["gdnative_wrapper_lib"]:
-    env["gdnative_wrapper_lib"] = File(
-        "../gdnative/libgdnative_wrapper_code.osx.opt.debug.fat.a"
-    )
-    env.Command(
-        env["gdnative_wrapper_lib"],
-        None,
-        "curl -L %s/libgdnative_wrapper_code.osx.opt.fat.a -o ${TARGET}"
-        % env["godot_release_base_url"],
-    )
-    env.NoClean(env["gdnative_wrapper_lib"])
-
-
 ### Python interpreter ###
 
+cpython_src = Dir("cpython")
+env.Command(
+    cpython_src,
+    None,
+    "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.7.1 --single-branch ${TARGET}",
+)
+env.NoClean(cpython_src)
 
-if env["backend"] == "cpython":
-    cpython_src = Dir("cpython")
-    env.Command(
-        cpython_src,
-        None,
-        "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.7.1 --single-branch ${TARGET}",
-    )
-    env.NoClean(cpython_src)
+cpython_build = Dir("cpython_build")
+# TODO: allow to compile cpython with `--with-pydebug` ?
+# Compile CPython and install cffi through pip
+env.Command(
+    cpython_build,
+    cpython_src,
+    "cd ${SOURCE} && " + "echo Configuring CPython... && "
+    '1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} --with-openssl=/usr/local/opt/openssl CPPFLAGS="-I/usr/local/opt/zlib/include" LDFLAGS="-L/usr/local/opt/zlib/lib" && '
+    + "echo Building CPython... && "
+    "1>/dev/null make -j4 && "
+    + "echo Installing CPython in ${TARGET.get_abspath()}... && "
+    "1>/dev/null make install && "
+    # TODO: still useful to install cffi ?
+    + "LD_LIBRARY_PATH=${TARGET.get_abspath()}/lib ${TARGET.get_abspath()}/bin/pip3 install cffi",
+    Chmod("%s/lib/libpython3.7m.dylib" % cpython_build.abspath, 0o600),
+    "install_name_tool -id @loader_path/lib/libpython3.7m.dylib "
+    + "%s/lib/libpython3.7m.dylib" % cpython_build.abspath,
+)
+env.NoClean(cpython_build)
 
-    cpython_build = Dir("cpython_build")
-    # TODO: allow to compile cpython with `--with-pydebug` ?
-    # Compile CPython and install cffi through pip
-    env.Command(
-        cpython_build,
-        cpython_src,
-        [
-            "cd ${SOURCE} && " + "echo Configuring CPython... && "
-            '1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} --with-openssl=/usr/local/opt/openssl CPPFLAGS="-I/usr/local/opt/zlib/include" LDFLAGS="-L/usr/local/opt/zlib/lib" && '
-            + "echo Building CPython... && "
-            "1>/dev/null make -j4 && "
-            + "echo Installing CPython in ${TARGET.get_abspath()}... && "
-            "1>/dev/null make install && "
-            + "LD_LIBRARY_PATH=${TARGET.get_abspath()}/lib ${TARGET.get_abspath()}/bin/pip3 install cffi",
-            Chmod("%s/lib/libpython3.7m.dylib" % cpython_build.abspath, 0o600),
-            "install_name_tool -id @loader_path/lib/libpython3.7m.dylib "
-            + "%s/lib/libpython3.7m.dylib" % cpython_build.abspath,
-        ],
-    )
-    env.NoClean(cpython_build)
 
-    def generate_build_dir(target, source, env):
-        target = target[0]
-        cpython_build = source[0]
-        libpythonscript = source[1]
-        godot_embedded = source[2]
+def generate_build_dir(target, source, env):
+    target = target[0]
+    cpython_build = source[0]
+    libpythonscript = source[1]
+    godot_module = source[2]
+    _godot_module = source[3]
 
-        if os.path.isdir(target.path):
-            shutil.rmtree(target.path)
-        os.mkdir(target.path)
+    if os.path.isdir(target.path):
+        shutil.rmtree(target.path)
+    os.mkdir(target.path)
 
-        def c(subpath=""):
-            return os.path.join(cpython_build.abspath, *subpath.split("/"))
+    def c(subpath=""):
+        return os.path.join(cpython_build.abspath, *subpath.split("/"))
 
-        def p(subpath=""):
-            return os.path.join(target.abspath, "pythonscript", *subpath.split("/"))
+    def p(subpath=""):
+        return os.path.join(target.abspath, "pythonscript", *subpath.split("/"))
 
-        os.mkdir(p())
+    os.mkdir(p())
 
-        shutil.copy(libpythonscript.path, p())
-        open(p(".gdignore"), "w").close()
+    shutil.copy(libpythonscript.path, p())
+    open(p(".gdignore"), "w").close()
 
-        if os.path.isdir(c("include")):
-            # Windows build of CPython doesn't contain include dir
-            shutil.copytree(c("include"), p("include"))
+    if os.path.isdir(c("include")):
+        # Windows build of CPython doesn't contain include dir
+        shutil.copytree(c("include"), p("include"))
 
-        # Remove __pycache__ to save lots of space
-        for root, dirs, files in os.walk(c("lib")):
-            if "__pycache__" in dirs:
-                shutil.rmtree(os.path.join(root, "__pycache__"))
+    # Remove __pycache__ to save lots of space
+    for root, dirs, files in os.walk(c("lib")):
+        if "__pycache__" in dirs:
+            shutil.rmtree(os.path.join(root, "__pycache__"))
 
-        shutil.copytree(c("bin"), p("bin"))
+    shutil.copytree(c("bin"), p("bin"))
 
-        shutil.copytree(c("lib"), p("lib"))
-        if env["compressed_stdlib"]:
-            shutil.move(p("lib/python3.7"), p("lib/tmp_python3.7"))
-            os.mkdir(p("lib/python3.7"))
-            shutil.move(
-                p("lib/tmp_python3.7/lib-dynload"), p("lib/python3.7/lib-dynload")
-            )
-            shutil.move(
-                p("lib/tmp_python3.7/site-packages"), p("lib/python3.7/site-packages")
-            )
-            shutil.make_archive(
-                base_name=p("lib/python37"),
-                format="zip",
-                root_dir=p("lib/tmp_python3.7"),
-            )
-            shutil.rmtree(p("lib/tmp_python3.7"))
+    shutil.copytree(c("lib"), p("lib"))
+    if env["compressed_stdlib"]:
+        shutil.move(p("lib/python3.7"), p("lib/tmp_python3.7"))
+        os.mkdir(p("lib/python3.7"))
+        shutil.move(p("lib/tmp_python3.7/lib-dynload"), p("lib/python3.7/lib-dynload"))
+        shutil.move(
+            p("lib/tmp_python3.7/site-packages"), p("lib/python3.7/site-packages")
+        )
+        shutil.make_archive(
+            base_name=p("lib/python37"), format="zip", root_dir=p("lib/tmp_python3.7")
+        )
+        shutil.rmtree(p("lib/tmp_python3.7"))
 
-        if env["dev_dyn"]:
-            os.symlink(godot_embedded.abspath, p("lib/python3.7/site-packages/godot"))
-        else:
-            shutil.copytree(godot_embedded.path, p("lib/python3.7/site-packages/godot"))
+    if env["dev_dyn"]:
+        os.symlink(
+            _godot_module.abspath,
+            p("lib/python3.7/site-packages/" + _godot_module.name),
+        )
+        os.symlink(godot_module.abspath, p("lib/python3.7/site-packages/godot"))
+    else:
+        shutil.copy(_godot_module.path, p("lib/python3.7/site-packages/"))
+        os.mkdir(p("lib/python3.7/site-packages/godot"))
+        for src in (
+            godot_module.glob("*.py")
+            + godot_module.glob("*.dylib")
+            + godot_module.glob("*.pxd")
+        ):
+            shutil.copy(src.abspath, p("lib/python3.7/site-packages/godot"))
+        # shutil.copytree(godot_module.path, p("lib/python3.7/site-packages/godot"))
 
-        if "generate_build_dir_hook" in env:
-            env["generate_build_dir_hook"](target.abspath)
+    if "generate_build_dir_hook" in env:
+        env["generate_build_dir_hook"](target.abspath)
 
-    env["generate_build_dir"] = generate_build_dir
-    env["backend_dir"] = cpython_build
-    env.Append(CFLAGS="-DBACKEND_CPYTHON")
-    env.Append(CFLAGS="-I %s/include/python3.7m/" % cpython_build.path)
-    env.Append(LIBPATH="%s/lib" % cpython_build.path)
-    env.Append(LIBS=["python3.7m"])
-    env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
 
-else:  # pypy
-
-    PYPY_SRC_NAME = "pypy3-v6.0.0-osx64"
-    PYPY_SRC_ARCHIVE = "%s.tar.bz2" % PYPY_SRC_NAME
-    PYPY_SRC_ARCHIVE_URL = (
-        "https://bitbucket.org/pypy/pypy/downloads/%s" % PYPY_SRC_ARCHIVE
-    )
-
-    pypy_build = Dir(PYPY_SRC_NAME)
-
-    env.Command(
-        PYPY_SRC_ARCHIVE, None, "curl -L %s -o ${TARGET}" % PYPY_SRC_ARCHIVE_URL
-    )
-    env.NoClean(PYPY_SRC_ARCHIVE)
-    env.Command(
-        pypy_build,
-        PYPY_SRC_ARCHIVE,
-        [
-            "tar xf ${SOURCE} -C ${TARGET.srcdir}",
-            "install_name_tool -id @loader_path/bin/libpypy3-c.dylib "
-            + "%s/bin/libpypy3-c.dylib" % pypy_build.abspath,
-        ],
-    )
-
-    def generate_build_dir(target, source, env):
-        target = target[0]
-        pypy_build = source[0]
-        libpythonscript = source[1]
-        godot_embedded = source[2]
-
-        if os.path.isdir(target.path):
-            shutil.rmtree(target.path)
-        os.mkdir(target.path)
-
-        def c(subpath=""):
-            return os.path.join(pypy_build.abspath, *subpath.split("/"))
-
-        def p(subpath=""):
-            return os.path.join(target.abspath, "pythonscript", *subpath.split("/"))
-
-        shutil.copytree(c(), p())
-        os.unlink(p("LICENSE"))
-        os.unlink(p("README.rst"))
-        shutil.copy(libpythonscript.path, p())
-        open(p(".gdignore"), "w").close()
-
-        if env["dev_dyn"]:
-            os.symlink(godot_embedded.abspath, p("site-packages/godot"))
-        else:
-            shutil.copytree(godot_embedded.path, p("site-packages/godot"))
-
-        if "generate_build_dir_hook" in env:
-            env["generate_build_dir_hook"](target.abspath)
-
-    env["generate_build_dir"] = generate_build_dir
-    env["backend_dir"] = pypy_build
-    env.Append(CFLAGS="-DBACKEND_PYPY")
-    env.Append(CFLAGS="-I %s/include" % pypy_build.path)
-    env.Append(LIBPATH="%s/bin" % pypy_build.path)
-    env.Append(LIBS=["pypy3-c"])
-    env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/bin'"])
+env["generate_build_dir"] = generate_build_dir
+env["backend_dir"] = cpython_build
+env.Append(CFLAGS="-DBACKEND_CPYTHON")
+env.Append(CFLAGS="-I %s/include/python3.7m/" % cpython_build.path)
+env.Append(LIBPATH="%s/lib" % cpython_build.path)
+env.Append(LIBS=["python3.7m"])
+env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])

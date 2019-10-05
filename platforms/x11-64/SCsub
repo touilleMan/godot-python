@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os, glob, shutil
 from SCons.Errors import UserError
 
@@ -47,6 +46,7 @@ env.Command(
     "1>/dev/null make -j4 && "
     + "echo Installing CPython in ${TARGET.get_abspath()}... && "
     "1>/dev/null make install && "
+    # TODO: still useful to install cffi ?
     + "LD_LIBRARY_PATH=${TARGET.get_abspath()}/lib ${TARGET.get_abspath()}/bin/pip3 install cffi",
 )
 env.NoClean(cpython_build)
