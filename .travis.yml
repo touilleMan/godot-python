@@ -67,7 +67,7 @@ before_install:
 
 install:
   - python -m venv venv
-  - . ./venv/script/activate
+  - . ./venv/bin/activate
   - pip install -r requirements.txt
 
 before_script:
