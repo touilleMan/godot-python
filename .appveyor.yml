@@ -20,8 +20,6 @@ install:
   - cl.exe
 
 before_build:
-  - python -m venv venv
-  - call venv/script/activate.bat
   - pip install -r requirements.txt
   - ps: if($env:DEBUG -eq "true") { iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')) }
 
