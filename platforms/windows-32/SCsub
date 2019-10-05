@@ -45,13 +45,13 @@ env.Command(
     cpython_build,
     None,
     (
-    "echo Cloning CPython... && "
-    "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.7.1 --single-branch platforms\\windows-32\\cpython && "
-    "echo Configuring CPython... && "
-    "${TARGET}\\..\\get_externals.bat --python=python && "
-    "echo Building CPython... && "
-    "${TARGET}\\..\\build.bat -p Win32"
-    )
+        "echo Cloning CPython... && "
+        "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.7.1 --single-branch platforms\\windows-32\\cpython && "
+        "echo Configuring CPython... && "
+        "${TARGET}\\..\\get_externals.bat --python=python && "
+        "echo Building CPython... && "
+        "${TARGET}\\..\\build.bat -p Win32"
+    ),
 )
 env.NoClean(cpython_build)
 
@@ -93,9 +93,7 @@ def generate_build_dir(target, source, env):
     shutil.copytree(c("../../Lib"), p("lib"))
 
     if env["compressed_stdlib"]:
-        shutil.make_archive(
-            base_name=p("python37"), format="zip", root_dir=p("lib")
-        )
+        shutil.make_archive(base_name=p("python37"), format="zip", root_dir=p("lib"))
         shutil.rmtree(p("lib"))
         os.mkdir(p("lib/"))
 
