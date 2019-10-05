@@ -36,7 +36,11 @@ return {{ retval }}
 
 
 {% macro render_method_cook_args(method, argsval="__args") %}
+{% if (method["arguments"] | length )  == 0 %}
+cdef const void **{{ argsval }} = NULL
+{% else %}
 cdef const void *{{ argsval }}[{{ method["arguments"] | length }}]
+{% endif %}
 {% for arg in method["arguments"] %}
 {% set i = loop.index - 1 %}
 {% if method["return_type_is_binding"] %}
