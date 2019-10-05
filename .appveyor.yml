@@ -11,6 +11,7 @@ environment:
       PYTHON: C:\Python37
 
 install:
+  - git submodule update --init --recursive
   - set "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   # - set "PATH=C:\\mingw-w64\\x86_64-6.3.0-posix-seh-rt_v5-rev1\\mingw64\\bin;%PATH%"
   - git rev-parse HEAD
@@ -20,7 +21,7 @@ install:
 
 before_build:
   - python -m venv venv
-  - ./venv/script/activate.bat
+  - call ./venv/script/activate.bat
   - pip install -r requirements.txt
   - ps: if($env:DEBUG -eq "true") { iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')) }
 
