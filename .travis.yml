@@ -14,17 +14,13 @@ env:
     - AUDIODEV="null"
     - XVFB_OPTS=":99.0 -ac -screen 0 1280x1024x24 -ac +extension GLX +extension RANDR +render -noreset"
   matrix:
-    - BITS=64 PYTHON_BACKEND=cpython
-    - BITS=64 PYTHON_BACKEND=pypy
-    - BITS=32 PYTHON_BACKEND=cpython
-    - BITS=32 PYTHON_BACKEND=pypy
+    - BITS=64
+    - BITS=32
 
 matrix:
   exclude:
     - os: osx
-      env: BITS=32 PYTHON_BACKEND=pypy
-    - os: osx
-      env: BITS=32 PYTHON_BACKEND=cpython
+      env: BITS=32
 
 addons:
   apt:
@@ -57,34 +53,42 @@ addons:
       - valgrind
 
 before_install:
-  - python --version
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew upgrade python; brew install scons; fi;
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew upgrade python; fi;
 # Replace binutils, gcc-7, g++-7, zlib1g-dev, libssl-dev, and libffi-dev for cross-compile
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$BITS" == "32" ]; then sudo dpkg --add-architecture i386 && sudo apt update && sudo apt install binutils:i386 gcc-7:i386 g++-7:i386 zlib1g-dev:i386 libssl-dev:i386 libffi-dev:i386; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pyenv shell 3.7; fi
-  - pip3 install virtualenv --user
 # Needed because scons doesn't inherit the customized $PATH env
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CC=gcc-7; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export TARGET_PLATFORM=x11-$BITS; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export TARGET_PLATFORM=osx-$BITS; fi
-  - python --version
+  - git rev-parse HEAD
   - $CC --version
-  - scons --version
+  - python --version
+
+install:
+  - python -m venv venv
+  - . ./venv/script/activate
+  - pip install -r requirements.txt
 
 before_script:
 # Start X11 server
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- $XVFB_OPTS; fi;
-  - sleep 3 # give xvfb some time to start
-
+# give xvfb some time to start
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sleep 3; fi
 
 script:
   - set -e  # Enable fail on first error
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scons platform=$TARGET_PLATFORM checkstyle; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then scons platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC gdnative_parse_cpp="clang -E" release_suffix=$TRAVIS_BRANCH release; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scons platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC release_suffix=$TRAVIS_BRANCH release; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then scons platform=$TARGET_PLATFORM CC=$CC release_suffix=$TRAVIS_BRANCH release; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scons platform=$TARGET_PLATFORM CC=$CC release_suffix=$TRAVIS_BRANCH release; fi
 # Tests need x11 server with opengl3 or compile godot with platform=server (both not working so far...)
-  # - LIBGL_ALWAYS_SOFTWARE=1 scons debugger=valgrind platform=$TARGET_PLATFORM backend=$PYTHON_BACKEND CC=$CC test
+  # - LIBGL_ALWAYS_SOFTWARE=1 scons debugger=valgrind platform=$TARGET_PLATFORM CC=$CC test
   - set +e
+  - ls -l build
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ls -l build/linux-*; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ls -l build/osx-*; fi
+  - du -sh build/
+  - ls -l godot-python-*.zip
 
 deploy:
   provider: releases
