@@ -65,7 +65,7 @@ static godot_pluginscript_language_desc desc;
 
 
 const godot_gdnative_ext_pluginscript_api_struct *load_pluginscript_ext(const godot_gdnative_init_options *options) {
-    for (int i = 0; i < options->api_struct->num_extensions; i++) {
+    for (unsigned int i = 0; i < options->api_struct->num_extensions; i++) {
         const godot_gdnative_api_struct *ext = options->api_struct->extensions[i];
         if (ext->type == GDNATIVE_EXT_PLUGINSCRIPT) {
             return (const godot_gdnative_ext_pluginscript_api_struct *)ext;
@@ -75,7 +75,7 @@ const godot_gdnative_ext_pluginscript_api_struct *load_pluginscript_ext(const go
 }
 
 
-void godot_gdnative_init(godot_gdnative_init_options *options) {
+GDN_EXPORT void godot_gdnative_init(godot_gdnative_init_options *options) {
     #define GD_PRINT(c_msg) { \
         godot_string gd_msg; \
         gdapi->godot_string_new_with_wide_string( \
@@ -199,9 +199,9 @@ void godot_gdnative_init(godot_gdnative_init_options *options) {
     pluginscriptapi->godot_pluginscript_register_language(&desc);
 }
 
-void godot_gdnative_singleton() {
+GDN_EXPORT void godot_gdnative_singleton() {
 }
 
-void godot_gdnative_terminate() {
+GDN_EXPORT void godot_gdnative_terminate() {
     Py_Finalize();
 }

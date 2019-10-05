@@ -164,7 +164,11 @@ For Windows:
 
 .. code-block:: bash
 
-	godot-python$ scons platform=windows-64 release
+	godot-python$ scons platform=windows-64 symlink_cp_fallback=true release
+
+Note the ``symlink_cp_fallback=true`` option given symlinks are not well supported
+on Windows. With this enabled the build system will do heavy recursive file/folder
+copies instead of cheap symlinks.
 
 For MacOS, you will need to customize our cpp to use clang. Your final command will look like:
 
