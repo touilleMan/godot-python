@@ -190,7 +190,7 @@ if env["show_build_dir"]:
 
 ### Save my eyes plz ###
 
-env["ENV"]["TERM"] = os.environ["TERM"]
+env["ENV"]["TERM"] = os.environ.get("TERM", "")
 if "clang" in env.get("CC"):
     env.Append(CCFLAGS="-fcolor-diagnostics")
 if "gcc" in env.get("CC"):
