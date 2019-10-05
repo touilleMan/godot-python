@@ -79,15 +79,14 @@ before_script:
 script:
   - set -e  # Enable fail on first error
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scons platform=$TARGET_PLATFORM checkstyle; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then scons platform=$TARGET_PLATFORM CC=$CC release_suffix=$TRAVIS_BRANCH release; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scons platform=$TARGET_PLATFORM CC=$CC release_suffix=$TRAVIS_BRANCH release; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then scons platform=$TARGET_PLATFORM CC=$CC release_suffix=$TRAVIS_BRANCH sample=true release; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scons platform=$TARGET_PLATFORM CC=$CC release_suffix=$TRAVIS_BRANCH sample=true release; fi
 # Tests need x11 server with opengl3 or compile godot with platform=server (both not working so far...)
   # - LIBGL_ALWAYS_SOFTWARE=1 scons debugger=valgrind platform=$TARGET_PLATFORM CC=$CC test
   - set +e
   - ls -l build
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ls -l build/linux-*; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ls -l build/osx-*; fi
   - du -sh build/
+  - ls -l build/pythonscript-*
   - ls -l godot-python-*.zip
 
 deploy:

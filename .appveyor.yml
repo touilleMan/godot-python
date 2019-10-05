@@ -26,12 +26,12 @@ before_build:
 build_script:
   # Un-comment if you're in deep troubles...
   # - set SCONS_MSCOMMON_DEBUG=-
-  - scons platform=%TARGET_PLATFORM% release_suffix=%APPVEYOR_REPO_TAG_NAME% release
+  - scons platform=%TARGET_PLATFORM% release_suffix=%APPVEYOR_REPO_TAG_NAME% sample=true release
 
 after_build:
   - ls -l build
-  - ls -l build/windows-*
   - du -sh build/
+  - ls -l build/pythonscript-*
   - ls -l godot-python-*.zip
 
 # test:
