@@ -78,13 +78,6 @@ vars.Add(
     default=False,
     converter=script_converter,
 )
-vars.Add(
-    BoolVariable(
-        "symlink_cp_fallback",
-        "Symlink are poorly supported on Windows, fallback to copy instead",
-        False,
-    )
-)
 
 
 env = Environment(ENV=os.environ, variables=vars)
@@ -109,33 +102,35 @@ def compiler_opts(opts, msvc=None):
 
 def SymLink(target, source, env):
     """
-    Scons doesn't provide cross-platform symlink out of the box
+    Scons doesn't provide cross-platform symlink out of the box due to Windows...
     """
     abs_src = os.path.abspath(str(source[0]))
     abs_trg = os.path.abspath(str(target[0]))
-    if env["symlink_cp_fallback"]:
-        try:
-            if os.path.isdir(abs_trg):
-                shutil.rmtree(abs_trg)
-            else:
-                os.unlink(abs_trg)
-        except Exception:
-            pass
-        try:
-            if os.path.isdir(abs_src):
-                shutil.copytree(abs_src, abs_trg)
-            else:
+
+    try:
+        os.unlink(abs_trg)
+    except Exception:
+        pass
+
+    if env["HOST_OS"] == "win32":
+        if os.path.isdir(abs_src):
+            try:
+                import _winapi
+
+                _winapi.CreateJunction(abs_src, abs_trg)
+            except Exception as e:
+                raise UserError(
+                    f"Can't do a NTFS junction as symlink fallback ({abs_src} -> {abs_trg}): {e}"
+                )
+        else:
+            try:
                 shutil.copy(abs_src, abs_trg)
-        except Exception as e:
-            raise UserError(
-                f"Can't do copy as symlink fallback ({abs_src} -> {abs_trg}): {e}"
-            )
+            except Exception as e:
+                raise UserError(
+                    f"Can't do a file copy as symlink fallback ({abs_src} -> {abs_trg}): {e}"
+                )
 
     else:
-        try:
-            os.unlink(abs_trg)
-        except Exception:
-            pass
         try:
             os.symlink(abs_src, abs_trg)
         except Exception as e:
@@ -429,6 +424,7 @@ env.Default(install_build_symlink)
 godot_binary, = env.Command(
     "build/godot", "$godot_binary", Action(SymLink, "Symlinking $SOURCE -> $TARGET")
 )
+env.Clean(godot_binary, "build/godot")
 env.Alias("godot_binary", godot_binary)
 
 
@@ -442,21 +438,58 @@ else:
     test_base_cmd = "${SOURCE} --path ${Dir('#').abspath}/tests/"
 
 
+if env["HOST_OS"] == "win32":
+
+    def init_pythonscript_build_symlinks(target_dir):
+        # Under Windows, symlinks in a git repository are not resolved, hence
+        # we must force their creation (using junction/file copy fallback)
+        symlinks = []
+        for item in ("pythonscript", "pythonscript.gdnlib"):
+            trg = (f"{target_dir}/{item}",)
+            src = f"{install_build_symlink}/{item}"
+            symlink, = env.Command(
+                trg,
+                install_build_symlink,
+                Action(
+                    # Using {install_build_symlink}/{item} as SOURCE creates
+                    # recursive dependency build/main -> build/main/pythonscript -> build/main.
+                    # On top of that the for loop force us to store in captured_src
+                    # the value to use in the call.
+                    lambda target, source, env, captured_src=src: SymLink(
+                        target, [captured_src, *source], env
+                    ),
+                    f"Symlinking {src} -> $TARGET",
+                ),
+            )
+            env.Clean(symlink, trg)
+            symlinks.append(symlink)
+
+        return symlinks
+
+
+else:
+
+    def init_pythonscript_build_symlinks(target_dir):
+        # Under POSIX, symlinks just works, so we only need to make sure
+        # the build dir they point to has been generated
+        return install_build_symlink
+
+
 env.Command(
     "tests/bindings",
-    ["$godot_binary", install_build_symlink],
+    ["$godot_binary", init_pythonscript_build_symlinks("tests/bindings")],
     test_base_cmd + "bindings",
 )
 env.AlwaysBuild("tests/bindings")
 env.Command(
     "tests/work_with_gdscript",
-    ["$godot_binary", install_build_symlink],
+    ["$godot_binary", init_pythonscript_build_symlinks("tests/work_with_gdscript")],
     test_base_cmd + "work_with_gdscript",
 )
 env.AlwaysBuild("tests/work_with_gdscript")
 env.Command(
     "tests/helloworld",
-    ["$godot_binary", install_build_symlink],
+    ["$godot_binary", init_pythonscript_build_symlinks("tests/helloworld")],
     test_base_cmd + "helloworld",
 )
 env.AlwaysBuild("tests/helloworld")
@@ -468,11 +501,20 @@ env.Alias("test", "tests")
 
 
 env.Command(
-    "example",
-    ["$godot_binary", install_build_symlink],
+    "examples/pong",
+    ["$godot_binary", init_pythonscript_build_symlinks("examples/pong")],
     "${SOURCE} --path ${Dir('#').abspath}/examples/pong",
 )
-env.AlwaysBuild("example")
+env.AlwaysBuild("examples/pong")
+env.Alias("example", "examples/pong")
+
+
+env.Command(
+    "examples/pong_multiplayer",
+    ["$godot_binary", init_pythonscript_build_symlinks("examples/pong_multiplayer")],
+    "${SOURCE} --path ${Dir('#').abspath}/examples/pong_multiplayer",
+)
+env.AlwaysBuild("examples/pong_multiplayer")
 
 
 ### Release (because I'm scared to do that with windows cmd on appveyor...) ###
