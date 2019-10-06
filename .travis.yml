@@ -63,10 +63,10 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export TARGET_PLATFORM=osx-$BITS; fi
   - git rev-parse HEAD
   - $CC --version
-  - python --version
+  - python3 --version
 
 install:
-  - python -m venv venv
+  - python3 -m venv venv
   - . ./venv/bin/activate
   - pip install -r requirements.txt
 
