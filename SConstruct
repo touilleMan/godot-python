@@ -100,7 +100,7 @@ def compiler_opts(opts, msvc=None):
     return " ".join(cooked)
 
 
-def SymLink(target, source, env):
+def SymLinkAction(target, source, env):
     """
     Scons doesn't provide cross-platform symlink out of the box due to Windows...
     """
@@ -137,7 +137,62 @@ def SymLink(target, source, env):
             raise UserError(f"Can't create symlink ({abs_src} -> {abs_trg}): {e}")
 
 
+def SymLink(env, target, source, action=SymLinkAction):
+    results = env.Command(
+        target, source, action
+    )
+    abs_trg = os.path.abspath(str(target[0]))
+    if env['PLATFORM'] == 'win32':
+        def _rm(env, target, source):
+            # assert len(target) == 1
+            try:
+                os.unlink(abs_trg)
+                # os.unlink(target[0])
+            except FileNotFoundError:
+                pass
+            except Exception as e:
+                # raise UserError(f"Can't remove NTFS junction {target[0]}")
+                raise UserError(f"Can't remove NTFS junction {abs_trg}: {e}")
+
+        env.CustomClean(
+            target,
+            # RemoveSymLink
+            Action(_rm, f"Removing symlink {target[0]}")
+        )
+    return results
+
+
 env.Append(BUILDERS={"SymLink": SymLink})
+
+
+def CustomClean(env, targets, action):
+    # Inspired by https://github.com/SCons/scons/wiki/CustomCleanActions
+
+    if not env.GetOption('clean'):
+        return
+
+    # normalize targets to absolute paths
+    targets = [env.Entry(target).abspath for target in env.Flatten(targets)]
+    launchdir = env.GetLaunchDir()
+    topdir = env.Dir("#").abspath
+    cl_targets = COMMAND_LINE_TARGETS
+
+    if not cl_targets:
+        cl_targets.append(".")
+
+    for cl_target in cl_targets:
+        if cl_target.startswith("#"):
+            full_target = os.path.join(topdir, cl_target[:1])
+        else:
+            full_target = os.path.join(launchdir, cl_target)
+        full_target = os.path.normpath(full_target)
+        for target in targets:
+            if target.startswith(full_target):
+                env.Execute(action)
+                return
+
+
+env.AddMethod(CustomClean, "CustomClean")
 
 
 def Glob(env, pattern):
@@ -152,7 +207,7 @@ env.AddMethod(Glob, "Glob")
 
 if env["dev_dyn"]:
     print(
-        "\033[0;32mBuild with a symlink on `pythonsript/godot` module"
+        "\033[0;32mBuild with a symlink on `pythonscript/godot` module"
         " (dev_dyn=True), don't share the binary !\033[0m\n"
     )
 
@@ -353,7 +408,24 @@ def extract_version():
     return gl["__version__"]
 
 
-def generate_build_dir_hook(path):
+def generate_build_dir(target, source, env):
+    target = target[0]
+    cpython_build = source[0]
+    libpythonscript = source[1]
+    godot_module = source[2]
+    _godot_module = source[3]
+
+    if os.path.isdir(target.path):
+        if env["dev_dyn"]:
+            print(f'dev_dyn: {target.path} already exist, skipping build step')
+            return
+        else:
+            print(f'Removing old build {target.path}')
+            shutil.rmtree(target.path)
+
+    os.mkdir(target.path)
+    env["generate_build_pythonscript_dir"](env, target, cpython_build, libpythonscript, godot_module, _godot_module)
+
     with open("misc/single_build_pythonscript.gdnlib") as fd:
         gdnlib = fd.read().replace(env["build_name"], "")
         # Single platform vs multi-platform one have not the same layout
@@ -362,20 +434,17 @@ def generate_build_dir_hook(path):
             r"\1",
             gdnlib,
         )
-    with open(os.path.join(path, "pythonscript.gdnlib"), "w") as fd:
+    with open(os.path.join(target.path, "pythonscript.gdnlib"), "w") as fd:
         fd.write(gdnlib)
 
-    shutil.copy("misc/release_LICENSE.txt", os.path.join(path, "LICENSE.txt"))
+    shutil.copy("misc/release_LICENSE.txt", os.path.join(target.path, "LICENSE.txt"))
 
     with open("misc/release_README.txt") as fd:
         readme = fd.read().format(
             version=extract_version(), date=datetime.utcnow().strftime("%Y-%m-%d")
         )
-    with open(os.path.join(path, "README.txt"), "w") as fd:
+    with open(os.path.join(target.path, "README.txt"), "w") as fd:
         fd.write(readme)
-
-
-env["generate_build_dir_hook"] = generate_build_dir_hook
 
 
 def do_or_die(func, *args, **kwargs):
@@ -399,7 +468,7 @@ env.Command(
         *pythonscript_godot_targets,
     ],
     Action(
-        partial(do_or_die, env["generate_build_dir"]),
+        partial(do_or_die, generate_build_dir),
         "Generating build dir $TARGET from $SOURCES",
     ),
 )
@@ -409,10 +478,7 @@ env.Clean("$build_dir", env["build_dir"].path)
 ### Symbolic link used by test and examples projects ###
 
 
-install_build_symlink, = env.Command(
-    "build/main", "$build_dir", Action(SymLink, "Symlinking $SOURCE -> $TARGET")
-)
-env.Clean(install_build_symlink, "build/main")
+install_build_symlink, = env.SymLink("build/main", "$build_dir")
 env.AlwaysBuild(install_build_symlink)
 
 env.Default(install_build_symlink)
@@ -421,10 +487,7 @@ env.Default(install_build_symlink)
 ### Download godot binary ###
 
 
-godot_binary, = env.Command(
-    "build/godot", "$godot_binary", Action(SymLink, "Symlinking $SOURCE -> $TARGET")
-)
-env.Clean(godot_binary, "build/godot")
+godot_binary, = env.SymLink("build/godot", "$godot_binary")
 env.Alias("godot_binary", godot_binary)
 
 
@@ -447,21 +510,20 @@ if env["HOST_OS"] == "win32":
         for item in ("pythonscript", "pythonscript.gdnlib"):
             trg = (f"{target_dir}/{item}",)
             src = f"{install_build_symlink}/{item}"
-            symlink, = env.Command(
+            symlink, = env.SymLink(
                 trg,
                 install_build_symlink,
-                Action(
+                action=Action(
                     # Using {install_build_symlink}/{item} as SOURCE creates
                     # recursive dependency build/main -> build/main/pythonscript -> build/main.
                     # On top of that the for loop force us to store in captured_src
                     # the value to use in the call.
-                    lambda target, source, env, captured_src=src: SymLink(
+                    lambda target, source, env, captured_src=src: SymLinkAction(
                         target, [captured_src, *source], env
                     ),
                     f"Symlinking {src} -> $TARGET",
                 ),
             )
-            env.Clean(symlink, trg)
             symlinks.append(symlink)
 
         return symlinks
