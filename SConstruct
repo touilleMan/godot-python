@@ -157,7 +157,7 @@ def SymLink(env, target, source, action=SymLinkAction):
         env.CustomClean(
             target,
             # RemoveSymLink
-            Action(_rm, f"Removing symlink {target[0]}")
+            Action(_rm, f"Removing symlink {abs_trg}")
         )
     return results
 
@@ -417,14 +417,17 @@ def generate_build_dir(target, source, env):
 
     if os.path.isdir(target.path):
         if env["dev_dyn"]:
-            print(f'dev_dyn: {target.path} already exist, skipping build step')
-            return
+            print(f"dev_dyn: {target.path} already exist, reusing it")
         else:
-            print(f'Removing old build {target.path}')
+            print(f"Removing old build {target.path}")
             shutil.rmtree(target.path)
 
-    os.mkdir(target.path)
-    env["generate_build_pythonscript_dir"](env, target, cpython_build, libpythonscript, godot_module, _godot_module)
+    if not os.path.isdir(target.path):
+        print(f"Generating build {target.path}")
+        os.mkdir(target.path)
+        env["add_cpython_to_build_dir"](env, target, cpython_build)
+
+    env["add_pythonscript_stuff_to_build_dir"](env, target, libpythonscript, _godot_module, godot_module)
 
     with open("misc/single_build_pythonscript.gdnlib") as fd:
         gdnlib = fd.read().replace(env["build_name"], "")

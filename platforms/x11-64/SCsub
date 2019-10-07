@@ -21,7 +21,7 @@ if not env["godot_binary"]:
         "curl -L %s/godot.x11.opt.debug.64 -o ${TARGET} && chmod 750 ${TARGET}"
         % env["godot_release_base_url"],
     )
-    env.NoClean(env["godot_binary"])
+env.NoClean(env["godot_binary"])
 
 
 ### Python interpreter ###
@@ -52,7 +52,8 @@ env.Command(
 env.NoClean(cpython_build)
 
 
-def generate_build_pythonscript_dir(env, target, cpython_build, libpythonscript, godot_module, _godot_module):
+def add_cpython_to_build_dir(env, target, cpython_build):
+
     def c(subpath=""):
         return os.path.join(cpython_build.abspath, *subpath.split("/"))
 
@@ -61,7 +62,6 @@ def generate_build_pythonscript_dir(env, target, cpython_build, libpythonscript,
 
     os.mkdir(p())
 
-    shutil.copy(libpythonscript.path, p())
     open(p(".gdignore"), "w").close()
 
     if os.path.isdir(c("include")):
@@ -88,7 +88,17 @@ def generate_build_pythonscript_dir(env, target, cpython_build, libpythonscript,
         )
         shutil.rmtree(p("lib/tmp_python3.7"))
 
+
+def add_pythonscript_stuff_to_build_dir(env, target, libpythonscript, _godot_module, godot_module):
+    def p(subpath=""):
+        return os.path.join(target.abspath, "pythonscript", *subpath.split("/"))
+
     if env["dev_dyn"]:
+        src = libpythonscript.abspath
+        trg = p(libpythonscript.name)
+        print(f"dev_dyn: SymLink {src} -> {trg}")
+        os.symlink(src, trg)
+
         src = _godot_module.abspath
         trg = p("lib/python3.7/site-packages/" + _godot_module.name)
         print(f"dev_dyn: SymLink {src} -> {trg}")
@@ -100,20 +110,24 @@ def generate_build_pythonscript_dir(env, target, cpython_build, libpythonscript,
         os.symlink(src, trg)
 
     else:
-        print(f"Copy {_godot_module.path} -> {p('lib/python3.7/site-packages/')}")
-        shutil.copy(_godot_module.path, p("lib/python3.7/site-packages/"))
+        print(f"Copy {libpythonscript.path} -> {p('lib/')}")
+        shutil.copy(libpythonscript.path, p())
 
-        print(f"Copy {godot_module.path} -> {p('lib/python3.7/site-packages/')}")
-        os.mkdir(p("lib/python3.7/site-packages/godot"))
+        print(f"Copy {_godot_module.path} -> {p('lib/')}")
+        shutil.copy(_godot_module.path, p("lib/"))
+
+        print(f"Copy {godot_module.path} -> {p('lib/godot')}")
+        os.mkdir(p("lib/godot"))
         for src in (
             godot_module.glob("*.py")
             + godot_module.glob("*.so")
             + godot_module.glob("*.pxd")
         ):
-            shutil.copy(src.abspath, p("lib/python3.7/site-packages/godot"))
+            shutil.copy(src.abspath, p("lib/godot"))
 
 
-env["generate_build_pythonscript_dir"] = generate_build_pythonscript_dir
+env["add_cpython_to_build_dir"] = add_cpython_to_build_dir
+env["add_pythonscript_stuff_to_build_dir"] = add_pythonscript_stuff_to_build_dir
 env["backend_dir"] = cpython_build
 env.Append(CFLAGS="-DBACKEND_CPYTHON")
 env.Append(CFLAGS="-I %s/include/python3.7m/" % cpython_build.path)
