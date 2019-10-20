@@ -1,6 +1,6 @@
 # cython: c_string_type=unicode, c_string_encoding=utf8
 
-from godot.gdnative_api_struct cimport (
+from .gdnative_api_struct cimport (
     godot_pluginscript_language_data,
     godot_string,
     godot_bool,
@@ -13,7 +13,7 @@ from godot.gdnative_api_struct cimport (
     godot_pluginscript_script_data,
     godot_pluginscript_script_manifest,
 )
-from _godot_gdapi cimport gdapi
+from .gdapi cimport gdapi
 
 # from cpython.ref cimport PyObject 
 # from libc.stddef cimport wchar_t

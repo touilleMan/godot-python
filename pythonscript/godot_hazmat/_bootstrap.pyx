@@ -1,13 +1,13 @@
-include "_godot_editor.pxi"
-include "_godot_profiling.pxi"
-include "_godot_script.pxi"
-include "_godot_instance.pxi"
+include "_bootstrap_editor.pxi"
+include "_bootstrap_profiling.pxi"
+include "_bootstrap_script.pxi"
+include "_bootstrap_instance.pxi"
 
-from godot.gdnative_api_struct cimport (
+from .gdnative_api_struct cimport (
     godot_gdnative_init_options,
     godot_pluginscript_language_data,
 )
-from _godot_gdapi cimport _register_gdapi
+from .gdapi cimport _register_gdapi
 
 
 cdef api void pythonscript_register_gdapi(const godot_gdnative_init_options *options):

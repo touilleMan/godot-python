@@ -108,38 +108,23 @@ def add_cpython_to_build_dir(env, target, cpython_build):
     _run_or_die("python.exe -m pip install cffi")
 
 
-def add_pythonscript_stuff_to_build_dir(env, target, libpythonscript, _godot_module, _godot_gdapi_module, godot_module):
+def add_pythonscript_stuff_to_build_dir(env, target, libpythonscript, godot_hazmat_module, godot_module):
     def p(subpath=""):
         return os.path.join(target.abspath, "pythonscript", *subpath.split("/"))
 
     print(f"Copy {libpythonscript.path} -> {p()}")
     shutil.copy(libpythonscript.path, p())
 
-    print(f"Copy {_godot_module.path} -> {p('lib/')}")
-    shutil.copy(_godot_module.path, p("lib/"))
-
-    print(f"Copy {_godot_gdapi_module.path} -> {p('lib/')}")
-    shutil.copy(_godot_gdapi_module.path, p("lib/"))
-
-    if env["dev_dyn"]:
-        import _winapi
-
-        if os.path.exists(p("lib/godot")):
-            print(f"dev_dyn: skip creating NTFS junction, {p('lib/godot')} already exists")
-        else:
-            print(f"dev_dyn: NTFS junction {godot_module.abspath} -> {p('lib/godot')}")
-            _winapi.CreateJunction(godot_module.abspath, p("lib/godot"))
-        env.NoClean(p("lib/godot"))
-
-    else:
-        print(f"Copy {godot_module.path} -> {p('lib/godot')}")
-        os.mkdir(p("lib/godot"))
+    for mod in (godot_hazmat_module, godot_module):
+        trg = p(f"lib/{mod.name}")
+        print(f"Copy {mod.path} -> {trg}")
+        os.mkdir(trg)
         for src in (
-            godot_module.glob("*.py")
-            + godot_module.glob("*.pyd")
-            + godot_module.glob("*.pxd")
+            mod.glob("*.py")
+            + mod.glob("*.pyd")
+            + mod.glob("*.pxd")
         ):
-            shutil.copy(src.abspath, p("lib/godot"))
+            shutil.copy(src.abspath, trg)
 
 
 env["add_cpython_to_build_dir"] = add_cpython_to_build_dir

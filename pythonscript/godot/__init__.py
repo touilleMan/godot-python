@@ -1,5 +1,4 @@
 from ._version import __version__
-from . import hazmat
 from .tags import signal
 # from .tags import (
 #     exposed,

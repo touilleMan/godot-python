@@ -2,7 +2,7 @@
 
 from libc.stddef cimport wchar_t
 
-from godot.gdnative_api_struct cimport (
+from .gdnative_api_struct cimport (
     godot_pluginscript_language_data,
     godot_string,
     godot_bool,
@@ -13,7 +13,7 @@ from godot.gdnative_api_struct cimport (
     godot_error,
     godot_dictionary
 )
-from _godot_gdapi cimport gdapi
+from .gdapi cimport gdapi
 
 
 cdef object godot_string_to_pyobj(const godot_string *p_gdstr):

@@ -11,7 +11,7 @@
 
 #include <gdnative_api_struct.gen.h>
 
-#include "_godot_api.h"
+#include "godot_hazmat/_bootstrap_api.h"
 
 
 // TODO: Anyway, this cause a segfault....
@@ -139,7 +139,7 @@ GDN_EXPORT void godot_gdnative_init(godot_gdnative_init_options *options) {
     Py_SetProgramName(L"godot");
     // Initialize interpreter but skip initialization registration of signal handlers
     Py_InitializeEx(0);
-    int ret = import__godot();
+    int ret = import_godot_hazmat___bootstrap();
     if (ret != 0){
         GD_ERROR_PRINT("Cannot load godot python module");
         return;

@@ -1,4 +1,4 @@
-from godot.gdnative_api_struct cimport (
+from .gdnative_api_struct cimport (
     godot_gdnative_init_options,
     godot_gdnative_core_api_struct,
     godot_gdnative_core_1_1_api_struct,
