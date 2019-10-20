@@ -15,7 +15,7 @@ from .tags import signal
 #     rpcmastersync,
 #     rpcpuppetsync,
 # )
-# from .vector2 import Vector2
+from .vector2 import Vector2
 
 
 # __all__ = (

@@ -17,7 +17,7 @@ from godot.gdnative_api_struct cimport (
     godot_pluginscript_script_data,
     godot_pluginscript_instance_data
 )
-from godot.hazmat cimport gdapi
+from _godot_gdapi cimport gdapi
 
 
 cdef api godot_pluginscript_instance_data* pythonscript_instance_init(

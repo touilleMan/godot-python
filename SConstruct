@@ -347,6 +347,13 @@ env.Depends(
 env.Alias("generate_godot_bindings", godot_bindings_pyx)
 
 
+### Collect .pxd headers files to detect rebuild needs ###
+
+# _godot_pxd_deps = env.Glob("_godot/*.pxd")
+_godot_pxd_deps = [*env.Glob("*pythonscript/*.pxd"), gdnative_api_struct_pxd]
+godot_pxd_deps = [*env.Glob("pythonscript/godot/*.pxd"), *_godot_pxd_deps, godot_bindings_pxd]
+
+
 ### Collect and build `pythonscript/godot` module ###
 
 cython_env = env.Clone()
@@ -370,13 +377,18 @@ pythonscript_godot_pyx_compiled = [
     ],
     cython_bindings_env.Cython(godot_bindings_pyx),
 ]
-env.Depends(pythonscript_godot_pyx_compiled, gdnative_api_struct_pxd)
-env.Depends(pythonscript_godot_pyx_compiled, godot_bindings_pxd)
+env.Depends(pythonscript_godot_pyx_compiled, godot_pxd_deps)
 pythonscript_godot_targets = [
     *env.Glob("pythonscript/godot/*.py"),
-    *env.Glob("pythonscript/godot/*.pxd"),
+    # *env.Glob("pythonscript/godot/*.pxd"),
     *pythonscript_godot_pyx_compiled,
 ]
+
+
+### Build `pythonscript/_godot_gdapi` module ###
+
+pythonscript__godot_gdapi_targets = env.Cython("pythonscript/_godot_gdapi.pyx")
+env.Depends(pythonscript_godot_pyx_compiled, _godot_pxd_deps)
 
 
 ### Build `pythonscript/_godot` module ###
@@ -386,7 +398,7 @@ pythonscript__godot_c_scrs = env.CythonToC(
     source="pythonscript/_godot.pyx",
     target=("pythonscript/_godot.c", "pythonscript/_godot_api.h"),
 )
-env.Depends(pythonscript__godot_c_scrs, gdnative_api_struct_pxd)
+env.Depends(pythonscript__godot_c_scrs, _godot_pxd_deps)
 env.Depends(pythonscript__godot_c_scrs, env.Glob("pythonscript/*.pxi"))
 pythonscript__godot_c, pythonscript__godot_api_h, *_ = pythonscript__godot_c_scrs
 pythonscript__godot_targets = cython_env.CythonCompile(source=[pythonscript__godot_c])
@@ -419,6 +431,7 @@ def generate_build_dir(target, source, env):
     libpythonscript = source[1]
     godot_module = source[2]
     _godot_module = source[3]
+    _godot_gdapi_module = source[6]
 
     if os.path.isdir(target.path):
         if env["dev_dyn"]:
@@ -432,7 +445,7 @@ def generate_build_dir(target, source, env):
         os.mkdir(target.path)
         env["add_cpython_to_build_dir"](env, target, cpython_build)
 
-    env["add_pythonscript_stuff_to_build_dir"](env, target, libpythonscript, _godot_module, godot_module)
+    env["add_pythonscript_stuff_to_build_dir"](env, target, libpythonscript, _godot_module, _godot_gdapi_module, godot_module)
 
     with open("misc/single_build_pythonscript.gdnlib") as fd:
         gdnlib = fd.read().replace(env["build_name"], "")
@@ -473,6 +486,7 @@ env.Command(
         libpythonscript,
         Dir("#pythonscript/godot"),
         *pythonscript__godot_targets,
+        *pythonscript__godot_gdapi_targets,
         *pythonscript_godot_targets,
     ],
     Action(

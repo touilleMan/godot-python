@@ -108,7 +108,7 @@ def add_cpython_to_build_dir(env, target, cpython_build):
     _run_or_die("python.exe -m pip install cffi")
 
 
-def add_pythonscript_stuff_to_build_dir(env, target, libpythonscript, _godot_module, godot_module):
+def add_pythonscript_stuff_to_build_dir(env, target, libpythonscript, _godot_module, _godot_gdapi_module, godot_module):
     def p(subpath=""):
         return os.path.join(target.abspath, "pythonscript", *subpath.split("/"))
 
@@ -117,6 +117,9 @@ def add_pythonscript_stuff_to_build_dir(env, target, libpythonscript, _godot_mod
 
     print(f"Copy {_godot_module.path} -> {p('lib/')}")
     shutil.copy(_godot_module.path, p("lib/"))
+
+    print(f"Copy {_godot_gdapi_module.path} -> {p('lib/')}")
+    shutil.copy(_godot_gdapi_module.path, p("lib/"))
 
     if env["dev_dyn"]:
         import _winapi
@@ -133,7 +136,7 @@ def add_pythonscript_stuff_to_build_dir(env, target, libpythonscript, _godot_mod
         os.mkdir(p("lib/godot"))
         for src in (
             godot_module.glob("*.py")
-            + godot_module.glob("*.dll")
+            + godot_module.glob("*.pyd")
             + godot_module.glob("*.pxd")
         ):
             shutil.copy(src.abspath, p("lib/godot"))

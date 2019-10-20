@@ -13,7 +13,7 @@ from godot.gdnative_api_struct cimport (
     godot_pluginscript_script_data,
     godot_pluginscript_script_manifest,
 )
-from godot.hazmat cimport gdapi
+from _godot_gdapi cimport gdapi
 
 # from cpython.ref cimport PyObject 
 # from libc.stddef cimport wchar_t
