@@ -65,7 +65,7 @@ cdef api void pythonscript_register_gdapi(const godot_gdnative_init_options *opt
 cdef api void pythonscript_print_banner():
     import sys
     import godot
-    cooked_sys_version = sys.version.replace("\n", "")
+    cooked_sys_version = '.'.join(map(str, sys.version_info))
     print(f"Pythonscript {godot.__version__} CPython {cooked_sys_version}")
 
 
