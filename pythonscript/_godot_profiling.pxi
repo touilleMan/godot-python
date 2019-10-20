@@ -4,7 +4,7 @@ from godot.gdnative_api_struct cimport (
     godot_pluginscript_language_data,
     godot_pluginscript_profiling_data,
 )
-from _godot cimport gdapi
+from godot.hazmat cimport gdapi
 
 
 cdef api void pythonscript_profiling_start(

@@ -1,9 +1,9 @@
-import builtins
+# import builtins
 
-from .gdnative_api_struct cimport (
-    godot_method_rpc_mode,
-    godot_property_usage_flags
-)
+# from .gdnative_api_struct cimport (
+#     godot_method_rpc_mode,
+#     godot_property_usage_flags
+# )
 from .bindings cimport Object
 
 
@@ -11,30 +11,30 @@ from .bindings cimport Object
 # to ExportedField ;-)
 
 
-class RPCMode:
-    def __init__(self, mod, modname):
-        self.mod = mod
-        self.modname = modname
+# class RPCMode:
+#     def __init__(self, mod, modname):
+#         self.mod = mod
+#         self.modname = modname
 
-    def __call__(self, decorated):
-        if isinstance(decorated, ExportedField):
-            decorated.rpc = self.mod
-        else:
-            decorated.__rpc = self.mod
+#     def __call__(self, decorated):
+#         if isinstance(decorated, ExportedField):
+#             decorated.rpc = self.mod
+#         else:
+#             decorated.__rpc = self.mod
 
-    def __repr__(self):
-        return "<%s(%s)>" % (type(self).__name__, self.modname)
+#     def __repr__(self):
+#         return "<%s(%s)>" % (type(self).__name__, self.modname)
 
 
-rpcdisabled = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_DISABLED, "disabled")
-rpcremote = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_REMOTE, "remote")
-rpcmaster = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_MASTER, "master")
-rpcpuppet = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_PUPPET, "puppet")
-rpcslave = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_SLAVE, "slave")
-rpcremotesync = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_REMOTESYNC, "remotesync")
-rpcsync = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_SYNC, "sync")
-rpcmastersync = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_MASTERSYNC, "mastersync")
-rpcpuppetsync = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_PUPPETSYNC, "puppetsync")
+# rpcdisabled = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_DISABLED, "disabled")
+# rpcremote = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_REMOTE, "remote")
+# rpcmaster = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_MASTER, "master")
+# rpcpuppet = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_PUPPET, "puppet")
+# rpcslave = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_SLAVE, "slave")
+# rpcremotesync = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_REMOTESYNC, "remotesync")
+# rpcsync = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_SYNC, "sync")
+# rpcmastersync = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_MASTERSYNC, "mastersync")
+# rpcpuppetsync = RPCMode(godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_PUPPETSYNC, "puppetsync")
 
 
 class SignalField:
@@ -51,100 +51,100 @@ def signal(name=None):
     return SignalField(name)
 
 
-# TODO: this can be greatly improved to make it more pythonic
+# # TODO: this can be greatly improved to make it more pythonic
 
 
-class ExportedField:
-    def __init__(
-        self,
-        type,
-        default=None,
-        name="",
-        hint=0,
-        usage=godot_property_usage_flags.GODOT_PROPERTY_USAGE_DEFAULT,
-        hint_string="",
-        rpc=godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_DISABLED,
-    ):
-        self.property = None
+# class ExportedField:
+#     def __init__(
+#         self,
+#         type,
+#         default=None,
+#         name="",
+#         hint=0,
+#         usage=godot_property_usage_flags.GODOT_PROPERTY_USAGE_DEFAULT,
+#         hint_string="",
+#         rpc=godot_method_rpc_mode.GODOT_METHOD_RPC_MODE_DISABLED,
+#     ):
+#         self.property = None
 
-        self.type = type
-        self.default = default
-        self.name = name
-        self.hint = hint
-        self.usage = usage
-        self.hint_string = hint_string
-        if isinstance(rpc, RPCMode):
-            self.rpc = rpc.mod
-        else:
-            self.rpc = rpc
+#         self.type = type
+#         self.default = default
+#         self.name = name
+#         self.hint = hint
+#         self.usage = usage
+#         self.hint_string = hint_string
+#         if isinstance(rpc, RPCMode):
+#             self.rpc = rpc.mod
+#         else:
+#             self.rpc = rpc
 
-    def __repr__(self):
-        return "<{x.__class__.__name__}(type={x.type}, default={x.default})>".format(
-            x=self
-        )
+#     def __repr__(self):
+#         return "<{x.__class__.__name__}(type={x.type}, default={x.default})>".format(
+#             x=self
+#         )
 
-    def __call__(self, decorated):
-        # This object is used as a decorator
-        if not callable(decorated) and not isinstance(decorated, builtins.property):
-            raise RuntimeError("@export should decorate function or property.")
+#     def __call__(self, decorated):
+#         # This object is used as a decorator
+#         if not callable(decorated) and not isinstance(decorated, builtins.property):
+#             raise RuntimeError("@export should decorate function or property.")
 
-        # It's possible decorated has already been passed through a rpc decorator
-        rpc = getattr(decorated, "__rpc", None)
-        if rpc:
-            self.rpc = rpc
-        self.property = decorated
-        return self
+#         # It's possible decorated has already been passed through a rpc decorator
+#         rpc = getattr(decorated, "__rpc", None)
+#         if rpc:
+#             self.rpc = rpc
+#         self.property = decorated
+#         return self
 
-    def setter(self, setfunc):
-        if not self.property:
-            raise RuntimeError(
-                "Cannot use setter attribute before defining the getter !"
-            )
+#     def setter(self, setfunc):
+#         if not self.property:
+#             raise RuntimeError(
+#                 "Cannot use setter attribute before defining the getter !"
+#             )
 
-        self.property = self.property.setter(setfunc)
-        return self
-
-
-def export(type, default=None, **kwargs):
-    return ExportedField(type, default, **kwargs)
+#         self.property = self.property.setter(setfunc)
+#         return self
 
 
-def exposed(cls=None, tool=False):
-    def wrapper(cls):
-        global __exposed_classes, __exposed_classes_per_module
-        assert issubclass(cls, Object), (
-            "%s must inherit from a Godot (e.g. `godot.bindings.Node`) "
-            "class to be marked as @exposed" % cls
-        )
-        assert cls.__name__ not in __exposed_classes
-        assert cls.__module__ not in __exposed_classes_per_module
-        cls.__tool = tool
-        __exposed_classes[cls.__name__] = cls
-        __exposed_classes_per_module[cls.__module__] = cls
-        return cls
-
-    if cls:
-        return wrapper(cls)
-
-    else:
-        return wrapper
+# def export(type, default=None, **kwargs):
+#     return ExportedField(type, default, **kwargs)
 
 
-def get_exposed_class_per_module(module):
-    if not isinstance(module, str):
-        module = module.__name__
-    return __exposed_classes_per_module[module]
+# def exposed(cls=None, tool=False):
+#     def wrapper(cls):
+#         global __exposed_classes, __exposed_classes_per_module
+#         assert issubclass(cls, Object), (
+#             "%s must inherit from a Godot (e.g. `godot.bindings.Node`) "
+#             "class to be marked as @exposed" % cls
+#         )
+#         assert cls.__name__ not in __exposed_classes
+#         assert cls.__module__ not in __exposed_classes_per_module
+#         cls.__tool = tool
+#         __exposed_classes[cls.__name__] = cls
+#         __exposed_classes_per_module[cls.__module__] = cls
+#         return cls
+
+#     if cls:
+#         return wrapper(cls)
+
+#     else:
+#         return wrapper
 
 
-def get_exposed_class_per_name(classname):
-    return __exposed_classes[classname]
+# def get_exposed_class_per_module(module):
+#     if not isinstance(module, str):
+#         module = module.__name__
+#     return __exposed_classes_per_module[module]
 
 
-def destroy_exposed_classes():
-    global __exposed_classes
-    global __exposed_classes_per_module
-    __exposed_classes.clear()
-    __exposed_classes_per_module.clear()
+# def get_exposed_class_per_name(classname):
+#     return __exposed_classes[classname]
+
+
+# def destroy_exposed_classes():
+#     global __exposed_classes
+#     global __exposed_classes_per_module
+#     __exposed_classes.clear()
+#     __exposed_classes_per_module.clear()
 
 
 # class BuiltinInitPlaceholder:

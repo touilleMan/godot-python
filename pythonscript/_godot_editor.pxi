@@ -13,7 +13,7 @@ from godot.gdnative_api_struct cimport (
     godot_error,
     godot_dictionary
 )
-from _godot cimport gdapi
+from godot.hazmat cimport gdapi
 
 
 cdef object godot_string_to_pyobj(const godot_string *p_gdstr):
