@@ -277,7 +277,12 @@ def cython_compile(env, source):
                 return item[: -len(extension)]
 
     libs = [_strip_extension(x.abspath) for x in source]
-    return env.SharedLibrary(libs, source, LIBPREFIX="")
+    # Python native module must have .pyd suffix on windows and .so on POSIX
+    if env['platform'].startswith('windows'):
+        suffix = '.pyd'
+    else:
+        suffix = '.so'
+    return env.SharedLibrary(libs, source, LIBPREFIX="", SHLIBSUFFIX=suffix)
 
 
 def cythonizer(env, source):
