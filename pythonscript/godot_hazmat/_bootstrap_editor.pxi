@@ -1,6 +1,10 @@
 # cython: c_string_type=unicode, c_string_encoding=utf8
 
+from cpython.ref cimport PyObject 
 from libc.stddef cimport wchar_t
+
+cdef extern from "Python.h":
+    PyObject* PyUnicode_FromWideChar(wchar_t *w, Py_ssize_t size)
 
 from .gdnative_api_struct cimport (
     godot_pluginscript_language_data,
@@ -17,7 +21,9 @@ from .gdapi cimport gdapi
 
 
 cdef object godot_string_to_pyobj(const godot_string *p_gdstr):
-    return <char*>gdapi.godot_string_wide_str(p_gdstr)
+    cdef const wchar_t * result = gdapi.godot_string_wide_str(p_gdstr)
+    cdef PyObject * pystr = PyUnicode_FromWideChar(result, -1)
+    return <object>pystr
 
 
 cdef godot_string pyobj_to_godot_string(object pystr):
