@@ -5,6 +5,7 @@ from libc.stddef cimport wchar_t
 
 cdef extern from "Python.h":
     PyObject* PyUnicode_FromWideChar(wchar_t *w, Py_ssize_t size)
+    wchar_t* PyUnicode_AsWideCharString(object, Py_ssize_t *)
 
 from .gdnative_api_struct cimport (
     godot_pluginscript_language_data,
@@ -28,8 +29,12 @@ cdef object godot_string_to_pyobj(const godot_string *p_gdstr):
 
 cdef godot_string pyobj_to_godot_string(object pystr):
     cdef godot_string gdstr;
+
+    cdef Py_ssize_t length
+    cdef wchar_t *my_wchars = PyUnicode_AsWideCharString(pystr, &length)
+    
     gdapi.godot_string_new_with_wide_string(
-        &gdstr, <wchar_t*><char*>pystr, len(pystr)
+        &gdstr, my_wchars, length
     )
     return gdstr
 
