@@ -1,6 +1,7 @@
 # cython: c_string_type=unicode, c_string_encoding=utf8
 
-from godot.gdnative_api_struct cimport (
+from godot.hazmat cimport gdapi
+from godot.hazmat.gdnative_api_struct cimport (
     godot_pluginscript_language_data,
     godot_string,
     godot_bool,
@@ -12,8 +13,8 @@ from godot.gdnative_api_struct cimport (
     godot_string_wide_str,
     godot_pluginscript_script_data,
     godot_pluginscript_script_manifest,
+    GODOT_ERR_UNAVAILABLE
 )
-from godot.hazmat cimport gdapi
 
 # from cpython.ref cimport PyObject 
 # from libc.stddef cimport wchar_t
@@ -31,6 +32,7 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
     # path = PyUnicode_FromWideChar(cpath, -1)
     # print(f"Init script {path}")
     print('Init script')
+    r_error[0] = GODOT_ERR_UNAVAILABLE
 
 
 cdef api void pythonscript_script_finish(

@@ -1,5 +1,5 @@
-from godot.gdnative_api_struct cimport *
 from godot.hazmat cimport gdapi
+from godot.hazmat.gdnative_api_struct cimport *
 
 ### Classes ###
 

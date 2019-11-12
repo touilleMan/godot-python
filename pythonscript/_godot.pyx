@@ -3,16 +3,10 @@ include "_godot_profiling.pxi"
 include "_godot_script.pxi"
 include "_godot_instance.pxi"
 
-from godot.gdnative_api_struct cimport (
+from godot.hazmat.gdnative_api_struct cimport (
     godot_gdnative_init_options,
     godot_pluginscript_language_data,
 )
-# from godot.hazmat cimport _register_gdapi
-
-
-cdef api void pythonscript_register_gdapi(const godot_gdnative_init_options *options):
-    # _register_gdapi(options)
-    pass
 
 
 cdef api void pythonscript_print_banner():

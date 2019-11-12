@@ -2,8 +2,8 @@
 
 from libc.stddef cimport wchar_t
 
-from godot.gdnative_api_struct cimport (
-    godot_pluginscript_language_data,
+from godot.hazmat cimport gdapi
+from godot.hazmat.gdnative_api_struct cimport (
     godot_string,
     godot_string_name,
     godot_bool,
@@ -11,13 +11,11 @@ from godot.gdnative_api_struct cimport (
     godot_pool_string_array,
     godot_object,
     godot_variant,
-    godot_error,
     godot_variant_call_error,
     godot_method_rpc_mode,
     godot_pluginscript_script_data,
     godot_pluginscript_instance_data
 )
-from godot.hazmat cimport gdapi
 
 
 cdef api godot_pluginscript_instance_data* pythonscript_instance_init(

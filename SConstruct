@@ -314,7 +314,7 @@ else:
 ### Generate godot api .h -> gdnative_api_struct.pxd ###
 
 
-gdnative_api_struct_pxd = File("pythonscript/godot/gdnative_api_struct.pxd")
+gdnative_api_struct_pxd = File("pythonscript/godot/hazmat/gdnative_api_struct.pxd")
 # TODO: autopxd doesn't work out of the box, hence
 # `gdnative_api_struct.pxd` has been customized after generation
 generate_gdnative_api_struct = env.Command(
