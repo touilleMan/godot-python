@@ -1,4 +1,5 @@
 from godot.hazmat cimport gdnative_api_struct
+# Re-expose Godot API with better names
 from godot.hazmat._gdapi cimport (
     pythonscript_gdapi as gdapi,
     pythonscript_gdapi11 as gdapi11,

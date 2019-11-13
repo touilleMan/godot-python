@@ -1,3 +1,13 @@
+/*
+ * Thise file get compile as a shared library that act as the entry point
+ * to the pythonscript plugin.
+ * It should be loaded by Godot's GDNative system (see the `pythonscript.gdnlib`
+ * file in the example/test projects).
+ * As part of the loading, GDNative will call the `godot_gdnative_init`
+ * function which will in turn initialize the CPython interpreter then register
+ * Python as a new language using Godot's Pluginscript system.
+ */
+
 #include "Python.h"
 
 #ifndef _WIN32
@@ -64,6 +74,11 @@ static const char *PYTHONSCRIPT_STRING_DELIMITERS[] = { "\" \"", "' '", 0 };
 static godot_pluginscript_language_desc desc;
 
 
+/*
+ * Global variables exposing Godot API to the godot.hazmat cython module.
+ * Hence we must initialized them before loading `_godot`/`godot` modules
+ * (which both depend on `godot.hazmat`).
+ */
 const godot_gdnative_core_api_struct *pythonscript_gdapi = NULL;
 const godot_gdnative_core_1_1_api_struct *pythonscript_gdapi11 = NULL;
 const godot_gdnative_core_1_2_api_struct *pythonscript_gdapi12 = NULL;
@@ -105,6 +120,11 @@ static void _register_gdapi(const godot_gdnative_init_options *options) {
 
 
 GDN_EXPORT void godot_gdnative_init(godot_gdnative_init_options *options) {
+    // Registering the api should be the very first thing to do !
+    _register_gdapi(options);
+
+    // Now those macros are usable
+
     #define GD_PRINT(c_msg) { \
         godot_string gd_msg; \
         pythonscript_gdapi->godot_string_new_with_wide_string( \
@@ -117,7 +137,8 @@ GDN_EXPORT void godot_gdnative_init(godot_gdnative_init_options *options) {
         pythonscript_gdapi->godot_print_error(msg, __func__, __FILE__, __LINE__); \
     }
 
-    _register_gdapi(options);
+    // Check for mandatory plugins
+
     if (!pythonscript_gdapi_ext_pluginscript) {
         GD_ERROR_PRINT("Pluginscript extension not available");
         return;
