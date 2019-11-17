@@ -129,8 +129,8 @@ def add_pythonscript_stuff_to_build_dir(env, target, libpythonscript, _godot_mod
 env["add_cpython_to_build_dir"] = add_cpython_to_build_dir
 env["add_pythonscript_stuff_to_build_dir"] = add_pythonscript_stuff_to_build_dir
 env["backend_dir"] = cpython_build
-env.Append(CFLAGS="-DBACKEND_CPYTHON")
-env.Append(CFLAGS="-I %s/include/python3.7m/" % cpython_build.path)
-env.Append(LIBPATH="%s/lib" % cpython_build.path)
+env.Append(CFLAGS=["-DBACKEND_CPYTHON"])
+env.Append(CFLAGS=["-I%s/include/python3.7m/" % cpython_build.path])
+env.Append(LIBPATH=["%s/lib" % cpython_build.path])
 env.Append(LIBS=["python3.7m"])
 env.Append(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])

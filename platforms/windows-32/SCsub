@@ -142,9 +142,9 @@ def add_pythonscript_stuff_to_build_dir(env, target, libpythonscript, _godot_mod
 env["add_cpython_to_build_dir"] = add_cpython_to_build_dir
 env["add_pythonscript_stuff_to_build_dir"] = add_pythonscript_stuff_to_build_dir
 env["backend_dir"] = cpython_build
-env.Append(CFLAGS="-DBACKEND_CPYTHON")
-env.Append(CFLAGS="-I %s\\..\\.." % cpython_build.path)
-env.Append(CFLAGS="-I %s\\..\\..\\Include" % cpython_build.path)
-env.Append(CFLAGS="-I %s\\..\\..\\PC" % cpython_build.path)
-env.Append(LIBPATH=cpython_build.path)
+env.Append(CFLAGS=["-DBACKEND_CPYTHON"])
+env.Append(CFLAGS=["-I%s\\..\\.." % cpython_build.path])
+env.Append(CFLAGS=["-I%s\\..\\..\\Include" % cpython_build.path])
+env.Append(CFLAGS=["-I%s\\..\\..\\PC" % cpython_build.path])
+env.Append(LIBPATH=[cpython_build.path])
 env.Append(LIBS=["python37"])
