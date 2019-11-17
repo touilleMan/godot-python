@@ -1,5 +1,5 @@
 /*
- * Thise file get compile as a shared library that act as the entry point
+ * This file gets compiled as a shared library that act as the entry point
  * to the pythonscript plugin.
  * It should be loaded by Godot's GDNative system (see the `pythonscript.gdnlib`
  * file in the example/test projects).
