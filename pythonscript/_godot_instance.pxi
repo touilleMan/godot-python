@@ -22,7 +22,7 @@ cdef api godot_pluginscript_instance_data* pythonscript_instance_init(
     godot_pluginscript_script_data *p_data,
     godot_object *p_owner
 ):
-    pass
+    return NULL
 
 
 cdef api void pythonscript_instance_finish(
