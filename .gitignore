@@ -6,6 +6,7 @@
 *.os
 *.so.*
 *.pyc
+*.pyd
 *.exp
 *.obj
 *.lib
