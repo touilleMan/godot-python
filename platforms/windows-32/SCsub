@@ -29,7 +29,7 @@ env.NoClean(env["godot_binary"])
 
 ### Python interpreter ###
 
-cpython_src = Dir("cpython")
+cpython_src = env.Dir("cpython")
 env.Command(
     cpython_src,
     None,
@@ -40,7 +40,7 @@ env.NoClean(cpython_src)
 
 # Build dir is within the source dir... which is something scons hates !
 # So we merge the two steps together.
-cpython_build = Dir("cpython/PCBuild/win32")
+cpython_build = env.Dir("cpython/PCBuild/win32")
 env.Command(
     cpython_build,
     None,

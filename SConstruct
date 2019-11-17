@@ -354,6 +354,13 @@ cython_env = env.Clone()
 if not env["shitty_compiler"]:
     cython_env.Append(CFLAGS="-Wno-unused")
 
+# Godot api struct pointers used in the cython modules are defined
+# in the pythonscript shared library. Unlink on UNIX, Windows
+# requires to have those symboles resolved at compile time.
+if env['platform'].startswith('windows'):
+    cython_env.Append(LIBPATH="#pythonscript")
+    cython_env.Append(LIBS="pythonscript")
+
 # `bindings.pyx` is a special snowflake given it size and autogeneration
 cython_bindings_env = cython_env.Clone()
 if not env["shitty_compiler"]:

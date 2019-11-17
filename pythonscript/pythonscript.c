@@ -79,13 +79,18 @@ static godot_pluginscript_language_desc desc;
  * Hence we must initialized them before loading `_godot`/`godot` modules
  * (which both depend on `godot.hazmat`).
  */
-const godot_gdnative_core_api_struct *pythonscript_gdapi = NULL;
-const godot_gdnative_core_1_1_api_struct *pythonscript_gdapi11 = NULL;
-const godot_gdnative_core_1_2_api_struct *pythonscript_gdapi12 = NULL;
-const godot_gdnative_ext_nativescript_api_struct *pythonscript_gdapi_ext_nativescript = NULL;
-const godot_gdnative_ext_pluginscript_api_struct *pythonscript_gdapi_ext_pluginscript = NULL;
-const godot_gdnative_ext_android_api_struct *pythonscript_gdapi_ext_android = NULL;
-const godot_gdnative_ext_arvr_api_struct *pythonscript_gdapi_ext_arvr = NULL;
+#ifdef _WIN32
+# define PYTHONSCRIPT_EXPORT __declspec(dllexport)
+#else
+# define PYTHONSCRIPT_EXPORT
+#endif
+PYTHONSCRIPT_EXPORT const godot_gdnative_core_api_struct *pythonscript_gdapi = NULL;
+PYTHONSCRIPT_EXPORT const godot_gdnative_core_1_1_api_struct *pythonscript_gdapi11 = NULL;
+PYTHONSCRIPT_EXPORT const godot_gdnative_core_1_2_api_struct *pythonscript_gdapi12 = NULL;
+PYTHONSCRIPT_EXPORT const godot_gdnative_ext_nativescript_api_struct *pythonscript_gdapi_ext_nativescript = NULL;
+PYTHONSCRIPT_EXPORT const godot_gdnative_ext_pluginscript_api_struct *pythonscript_gdapi_ext_pluginscript = NULL;
+PYTHONSCRIPT_EXPORT const godot_gdnative_ext_android_api_struct *pythonscript_gdapi_ext_android = NULL;
+PYTHONSCRIPT_EXPORT const godot_gdnative_ext_arvr_api_struct *pythonscript_gdapi_ext_arvr = NULL;
 
 
 static void _register_gdapi(const godot_gdnative_init_options *options) {
