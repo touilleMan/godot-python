@@ -57,7 +57,6 @@ env.NoClean(cpython_build)
 
 
 def add_cpython_to_build_dir(env, target, cpython_build):
-
     def c(subpath=""):
         return os.path.join(cpython_build.abspath, *subpath.split("/"))
 
@@ -108,7 +107,9 @@ def add_cpython_to_build_dir(env, target, cpython_build):
     _run_or_die("python.exe -m pip install cffi")
 
 
-def add_pythonscript_stuff_to_build_dir(env, target, libpythonscript, _godot_module, godot_module):
+def add_pythonscript_stuff_to_build_dir(
+    env, target, libpythonscript, _godot_module, godot_module
+):
     def p(subpath=""):
         return os.path.join(target.abspath, "pythonscript", *subpath.split("/"))
 
@@ -122,7 +123,9 @@ def add_pythonscript_stuff_to_build_dir(env, target, libpythonscript, _godot_mod
         import _winapi
 
         if os.path.exists(p("lib/godot")):
-            print(f"dev_dyn: skip creating NTFS junction, {p('lib/godot')} already exists")
+            print(
+                f"dev_dyn: skip creating NTFS junction, {p('lib/godot')} already exists"
+            )
         else:
             print(f"dev_dyn: NTFS junction {godot_module.abspath} -> {p('lib/godot')}")
             _winapi.CreateJunction(godot_module.abspath, p("lib/godot"))

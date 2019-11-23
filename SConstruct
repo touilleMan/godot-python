@@ -138,11 +138,10 @@ def SymLinkAction(target, source, env):
 
 
 def SymLink(env, target, source, action=SymLinkAction):
-    results = env.Command(
-        target, source, action
-    )
+    results = env.Command(target, source, action)
     abs_trg = os.path.abspath(str(target[0]))
-    if env['PLATFORM'] == 'win32':
+    if env["PLATFORM"] == "win32":
+
         def _rm(env, target, source):
             # assert len(target) == 1
             try:
@@ -157,7 +156,7 @@ def SymLink(env, target, source, action=SymLinkAction):
         env.CustomClean(
             target,
             # RemoveSymLink
-            Action(_rm, f"Removing symlink {abs_trg}")
+            Action(_rm, f"Removing symlink {abs_trg}"),
         )
     return results
 
@@ -168,7 +167,7 @@ env.Append(BUILDERS={"SymLink": SymLink})
 def CustomClean(env, targets, action):
     # Inspired by https://github.com/SCons/scons/wiki/CustomCleanActions
 
-    if not env.GetOption('clean'):
+    if not env.GetOption("clean"):
         return
 
     # normalize targets to absolute paths
@@ -278,10 +277,10 @@ def cython_compile(env, source):
 
     libs = [_strip_extension(x.abspath) for x in source]
     # Python native module must have .pyd suffix on windows and .so on POSIX
-    if env['platform'].startswith('windows'):
-        suffix = '.pyd'
+    if env["platform"].startswith("windows"):
+        suffix = ".pyd"
     else:
-        suffix = '.so'
+        suffix = ".so"
     return env.SharedLibrary(libs, source, LIBPREFIX="", SHLIBSUFFIX=suffix)
 
 
@@ -357,7 +356,7 @@ if not env["shitty_compiler"]:
 # Godot api struct pointers used in the cython modules are defined
 # in the pythonscript shared library. Unlink on UNIX, Windows
 # requires to have those symboles resolved at compile time.
-if env['platform'].startswith('windows'):
+if env["platform"].startswith("windows"):
     cython_env.Append(LIBPATH=["#pythonscript"])
     cython_env.Append(LIBS=["pythonscript"])
 
@@ -374,7 +373,7 @@ pythonscript_godot_pyx_compiled = [
         cython_env.Cython(src)
         for src in [
             *env.Glob("pythonscript/godot/*.pyx"),
-            *env.Glob("pythonscript/godot/hazmat/*.pyx")
+            *env.Glob("pythonscript/godot/hazmat/*.pyx"),
         ]
         if src != godot_bindings_pyx
     ],
@@ -382,7 +381,7 @@ pythonscript_godot_pyx_compiled = [
 ]
 pythonscript_godot_pxds = [
     *env.Glob("pythonscript/godot/*.pxd"),
-    *env.Glob("pythonscript/godot/hazmat/*.pxd")
+    *env.Glob("pythonscript/godot/hazmat/*.pxd"),
 ]
 env.Depends(pythonscript_godot_pyx_compiled, gdnative_api_struct_pxd)
 env.Depends(pythonscript_godot_pyx_compiled, godot_bindings_pxd)
@@ -448,7 +447,9 @@ def generate_build_dir(target, source, env):
         os.mkdir(target.path)
         env["add_cpython_to_build_dir"](env, target, cpython_build)
 
-    env["add_pythonscript_stuff_to_build_dir"](env, target, libpythonscript, _godot_module, godot_module)
+    env["add_pythonscript_stuff_to_build_dir"](
+        env, target, libpythonscript, _godot_module, godot_module
+    )
 
     with open("misc/single_build_pythonscript.gdnlib") as fd:
         gdnlib = fd.read().replace(env["build_name"], "")
