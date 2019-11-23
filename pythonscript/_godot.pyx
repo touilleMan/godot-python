@@ -5,25 +5,66 @@
 # only expose C functions.
 # Beside this module depend on the `godot.hazmat` module so it would be a bad
 # idea to make the `godot` module depend on it...
-
 include "_godot_editor.pxi"
 include "_godot_profiling.pxi"
 include "_godot_script.pxi"
 include "_godot_instance.pxi"
 
-
 from godot.hazmat.gdnative_api_struct cimport (
     godot_gdnative_init_options,
     godot_pluginscript_language_data,
 )
+from godot.hazmat._internal cimport set_pythonscript_verbose
+
+import os
+import sys
+import godot
+from godot.bindings import OS, ProjectSettings
+
+
+def _setup_config_entry(name, default_value):
+    if not ProjectSettings.has_setting(name):
+        ProjectSettings.set_setting(name, default_value)
+    ProjectSettings.set_initial_value(name, default_value)
+    # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
+    return ProjectSettings.get_setting(name)
 
 
 cdef api godot_pluginscript_language_data *pythonscript_init():
-	# Print banner
-    import sys
-    import godot
+    set_pythonscript_verbose(True)
+
+    # # Make sure Python starts in the game directory
+    # os.chdir(ProjectSettings.globalize_path("res://"))
+
+    # # Pass argv arguments
+    # sys.argv = ["godot"] + list(OS.get_cmdline_args())
+
+    # # Update PYTHONPATH according to configuration
+    # pythonpath = _setup_config_entry("python_script/path", "res://;res://lib")
+    # for p in pythonpath.split(";"):
+    #     p = ProjectSettings.globalize_path(p)
+    #     sys.path.append(p)
+
+    # # Redirect stdout/stderr to have it in the Godot editor console
+    # if _setup_config_entry("python_script/io_streams_capture", True):
+    #     enable_capture_io_streams()
+
+    # # Enable verbose output from pythonscript framework
+    # if _setup_config_entry("python_script/verbose", False):
+    #     set_pythonscript_verbose(True)
+
+    # Finally proudly print banner ;-)
+    # if _setup_config_entry("python_script/print_startup_info", True):
+        # cooked_sys_version = '.'.join(map(str, sys.version_info))
+        # print(f"Pythonscript {godot.__version__} CPython {cooked_sys_version}")
+
+    if get_pythonscript_verbose():
+        print(f"PYTHONPATH: {sys.path}")
+
     cooked_sys_version = '.'.join(map(str, sys.version_info))
     print(f"Pythonscript {godot.__version__} CPython {cooked_sys_version}")
+    print(f"PYTHONPATH: {sys.path}")
+
     return NULL
 
 

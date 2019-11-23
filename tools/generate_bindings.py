@@ -30,10 +30,11 @@ GD_TYPES = {
 
 SAMPLE_CLASSES = {
     "Object",
+    "_ProjectSettings",
     # "Input",
     # "InputMap",
     # "MainLoop",
-    # "Node",
+    "Node",
     "Reference",
     "ARVRInterface",
     "ARVRInterfaceGDNative",

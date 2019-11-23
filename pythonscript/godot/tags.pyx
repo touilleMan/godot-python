@@ -1,13 +1,14 @@
 import builtins
 import enum
 
-from .hazmat.gdnative_api_struct cimport (
+from godot.hazmat.gdnative_api_struct cimport (
     godot_method_rpc_mode,
     godot_property_usage_flags,
     godot_method_rpc_mode,
     godot_property_hint,
 )
-from .bindings cimport Object
+from godot.hazmat._internal cimport get_exposed_class_per_module, set_exposed_class_per_module
+from godot.bindings cimport Object
 
 
 # Make Godot enums accesible from Python at runtime
@@ -237,9 +238,6 @@ def export(
     )
 
 
-__exposed_classes_per_module = {}
-
-
 def exposed(cls=None, tool=False):
     """
     Decorator used to mark a class as beeing exposed to Godot (hence making
@@ -254,22 +252,21 @@ def exposed(cls=None, tool=False):
             pass
     """
     def wrapper(cls):
-        global __exposed_classes_per_module
-
         if not issubclass(cls, Object):
             raise ValueError(
                 f"{cls!r} must inherit from a Godot (e.g. `godot.bindings.Node`) "
                 "class to be marked as @exposed"
             )
 
-        if cls.__module__ in __exposed_classes_per_module:
+        existing_cls_for_module = get_exposed_class_per_module(cls.__module__)
+        if existing_cls_for_module:
             raise ValueError(
-                f"Only a single class can be marked as @exposed per module"
-                f" (already got {__exposed_classes_per_module[cls.__module__]!r})"
+                "Only a single class can be marked as @exposed per module"
+                f" (already got {existing_cls_for_module!r})"
             )
 
         cls.__tool = tool
-        __exposed_classes_per_module[cls.__module__] = cls
+        set_exposed_class_per_module(cls.__module__, cls)
 
         return cls
 
@@ -278,15 +275,3 @@ def exposed(cls=None, tool=False):
 
     else:
         return wrapper
-
-
-def get_exposed_class_per_module(module):
-    if not isinstance(module, str):
-        module = module.__name__
-    return __exposed_classes_per_module[module]
-
-
-# TODO: hide this to prevent user from fooling with it ?
-def destroy_exposed_classes():
-    global __exposed_classes_per_module
-    __exposed_classes_per_module.clear()

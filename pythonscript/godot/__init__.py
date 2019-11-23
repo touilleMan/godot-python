@@ -1,5 +1,5 @@
-from ._version import __version__
-from .tags import (
+from godot._version import __version__
+from godot.tags import (
     MethodRPCMode,
     PropertyHint,
     PropertyUsageFlag,
@@ -16,7 +16,7 @@ from .tags import (
     export,
     exposed,
 )
-from .vector2 import Vector2
+from godot.vector2 import Vector2
 
 
 __all__ = (

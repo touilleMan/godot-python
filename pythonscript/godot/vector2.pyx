@@ -2,8 +2,8 @@
 
 cimport cython
 
-from .hazmat cimport gdapi, gdapi12
-from .hazmat.gdnative_api_struct cimport godot_vector2, godot_real
+from godot.hazmat cimport gdapi, gdapi12
+from godot.hazmat.gdnative_api_struct cimport godot_vector2, godot_real
 
 
 @cython.final

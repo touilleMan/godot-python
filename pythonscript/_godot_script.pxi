@@ -1,6 +1,7 @@
 # cython: c_string_type=unicode, c_string_encoding=utf8
 
 from godot.hazmat cimport gdapi
+from godot.hazmat.convert cimport godot_string_to_pyobj, pyobj_to_godot_string
 from godot.hazmat.gdnative_api_struct cimport (
     godot_pluginscript_language_data,
     godot_string,
@@ -14,42 +15,20 @@ from godot.hazmat.gdnative_api_struct cimport (
     godot_pluginscript_script_data,
     godot_pluginscript_script_manifest,
     GODOT_OK,
-    GODOT_ERR_UNAVAILABLE
+    GODOT_ERR_UNAVAILABLE,
+    GODOT_ERR_FILE_BAD_PATH,
+    GODOT_ERR_PARSE_ERROR,
+)
+from godot.hazmat._internal cimport (
+    get_pythonscript_verbose,
+    get_exposed_class_per_module,
+    destroy_exposed_classes,
 )
 
-# from cpython.ref cimport PyObject 
-# from libc.stddef cimport wchar_t
-
-# cdef extern from "Python.h":
-#     PyObject* PyUnicode_FromWideChar(wchar_t *w, Py_ssize_t size)
+import traceback
 
 
-# cdef inline void py_to_gd_str(str pystr, godot_string *gd_str):
-#     # TODO: this is probably broken for unicode...
-#     gdapi.godot_string_new_with_wide_string(gd_str, pystr, len(pystr))
-
-
-# cdef inline void py_to_gd_strname(str pystr, godot_string_name *gd_str):
-#     gdapi.godot_string_name_new_data(gd_str, pystr)
-
-
-# cdef inline str gd_to_py_strname(godot_string_name *gd_str):
-#     cdef godot_string gdstr = gdapi.godot_string_name_get_name(p_gdstring)
-#     return gd_to_py_str(gdstr)
-
-
-# cdef inline str gd_to_py_str(godot_string_name *gd_str):
-#     cdef wchar_t *raw_str = gdapi.godot_string_wide_str(p_gdstring)
-#     return raw_str
-
-
-cdef api godot_pluginscript_script_manifest pythonscript_script_init(
-    godot_pluginscript_language_data *p_data,
-    const godot_string *p_path,
-    const godot_string *p_source,
-    godot_error *r_error
-):
-    cdef godot_pluginscript_script_manifest manifest
+cdef inline _init_empty_manifest(godot_pluginscript_script_manifest *manifest):
     manifest.data = NULL
     gdapi.godot_string_name_new_data(&manifest.name, "")
     manifest.is_tool = False
@@ -59,18 +38,56 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
     gdapi.godot_array_new(&manifest.signals)
     gdapi.godot_array_new(&manifest.properties)
 
+
+cdef api godot_pluginscript_script_manifest pythonscript_script_init(
+    godot_pluginscript_language_data *p_data,
+    const godot_string *p_path,
+    const godot_string *p_source,
+    godot_error *r_error
+):
+    cdef godot_pluginscript_script_manifest manifest
+    cdef object path = godot_string_to_pyobj(p_path)
+    if get_pythonscript_verbose():
+        print(f"Loading python script from {path}")
+
+    if not path.startswith("res://") or not path.rsplit(".", 1)[-1] in (
+        "py",
+        "pyc",
+        "pyo",
+        "pyd",
+    ):
+        print(
+            f"Bad python script path `{path}`, must starts by `res://` and ends with `.py/pyc/pyo/pyd`"
+        )
+        r_error[0] = GODOT_ERR_FILE_BAD_PATH
+        # Obliged to return the structure, but no need in init it
+        return manifest
+
+    # TODO: possible bug if res:// is not part of PYTHONPATH
+    # Remove `res://`, `.py` and replace / by .
+    modname = path[6:].rsplit(".", 1)[0].replace("/", ".")
+    try:
+        __import__(modname)  # Force lazy loading of the module
+        # TODO: make sure script reloading works
+        cls = get_exposed_class_per_module(modname)
+    except BaseException:
+        # If we are here it could be because the file doesn't exists
+        # or (more possibly) the file content is not a valid python (or
+        # miss an exposed class)
+        print(
+            f"Got exception loading {path} ({modname}): {traceback.format_exc()}"
+        )
+        r_error[0] = GODOT_ERR_PARSE_ERROR
+        # Obliged to return the structure, but no need in init it
+        return manifest
+
     r_error[0] = GODOT_OK
-
-    # # cdef wchar_t *cpath = godot_string_wide_str(p_path)
-    # # path = PyUnicode_FromWideChar(cpath, -1)
-    # # print(f"Init script {path}")
-    # print('Init script')
-    # r_error[0] = GODOT_ERR_UNAVAILABLE
-
+    _init_empty_manifest(&manifest)
     return manifest
+    # return _build_script_manifest(cls)[0]
 
 
 cdef api void pythonscript_script_finish(
     godot_pluginscript_script_data *p_data
 ):
-    pass
+    destroy_exposed_classes()
