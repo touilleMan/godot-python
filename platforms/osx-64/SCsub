@@ -95,21 +95,26 @@ def add_pythonscript_stuff_to_build_dir(env, target, libpythonscript, _godot_mod
     def p(subpath=""):
         return os.path.join(target.abspath, "pythonscript", *subpath.split("/"))
 
+    def symlink_on_need(src, trg):
+        if os.path.exists(trg):
+            print(f"dev_dyn: skip creating SymLink, {trg} already exists")
+        else:
+            print(f"dev_dyn: SymLink {src} -> {trg}")
+            os.symlink(src, trg)
+
     if env["dev_dyn"]:
-        src = libpythonscript.abspath
-        trg = p(libpythonscript.name)
-        print(f"dev_dyn: SymLink {src} -> {trg}")
-        os.symlink(src, trg)
-
-        src = _godot_module.abspath
-        trg = p("lib/python3.7/site-packages/" + _godot_module.name)
-        print(f"dev_dyn: SymLink {src} -> {trg}")
-        os.symlink(src, trg)
-
-        src = godot_module.abspath
-        trg = p("lib/python3.7/site-packages/godot")
-        print(f"dev_dyn: SymLink {src} -> {trg}")
-        os.symlink(src, trg)
+        symlink_on_need(
+            libpythonscript.abspath,
+            p(libpythonscript.name)
+        )
+        symlink_on_need(
+            _godot_module.abspath,
+            p("lib/python3.7/site-packages/" + _godot_module.name)
+        )
+        symlink_on_need(
+            godot_module.abspath,
+            p("lib/python3.7/site-packages/godot")
+        )
 
     else:
         print(f"Copy {libpythonscript.path} -> {p('lib/')}")

@@ -372,16 +372,25 @@ else:
 pythonscript_godot_pyx_compiled = [
     *[
         cython_env.Cython(src)
-        for src in env.Glob("pythonscript/godot/*.pyx")
+        for src in [
+            *env.Glob("pythonscript/godot/*.pyx"),
+            *env.Glob("pythonscript/godot/hazmat/*.pyx")
+        ]
         if src != godot_bindings_pyx
     ],
     cython_bindings_env.Cython(godot_bindings_pyx),
 ]
+pythonscript_godot_pxds = [
+    *env.Glob("pythonscript/godot/*.pxd"),
+    *env.Glob("pythonscript/godot/hazmat/*.pxd")
+]
 env.Depends(pythonscript_godot_pyx_compiled, gdnative_api_struct_pxd)
 env.Depends(pythonscript_godot_pyx_compiled, godot_bindings_pxd)
+env.Depends(pythonscript_godot_pyx_compiled, pythonscript_godot_pxds)
 pythonscript_godot_targets = [
     *env.Glob("pythonscript/godot/*.py"),
-    *env.Glob("pythonscript/godot/*.pxd"),
+    *env.Glob("pythonscript/godot/hazmat/*.py"),
+    *pythonscript_godot_pxds,
     *pythonscript_godot_pyx_compiled,
 ]
 

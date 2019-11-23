@@ -37,10 +37,9 @@ cdef api godot_string pythonscript_get_template_source_code(
     const godot_string *p_class_name,
     const godot_string *p_base_class_name
 ):
-    # TODO: Cython consider wchat_t not portable, hence on linux we do
-    # dirty cast between `wchar_t *` band `char *`. This is likely to
-    # fail under Windows (where we should be able to use
-    # `PyUnicode_AsWideChar` instead)
+    # TODO: Cython considers wchar_t not portable, hence on linux we do
+    # dirty cast between `wchar_t *` and `char *`. This is likely to fail under
+    # Windows (where we should be able to use `PyUnicode_AsWideChar` instead)
     cdef bytes base_class_name = <char*>gdapi.godot_string_wide_str(p_base_class_name)
     cdef bytes class_name
     if p_class_name == NULL:
