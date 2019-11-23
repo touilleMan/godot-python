@@ -290,7 +290,6 @@ def cythonizer(env, source):
 
 
 env.AddMethod(cython_compile, "CythonCompile")
-env.AddMethod(cythonizer, "Cython")
 
 
 ### Default C flags ###
@@ -367,30 +366,45 @@ if not env["shitty_compiler"]:
     cython_bindings_env.Append(LINKFLAGS=["-Wl,--strip-all"])
 else:
     cython_bindings_env.Append(CFLAGS=["/Os"])
+godot_bindings_pyx_to_c = cython_bindings_env.CythonToC(godot_bindings_pyx)
+godot_bindings_pyx_compiled = cython_bindings_env.CythonCompile(godot_bindings_pyx_to_c)
 
-pythonscript_godot_pyx_compiled = [
-    *[
-        cython_env.Cython(src)
-        for src in [
-            *env.Glob("pythonscript/godot/*.pyx"),
-            *env.Glob("pythonscript/godot/hazmat/*.pyx"),
-        ]
-        if src != godot_bindings_pyx
-    ],
-    cython_bindings_env.Cython(godot_bindings_pyx),
+# Now the other common folks
+pythonscript_godot_pyx_except_bindings = [
+    *[src for src in env.Glob("pythonscript/godot/*.pyx") if src != godot_bindings_pyx],
+    *env.Glob("pythonscript/godot/hazmat/*.pyx"),
 ]
+pythonscript_godot_pyx_except_bindings_to_c = [
+    cython_env.CythonToC(src) for src in pythonscript_godot_pyx_except_bindings
+]
+pythonscript_godot_pyx_except_bindings_compiled = [
+    cython_env.CythonCompile(src) for src in pythonscript_godot_pyx_except_bindings_to_c
+]
+
+# Define dependencies on .pxd files
+pythonscript_godot_pyxs = [pythonscript_godot_pyx_except_bindings, godot_bindings_pyx]
 pythonscript_godot_pxds = [
     *env.Glob("pythonscript/godot/*.pxd"),
     *env.Glob("pythonscript/godot/hazmat/*.pxd"),
+    gdnative_api_struct_pxd,
+    godot_bindings_pxd,
 ]
-env.Depends(pythonscript_godot_pyx_compiled, gdnative_api_struct_pxd)
-env.Depends(pythonscript_godot_pyx_compiled, godot_bindings_pxd)
-env.Depends(pythonscript_godot_pyx_compiled, pythonscript_godot_pxds)
+pythonscript_godot_pyxs_to_c = [
+    pythonscript_godot_pyx_except_bindings_to_c,
+    godot_bindings_pyx_to_c,
+]
+pythonscript_godot_pyxs_compiled = [
+    pythonscript_godot_pyx_except_bindings_compiled,
+    godot_bindings_pyx_compiled,
+]
+env.Depends(pythonscript_godot_pyxs_to_c, pythonscript_godot_pxds)
+
+# Final target
 pythonscript_godot_targets = [
     *env.Glob("pythonscript/godot/*.py"),
     *env.Glob("pythonscript/godot/hazmat/*.py"),
     *pythonscript_godot_pxds,
-    *pythonscript_godot_pyx_compiled,
+    *pythonscript_godot_pyxs_compiled,
 ]
 
 
@@ -401,7 +415,7 @@ pythonscript__godot_c_scrs = env.CythonToC(
     source="pythonscript/_godot.pyx",
     target=("pythonscript/_godot.c", "pythonscript/_godot_api.h"),
 )
-env.Depends(pythonscript__godot_c_scrs, gdnative_api_struct_pxd)
+env.Depends(pythonscript__godot_c_scrs, pythonscript_godot_pxds)
 env.Depends(pythonscript__godot_c_scrs, env.Glob("pythonscript/*.pxi"))
 pythonscript__godot_c, pythonscript__godot_api_h, *_ = pythonscript__godot_c_scrs
 pythonscript__godot_targets = cython_env.CythonCompile(source=[pythonscript__godot_c])
