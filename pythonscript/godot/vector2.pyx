@@ -9,17 +9,27 @@ from godot.hazmat.gdnative_api_struct cimport godot_vector2, godot_real
 @cython.final
 cdef class Vector2:
 
+    def __init__(self, godot_real x=0.0, godot_real y=0.0):
+        gdapi.godot_vector2_new(self._c_vector2_ptr(), x, y)
+
     @staticmethod
     cdef Vector2 new(godot_real x=0.0, godot_real y=0.0):
         cdef Vector2 ret = Vector2.__new__()
         gdapi.godot_vector2_new(ret._c_vector2_ptr(), x, y)
         return ret
 
+    @staticmethod
+    cdef Vector2 from_ptr(const godot_vector2 *_ptr):
+        # Call to __new__ bypasses __init__ constructor
+        cdef Vector2 ret = Vector2.__new__()
+        ret._c_vector2 = _ptr[0]
+        return ret
+
     def __cinit__(self, x=0.0, y=0.0):
         gdapi.godot_vector2_new(self._c_vector2_ptr(), x, y)
 
     cdef inline godot_vector2 *_c_vector2_ptr(Vector2 self):
-        return &(<Vector2>self)._c_vector2
+        return &(self._c_vector2)
 
     def __repr__(self):
         return f"<Vector2(x={self.x}, y={self.y})>"

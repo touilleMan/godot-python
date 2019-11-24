@@ -12,6 +12,9 @@ cdef class Vector2:
     @staticmethod
     cdef Vector2 new(godot_real x=*, godot_real y=*)
 
+    @staticmethod
+    cdef Vector2 from_ptr(const godot_vector2 *_ptr)
+
     cdef inline godot_vector2 *_c_vector2_ptr(Vector2 self)
 
     # Operators
