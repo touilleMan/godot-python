@@ -1,10 +1,10 @@
 # cython: c_string_type=unicode, c_string_encoding=utf8
 
-from godot.hazmat cimport gdapi
-from godot.hazmat.gdnative_api_struct cimport (
+from godot._hazmat.gdnative_api_struct cimport (
     godot_pluginscript_language_data,
     godot_pluginscript_profiling_data,
 )
+from godot._hazmat.gdapi cimport pythonscript_gdapi as gdapi
 
 
 cdef api void pythonscript_profiling_start(

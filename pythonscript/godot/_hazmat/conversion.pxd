@@ -1,8 +1,8 @@
 from libc.stddef cimport wchar_t
 from libc.stdio cimport printf
 
-from godot.hazmat._gdapi cimport pythonscript_gdapi as gdapi
-from godot.hazmat.gdnative_api_struct cimport (
+from godot._hazmat.gdapi cimport pythonscript_gdapi as gdapi
+from godot._hazmat.gdnative_api_struct cimport (
     godot_string,
     godot_int,
     godot_variant,

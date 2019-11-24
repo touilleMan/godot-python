@@ -1,4 +1,4 @@
-from .gdnative_api_struct cimport (
+from godot._hazmat.gdnative_api_struct cimport (
     godot_gdnative_core_api_struct,
     godot_gdnative_core_1_1_api_struct,
     godot_gdnative_core_1_2_api_struct,

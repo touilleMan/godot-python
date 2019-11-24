@@ -2,8 +2,7 @@
 
 from libc.stddef cimport wchar_t
 
-from godot.hazmat cimport gdapi
-from godot.hazmat.gdnative_api_struct cimport (
+from godot._hazmat.gdnative_api_struct cimport (
     godot_string,
     godot_string_name,
     godot_bool,
@@ -16,6 +15,7 @@ from godot.hazmat.gdnative_api_struct cimport (
     godot_pluginscript_script_data,
     godot_pluginscript_instance_data
 )
+from godot._hazmat.gdapi cimport pythonscript_gdapi as gdapi
 
 
 cdef api godot_pluginscript_instance_data* pythonscript_instance_init(

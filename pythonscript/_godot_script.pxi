@@ -1,8 +1,6 @@
 # cython: c_string_type=unicode, c_string_encoding=utf8
 
-from godot.hazmat cimport gdapi
-from godot.hazmat.convert cimport godot_string_to_pyobj, pyobj_to_godot_string
-from godot.hazmat.gdnative_api_struct cimport (
+from godot._hazmat.gdnative_api_struct cimport (
     godot_pluginscript_language_data,
     godot_string,
     godot_bool,
@@ -19,7 +17,9 @@ from godot.hazmat.gdnative_api_struct cimport (
     GODOT_ERR_FILE_BAD_PATH,
     GODOT_ERR_PARSE_ERROR,
 )
-from godot.hazmat._internal cimport (
+from godot._hazmat.gdapi cimport pythonscript_gdapi as gdapi
+from godot._hazmat.conversion cimport godot_string_to_pyobj, pyobj_to_godot_string
+from godot._hazmat.internal cimport (
     get_pythonscript_verbose,
     get_exposed_class_per_module,
     destroy_exposed_classes,

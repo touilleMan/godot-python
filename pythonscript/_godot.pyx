@@ -10,11 +10,11 @@ include "_godot_profiling.pxi"
 include "_godot_script.pxi"
 include "_godot_instance.pxi"
 
-from godot.hazmat.gdnative_api_struct cimport (
+from godot._hazmat.gdnative_api_struct cimport (
     godot_gdnative_init_options,
     godot_pluginscript_language_data,
 )
-from godot.hazmat._internal cimport set_pythonscript_verbose
+from godot._hazmat.internal cimport set_pythonscript_verbose
 
 import os
 import sys

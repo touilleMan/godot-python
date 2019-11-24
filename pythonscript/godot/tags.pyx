@@ -1,13 +1,13 @@
 import builtins
 import enum
 
-from godot.hazmat.gdnative_api_struct cimport (
+from godot._hazmat.gdnative_api_struct cimport (
     godot_method_rpc_mode,
     godot_property_usage_flags,
     godot_method_rpc_mode,
     godot_property_hint,
 )
-from godot.hazmat._internal cimport get_exposed_class_per_module, set_exposed_class_per_module
+from godot._hazmat.internal cimport get_exposed_class_per_module, set_exposed_class_per_module
 from godot.bindings cimport Object
 
 
