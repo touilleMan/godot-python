@@ -175,32 +175,28 @@ cdef inline object godot_variant_to_pyobj(const godot_variant *p_gdvar):
         )
 
 
-cdef inline godot_variant pyobj_to_godot_variant(object pyobj):
-    cdef godot_variant gdvar
-
+cdef inline void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
     if pyobj is None:
-        gdapi.godot_variant_new_nil(&gdvar)
+        gdapi.godot_variant_new_nil(p_var)
     elif isinstance(pyobj, bool):
-        gdapi.godot_variant_new_bool(&gdvar, pyobj)
+        gdapi.godot_variant_new_bool(p_var, pyobj)
     elif isinstance(pyobj, int):
-        gdapi.godot_variant_new_int(&gdvar, pyobj)
+        gdapi.godot_variant_new_int(p_var, pyobj)
     elif isinstance(pyobj, float):
-        gdapi.godot_variant_new_real(&gdvar, pyobj)
+        gdapi.godot_variant_new_real(p_var, pyobj)
     elif isinstance(pyobj, str):
         # cdef godot_string gdstr = pyobj_to_godot_string(pyobj)
         gdstr = pyobj_to_godot_string(pyobj)
         try:
-            gdapi.godot_variant_new_string(&gdvar, &gdstr)
+            gdapi.godot_variant_new_string(p_var, &gdstr)
         finally:
             gdapi.godot_string_destroy(&gdstr)
     elif isinstance(pyobj, Vector2):
-        gdapi.godot_variant_new_vector2(&gdvar, (<Vector2>pyobj)._c_vector2_ptr())
+        gdapi.godot_variant_new_vector2(p_var, (<Vector2>pyobj)._c_vector2_ptr())
 
     # TODO: finish other base types
 
     elif isinstance(pyobj, Object):
-        gdapi.godot_variant_new_object(&gdvar, (<Object>pyobj)._ptr)
+        gdapi.godot_variant_new_object(p_var, (<Object>pyobj)._ptr)
     else:
         raise TypeError(f"Cannot convert `{pyobj}` to Godot's Variant")
-
-    return gdvar
