@@ -4,7 +4,17 @@ __methbind__{{ cls["name"] }}__{{ method["name"] }}
 
 
 {% macro render_method_bind_register(cls, method) %}
-cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = gdapi.godot_method_bind_get_method("{{ cls['name'] }}", "{{ method['name'] }}")
+{% set bind_name = cls["singleton_name"] if cls["singleton"] else cls["name"] %}
+cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = gdapi.godot_method_bind_get_method("{{ bind_name }}", "{{ method['name'] }}")
+{%- endmacro %}
+
+
+{% macro render_method_c_signature(method) %}
+{{ method["return_type"] }} {{ method["name"] }}(self,
+{%- for arg in method["arguments"] %}
+{{ arg["type"] }} {{ arg["name"] }},
+{%- endfor %}
+)
 {%- endmacro %}
 
 
@@ -103,6 +113,7 @@ gdapi.godot_method_bind_ptrcall(
 
 
 {% macro render_method(cls, method) %}
+# {{ render_method_c_signature(method) }}
 cpdef {{ render_method_signature(method) }}:
     {{ _render_method_cook_args(method) | indent }}
     {{ _render_method_call(cls, method) | indent }}

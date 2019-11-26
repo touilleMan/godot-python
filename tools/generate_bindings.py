@@ -62,8 +62,6 @@ def strip_unsupported_stuff(classes):
                 continue
             if meth["is_noscript"]:
                 continue
-            if meth["is_const"]:
-                continue
             if meth["is_reverse"]:
                 continue
             if meth["is_virtual"]:
@@ -143,7 +141,7 @@ def cook_data(data):
                     return (False, f"godot_{camel_to_snake(type_)}")
 
     def _cook_name(name):
-        if iskeyword(name) or name in ("char", "bool", "int", "float", "short"):
+        if iskeyword(name) or name in ("char", "bool", "int", "float", "short", "type"):
             return f"{name}_"
         else:
             return name
