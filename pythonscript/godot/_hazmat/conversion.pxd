@@ -5,6 +5,7 @@ from godot._hazmat.gdapi cimport pythonscript_gdapi as gdapi
 from godot._hazmat.gdnative_api_struct cimport (
     godot_string,
     godot_int,
+    godot_vector2,
     godot_variant,
     godot_variant_type,
 )
@@ -29,21 +30,21 @@ cdef inline object godot_string_to_pyobj(const godot_string *p_gdstr):
         return raw[:length * 4].decode("UTF-32")
 
 
-cdef inline godot_string pyobj_to_godot_string(object pystr):
-    cdef godot_string gdstr
+cdef inline pyobj_to_godot_string(object pystr, godot_string *p_gdstr):
     # TODO: unicode&windows support is most likely broken...
+    cdef bytes raw
     IF UNAME_SYSNAME == "Windows":
         raw = pystr.encode("UTF-16")
     ELSE:
         raw = pystr.encode("UTF-32")
     gdapi.godot_string_new_with_wide_string(
-        &gdstr, <wchar_t*><char*>raw, len(pystr)
+        p_gdstr, <wchar_t*><char*>raw, len(pystr)
     )
-    return gdstr
 
 
 cdef inline object godot_variant_to_pyobj(const godot_variant *p_gdvar):
-    gdtype = gdapi.godot_variant_get_type(p_gdvar)
+    cdef godot_variant_type gdtype = gdapi.godot_variant_get_type(p_gdvar)
+
     if gdtype == godot_variant_type.GODOT_VARIANT_TYPE_NIL:
         return None
 
@@ -57,17 +58,10 @@ cdef inline object godot_variant_to_pyobj(const godot_variant *p_gdvar):
         return float(gdapi.godot_variant_as_real(p_gdvar))
 
     elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_STRING:
-        # cdef godot_string gdstr = gdapi.godot_variant_as_string(p_gdvar)
-        gdstr = gdapi.godot_variant_as_string(p_gdvar)
-        try:
-            return godot_string_to_pyobj(&gdstr)
-        finally:
-            gdapi.godot_string_destroy(&gdstr)
+        return _godot_variant_to_pyobj_string(p_gdvar)
 
     elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_VECTOR2:
-        # cdef godot_vector2 gdvect2 = gdapi.godot_variant_as_vector2(p_gdvar)
-        gdvect2 = gdapi.godot_variant_as_vector2(p_gdvar)
-        return Vector2.build_from_gdobj(gdvect2)
+        return _godot_variant_to_pyobj_vector2(p_gdvar)
 
     # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_RECT2:
     #     raw = gdapi.godot_variant_as_rect2(p_gdvar)
@@ -175,6 +169,21 @@ cdef inline object godot_variant_to_pyobj(const godot_variant *p_gdvar):
         )
 
 
+# Needed to define gdstr in it own scope
+cdef inline object _godot_variant_to_pyobj_string(const godot_variant *p_gdvar):
+    cdef godot_string gdstr = gdapi.godot_variant_as_string(p_gdvar)
+    try:
+        return godot_string_to_pyobj(&gdstr)
+    finally:
+        gdapi.godot_string_destroy(&gdstr)
+
+
+# Needed to define gdvect2 in it own scope
+cdef inline object _godot_variant_to_pyobj_vector2(const godot_variant *p_gdvar):
+    cdef godot_vector2 gdvect2 = gdapi.godot_variant_as_vector2(p_gdvar)
+    return Vector2.build_from_gdobj(gdvect2)
+
+
 cdef inline void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
     if pyobj is None:
         gdapi.godot_variant_new_nil(p_var)
@@ -185,12 +194,7 @@ cdef inline void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
     elif isinstance(pyobj, float):
         gdapi.godot_variant_new_real(p_var, pyobj)
     elif isinstance(pyobj, str):
-        # cdef godot_string gdstr = pyobj_to_godot_string(pyobj)
-        gdstr = pyobj_to_godot_string(pyobj)
-        try:
-            gdapi.godot_variant_new_string(p_var, &gdstr)
-        finally:
-            gdapi.godot_string_destroy(&gdstr)
+        _pyobj_to_godot_variant_convert_string(pyobj, p_var)
     elif isinstance(pyobj, Vector2):
         gdapi.godot_variant_new_vector2(p_var, (<Vector2>pyobj)._c_vector2_ptr())
 
@@ -200,3 +204,13 @@ cdef inline void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
         gdapi.godot_variant_new_object(p_var, (<Object>pyobj)._ptr)
     else:
         raise TypeError(f"Cannot convert `{pyobj}` to Godot's Variant")
+
+
+# Needed to define gdstr in it own scope
+cdef inline void _pyobj_to_godot_variant_convert_string(object pyobj, godot_variant *p_var):
+    cdef godot_string gdstr
+    pyobj_to_godot_string(pyobj, &gdstr)
+    try:
+        gdapi.godot_variant_new_string(p_var, &gdstr)
+    finally:
+        gdapi.godot_string_destroy(&gdstr)
