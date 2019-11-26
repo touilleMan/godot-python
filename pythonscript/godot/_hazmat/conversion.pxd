@@ -18,27 +18,27 @@ from godot.bindings cimport Object
 # The sad part is wchar_t is not portable: it is 16bits long on Windows and
 # 32bits long on Linux and MacOS...
 # So we end up with a UCS2 encoding on Windows and UCS4 everywhere else :'(
+IF UNAME_SYSNAME == "Windows":
+    # Specify endianess otherwise `encode` appends a BOM at the start of the converted string
+    DEF _STRING_ENCODING = "UTF-16-LE"
+    DEF _STRING_CODEPOINT_LENGTH = 2
+ELSE:
+    DEF _STRING_ENCODING = "UTF-32-LE"
+    DEF _STRING_CODEPOINT_LENGTH = 4
 
 
 cdef inline object godot_string_to_pyobj(const godot_string *p_gdstr):
     # TODO: unicode&windows support is most likely broken...
     cdef char *raw = <char*>gdapi.godot_string_wide_str(p_gdstr)
     cdef godot_int length = gdapi.godot_string_length(p_gdstr)
-    IF UNAME_SYSNAME == "Windows":
-        return raw[:length * 2].decode("UTF-16")
-    ELSE:
-        return raw[:length * 4].decode("UTF-32")
+    return raw[:length * _STRING_CODEPOINT_LENGTH].decode(_STRING_ENCODING)
 
 
 cdef inline pyobj_to_godot_string(object pystr, godot_string *p_gdstr):
     # TODO: unicode&windows support is most likely broken...
-    cdef bytes raw
-    IF UNAME_SYSNAME == "Windows":
-        raw = pystr.encode("UTF-16")
-    ELSE:
-        raw = pystr.encode("UTF-32")
+    cdef bytes raw = pystr.encode(_STRING_ENCODING)
     gdapi.godot_string_new_with_wide_string(
-        p_gdstr, <wchar_t*><char*>raw, len(pystr)
+        p_gdstr, (<wchar_t*><char*>raw), len(pystr)
     )
 
 
