@@ -48,6 +48,7 @@ vars.Add(
         False,
     )
 )
+vars.Add(BoolVariable("debug", "Compile with debug symbols", False))
 vars.Add(
     BoolVariable(
         "sample", "Generate only a subset of the bindings (faster build time)", False
@@ -301,6 +302,9 @@ env.AppendUnique(CPPPATH=["#", "$gdnative_include_dir"])
 if not env["shitty_compiler"]:
     env.Append(CFLAGS=["-std=c11"])
     env.Append(CFLAGS=["-Werror", "-Wall"])
+    if env["debug"]:
+        env.Append(CFLAGS=["-g", "-ggdb"])
+        env.Append(LINKFLAGS=["-g", "-ggdb"])
 else:
     env.Append(CFLAGS=["/WX", "/W2"])
 
@@ -535,7 +539,7 @@ env.Alias("godot_binary", godot_binary)
 
 # Note: passing absolute path is only really needed on Mac with Godot.app
 if env["debugger"]:
-    test_base_cmd = "${debugger} -- ${SOURCE} --path ${Dir('#').abspath}/tests/"
+    test_base_cmd = "${debugger} ${SOURCE} -- --path ${Dir('#').abspath}/tests/"
 else:
     test_base_cmd = "${SOURCE} --path ${Dir('#').abspath}/tests/"
 
