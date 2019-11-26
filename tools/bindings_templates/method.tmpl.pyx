@@ -4,8 +4,7 @@ __methbind__{{ cls["name"] }}__{{ method["name"] }}
 
 
 {% macro render_method_bind_register(cls, method) %}
-{% set bind_name = cls["singleton_name"] if cls["singleton"] else cls["name"] %}
-cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = gdapi.godot_method_bind_get_method("{{ bind_name }}", "{{ method['name'] }}")
+cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = gdapi.godot_method_bind_get_method("{{ cls['bind_register_name'] }}", "{{ method['name'] }}")
 {%- endmacro %}
 
 
@@ -99,15 +98,17 @@ gdapi.godot_string_destroy(&__var_{{ arg["name"] }})
 {% if method["return_type"] == "void" %}
 {% set retval_as_arg = "NULL" %}
 {% elif method["return_type_is_binding"] %}
-cdef {{ method["return_type"] }} {{ retval }} = {{ method["return_type"] }}.__new__()
+cdef {{ method["return_type"] }} {{ retval }} = {{ method["return_type"] }}.__new__({{ method["return_type"] }})
 {% set retval_as_arg = "{}._ptr".format(retval) %}
 {% elif method["return_type"] == "godot_vector2" %}
-cdef Vector2 {{ retval }} = Vector2.__new__()
+cdef Vector2 {{ retval }} = Vector2.__new__(Vector2)
 {% set retval_as_arg = "{}._c_vector2_ptr()".format(retval) %}
 {% else %}
 cdef {{ method["return_type"] }} {{ retval }}
 {% set retval_as_arg = "&{}".format(retval) %}
 {% endif %}
+if {{ get_method_bind_register_name(cls, method) }} == NULL:
+    raise NotImplementedError
 gdapi.godot_method_bind_ptrcall(
     {{ get_method_bind_register_name(cls, method) }},
     self._ptr,

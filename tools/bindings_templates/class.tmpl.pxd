@@ -16,6 +16,11 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
     cdef bint _ptr_owner
 {% endif %}
 
+{% if not cls["singleton"] and cls["instanciable"] %}
+    @staticmethod
+    cdef {{ cls["name"] }} new()
+{% endif %}
+
     @staticmethod
     cdef {{ cls["name"] }} from_ptr(godot_object *_ptr, bint owner=*)
 

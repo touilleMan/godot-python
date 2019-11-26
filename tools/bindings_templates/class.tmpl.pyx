@@ -33,6 +33,19 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         self._ptr_owner = True
 {% endif %}
 
+{% if not cls["singleton"] and cls["instanciable"] %}
+    @staticmethod
+    cdef {{ cls["name"] }} new():
+        {{ cls["name"] }}.__new__({{ cls["name"] }})
+        # Call to __new__ bypasses __init__ constructor
+        cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
+        wrapper._ptr = __{{ cls["name"] }}_constructor()
+        if wrapper._ptr is NULL:
+            raise MemoryError
+        wrapper._ptr_owner = True
+        return wrapper
+{% endif %}
+
     @staticmethod
     cdef {{ cls["name"] }} from_ptr(godot_object *_ptr, bint owner=False):
         # Call to __new__ bypasses __init__ constructor

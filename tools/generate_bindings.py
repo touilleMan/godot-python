@@ -52,8 +52,13 @@ SAMPLE_CLASSES = {
 }
 
 SUPPORTED_TYPES = {
-    "void", "godot_bool", "godot_int", "godot_real", "godot_string",
-    "godot_vector2", "godot_variant",
+    "void",
+    "godot_bool",
+    "godot_int",
+    "godot_real",
+    "godot_string",
+    "godot_vector2",
+    "godot_variant",
 }
 
 
@@ -154,6 +159,7 @@ def cook_data(data):
             constants = item["constants"]
             continue
 
+        item["bind_register_name"] = item["name"]
         item["base_class"] = class_renames[item["base_class"]]
         item["name"] = class_renames[item["name"]]
 
