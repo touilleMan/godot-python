@@ -7,6 +7,7 @@ cdef inline bint get_pythonscript_verbose():
 
 
 cdef inline void set_pythonscript_verbose(bint status):
+    global __pythonscript_verbose
     __pythonscript_verbose = status
 
 

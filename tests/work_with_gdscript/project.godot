@@ -12,3 +12,4 @@ singletons=[ "res://pythonscript.gdnlib" ]
 [python_script]
 
 io_streams_capture=false
+verbose=true
