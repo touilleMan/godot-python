@@ -40,8 +40,6 @@ try:
     return godot_variant_to_pyobj(&{{ retval }})
 finally:
     gdapi.godot_variant_destroy(&{{ retval }})
-{% elif method["return_type_is_binding"] %}
-return {{ method["return_type"] }}.from_ptr({{ retval }})
 {% else %}
 return {{ retval }}
 {% endif %}
@@ -72,6 +70,8 @@ cdef godot_bool __var_{{ arg["name"] }} = {{ arg["name"] }}
 cdef godot_string __var_{{ arg["name"] }}
 pyobj_to_godot_string({{ arg["name"] }}, &__var_{{ arg["name"] }})
 {{ argsval }}[{{ i }}] = <void*>&__var_{{ arg["name"] }}
+{% elif arg["type"] == "godot_vector2" %}
+{{ argsval }}[{{ i }}] = <void*>((<Vector2>{{ arg["name"] }})._c_vector2_ptr())
 {% elif arg["type"] == "godot_variant" %}
 cdef godot_variant __var_{{ arg["name"] }}
 pyobj_to_godot_variant({{ arg["name"] }}, &__var_{{ arg["name"] }})
@@ -96,18 +96,23 @@ gdapi.godot_string_destroy(&__var_{{ arg["name"] }})
 
 
 {% macro _render_method_call(cls, method, argsval="__args", retval="__ret") %}
-{% if method["return_type"] != "void" %}
+{% if method["return_type"] == "void" %}
+{% set retval_as_arg = "NULL" %}
+{% elif method["return_type_is_binding"] %}
+cdef {{ method["return_type"] }} {{ retval }} = {{ method["return_type"] }}.__new__()
+{% set retval_as_arg = "{}._ptr".format(retval) %}
+{% elif method["return_type"] == "godot_vector2" %}
+cdef Vector2 {{ retval }} = Vector2.__new__()
+{% set retval_as_arg = "{}._c_vector2_ptr()".format(retval) %}
+{% else %}
 cdef {{ method["return_type"] }} {{ retval }}
+{% set retval_as_arg = "&{}".format(retval) %}
 {% endif %}
 gdapi.godot_method_bind_ptrcall(
     {{ get_method_bind_register_name(cls, method) }},
     self._ptr,
     {{ argsval }},
-{% if method["return_type"] == "void" %}
-    NULL
-{% else %}
-    &{{ retval }}
-{% endif %}
+    {{ retval_as_arg }}
 )
 {%- endmacro %}
 

@@ -31,7 +31,7 @@ cdef class Vector2:
     def __cinit__(self, x=0.0, y=0.0):
         gdapi.godot_vector2_new(self._c_vector2_ptr(), x, y)
 
-    cdef inline godot_vector2 *_c_vector2_ptr(Vector2 self):
+    cdef inline godot_vector2 *_c_vector2_ptr(self):
         return &(self._c_vector2)
 
     def __repr__(self):

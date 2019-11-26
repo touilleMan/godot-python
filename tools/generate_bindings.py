@@ -51,7 +51,10 @@ SAMPLE_CLASSES = {
     # "_VisualScriptEditor",
 }
 
-SUPPORTED_TYPES = {"void", "godot_bool", "godot_int", "godot_string", "godot_variant"}
+SUPPORTED_TYPES = {
+    "void", "godot_bool", "godot_int", "godot_real", "godot_string",
+    "godot_vector2", "godot_variant",
+}
 
 
 def strip_unsupported_stuff(classes):

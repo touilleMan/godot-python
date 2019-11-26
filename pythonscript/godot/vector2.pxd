@@ -15,7 +15,7 @@ cdef class Vector2:
     @staticmethod
     cdef Vector2 from_ptr(const godot_vector2 *_ptr)
 
-    cdef inline godot_vector2 *_c_vector2_ptr(Vector2 self)
+    cdef inline godot_vector2 *_c_vector2_ptr(self)
 
     # Operators
     cdef inline Vector2 operator_add(self, Vector2 b)
