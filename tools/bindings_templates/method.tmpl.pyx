@@ -71,6 +71,10 @@ pyobj_to_godot_string({{ arg["name"] }}, &__var_{{ arg["name"] }})
 {{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
 {% elif arg["type"] == "godot_vector2" %}
 {{ argsval }}[{{ i }}] = <void*>(&(<Vector2>{{ arg["name"] }})._gd_data)
+{% elif arg["type"] == "godot_array" %}
+{{ argsval }}[{{ i }}] = <void*>(&(<Array>{{ arg["name"] }})._gd_data)
+{% elif arg["type"] == "godot_dictionary" %}
+{{ argsval }}[{{ i }}] = <void*>(&(<Dictionary>{{ arg["name"] }})._gd_data)
 {% elif arg["type"] == "godot_variant" %}
 cdef godot_variant __var_{{ arg["name"] }}
 pyobj_to_godot_variant({{ arg["name"] }}, &__var_{{ arg["name"] }})
@@ -102,6 +106,12 @@ cdef {{ method["return_type"] }} {{ retval }} = {{ method["return_type"] }}.__ne
 {% set retval_as_arg = "{}._ptr".format(retval) %}
 {% elif method["return_type"] == "godot_vector2" %}
 cdef Vector2 {{ retval }} = Vector2.__new__(Vector2)
+{% set retval_as_arg = "&{}._gd_data".format(retval) %}
+{% elif method["return_type"] == "godot_array" %}
+cdef Array {{ retval }} = Array.__new__(Array)
+{% set retval_as_arg = "&{}._gd_data".format(retval) %}
+{% elif method["return_type"] == "godot_dictionary" %}
+cdef Dictionary {{ retval }} = Dictionary.__new__(Dictionary)
 {% set retval_as_arg = "&{}._gd_data".format(retval) %}
 {% else %}
 cdef {{ method["return_type"] }} {{ retval }}

@@ -59,6 +59,8 @@ SUPPORTED_TYPES = {
     "godot_string",
     "godot_vector2",
     "godot_variant",
+    "godot_array",
+    "godot_dictionary",
 }
 
 
