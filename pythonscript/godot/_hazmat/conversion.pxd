@@ -196,7 +196,7 @@ cdef inline void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
     elif isinstance(pyobj, str):
         _pyobj_to_godot_variant_convert_string(pyobj, p_var)
     elif isinstance(pyobj, Vector2):
-        gdapi.godot_variant_new_vector2(p_var, (<Vector2>pyobj)._c_vector2_ptr())
+        gdapi.godot_variant_new_vector2(p_var, &(<Vector2>pyobj)._gd_data)
 
     # TODO: finish other base types
 

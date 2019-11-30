@@ -55,28 +55,28 @@ cdef const void *{{ argsval }}[{{ method["arguments"] | length }}]
 {% set i = loop.index - 1 %}
 # {{ arg["type"] }} {{ arg["name"] }}
 {% if arg["type_is_binding"] %}
-{{ argsval }}[{{ i }}] = <void*>&{{ arg["name"] }}._ptr
+{{ argsval }}[{{ i }}] = <void*>(&{{ arg["name"] }}._ptr)
 {% elif arg["type"] == "godot_int" %}
 cdef godot_int __var_{{ arg["name"] }} = {{ arg["name"] }}
-{{ argsval }}[{{ i }}] = <void*>&__var_{{ arg["name"] }}
+{{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
 {% elif arg["type"] == "godot_float" %}
 cdef godot_float __var_{{ arg["name"] }} = {{ arg["name"] }}
-{{ argsval }}[{{ i }}] = <void*>&__var_{{ arg["name"] }}
+{{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
 {% elif arg["type"] == "godot_bool" %}
 cdef godot_bool __var_{{ arg["name"] }} = {{ arg["name"] }}
-{{ argsval }}[{{ i }}] = <void*>&__var_{{ arg["name"] }}
+{{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
 {% elif arg["type"] == "godot_string" %}
 cdef godot_string __var_{{ arg["name"] }}
 pyobj_to_godot_string({{ arg["name"] }}, &__var_{{ arg["name"] }})
-{{ argsval }}[{{ i }}] = <void*>&__var_{{ arg["name"] }}
+{{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
 {% elif arg["type"] == "godot_vector2" %}
-{{ argsval }}[{{ i }}] = <void*>((<Vector2>{{ arg["name"] }})._c_vector2_ptr())
+{{ argsval }}[{{ i }}] = <void*>(&(<Vector2>{{ arg["name"] }})._gd_data)
 {% elif arg["type"] == "godot_variant" %}
 cdef godot_variant __var_{{ arg["name"] }}
 pyobj_to_godot_variant({{ arg["name"] }}, &__var_{{ arg["name"] }})
-{{ argsval }}[{{ i }}] = <void*>&__var_{{ arg["name"] }}
+{{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
 {% else %}
-{{ argsval }}[{{ i }}] = <void*>&{{ arg["name"] }}
+{{ argsval }}[{{ i }}] = <void*>(&{{ arg["name"] }})
 {% endif %}
 {% endfor %}
 {%- endmacro %}
@@ -102,7 +102,7 @@ cdef {{ method["return_type"] }} {{ retval }} = {{ method["return_type"] }}.__ne
 {% set retval_as_arg = "{}._ptr".format(retval) %}
 {% elif method["return_type"] == "godot_vector2" %}
 cdef Vector2 {{ retval }} = Vector2.__new__(Vector2)
-{% set retval_as_arg = "{}._c_vector2_ptr()".format(retval) %}
+{% set retval_as_arg = "&{}._gd_data".format(retval) %}
 {% else %}
 cdef {{ method["return_type"] }} {{ retval }}
 {% set retval_as_arg = "&{}".format(retval) %}

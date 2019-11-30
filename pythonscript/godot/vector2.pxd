@@ -7,15 +7,13 @@ from godot._hazmat.gdnative_api_struct cimport godot_vector2, godot_real
 
 @cython.final
 cdef class Vector2:
-    cdef godot_vector2 _c_vector2
+    cdef godot_vector2 _gd_data
 
     @staticmethod
     cdef Vector2 new(godot_real x=*, godot_real y=*)
 
     @staticmethod
     cdef Vector2 from_ptr(const godot_vector2 *_ptr)
-
-    cdef inline godot_vector2 *_c_vector2_ptr(self)
 
     # Operators
     cdef inline Vector2 operator_add(self, Vector2 b)
