@@ -31,6 +31,7 @@ cdef class Array:
     cdef inline void operator_delitem(self, godot_int index)
 
     # Methods
+
     cpdef inline godot_int hash(self)
     cpdef inline godot_int size(self)
     cpdef inline Array duplicate(self, godot_bool deep)
