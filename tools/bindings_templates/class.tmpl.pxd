@@ -22,7 +22,7 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% endif %}
 
     @staticmethod
-    cdef {{ cls["name"] }} from_ptr(godot_object *_ptr, bint owner=*)
+    cdef {{ cls["name"] }} from_ptr(godot_object *_ptr, bint owner)
 
 {% for method in cls["methods"] %}
     cpdef {{ render_method_signature(method) | indent }}

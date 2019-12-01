@@ -36,7 +36,6 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% if not cls["singleton"] and cls["instanciable"] %}
     @staticmethod
     cdef {{ cls["name"] }} new():
-        {{ cls["name"] }}.__new__({{ cls["name"] }})
         # Call to __new__ bypasses __init__ constructor
         cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
         wrapper._gd_ptr = __{{ cls["name"] }}_constructor()
@@ -47,7 +46,7 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% endif %}
 
     @staticmethod
-    cdef {{ cls["name"] }} from_ptr(godot_object *_ptr, bint owner=False):
+    cdef {{ cls["name"] }} from_ptr(godot_object *_ptr, bint owner):
         # Call to __new__ bypasses __init__ constructor
         cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
         wrapper._gd_ptr = _ptr

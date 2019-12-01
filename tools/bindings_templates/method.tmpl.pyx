@@ -29,6 +29,12 @@ object {{ method["name"] }}(self,
 {% macro _render_method_return(method, retval="__ret") %}
 {% if method["return_type"] == "void" %}
 return
+{% elif method["return_type_is_binding"] %}
+if {{ retval }}._gd_ptr == NULL:
+    {{ retval }}._gd_ptr_owner = False
+    return None
+else:
+    return {{ retval }}
 {% elif method["return_type"] == "godot_string" %}
 try:
     return godot_string_to_pyobj(&{{ retval }})
@@ -103,7 +109,8 @@ gdapi.godot_string_destroy(&__var_{{ arg["name"] }})
 {% set retval_as_arg = "NULL" %}
 {% elif method["return_type_is_binding"] %}
 cdef {{ method["return_type"] }} {{ retval }} = {{ method["return_type"] }}.__new__({{ method["return_type"] }})
-{% set retval_as_arg = "{}._gd_ptr".format(retval) %}
+{{ retval }}._gd_ptr_owner = True
+{% set retval_as_arg = "&{}._gd_ptr".format(retval) %}
 {% elif method["return_type"] == "godot_vector2" %}
 cdef Vector2 {{ retval }} = Vector2.__new__(Vector2)
 {% set retval_as_arg = "&{}._gd_data".format(retval) %}
