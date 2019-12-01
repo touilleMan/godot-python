@@ -14,22 +14,11 @@ from godot._hazmat.gdnative_api_struct cimport (
     godot_dictionary
 )
 from godot._hazmat.gdapi cimport pythonscript_gdapi as gdapi
-
-
-cdef object godot_string_to_pyobj(const godot_string *p_gdstr):
-    return <char*>gdapi.godot_string_wide_str(p_gdstr)
-
-
-cdef godot_string pyobj_to_godot_string(object pystr):
-    cdef godot_string gdstr;
-    gdapi.godot_string_new_with_wide_string(
-        &gdstr, <wchar_t*><char*>pystr, len(pystr)
-    )
-    return gdstr
-
-
-cdef object variant_to_pyobj(const godot_variant *p_gdvar):
-    return None
+from godot._hazmat.conversion cimport (
+    godot_string_to_pyobj,
+    pyobj_to_godot_string,
+    godot_variant_to_pyobj,
+)
 
 
 cdef api godot_string pythonscript_get_template_source_code(
@@ -37,22 +26,19 @@ cdef api godot_string pythonscript_get_template_source_code(
     const godot_string *p_class_name,
     const godot_string *p_base_class_name
 ):
-    # TODO: Cython considers wchar_t not portable, hence on linux we do
-    # dirty cast between `wchar_t *` and `char *`. This is likely to fail under
-    # Windows (where we should be able to use `PyUnicode_AsWideChar` instead)
-    cdef bytes base_class_name = <char*>gdapi.godot_string_wide_str(p_base_class_name)
-    cdef bytes class_name
+    cdef str class_name
     if p_class_name == NULL:
-        class_name = b"MyExportedCls"
+        class_name = "MyExportedCls"
     else:
-        class_name = <char*>gdapi.godot_string_wide_str(p_class_name)
-    cdef bytes src = b"""from godot import exposed, export
+        class_name = godot_string_to_pyobj(p_class_name)
+    cdef str base_class_name = godot_string_to_pyobj(p_base_class_name)
+    cdef str src = f"""from godot import exposed, export
 from godot.bindings import *
 from godot.globals import *
 
 
 @exposed
-class {}({}):
+class {class_name}({base_class_name}):
 
     # member variables here, example:
     a = export(int)
@@ -64,9 +50,9 @@ class {}({}):
         Initialization here.
         \"\"\"
         pass
-""".format(class_name, base_class_name)
+"""
     cdef godot_string ret
-    gdapi.godot_string_new_with_wide_string(&ret, <wchar_t*><char*>src, len(src))
+    pyobj_to_godot_string(src, &ret)
     return ret
 
 
@@ -96,15 +82,24 @@ cdef api godot_string pythonscript_make_function(
     const godot_string *p_name,
     const godot_pool_string_array *p_args
 ):
-#     args = PoolStringArray.build_from_gdobj(args, steal=True)
-#     name = godot_string_to_pyobj(name)
-#     src = ["def %s(" % name]
-#     src.append(", ".join([arg.split(":", 1)[0] for arg in args]))
-#     src.append("):\n    pass")
-#     return "".join(src)
+    cdef str name = godot_string_to_pyobj(p_name)
+
+    # TODO: replace this with PoolStringArray binding once implemented
+    cdef int i
+    cdef godot_string gdarg
+    cdef list args_names = []
+    for i in range(gdapi.godot_pool_string_array_size(p_args)):
+        gdarg = gdapi.godot_pool_string_array_get(p_args, i)
+        arg = godot_string_to_pyobj(&gdarg)
+        gdapi.godot_string_destroy(&gdarg)
+        args_names.append(arg.split(":", 1)[0])
+
+    cdef str src = """\
+    def {name}(self, { ','.join(args_names) }):
+        pass
+"""
     cdef godot_string ret
-    cdef bytes src = b"def dummy():\n    pass\n"
-    gdapi.godot_string_new_with_wide_string(&ret, <wchar_t*><char*>src, len(src))
+    pyobj_to_godot_string(src, &ret)
     return ret
 
 
@@ -152,7 +147,7 @@ cdef api void pythonscript_add_global_constant(
     const godot_variant *p_value
 ):
     name = godot_string_to_pyobj(p_variable)
-    value = variant_to_pyobj(p_value)
+    value = godot_variant_to_pyobj(p_value)
     # Update `godot.globals` module here
     import godot
     godot.globals.__dict__[name] = value
