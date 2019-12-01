@@ -28,14 +28,14 @@ ELSE:
     DEF _STRING_CODEPOINT_LENGTH = 4
 
 
-cdef inline object godot_string_to_pyobj(const godot_string *p_gdstr):
+cdef inline str godot_string_to_pyobj(const godot_string *p_gdstr):
     # TODO: unicode&windows support is most likely broken...
     cdef char *raw = <char*>gdapi.godot_string_wide_str(p_gdstr)
     cdef godot_int length = gdapi.godot_string_length(p_gdstr)
     return raw[:length * _STRING_CODEPOINT_LENGTH].decode(_STRING_ENCODING)
 
 
-cdef inline void pyobj_to_godot_string(object pystr, godot_string *p_gdstr):
+cdef inline void pyobj_to_godot_string(str pystr, godot_string *p_gdstr):
     # TODO: unicode&windows support is most likely broken...
     cdef bytes raw = pystr.encode(_STRING_ENCODING)
     gdapi.godot_string_new_with_wide_string(
@@ -43,14 +43,14 @@ cdef inline void pyobj_to_godot_string(object pystr, godot_string *p_gdstr):
     )
 
 
-cdef inline object godot_string_name_to_pyobj(const godot_string_name *p_gdname):
+cdef inline str godot_string_name_to_pyobj(const godot_string_name *p_gdname):
     cdef godot_string strname = gdapi.godot_string_name_get_name(p_gdname)
     cdef ret = godot_string_to_pyobj(&strname)
     gdapi.godot_string_destroy(&strname)
     return ret
 
 
-cdef inline void pyobj_to_godot_string_name(object pystr, godot_string_name *p_gdname):
+cdef inline void pyobj_to_godot_string_name(str pystr, godot_string_name *p_gdname):
     cdef godot_string strname
     pyobj_to_godot_string(pystr, &strname)
     gdapi.godot_string_name_new(p_gdname, &strname)
