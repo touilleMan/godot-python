@@ -59,8 +59,8 @@ cdef const void *{{ argsval }}[{{ method["arguments"] | length }}]
 {% elif arg["type"] == "godot_int" %}
 cdef godot_int __var_{{ arg["name"] }} = {{ arg["name"] }}
 {{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
-{% elif arg["type"] == "godot_float" %}
-cdef godot_float __var_{{ arg["name"] }} = {{ arg["name"] }}
+{% elif arg["type"] == "godot_real" %}
+cdef godot_real __var_{{ arg["name"] }} = {{ arg["name"] }}
 {{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
 {% elif arg["type"] == "godot_bool" %}
 cdef godot_bool __var_{{ arg["name"] }} = {{ arg["name"] }}
