@@ -8,6 +8,8 @@ from godot._hazmat.gdapi cimport (
 )
 from godot._hazmat.gdnative_api_struct cimport godot_vector2, godot_real
 
+import math
+
 
 @cython.final
 cdef class Vector2:
@@ -281,3 +283,17 @@ cdef class Vector2:
         cdef Vector2 ret  = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_vector2_clamped(&self._gd_data, length)
         return ret
+
+    # TODO: gdapi should expose those constants to us
+
+    AXIS_X = 0
+    AXIS_Y = 0
+    AXIS_Z = 0
+
+    ZERO = Vector2(0, 0)
+    ONE = Vector2(1, 1)
+    INF = Vector2(math.inf, math.inf)
+    LEFT = Vector2(-1, 0)
+    RIGHT = Vector2(1, 0)
+    UP = Vector2(0, -1)
+    DOWN = Vector2(0, 1)
