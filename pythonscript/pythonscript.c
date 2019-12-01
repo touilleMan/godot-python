@@ -8,15 +8,12 @@
  * Python as a new language using Godot's Pluginscript system.
  */
 
-#include "Python.h"
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
 
 #ifndef _WIN32
 #include <dlfcn.h>
 #endif
-#include <wchar.h>
-
-#include <Python.h>
-#include <stdio.h>
 #include <wchar.h>
 
 #include <gdnative_api_struct.gen.h>
