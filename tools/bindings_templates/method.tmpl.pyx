@@ -55,7 +55,7 @@ cdef const void *{{ argsval }}[{{ method["arguments"] | length }}]
 {% set i = loop.index - 1 %}
 # {{ arg["type"] }} {{ arg["name"] }}
 {% if arg["type_is_binding"] %}
-{{ argsval }}[{{ i }}] = <void*>(&{{ arg["name"] }}._ptr)
+{{ argsval }}[{{ i }}] = <void*>(&(<Object>{{ arg["name"] }})._gd_ptr)
 {% elif arg["type"] == "godot_int" %}
 cdef godot_int __var_{{ arg["name"] }} = {{ arg["name"] }}
 {{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
@@ -103,7 +103,7 @@ gdapi.godot_string_destroy(&__var_{{ arg["name"] }})
 {% set retval_as_arg = "NULL" %}
 {% elif method["return_type_is_binding"] %}
 cdef {{ method["return_type"] }} {{ retval }} = {{ method["return_type"] }}.__new__({{ method["return_type"] }})
-{% set retval_as_arg = "{}._ptr".format(retval) %}
+{% set retval_as_arg = "{}._gd_ptr".format(retval) %}
 {% elif method["return_type"] == "godot_vector2" %}
 cdef Vector2 {{ retval }} = Vector2.__new__(Vector2)
 {% set retval_as_arg = "&{}._gd_data".format(retval) %}
@@ -121,7 +121,7 @@ if {{ get_method_bind_register_name(cls, method) }} == NULL:
     raise NotImplementedError
 gdapi.godot_method_bind_ptrcall(
     {{ get_method_bind_register_name(cls, method) }},
-    self._ptr,
+    self._gd_ptr,
     {{ argsval }},
     {{ retval_as_arg }}
 )

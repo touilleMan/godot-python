@@ -16,9 +16,9 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% if not cls["base_class"] %}
     def __dealloc__(self):
         # De-allocate if not null and flag is set
-        if self._ptr is not NULL and self._ptr_owner is True:
-            gdapi.godot_object_destroy(self._ptr)
-            self._ptr = NULL
+        if self._gd_ptr is not NULL and self._gd_ptr_owner is True:
+            gdapi.godot_object_destroy(self._gd_ptr)
+            self._gd_ptr = NULL
 {% endif %}
 
     def __init__(self):
@@ -27,10 +27,10 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% elif not cls["instanciable"] %}
         raise RuntimeError(f"{type(self)} is not instanciable.")
 {% else %}
-        self._ptr = __{{ cls["name"] }}_constructor()
-        if self._ptr is NULL:
+        self._gd_ptr = __{{ cls["name"] }}_constructor()
+        if self._gd_ptr is NULL:
             raise MemoryError
-        self._ptr_owner = True
+        self._gd_ptr_owner = True
 {% endif %}
 
 {% if not cls["singleton"] and cls["instanciable"] %}
@@ -39,10 +39,10 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         {{ cls["name"] }}.__new__({{ cls["name"] }})
         # Call to __new__ bypasses __init__ constructor
         cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
-        wrapper._ptr = __{{ cls["name"] }}_constructor()
-        if wrapper._ptr is NULL:
+        wrapper._gd_ptr = __{{ cls["name"] }}_constructor()
+        if wrapper._gd_ptr is NULL:
             raise MemoryError
-        wrapper._ptr_owner = True
+        wrapper._gd_ptr_owner = True
         return wrapper
 {% endif %}
 
@@ -50,8 +50,8 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
     cdef {{ cls["name"] }} from_ptr(godot_object *_ptr, bint owner=False):
         # Call to __new__ bypasses __init__ constructor
         cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
-        wrapper._ptr = _ptr
-        wrapper._ptr_owner = owner
+        wrapper._gd_ptr = _ptr
+        wrapper._gd_ptr_owner = owner
         return wrapper
 
     # Constants

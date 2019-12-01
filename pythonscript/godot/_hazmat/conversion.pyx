@@ -271,7 +271,7 @@ cdef void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
     # TODO: finish other base types
 
     elif isinstance(pyobj, Object):
-        gdapi.godot_variant_new_object(p_var, (<Object>pyobj)._ptr)
+        gdapi.godot_variant_new_object(p_var, (<Object>pyobj)._gd_ptr)
     else:
         raise TypeError(f"Cannot convert `{pyobj}` to Godot's Variant")
 
