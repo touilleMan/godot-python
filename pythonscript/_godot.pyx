@@ -18,6 +18,7 @@ from godot._hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_v
 
 import os
 import sys
+
 import godot
 from godot.bindings import OS, ProjectSettings
 

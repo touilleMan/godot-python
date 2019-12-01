@@ -7,7 +7,7 @@ from godot._hazmat.gdnative_api_struct cimport (
     godot_method_rpc_mode,
     godot_property_hint,
 )
-from godot._hazmat.internal cimport get_exposed_class_per_module, set_exposed_class_per_module
+from godot._hazmat.internal cimport get_exposed_class, set_exposed_class
 from godot.bindings cimport Object
 
 
@@ -258,7 +258,7 @@ def exposed(cls=None, tool=False):
                 "class to be marked as @exposed"
             )
 
-        existing_cls_for_module = get_exposed_class_per_module(cls.__module__)
+        existing_cls_for_module = get_exposed_class(cls.__module__)
         if existing_cls_for_module:
             raise ValueError(
                 "Only a single class can be marked as @exposed per module"
@@ -266,8 +266,32 @@ def exposed(cls=None, tool=False):
             )
 
         cls.__tool = tool
-        set_exposed_class_per_module(cls.__module__, cls)
+        cls.__exposed_python_class = True
+        cls.__exported = {}
+        cls.__signals = {}
 
+        # Retrieve parent exported fields
+        for b in cls.__bases__:
+            cls.__exported.update(getattr(b, "__exported", {}))
+            cls.__signals.update(getattr(b, "__signals", {}))
+
+        # Collect exported fields
+        for k, v in cls.__dict__.items():
+            if isinstance(v, ExportedField):
+                cls.__exported[k] = v
+                v.name = k  # hard to bind this earlier...
+                if v.property:
+                    # If export has been used to decorate a property, expose it
+                    # in the generated class
+                    cls.__dict__[k] = v.property
+                else:
+                    cls.__dict__[k] = v.default
+            elif isinstance(v, SignalField):
+                v.name = v.name if v.name else k
+                cls.__signals[v.name] = v
+                cls.__dict__[k] = v
+
+        set_exposed_class(cls)
         return cls
 
     if cls:

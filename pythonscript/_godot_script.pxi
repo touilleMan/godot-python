@@ -1,5 +1,7 @@
 # cython: c_string_type=unicode, c_string_encoding=utf8
 
+from cpython cimport Py_INCREF, Py_DECREF, PyObject
+
 from godot._hazmat.gdnative_api_struct cimport (
     godot_pluginscript_language_data,
     godot_string,
@@ -16,19 +18,31 @@ from godot._hazmat.gdnative_api_struct cimport (
     GODOT_ERR_UNAVAILABLE,
     GODOT_ERR_FILE_BAD_PATH,
     GODOT_ERR_PARSE_ERROR,
+    GODOT_METHOD_FLAG_FROM_SCRIPT,
+    GODOT_METHOD_RPC_MODE_DISABLED,
 )
 from godot._hazmat.gdapi cimport pythonscript_gdapi as gdapi
-from godot._hazmat.conversion cimport godot_string_to_pyobj, pyobj_to_godot_string
+from godot._hazmat.conversion cimport (
+    godot_string_to_pyobj,
+    pyobj_to_godot_string,
+    pyobj_to_godot_string_name,
+    pyobj_to_godot_type,
+)
 from godot._hazmat.internal cimport (
     get_pythonscript_verbose,
-    get_exposed_class_per_module,
-    destroy_exposed_classes,
+    get_exposed_class,
+    destroy_exposed_class,
 )
+from godot.bindings cimport Object
+from godot.array cimport Array
+from godot.dictionary cimport Dictionary
 
+import inspect
 import traceback
 
 
-cdef inline _init_empty_manifest(godot_pluginscript_script_manifest *manifest):
+cdef inline godot_pluginscript_script_manifest _build_empty_script_manifest():
+    cdef godot_pluginscript_script_manifest manifest
     manifest.data = NULL
     gdapi.godot_string_name_new_data(&manifest.name, "")
     manifest.is_tool = False
@@ -37,6 +51,90 @@ cdef inline _init_empty_manifest(godot_pluginscript_script_manifest *manifest):
     gdapi.godot_array_new(&manifest.methods)
     gdapi.godot_array_new(&manifest.signals)
     gdapi.godot_array_new(&manifest.properties)
+    return manifest
+
+
+cdef Dictionary _build_signal_info(object signal):
+    cdef Dictionary methinfo = Dictionary()
+    methinfo["name"] = signal.name
+    # Dummy data, only name is important here
+    methinfo["args"] = Array()
+    methinfo["default_args"] = Array()
+    methinfo["return"] = None
+    methinfo["flags"] = GODOT_METHOD_FLAG_FROM_SCRIPT
+    return methinfo
+
+
+cdef Dictionary _build_method_info(object meth, object methname):
+    cdef Dictionary methinfo = Dictionary()
+    spec = inspect.getfullargspec(meth)
+    methinfo["name"] = methname
+    # TODO: Handle classmethod/staticmethod
+    methinfo["args"] = Array(spec.args)
+    methinfo["default_args"] = Array()  # TODO
+    # TODO: use annotation to determine return type ?
+    methinfo["return"] = None
+    methinfo["flags"] = GODOT_METHOD_FLAG_FROM_SCRIPT
+    methinfo["rpc_mode"] = getattr(
+        meth, "__rpc", GODOT_METHOD_RPC_MODE_DISABLED
+    )
+    return methinfo
+
+
+cdef Dictionary _build_property_info(object prop):
+    cdef Dictionary propinfo = Dictionary()
+    propinfo["name"] = prop.name
+    propinfo["type"] = pyobj_to_godot_type(prop.type)
+    propinfo["hint"] = prop.hint
+    propinfo["hint_string"] = prop.hint_string
+    propinfo["usage"] = prop.usage
+    propinfo["default_value"] = prop.default
+    propinfo["rset_mode"] = prop.rpc
+    return propinfo
+
+
+cdef godot_pluginscript_script_manifest _build_script_manifest(object cls):
+    cdef godot_pluginscript_script_manifest manifest
+    # No need to increase refcount here given `cls` is guaranteed to be kept
+    # until we call `destroy_exposed_class`
+    manifest.data = <PyObject*>cls
+    pyobj_to_godot_string_name(cls.__name__, &manifest.name)
+    manifest.is_tool = cls.__tool
+    gdapi.godot_dictionary_new(&manifest.member_lines)
+
+    if cls.__bases__:
+        # Only one Godot parent class (checked at class definition time)
+        godot_parent_class = next(
+            (b for b in cls.__bases__ if issubclass(b, Object))
+        )
+        if not godot_parent_class.__dict__.get("__exposed_python_class"):
+            base = godot_parent_class.__name__
+        else:
+            # Pluginscript wants us to return the parent as a path
+            base = f"res://{godot_parent_class.__module__.replace('.', '/')}.py"
+        pyobj_to_godot_string_name(base, &manifest.base)
+
+    methods = Array()
+    # TODO: include inherited in exposed methods ? Expose Godot base class' ones ?
+    # for methname in vars(cls):
+    for methname in dir(cls):
+        meth = getattr(cls, methname)
+        if not inspect.isfunction(meth) or meth.__name__.startswith("__"):
+            continue
+        methods.append(_build_method_info(meth, methname))
+    gdapi.godot_array_new_copy(&manifest.methods, &methods._gd_data)
+
+    signals = Array()
+    for signal in cls.__signals.values():
+        signals.append(_build_signal_info(signal))
+    gdapi.godot_array_new_copy(&manifest.signals, &signals._gd_data)
+
+    properties = Array()
+    for prop in cls.__exported.values():
+        properties.append(_build_property_info(prop))
+    gdapi.godot_array_new_copy(&manifest.properties, &properties._gd_data)
+
+    return manifest
 
 
 cdef api godot_pluginscript_script_manifest pythonscript_script_init(
@@ -45,7 +143,6 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
     const godot_string *p_source,
     godot_error *r_error
 ):
-    cdef godot_pluginscript_script_manifest manifest
     cdef object path = godot_string_to_pyobj(p_path)
     if get_pythonscript_verbose():
         print(f"Loading python script from {path}")
@@ -60,8 +157,7 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
             f"Bad python script path `{path}`, must starts by `res://` and ends with `.py/pyc/pyo/pyd`"
         )
         r_error[0] = GODOT_ERR_FILE_BAD_PATH
-        # Obliged to return the structure, but no need in init it
-        return manifest
+        return _build_empty_script_manifest()
 
     # TODO: possible bug if res:// is not part of PYTHONPATH
     # Remove `res://`, `.py` and replace / by .
@@ -69,7 +165,7 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
     try:
         __import__(modname)  # Force lazy loading of the module
         # TODO: make sure script reloading works
-        cls = get_exposed_class_per_module(modname)
+        cls = get_exposed_class(modname)
     except BaseException:
         # If we are here it could be because the file doesn't exists
         # or (more possibly) the file content is not a valid python (or
@@ -78,16 +174,13 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
             f"Got exception loading {path} ({modname}): {traceback.format_exc()}"
         )
         r_error[0] = GODOT_ERR_PARSE_ERROR
-        # Obliged to return the structure, but no need in init it
-        return manifest
+        return _build_empty_script_manifest()
 
     r_error[0] = GODOT_OK
-    _init_empty_manifest(&manifest)
-    return manifest
-    # return _build_script_manifest(cls)[0]
+    return _build_script_manifest(cls)
 
 
 cdef api void pythonscript_script_finish(
     godot_pluginscript_script_data *p_data
 ):
-    destroy_exposed_classes()
+    destroy_exposed_class(<object>p_data)
