@@ -281,7 +281,7 @@ example:
 
 	class Helper:
 		"""
-		Othes classes are considered helpers and cannot be called from outside
+		Other classes are considered helpers and cannot be called from outside
 		Python. However they can be imported from another python module.
 		"""
 		...
