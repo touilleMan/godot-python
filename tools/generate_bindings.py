@@ -62,10 +62,12 @@ SUPPORTED_TYPES = {
     "godot_variant",
     "godot_array",
     "godot_dictionary",
+    "godot_object",
 }
 
 
 def strip_unsupported_stuff(classes):
+    all_supported_types = [*SUPPORTED_TYPES, *[k["name"] for k in classes]]
     for klass in classes:
         methods = []
         for meth in klass["methods"]:
@@ -81,9 +83,9 @@ def strip_unsupported_stuff(classes):
                 continue
             if meth["is_from_script"]:
                 continue
-            if meth["return_type"] not in SUPPORTED_TYPES:
+            if meth["return_type"] not in all_supported_types:
                 continue
-            if [arg for arg in meth["arguments"] if arg["type"] not in SUPPORTED_TYPES]:
+            if [arg for arg in meth["arguments"] if arg["type"] not in all_supported_types]:
                 continue
             methods.append(meth)
         klass["methods"] = methods
