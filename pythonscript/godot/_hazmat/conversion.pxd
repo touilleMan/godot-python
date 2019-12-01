@@ -43,7 +43,7 @@ cdef inline void pyobj_to_godot_string(object pystr, godot_string *p_gdstr):
     )
 
 
-cdef inline object godot_string_name_to_pyobj(godot_string_name *p_gdname):
+cdef inline object godot_string_name_to_pyobj(const godot_string_name *p_gdname):
     cdef godot_string strname = gdapi.godot_string_name_get_name(p_gdname)
     cdef ret = godot_string_to_pyobj(&strname)
     gdapi.godot_string_destroy(&strname)
