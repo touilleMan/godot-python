@@ -2,10 +2,6 @@
 
 cimport cython
 
-from godot._hazmat.gdapi cimport (
-    pythonscript_gdapi as gdapi,
-    pythonscript_gdapi12 as gdapi12
-)
 from godot._hazmat.gdnative_api_struct cimport godot_rid, godot_int
 
 
