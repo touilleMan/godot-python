@@ -86,7 +86,11 @@ def strip_unsupported_stuff(classes):
                 continue
             if meth["return_type"] not in all_supported_types:
                 continue
-            if [arg for arg in meth["arguments"] if arg["type"] not in all_supported_types]:
+            if [
+                arg
+                for arg in meth["arguments"]
+                if arg["type"] not in all_supported_types
+            ]:
                 continue
             methods.append(meth)
         klass["methods"] = methods

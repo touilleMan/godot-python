@@ -42,9 +42,9 @@ __all__ = (
     "export",
     "exposed",
     # Builtins types
-    "Array"
-    "Color"
-    "Dictionary"
-    "RID"
-    "Vector2"
+    "Array",
+    "Color",
+    "Dictionary",
+    "RID",
+    "Vector2",
 )
