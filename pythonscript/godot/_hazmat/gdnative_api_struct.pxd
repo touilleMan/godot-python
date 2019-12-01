@@ -6,12 +6,38 @@
 # - bint -> bool typedef
 # - array attribute in struct got they size messed up (all `_dont_touch_that`)
 # - `const` qualifier in function arguments got stripped
+# - `godot_method_flags` missing in `gdnative_api_struct.gen.h`
 
 from libc.stdint cimport uint8_t, uint64_t, int64_t, uint32_t, int32_t
 from libc.stddef cimport wchar_t
 
 
 cdef extern from "gdnative_api_struct.gen.h" nogil:
+
+    """
+    typedef enum {
+        GODOT_METHOD_FLAG_NORMAL = 1,
+        GODOT_METHOD_FLAG_EDITOR = 2,
+        GODOT_METHOD_FLAG_NOSCRIPT = 4,
+        GODOT_METHOD_FLAG_CONST = 8,
+        GODOT_METHOD_FLAG_REVERSE = 16,
+        GODOT_METHOD_FLAG_VIRTUAL = 32,
+        GODOT_METHOD_FLAG_FROM_SCRIPT = 64,
+        GODOT_METHOD_FLAG_VARARG = 128,
+        GODOT_METHOD_FLAGS_DEFAULT = GODOT_METHOD_FLAG_NORMAL
+    } godot_method_flags;
+    """
+
+    ctypedef enum godot_method_flags:
+        GODOT_METHOD_FLAG_NORMAL = 1
+        GODOT_METHOD_FLAG_EDITOR = 2
+        GODOT_METHOD_FLAG_NOSCRIPT = 4
+        GODOT_METHOD_FLAG_CONST = 8
+        GODOT_METHOD_FLAG_REVERSE = 16  # used for events
+        GODOT_METHOD_FLAG_VIRTUAL = 32
+        GODOT_METHOD_FLAG_FROM_SCRIPT = 64
+        GODOT_METHOD_FLAG_VARARG = 128
+        GODOT_METHOD_FLAGS_DEFAULT = 1  # METHOD_FLAG_NORMAL
 
     ctypedef enum godot_error:
         GODOT_OK
