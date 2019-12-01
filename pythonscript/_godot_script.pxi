@@ -1,7 +1,5 @@
 # cython: c_string_type=unicode, c_string_encoding=utf8
 
-from cpython cimport Py_INCREF, Py_DECREF, PyObject
-
 from godot._hazmat.gdnative_api_struct cimport (
     godot_pluginscript_language_data,
     godot_string,
