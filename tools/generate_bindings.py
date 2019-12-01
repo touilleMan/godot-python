@@ -58,6 +58,7 @@ SUPPORTED_TYPES = {
     "godot_int",
     "godot_real",
     "godot_string",
+    "godot_rid",
     "godot_vector2",
     "godot_variant",
     "godot_array",
