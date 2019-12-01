@@ -16,6 +16,10 @@ from godot.tags import (
     export,
     exposed,
 )
+from godot.array import Array
+from godot.color import Color
+from godot.dictionary import Dictionary
+from godot.rid import RID
 from godot.vector2 import Vector2
 
 
@@ -37,6 +41,10 @@ __all__ = (
     "signal",
     "export",
     "exposed",
-    # vector2
-    "Vector2",
+    # Builtins types
+    "Array"
+    "Color"
+    "Dictionary"
+    "RID"
+    "Vector2"
 )
