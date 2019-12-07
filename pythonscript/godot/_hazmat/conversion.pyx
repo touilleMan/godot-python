@@ -13,16 +13,16 @@ from godot._hazmat.gdnative_api_struct cimport (
 from godot.bindings cimport Object
 from godot.vector2 cimport Vector2
 # from godot.rect2 cimport Rect2
-# from godot.vector3 cimport Vector3
+from godot.vector3 cimport Vector3
 # from godot.transform2d cimport Transform2D
-# from godot.plane cimport Plane
-# from godot.quat cimport Quat
-# from godot.aabb cimport AABB
-# from godot.basis cimport Basis
+from godot.plane cimport Plane
+from godot.quat cimport Quat
+from godot.aabb cimport AABB
+from godot.basis cimport Basis
 # from godot.transform cimport Transform
-# from godot.color cimport Color
-# from godot.nodepath cimport NodePath
-# from godot.rid cimport RID
+from godot.color cimport Color
+from godot.node_path cimport NodePath
+from godot.rid cimport RID
 from godot.dictionary cimport Dictionary
 from godot.array cimport (
     Array,
@@ -45,16 +45,16 @@ GD_PY_TYPES = (
     (godot_variant_type.GODOT_VARIANT_TYPE_OBJECT, Object),
     (godot_variant_type.GODOT_VARIANT_TYPE_VECTOR2, Vector2),
     # (godot_variant_type.GODOT_VARIANT_TYPE_RECT2, Rect2),
-    # (godot_variant_type.GODOT_VARIANT_TYPE_VECTOR3, Vector3),
+    (godot_variant_type.GODOT_VARIANT_TYPE_VECTOR3, Vector3),
     # (godot_variant_type.GODOT_VARIANT_TYPE_TRANSFORM2D, Transform2D),
-    # (godot_variant_type.GODOT_VARIANT_TYPE_PLANE, Plane),
-    # (godot_variant_type.GODOT_VARIANT_TYPE_QUAT, Quat),
-    # (godot_variant_type.GODOT_VARIANT_TYPE_AABB, AABB),
-    # (godot_variant_type.GODOT_VARIANT_TYPE_BASIS, Basis),
+    (godot_variant_type.GODOT_VARIANT_TYPE_PLANE, Plane),
+    (godot_variant_type.GODOT_VARIANT_TYPE_QUAT, Quat),
+    (godot_variant_type.GODOT_VARIANT_TYPE_AABB, AABB),
+    (godot_variant_type.GODOT_VARIANT_TYPE_BASIS, Basis),
     # (godot_variant_type.GODOT_VARIANT_TYPE_TRANSFORM, Transform),
-    # (godot_variant_type.GODOT_VARIANT_TYPE_COLOR, Color),
-    # (godot_variant_type.GODOT_VARIANT_TYPE_NODE_PATH, NodePath),
-    # (godot_variant_type.GODOT_VARIANT_TYPE_RID, RID),
+    (godot_variant_type.GODOT_VARIANT_TYPE_COLOR, Color),
+    (godot_variant_type.GODOT_VARIANT_TYPE_NODE_PATH, NodePath),
+    (godot_variant_type.GODOT_VARIANT_TYPE_RID, RID),
     (godot_variant_type.GODOT_VARIANT_TYPE_DICTIONARY, Dictionary),
     (godot_variant_type.GODOT_VARIANT_TYPE_ARRAY, Array),
     # (
@@ -126,46 +126,37 @@ cdef object godot_variant_to_pyobj(const godot_variant *p_gdvar):
     #     raw = gdapi.godot_variant_as_rect2(p_gdvar)
     #     return godot_bindings_module.Rect2.build_from_gdobj(raw)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_VECTOR3:
-    #     raw = gdapi.godot_variant_as_vector3(p_gdvar)
-    #     return godot_bindings_module.Vector3.build_from_gdobj(raw)
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_VECTOR3:
+        return _godot_variant_to_pyobj_vector3(p_gdvar)
 
     # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_TRANSFORM2D:
     #     raw = gdapi.godot_variant_as_transform2d(p_gdvar)
     #     return godot_bindings_module.Transform2D.build_from_gdobj(raw)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_PLANE:
-    #     raw = gdapi.godot_variant_as_plane(p_gdvar)
-    #     return godot_bindings_module.Plane.build_from_gdobj(raw)
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_PLANE:
+        return _godot_variant_to_pyobj_plane(p_gdvar)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_QUAT:
-    #     raw = gdapi.godot_variant_as_quat(p_gdvar)
-    #     return godot_bindings_module.Quat.build_from_gdobj(raw)
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_QUAT:
+        return _godot_variant_to_pyobj_quat(p_gdvar)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_AABB:
-    #     raw = gdapi.godot_variant_as_aabb(p_gdvar)
-    #     return godot_bindings_module.AABB.build_from_gdobj(raw)
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_AABB:
+        return _godot_variant_to_pyobj_aabb(p_gdvar)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_BASIS:
-    #     raw = gdapi.godot_variant_as_basis(p_gdvar)
-    #     return godot_bindings_module.Basis.build_from_gdobj(raw)
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_BASIS:
+        return _godot_variant_to_pyobj_basis(p_gdvar)
 
     # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_TRANSFORM:
     #     raw = gdapi.godot_variant_as_transform(p_gdvar)
     #     return godot_bindings_module.Transform.build_from_gdobj(raw)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_COLOR:
-    #     raw = gdapi.godot_variant_as_color(p_gdvar)
-    #     return godot_bindings_module.Color.build_from_gdobj(raw)
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_COLOR:
+        return _godot_variant_to_pyobj_color(p_gdvar)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_NODE_PATH:
-    #     p_raw = godot_node_path_alloc(initialized=False)
-    #     p_raw[0] = gdapi.godot_variant_as_node_path(p_gdvar)
-    #     return godot_bindings_module.NodePath.build_from_gdobj(p_raw, steal=True)
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_NODE_PATH:
+        return _godot_variant_to_pyobj_node_path(p_gdvar)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_RID:
-    #     raw = gdapi.godot_variant_as_rid(p_gdvar)
-    #     return godot_bindings_module.RID.build_from_gdobj(raw)
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_RID:
+        return _godot_variant_to_pyobj_rid(p_gdvar)
 
     # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_OBJECT:
     #     p_raw = gdapi.godot_variant_as_object(p_gdvar)
@@ -238,6 +229,54 @@ cdef inline Vector2 _godot_variant_to_pyobj_vector2(const godot_variant *p_gdvar
     return vect
 
 
+cdef inline Vector3 _godot_variant_to_pyobj_vector3(const godot_variant *p_gdvar):
+    cdef Vector3 vect = Vector3.__new__(Vector3)
+    vect._gd_data = gdapi.godot_variant_as_vector3(p_gdvar)
+    return vect
+
+
+cdef inline Plane _godot_variant_to_pyobj_plane(const godot_variant *p_gdvar):
+    cdef Plane vect = Plane.__new__(Plane)
+    vect._gd_data = gdapi.godot_variant_as_plane(p_gdvar)
+    return vect
+
+
+cdef inline Quat _godot_variant_to_pyobj_quat(const godot_variant *p_gdvar):
+    cdef Quat vect = Quat.__new__(Quat)
+    vect._gd_data = gdapi.godot_variant_as_quat(p_gdvar)
+    return vect
+
+
+cdef inline AABB _godot_variant_to_pyobj_aabb(const godot_variant *p_gdvar):
+    cdef AABB vect = AABB.__new__(AABB)
+    vect._gd_data = gdapi.godot_variant_as_aabb(p_gdvar)
+    return vect
+
+
+cdef inline Basis _godot_variant_to_pyobj_basis(const godot_variant *p_gdvar):
+    cdef Basis vect = Basis.__new__(Basis)
+    vect._gd_data = gdapi.godot_variant_as_basis(p_gdvar)
+    return vect
+
+
+cdef inline Color _godot_variant_to_pyobj_color(const godot_variant *p_gdvar):
+    cdef Color vect = Color.__new__(Color)
+    vect._gd_data = gdapi.godot_variant_as_color(p_gdvar)
+    return vect
+
+
+cdef inline NodePath _godot_variant_to_pyobj_node_path(const godot_variant *p_gdvar):
+    cdef NodePath vect = NodePath.__new__(NodePath)
+    vect._gd_data = gdapi.godot_variant_as_node_path(p_gdvar)
+    return vect
+
+
+cdef inline RID _godot_variant_to_pyobj_rid(const godot_variant *p_gdvar):
+    cdef RID vect = RID.__new__(RID)
+    vect._gd_data = gdapi.godot_variant_as_rid(p_gdvar)
+    return vect
+
+
 cdef inline Dictionary _godot_variant_to_pyobj_dictionary(const godot_variant *p_gdvar):
     cdef Dictionary d = Dictionary.__new__(Dictionary)
     d._gd_data = gdapi.godot_variant_as_dictionary(p_gdvar)
@@ -263,6 +302,22 @@ cdef void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
         _pyobj_to_godot_variant_convert_string(pyobj, p_var)
     elif isinstance(pyobj, Vector2):
         gdapi.godot_variant_new_vector2(p_var, &(<Vector2>pyobj)._gd_data)
+    elif isinstance(pyobj, Vector3):
+        gdapi.godot_variant_new_vector3(p_var, &(<Vector3>pyobj)._gd_data)
+    elif isinstance(pyobj, Plane):
+        gdapi.godot_variant_new_plane(p_var, &(<Plane>pyobj)._gd_data)
+    elif isinstance(pyobj, Quat):
+        gdapi.godot_variant_new_quat(p_var, &(<Quat>pyobj)._gd_data)
+    elif isinstance(pyobj, AABB):
+        gdapi.godot_variant_new_aabb(p_var, &(<AABB>pyobj)._gd_data)
+    elif isinstance(pyobj, Basis):
+        gdapi.godot_variant_new_basis(p_var, &(<Basis>pyobj)._gd_data)
+    elif isinstance(pyobj, Color):
+        gdapi.godot_variant_new_color(p_var, &(<Color>pyobj)._gd_data)
+    elif isinstance(pyobj, NodePath):
+        gdapi.godot_variant_new_node_path(p_var, &(<NodePath>pyobj)._gd_data)
+    elif isinstance(pyobj, RID):
+        gdapi.godot_variant_new_rid(p_var, &(<RID>pyobj)._gd_data)
     elif isinstance(pyobj, Dictionary):
         gdapi.godot_variant_new_dictionary(p_var, &(<Dictionary>pyobj)._gd_data)
     elif isinstance(pyobj, Array):
