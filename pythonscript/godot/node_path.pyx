@@ -24,7 +24,7 @@ cdef class NodePath:
         gdapi.godot_node_path_destroy(&self._gd_data)
 
     @staticmethod
-    cdef NodePath new(str from_):
+    cdef inline NodePath new(str from_):
         # Call to __new__ bypasses __init__ constructor
         cdef NodePath ret = NodePath.__new__(NodePath)
         cdef godot_string gd_from
@@ -34,7 +34,7 @@ cdef class NodePath:
         return ret
 
     @staticmethod
-    cdef NodePath from_ptr(const godot_node_path *_ptr):
+    cdef inline NodePath from_ptr(const godot_node_path *_ptr):
         # Call to __new__ bypasses __init__ constructor
         cdef NodePath ret = NodePath.__new__(NodePath)
         ret._gd_data = _ptr[0]
@@ -61,37 +61,37 @@ cdef class NodePath:
         gdapi.godot_string_destroy(&var_ret)
         return ret
 
-    cpdef bint is_absolute(self):
+    cpdef inline bint is_absolute(self):
         return gdapi.godot_node_path_is_absolute(&self._gd_data)
 
-    cpdef godot_int get_name_count(self):
+    cpdef inline godot_int get_name_count(self):
         return gdapi.godot_node_path_get_name_count(&self._gd_data)
 
-    cpdef str get_name(self, godot_int idx):
+    cpdef inline str get_name(self, godot_int idx):
         cdef godot_string gd_ret = gdapi.godot_node_path_get_name(&self._gd_data, idx)
         cdef str ret = godot_string_to_pyobj(&gd_ret)
         gdapi.godot_string_destroy(&gd_ret)
         return ret
 
-    cpdef godot_int get_subname_count(self):
+    cpdef inline godot_int get_subname_count(self):
         return gdapi.godot_node_path_get_subname_count(&self._gd_data)
  
-    cpdef str get_subname(self, godot_int idx):
+    cpdef inline str get_subname(self, godot_int idx):
         cdef godot_string gd_ret = gdapi.godot_node_path_get_subname(&self._gd_data, idx)
         cdef str ret = godot_string_to_pyobj(&gd_ret)
         gdapi.godot_string_destroy(&gd_ret)
         return ret
 
-    cpdef str get_concatenated_subnames(self):
+    cpdef inline str get_concatenated_subnames(self):
         cdef godot_string gdret = gdapi.godot_node_path_get_concatenated_subnames(&self._gd_data)
         cdef str ret = godot_string_to_pyobj(&gdret)
         gdapi.godot_string_destroy(&gdret)
         return ret
 
-    cpdef bint is_empty(self):
+    cpdef inline bint is_empty(self):
         return gdapi.godot_node_path_is_empty(&self._gd_data)
 
-    cpdef NodePath get_as_property_path(self):
+    cpdef inline NodePath get_as_property_path(self):
         cdef NodePath ret = NodePath.__new__(NodePath)
         ret._gd_data = gdapi11.godot_node_path_get_as_property_path(&self._gd_data)
         return ret

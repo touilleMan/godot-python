@@ -29,14 +29,14 @@ cdef class Array:
         gdapi.godot_array_destroy(&self._gd_data)
 
     @staticmethod
-    cdef Array new():
+    cdef inline Array new():
         # Call to __new__ bypasses __init__ constructor
         cdef Array ret = Array.__new__(Array)
         gdapi.godot_array_new(&ret._gd_data)
         return ret
 
     @staticmethod
-    cdef Array from_ptr(const godot_array *_ptr):
+    cdef inline Array from_ptr(const godot_array *_ptr):
         # Call to __new__ bypasses __init__ constructor
         cdef Array ret = Array.__new__(Array)
         # `godot_array` is a cheap structure pointing on a refcounted vector

@@ -37,35 +37,35 @@ cdef class Quat:
             raise ValueError("Missing params")
 
     @staticmethod
-    cdef Quat new(godot_real x, godot_real y, godot_real z, godot_real w):
+    cdef inline Quat new(godot_real x, godot_real y, godot_real z, godot_real w):
         # Call to __new__ bypasses __init__ constructor
         cdef Quat ret = Quat.__new__(Quat)
         gdapi.godot_quat_new(&ret._gd_data, x, y, z, w)
         return ret
 
     @staticmethod
-    cdef Quat new_with_axis_angle(Vector3 axis, godot_real angle):
+    cdef inline Quat new_with_axis_angle(Vector3 axis, godot_real angle):
         # Call to __new__ bypasses __init__ constructor
         cdef Quat ret = Quat.__new__(Quat)
         gdapi.godot_quat_new_with_axis_angle(&ret._gd_data, &axis._gd_data, angle)
         return ret
 
     @staticmethod
-    cdef Quat new_with_basis(Basis basis):
+    cdef inline Quat new_with_basis(Basis basis):
         # Call to __new__ bypasses __init__ constructor
         cdef Quat ret = Quat.__new__(Quat)
         gdapi11.godot_quat_new_with_basis(&ret._gd_data, &basis._gd_data)
         return ret
 
     @staticmethod
-    cdef Quat new_with_euler(Vector3 euler):
+    cdef inline Quat new_with_euler(Vector3 euler):
         # Call to __new__ bypasses __init__ constructor
         cdef Quat ret = Quat.__new__(Quat)
         gdapi11.godot_quat_new_with_euler(&ret._gd_data, &euler._gd_data)
         return ret
 
     @staticmethod
-    cdef Quat from_ptr(const godot_quat *_ptr):
+    cdef inline Quat from_ptr(const godot_quat *_ptr):
         # Call to __new__ bypasses __init__ constructor
         cdef Quat ret = Quat.__new__(Quat)
         ret._gd_data = _ptr[0]

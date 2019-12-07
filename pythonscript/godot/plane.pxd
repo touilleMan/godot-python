@@ -16,16 +16,16 @@ cdef class Plane:
     cdef godot_plane _gd_data
 
     @staticmethod
-    cdef Plane new_with_reals(godot_real a, godot_real b, godot_real c, godot_real d)
+    cdef inline Plane new_with_reals(godot_real a, godot_real b, godot_real c, godot_real d)
 
     @staticmethod
-    cdef Plane new_with_vectors(Vector3 v1, Vector3 v2, Vector3 v3)
+    cdef inline Plane new_with_vectors(Vector3 v1, Vector3 v2, Vector3 v3)
 
     @staticmethod
-    cdef Plane new_with_normal(Vector3 normal, godot_real d)
+    cdef inline Plane new_with_normal(Vector3 normal, godot_real d)
 
     @staticmethod
-    cdef Plane from_ptr(const godot_plane *_ptr)
+    cdef inline Plane from_ptr(const godot_plane *_ptr)
 
     # Operators
 

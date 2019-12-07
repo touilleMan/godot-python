@@ -10,10 +10,10 @@ cdef class RID:
     cdef godot_rid _gd_data
 
     @staticmethod
-    cdef RID new()
+    cdef inline RID new()
 
     @staticmethod
-    cdef RID from_ptr(const godot_rid *_ptr)
+    cdef inline RID from_ptr(const godot_rid *_ptr)
 
     # Operators
 

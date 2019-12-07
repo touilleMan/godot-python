@@ -16,22 +16,22 @@ cdef class Basis:
     cdef godot_basis _gd_data
 
     @staticmethod
-    cdef Basis new()
+    cdef inline Basis new()
 
     @staticmethod
-    cdef Basis new_with_rows(Vector3 x, Vector3 y, Vector3 z)
+    cdef inline Basis new_with_rows(Vector3 x, Vector3 y, Vector3 z)
 
     @staticmethod
-    cdef Basis new_with_axis_and_angle(Vector3 axis, godot_real phi)
+    cdef inline Basis new_with_axis_and_angle(Vector3 axis, godot_real phi)
 
     @staticmethod
-    cdef Basis new_with_euler(Vector3 from_)
+    cdef inline Basis new_with_euler(Vector3 from_)
 
     @staticmethod
-    cdef Basis new_with_euler_quat(Quat from_)
+    cdef inline Basis new_with_euler_quat(Quat from_)
 
     @staticmethod
-    cdef Basis from_ptr(const godot_basis *_ptr)
+    cdef inline Basis from_ptr(const godot_basis *_ptr)
 
     # Operators
 

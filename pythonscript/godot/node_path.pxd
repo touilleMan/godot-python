@@ -14,10 +14,10 @@ cdef class NodePath:
     cdef godot_node_path _gd_data
 
     @staticmethod
-    cdef NodePath new(str from_)
+    cdef inline NodePath new(str from_)
 
     @staticmethod
-    cdef NodePath from_ptr(const godot_node_path *_ptr)
+    cdef inline NodePath from_ptr(const godot_node_path *_ptr)
 
     # Operators
 
@@ -28,11 +28,11 @@ cdef class NodePath:
     # Methods
 
     cdef inline str as_string(self)
-    cpdef bint is_absolute(self)
-    cpdef godot_int get_name_count(self)
-    cpdef str get_name(self, godot_int idx)
-    cpdef godot_int get_subname_count(self)
-    cpdef str get_subname(self, godot_int idx)
-    cpdef str get_concatenated_subnames(self)
-    cpdef bint is_empty(self)
-    cpdef NodePath get_as_property_path(self)
+    cpdef inline bint is_absolute(self)
+    cpdef inline godot_int get_name_count(self)
+    cpdef inline str get_name(self, godot_int idx)
+    cpdef inline godot_int get_subname_count(self)
+    cpdef inline str get_subname(self, godot_int idx)
+    cpdef inline str get_concatenated_subnames(self)
+    cpdef inline bint is_empty(self)
+    cpdef inline NodePath get_as_property_path(self)

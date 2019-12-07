@@ -15,10 +15,10 @@ cdef class Dictionary:
     cdef godot_dictionary _gd_data
 
     @staticmethod
-    cdef Dictionary new()
+    cdef inline Dictionary new()
 
     @staticmethod
-    cdef Dictionary from_ptr(const godot_dictionary *_ptr)
+    cdef inline Dictionary from_ptr(const godot_dictionary *_ptr)
 
     # Operators
 

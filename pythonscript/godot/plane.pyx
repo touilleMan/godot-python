@@ -35,28 +35,28 @@ cdef class Plane:
             raise ValueError("Missing params")
 
     @staticmethod
-    cdef Plane new_with_reals(godot_real a, godot_real b, godot_real c, godot_real d):
+    cdef inline Plane new_with_reals(godot_real a, godot_real b, godot_real c, godot_real d):
         # Call to __new__ bypasses __init__ constructor
         cdef Plane ret = Plane.__new__(Plane)
         gdapi.godot_plane_new_with_reals(&ret._gd_data, a, b, c, d)
         return ret
 
     @staticmethod
-    cdef Plane new_with_vectors(Vector3 v1, Vector3 v2, Vector3 v3):
+    cdef inline Plane new_with_vectors(Vector3 v1, Vector3 v2, Vector3 v3):
         # Call to __new__ bypasses __init__ constructor
         cdef Plane ret = Plane.__new__(Plane)
         gdapi.godot_plane_new_with_vectors(&ret._gd_data, &v1._gd_data, &v2._gd_data, &v3._gd_data)
         return ret
 
     @staticmethod
-    cdef Plane new_with_normal(Vector3 normal, godot_real d):
+    cdef inline Plane new_with_normal(Vector3 normal, godot_real d):
         # Call to __new__ bypasses __init__ constructor
         cdef Plane ret = Plane.__new__(Plane)
         gdapi.godot_plane_new_with_normal(&ret._gd_data, &normal._gd_data, d)
         return ret
 
     @staticmethod
-    cdef Plane from_ptr(const godot_plane *_ptr):
+    cdef inline Plane from_ptr(const godot_plane *_ptr):
         # Call to __new__ bypasses __init__ constructor
         cdef Plane ret = Plane.__new__(Plane)
         ret._gd_data = _ptr[0]

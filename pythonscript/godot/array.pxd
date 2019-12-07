@@ -15,10 +15,10 @@ cdef class Array:
     cdef godot_array _gd_data
 
     @staticmethod
-    cdef Array new()
+    cdef inline Array new()
 
     @staticmethod
-    cdef Array from_ptr(const godot_array *_ptr)
+    cdef inline Array from_ptr(const godot_array *_ptr)
 
     # Operators
 

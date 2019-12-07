@@ -20,14 +20,14 @@ cdef class AABB:
         gdapi.godot_aabb_new(&self._gd_data, &pos._gd_data, &size._gd_data)
 
     @staticmethod
-    cdef AABB new(godot_vector3 *pos, godot_vector3 *size):
+    cdef inline AABB new(godot_vector3 *pos, godot_vector3 *size):
         # Call to __new__ bypasses __init__ constructor
         cdef AABB ret = AABB.__new__(AABB)
         gdapi.godot_aabb_new(&ret._gd_data, pos, size)
         return ret
 
     @staticmethod
-    cdef AABB from_ptr(const godot_aabb *_ptr):
+    cdef inline AABB from_ptr(const godot_aabb *_ptr):
         # Call to __new__ bypasses __init__ constructor
         cdef AABB ret = AABB.__new__(AABB)
         ret._gd_data = _ptr[0]

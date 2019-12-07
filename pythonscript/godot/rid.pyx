@@ -16,14 +16,14 @@ cdef class RID:
         gdapi.godot_rid_new(&self._gd_data)
 
     @staticmethod
-    cdef RID new():
+    cdef inline RID new():
         # Call to __new__ bypasses __init__ constructor
         cdef RID ret = RID.__new__(RID)
         gdapi.godot_rid_new(&ret._gd_data)
         return ret
 
     @staticmethod
-    cdef RID from_ptr(const godot_rid *_ptr):
+    cdef inline RID from_ptr(const godot_rid *_ptr):
         # Call to __new__ bypasses __init__ constructor
         cdef RID ret = RID.__new__(RID)
         ret._gd_data = _ptr[0]

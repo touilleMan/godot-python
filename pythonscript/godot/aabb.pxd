@@ -17,10 +17,10 @@ cdef class AABB:
     cdef godot_aabb _gd_data
 
     @staticmethod
-    cdef AABB new(godot_vector3 *pos, godot_vector3 *size)
+    cdef inline AABB new(godot_vector3 *pos, godot_vector3 *size)
 
     @staticmethod
-    cdef AABB from_ptr(const godot_aabb *_ptr)
+    cdef inline AABB from_ptr(const godot_aabb *_ptr)
 
     # Operators
 

@@ -40,42 +40,42 @@ cdef class Basis:
             gdapi.godot_basis_new_with_rows(&self._gd_data, &(<Vector3>x)._gd_data, &(<Vector3>y)._gd_data, &(<Vector3>z)._gd_data)
 
     @staticmethod
-    cdef Basis new():
+    cdef inline Basis new():
         # Call to __new__ bypasses __init__ constructor
         cdef Basis ret = Basis.__new__(Basis)
         gdapi.godot_basis_new(&ret._gd_data)
         return ret
 
     @staticmethod
-    cdef Basis new_with_rows(Vector3 x, Vector3 y, Vector3 z):
+    cdef inline Basis new_with_rows(Vector3 x, Vector3 y, Vector3 z):
         # Call to __new__ bypasses __init__ constructor
         cdef Basis ret = Basis.__new__(Basis)
         gdapi.godot_basis_new_with_rows(&ret._gd_data, &x._gd_data, &y._gd_data, &z._gd_data)
         return ret
 
     @staticmethod
-    cdef Basis new_with_axis_and_angle(Vector3 axis, godot_real phi):
+    cdef inline Basis new_with_axis_and_angle(Vector3 axis, godot_real phi):
         # Call to __new__ bypasses __init__ constructor
         cdef Basis ret = Basis.__new__(Basis)
         gdapi.godot_basis_new_with_axis_and_angle(&ret._gd_data, &axis._gd_data, phi)
         return ret
 
     @staticmethod
-    cdef Basis new_with_euler(Vector3 from_):
+    cdef inline Basis new_with_euler(Vector3 from_):
         # Call to __new__ bypasses __init__ constructor
         cdef Basis ret = Basis.__new__(Basis)
         gdapi.godot_basis_new_with_euler(&ret._gd_data, &from_._gd_data)
         return ret
 
     @staticmethod
-    cdef Basis new_with_euler_quat(Quat from_):
+    cdef inline Basis new_with_euler_quat(Quat from_):
         # Call to __new__ bypasses __init__ constructor
         cdef Basis ret = Basis.__new__(Basis)
         gdapi.godot_basis_new_with_euler_quat(&ret._gd_data, &from_._gd_data)
         return ret
 
     @staticmethod
-    cdef Basis from_ptr(const godot_basis *_ptr):
+    cdef inline Basis from_ptr(const godot_basis *_ptr):
         # Call to __new__ bypasses __init__ constructor
         cdef Basis ret = Basis.__new__(Basis)
         ret._gd_data = _ptr[0]

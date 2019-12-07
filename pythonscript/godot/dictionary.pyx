@@ -35,14 +35,14 @@ cdef class Dictionary:
         gdapi.godot_dictionary_destroy(&self._gd_data)
 
     @staticmethod
-    cdef Dictionary new():
+    cdef inline Dictionary new():
         # Call to __new__ bypasses __init__ constructor
         cdef Dictionary ret = Dictionary.__new__(Dictionary)
         gdapi.godot_dictionary_new(&ret._gd_data)
         return ret
 
     @staticmethod
-    cdef Dictionary from_ptr(const godot_dictionary *_ptr):
+    cdef inline Dictionary from_ptr(const godot_dictionary *_ptr):
         # Call to __new__ bypasses __init__ constructor
         cdef Dictionary ret = Dictionary.__new__(Dictionary)
         # `godot_dictionary` is a cheap structure pointing on a refcounted vector

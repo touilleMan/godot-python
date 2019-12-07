@@ -18,14 +18,14 @@ cdef class Vector2:
         gdapi.godot_vector2_new(&self._gd_data, x, y)
 
     @staticmethod
-    cdef Vector2 new(godot_real x=0.0, godot_real y=0.0):
+    cdef inline Vector2 new(godot_real x=0.0, godot_real y=0.0):
         # Call to __new__ bypasses __init__ constructor
         cdef Vector2 ret = Vector2.__new__(Vector2)
         gdapi.godot_vector2_new(&ret._gd_data, x, y)
         return ret
 
     @staticmethod
-    cdef Vector2 from_ptr(const godot_vector2 *_ptr):
+    cdef inline Vector2 from_ptr(const godot_vector2 *_ptr):
         # Call to __new__ bypasses __init__ constructor
         cdef Vector2 ret = Vector2.__new__(Vector2)
         ret._gd_data = _ptr[0]
@@ -183,41 +183,41 @@ cdef class Vector2:
 
     # Methods
 
-    cpdef Vector2 normalized(self):
+    cpdef inline Vector2 normalized(self):
         cdef Vector2 ret  = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_vector2_normalized(&self._gd_data)
         return ret
 
-    cpdef godot_real length(self):
+    cpdef inline godot_real length(self):
         return gdapi.godot_vector2_length(&self._gd_data)
 
-    cpdef godot_real angle(self):
+    cpdef inline godot_real angle(self):
         return gdapi.godot_vector2_angle(&self._gd_data)
 
-    cpdef godot_real length_squared(self):
+    cpdef inline godot_real length_squared(self):
         return gdapi.godot_vector2_length_squared(&self._gd_data)
 
-    cpdef bint is_normalized(self):
+    cpdef inline bint is_normalized(self):
         return gdapi.godot_vector2_is_normalized(&self._gd_data)
 
-    cpdef godot_real distance_to(self, Vector2 to):
+    cpdef inline godot_real distance_to(self, Vector2 to):
         return gdapi.godot_vector2_distance_to(&self._gd_data, &to._gd_data)
 
-    cpdef godot_real distance_squared_to(self, Vector2 to):
+    cpdef inline godot_real distance_squared_to(self, Vector2 to):
         return gdapi.godot_vector2_distance_squared_to(&self._gd_data, &to._gd_data)
 
-    cpdef godot_real angle_to(self, Vector2 to):
+    cpdef inline godot_real angle_to(self, Vector2 to):
         return gdapi.godot_vector2_angle_to(&self._gd_data, &to._gd_data)
 
-    cpdef godot_real angle_to_point(self, Vector2 to):
+    cpdef inline godot_real angle_to_point(self, Vector2 to):
         return gdapi.godot_vector2_angle_to_point(&self._gd_data, &to._gd_data)
 
-    cpdef Vector2 linear_interpolate(self, Vector2 b, godot_real t):
+    cpdef inline Vector2 linear_interpolate(self, Vector2 b, godot_real t):
         cdef Vector2 ret  = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_vector2_linear_interpolate(&self._gd_data, &b._gd_data, t)
         return ret
 
-    cpdef Vector2 cubic_interpolate(self, Vector2 b, Vector2 pre_a, Vector2 post_b, godot_real t):
+    cpdef inline Vector2 cubic_interpolate(self, Vector2 b, Vector2 pre_a, Vector2 post_b, godot_real t):
         cdef Vector2 ret  = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_vector2_cubic_interpolate(
             &self._gd_data,
@@ -228,58 +228,58 @@ cdef class Vector2:
         )
         return ret
 
-    cpdef Vector2 move_toward(self, Vector2 to, godot_real delta):
+    cpdef inline Vector2 move_toward(self, Vector2 to, godot_real delta):
         cdef Vector2 ret  = Vector2.__new__(Vector2)
         ret._gd_data = gdapi12.godot_vector2_move_toward(&self._gd_data, &to._gd_data, delta)
         return ret
 
-    cpdef Vector2 rotated(self, godot_real phi):
+    cpdef inline Vector2 rotated(self, godot_real phi):
         cdef Vector2 ret  = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_vector2_rotated(&self._gd_data, phi)
         return ret
 
-    cpdef Vector2 tangent(self):
+    cpdef inline Vector2 tangent(self):
         cdef Vector2 ret  = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_vector2_tangent(&self._gd_data)
         return ret
 
-    cpdef Vector2 floor(self):
+    cpdef inline Vector2 floor(self):
         cdef Vector2 ret  = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_vector2_floor(&self._gd_data)
         return ret
 
-    cpdef Vector2 snapped(self, Vector2 by):
+    cpdef inline Vector2 snapped(self, Vector2 by):
         cdef Vector2 ret  = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_vector2_snapped(&self._gd_data, &by._gd_data)
         return ret
 
-    cpdef godot_real aspect(self):
+    cpdef inline godot_real aspect(self):
         return gdapi.godot_vector2_aspect(&self._gd_data)
 
-    cpdef godot_real dot(self, Vector2 with_):
+    cpdef inline godot_real dot(self, Vector2 with_):
         return gdapi.godot_vector2_dot(&self._gd_data, &with_._gd_data)
 
-    cpdef Vector2 slide(self, Vector2 n):
+    cpdef inline Vector2 slide(self, Vector2 n):
         cdef Vector2 ret  = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_vector2_slide(&self._gd_data, &n._gd_data)
         return ret
 
-    cpdef Vector2 bounce(self, Vector2 n):
+    cpdef inline Vector2 bounce(self, Vector2 n):
         cdef Vector2 ret  = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_vector2_bounce(&self._gd_data, &n._gd_data)
         return ret
 
-    cpdef Vector2 reflect(self, Vector2 n):
+    cpdef inline Vector2 reflect(self, Vector2 n):
         cdef Vector2 ret  = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_vector2_reflect(&self._gd_data, &n._gd_data)
         return ret
 
-    cpdef Vector2 abs(self):
+    cpdef inline Vector2 abs(self):
         cdef Vector2 ret  = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_vector2_abs(&self._gd_data)
         return ret
 
-    cpdef Vector2 clamped(self, godot_real length):
+    cpdef inline Vector2 clamped(self, godot_real length):
         cdef Vector2 ret  = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_vector2_clamped(&self._gd_data, length)
         return ret

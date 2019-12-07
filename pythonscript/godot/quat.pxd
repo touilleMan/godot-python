@@ -16,19 +16,19 @@ cdef class Quat:
     cdef godot_quat _gd_data
 
     @staticmethod
-    cdef Quat new(godot_real x, godot_real y, godot_real z, godot_real w)
+    cdef inline Quat new(godot_real x, godot_real y, godot_real z, godot_real w)
 
     @staticmethod
-    cdef Quat new_with_axis_angle(Vector3 axis, godot_real angle)
+    cdef inline Quat new_with_axis_angle(Vector3 axis, godot_real angle)
 
     @staticmethod
-    cdef Quat new_with_basis(Basis basis)
+    cdef inline Quat new_with_basis(Basis basis)
 
     @staticmethod
-    cdef Quat new_with_euler(Vector3 euler)
+    cdef inline Quat new_with_euler(Vector3 euler)
 
     @staticmethod
-    cdef Quat from_ptr(const godot_quat *_ptr)
+    cdef inline Quat from_ptr(const godot_quat *_ptr)
 
     # Operators
 

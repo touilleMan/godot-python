@@ -21,21 +21,21 @@ cdef class Color:
             gdapi.godot_color_new_rgba(&self._gd_data, r, g, b, a)
 
     @staticmethod
-    cdef Color new_rgba(godot_real r, godot_real g, godot_real b, godot_real a):
+    cdef inline Color new_rgba(godot_real r, godot_real g, godot_real b, godot_real a):
         # Call to __new__ bypasses __init__ constructor
         cdef Color ret = Color.__new__(Color)
         gdapi.godot_color_new_rgba(&ret._gd_data, r, g, b, a)
         return ret
 
     @staticmethod
-    cdef Color new_rgb(godot_real r, godot_real g, godot_real b):
+    cdef inline Color new_rgb(godot_real r, godot_real g, godot_real b):
         # Call to __new__ bypasses __init__ constructor
         cdef Color ret = Color.__new__(Color)
         gdapi.godot_color_new_rgb(&ret._gd_data, r, g, b)
         return ret
 
     @staticmethod
-    cdef Color from_ptr(const godot_color *_ptr):
+    cdef inline Color from_ptr(const godot_color *_ptr):
         # Call to __new__ bypasses __init__ constructor
         cdef Color ret = Color.__new__(Color)
         ret._gd_data = _ptr[0]
