@@ -16,6 +16,7 @@ cdef class Vector2:
     cdef Vector2 from_ptr(const godot_vector2 *_ptr)
 
     # Operators
+
     cdef inline Vector2 operator_add(self, Vector2 b)
     cdef inline Vector2 operator_subtract(self, Vector2 b)
     cdef inline Vector2 operator_multiply_vector(self, Vector2 b)

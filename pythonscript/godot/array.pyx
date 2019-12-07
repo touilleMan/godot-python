@@ -111,7 +111,7 @@ cdef class Array:
             arr.operator_set(self_size + i, items.get(i))
         return arr
 
-    cdef inline godot_bool operator_equal(self, Array other):
+    cdef inline bint operator_equal(self, Array other):
         # TODO `godot_array_operator_equal` is missing in gdapi, submit a PR ?
         cdef godot_int size = self.size()
         if size != other.size():
@@ -124,10 +124,10 @@ cdef class Array:
                 return False
         return True
 
-    cdef inline godot_bool operator_contains(self, object key):
+    cdef inline bint operator_contains(self, object key):
         cdef godot_variant var_key
         pyobj_to_godot_variant(key, &var_key)
-        cdef godot_bool ret = gdapi.godot_array_has(&self._gd_data, &var_key)
+        cdef bint ret = gdapi.godot_array_has(&self._gd_data, &var_key)
         gdapi.godot_variant_destroy(&var_key)
         return ret
 
@@ -167,7 +167,7 @@ cdef class Array:
     cpdef inline godot_int size(self):
         return gdapi.godot_array_size(&self._gd_data)
 
-    cpdef inline Array duplicate(self, godot_bool deep):
+    cpdef inline Array duplicate(self, bint deep):
         cdef Array ret = Array.__new__(Array)
         ret._gd_data = gdapi11.godot_array_duplicate(&self._gd_data, deep)
         return ret
@@ -191,7 +191,7 @@ cdef class Array:
     cpdef inline void clear(self):
         gdapi.godot_array_clear(&self._gd_data)
 
-    cpdef inline godot_bool empty(self):
+    cpdef inline bint empty(self):
         return gdapi.godot_array_empty(&self._gd_data)
 
     cpdef inline void erase(self, object item):
@@ -265,10 +265,10 @@ cdef class Array:
     cpdef inline void resize(self, godot_int size):
         gdapi.godot_array_resize(&self._gd_data, size)
 
-    cpdef inline godot_bool rfind(self, object what, godot_int from_):
+    cpdef inline bint rfind(self, object what, godot_int from_):
         cdef godot_variant var_what
         pyobj_to_godot_variant(what, &var_what)
-        cdef godot_bool ret = gdapi.godot_array_rfind(&self._gd_data, &var_what, from_)
+        cdef bint ret = gdapi.godot_array_rfind(&self._gd_data, &var_what, from_)
         gdapi.godot_variant_destroy(&var_what)
         return ret
 
@@ -278,14 +278,14 @@ cdef class Array:
     cdef inline void sort_custom(self, godot_object *p_obj, godot_string *p_func):
         gdapi.godot_array_sort_custom(&self._gd_data, p_obj, p_func)
 
-    cpdef inline godot_int bsearch(self, object value, godot_bool before):
+    cpdef inline godot_int bsearch(self, object value, bint before):
         cdef godot_variant var_value
         pyobj_to_godot_variant(value, &var_value)
         cdef godot_int ret = gdapi.godot_array_bsearch(&self._gd_data, &var_value, before)
         gdapi.godot_variant_destroy(&var_value)
         return ret
 
-    cdef inline godot_int bsearch_custom(self, object value, godot_object *p_obj, godot_string *p_func, godot_bool before):
+    cdef inline godot_int bsearch_custom(self, object value, godot_object *p_obj, godot_string *p_func, bint before):
         cdef godot_variant var_value
         pyobj_to_godot_variant(value, &var_value)
         cdef godot_int ret = gdapi.godot_array_bsearch_custom(&self._gd_data, &var_value, p_obj, p_func, before)
