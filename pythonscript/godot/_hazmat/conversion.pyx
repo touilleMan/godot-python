@@ -19,7 +19,7 @@ from godot.plane cimport Plane
 from godot.quat cimport Quat
 from godot.aabb cimport AABB
 from godot.basis cimport Basis
-# from godot.transform cimport Transform
+from godot.transform cimport Transform
 from godot.color cimport Color
 from godot.node_path cimport NodePath
 from godot.rid cimport RID
@@ -51,7 +51,7 @@ GD_PY_TYPES = (
     (godot_variant_type.GODOT_VARIANT_TYPE_QUAT, Quat),
     (godot_variant_type.GODOT_VARIANT_TYPE_AABB, AABB),
     (godot_variant_type.GODOT_VARIANT_TYPE_BASIS, Basis),
-    # (godot_variant_type.GODOT_VARIANT_TYPE_TRANSFORM, Transform),
+    (godot_variant_type.GODOT_VARIANT_TYPE_TRANSFORM, Transform),
     (godot_variant_type.GODOT_VARIANT_TYPE_COLOR, Color),
     (godot_variant_type.GODOT_VARIANT_TYPE_NODE_PATH, NodePath),
     (godot_variant_type.GODOT_VARIANT_TYPE_RID, RID),
@@ -143,9 +143,8 @@ cdef object godot_variant_to_pyobj(const godot_variant *p_gdvar):
     elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_BASIS:
         return _godot_variant_to_pyobj_basis(p_gdvar)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_TRANSFORM:
-    #     raw = gdapi.godot_variant_as_transform(p_gdvar)
-    #     return godot_bindings_module.Transform.build_from_gdobj(raw)
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_TRANSFORM:
+        return _godot_variant_to_pyobj_transform(p_gdvar)
 
     elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_COLOR:
         return _godot_variant_to_pyobj_color(p_gdvar)
@@ -245,6 +244,12 @@ cdef inline Transform2D _godot_variant_to_pyobj_transform2d(const godot_variant 
     return vect
 
 
+cdef inline Transform _godot_variant_to_pyobj_transform(const godot_variant *p_gdvar):
+    cdef Transform vect = Transform.__new__(Transform)
+    vect._gd_data = gdapi.godot_variant_as_transform(p_gdvar)
+    return vect
+
+
 cdef inline Plane _godot_variant_to_pyobj_plane(const godot_variant *p_gdvar):
     cdef Plane vect = Plane.__new__(Plane)
     vect._gd_data = gdapi.godot_variant_as_plane(p_gdvar)
@@ -332,6 +337,8 @@ cdef void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
         gdapi.godot_variant_new_rect2(p_var, &(<Rect2>pyobj)._gd_data)
     elif isinstance(pyobj, Transform2D):
         gdapi.godot_variant_new_transform2d(p_var, &(<Transform2D>pyobj)._gd_data)
+    elif isinstance(pyobj, Transform):
+        gdapi.godot_variant_new_transform(p_var, &(<Transform>pyobj)._gd_data)
     elif isinstance(pyobj, Dictionary):
         gdapi.godot_variant_new_dictionary(p_var, &(<Dictionary>pyobj)._gd_data)
     elif isinstance(pyobj, Array):
