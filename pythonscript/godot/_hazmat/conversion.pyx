@@ -12,7 +12,7 @@ from godot._hazmat.gdnative_api_struct cimport (
 )
 from godot.bindings cimport Object
 from godot.vector2 cimport Vector2
-# from godot.rect2 cimport Rect2
+from godot.rect2 cimport Rect2
 from godot.vector3 cimport Vector3
 # from godot.transform2d cimport Transform2D
 from godot.plane cimport Plane
@@ -44,7 +44,7 @@ GD_PY_TYPES = (
     (godot_variant_type.GODOT_VARIANT_TYPE_STRING, str),
     (godot_variant_type.GODOT_VARIANT_TYPE_OBJECT, Object),
     (godot_variant_type.GODOT_VARIANT_TYPE_VECTOR2, Vector2),
-    # (godot_variant_type.GODOT_VARIANT_TYPE_RECT2, Rect2),
+    (godot_variant_type.GODOT_VARIANT_TYPE_RECT2, Rect2),
     (godot_variant_type.GODOT_VARIANT_TYPE_VECTOR3, Vector3),
     # (godot_variant_type.GODOT_VARIANT_TYPE_TRANSFORM2D, Transform2D),
     (godot_variant_type.GODOT_VARIANT_TYPE_PLANE, Plane),
@@ -122,9 +122,8 @@ cdef object godot_variant_to_pyobj(const godot_variant *p_gdvar):
     elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_VECTOR2:
         return _godot_variant_to_pyobj_vector2(p_gdvar)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_RECT2:
-    #     raw = gdapi.godot_variant_as_rect2(p_gdvar)
-    #     return godot_bindings_module.Rect2.build_from_gdobj(raw)
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_RECT2:
+        return _godot_variant_to_pyobj_rect2(p_gdvar)
 
     elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_VECTOR3:
         return _godot_variant_to_pyobj_vector3(p_gdvar)
@@ -229,6 +228,12 @@ cdef inline Vector2 _godot_variant_to_pyobj_vector2(const godot_variant *p_gdvar
     return vect
 
 
+cdef inline Rect2 _godot_variant_to_pyobj_rect2(const godot_variant *p_gdvar):
+    cdef Rect2 vect = Rect2.__new__(Rect2)
+    vect._gd_data = gdapi.godot_variant_as_rect2(p_gdvar)
+    return vect
+
+
 cdef inline Vector3 _godot_variant_to_pyobj_vector3(const godot_variant *p_gdvar):
     cdef Vector3 vect = Vector3.__new__(Vector3)
     vect._gd_data = gdapi.godot_variant_as_vector3(p_gdvar)
@@ -318,6 +323,8 @@ cdef void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
         gdapi.godot_variant_new_node_path(p_var, &(<NodePath>pyobj)._gd_data)
     elif isinstance(pyobj, RID):
         gdapi.godot_variant_new_rid(p_var, &(<RID>pyobj)._gd_data)
+    elif isinstance(pyobj, Rect2):
+        gdapi.godot_variant_new_rect2(p_var, &(<Rect2>pyobj)._gd_data)
     elif isinstance(pyobj, Dictionary):
         gdapi.godot_variant_new_dictionary(p_var, &(<Dictionary>pyobj)._gd_data)
     elif isinstance(pyobj, Array):
