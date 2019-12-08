@@ -15,16 +15,34 @@ env = Environment(
 )
 
 
-GD_TYPES = {
+BASE_TYPES = {
     "void": "void",
     "bool": "godot_bool",
     "int": "godot_int",
     "float": "godot_real",
     "enum.Error": "godot_error",
     "enum.Vector3::Axis": "godot_vector3_axis",
-    "Variant": "godot_variant",
-    "String": "godot_string",
+}
+STACK_AND_HEAP_BUILTINS_TYPES = {"Variant": "godot_variant", "String": "godot_string"}
+STACK_ONLY_BUILTINS_TYPES = {
+    "AABB": "godot_aabb",
+    "Array": "godot_array",
+    "Basis": "godot_basis",
+    "Color": "godot_color",
+    "Dictionary": "godot_dictionary",
+    "NodePath": "godot_node_path",
+    "Plane": "godot_plane",
+    "Quat": "godot_quat",
+    "Rect2": "godot_rect2",
+    "RID": "godot_rid",
+    "Transform": "godot_transform",
     "Transform2D": "godot_transform2d",
+    "Vector2": "godot_vector2",
+    "Vector3": "godot_vector3",
+    "PoolByteArray": "godot_pool_byte_array",
+    "PoolIntArray": "godot_pool_int_array",
+    "PoolRealArray": "godot_pool_real_array",
+    "PoolStringArray": "godot_pool_string_array",
 }
 
 
@@ -39,7 +57,7 @@ SAMPLE_CLASSES = {
     "Reference",
     "ARVRInterface",
     "ARVRInterfaceGDNative",
-    # "MultiplayerAPI",
+    "Resource",
     # "SceneTree",
     # "Viewport",
     # "_ClassDB",
@@ -58,17 +76,36 @@ SUPPORTED_TYPES = {
     "godot_int",
     "godot_real",
     "godot_string",
-    "godot_rid",
-    "godot_vector2",
     "godot_variant",
-    "godot_array",
-    "godot_dictionary",
     "godot_object",
+    "godot_aabb",
+    "godot_array",
+    "godot_basis",
+    "godot_color",
+    "godot_dictionary",
+    "godot_node_path",
+    "godot_plane",
+    "godot_quat",
+    "godot_rect2",
+    "godot_rid",
+    "godot_transform",
+    "godot_transform2d",
+    "godot_vector2",
+    "godot_vector3",
 }
 
 
 def strip_unsupported_stuff(classes):
-    all_supported_types = [*SUPPORTED_TYPES, *[k["name"] for k in classes]]
+    supported_classes = {k["name"] for k in classes}
+
+    def _is_supported_type(specs):
+        if specs["is_builtin"]:
+            return specs["type"] in SUPPORTED_TYPES
+        elif specs["is_object"]:
+            return specs["binding_type"] in supported_classes
+        else:
+            return True
+
     for klass in classes:
         methods = []
         for meth in klass["methods"]:
@@ -84,29 +121,31 @@ def strip_unsupported_stuff(classes):
                 continue
             if meth["is_from_script"]:
                 continue
-            if meth["return_type"] not in all_supported_types:
+            if not _is_supported_type(meth["return_type_specs"]):
                 continue
-            if [
+            if any(
                 arg
                 for arg in meth["arguments"]
-                if arg["type"] not in all_supported_types
-            ]:
+                if not _is_supported_type(arg["type_specs"])
+            ):
                 continue
             methods.append(meth)
         klass["methods"] = methods
 
         properties = []
         for prop in klass["properties"]:
-            if prop["type"] not in SUPPORTED_TYPES:
+            if not _is_supported_type(prop["type_specs"]):
                 continue
             properties.append(prop)
         klass["properties"] = properties
 
         signals = []
         for signal in klass["signals"]:
-            if [
-                arg for arg in signal["arguments"] if arg["type"] not in SUPPORTED_TYPES
-            ]:
+            if any(
+                arg
+                for arg in signal["arguments"]
+                if not _is_supported_type(arg["type_specs"])
+            ):
                 continue
             signals.append(signal)
         klass["signals"] = signals
@@ -148,15 +187,57 @@ def cook_data(data):
 
     def _cook_type(type_):
         try:
-            return (True, class_renames[type_])
+            return {
+                "type": "godot_object",
+                "binding_type": class_renames[type_],
+                "is_object": True,
+                "is_builtin": False,
+                "stack_only": False,
+            }
         except KeyError:
-            try:
-                return (False, GD_TYPES[type_])
-            except KeyError:
-                if type_.startswith("enum."):
-                    return (False, "godot_int")
-                else:
-                    return (False, f"godot_{camel_to_snake(type_)}")
+            pass
+        try:
+            return {
+                "type": STACK_ONLY_BUILTINS_TYPES[type_],
+                "binding_type": type_,
+                "is_object": False,
+                "is_builtin": True,
+                "stack_only": True,
+            }
+        except KeyError:
+            pass
+        try:
+            spec = {
+                "type": STACK_AND_HEAP_BUILTINS_TYPES[type_],
+                "is_object": False,
+                "is_builtin": True,
+                "stack_only": False,
+            }
+            if spec["type"] == "godot_variant":
+                spec["binding_type"] = "object"
+            elif spec["type"] == "godot_string":
+                spec["binding_type"] = "str"
+            return spec
+        except KeyError:
+            pass
+        try:
+            specs = {"is_object": False, "is_builtin": False, "stack_only": True}
+            if type_.startswith("enum."):
+                specs["binding_type"] = specs["type"] = "godot_int"
+            else:
+                specs["binding_type"] = specs["type"] = BASE_TYPES[type_]
+            return specs
+        except KeyError:
+            pass
+        print(f"Unknwon type: {type_}")
+        return {
+            "type": type_,
+            "binding_type": type_,
+            "is_object": False,
+            "is_builtin": False,
+            "stack_only": False,
+        }
+        # raise RuntimeError(f"Unknown type: {type_}")
 
     def _cook_name(name):
         if iskeyword(name) or name in ("char", "bool", "int", "float", "short", "type"):
@@ -179,22 +260,28 @@ def cook_data(data):
 
         for meth in item["methods"]:
             meth["name"] = _cook_name(meth["name"])
-            meth["return_type_is_binding"], meth["return_type"] = _cook_type(
-                meth["return_type"]
-            )
+            specs = _cook_type(meth["return_type"])
+            meth["return_type_specs"] = specs
+            meth["return_type"] = specs["type"]
             for arg in meth["arguments"]:
                 arg["name"] = _cook_name(arg["name"])
-                arg["type_is_binding"], arg["type"] = _cook_type(arg["type"])
+                specs = _cook_type(arg["type"])
+                arg["type_specs"] = specs
+                arg["type"] = specs["type"]
 
         for prop in item["properties"]:
             prop["name"] = _cook_name(prop["name"])
-            prop["type_is_binding"], prop["type"] = _cook_type(prop["type"])
+            specs = _cook_type(prop["type"])
+            prop["type_specs"] = specs
+            prop["type"] = specs["type"]
 
         for signal in item["signals"]:
             signal["name"] = _cook_name(signal["name"])
             for arg in signal["arguments"]:
                 arg["name"] = _cook_name(arg["name"])
-                arg["type_is_binding"], arg["type"] = _cook_type(arg["type"])
+                specs = _cook_type(arg["type"])
+                arg["type_specs"] = specs
+                arg["type"] = specs["type"]
 
         classes.append(item)
 

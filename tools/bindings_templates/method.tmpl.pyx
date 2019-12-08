@@ -11,16 +11,16 @@ cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = gdapi
 {% macro render_method_c_signature(method) %}
 {{ method["return_type"] }} {{ method["name"] }}(self,
 {%- for arg in method["arguments"] %}
-{{ arg["type"] }} {{ arg["name"] }},
+ {{ arg["type"] }} {{ arg["name"] }},
 {%- endfor %}
 )
 {%- endmacro %}
 
 
 {% macro render_method_signature(method) %}
-object {{ method["name"] }}(self,
+{{ method["return_type_specs"]["binding_type"] }} {{ method["name"] }}(self,
 {%- for arg in method["arguments"] %}
- {{ arg["name"] }},
+ {{ arg["type_specs"]["binding_type"] }} {{ arg["name"] }},
 {%- endfor %}
 )
 {%- endmacro %}
@@ -29,7 +29,7 @@ object {{ method["name"] }}(self,
 {% macro _render_method_return(method, retval="__ret") %}
 {% if method["return_type"] == "void" %}
 return
-{% elif method["return_type_is_binding"] %}
+{% elif method["return_type_specs"]["is_object"] %}
 if {{ retval }}._gd_ptr == NULL:
     {{ retval }}._gd_ptr_owner = False
     return None
@@ -60,33 +60,20 @@ cdef const void *{{ argsval }}[{{ method["arguments"] | length }}]
 {% for arg in method["arguments"] %}
 {% set i = loop.index - 1 %}
 # {{ arg["type"] }} {{ arg["name"] }}
-{% if arg["type_is_binding"] %}
-{{ argsval }}[{{ i }}] = <void*>(&(<Object>{{ arg["name"] }})._gd_ptr)
-{% elif arg["type"] == "godot_int" %}
-cdef godot_int __var_{{ arg["name"] }} = {{ arg["name"] }}
-{{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
-{% elif arg["type"] == "godot_real" %}
-cdef godot_real __var_{{ arg["name"] }} = {{ arg["name"] }}
-{{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
-{% elif arg["type"] == "godot_bool" %}
-cdef godot_bool __var_{{ arg["name"] }} = {{ arg["name"] }}
-{{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
+{% if arg["type_specs"]["is_object"] %}
+{{ argsval }}[{{ i }}] = <void*>(&{{ arg["name"] }}._gd_ptr)
 {% elif arg["type"] == "godot_string" %}
 cdef godot_string __var_{{ arg["name"] }}
 pyobj_to_godot_string({{ arg["name"] }}, &__var_{{ arg["name"] }})
 {{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
-{% elif arg["type"] == "godot_vector2" %}
-{{ argsval }}[{{ i }}] = <void*>(&(<Vector2>{{ arg["name"] }})._gd_data)
-{% elif arg["type"] == "godot_array" %}
-{{ argsval }}[{{ i }}] = <void*>(&(<Array>{{ arg["name"] }})._gd_data)
-{% elif arg["type"] == "godot_dictionary" %}
-{{ argsval }}[{{ i }}] = <void*>(&(<Dictionary>{{ arg["name"] }})._gd_data)
 {% elif arg["type"] == "godot_variant" %}
 cdef godot_variant __var_{{ arg["name"] }}
 pyobj_to_godot_variant({{ arg["name"] }}, &__var_{{ arg["name"] }})
 {{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
+{% elif arg["type_specs"]["is_builtin"] %}
+{{ argsval }}[{{ i }}] = <void*>(&{{ arg["name"] }}._gd_data)
 {% else %}
-{{ argsval }}[{{ i }}] = <void*>(&{{ arg["name"] }})
+{{ argsval }}[{{ i }}] = &{{ arg["name"] }}
 {% endif %}
 {% endfor %}
 {%- endmacro %}
@@ -107,18 +94,20 @@ gdapi.godot_string_destroy(&__var_{{ arg["name"] }})
 {% macro _render_method_call(cls, method, argsval="__args", retval="__ret") %}
 {% if method["return_type"] == "void" %}
 {% set retval_as_arg = "NULL" %}
-{% elif method["return_type_is_binding"] %}
-cdef {{ method["return_type"] }} {{ retval }} = {{ method["return_type"] }}.__new__({{ method["return_type"] }})
+{% elif method["return_type_specs"]["is_object"] %}
+{% set binding_type =  method["return_type_specs"]["binding_type"] %}
+cdef {{ binding_type }} {{ retval }} = {{ binding_type }}.__new__({{ binding_type }})
 {{ retval }}._gd_ptr_owner = True
 {% set retval_as_arg = "&{}._gd_ptr".format(retval) %}
-{% elif method["return_type"] == "godot_vector2" %}
-cdef Vector2 {{ retval }} = Vector2.__new__(Vector2)
-{% set retval_as_arg = "&{}._gd_data".format(retval) %}
-{% elif method["return_type"] == "godot_array" %}
-cdef Array {{ retval }} = Array.__new__(Array)
-{% set retval_as_arg = "&{}._gd_data".format(retval) %}
-{% elif method["return_type"] == "godot_dictionary" %}
-cdef Dictionary {{ retval }} = Dictionary.__new__(Dictionary)
+{% elif method["return_type"] == "godot_string" %}
+cdef godot_string {{ retval }}
+{% set retval_as_arg = "&{}".format(retval) %}
+{% elif method["return_type"] == "godot_variant" %}
+cdef godot_variant {{ retval }}
+{% set retval_as_arg = "&{}".format(retval) %}
+{% elif method["return_type_specs"]["is_builtin"] %}
+{% set binding_type =  method["return_type_specs"]["binding_type"] %}
+cdef {{ binding_type }} {{ retval }} = {{ binding_type }}.__new__({{ binding_type }})
 {% set retval_as_arg = "&{}._gd_data".format(retval) %}
 {% else %}
 cdef {{ method["return_type"] }} {{ retval }}
