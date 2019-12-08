@@ -10,8 +10,6 @@ from godot._hazmat.gdnative_api_struct cimport (
     godot_variant,
     godot_variant_type,
 )
-from godot.vector2 cimport Vector2
-from godot.bindings cimport Object
 
 
 # Godot string are basically a vector of wchar_t, each wchar_t representing
