@@ -157,8 +157,7 @@ cdef api godot_string pythonscript_debug_get_error(
     godot_pluginscript_language_data *p_data
 ):
     cdef godot_string ret
-    cdef bytes src = b"Nothing"
-    gdapi.godot_string_new_with_wide_string(&ret, <wchar_t*><char*>src, len(src))
+    pyobj_to_godot_string("Nothing", &ret)
     return ret
 
 
@@ -180,8 +179,7 @@ cdef api godot_string pythonscript_debug_get_stack_level_function(
     int p_level
 ):
     cdef godot_string ret
-    cdef bytes src = b"Nothing"
-    gdapi.godot_string_new_with_wide_string(&ret, <wchar_t*><char*>src, len(src))
+    pyobj_to_godot_string("Nothing", &ret)
     return ret
 
 
@@ -190,8 +188,7 @@ cdef api godot_string pythonscript_debug_get_stack_level_source(
     int p_level
 ):
     cdef godot_string ret
-    cdef bytes src = b"Nothing"
-    gdapi.godot_string_new_with_wide_string(&ret, <wchar_t*><char*>src, len(src))
+    pyobj_to_godot_string("Nothing", &ret)
     return ret
 
 
@@ -235,8 +232,7 @@ cdef api godot_string pythonscript_debug_parse_stack_level_expression(
     int p_max_depth
 ):
     cdef godot_string ret
-    cdef bytes src = b"Nothing"
-    gdapi.godot_string_new_with_wide_string(&ret, <wchar_t*><char*>src, len(src))
+    pyobj_to_godot_string("Nothing", &ret)
     return ret
 
 
