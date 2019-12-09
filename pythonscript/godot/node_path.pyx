@@ -21,6 +21,8 @@ cdef class NodePath:
         gdapi.godot_string_destroy(&gd_from)
 
     def __dealloc__(self):
+        # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
+        # hand otherwise we will get a segfault here
         gdapi.godot_node_path_destroy(&self._gd_data)
 
     @staticmethod

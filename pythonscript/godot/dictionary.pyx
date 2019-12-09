@@ -32,6 +32,8 @@ cdef class Dictionary:
                 raise ValueError("dictionary update sequence element #0 has length 1; 2 is required")
 
     def __dealloc__(self):
+        # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
+        # hand otherwise we will get a segfault here
         gdapi.godot_dictionary_destroy(&self._gd_data)
 
     @staticmethod
