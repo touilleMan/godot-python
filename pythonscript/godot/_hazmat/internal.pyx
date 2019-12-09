@@ -5,7 +5,7 @@ cdef bint __pythonscript_verbose = False
 # It contains class objects that are referenced
 # from the Godot without refcounting, so droping
 # an item from there will likely cause a segfault
-cdef __exposed_classes_per_module = {}
+cdef dict __exposed_classes_per_module = {}
 
 
 cdef object get_exposed_class(str module_name):
