@@ -24,16 +24,14 @@ from godot.color cimport Color
 from godot.node_path cimport NodePath
 from godot.rid cimport RID
 from godot.dictionary cimport Dictionary
-from godot.array cimport (
-    Array,
-    # PoolByteArray,
-    # PoolIntArray,
-    # PoolRealArray,
-    # PoolStringArray,
-    # PoolVector2Array,
-    # PoolVector3Array,
-    # PoolColorArray,
-)
+from godot.array cimport Array
+# from godot.pool_byte_array cimport PoolByteArray
+from godot.pool_int_array cimport PoolIntArray
+# from godot.pool_real_array cimport PoolRealArray
+# from godot.pool_string_array cimport PoolStringArray
+# from godot.pool_vector2_array cimport PoolVector2Array
+# from godot.pool_vector3_array cimport PoolVector3Array
+# from godot.pool_color_array cimport PoolColorArray
 
 
 GD_PY_TYPES = (
@@ -61,7 +59,7 @@ GD_PY_TYPES = (
     #     godot_variant_type.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY,
     #     PoolByteArray,
     # ),
-    # (godot_variant_type.GODOT_VARIANT_TYPE_POOL_INT_ARRAY, PoolIntArray),
+    (godot_variant_type.GODOT_VARIANT_TYPE_POOL_INT_ARRAY, PoolIntArray),
     # (
     #     godot_variant_type.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY,
     #     PoolRealArray,
@@ -171,6 +169,9 @@ cdef object godot_variant_to_pyobj(const godot_variant *p_gdvar):
     #     p_raw = godot_pool_byte_array_alloc(initialized=False)
     #     p_raw[0] = gdapi.godot_variant_as_pool_byte_array(p_gdvar)
     #     return godot_bindings_module.PoolByteArray.build_from_gdobj(p_raw, steal=True)
+
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_POOL_INT_ARRAY:
+        return _godot_variant_to_pyobj_pool_int_array(p_gdvar)
 
     # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_POOL_INT_ARRAY:
     #     p_raw = godot_pool_int_array_alloc(initialized=False)
@@ -304,6 +305,12 @@ cdef inline Array _godot_variant_to_pyobj_array(const godot_variant *p_gdvar):
     return a
 
 
+cdef inline PoolIntArray _godot_variant_to_pyobj_pool_int_array(const godot_variant *p_gdvar):
+    cdef PoolIntArray a = PoolIntArray.__new__(PoolIntArray)
+    a._gd_data = gdapi.godot_variant_as_pool_int_array(p_gdvar)
+    return a
+
+
 cdef void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
     if pyobj is None:
         gdapi.godot_variant_new_nil(p_var)
@@ -343,6 +350,8 @@ cdef void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
         gdapi.godot_variant_new_dictionary(p_var, &(<Dictionary>pyobj)._gd_data)
     elif isinstance(pyobj, Array):
         gdapi.godot_variant_new_array(p_var, &(<Array>pyobj)._gd_data)
+    elif isinstance(pyobj, PoolIntArray):
+        gdapi.godot_variant_new_pool_int_array(p_var, &(<PoolIntArray>pyobj)._gd_data)
 
     # TODO: finish other base types
 

@@ -23,6 +23,7 @@ from godot.color import Color
 from godot.dictionary import Dictionary
 from godot.node_path import NodePath
 from godot.plane import Plane
+from godot.pool_int_array import PoolIntArray
 from godot.quat import Quat
 from godot.rect2 import Rect2
 from godot.rid import RID
@@ -58,6 +59,7 @@ __all__ = (
     "Dictionary",
     "NodePath",
     "Plane",
+    "PoolIntArray",
     "Quat",
     "Rect2",
     "RID",
