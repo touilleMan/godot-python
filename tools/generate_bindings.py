@@ -43,6 +43,9 @@ STACK_ONLY_BUILTINS_TYPES = {
     "PoolIntArray": "godot_pool_int_array",
     "PoolRealArray": "godot_pool_real_array",
     "PoolStringArray": "godot_pool_string_array",
+    "PoolVector2Array": "godot_pool_vector2_array",
+    "PoolVector3Array": "godot_pool_vector3_array",
+    "PoolColorArray": "godot_pool_color_array",
 }
 
 
