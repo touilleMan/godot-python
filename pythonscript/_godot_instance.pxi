@@ -131,19 +131,6 @@ cdef api void pythonscript_instance_notification(
             pass
 
 
-cdef api godot_method_rpc_mode pythonscript_instance_get_rpc_mode(
-    godot_pluginscript_instance_data *p_data,
-    const godot_string *p_method
-):
-    pass
-
-
-cdef api godot_method_rpc_mode pythonscript_instance_get_rset_mode(
-    godot_pluginscript_instance_data *p_data,
-    const godot_string *p_variable
-):
-    pass
-
 # Useful ?
 
 # cdef api void pythonscript_instance_refcount_incremented(
