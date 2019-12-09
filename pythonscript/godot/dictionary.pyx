@@ -210,7 +210,7 @@ cdef class Dictionary:
     # TODO: would be better to turn this into an iterator
     cpdef inline list keys(self):
         cdef godot_array gd_keys = gdapi.godot_dictionary_keys(&self._gd_data)
-        cdef godot_int i
+        cdef int i
         cdef list ret = [
             godot_variant_to_pyobj(gdapi.godot_array_operator_index(&gd_keys, i))
             for i in range(gdapi.godot_array_size(&gd_keys))
@@ -221,7 +221,7 @@ cdef class Dictionary:
     # TODO: would be better to turn this into an iterator
     cpdef inline list values(self):
         cdef godot_array gd_values = gdapi.godot_dictionary_values(&self._gd_data)
-        cdef godot_int i
+        cdef int i
         cdef list ret = [
             godot_variant_to_pyobj(gdapi.godot_array_operator_index(&gd_values, i))
             for i in range(gdapi.godot_array_size(&gd_values))

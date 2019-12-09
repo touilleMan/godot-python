@@ -69,6 +69,7 @@ cdef class Array:
 
     def __iter__(self):
         # TODO: mid iteration mutation should throw exception ?
+        cdef int i
         for i in range(self.size()):
             yield self.get(i)
 
@@ -95,6 +96,7 @@ cdef class Array:
         cdef godot_int self_size = self.size()
         cdef godot_int items_size = items.size()
         gdapi.godot_array_resize(&self._gd_data, self_size + items_size)
+        cdef int i
         for i in range(items_size):
             self.operator_set(self_size + i, items.get(i))
         return self
@@ -105,6 +107,7 @@ cdef class Array:
         cdef godot_int items_size = items.size()
         cdef Array arr = Array.new()
         gdapi.godot_array_resize(&arr._gd_data, self_size + items_size)
+        cdef int i
         for i in range(self_size):
             arr.operator_set(i, self.get(i))
         for i in range(items_size):
@@ -116,6 +119,7 @@ cdef class Array:
         cdef godot_int size = self.size()
         if size != other.size():
             return False
+        cdef int i
         for i in range(size):
             if not gdapi.godot_variant_operator_equal(
                     gdapi.godot_array_operator_index(&self._gd_data, i),
@@ -134,6 +138,7 @@ cdef class Array:
     cdef inline Array operator_getslice(self, object slice_):
         cdef Array ret = Array.new()
         # TODO: optimize with `godot_array_resize` ?
+        cdef int i
         for i in range(slice_.start, slice_.end, slice_.step or 1):
             ret.append(self.operator_getitem(i))
         return ret
