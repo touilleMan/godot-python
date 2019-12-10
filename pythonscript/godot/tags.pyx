@@ -265,6 +265,9 @@ def exposed(cls=None, tool=False):
                 f" (already got {existing_cls_for_module!r})"
             )
 
+        # Overwrite parent __init__ to avoid creating a Godot object given
+        # exported script are always initialized with an existing Godot object
+        cls.__init__ = lambda self: None
         cls.__tool = tool
         cls.__exposed_python_class = True
         cls.__exported = {}

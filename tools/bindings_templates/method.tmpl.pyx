@@ -97,7 +97,7 @@ gdapi.godot_string_destroy(&__var_{{ arg["name"] }})
 {% elif method["return_type_specs"]["is_object"] %}
 {% set binding_type =  method["return_type_specs"]["binding_type"] %}
 cdef {{ binding_type }} {{ retval }} = {{ binding_type }}.__new__({{ binding_type }})
-{{ retval }}._gd_ptr_owner = True
+{{ retval }}._gd_ptr_owner = False
 {% set retval_as_arg = "&{}._gd_ptr".format(retval) %}
 {% elif method["return_type"] == "godot_string" %}
 cdef godot_string {{ retval }}

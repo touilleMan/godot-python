@@ -31,6 +31,8 @@ cdef api godot_pluginscript_instance_data* pythonscript_instance_init(
     godot_object *p_owner
 ):
     cdef object instance = (<object>p_data)()
+    (<Object>instance)._gd_ptr_owner = False
+    (<Object>instance)._gd_ptr = p_owner
     Py_INCREF(instance)
     return <void *>instance
 

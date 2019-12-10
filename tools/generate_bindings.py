@@ -114,17 +114,25 @@ def strip_unsupported_stuff(classes):
     for klass in classes:
         methods = []
         for meth in klass["methods"]:
-            if meth["is_editor"]:
-                continue
             if meth["is_noscript"]:
+                print(
+                    f"`{klass['name']}.{meth['name']}` has `is_noscript=True`"
+                    " (should never be the case...)"
+                )
+            if meth["is_from_script"]:
+                print(
+                    f"`{klass['name']}.{meth['name']}` has `is_from_script=True`"
+                    " (should never be the case...)"
+                )
+            # TODO: handle default param values
+            # TODO: handle those flags
+            if meth["is_editor"]:
                 continue
             if meth["is_reverse"]:
                 continue
             if meth["is_virtual"]:
                 continue
             if meth["has_varargs"]:
-                continue
-            if meth["is_from_script"]:
                 continue
             if not _is_supported_type(meth["return_type_specs"]):
                 continue
