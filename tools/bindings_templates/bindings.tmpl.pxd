@@ -18,6 +18,8 @@ from godot.transform cimport Transform
 from godot.transform2d cimport Transform2D
 from godot.vector2 cimport Vector2
 from godot.vector3 cimport Vector3
+from godot.pool_int_array cimport PoolIntArray
+from godot.pool_string_array cimport PoolStringArray
 
 {% for cls in classes %}
 {{ render_class_pxd(cls) }}
