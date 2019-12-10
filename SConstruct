@@ -365,11 +365,12 @@ if env["platform"].startswith("windows"):
 
 # `bindings.pyx` is a special snowflake given it size and autogeneration
 cython_bindings_env = cython_env.Clone()
-if not env["shitty_compiler"]:
-    cython_bindings_env.Append(CFLAGS=["-Os"])
-    cython_bindings_env.Append(LINKFLAGS=["-Wl,--strip-all"])
-else:
-    cython_bindings_env.Append(CFLAGS=["/Os"])
+if not env["sample"]:
+    if not env["shitty_compiler"]:
+        cython_bindings_env.Append(CFLAGS=["-Os"])
+        cython_bindings_env.Append(LINKFLAGS=["-Wl,--strip-all"])
+    else:
+        cython_bindings_env.Append(CFLAGS=["/Os"])
 godot_bindings_pyx_to_c = cython_bindings_env.CythonToC(godot_bindings_pyx)
 godot_bindings_pyx_compiled = cython_bindings_env.CythonCompile(godot_bindings_pyx_to_c)
 
