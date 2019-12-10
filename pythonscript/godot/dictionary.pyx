@@ -59,14 +59,14 @@ cdef class Dictionary:
     # Operators
 
     def __getitem__(self, key):
-        return self.operator_getitem(key)
+        return Dictionary.operator_getitem(self, key)
 
     def __setitem__(self, object key, object value):
-        self.operator_setitem(key, value)
+        Dictionary.operator_setitem(self, key, value)
 
     # TODO: support slice
     def __delitem__(self, object key):
-        self.operator_delitem(key)
+        Dictionary.operator_delitem(self, key)
 
     def __len__(self):
         return self.size()
@@ -91,13 +91,19 @@ cdef class Dictionary:
         return self.hash()
 
     def __eq__(self, Dictionary other):
-        return self.operator_equal(other)
+        try:
+            return Dictionary.operator_equal(self, other)
+        except TypeError:
+            return False
 
     def __ne__(self, object other):
-        return not self.operator_equal(other)
+        try:
+            return not Dictionary.operator_equal(self, other)
+        except TypeError:
+            return False
 
     def __contains__(self, object key):
-        return self.operator_contains(key)
+        return Dictionary.operator_contains(self, key)
 
     # TODO: support __iadd__ for other types than Dictionary ?
     def __iadd__(self, Dictionary items):

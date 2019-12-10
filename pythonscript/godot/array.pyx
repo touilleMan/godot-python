@@ -54,17 +54,17 @@ cdef class Array:
 
     def __getitem__(self, index):
         if isinstance(index, slice):
-            return self.operator_getslice(index)
+            return Array.operator_getslice(self, index)
         else:
-            return self.operator_getitem(index)
+            return Array.operator_getitem(self, index)
 
     # TODO: support slice
     def __setitem__(self, godot_int index, object value):
-        self.operator_setitem(index, value)
+        Array.operator_setitem(self, index, value)
 
     # TODO: support slice
     def __delitem__(self, godot_int index):
-        self.operator_delitem(index)
+        Array.operator_delitem(self, index)
 
     def __len__(self):
         return self.size()
@@ -85,13 +85,19 @@ cdef class Array:
         return self.hash()
 
     def __eq__(self, Array other):
-        return self.operator_equal(other)
+        try:
+            return Array.operator_equal(self, other)
+        except TypeError:
+            return False
 
     def __ne__(self, other):
-        return not self.operator_equal(other)
+        try:
+            return not Array.operator_equal(self, other)
+        except TypeError:
+            return True
 
     def __contains__(self, object key):
-        return self.operator_contains(key)
+        return Array.operator_contains(self, key)
 
     # TODO: support __iadd__ for other types than Array ?
     def __iadd__(self, Array items):
@@ -100,7 +106,7 @@ cdef class Array:
         gdapi.godot_array_resize(&self._gd_data, self_size + items_size)
         cdef int i
         for i in range(items_size):
-            self.operator_set(self_size + i, items.get(i))
+            Array.operator_set(self, self_size + i, items.get(i))
         return self
 
     # TODO: support __add__ for other types than Array ?
@@ -142,7 +148,7 @@ cdef class Array:
         # TODO: optimize with `godot_array_resize` ?
         cdef int i
         for i in range(slice_.start, slice_.end, slice_.step or 1):
-            ret.append(self.operator_getitem(i))
+            ret.append(Array.operator_getitem(self, i))
         return ret
 
     cdef inline object operator_getitem(self, godot_int index):

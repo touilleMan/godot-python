@@ -43,12 +43,16 @@ cdef class AABB:
         return gdapi.godot_aabb_operator_equal(&self._gd_data, &b._gd_data)
 
     def __eq__(self, other):
-        cdef AABB _other = <AABB?>other
-        return self.operator_equal(_other)
+        try:
+            return AABB.operator_equal(self, other)
+        except TypeError:
+            return False
 
     def __ne__(self, other):
-        cdef AABB _other = <AABB?>other
-        return not self.operator_equal(_other)
+        try:
+            return not AABB.operator_equal(self, other)
+        except TypeError:
+            return True
 
     # Properties
 

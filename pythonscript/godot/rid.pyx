@@ -7,19 +7,33 @@ from godot._hazmat.gdapi cimport (
     pythonscript_gdapi12 as gdapi12
 )
 from godot._hazmat.gdnative_api_struct cimport godot_rid, godot_int
+from godot.bindings cimport Resource
 
 
 @cython.final
 cdef class RID:
 
-    def __init__(self):
-        gdapi.godot_rid_new(&self._gd_data)
+    def __init__(self, from_=None):
+        if from_:
+            gdapi.godot_rid_new_with_resource(
+                &self._gd_data,
+                (<Resource?>from_)._gd_ptr
+            )
+        else:
+            gdapi.godot_rid_new(&self._gd_data)
 
     @staticmethod
     cdef inline RID new():
         # Call to __new__ bypasses __init__ constructor
         cdef RID ret = RID.__new__(RID)
         gdapi.godot_rid_new(&ret._gd_data)
+        return ret
+
+    @staticmethod
+    cdef inline RID new_with_resource(Resource resource):
+        # Call to __new__ bypasses __init__ constructor
+        cdef RID ret = RID.__new__(RID)
+        gdapi.godot_rid_new_with_resource(&ret._gd_data, resource._gd_ptr)
         return ret
 
     @staticmethod
@@ -44,15 +58,19 @@ cdef class RID:
 
     def __lt__(self, other):
         cdef RID _other = <RID?>other
-        return self.operator_less(_other)
+        return RID.operator_less(self, _other)
 
     def __eq__(self, other):
-        cdef RID _other = <RID?>other
-        return self.operator_equal(_other)
+        try:
+            return RID.operator_equal(self, other)
+        except TypeError:
+            return False
 
     def __ne__(self, other):
-        cdef RID _other = <RID?>other
-        return not self.operator_equal(_other)
+        try:
+            return not RID.operator_equal(self, other)
+        except TypeError:
+            return True
 
     # Methods
 

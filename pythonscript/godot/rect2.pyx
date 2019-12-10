@@ -56,12 +56,16 @@ cdef class Rect2:
         return gdapi.godot_rect2_operator_equal(&self._gd_data, &b._gd_data)
 
     def __eq__(self, other):
-        cdef Rect2 _other = <Rect2?>other
-        return self.operator_equal(_other)
+        try:
+            return Rect2.operator_equal(self, other)
+        except TypeError:
+            return False
 
     def __ne__(self, other):
-        cdef Rect2 _other = <Rect2?>other
-        return not self.operator_equal(_other)
+        try:
+            return not Rect2.operator_equal(self, other)
+        except TypeError:
+            return True
 
     # Properties
 

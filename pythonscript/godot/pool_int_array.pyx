@@ -74,17 +74,17 @@ cdef class PoolIntArray:
 
     def __getitem__(self, index):
         if isinstance(index, slice):
-            return self.operator_getslice(index)
+            return PoolIntArray.operator_getslice(self, index)
         else:
-            return self.operator_getitem(index)
+            return PoolIntArray.operator_getitem(self, index)
 
     # TODO: support slice
     def __setitem__(self, godot_int index, object value):
-        self.operator_setitem(index, value)
+        PoolIntArray.operator_setitem(self, index, value)
 
     # TODO: support slice
     def __delitem__(self, godot_int index):
-        self.operator_delitem(index)
+        PoolIntArray.operator_delitem(self, index)
 
     def __len__(self):
         return self.size()
@@ -99,10 +99,16 @@ cdef class PoolIntArray:
         return self.copy()
 
     def __eq__(self, PoolIntArray other):
-        return self.operator_equal(other)
+        try:
+            return PoolIntArray.operator_equal(self, other)
+        except TypeError:
+            return False
 
     def __ne__(self, other):
-        return not self.operator_equal(other)
+        try:
+            return not PoolIntArray.operator_equal(self, other)
+        except TypeError:
+            return True
 
     def __iadd__(self, PoolIntArray items):
         self.append_array(items)
@@ -132,7 +138,7 @@ cdef class PoolIntArray:
         # TODO: optimize with `godot_array_resize` ?
         cdef int i
         for i in range(slice_.start, slice_.end, slice_.step or 1):
-            ret.append(self.operator_getitem(i))
+            ret.append(PoolIntArray.operator_getitem(self, i))
         return ret
 
     cdef inline godot_int operator_getitem(self, godot_int index):

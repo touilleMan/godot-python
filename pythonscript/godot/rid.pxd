@@ -3,6 +3,7 @@
 cimport cython
 
 from godot._hazmat.gdnative_api_struct cimport godot_rid, godot_int
+from godot.bindings cimport Resource
 
 
 @cython.final
@@ -11,6 +12,9 @@ cdef class RID:
 
     @staticmethod
     cdef inline RID new()
+
+    @staticmethod
+    cdef inline RID new_with_resource(Resource resource)
 
     @staticmethod
     cdef inline RID from_ptr(const godot_rid *_ptr)

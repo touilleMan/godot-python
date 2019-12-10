@@ -55,16 +55,19 @@ cdef class Color:
         return gdapi.godot_color_operator_less(&self._gd_data, &b._gd_data)
 
     def __lt__(self, other):
-        cdef Color _other = <Color?>other
-        return self.operator_less(_other)
+        return Color.operator_less(self, other)
 
     def __eq__(self, other):
-        cdef Color _other = <Color?>other
-        return self.operator_equal(_other)
+        try:
+            return Color.operator_equal(self, other)
+        except TypeError:
+            return False
 
     def __ne__(self, other):
-        cdef Color _other = <Color?>other
-        return not self.operator_equal(_other)
+        try:
+            return not Color.operator_equal(self, other)
+        except TypeError:
+            return True
 
     # Properties
 

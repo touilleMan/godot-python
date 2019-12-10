@@ -81,29 +81,37 @@ cdef class Vector2:
 
     def __lt__(self, other):
         cdef Vector2 _other = <Vector2?>other
-        return self.operator_less(_other)
+        return Vector2.operator_less(self, _other)
 
     def __eq__(self, other):
-        cdef Vector2 _other = <Vector2?>other
-        return self.operator_equal(_other)
+        cdef Vector2 _other
+        try:
+            _other = <Vector2?>other
+        except TypeError:
+            return False
+        return Vector2.operator_equal(self, _other)
 
     def __ne__(self, other):
-        cdef Vector2 _other = <Vector2?>other
-        return not self.operator_equal(_other)
+        cdef Vector2 _other
+        try:
+            _other = <Vector2?>other
+        except TypeError:
+            return True
+        return not Vector2.operator_equal(self, _other)
 
     def __neg__(self):
-        return self.operator_neg()
+        return Vector2.operator_neg(self, )
 
     def __pos__(self):
         return self
 
     def __add__(self, val):
         cdef Vector2 _val = <Vector2?>val
-        return self.operator_add(_val)
+        return Vector2.operator_add(self, _val)
 
     def __sub__(self, val):
         cdef Vector2 _val = <Vector2?>val
-        return self.operator_subtract(_val)
+        return Vector2.operator_subtract(self, _val)
 
     def __mul__(self, val):
         cdef Vector2 _val
@@ -112,10 +120,10 @@ cdef class Vector2:
             _val = <Vector2?>val
 
         except TypeError:
-            return self.operator_multiply_scalar(val)
+            return Vector2.operator_multiply_scalar(self, val)
 
         else:
-            return self.operator_multiply_vector(_val)
+            return Vector2.operator_multiply_vector(self, _val)
 
     def __truediv__(self, val):
         cdef Vector2 _val
@@ -127,13 +135,13 @@ cdef class Vector2:
             if val is 0:
                 raise ZeroDivisionError()
 
-            return self.operator_divide_scalar(val)
+            return Vector2.operator_divide_scalar(self, val)
 
         else:
             if _val.x == 0 or _val.y == 0:
                 raise ZeroDivisionError()
 
-            return self.operator_divide_vector(_val)
+            return Vector2.operator_divide_vector(self, _val)
 
     # Properties
 

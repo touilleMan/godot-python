@@ -77,15 +77,19 @@ cdef class Plane:
         return ret
 
     def __eq__(self, other):
-        cdef Plane _other = <Plane?>other
-        return self.operator_equal(_other)
+        try:
+            return Plane.operator_equal(self, other)
+        except TypeError:
+            return False
 
     def __ne__(self, other):
-        cdef Plane _other = <Plane?>other
-        return not self.operator_equal(_other)
+        try:
+            return not Plane.operator_equal(self, other)
+        except TypeError:
+            return True
 
     def __neg__(self):
-        return self.operator_neg()
+        return Plane.operator_neg(self)
 
     # Property
 

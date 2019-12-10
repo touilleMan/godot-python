@@ -83,13 +83,13 @@ cdef class Transform:
         return gdapi.godot_transform_operator_equal(&self._gd_data, &b._gd_data)
 
     def __eq__(self, other):
-        return self.operator_equal(other)
+        return Transform.operator_equal(self, other)
 
     def __ne__(self, other):
-        return not self.operator_equal(other)
+        return not Transform.operator_equal(self, other)
 
     def __mul__(self, val):
-        return self.operator_multiply(val)
+        return Transform.operator_multiply(self, val)
 
     # Properties
 

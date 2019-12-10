@@ -106,29 +106,31 @@ cdef class Quat:
         return ret
 
     def __eq__(self, other):
-        cdef Quat _other = <Quat?>other
-        return self.operator_equal(_other)
+        try:
+            return Quat.operator_equal(self, other)
+        except TypeError:
+            return False
 
     def __ne__(self, other):
-        cdef Quat _other = <Quat?>other
-        return not self.operator_equal(_other)
+        try:
+            return not Quat.operator_equal(self, other)
+        except TypeError:
+            return True
 
     def __neg__(self):
-        return self.operator_neg()
+        return Quat.operator_neg(self)
 
     def __add__(self, val):
-        cdef Quat _val = <Quat?>val
-        return self.operator_add(_val)
+        return Quat.operator_add(self, val)
 
     def __sub__(self, val):
-        cdef Quat _val = <Quat?>val
-        return self.operator_subtract(_val)
+        return Quat.operator_subtract(self, val)
 
     def __mul__(self, godot_real val):
-        return self.operator_multiply(val)
+        return Quat.operator_multiply(self, val)
 
     def __truediv__(self, godot_real val):
-        return self.operator_multiply(val)
+        return Quat.operator_multiply(self, val)
 
     # Property
 

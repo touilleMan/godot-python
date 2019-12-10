@@ -111,20 +111,24 @@ cdef class Basis:
         return gdapi.godot_basis_operator_equal(&self._gd_data, &b._gd_data)
 
     def __eq__(self, other):
-        cdef Basis _other = <Basis?>other
-        return self.operator_equal(_other)
+        try:
+            return Basis.operator_equal(self, other)
+        except TypeError:
+            return False
 
     def __ne__(self, other):
-        cdef Basis _other = <Basis?>other
-        return not self.operator_equal(_other)
+        try:
+            return not Basis.operator_equal(self, other)
+        except TypeError:
+            return True
 
     def __add__(self, val):
         cdef Basis _val = <Basis?>val
-        return self.operator_add(_val)
+        return Basis.operator_add(self, _val)
 
     def __sub__(self, val):
         cdef Basis _val = <Basis?>val
-        return self.operator_subtract(_val)
+        return Basis.operator_subtract(self, _val)
 
     def __mul__(self, val):
         cdef Basis _val
@@ -133,10 +137,10 @@ cdef class Basis:
             _val = <Basis?>val
 
         except TypeError:
-            return self.operator_multiply_scalar(val)
+            return Basis.operator_multiply_scalar(self, val)
 
         else:
-            return self.operator_multiply_vector(_val)
+            return Basis.operator_multiply_vector(self, _val)
 
     # Property
 

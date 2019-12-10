@@ -51,7 +51,16 @@ cdef class NodePath:
         return gdapi.godot_node_path_operator_equal(&self._gd_data, &b._gd_data)
 
     def __eq__(self, other):
-        return self.operator_equal(<NodePath?>other)
+        try:
+            return NodePath.operator_equal(self, other)
+        except TypeError:
+            return False
+
+    def __ne__(self, other):
+        try:
+            return not NodePath.operator_equal(self, other)
+        except TypeError:
+            return True
 
     # Properties
 

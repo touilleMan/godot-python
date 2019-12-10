@@ -70,13 +70,19 @@ cdef class Transform2D:
         return gdapi.godot_transform2d_operator_equal(&self._gd_data, &b._gd_data)
 
     def __eq__(self, other):
-        return self.operator_equal(other)
+        try:
+            return Transform2D.operator_equal(self, other)
+        except TypeError:
+            return False
 
     def __ne__(self, other):
-        return not self.operator_equal(other)
+        try:
+            return not Transform2D.operator_equal(self, other)
+        except TypeError:
+            return True
 
     def __mul__(self, val):
-        return self.operator_multiply(val)
+        return Transform2D.operator_multiply(self, val)
 
     # Properties
 
