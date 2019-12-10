@@ -521,7 +521,7 @@ env.Clean("$build_dir", env["build_dir"].path)
 ### Symbolic link used by test and examples projects ###
 
 
-install_build_symlink, = env.SymLink("build/main", "$build_dir")
+(install_build_symlink,) = env.SymLink("build/main", "$build_dir")
 env.AlwaysBuild(install_build_symlink)
 
 env.Default(install_build_symlink)
@@ -530,7 +530,7 @@ env.Default(install_build_symlink)
 ### Download godot binary ###
 
 
-godot_binary, = env.SymLink("build/godot", "$godot_binary")
+(godot_binary,) = env.SymLink("build/godot", "$godot_binary")
 env.Alias("godot_binary", godot_binary)
 
 
@@ -553,7 +553,7 @@ if env["HOST_OS"] == "win32":
         for item in ("pythonscript", "pythonscript.gdnlib"):
             trg = (f"{target_dir}/{item}",)
             src = f"{install_build_symlink}/{item}"
-            symlink, = env.SymLink(
+            (symlink,) = env.SymLink(
                 trg,
                 install_build_symlink,
                 action=Action(

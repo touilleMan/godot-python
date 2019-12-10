@@ -256,9 +256,9 @@ class TestPoolIntArray(BaseTestPoolArray):
         self.acls = PoolIntArray
         random.seed(0)  # Fix seed for reproducibility
         self.vg = (
-            lambda c=None: random.randint(-2 ** 31, 2 ** 31 - 1)
+            lambda c=None: random.randint(-(2 ** 31), 2 ** 31 - 1)
             if c is None
-            else [random.randint(-2 ** 31, 2 ** 31 - 1) for x in range(c)]
+            else [random.randint(-(2 ** 31), 2 ** 31 - 1) for x in range(c)]
         )
 
 
