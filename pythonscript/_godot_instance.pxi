@@ -82,6 +82,7 @@ cdef api godot_variant pythonscript_instance_call_method(
 ):
     cdef godot_variant var_ret
     cdef object instance = <object>p_data
+    # TODO: optimize this by caching godot_string_name -> method lookup
     try:
         meth = getattr(instance, godot_string_name_to_pyobj(p_method))
 
