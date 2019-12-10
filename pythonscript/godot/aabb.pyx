@@ -16,7 +16,7 @@ from godot.vector3 cimport Vector3
 @cython.final
 cdef class AABB:
 
-    def __init__(self, Vector3 pos, Vector3 size):
+    def __init__(self, Vector3 pos=Vector3(), Vector3 size=Vector3()):
         gdapi.godot_aabb_new(&self._gd_data, &pos._gd_data, &size._gd_data)
 
     @staticmethod
@@ -69,7 +69,7 @@ cdef class AABB:
         return self.get_position()
 
     @position.setter
-    def position(self, val):
+    def position(self, Vector3 val not None):
         self.set_position(val)
 
     cdef inline Vector3 get_size(self):
@@ -85,7 +85,7 @@ cdef class AABB:
         return self.get_size()
 
     @size.setter
-    def size(self, val):
+    def size(self, Vector3 val not None):
         self.set_size(val)
 
     @property
@@ -138,30 +138,30 @@ cdef class AABB:
         return gdapi.godot_aabb_has_point(&self._gd_data, &point._gd_data)
 
     cpdef inline Vector3 get_support(self, Vector3 dir):
-        cdef Vector3 ret = AABB.__new__(AABB)
+        cdef Vector3 ret = Vector3.__new__(Vector3)
         ret._gd_data = gdapi.godot_aabb_get_support(&self._gd_data, &dir._gd_data)
         return ret
 
     cpdef inline Vector3 get_longest_axis(self):
-        cdef Vector3 ret = AABB.__new__(AABB)
+        cdef Vector3 ret = Vector3.__new__(Vector3)
         ret._gd_data = gdapi.godot_aabb_get_longest_axis(&self._gd_data)
         return ret
 
-    cpdef inline godot_int get_longest_axis_index(self, Vector3 point):
+    cpdef inline godot_int get_longest_axis_index(self):
         return gdapi.godot_aabb_get_longest_axis_index(&self._gd_data)
 
-    cpdef inline godot_real get_longest_axis_size(self, Vector3 point):
+    cpdef inline godot_real get_longest_axis_size(self):
         return gdapi.godot_aabb_get_longest_axis_size(&self._gd_data)
 
     cpdef inline Vector3 get_shortest_axis(self):
-        cdef Vector3 ret = AABB.__new__(AABB)
+        cdef Vector3 ret = Vector3.__new__(Vector3)
         ret._gd_data = gdapi.godot_aabb_get_shortest_axis(&self._gd_data)
         return ret
 
-    cpdef inline godot_int get_shortest_axis_index(self, Vector3 point):
+    cpdef inline godot_int get_shortest_axis_index(self):
         return gdapi.godot_aabb_get_shortest_axis_index(&self._gd_data)
 
-    cpdef inline godot_real get_shortest_axis_size(self, Vector3 point):
+    cpdef inline godot_real get_shortest_axis_size(self):
         return gdapi.godot_aabb_get_shortest_axis_size(&self._gd_data)
 
     cpdef inline AABB expand(self, Vector3 to_point):
@@ -175,6 +175,6 @@ cdef class AABB:
         return ret
 
     cpdef inline Vector3 get_endpoint(self, godot_int idx):
-        cdef Vector3 ret = AABB.__new__(AABB)
+        cdef Vector3 ret = Vector3.__new__(Vector3)
         ret._gd_data = gdapi.godot_aabb_get_endpoint(&self._gd_data, idx)
         return ret

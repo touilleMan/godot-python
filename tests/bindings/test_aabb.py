@@ -1,6 +1,6 @@
 import pytest
 
-from godot.bindings import AABB, Vector3, Plane
+from godot import AABB, Vector3, Plane
 
 
 class TestAABB:
@@ -14,10 +14,7 @@ class TestAABB:
 
     def test_repr(self):
         v = AABB(Vector3(1, 2, 3), Vector3(4, 5, 6))
-        assert (
-            repr(v)
-            == "<AABB(position=<Vector3(x=1.0, y=2.0, z=3.0)>, size=<Vector3(x=4.0, y=5.0, z=6.0)>)>"
-        )
+        assert repr(v) == "<AABB(1, 2, 3 - 4, 5, 6)>"
 
     def test_instantiate(self):
         # Can build it with int or float or nothing
@@ -39,7 +36,7 @@ class TestAABB:
             AABB(Vector3(), "b")
 
     @pytest.mark.parametrize(
-        "args",
+        "field,ret_type,params",
         [
             ["get_area", float, ()],
             ["has_no_area", bool, ()],
@@ -64,10 +61,9 @@ class TestAABB:
         ],
         ids=lambda x: x[0],
     )
-    def test_methods(self, args):
+    def test_methods(self, field, ret_type, params):
         v = AABB()
         # Don't test methods' validity but bindings one
-        field, ret_type, params = args
         assert hasattr(v, field)
         method = getattr(v, field)
         assert callable(method)
@@ -75,11 +71,10 @@ class TestAABB:
         assert type(ret) == ret_type
 
     @pytest.mark.parametrize(
-        "args", [("position", Vector3), ("size", Vector3)], ids=lambda x: x[0]
+        "field,ret_type", [("position", Vector3), ("size", Vector3)], ids=lambda x: x[0]
     )
-    def test_properties(self, args):
+    def test_properties(self, field, ret_type):
         v = AABB(Vector3(1, 2, 3), Vector3(4, 5, 6))
-        field, ret_type = args
         assert hasattr(v, field)
         field_val = getattr(v, field)
         assert type(field_val) == ret_type
@@ -89,7 +84,7 @@ class TestAABB:
             assert field_val == val
 
     @pytest.mark.parametrize(
-        "args",
+        "field,bad_value",
         [
             ("position", "dummy"),
             ("size", "dummy"),
@@ -100,9 +95,8 @@ class TestAABB:
         ],
         ids=lambda x: x[0],
     )
-    def test_bad_properties(self, args):
+    def test_bad_properties(self, field, bad_value):
         v = AABB()
-        field, bad_value = args
         with pytest.raises(TypeError):
             setattr(v, field, bad_value)
 
