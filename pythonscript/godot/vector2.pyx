@@ -296,7 +296,6 @@ cdef class Vector2:
 
     AXIS_X = 0
     AXIS_Y = 0
-    AXIS_Z = 0
 
     ZERO = Vector2(0, 0)
     ONE = Vector2(1, 1)

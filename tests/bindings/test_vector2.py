@@ -1,6 +1,6 @@
 import pytest
 
-from godot.bindings import Vector2
+from godot import Vector2
 
 
 class TestVector2:
@@ -40,7 +40,7 @@ class TestVector2:
             Vector2(None, 2)
 
     @pytest.mark.parametrize(
-        "args",
+        "field,ret_type,params",
         [
             ["abs", Vector2, ()],
             ["angle", float, ()],
@@ -65,10 +65,9 @@ class TestVector2:
         ],
         ids=lambda x: x[0],
     )
-    def test_methods(self, args):
+    def test_methods(self, field, ret_type, params):
         v = Vector2()
         # Don't test methods' validity but bindings one
-        field, ret_type, params = args
         assert hasattr(v, field)
         method = getattr(v, field)
         assert callable(method)
@@ -76,13 +75,12 @@ class TestVector2:
         assert type(ret) == ret_type
 
     @pytest.mark.parametrize(
-        "args",
+        "field,ret_type",
         [("height", float), ("width", float), ("x", float), ("y", float)],
         ids=lambda x: x[0],
     )
-    def test_properties(self, args):
+    def test_properties(self, field, ret_type):
         v = Vector2()
-        field, ret_type = args
         assert hasattr(v, field)
         field_val = getattr(v, field)
         assert type(field_val) == ret_type
@@ -92,13 +90,21 @@ class TestVector2:
             assert field_val == val
 
     @pytest.mark.parametrize(
-        "args",
-        [("height", "NaN"), ("width", "NaN"), ("x", "NaN"), ("y", "NaN")],
+        "field,bad_value",
+        [
+            ("height", "NaN"),
+            ("width", "NaN"),
+            ("x", "NaN"),
+            ("y", "NaN"),
+            ("height", None),
+            ("width", None),
+            ("x", None),
+            ("y", None),
+        ],
         ids=lambda x: x[0],
     )
-    def test_bad_properties(self, args):
+    def test_bad_properties(self, field, bad_value):
         v = Vector2()
-        field, bad_value = args
         with pytest.raises(TypeError):
             setattr(v, field, bad_value)
 
@@ -119,7 +125,7 @@ class TestVector2:
         assert v3.y == 2.5
 
     @pytest.mark.parametrize(
-        "args",
+        "param,result",
         [
             (Vector2(0, 0), Vector2(2, 3)),
             (Vector2(3, 2), Vector2(5, 5)),
@@ -127,13 +133,12 @@ class TestVector2:
         ],
         ids=lambda x: x[0],
     )
-    def test_add(self, args):
-        param, result = args
+    def test_add(self, param, result):
         calc = Vector2(2, 3) + param
         assert calc == result
 
     @pytest.mark.parametrize(
-        "args",
+        "param,result",
         [
             (Vector2(0, 0), Vector2(2, 3)),
             (Vector2(3, 2), Vector2(-1, 1)),
@@ -141,8 +146,7 @@ class TestVector2:
         ],
         ids=lambda x: x[0],
     )
-    def test_sub(self, args):
-        param, result = args
+    def test_sub(self, param, result):
         calc = Vector2(2, 3) - param
         assert calc == result
 
@@ -174,7 +178,7 @@ class TestVector2:
             Vector2(2, 3) * arg
 
     @pytest.mark.parametrize(
-        "args",
+        "param,result",
         [
             (0, Vector2(0, 0)),
             (1, Vector2(2, 3)),
@@ -184,13 +188,12 @@ class TestVector2:
         ],
         ids=lambda x: x[0],
     )
-    def test_mult(self, args):
-        param, result = args
+    def test_mult(self, param, result):
         calc = Vector2(2, 3) * param
         assert calc == result
 
     @pytest.mark.parametrize(
-        "args",
+        "param,result",
         [
             (1, Vector2(2, 3)),
             (0.5, Vector2(4, 6)),
@@ -200,8 +203,7 @@ class TestVector2:
         ],
         ids=lambda x: x[0],
     )
-    def test_div(self, args):
-        param, result = args
+    def test_div(self, param, result):
         calc = Vector2(2, 3) / param
         assert calc == result
 
@@ -216,3 +218,22 @@ class TestVector2:
     def test_bad_equal(self, arg):
         arr = Vector2(1, 2)
         assert arr != arg
+
+    @pytest.mark.parametrize(
+        "field,type",
+        [
+            ("AXIS_X", int),
+            ("AXIS_Y", int),
+            ("ZERO", Vector2),
+            ("ONE", Vector2),
+            ("INF", Vector2),
+            ("LEFT", Vector2),
+            ("RIGHT", Vector2),
+            ("UP", Vector2),
+            ("DOWN", Vector2),
+        ],
+        ids=lambda x: x[0],
+    )
+    def test_contants(self, field, type):
+        field_val = getattr(Vector2, field)
+        assert isinstance(field_val, type)
