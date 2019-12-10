@@ -68,7 +68,7 @@ cdef class PoolIntArray:
         return ret
 
     def __repr__(self):
-        return f"<{type(self).__name__}({', '.join(iter(self))})>"
+        return f"<{type(self).__name__}([{', '.join(repr(x) for x in self)}])>"
 
     # Operators
 
