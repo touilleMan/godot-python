@@ -150,11 +150,8 @@ cdef object godot_variant_to_pyobj(const godot_variant *p_gdvar):
     elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_RID:
         return _godot_variant_to_pyobj_rid(p_gdvar)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_OBJECT:
-    #     p_raw = gdapi.godot_variant_as_object(p_gdvar)
-    #     # TODO: optimize this
-    #     tmpobj = godot_bindings_module.Object(p_raw)
-    #     return getattr(godot_bindings_module, tmpobj.get_class())(p_raw)
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_OBJECT:
+        return _godot_variant_to_pyobj_object(p_gdvar)
 
     elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_DICTIONARY:
         return _godot_variant_to_pyobj_dictionary(p_gdvar)
@@ -281,6 +278,10 @@ cdef inline RID _godot_variant_to_pyobj_rid(const godot_variant *p_gdvar):
     cdef RID vect = RID.__new__(RID)
     vect._gd_data = gdapi.godot_variant_as_rid(p_gdvar)
     return vect
+
+
+cdef inline Object _godot_variant_to_pyobj_object(const godot_variant *p_gdvar):
+    return Object.from_ptr(gdapi.godot_variant_as_object(p_gdvar), owner=False)
 
 
 cdef inline Dictionary _godot_variant_to_pyobj_dictionary(const godot_variant *p_gdvar):
