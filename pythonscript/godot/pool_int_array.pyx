@@ -29,17 +29,18 @@ cdef class PoolIntArray:
         cdef Array other_as_array
         if not other:
             gdapi.godot_pool_int_array_new(&self._gd_data)
-        try:
-            other_as_pool_int_array = <PoolIntArray?>other
-            gdapi.godot_pool_int_array_new_copy(&self._gd_data, &other_as_pool_int_array._gd_data)
-        except TypeError:
-            pass
-        try:
-            other_as_array = <Array?>other
-            gdapi.godot_pool_int_array_new_with_array(&self._gd_data, &other_as_array._gd_data)
-        except TypeError:
-            pass
-        raise ValueError("`other` must be `Array` or `PoolIntArray`")
+        else:
+            try:
+                other_as_pool_int_array = <PoolIntArray?>other
+                gdapi.godot_pool_int_array_new_copy(&self._gd_data, &other_as_pool_int_array._gd_data)
+            except TypeError:
+                pass
+            try:
+                other_as_array = <Array?>other
+                gdapi.godot_pool_int_array_new_with_array(&self._gd_data, &other_as_array._gd_data)
+            except TypeError:
+                pass
+            raise ValueError("`other` must be `Array` or `PoolIntArray`")
 
     def __dealloc__(self):
         # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
