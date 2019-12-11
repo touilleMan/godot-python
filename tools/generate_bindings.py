@@ -61,8 +61,9 @@ SAMPLE_CLASSES = {
     "ARVRInterface",
     "ARVRInterfaceGDNative",
     "Resource",
+    "Environment",
     # "SceneTree",
-    # "Viewport",
+    "Viewport",
     # "_ClassDB",
     # "_Engine",
     # "_Geometry",
@@ -98,6 +99,21 @@ SUPPORTED_TYPES = {
     "godot_pool_int_array",
     "godot_pool_string_array",
 }
+
+
+def patch_stuff(classes):
+    # See https://github.com/godotengine/godot/issues/34254
+    for klass in classes:
+        if klass['name'] != '_OS':
+            continue
+        for meth in klass['methods']:
+            if meth['name'] in (
+                "get_static_memory_usage",
+                "get_static_memory_peak_usage",
+                "get_dynamic_memory_usage",
+            ):
+                meth['return_type'] = "uint64_t"
+                meth['return_type_specs']['binding_type'] = "uint64_t"
 
 
 def strip_unsupported_stuff(classes):
@@ -320,6 +336,7 @@ def generate_bindings(output_path, input_path, sample):
     if sample:
         classes = [klass for klass in classes if klass["name"] in SAMPLE_CLASSES]
     strip_unsupported_stuff(classes)
+    patch_stuff(classes)
 
     template = env.get_template("bindings.tmpl.pyx")
     out = template.render(classes=classes, constants=constants)
