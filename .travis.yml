@@ -52,11 +52,11 @@ addons:
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew upgrade python; fi;
-# Replace binutils, gcc-7, g++-7, zlib1g-dev, libssl-dev, and libffi-dev for cross-compile
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$BITS" == "32" ]; then sudo dpkg --add-architecture i386 && sudo apt update && sudo apt install binutils:i386 gcc-7:i386 g++-7:i386 zlib1g-dev:i386 libssl-dev:i386 libffi-dev:i386; fi
+# Replace binutils, gcc-9, zlib1g-dev, libssl-dev, and libffi-dev for cross-compile
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$BITS" == "32" ]; then sudo dpkg --add-architecture i386 && sudo apt update && sudo apt install binutils:i386 gcc-9:i386 zlib1g-dev:i386 libssl-dev:i386 libffi-dev:i386; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pyenv shell 3.7; fi
 # Needed because scons doesn't inherit the customized $PATH env
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CC=gcc-7; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CC=gcc-9; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export TARGET_PLATFORM=x11-$BITS; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export TARGET_PLATFORM=osx-$BITS; fi
   - git rev-parse HEAD
