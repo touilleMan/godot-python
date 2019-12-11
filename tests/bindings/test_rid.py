@@ -1,6 +1,7 @@
 import pytest
 
-from godot.bindings import RID, Environment, Node
+from godot.bindings import Environment, Node
+from godot import RID
 
 
 class TestRID:
@@ -22,10 +23,19 @@ class TestRID:
         v_b = RID(res_b)
         assert not v_a_1 == v_b  # Force use of __eq__
 
-    @pytest.mark.parametrize("arg", [None, 0, "foo", RID(Environment())])
+    @pytest.mark.parametrize("arg", [None, 0, "foo"])
     def test_bad_equal(self, arg):
-        arr = Environment(Environment())
+        arr = RID(Environment())
         assert arr != arg
+
+    def test_bad_equal_with_rid(self):
+        # Doing `RID(Environment())` will cause garbage collection of enclosed
+        # Environment object and possible reuse of it id
+        env1 = Environment()
+        env2 = Environment()
+        rid1 = RID(env1)
+        rid2 = RID(env2)
+        assert rid1 != rid2
 
     def test_repr(self):
         v = RID()

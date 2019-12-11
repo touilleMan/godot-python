@@ -13,11 +13,11 @@ from godot.bindings cimport Resource
 @cython.final
 cdef class RID:
 
-    def __init__(self, from_=None):
-        if from_:
+    def __init__(self, Resource from_=None):
+        if from_ is not None:
             gdapi.godot_rid_new_with_resource(
                 &self._gd_data,
-                (<Resource?>from_)._gd_ptr
+                from_._gd_ptr
             )
         else:
             gdapi.godot_rid_new(&self._gd_data)
