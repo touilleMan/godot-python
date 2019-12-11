@@ -28,9 +28,12 @@ cdef class Array:
     cdef inline object operator_getitem(self, godot_int index)
     cdef inline void operator_setitem(self, godot_int index, object value)
     cdef inline void operator_delitem(self, godot_int index)
+    cdef inline operator_iadd(self, Array items)
+    cdef inline Array operator_add(self, Array items)
 
     # Methods
 
+    cpdef inline Array copy(self)
     cpdef inline godot_int hash(self)
     cpdef inline godot_int size(self)
     cpdef inline Array duplicate(self, bint deep)

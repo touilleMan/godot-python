@@ -52,15 +52,44 @@ cdef class Array:
 
     # Operators
 
+    cdef inline Array operator_getslice(self, object slice_):
+        cdef Array ret = Array.new()
+        # TODO: optimize with `godot_array_resize` ?
+        cdef int i
+        for i in range(slice_.start, slice_.end, slice_.step or 1):
+            ret.append(Array.operator_getitem(self, i))
+        return ret
+
+    cdef inline object operator_getitem(self, godot_int index):
+        cdef godot_int size = self.size()
+        index = size + index if index < 0 else index
+        if abs(index) >= size:
+            raise IndexError("list index out of range")
+        return self.get(index)
+
     def __getitem__(self, index):
         if isinstance(index, slice):
             return Array.operator_getslice(self, index)
         else:
             return Array.operator_getitem(self, index)
 
+    cdef inline void operator_setitem(self, godot_int index, object value):
+        cdef godot_int size = self.size()
+        index = size + index if index < 0 else index
+        if abs(index) >= size:
+            raise IndexError("list index out of range")
+        self.set(index, value)
+
     # TODO: support slice
     def __setitem__(self, godot_int index, object value):
         Array.operator_setitem(self, index, value)
+
+    cdef inline void operator_delitem(self, godot_int index):
+        cdef godot_int size = self.size()
+        index = size + index if index < 0 else index
+        if abs(index) >= size:
+            raise IndexError("list index out of range")
+        self.remove(index)
 
     # TODO: support slice
     def __delitem__(self, godot_int index):
@@ -84,44 +113,6 @@ cdef class Array:
     def __hash__(self):
         return self.hash()
 
-    def __eq__(self, Array other):
-        try:
-            return Array.operator_equal(self, other)
-        except TypeError:
-            return False
-
-    def __ne__(self, other):
-        try:
-            return not Array.operator_equal(self, other)
-        except TypeError:
-            return True
-
-    def __contains__(self, object key):
-        return Array.operator_contains(self, key)
-
-    # TODO: support __iadd__ for other types than Array ?
-    def __iadd__(self, Array items):
-        cdef godot_int self_size = self.size()
-        cdef godot_int items_size = items.size()
-        gdapi.godot_array_resize(&self._gd_data, self_size + items_size)
-        cdef int i
-        for i in range(items_size):
-            Array.operator_set(self, self_size + i, items.get(i))
-        return self
-
-    # TODO: support __add__ for other types than Array ?
-    def __add__(self, Array items):
-        cdef godot_int self_size = self.size()
-        cdef godot_int items_size = items.size()
-        cdef Array arr = Array.new()
-        gdapi.godot_array_resize(&arr._gd_data, self_size + items_size)
-        cdef int i
-        for i in range(self_size):
-            arr.operator_set(i, self.get(i))
-        for i in range(items_size):
-            arr.operator_set(self_size + i, items.get(i))
-        return arr
-
     cdef inline bint operator_equal(self, Array other):
         # TODO `godot_array_operator_equal` is missing in gdapi, submit a PR ?
         cdef godot_int size = self.size()
@@ -136,6 +127,18 @@ cdef class Array:
                 return False
         return True
 
+    def __eq__(self, Array other):
+        try:
+            return Array.operator_equal(self, other)
+        except TypeError:
+            return False
+
+    def __ne__(self, other):
+        try:
+            return not Array.operator_equal(self, other)
+        except TypeError:
+            return True
+
     cdef inline bint operator_contains(self, object key):
         cdef godot_variant var_key
         pyobj_to_godot_variant(key, &var_key)
@@ -143,36 +146,54 @@ cdef class Array:
         gdapi.godot_variant_destroy(&var_key)
         return ret
 
-    cdef inline Array operator_getslice(self, object slice_):
-        cdef Array ret = Array.new()
-        # TODO: optimize with `godot_array_resize` ?
+    def __contains__(self, object key):
+        return Array.operator_contains(self, key)
+
+    cdef inline operator_iadd(self, Array items):
+        cdef godot_int self_size = self.size()
+        cdef godot_int items_size = items.size()
+        gdapi.godot_array_resize(&self._gd_data, self_size + items_size)
         cdef int i
-        for i in range(slice_.start, slice_.end, slice_.step or 1):
-            ret.append(Array.operator_getitem(self, i))
+        for i in range(items_size):
+            Array.operator_set(self, self_size + i, items.get(i))
+
+    # TODO: support __iadd__ for other types than Array ?
+    def __iadd__(self, items):
+        try:
+            Array.operator_iadd(self, items)
+        except TypeError:
+            for x in items:
+                self.append(x)
+        return self
+
+    cdef inline Array operator_add(self, Array items):
+        cdef godot_int self_size = self.size()
+        cdef godot_int items_size = items.size()
+        cdef Array ret = Array.new()
+        gdapi.godot_array_resize(&ret._gd_data, self_size + items_size)
+        cdef int i
+        for i in range(self_size):
+            ret.operator_set(i, self.get(i))
+        for i in range(items_size):
+            ret.operator_set(self_size + i, items.get(i))
         return ret
 
-    cdef inline object operator_getitem(self, godot_int index):
-        cdef godot_int size = self.size()
-        index = size + index if index < 0 else index
-        if abs(index) >= size:
-            raise IndexError("list index out of range")
-        return self.get(index)
-
-    cdef inline void operator_setitem(self, godot_int index, object value):
-        cdef godot_int size = self.size()
-        index = size + index if index < 0 else index
-        if abs(index) >= size:
-            raise IndexError("list index out of range")
-        self.set(index, value)
-
-    cdef inline void operator_delitem(self, godot_int index):
-        cdef godot_int size = self.size()
-        index = size + index if index < 0 else index
-        if abs(index) >= size:
-            raise IndexError("list index out of range")
-        self.remove(index)
+    # TODO: support __add__ for other types than Array ?
+    def __add__(self, items):
+        try:
+            return Array.operator_add(self, items)
+        except TypeError:
+            ret = Array.copy(self)
+            for x in items:
+                ret.append(x)
+            return ret
 
     # Methods
+
+    cpdef inline Array copy(self):
+        cdef Array ret = Array.__new__(Array)
+        gdapi.godot_array_new_copy(&ret._gd_data, &self._gd_data)
+        return ret
 
     cpdef inline godot_int hash(self):
         return gdapi.godot_array_hash(&self._gd_data)
