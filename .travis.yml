@@ -31,7 +31,6 @@ addons:
 #      - llvm-toolchain-precise
     packages:
       - build-essential
-      - scons
       - pkg-config
       - libx11-dev
       - libxcursor-dev
@@ -45,13 +44,11 @@ addons:
       - libxrandr-dev
       - libffi-dev
       # Needed to cross-compile x86 on amd64
-      - gcc-7-multilib
-      - g++-7-multilib
+      - gcc-9-multilib
       # Need gcc > 4.6 for -std=c++11 and >= 7 for LTO 6.0 (used by gnative wrapper)
-      - gcc-7
-      - g++-7
+      - gcc-9
 #      - clang-3.9
-      - valgrind
+#      - valgrind
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew upgrade python; fi;
