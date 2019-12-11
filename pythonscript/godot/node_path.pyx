@@ -14,7 +14,7 @@ from godot._hazmat.conversion cimport pyobj_to_godot_string, godot_string_to_pyo
 @cython.final
 cdef class NodePath:
 
-    def __init__(self, str from_):
+    def __init__(self, str from_ not None):
         cdef godot_string gd_from
         pyobj_to_godot_string(from_, &gd_from)
         gdapi.godot_node_path_new(&self._gd_data, &gd_from)
@@ -44,6 +44,9 @@ cdef class NodePath:
 
     def __repr__(self):
         return f"<NodePath({self.as_string()})>"
+
+    def __str__(self):
+        return self.as_string()
 
     # Operators
 

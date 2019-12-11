@@ -1,6 +1,6 @@
 import pytest
 
-from godot.bindings import NodePath, Vector3
+from godot import Vector3, NodePath
 
 
 class TestNodePath:
@@ -20,7 +20,7 @@ class TestNodePath:
 
     def test_repr(self):
         v = NodePath("/root/leaf")
-        assert repr(v) == "<NodePath(path='/root/leaf')>"
+        assert repr(v) == "<NodePath(/root/leaf)>"
 
     @pytest.mark.parametrize("args", [(), (42,), (None,)])
     def test_bad_build(self, args):
@@ -48,3 +48,20 @@ class TestNodePath:
         assert callable(method)
         ret = method(*params)
         assert isinstance(ret, ret_type)
+
+    def test_as_binding_return_value(self, current_node):
+        ret = current_node.get_path()
+        assert isinstance(ret, NodePath)
+
+        ret2 = current_node.get_path()
+        assert ret == ret2
+
+        assert str(ret) == "/root/main"
+
+    def test_as_binding_param(self, current_node):
+        root = current_node.get_parent()
+        path = current_node.get_path()
+        dummy_path = NodePath('/foo/bar')
+
+        assert root.has_node(path) is True
+        assert root.has_node(dummy_path) is False
