@@ -56,9 +56,8 @@ cdef class RID:
         cdef RID ret  = RID.__new__(RID)
         return gdapi.godot_rid_operator_less(&self._gd_data, &b._gd_data)
 
-    def __lt__(self, other):
-        cdef RID _other = <RID?>other
-        return RID.operator_less(self, _other)
+    def __lt__(self, RID other not None):
+        return RID.operator_less(self, other)
 
     def __eq__(self, other):
         try:
