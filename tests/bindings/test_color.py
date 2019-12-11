@@ -1,6 +1,7 @@
 import pytest
 
-from godot.bindings import Color, Vector2, Node
+from godot import Color, Vector2
+from godot.bindings import Node
 
 
 class TestColor:
@@ -53,23 +54,29 @@ class TestColor:
             Color(*arg)
 
     @pytest.mark.parametrize(
-        "args",
+        "field,ret_type,params",
         [
             ["to_rgba32", int, ()],
+            ["to_abgr32", int, ()],
+            ["to_abgr64", int, ()],
+            ["to_argb64", int, ()],
+            ["to_rgba64", int, ()],
             ["to_argb32", int, ()],
             ["gray", float, ()],
             ["inverted", Color, ()],
             ["contrasted", Color, ()],
             ["linear_interpolate", Color, (Color(0xAA, 0xBB, 0xCC), 2.2)],
             ["blend", Color, (Color(0xAA, 0xBB, 0xCC),)],
+            ["darkened", Color, (2.2,)],
+            ["from_hsv", Color, (1.1, 2.2, 3.3, 4.4)],
+            ["lightened", Color, (2.2,)],
             ["to_html", str, (True,)],
         ],
         ids=lambda x: x[0],
     )
-    def test_methods(self, args):
+    def test_methods(self, field,ret_type,params):
         v = Color()
         # Don't test methods' validity but bindings one
-        field, ret_type, params = args
         assert hasattr(v, field)
         method = getattr(v, field)
         assert callable(method)
@@ -77,7 +84,7 @@ class TestColor:
         assert type(ret) == ret_type
 
     @pytest.mark.parametrize(
-        "arg",
+        "small,big",
         [
             (Color(0, 0, 0), Color(1, 0, 0)),
             (Color(0, 1, 0), Color(1, 0, 0)),
@@ -85,12 +92,11 @@ class TestColor:
         ],
         ids=lambda x: x[0],
     )
-    def test_lt(self, arg):
-        small, big = arg
+    def test_lt(self, small, big):
         assert small < big
 
     @pytest.mark.parametrize(
-        "args",
+        "field,ret_type",
         [
             ("r", float),
             ("r8", int),
@@ -103,9 +109,8 @@ class TestColor:
         ],
         ids=lambda x: x[0],
     )
-    def test_properties_rw(self, args):
+    def test_properties_rw(self, field,ret_type):
         v = Color()
-        field, ret_type = args
         assert hasattr(v, field)
         field_val = getattr(v, field)
         assert type(field_val) == ret_type
@@ -141,6 +146,14 @@ class TestColor:
             ("b8", "Nan"),
             ("a", "Nan"),
             ("a8", "Nan"),
+            ("r", None),
+            ("r8", None),
+            ("g", None),
+            ("g8", None),
+            ("b", None),
+            ("b8", None),
+            ("a", None),
+            ("a8", None),
         ],
         ids=lambda x: x[0],
     )
@@ -149,3 +162,8 @@ class TestColor:
         field, bad_value = args
         with pytest.raises(TypeError):
             setattr(v, field, bad_value)
+
+    def test_constants(self):
+        assert isinstance(Color.LEMONCHIFFON, Color)
+        # I don't have a single clue what those colors are...
+        assert Color.LEMONCHIFFON != Color.MEDIUMSPRINGGREEN
