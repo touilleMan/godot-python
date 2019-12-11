@@ -16,25 +16,8 @@ from godot.basis cimport Basis
 @cython.final
 cdef class Quat:
 
-    def __init__(self, from_=None, euler=None, axis=None, angle=None, x=None, y=None, z=None, w=None):
-        if from_ is not None:
-            gdapi11.godot_quat_new_with_basis(&self._gd_data, &(<Basis>from_)._gd_data)
-
-        elif euler is not None:
-            gdapi11.godot_quat_new_with_euler(&self._gd_data, &(<Vector3>euler)._gd_data)
-
-        elif axis is not None or angle is not None:
-            if axis is None or angle is None:
-                raise ValueError("`axis` and `angle` must be provided together")
-            gdapi.godot_quat_new_with_axis_angle(&self._gd_data, &(<Vector3>axis)._gd_data, angle)
-
-        elif x is not None or y is not None or z is not None or w is not None:
-            if x is None or y is None or z is None or w is None:
-                raise ValueError("`x`, `y`, `z` and `w` must be provided together")
-            gdapi.godot_quat_new(&self._gd_data, x, y, z, w)
-
-        else:
-            raise ValueError("Missing params")
+    def __init__(self, x=0, y=0, z=0, w=0):
+        gdapi.godot_quat_new(&self._gd_data, x, y, z, w)
 
     @staticmethod
     cdef inline Quat new(godot_real x, godot_real y, godot_real z, godot_real w):
@@ -44,6 +27,10 @@ cdef class Quat:
         return ret
 
     @staticmethod
+    def from_axis_angle(Vector3 axis not None, godot_real angle):
+        return Quat.new_with_axis_angle(axis, angle)
+
+    @staticmethod
     cdef inline Quat new_with_axis_angle(Vector3 axis, godot_real angle):
         # Call to __new__ bypasses __init__ constructor
         cdef Quat ret = Quat.__new__(Quat)
@@ -51,11 +38,19 @@ cdef class Quat:
         return ret
 
     @staticmethod
+    def from_basis(Basis basis not None):
+        return Quat.new_with_basis(basis)
+
+    @staticmethod
     cdef inline Quat new_with_basis(Basis basis):
         # Call to __new__ bypasses __init__ constructor
         cdef Quat ret = Quat.__new__(Quat)
         gdapi11.godot_quat_new_with_basis(&ret._gd_data, &basis._gd_data)
         return ret
+
+    @staticmethod
+    def from_euler(Vector3 euler not None):
+        return Quat.new_with_euler(euler)
 
     @staticmethod
     cdef inline Quat new_with_euler(Vector3 euler):
@@ -72,7 +67,7 @@ cdef class Quat:
         return ret
 
     def __repr__(self):
-        return f"<Quat({self.as_string()})>"
+        return f"<Quat(x={self.x}, y={self.y}, z={self.z}, w={self.w})>"
 
     # Operators
 
@@ -120,17 +115,22 @@ cdef class Quat:
     def __neg__(self):
         return Quat.operator_neg(self)
 
-    def __add__(self, val):
+    def __pos__(self):
+        return self
+
+    def __add__(self, Quat val not None):
         return Quat.operator_add(self, val)
 
-    def __sub__(self, val):
+    def __sub__(self, Quat val not None):
         return Quat.operator_subtract(self, val)
 
     def __mul__(self, godot_real val):
         return Quat.operator_multiply(self, val)
 
     def __truediv__(self, godot_real val):
-        return Quat.operator_multiply(self, val)
+        if val == 0:
+            raise ZeroDivisionError
+        return Quat.operator_divide(self, val)
 
     # Property
 
@@ -242,3 +242,6 @@ cdef class Quat:
 
     cpdef inline void set_axis_angle(self, Vector3 axis, godot_real angle):
         gdapi11.godot_quat_set_axis_angle(&self._gd_data, &axis._gd_data, angle)
+
+
+    IDENTITY = Quat(0, 0, 0, 1)

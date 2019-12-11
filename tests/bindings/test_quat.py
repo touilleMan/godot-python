@@ -1,12 +1,43 @@
 import pytest
 
-from godot.bindings import Quat, Vector3
+from godot import Basis, Quat, Vector3
 
 
 class TestQuat:
     def test_base(self):
         v = Quat()
         assert type(v) == Quat
+
+    @pytest.mark.parametrize(
+        "field,args",
+        [
+            ["from_axis_angle", (Vector3.ONE, 1.1)],
+            ["from_euler", (Vector3.ONE, )],
+            ["from_basis", (Basis(), )],
+        ]
+    )
+    def test_inits(self, field, args):
+        build = getattr(Quat, field)
+        v = build(*args)
+        assert isinstance(v, Quat)
+
+    @pytest.mark.parametrize(
+        "field,args",
+        [
+            ["from_axis_angle", (None, 1.1)],
+            ["from_euler", (None, )],
+            ["from_basis", (None, )],
+            ["from_axis_angle", (Vector3.ONE, None)],
+            ["from_axis_angle", (Vector3.ONE, "dummy")],
+            ["from_axis_angle", ("dummy", 1.1)],
+            ["from_euler", ("dummy", )],
+            ["from_basis", ("dummy", )],
+        ]
+    )
+    def test_bad_inits(self, field, args):
+        build = getattr(Quat, field)
+        with pytest.raises(TypeError):
+            v = build(*args)
 
     def test_repr(self):
         v = Quat(1.0, 2.0, 3.0, 4.0)
@@ -50,7 +81,7 @@ class TestQuat:
             Quat(1, 2, 3, None)
 
     @pytest.mark.parametrize(
-        "args",
+        "field,ret_type,params",
         [
             ["length", float, ()],
             ["length_squared", float, ()],
@@ -62,13 +93,13 @@ class TestQuat:
             ["slerp", Quat, (Quat(), 1.0)],
             ["slerpni", Quat, (Quat(), 1.0)],
             ["cubic_slerp", Quat, (Quat(), Quat(), Quat(), 1.0)],
+            ["set_axis_angle", type(None), (Vector3(1, 2, 3), 3.3)],
         ],
         ids=lambda x: x[0],
     )
-    def test_methods(self, args):
+    def test_methods(self, field, ret_type, params):
         v = Quat()
         # Don't test methods' validity but bindings one
-        field, ret_type, params = args
         assert hasattr(v, field)
         method = getattr(v, field)
         assert callable(method)
@@ -76,13 +107,12 @@ class TestQuat:
         assert type(ret) == ret_type
 
     @pytest.mark.parametrize(
-        "args",
+        "field,ret_type",
         [("x", float), ("y", float), ("z", float), ("w", float)],
         ids=lambda x: x[0],
     )
-    def test_properties(self, args):
+    def test_properties(self, field, ret_type):
         v = Quat()
-        field, ret_type = args
         assert hasattr(v, field)
         field_val = getattr(v, field)
         assert type(field_val) == ret_type
@@ -92,13 +122,15 @@ class TestQuat:
             assert pytest.approx(field_val) == val
 
     @pytest.mark.parametrize(
-        "args",
-        [("x", "NaN"), ("y", "NaN"), ("z", "NaN"), ("w", "NaN")],
+        "field,bad_value",
+        [
+            ("x", "NaN"), ("y", "NaN"), ("z", "NaN"), ("w", "NaN"),
+            ("x", None), ("y", None), ("z", None), ("w", None)
+        ],
         ids=lambda x: x[0],
     )
-    def test_bad_properties(self, args):
+    def test_bad_properties(self, field, bad_value):
         v = Quat()
-        field, bad_value = args
         with pytest.raises(TypeError):
             setattr(v, field, bad_value)
 
@@ -127,7 +159,7 @@ class TestQuat:
         assert v2.w == -4.5
 
     @pytest.mark.parametrize(
-        "args",
+        "param,result",
         [
             (Quat(0, 0, 0, 0), Quat(2, 3, 4, 5)),
             (Quat(4, 3, 2, 1), Quat(6, 6, 6, 6)),
@@ -135,13 +167,12 @@ class TestQuat:
         ],
         ids=lambda x: x[0],
     )
-    def test_add(self, args):
-        param, result = args
+    def test_add(self, param,result):
         calc = Quat(2, 3, 4, 5) + param
         assert calc == result
 
     @pytest.mark.parametrize(
-        "args",
+        "param,result",
         [
             (Quat(0, 0, 0, 0), Quat(2, 3, 4, 5)),
             (Quat(5, 4, 3, 2), Quat(-3, -1, 1, 3)),
@@ -149,8 +180,7 @@ class TestQuat:
         ],
         ids=lambda x: x[0],
     )
-    def test_sub(self, args):
-        param, result = args
+    def test_sub(self, param,result):
         calc = Quat(2, 3, 4, 5) - param
         assert calc == result
 
@@ -181,22 +211,20 @@ class TestQuat:
             Quat(2, 3, 4, 5) * arg
 
     @pytest.mark.parametrize(
-        "args",
+        "param,result",
         [(0, Quat(0, 0, 0, 0)), (1, Quat(2, 3, 4, 5)), (2.5, Quat(5, 7.5, 10, 12.5))],
         ids=lambda x: x[0],
     )
-    def test_mul(self, args):
-        param, result = args
+    def test_mul(self, param,result):
         calc = Quat(2, 3, 4, 5) * param
         assert calc == result
 
     @pytest.mark.parametrize(
-        "args",
+        "param,result",
         [(1, Quat(2, 3, 4, 5)), (0.5, Quat(4, 6, 8, 10)), (2, Quat(1, 1.5, 2, 2.5))],
         ids=lambda x: x[0],
     )
-    def test_div(self, args):
-        param, result = args
+    def test_div(self, param,result):
         calc = Quat(2, 3, 4, 5) / param
         assert calc == result
 
@@ -211,7 +239,3 @@ class TestQuat:
     def test_bad_equal(self, arg):
         arr = Quat(0.1, 1, 2, 3)
         assert arr != arg
-
-    @pytest.mark.xfail
-    def test_build_with_axis_angle(self):
-        pass
