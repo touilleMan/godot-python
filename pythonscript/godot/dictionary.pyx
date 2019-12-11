@@ -72,14 +72,13 @@ cdef class Dictionary:
         return self.size()
 
     def __iter__(self):
-        cdef godot_variant *p_value
         cdef godot_variant *p_key = NULL
         # TODO: mid iteration mutation should throw exception ?
         while True:
-            p_value = gdapi.godot_dictionary_next(&self._gd_data, p_key)
-            if p_value == NULL:
+            p_key = gdapi.godot_dictionary_next(&self._gd_data, p_key)
+            if p_key == NULL:
                 return
-            yield godot_variant_to_pyobj(p_value)
+            yield godot_variant_to_pyobj(p_key)
 
     def __copy__(self):
         return self.duplicate(False)
@@ -174,6 +173,23 @@ cdef class Dictionary:
         gdapi.godot_variant_destroy(&var_key)
 
     # Methods
+
+    def update(self, other):
+        cdef object k
+        cdef object v
+        for k, v in other.items():
+            self[k] = v
+
+    def items(self):
+        cdef godot_variant *p_key = NULL
+        cdef godot_variant *p_value
+        # TODO: mid iteration mutation should throw exception ?
+        while True:
+            p_key = gdapi.godot_dictionary_next(&self._gd_data, p_key)
+            if p_key == NULL:
+                return
+            p_value = gdapi.godot_dictionary_operator_index(&self._gd_data, p_key)
+            yield godot_variant_to_pyobj(p_key), godot_variant_to_pyobj(p_value)
 
     cpdef inline godot_int hash(self):
         return gdapi.godot_dictionary_hash(&self._gd_data)
