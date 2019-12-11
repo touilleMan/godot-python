@@ -1,7 +1,7 @@
 import pytest
 
-from godot import bindings
-from godot.bindings import OS
+from godot import Vector3, Dictionary, Array, PoolIntArray, PoolStringArray
+from godot.bindings import OS, Node
 
 
 def check_memory_leak(fn):
@@ -9,8 +9,6 @@ def check_memory_leak(fn):
     static_mem_start = OS.get_static_memory_usage()
 
     fn()
-
-    # TODO: force garbage collection on pypy
 
     static_mem_end = OS.get_static_memory_usage()
     dynamic_mem_end = OS.get_dynamic_memory_usage()
@@ -43,7 +41,7 @@ def test_base_dynamic_memory_leak_check():
 
 def test_base_builtin_memory_leak():
     def fn():
-        v = bindings.Vector3()
+        v = Vector3()
         v.x = 42
         v.y
 
@@ -52,7 +50,7 @@ def test_base_builtin_memory_leak():
 
 def test_dictionary_memory_leak():
     def fn():
-        v = bindings.Dictionary()
+        v = Dictionary()
         v["foo"] = OS
         v.update({"a": 1, "b": 2.0, "c": "three"})
         v["foo"]
@@ -64,7 +62,7 @@ def test_dictionary_memory_leak():
 
 def test_array_memory_leak():
     def fn():
-        v = bindings.Array()
+        v = Array()
         v.append("x")
         v += [1, 2, 3]
         v[0]
@@ -75,27 +73,29 @@ def test_array_memory_leak():
 
 def test_pool_int_array_memory_leak():
     def fn():
-        v = bindings.PoolIntArray()
+        v = PoolIntArray()
         v.append(42)
         v.resize(1000)
-        v.pop()
+        del v[0]
+        del v[10]
 
     check_memory_leak(fn)
 
 
 def test_pool_string_array_memory_leak():
     def fn():
-        v = bindings.PoolStringArray()
+        v = PoolStringArray()
         v.append("fooo")
-        # v.resize(1000)  # TODO: when uncommenting this, the test pass...
-        v.pop()
+        v.resize(1000)
+        del v[0]
+        del v[10]
 
     check_memory_leak(fn)
 
 
 def test_object_memory_leak():
     def fn():
-        v = bindings.Node()
+        v = Node()
         v.free()
 
     check_memory_leak(fn)
