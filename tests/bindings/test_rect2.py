@@ -1,6 +1,6 @@
 import pytest
 
-from godot.bindings import Rect2, Vector2
+from godot import Rect2, Vector2
 
 
 class TestRect2:
@@ -43,24 +43,26 @@ class TestRect2:
             Rect2(None, 2)
 
     @pytest.mark.parametrize(
-        "args",
+        "field,ret_type,params",
         [
-            ["clip", Rect2, (Rect2(),)],
-            ["encloses", bool, (Rect2(),)],
-            ["expand", Rect2, (Vector2(),)],
             ["get_area", float, ()],
-            ["grow", Rect2, (0.5,)],
-            ["has_no_area", bool, ()],
-            ["has_point", bool, (Vector2(),)],
             ["intersects", bool, (Rect2(),)],
+            ["encloses", bool, (Rect2(),)],
+            ["has_no_area", bool, ()],
+            ["clip", Rect2, (Rect2(),)],
             ["merge", Rect2, (Rect2(),)],
+            ["has_point", bool, (Vector2(),)],
+            ["grow", Rect2, (0.5,)],
+            ["grow_individual", Rect2, (0.1, 0.2, 0.3, 0.4)],
+            ["grow_margin", Rect2, (42, 0.5)],
+            ["abs", Rect2, ()],
+            ["expand", Rect2, (Vector2(),)],
         ],
         ids=lambda x: x[0],
     )
-    def test_methods(self, args):
+    def test_methods(self, field,ret_type,params):
         v = Rect2()
         # Don't test methods' validity but bindings one
-        field, ret_type, params = args
         assert hasattr(v, field)
         method = getattr(v, field)
         assert callable(method)
@@ -68,11 +70,10 @@ class TestRect2:
         assert type(ret) == ret_type
 
     @pytest.mark.parametrize(
-        "args", [("position", Vector2), ("size", Vector2)], ids=lambda x: x[0]
+        "field,ret_type", [("position", Vector2), ("size", Vector2)], ids=lambda x: x[0]
     )
-    def test_properties(self, args):
+    def test_rw_properties(self, field,ret_type):
         v = Rect2()
-        field, ret_type = args
         assert hasattr(v, field)
         field_val = getattr(v, field)
         assert type(field_val) == ret_type
@@ -81,8 +82,15 @@ class TestRect2:
             field_val = getattr(v, field)
             assert field_val == val
 
+    def test_ro_end_property(self):
+        v = Rect2()
+        assert hasattr(v, 'end')
+        assert type(v.end) == Vector2
+        with pytest.raises(AttributeError):
+            v.end = Vector2()
+
     @pytest.mark.parametrize(
-        "args",
+        "field,bad_value",
         [
             ("position", "dummy"),
             ("size", "dummy"),
@@ -93,9 +101,8 @@ class TestRect2:
         ],
         ids=lambda x: x[0],
     )
-    def test_bad_properties(self, args):
+    def test_bad_rw_properties(self, field,bad_value):
         v = Rect2()
-        field, bad_value = args
         with pytest.raises(TypeError):
             setattr(v, field, bad_value)
 

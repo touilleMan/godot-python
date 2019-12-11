@@ -41,7 +41,7 @@ cdef class Rect2:
     cpdef inline godot_real get_area(self)
     cpdef inline bint intersects(self, Rect2 b)
     cpdef inline bint encloses(self, Rect2 b)
-    cpdef inline bint has_no_area(self, Rect2 b)
+    cpdef inline bint has_no_area(self)
     cpdef inline Rect2 clip(self, Rect2 b)
     cpdef inline Rect2 merge(self, Rect2 b)
     cpdef inline bint has_point(self, Vector2 point)

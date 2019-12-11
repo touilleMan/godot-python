@@ -15,15 +15,12 @@ from godot.vector2 cimport Vector2
 @cython.final
 cdef class Rect2:
 
-    def __init__(self, position=None, size=None, x=None, y=None, width=None, height=None):
-        if x is not None or y is not None or width is not None or height is not None:
-            if x is None or y is None or width is None or height is None:
-                raise ValueError("`x`, `y`, `width` and `height` params must be provided together")
-            gdapi.godot_rect2_new(&self._gd_data, x, y, width, height)
-        if position is not None or size is not None:
-            if position is None or size is None:
-                raise ValueError("`position` and `size` params must be provided together")
-            gdapi.godot_rect2_new_with_position_and_size(&self._gd_data, &(<Vector2?>position)._gd_data, &(<Vector2?>size)._gd_data)
+    def __init__(self, godot_real x=0.0, godot_real y=0.0, godot_real width=0.0, godot_real height=0.0):
+        gdapi.godot_rect2_new(&self._gd_data, x, y, width, height)
+
+    @staticmethod
+    def from_pos_size(Vector2 position not None, Vector2 size not None):
+        return Rect2.new_with_position_and_size(position, size)
 
     @staticmethod
     cdef inline Rect2 new(godot_real x=0.0, godot_real y=0.0, godot_real width=0.0, godot_real height=0.0):
@@ -47,7 +44,7 @@ cdef class Rect2:
         return ret
 
     def __repr__(self):
-        return f"<Rect2({self.as_string})>"
+        return f"<Rect2({self.as_string()})>"
 
     # Operators
 
@@ -82,7 +79,7 @@ cdef class Rect2:
         return self.get_size()
 
     @size.setter
-    def size(self, val):
+    def size(self, Vector2 val not None):
         self.set_size(val)
 
     cdef inline Vector2 get_position(self):
@@ -98,7 +95,7 @@ cdef class Rect2:
         return self.get_position()
 
     @position.setter
-    def position(self, val):
+    def position(self, Vector2 val not None):
         self.set_position(val)
 
     cdef inline Vector2 get_end(self):
@@ -125,7 +122,7 @@ cdef class Rect2:
     cpdef inline bint encloses(self, Rect2 b):
         return gdapi.godot_rect2_encloses(&self._gd_data, &b._gd_data)
 
-    cpdef inline bint has_no_area(self, Rect2 b):
+    cpdef inline bint has_no_area(self):
         return gdapi.godot_rect2_has_no_area(&self._gd_data)
 
     cpdef inline Rect2 clip(self, Rect2 b):
