@@ -79,9 +79,8 @@ cdef class Vector2:
         ret._gd_data = gdapi.godot_vector2_operator_neg(&self._gd_data)
         return ret
 
-    def __lt__(self, other):
-        cdef Vector2 _other = <Vector2?>other
-        return Vector2.operator_less(self, _other)
+    def __lt__(self, Vector2 other not None):
+        return Vector2.operator_less(self, other)
 
     def __eq__(self, other):
         cdef Vector2 _other
@@ -105,13 +104,11 @@ cdef class Vector2:
     def __pos__(self):
         return self
 
-    def __add__(self, val):
-        cdef Vector2 _val = <Vector2?>val
-        return Vector2.operator_add(self, _val)
+    def __add__(self, Vector2 val not None):
+        return Vector2.operator_add(self, val)
 
-    def __sub__(self, val):
-        cdef Vector2 _val = <Vector2?>val
-        return Vector2.operator_subtract(self, _val)
+    def __sub__(self, Vector2 val not None):
+        return Vector2.operator_subtract(self, val)
 
     def __mul__(self, val):
         cdef Vector2 _val

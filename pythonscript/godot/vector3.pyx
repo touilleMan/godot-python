@@ -106,13 +106,11 @@ cdef class Vector3:
     def __pos__(self):
         return self
 
-    def __add__(self, val):
-        cdef Vector3 _val = <Vector3?>val
-        return Vector3.operator_add(self, _val)
+    def __add__(self, Vector3 val not None):
+        return Vector3.operator_add(self, val)
 
-    def __sub__(self, val):
-        cdef Vector3 _val = <Vector3?>val
-        return Vector3.operator_subtract(self, _val)
+    def __sub__(self, Vector3 val not None):
+        return Vector3.operator_subtract(self, val)
 
     def __mul__(self, val):
         cdef Vector3 _val
