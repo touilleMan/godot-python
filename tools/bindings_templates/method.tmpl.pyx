@@ -102,6 +102,7 @@ cdef {{ binding_type }} {{ retval }} = {{ binding_type }}.__new__({{ binding_typ
 {% elif method["return_type"] == "godot_string" %}
 cdef godot_string {{ retval }}
 {% set retval_as_arg = "&{}".format(retval) %}
+gdapi.godot_string_new({{ retval_as_arg }})
 {% elif method["return_type"] == "godot_variant" %}
 cdef godot_variant {{ retval }}
 {% set retval_as_arg = "&{}".format(retval) %}
