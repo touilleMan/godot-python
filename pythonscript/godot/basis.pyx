@@ -16,28 +16,23 @@ from godot.quat cimport Quat
 @cython.final
 cdef class Basis:
 
-    def __init__(self, x=None, y=None, z=None, axis=None, phi=None, from_=None):
-        if from_ is not None:
-            try:
-                gdapi.godot_basis_new_with_euler_quat(&self._gd_data, &(<Quat>from_)._gd_data)
-            except TypeError:
-                try:
-                    gdapi.godot_basis_new_with_euler(&self._gd_data, &(<Vector3>from_)._gd_data)
-                except TypeError:
-                    raise ValueError('`from_` must be Quat or Vector3')
+    def __init__(self, Vector3 x not None=Vector3.RIGHT, Vector3 y not None=Vector3.UP, Vector3 z not None=Vector3.BACK):
+        gdapi.godot_basis_new_with_rows(&self._gd_data, &(<Vector3>x)._gd_data, &(<Vector3>y)._gd_data, &(<Vector3>z)._gd_data)
 
-        elif axis is not None or phi is not None:
-            if axis is None or phi is None:
-                raise ValueError("`axis` and `phi` must be provided together")
-            gdapi.godot_basis_new_with_axis_and_angle(&self._gd_data, &(<Vector3>axis)._gd_data, phi)
+    @staticmethod
+    def from_euler(from_):
+        try:
+            return Basis.new_with_euler(<Vector3?>from_)
+        except TypeError:
+            pass
+        try:
+            return Basis.new_with_euler_quat(<Quat?>from_)
+        except TypeError:
+            raise TypeError('`from_` must be Quat or Vector3')
 
-        elif x is None and y is None and z is None:
-            gdapi.godot_basis_new(&self._gd_data)
-
-        else:
-            if x is None or y is None or z is None:
-                raise ValueError("`x`, `y` and `z` params must be provided together")
-            gdapi.godot_basis_new_with_rows(&self._gd_data, &(<Vector3>x)._gd_data, &(<Vector3>y)._gd_data, &(<Vector3>z)._gd_data)
+    @staticmethod
+    def from_axis_angle(Vector3 axis not None, phi):
+        return Basis.new_with_axis_and_angle(axis, phi)
 
     @staticmethod
     cdef inline Basis new():
@@ -122,13 +117,11 @@ cdef class Basis:
         except TypeError:
             return True
 
-    def __add__(self, val):
-        cdef Basis _val = <Basis?>val
-        return Basis.operator_add(self, _val)
+    def __add__(self, Basis val not None):
+        return Basis.operator_add(self, val)
 
-    def __sub__(self, val):
-        cdef Basis _val = <Basis?>val
-        return Basis.operator_subtract(self, _val)
+    def __sub__(self, Basis val not None):
+        return Basis.operator_subtract(self, val)
 
     def __mul__(self, val):
         cdef Basis _val
@@ -157,7 +150,7 @@ cdef class Basis:
         return self.get_x()
 
     @x.setter
-    def x(self, val):
+    def x(self, Vector3 val not None):
         self.set_x(val)
 
     cdef inline Vector3 get_y(self):
@@ -173,7 +166,7 @@ cdef class Basis:
         return self.get_y()
 
     @y.setter
-    def y(self, val):
+    def y(self, Vector3 val not None):
         self.set_y(val)
 
     cdef inline Vector3 get_z(self):
@@ -189,7 +182,7 @@ cdef class Basis:
         return self.get_z()
 
     @z.setter
-    def z(self, val):
+    def z(self, Vector3 val not None):
         self.set_z(val)
 
     # Methods
