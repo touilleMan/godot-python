@@ -30,7 +30,7 @@ Quickstart
 By order of simplicity:
 
 - Directly download the project from within Godot with the asset library tab.
-- You can also download manually `here <https://godotengine.org/asset-library/asset/179>`_ (CPython backend) and `there <https://godotengine.org/asset-library/asset/192>`_ (for Pypy backend).
+- Download from the `asset library website <https://godotengine.org/asset-library/asset/179>`_.
 - Finally you can also head to the project `release page <https://github.com/touilleMan/godot-python/releases>`_ if you want to only download one specific platform build
 
 Building
@@ -127,7 +127,7 @@ without clashing with your global Python configuration.
 	godot-python$ python3 -m venv venv
 
 
-Now with should activate the virtual env, this is something you should do
+Now you need to activate the virtual env, this is something you should do
 every time you want to use the virtual env.
 
 For Linux/MacOS:
@@ -164,16 +164,16 @@ For Windows:
 
 .. code-block:: bash
 
-	godot-python$ scons platform=windows-64release
+	godot-python$ scons platform=windows-64 release
 
-For MacOS, you will need to customize our cpp to use clang. Your final command will look like:
+For MacOS:
 
 .. code-block:: bash
 
-	godot-python$ scons platform=osx-64 gdnative_parse_cpp="clang -E" release
+	godot-python$ scons platform=osx-64 release
 
-Valid platforms are `x11-64`, `x11-32`, `windows-64`, `windows-32` and `osx-64`. Check Travis
-or Appveyor links above to see the current status of your platform.
+Valid platforms are `x11-64`, `x11-32`, `windows-64`, `windows-32` and `osx-64`.
+Check Travis or Appveyor links above to see the current status of your platform.
 
 This command will checkout CPython repo, move to a pinned commit and build
 CPython from source.
@@ -196,9 +196,9 @@ Testing your build
 	godot-python$ scons platform=<platform> test
 
 This will run pytests defined in `tests/bindings` inside the Godot environment.
-If not present, will download a precompiled Godot binary
-(defined in SConstruct and platform specific SCSub files) to and set the
-correct library path for the GDNative wrapper.
+If not present, will download a precompiled Godot binary (defined in SConstruct
+and platform specific SCSub files) to and set the correct library path for
+the GDNative wrapper.
 
 
 Running the example project
@@ -210,7 +210,8 @@ Running the example project
 
 This will run the converted pong example in `examples/pong` inside the Godot
 environment. If not present, will download a precompiled Godot binary
-(defined in SConstruct) to and set the correct library path for the GDNative wrapper.
+(defined in SConstruct) to and set the correct library path for the GDNative
+wrapper.
 
 
 Using a local Godot version
@@ -238,9 +239,10 @@ example:
 .. code-block:: python
 
 	# Explicit is better than implicit
-	from godot import exposed, export
-	from godot.bindings import Node2D, Vector2
+	from godot import exposed, export, Vector2
+	from godot.bindings import Node2D
 
+	SPEED = Vector2(10, 10)
 
 	@exposed
 	class Player(Node2D):
@@ -275,6 +277,9 @@ example:
 			# Of course you can access property & methods defined in the parent
 			name = self.get_name()
 			print('%s position x=%s, y=%s' % (name, self.position.x, self.position.y))
+
+		def _process(self, delta):
+			self.position += SPEED * delta
 
 		...
 
@@ -344,5 +349,8 @@ manager to lock it::
   with arr.raw_access() as ptr:
       for i in range(10000):
           assert ptr[i] == i # so is this
+
+Keep in mind great performances comes with great responsabilities: there is no
+boundary check so you may end up with memory corruption if you don't take care ;-)
 
 See the `godot-python issue <https://github.com/touilleMan/godot-python/issues/84>`_.
