@@ -1,369 +1,328 @@
 import pytest
-import random
+from random import Random
 from inspect import isfunction
+from functools import partial
 
-from godot.bindings import (
-    Node,
-    Resource,
-    Area2D,
+from godot.bindings import Node, Resource
+from godot import (
     Vector2,
     Vector3,
     Color,
     Array,
     PoolIntArray,
-    PoolByteArray,
-    PoolRealArray,
-    PoolColorArray,
-    PoolStringArray,
-    PoolVector2Array,
-    PoolVector3Array,
+    # PoolByteArray,
+    # PoolRealArray,
+    # PoolColorArray,
+    # PoolStringArray,
+    # PoolVector2Array,
+    # PoolVector3Array,
 )
 
 
-class BaseTestPoolArray:
-    def _expand_arg(self, arg):
-        return arg(self) if isfunction(arg) else arg
+class BasePoolArrayBench:
+    cls = None
 
-    def test_base(self):
-        v = self.acls()
-        assert type(v) == self.acls
+    def __init__(self):
+        # Fixed seed for reproducibility
+        self.random = Random(0)
 
-    @pytest.mark.parametrize("arg", [Array, lambda s: s.acls, list])
-    def test_equal(self, arg):
-        arg = self._expand_arg(arg)
-        arr = self.acls()
-        other = arg()
-        for item in [self.vg() for _ in range(4)]:
-            arr.append(item)
-            other.append(item)
-        assert arr == other
-        bad = self.acls([self.vg()])
-        assert not arr == bad  # Force use of __eq__
+    def generate_value(self):
+        raise NotImplemented
 
-    @pytest.mark.parametrize(
-        "arg",
-        [
-            None,
-            0,
-            "foo",
-            Vector2(),
-            Node(),
-            lambda s: s.vg(1),
-            lambda s: s.acls(s.vg(1)),
-            lambda s: Array(s.vg(1)),
-        ],
-    )
-    def test_bad_equal(self, arg):
-        arg = self._expand_arg(arg)
-        arr = self.acls()
-        assert arr != arg
+    def generate_values(self, count):
+        return [self.generate_value() for _ in range(count)]
 
-    def test_add(self):
-        v0 = self.vg(1)
-        arr = self.acls(v0)
-        v1 = self.vg(2)
-        arr += self.acls(v1)  # __iadd__
-        assert arr == self.acls(v0 + v1)
-        v2 = self.vg(1)
-        arr2 = arr + self.acls(v2)  # __add__
-        assert arr2 == self.acls(v0 + v1 + v2)
-
-    def test_add_with_non_PoolBytearray(self):
-        v0 = self.vg(1)
-        arr = self.acls(v0)
-        v1 = self.vg(2)
-        arr += v1  # __iadd__
-        assert arr == self.acls(v0 + v1)
-        v2 = self.vg(1)
-        arr2 = arr + v2  # __add__
-        assert arr2 == self.acls(v0 + v1 + v2)
-        # Also test list's __iadd__
-        values = [self.vg() for _ in range(3)]
-        arr3 = [values[0]]
-        pba = self.acls(values[1:])
-        arr3 += pba
-        assert arr3 == values
-        # list.__add__ only works with other lists
-        with pytest.raises(TypeError):
-            [values[0]] + pba
-        arr4 = [values[0]] + list(pba)
-        assert arr4 == values
-
-    @pytest.mark.parametrize("arg", [None, 0, "foo", Vector2(), Node()])
-    def test_bad_add(self, arg):
-        with pytest.raises(TypeError):
-            assert self.acls() + arg
-
-    def test_repr(self):
-        name = self.acls.__name__
-        v = self.acls()
-        assert repr(v) == "<%s([])>" % name
-        items = self.vg(3)
-        v = self.acls(items)
-        assert repr(v) == "<%s(%s)>" % (name, items)
-
-    @pytest.mark.parametrize(
-        "arg", [42, "dummy", Node(), Vector2(), [object()], Array(["not", "bytes"])]
-    )
-    def test_bad_instantiate(self, arg):
-        with pytest.raises(TypeError):
-            PoolByteArray(arg)
-
-    @pytest.mark.parametrize(
-        "arg", [lambda s: s.acls(), lambda s: Array(s.vg(2)), [], (), lambda s: s.vg(3)]
-    )
-    def test_instantiate_from_copy(self, arg):
-        arg = self._expand_arg(arg)
-        arr = self.acls(arg)
-        if hasattr(arg, "_gd_ptr"):
-            assert arr._gd_ptr != arg._gd_ptr
-
-    @pytest.mark.parametrize(
-        "args",
-        [
-            ["append", type(None), lambda s: (s.vg(),)],
-            ["insert", type(None), lambda s: (0, s.vg())],
-            ["push_back", type(None), lambda s: (s.vg(),)],
-            ["resize", type(None), (2,)],
-        ],
-        ids=lambda x: x[0],
-    )
-    def test_methods(self, args):
-        v = self.acls(self.vg(1))
-        # Don't test methods' validity but bindings one
-        field, ret_type, params = args
-        params = self._expand_arg(params)
-        assert hasattr(v, field)
-        method = getattr(v, field)
-        assert callable(method)
-        ret = method(*params)
-        assert type(ret) == ret_type
-
-    def test_len(self):
-        arr = self.acls()
-        assert len(arr) == 0
-        arr.append(self.vg())
-        assert len(arr) == 1
-
-    def test_getitem(self):
-        v = self.vg(3)
-        arr = self.acls(v)
-        assert arr[0] == v[0]
-        assert arr[1] == v[1]
-        assert arr[-1] == v[-1]
-
-    def test_getitem_slice(self):
-        arr = self.acls(self.vg(3))
-        assert isinstance(arr[:-1], self.acls)
-        assert arr[1:] == self.acls([arr[1], arr[2]])
-
-    def test_outofrange_getitem(self):
-        arr = self.acls(self.vg(2))
-        with pytest.raises(IndexError):
-            arr[2]
-
-    def test_setitem(self):
-        arr = self.acls(self.vg(3))
-        v = self.vg()
-        arr[0] = v
-        assert len(arr) == 3
-        assert arr[0] == v
-        arr[-1] = v
-        assert len(arr) == 3
-        assert arr[-1] == v
-
-    def test_outofrange_setitem(self):
-        arr = self.acls(self.vg(2))
-        v = self.vg()
-        with pytest.raises(IndexError):
-            arr[2] = v
-
-    def test_delitem(self):
-        items = self.vg(3)
-        arr = self.acls(items)
-        del arr[0]
-        assert len(arr) == 2
-        assert arr[0] == items[1]
-        assert arr[1] == items[2]
-        del arr[-1]
-        assert len(arr) == 1
-        assert arr[-1] == items[1]
-
-    def test_outofrange_delitem(self):
-        arr = self.acls(self.vg(2))
-        with pytest.raises(IndexError):
-            del arr[2]
-
-    def test_iter(self):
-        items = self.vg(3)
-        arr = self.acls(items)
-        items_from_v = [x for x in arr]
-        assert items_from_v == items
-
-    def test_append(self):
-        items = self.vg(3)
-        arr = self.acls()
-        for item in items:
-            arr.append(item)
-        assert len(arr) == 3
-        assert arr == self.acls(items)
+    def expand_arg(self, arg):
+        if isfunction(arg):
+            return arg(self)
+        else:
+            return arg
 
 
-class TestPoolByteArray(BaseTestPoolArray):
-    def setup(self):
-        self.acls = PoolByteArray
-        random.seed(0)  # Fix seed for reproducibility
-        self.vg = (
-            lambda c=None: random.randint(0, 255)
-            if c is None
-            else [random.randint(0, 255) for x in range(c)]
-        )
+class PoolIntArrayBench(BasePoolArrayBench):
+    cls = PoolIntArray
 
-    def test_byte_overflow(self):
-        with pytest.raises(ValueError):
-            PoolByteArray([256])
-        with pytest.raises(ValueError):
-            PoolByteArray([1, 2, 256, 4])
-        arr = PoolByteArray([1])
-        with pytest.raises(ValueError):
-            arr.append(256)
-        with pytest.raises(ValueError):
-            arr.insert(1, 256)
-        with pytest.raises(ValueError):
-            arr.push_back(256)
-        with pytest.raises(ValueError):
-            arr.insert(1, 256)
-
-    @pytest.mark.parametrize("arg", ["foo", None], ids=lambda x: x[0])
-    def test_bad_byte(self, arg):
-        with pytest.raises(TypeError):
-            PoolByteArray([arg])
-        with pytest.raises(TypeError):
-            PoolByteArray([1, 2, arg, 4])
-        arr = PoolByteArray([1])
-        with pytest.raises(TypeError):
-            arr.append(arg)
-        with pytest.raises(TypeError):
-            arr.insert(1, arg)
-        with pytest.raises(TypeError):
-            arr.push_back(arg)
-        with pytest.raises(TypeError):
-            arr.insert(1, arg)
+    def generate_value(self):
+        return self.random.randint(-(2 ** 31), 2 ** 31 - 1)
 
 
-class TestPoolIntArray(BaseTestPoolArray):
-    def setup(self):
-        self.acls = PoolIntArray
-        random.seed(0)  # Fix seed for reproducibility
-        self.vg = (
-            lambda c=None: random.randint(-(2 ** 31), 2 ** 31 - 1)
-            if c is None
-            else [random.randint(-(2 ** 31), 2 ** 31 - 1) for x in range(c)]
-        )
+@pytest.fixture(
+    scope="module", ids=lambda x: x.cls.__name__, params=[PoolIntArrayBench]
+)
+def pool_x_array(request):
+    return request.param()
 
 
-class TestPoolRealArray(BaseTestPoolArray):
-    def setup(self):
-        self.acls = PoolRealArray
-        random.seed(0)  # Fix seed for reproducibility
-        # Use integer instead of float to avoid floating point imprecision in comparisons
-        self.vg = (
-            lambda c=None: float(random.randint(0, 100))
-            if c is None
-            else [float(random.randint(0, 100)) for x in range(c)]
-        )
+def test_empty_init(pool_x_array):
+    v1 = pool_x_array.cls()
+    v2 = pool_x_array.cls()
+    assert type(v1) == pool_x_array.cls
+    assert v1 == v2
+    assert len(v1) == 0
 
 
-class TestPoolColorArray(BaseTestPoolArray):
-    def setup(self):
-        self.acls = PoolColorArray
-        random.seed(0)  # Fix seed for reproducibility
-        # Use integer instead of float to avoid floating point imprecision in comparisons
-        self.vg = (
-            lambda c=None: Color(random.randint(0, 100))
-            if c is None
-            else [Color(random.randint(0, 100)) for x in range(c)]
-        )
+@pytest.mark.parametrize(
+    "bad_val",
+    [
+        lambda x: x.generate_value(),
+        iter([]),
+        42,
+        "dummy",
+        Node(),
+        Vector2(),
+        [object()],
+    ],
+)
+def test_bad_init(pool_x_array, bad_val):
+    bad_val = pool_x_array.expand_arg(bad_val)
+    with pytest.raises(TypeError):
+        pool_x_array.cls(bad_val)
 
 
-class TestPoolStringArray(BaseTestPoolArray):
-    def setup(self):
-        self.acls = PoolStringArray
-        random.seed(0)  # Fix seed for reproducibility
-        self.vg = (
-            lambda c=None: str(random.random())
-            if c is None
-            else [str(random.random()) for x in range(c)]
-        )
+def test_initialized_init(pool_x_array):
+    vals = pool_x_array.generate_values(4)
+    v1 = pool_x_array.cls(vals)
+    v2 = pool_x_array.cls(Array(vals))
+    v3 = pool_x_array.cls(v2)
+    assert type(v1) == pool_x_array.cls
+    assert type(v2) == pool_x_array.cls
+    assert type(v3) == pool_x_array.cls
+    assert v1 == v2
+    assert v2 == v3
+    assert len(v1) == 4
 
 
-class TestPoolVector2Array(BaseTestPoolArray):
-    def setup(self):
-        self.acls = PoolVector2Array
-        random.seed(0)  # Fix seed for reproducibility
-        # Use integer instead of float to avoid floating point imprecision in comparisons
-        self.vg = (
-            lambda c=None: Vector2(random.randint(0, 100))
-            if c is None
-            else [Vector2(random.randint(0, 100)) for x in range(c)]
-        )
+def test_equal(pool_x_array):
+    vals = pool_x_array.generate_values(4)
+
+    v1 = pool_x_array.cls(vals)
+    v2 = pool_x_array.cls()
+    for item in vals:
+        v2.append(item)
+    v3 = pool_x_array.cls()
+    v3 += v2
+
+    # Test __eq__ operator
+    assert v1 == v2
+    assert v2 == v3
+
+    # Test __ne__ operator
+    assert not v1 != v2
+    assert not v2 != v3
 
 
-class TestPoolVector3Array(BaseTestPoolArray):
-    def setup(self):
-        self.acls = PoolVector3Array
-        random.seed(0)  # Fix seed for reproducibility
-        # Use integer instead of float to avoid floating point imprecision in comparisons
-        self.vg = (
-            lambda c=None: Vector3(random.randint(0, 100))
-            if c is None
-            else [Vector3(random.randint(0, 100)) for x in range(c)]
-        )
+@pytest.mark.parametrize("other_type", [list, tuple, Array])
+def test_bad_equal_on_different_types(pool_x_array, other_type):
+    vals = pool_x_array.generate_values(4)
+
+    pool = pool_x_array.cls(vals)
+    other = other_type(vals)
+
+    # Test __eq__ operator
+    assert not pool == other
+
+    # Test __ne__ operator
+    assert pool != other
 
 
-# Extra tests
+@pytest.mark.parametrize(
+    "arg",
+    [
+        None,
+        0,
+        Array(),
+        [],
+        (),
+        "",
+        Vector2(),
+        Node(),
+        lambda s: s.generate_value(),
+        lambda s: s.cls(s.generate_values(2)),
+    ],
+)
+def test_bad_equal(pool_x_array, arg):
+    pool = pool_x_array.cls()
+    other = pool_x_array.expand_arg(arg)
+
+    # Test __ne__ operator
+    assert not pool == other
+
+    # Test __eq__ operator
+    assert pool != other
 
 
-@pytest.mark.xfail
-class TestPoolVector3ArraySize:
-    def test_size(self):
-        a = PoolVector3Array()
-        a.resize(1000)
-        assert len(a) == 1000
-
-    def test_size_in_array(self):
-        a = Array()
-        a.resize(9)
-        a[0] = PoolVector3Array()
-        a[0].resize(1000)
-        assert len(a[0]) == 1000
-
-    def test_as_both(self):
-        a = Array()
-        a.resize(9)
-        pa = PoolVector3Array()
-        pa.resize(1000)
-        assert len(pa) == 1000
-        a[0] = pa
-        assert len(pa) == 1000
-        pa.resize(2000)
-        assert len(pa) == 2000
-        assert len(a[0]) == 2000
-        a[0].resize(3000)
-        assert len(a[0]) == 3000
+def test_add(pool_x_array):
+    v0 = pool_x_array.generate_values(2)
+    arr = pool_x_array.cls(v0)
+    v1 = pool_x_array.generate_values(2)
+    arr += pool_x_array.cls(v1)  # __iadd__
+    assert arr == pool_x_array.cls(v0 + v1)
+    v2 = pool_x_array.generate_values(2)
+    arr2 = arr + pool_x_array.cls(v2)  # __add__
+    assert arr2 == pool_x_array.cls(v0 + v1 + v2)
 
 
-class TestPoolArrayRawAccess:
-    def test_raw_access(self):
-        arr = PoolIntArray()
-        arr.resize(30)
+@pytest.mark.parametrize("arg", [None, [], (), Array(), 0, "foo", Vector2(), Node()])
+def test_bad_add(pool_x_array, arg):
+    with pytest.raises(TypeError):
+        pool_x_array.cls() + arg
 
-        with arr.raw_access() as ptr:
-            for i in range(30):
-                ptr[i] = i
-        assert arr == [i for i in range(30)]
 
-        # Also test read access
-        with arr.raw_access() as ptr:
-            for i in range(30):
-                assert ptr[i] == i
+@pytest.mark.parametrize("arg", [None, [], (), Array(), 0, "foo", Vector2(), Node()])
+def test_bad_iadd(pool_x_array, arg):
+    arr = pool_x_array.cls()
+    with pytest.raises(TypeError):
+        arr += arg
+
+
+def test_repr(pool_x_array):
+    name = pool_x_array.cls.__name__
+    v = pool_x_array.cls()
+    assert repr(v) == "<%s([])>" % name
+    items = pool_x_array.generate_values(3)
+    v = pool_x_array.cls(items)
+    assert repr(v) == "<%s(%s)>" % (name, items)
+
+
+@pytest.mark.parametrize(
+    "field,ret_type,params",
+    [
+        ["append", type(None), lambda x: (x.generate_value(),)],
+        ["push_back", type(None), lambda x: (x.generate_value(),)],
+        ["resize", type(None), (2,)],
+    ],
+    ids=lambda x: x[0],
+)
+def test_methods(pool_x_array, field, ret_type, params):
+    # Don't test methods' validity but bindings one
+    v = pool_x_array.cls(pool_x_array.generate_values(1))
+    params = pool_x_array.expand_arg(params)
+    assert hasattr(v, field)
+    method = getattr(v, field)
+    assert callable(method)
+    ret = method(*params)
+    assert type(ret) == ret_type
+
+
+def test_len(pool_x_array):
+    arr = pool_x_array.cls()
+    assert len(arr) == 0
+    arr.append(pool_x_array.generate_value())
+    assert len(arr) == 1
+
+
+def test_getitem(pool_x_array):
+    vals = pool_x_array.generate_values(3)
+    arr = pool_x_array.cls(vals)
+    assert arr[0] == vals[0]
+    assert arr[1] == vals[1]
+    assert arr[-1] == vals[-1]
+
+
+@pytest.mark.parametrize(
+    "slice_",
+    [
+        slice(1, 3),
+        slice(1, 3, -1),
+        slice(None, None, -1),
+        slice(None, None, 2),
+        slice(None, None, 10),
+        slice(-10, 10, 1),
+        slice(-10, None, 1),
+        slice(-1, None, 1),
+        slice(-1, 1, -1),
+    ],
+)
+def test_getitem_slice(pool_x_array, slice_):
+    vals = pool_x_array.generate_values(4)
+    arr = pool_x_array.cls(vals)
+    expected = vals[slice_]
+    sub_arr = arr[slice_]
+    assert isinstance(sub_arr, pool_x_array.cls)
+    assert sub_arr == pool_x_array.cls(expected)
+
+
+def test_getitem_slice_zero_step(pool_x_array):
+    arr = pool_x_array.cls(pool_x_array.generate_values(2))
+    with pytest.raises(ValueError):
+        arr[::0]
+
+
+def test_outofrange_getitem(pool_x_array):
+    arr = pool_x_array.cls(pool_x_array.generate_values(2))
+    with pytest.raises(IndexError):
+        arr[2]
+    with pytest.raises(IndexError):
+        arr[-3]
+
+
+def test_setitem(pool_x_array):
+    arr = pool_x_array.cls(pool_x_array.generate_values(3))
+    v = pool_x_array.generate_value()
+    arr[0] = v
+    assert len(arr) == 3
+    assert arr[0] == v
+    arr[-1] = v
+    assert len(arr) == 3
+    assert arr[-1] == v
+
+
+def test_outofrange_setitem(pool_x_array):
+    arr = pool_x_array.cls(pool_x_array.generate_values(2))
+    v = pool_x_array.generate_value()
+    with pytest.raises(IndexError):
+        arr[2] = v
+    with pytest.raises(IndexError):
+        arr[-3] = v
+
+
+def test_delitem(pool_x_array):
+    items = pool_x_array.generate_values(3)
+    arr = pool_x_array.cls(items)
+    del arr[0]
+    assert len(arr) == 2
+    assert arr[0] == items[1]
+    assert arr[1] == items[2]
+    del arr[-1]
+    assert len(arr) == 1
+    assert arr[-1] == items[1]
+
+
+def test_outofrange_delitem(pool_x_array):
+    arr = pool_x_array.cls(pool_x_array.generate_values(2))
+    with pytest.raises(IndexError):
+        del arr[2]
+    with pytest.raises(IndexError):
+        del arr[-3]
+
+
+def test_iter(pool_x_array):
+    items = pool_x_array.generate_values(3)
+    arr = pool_x_array.cls(items)
+    items_from_v = [x for x in arr]
+    assert items_from_v == items
+
+
+def test_append(pool_x_array):
+    items = pool_x_array.generate_values(3)
+    arr = pool_x_array.cls()
+    for item in items:
+        arr.append(item)
+    assert len(arr) == 3
+    assert arr == pool_x_array.cls(items)
+
+
+def test_raw_access(pool_x_array):
+    arr = pool_x_array.cls()
+    arr.resize(100)
+    values = pool_x_array.generate_values(10)
+
+    with arr.raw_access() as ptr:
+        assert isinstance(ptr.get_address(), int)
+
+        for i in range(100):
+            ptr[i] = values[i % len(values)]
+
+    with arr.raw_access() as ptr:
+        for i in range(100):
+            assert ptr[i] == values[i % len(values)]
