@@ -133,7 +133,7 @@ def signal(name: str=None):
     return SignalField(name)
 
 
-# # TODO: this can be greatly improved to make it more pythonic
+# TODO: this can be greatly improved to make it more pythonic
 
 
 class ExportedField:
