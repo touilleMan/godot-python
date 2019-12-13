@@ -12,9 +12,9 @@ class TestQuat:
         "field,args",
         [
             ["from_axis_angle", (Vector3.ONE, 1.1)],
-            ["from_euler", (Vector3.ONE, )],
-            ["from_basis", (Basis(), )],
-        ]
+            ["from_euler", (Vector3.ONE,)],
+            ["from_basis", (Basis(),)],
+        ],
     )
     def test_inits(self, field, args):
         build = getattr(Quat, field)
@@ -25,14 +25,14 @@ class TestQuat:
         "field,args",
         [
             ["from_axis_angle", (None, 1.1)],
-            ["from_euler", (None, )],
-            ["from_basis", (None, )],
+            ["from_euler", (None,)],
+            ["from_basis", (None,)],
             ["from_axis_angle", (Vector3.ONE, None)],
             ["from_axis_angle", (Vector3.ONE, "dummy")],
             ["from_axis_angle", ("dummy", 1.1)],
-            ["from_euler", ("dummy", )],
-            ["from_basis", ("dummy", )],
-        ]
+            ["from_euler", ("dummy",)],
+            ["from_basis", ("dummy",)],
+        ],
     )
     def test_bad_inits(self, field, args):
         build = getattr(Quat, field)
@@ -124,8 +124,14 @@ class TestQuat:
     @pytest.mark.parametrize(
         "field,bad_value",
         [
-            ("x", "NaN"), ("y", "NaN"), ("z", "NaN"), ("w", "NaN"),
-            ("x", None), ("y", None), ("z", None), ("w", None)
+            ("x", "NaN"),
+            ("y", "NaN"),
+            ("z", "NaN"),
+            ("w", "NaN"),
+            ("x", None),
+            ("y", None),
+            ("z", None),
+            ("w", None),
         ],
         ids=lambda x: x[0],
     )
@@ -167,7 +173,7 @@ class TestQuat:
         ],
         ids=lambda x: x[0],
     )
-    def test_add(self, param,result):
+    def test_add(self, param, result):
         calc = Quat(2, 3, 4, 5) + param
         assert calc == result
 
@@ -180,7 +186,7 @@ class TestQuat:
         ],
         ids=lambda x: x[0],
     )
-    def test_sub(self, param,result):
+    def test_sub(self, param, result):
         calc = Quat(2, 3, 4, 5) - param
         assert calc == result
 
@@ -215,7 +221,7 @@ class TestQuat:
         [(0, Quat(0, 0, 0, 0)), (1, Quat(2, 3, 4, 5)), (2.5, Quat(5, 7.5, 10, 12.5))],
         ids=lambda x: x[0],
     )
-    def test_mul(self, param,result):
+    def test_mul(self, param, result):
         calc = Quat(2, 3, 4, 5) * param
         assert calc == result
 
@@ -224,7 +230,7 @@ class TestQuat:
         [(1, Quat(2, 3, 4, 5)), (0.5, Quat(4, 6, 8, 10)), (2, Quat(1, 1.5, 2, 2.5))],
         ids=lambda x: x[0],
     )
-    def test_div(self, param,result):
+    def test_div(self, param, result):
         calc = Quat(2, 3, 4, 5) / param
         assert calc == result
 

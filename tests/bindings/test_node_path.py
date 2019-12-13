@@ -61,7 +61,7 @@ class TestNodePath:
     def test_as_binding_param(self, current_node):
         root = current_node.get_parent()
         path = current_node.get_path()
-        dummy_path = NodePath('/foo/bar')
+        dummy_path = NodePath("/foo/bar")
 
         assert root.has_node(path) is True
         assert root.has_node(dummy_path) is False

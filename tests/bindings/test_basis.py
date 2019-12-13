@@ -35,9 +35,9 @@ class TestBasis:
         "field,args",
         [
             ["from_axis_angle", (Vector3.ONE, 1.1)],
-            ["from_euler", (Vector3.ONE, )],
-            ["from_euler", (Quat(), )],
-        ]
+            ["from_euler", (Vector3.ONE,)],
+            ["from_euler", (Quat(),)],
+        ],
     )
     def test_inits(self, field, args):
         build = getattr(Basis, field)
@@ -48,12 +48,12 @@ class TestBasis:
         "field,args",
         [
             ["from_axis_angle", (None, 1.1)],
-            ["from_euler", (None, )],
+            ["from_euler", (None,)],
             ["from_axis_angle", (Vector3.ONE, None)],
             ["from_axis_angle", (Vector3.ONE, "dummy")],
             ["from_axis_angle", ("dummy", 1.1)],
-            ["from_euler", ("dummy", )],
-        ]
+            ["from_euler", ("dummy",)],
+        ],
     )
     def test_bad_inits(self, field, args):
         build = getattr(Basis, field)
@@ -94,7 +94,7 @@ class TestBasis:
             ["get_scale", Vector3, ()],
             ["get_euler", Vector3, ()],
             ["get_quat", Quat, ()],
-            ["set_quat", type(None), (Quat(), )],
+            ["set_quat", type(None), (Quat(),)],
             ["set_axis_angle_scale", type(None), (Vector3.ONE, 1.1, Vector3.ONE)],
             ["set_euler_scale", type(None), (Vector3.ONE, Vector3.ONE)],
             ["set_quat_scale", type(None), (Quat(), Vector3.ONE)],
@@ -117,7 +117,9 @@ class TestBasis:
         assert isinstance(ret, ret_type)
 
     @pytest.mark.parametrize(
-        "field,ret_type", [("x", Vector3), ("y", Vector3), ("z", Vector3)], ids=lambda x: x[0]
+        "field,ret_type",
+        [("x", Vector3), ("y", Vector3), ("z", Vector3)],
+        ids=lambda x: x[0],
     )
     def test_properties(self, field, ret_type):
         v = Basis()
@@ -144,7 +146,7 @@ class TestBasis:
         ],
         ids=lambda x: x[0],
     )
-    def test_bad_properties(self, field,bad_value):
+    def test_bad_properties(self, field, bad_value):
         v = Basis()
         with pytest.raises(TypeError):
             setattr(v, field, bad_value)

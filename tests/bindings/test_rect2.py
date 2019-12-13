@@ -60,7 +60,7 @@ class TestRect2:
         ],
         ids=lambda x: x[0],
     )
-    def test_methods(self, field,ret_type,params):
+    def test_methods(self, field, ret_type, params):
         v = Rect2()
         # Don't test methods' validity but bindings one
         assert hasattr(v, field)
@@ -72,7 +72,7 @@ class TestRect2:
     @pytest.mark.parametrize(
         "field,ret_type", [("position", Vector2), ("size", Vector2)], ids=lambda x: x[0]
     )
-    def test_rw_properties(self, field,ret_type):
+    def test_rw_properties(self, field, ret_type):
         v = Rect2()
         assert hasattr(v, field)
         field_val = getattr(v, field)
@@ -84,7 +84,7 @@ class TestRect2:
 
     def test_ro_end_property(self):
         v = Rect2()
-        assert hasattr(v, 'end')
+        assert hasattr(v, "end")
         assert type(v.end) == Vector2
         with pytest.raises(AttributeError):
             v.end = Vector2()
@@ -101,7 +101,7 @@ class TestRect2:
         ],
         ids=lambda x: x[0],
     )
-    def test_bad_rw_properties(self, field,bad_value):
+    def test_bad_rw_properties(self, field, bad_value):
         v = Rect2()
         with pytest.raises(TypeError):
             setattr(v, field, bad_value)

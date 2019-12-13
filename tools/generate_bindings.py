@@ -104,16 +104,16 @@ SUPPORTED_TYPES = {
 def patch_stuff(classes):
     # See https://github.com/godotengine/godot/issues/34254
     for klass in classes:
-        if klass['name'] != '_OS':
+        if klass["name"] != "_OS":
             continue
-        for meth in klass['methods']:
-            if meth['name'] in (
+        for meth in klass["methods"]:
+            if meth["name"] in (
                 "get_static_memory_usage",
                 "get_static_memory_peak_usage",
                 "get_dynamic_memory_usage",
             ):
-                meth['return_type'] = "uint64_t"
-                meth['return_type_specs']['binding_type'] = "uint64_t"
+                meth["return_type"] = "uint64_t"
+                meth["return_type_specs"]["binding_type"] = "uint64_t"
 
 
 def strip_unsupported_stuff(classes):

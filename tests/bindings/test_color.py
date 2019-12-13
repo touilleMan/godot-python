@@ -74,7 +74,7 @@ class TestColor:
         ],
         ids=lambda x: x[0],
     )
-    def test_methods(self, field,ret_type,params):
+    def test_methods(self, field, ret_type, params):
         v = Color()
         # Don't test methods' validity but bindings one
         assert hasattr(v, field)
@@ -109,7 +109,7 @@ class TestColor:
         ],
         ids=lambda x: x[0],
     )
-    def test_properties_rw(self, field,ret_type):
+    def test_properties_rw(self, field, ret_type):
         v = Color()
         assert hasattr(v, field)
         field_val = getattr(v, field)
