@@ -47,9 +47,7 @@ return {{ retval }}
 
 
 {% macro _render_method_cook_args(method, argsval="__args") %}
-{% if (method["arguments"] | length )  == 0 %}
-cdef const void **{{ argsval }} = NULL
-{% else %}
+{% if (method["arguments"] | length )  != 0 %}
 cdef const void *{{ argsval }}[{{ method["arguments"] | length }}]
 {% endif %}
 {% for arg in method["arguments"] %}
@@ -104,7 +102,11 @@ if {{ get_method_bind_register_name(cls, method) }} == NULL:
 gdapi.godot_method_bind_ptrcall(
     {{ get_method_bind_register_name(cls, method) }},
     self._gd_ptr,
+{% if (method["arguments"] | length )  != 0 %}
     {{ argsval }},
+{%else %}
+    NULL,
+{% endif %}
     {{ retval_as_arg }}
 )
 {%- endmacro %}
