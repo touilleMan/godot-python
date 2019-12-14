@@ -5,17 +5,18 @@ from functools import partial
 
 from godot.bindings import Node, Resource
 from godot import (
+    Array,
     Vector2,
     Vector3,
     Color,
-    Array,
+    GDString,
     PoolIntArray,
-    # PoolByteArray,
-    # PoolRealArray,
-    # PoolColorArray,
-    # PoolStringArray,
-    # PoolVector2Array,
-    # PoolVector3Array,
+    PoolRealArray,
+    PoolByteArray,
+    PoolVector2Array,
+    PoolVector3Array,
+    PoolColorArray,
+    PoolStringArray,
 )
 
 
@@ -46,8 +47,62 @@ class PoolIntArrayBench(BasePoolArrayBench):
         return self.random.randint(-(2 ** 31), 2 ** 31 - 1)
 
 
+class PoolRealArrayBench(BasePoolArrayBench):
+    cls = PoolRealArray
+
+    def generate_value(self):
+        # Use integer instead of float to avoid floating point imprecision in comparisons
+        return float(self.random.randint(0, 100))
+
+
+class PoolByteArrayBench(BasePoolArrayBench):
+    cls = PoolByteArray
+
+    def generate_value(self):
+        return self.random.randint(0, 255)
+
+
+class PoolColorArrayBench(BasePoolArrayBench):
+    cls = PoolColorArray
+
+    def generate_value(self):
+        # Use integer instead of float to avoid floating point imprecision in comparisons
+        return Color(self.random.randint(0, 100))
+
+
+class PoolStringArrayBench(BasePoolArrayBench):
+    cls = PoolStringArray
+
+    def generate_value(self):
+        return GDString(str(self.random.random()))
+
+
+class PoolVector2ArrayBench(BasePoolArrayBench):
+    cls = PoolVector2Array
+
+    def generate_value(self):
+        # Use integer instead of float to avoid floating point imprecision in comparisons
+        return Vector2(self.random.randint(0, 100))
+
+
+class PoolVector3ArrayBench(BasePoolArrayBench):
+    cls = PoolVector3Array
+
+    def generate_value(self):
+        # Use integer instead of float to avoid floating point imprecision in comparisons
+        return Vector3(self.random.randint(0, 100))
+
+
 @pytest.fixture(
-    scope="module", ids=lambda x: x.cls.__name__, params=[PoolIntArrayBench]
+    scope="module", ids=lambda x: x.cls.__name__, params=[
+PoolIntArrayBench,
+PoolRealArrayBench,
+PoolByteArrayBench,
+PoolColorArrayBench,
+PoolStringArrayBench,
+PoolVector2ArrayBench,
+PoolVector3ArrayBench,
+]
 )
 def pool_x_array(request):
     return request.param()
@@ -65,12 +120,13 @@ def test_empty_init(pool_x_array):
     "bad_val",
     [
         lambda x: x.generate_value(),
-        iter([]),
+        lambda x: (object() for _ in range(1)),  # Must be generated each time
         42,
         "dummy",
         Node(),
         Vector2(),
         [object()],
+        lambda x: [x.generate_value(), object(), x.generate_value()],
     ],
 )
 def test_bad_init(pool_x_array, bad_val):
@@ -178,10 +234,10 @@ def test_bad_iadd(pool_x_array, arg):
 def test_repr(pool_x_array):
     name = pool_x_array.cls.__name__
     v = pool_x_array.cls()
-    assert repr(v) == "<%s([])>" % name
+    assert repr(v) == f"<{name}([])>"
     items = pool_x_array.generate_values(3)
     v = pool_x_array.cls(items)
-    assert repr(v) == "<%s(%s)>" % (name, items)
+    assert repr(v) == f"<{name}({items!r})>"
 
 
 @pytest.mark.parametrize(
@@ -326,3 +382,15 @@ def test_raw_access(pool_x_array):
     with arr.raw_access() as ptr:
         for i in range(100):
             assert ptr[i] == values[i % len(values)]
+
+
+def test_pool_byte_array_overflow():
+    with pytest.raises(OverflowError):
+        PoolByteArray([256])
+    with pytest.raises(OverflowError):
+        PoolByteArray([1, 2, 256, 4])
+    arr = PoolByteArray([1])
+    with pytest.raises(OverflowError):
+        arr.append(256)
+    with pytest.raises(OverflowError):
+        arr.push_back(256)

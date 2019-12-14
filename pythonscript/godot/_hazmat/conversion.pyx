@@ -25,13 +25,18 @@ from godot.node_path cimport NodePath
 from godot.rid cimport RID
 from godot.dictionary cimport Dictionary
 from godot.array cimport Array
-# from godot.pool_byte_array cimport PoolByteArray
-from godot.pool_int_array cimport PoolIntArray
-# from godot.pool_real_array cimport PoolRealArray
-from godot.pool_string_array cimport PoolStringArray
-# from godot.pool_vector2_array cimport PoolVector2Array
-# from godot.pool_vector3_array cimport PoolVector3Array
-# from godot.pool_color_array cimport PoolColorArray
+from godot.gdstring cimport GDString
+from godot.pool_arrays cimport (
+    PoolByteArray,
+    PoolIntArray,
+    PoolRealArray,
+    PoolStringArray,
+    PoolVector2Array,
+    PoolVector3Array,
+    PoolColorArray,
+)
+
+from warnings import warn
 
 
 GD_PY_TYPES = (
@@ -39,7 +44,7 @@ GD_PY_TYPES = (
     (godot_variant_type.GODOT_VARIANT_TYPE_BOOL, bool),
     (godot_variant_type.GODOT_VARIANT_TYPE_INT, int),
     (godot_variant_type.GODOT_VARIANT_TYPE_REAL, float),
-    (godot_variant_type.GODOT_VARIANT_TYPE_STRING, str),
+    (godot_variant_type.GODOT_VARIANT_TYPE_STRING, GDString),
     (godot_variant_type.GODOT_VARIANT_TYPE_OBJECT, Object),
     (godot_variant_type.GODOT_VARIANT_TYPE_VECTOR2, Vector2),
     (godot_variant_type.GODOT_VARIANT_TYPE_RECT2, Rect2),
@@ -55,35 +60,36 @@ GD_PY_TYPES = (
     (godot_variant_type.GODOT_VARIANT_TYPE_RID, RID),
     (godot_variant_type.GODOT_VARIANT_TYPE_DICTIONARY, Dictionary),
     (godot_variant_type.GODOT_VARIANT_TYPE_ARRAY, Array),
-    # (
-    #     godot_variant_type.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY,
-    #     PoolByteArray,
-    # ),
+    (
+        godot_variant_type.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY,
+        PoolByteArray,
+    ),
     (godot_variant_type.GODOT_VARIANT_TYPE_POOL_INT_ARRAY, PoolIntArray),
-    # (
-    #     godot_variant_type.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY,
-    #     PoolRealArray,
-    # ),
+    (
+        godot_variant_type.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY,
+        PoolRealArray,
+    ),
     (godot_variant_type.GODOT_VARIANT_TYPE_POOL_STRING_ARRAY, PoolStringArray),
-    # (
-    #     godot_variant_type.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY,
-    #     PoolVector2Array,
-    # ),
-    # (
-    #     godot_variant_type.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY,
-    #     PoolVector3Array,
-    # ),
-    # (
-    #     godot_variant_type.GODOT_VARIANT_TYPE_POOL_COLOR_ARRAY,
-    #     PoolColorArray,
-    # ),
+    (
+        godot_variant_type.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY,
+        PoolVector2Array,
+    ),
+    (
+        godot_variant_type.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY,
+        PoolVector3Array,
+    ),
+    (
+        godot_variant_type.GODOT_VARIANT_TYPE_POOL_COLOR_ARRAY,
+        PoolColorArray,
+    ),
 )
 
 
 cdef object godot_type_to_pyobj(godot_variant_type gdtype):
     cdef pytype = next((py for gd, py in GD_PY_TYPES if gd == gdtype), None)
     if pytype is None:
-        raise TypeError(f"No Python equivalent for Godot type `{gdtype}`")
+        warn(f"No Python equivalent for Godot type `{gdtype}`")
+        return None
 
     return pytype
 
@@ -91,7 +97,8 @@ cdef object godot_type_to_pyobj(godot_variant_type gdtype):
 cdef godot_variant_type pyobj_to_godot_type(object pytype):
     cdef gdtype = next((gd for gd, py in GD_PY_TYPES if py == pytype), None)
     if gdtype is None:
-        raise TypeError("No Godot equivalent for Python type `{pytype}`")
+        warn(f"No Godot equivalent for Python type `{pytype}`")
+        return godot_variant_type.GODOT_VARIANT_TYPE_NIL
 
     return gdtype
 
@@ -159,125 +166,108 @@ cdef object godot_variant_to_pyobj(const godot_variant *p_gdvar):
     elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_ARRAY:
         return _godot_variant_to_pyobj_array(p_gdvar)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY:
-    #     p_raw = godot_pool_byte_array_alloc(initialized=False)
-    #     p_raw[0] = gdapi.godot_variant_as_pool_byte_array(p_gdvar)
-    #     return godot_bindings_module.PoolByteArray.build_from_gdobj(p_raw, steal=True)
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_POOL_BYTE_ARRAY:
+        return _godot_variant_to_pyobj_pool_byte_array(p_gdvar)
 
     elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_POOL_INT_ARRAY:
         return _godot_variant_to_pyobj_pool_int_array(p_gdvar)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY:
-    #     p_raw = godot_pool_real_array_alloc(initialized=False)
-    #     p_raw[0] = gdapi.godot_variant_as_pool_real_array(p_gdvar)
-    #     return godot_bindings_module.PoolRealArray.build_from_gdobj(p_raw, steal=True)
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_POOL_REAL_ARRAY:
+        return _godot_variant_to_pyobj_pool_real_array(p_gdvar)
 
     elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_POOL_STRING_ARRAY:
         return _godot_variant_to_pyobj_pool_string_array(p_gdvar)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY:
-    #     p_raw = godot_pool_vector2_array_alloc(initialized=False)
-    #     p_raw[0] = gdapi.godot_variant_as_pool_vector2_array(p_gdvar)
-    #     return godot_bindings_module.PoolVector2Array.build_from_gdobj(
-    #         p_raw, steal=True
-    #     )
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_POOL_VECTOR2_ARRAY:
+        return _godot_variant_to_pyobj_pool_vector2_array(p_gdvar)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY:
-    #     p_raw = godot_pool_vector3_array_alloc(initialized=False)
-    #     p_raw[0] = gdapi.godot_variant_as_pool_vector3_array(p_gdvar)
-    #     return godot_bindings_module.PoolVector3Array.build_from_gdobj(
-    #         p_raw, steal=True
-    #     )
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_POOL_VECTOR3_ARRAY:
+        return _godot_variant_to_pyobj_pool_vector3_array(p_gdvar)
 
-    # elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_POOL_COLOR_ARRAY:
-    #     p_raw = godot_pool_color_array_alloc(initialized=False)
-    #     p_raw[0] = gdapi.godot_variant_as_pool_color_array(p_gdvar)
-    #     return godot_bindings_module.PoolColorArray.build_from_gdobj(p_raw, steal=True)
+    elif gdtype == godot_variant_type.GODOT_VARIANT_TYPE_POOL_COLOR_ARRAY:
+        return _godot_variant_to_pyobj_pool_color_array(p_gdvar)
 
     else:
-        raise TypeError(
-            f"Unknown Variant type `{gdtype}` (this should never happen !)"
-        )
+        warn(f"Unknown Variant type `{gdtype}` (this should never happen !)")
+        return None
 
 
-cdef inline str _godot_variant_to_pyobj_string(const godot_variant *p_gdvar):
-    cdef godot_string gdstr = gdapi.godot_variant_as_string(p_gdvar)
-    try:
-        return godot_string_to_pyobj(&gdstr)
-    finally:
-        gdapi.godot_string_destroy(&gdstr)
+cdef inline GDString _godot_variant_to_pyobj_string(const godot_variant *p_gdvar):
+    cdef GDString ret = GDString.__new__(GDString)
+    ret._gd_data = gdapi.godot_variant_as_string(p_gdvar)
+    return ret
 
 
 cdef inline Vector2 _godot_variant_to_pyobj_vector2(const godot_variant *p_gdvar):
-    cdef Vector2 vect = Vector2.__new__(Vector2)
-    vect._gd_data = gdapi.godot_variant_as_vector2(p_gdvar)
-    return vect
+    cdef Vector2 ret = Vector2.__new__(Vector2)
+    ret._gd_data = gdapi.godot_variant_as_vector2(p_gdvar)
+    return ret
 
 
 cdef inline Rect2 _godot_variant_to_pyobj_rect2(const godot_variant *p_gdvar):
-    cdef Rect2 vect = Rect2.__new__(Rect2)
-    vect._gd_data = gdapi.godot_variant_as_rect2(p_gdvar)
-    return vect
+    cdef Rect2 ret = Rect2.__new__(Rect2)
+    ret._gd_data = gdapi.godot_variant_as_rect2(p_gdvar)
+    return ret
 
 
 cdef inline Vector3 _godot_variant_to_pyobj_vector3(const godot_variant *p_gdvar):
-    cdef Vector3 vect = Vector3.__new__(Vector3)
-    vect._gd_data = gdapi.godot_variant_as_vector3(p_gdvar)
-    return vect
+    cdef Vector3 ret = Vector3.__new__(Vector3)
+    ret._gd_data = gdapi.godot_variant_as_vector3(p_gdvar)
+    return ret
 
 
 cdef inline Transform2D _godot_variant_to_pyobj_transform2d(const godot_variant *p_gdvar):
-    cdef Transform2D vect = Transform2D.__new__(Transform2D)
-    vect._gd_data = gdapi.godot_variant_as_transform2d(p_gdvar)
-    return vect
+    cdef Transform2D ret = Transform2D.__new__(Transform2D)
+    ret._gd_data = gdapi.godot_variant_as_transform2d(p_gdvar)
+    return ret
 
 
 cdef inline Transform _godot_variant_to_pyobj_transform(const godot_variant *p_gdvar):
-    cdef Transform vect = Transform.__new__(Transform)
-    vect._gd_data = gdapi.godot_variant_as_transform(p_gdvar)
-    return vect
+    cdef Transform ret = Transform.__new__(Transform)
+    ret._gd_data = gdapi.godot_variant_as_transform(p_gdvar)
+    return ret
 
 
 cdef inline Plane _godot_variant_to_pyobj_plane(const godot_variant *p_gdvar):
-    cdef Plane vect = Plane.__new__(Plane)
-    vect._gd_data = gdapi.godot_variant_as_plane(p_gdvar)
-    return vect
+    cdef Plane ret = Plane.__new__(Plane)
+    ret._gd_data = gdapi.godot_variant_as_plane(p_gdvar)
+    return ret
 
 
 cdef inline Quat _godot_variant_to_pyobj_quat(const godot_variant *p_gdvar):
-    cdef Quat vect = Quat.__new__(Quat)
-    vect._gd_data = gdapi.godot_variant_as_quat(p_gdvar)
-    return vect
+    cdef Quat ret = Quat.__new__(Quat)
+    ret._gd_data = gdapi.godot_variant_as_quat(p_gdvar)
+    return ret
 
 
 cdef inline AABB _godot_variant_to_pyobj_aabb(const godot_variant *p_gdvar):
-    cdef AABB vect = AABB.__new__(AABB)
-    vect._gd_data = gdapi.godot_variant_as_aabb(p_gdvar)
-    return vect
+    cdef AABB ret = AABB.__new__(AABB)
+    ret._gd_data = gdapi.godot_variant_as_aabb(p_gdvar)
+    return ret
 
 
 cdef inline Basis _godot_variant_to_pyobj_basis(const godot_variant *p_gdvar):
-    cdef Basis vect = Basis.__new__(Basis)
-    vect._gd_data = gdapi.godot_variant_as_basis(p_gdvar)
-    return vect
+    cdef Basis ret = Basis.__new__(Basis)
+    ret._gd_data = gdapi.godot_variant_as_basis(p_gdvar)
+    return ret
 
 
 cdef inline Color _godot_variant_to_pyobj_color(const godot_variant *p_gdvar):
-    cdef Color vect = Color.__new__(Color)
-    vect._gd_data = gdapi.godot_variant_as_color(p_gdvar)
-    return vect
+    cdef Color ret = Color.__new__(Color)
+    ret._gd_data = gdapi.godot_variant_as_color(p_gdvar)
+    return ret
 
 
 cdef inline NodePath _godot_variant_to_pyobj_node_path(const godot_variant *p_gdvar):
-    cdef NodePath vect = NodePath.__new__(NodePath)
-    vect._gd_data = gdapi.godot_variant_as_node_path(p_gdvar)
-    return vect
+    cdef NodePath ret = NodePath.__new__(NodePath)
+    ret._gd_data = gdapi.godot_variant_as_node_path(p_gdvar)
+    return ret
 
 
 cdef inline RID _godot_variant_to_pyobj_rid(const godot_variant *p_gdvar):
-    cdef RID vect = RID.__new__(RID)
-    vect._gd_data = gdapi.godot_variant_as_rid(p_gdvar)
-    return vect
+    cdef RID ret = RID.__new__(RID)
+    ret._gd_data = gdapi.godot_variant_as_rid(p_gdvar)
+    return ret
 
 
 cdef inline Object _godot_variant_to_pyobj_object(const godot_variant *p_gdvar):
@@ -296,15 +286,45 @@ cdef inline Array _godot_variant_to_pyobj_array(const godot_variant *p_gdvar):
     return a
 
 
+cdef inline PoolByteArray _godot_variant_to_pyobj_pool_byte_array(const godot_variant *p_gdvar):
+    cdef PoolByteArray a = PoolByteArray.__new__(PoolIntArray)
+    a._gd_data = gdapi.godot_variant_as_pool_byte_array(p_gdvar)
+    return a
+
+
 cdef inline PoolIntArray _godot_variant_to_pyobj_pool_int_array(const godot_variant *p_gdvar):
     cdef PoolIntArray a = PoolIntArray.__new__(PoolIntArray)
     a._gd_data = gdapi.godot_variant_as_pool_int_array(p_gdvar)
     return a
 
 
+cdef inline PoolRealArray _godot_variant_to_pyobj_pool_real_array(const godot_variant *p_gdvar):
+    cdef PoolRealArray a = PoolRealArray.__new__(PoolRealArray)
+    a._gd_data = gdapi.godot_variant_as_pool_real_array(p_gdvar)
+    return a
+
+
 cdef inline PoolStringArray _godot_variant_to_pyobj_pool_string_array(const godot_variant *p_gdvar):
     cdef PoolStringArray a = PoolStringArray.__new__(PoolStringArray)
     a._gd_data = gdapi.godot_variant_as_pool_string_array(p_gdvar)
+    return a
+
+
+cdef inline PoolVector2Array _godot_variant_to_pyobj_pool_vector2_array(const godot_variant *p_gdvar):
+    cdef PoolVector2Array a = PoolVector2Array.__new__(PoolVector2Array)
+    a._gd_data = gdapi.godot_variant_as_pool_vector2_array(p_gdvar)
+    return a
+
+
+cdef inline PoolVector3Array _godot_variant_to_pyobj_pool_vector3_array(const godot_variant *p_gdvar):
+    cdef PoolVector3Array a = PoolVector3Array.__new__(PoolVector3Array)
+    a._gd_data = gdapi.godot_variant_as_pool_vector3_array(p_gdvar)
+    return a
+
+
+cdef inline PoolColorArray _godot_variant_to_pyobj_pool_color_array(const godot_variant *p_gdvar):
+    cdef PoolColorArray a = PoolColorArray.__new__(PoolColorArray)
+    a._gd_data = gdapi.godot_variant_as_pool_color_array(p_gdvar)
     return a
 
 
@@ -319,6 +339,8 @@ cdef void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
         gdapi.godot_variant_new_real(p_var, pyobj)
     elif isinstance(pyobj, str):
         _pyobj_to_godot_variant_convert_string(pyobj, p_var)
+    elif isinstance(pyobj, GDString):
+        gdapi.godot_variant_new_string(p_var, &(<GDString>pyobj)._gd_data)
     elif isinstance(pyobj, Vector2):
         gdapi.godot_variant_new_vector2(p_var, &(<Vector2>pyobj)._gd_data)
     elif isinstance(pyobj, Vector3):
@@ -347,17 +369,25 @@ cdef void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
         gdapi.godot_variant_new_dictionary(p_var, &(<Dictionary>pyobj)._gd_data)
     elif isinstance(pyobj, Array):
         gdapi.godot_variant_new_array(p_var, &(<Array>pyobj)._gd_data)
+    elif isinstance(pyobj, PoolByteArray):
+        gdapi.godot_variant_new_pool_byte_array(p_var, &(<PoolByteArray>pyobj)._gd_data)
     elif isinstance(pyobj, PoolIntArray):
         gdapi.godot_variant_new_pool_int_array(p_var, &(<PoolIntArray>pyobj)._gd_data)
+    elif isinstance(pyobj, PoolRealArray):
+        gdapi.godot_variant_new_pool_real_array(p_var, &(<PoolRealArray>pyobj)._gd_data)
     elif isinstance(pyobj, PoolStringArray):
         gdapi.godot_variant_new_pool_string_array(p_var, &(<PoolStringArray>pyobj)._gd_data)
-
-    # TODO: finish other base types
-
+    elif isinstance(pyobj, PoolVector2Array):
+        gdapi.godot_variant_new_pool_vector2_array(p_var, &(<PoolVector2Array>pyobj)._gd_data)
+    elif isinstance(pyobj, PoolVector3Array):
+        gdapi.godot_variant_new_pool_vector3_array(p_var, &(<PoolVector3Array>pyobj)._gd_data)
+    elif isinstance(pyobj, PoolColorArray):
+        gdapi.godot_variant_new_pool_color_array(p_var, &(<PoolColorArray>pyobj)._gd_data)
     elif isinstance(pyobj, Object):
         gdapi.godot_variant_new_object(p_var, (<Object>pyobj)._gd_ptr)
     else:
-        raise TypeError(f"Cannot convert `{pyobj}` to Godot's Variant")
+        warn(f"Cannot convert `{type(pyobj)}` to Godot's Variant")
+        gdapi.godot_variant_new_nil(p_var)
 
 
 # Needed to define gdstr in it own scope

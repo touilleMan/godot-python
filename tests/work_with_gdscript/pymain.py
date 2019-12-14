@@ -17,10 +17,13 @@ class PyMain(Node):
         root_node = self
         # Retrieve command line arguments passed through --pytest=...
         prefix = "--pytest="
-        # Filter to avoid scanning `plugins` and `lib` directories
-        pytest_args = [x for x in os.listdir() if x.startswith("test_")]
+        pytest_args = []
         for arg in OS.get_cmdline_args():
             if arg.startswith(prefix):
                 pytest_args += arg[len(prefix) :].split(",")
+        if all(arg.startswith('-') for arg in pytest_args):
+            # Filter to avoid scanning `plugins` and `lib` directories
+            pytest_args += [x for x in os.listdir() if x.startswith("test_")]
         # Run tests here
+        print(f"running `pytest {' '.join(pytest_args)}`")
         return pytest.main(pytest_args)

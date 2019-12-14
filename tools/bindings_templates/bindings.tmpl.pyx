@@ -18,8 +18,15 @@ from godot.transform cimport Transform
 from godot.transform2d cimport Transform2D
 from godot.vector2 cimport Vector2
 from godot.vector3 cimport Vector3
-from godot.pool_int_array cimport PoolIntArray
-from godot.pool_string_array cimport PoolStringArray
+from godot.pool_arrays cimport (
+    PoolIntArray,
+    PoolRealArray,
+    PoolByteArray,
+    PoolVector2Array,
+    PoolVector3Array,
+    PoolColorArray,
+    PoolStringArray,
+)
 
 ### Classes ###
 

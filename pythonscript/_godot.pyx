@@ -39,7 +39,7 @@ cdef api godot_pluginscript_language_data *pythonscript_init():
     sys.argv = ["godot"] + list(OS.get_cmdline_args())
 
     # Update PYTHONPATH according to configuration
-    pythonpath = _setup_config_entry("python_script/path", "res://;res://lib")
+    pythonpath = str(_setup_config_entry("python_script/path", "res://;res://lib"))
     for p in pythonpath.split(";"):
         p = ProjectSettings.globalize_path(p)
         sys.path.append(p)

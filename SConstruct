@@ -32,6 +32,7 @@ vars.Add(
     )
 )
 vars.Add(BoolVariable("show_build_dir", "Display build dir and leave", False))
+vars.Add("pytest_args", "Pytest arguments passed to tests functions", "")
 vars.Add("release_suffix", "Suffix to add to the release archive", "wip")
 vars.Add("godot_binary", "Path to Godot main binary", "")
 vars.Add("debugger", "Run godot with given debugger", "")
@@ -332,7 +333,21 @@ env.Alias("generate_gdnative_api_struct", generate_gdnative_api_struct)
 env.AlwaysBuild("generate_gdnative_api_struct")
 
 
-### Generate pythonscript/godot/bindings.pyx ###
+### Generate pythonscript/godot/pool_arrays.pyx&pxd ###
+
+godot_pool_arrays_pyx, godot_pool_arrays_pxd = env.Command(
+    target=("pythonscript/godot/pool_arrays.pyx", "pythonscript/godot/pool_arrays.pxd"),
+    source=(),
+    action=("python tools/generate_pool_arrays.py  -o ${TARGET}"),
+)
+env.Depends(
+    godot_pool_arrays_pyx,
+    ["tools/generate_pool_arrays.py", env.Glob("tools/pool_array_templates/*")],
+)
+env.Alias("generate_pool_arrays", godot_pool_arrays_pyx)
+
+
+### Generate pythonscript/godot/bindings.pyx&pxd ###
 
 sample_opt = "--sample" if env["sample"] else ""
 godot_bindings_pyx, godot_bindings_pxd = env.Command(
@@ -375,31 +390,34 @@ godot_bindings_pyx_to_c = cython_bindings_env.CythonToC(godot_bindings_pyx)
 godot_bindings_pyx_compiled = cython_bindings_env.CythonCompile(godot_bindings_pyx_to_c)
 
 # Now the other common folks
-pythonscript_godot_pyx_except_bindings = [
+pythonscript_godot_pyxs_except_bindings = [
     *[src for src in env.Glob("pythonscript/godot/*.pyx") if src != godot_bindings_pyx],
     *env.Glob("pythonscript/godot/_hazmat/*.pyx"),
+    godot_pool_arrays_pyx,
 ]
-pythonscript_godot_pyx_except_bindings_to_c = [
-    cython_env.CythonToC(src) for src in pythonscript_godot_pyx_except_bindings
+pythonscript_godot_pyxs_except_bindings_to_c = [
+    cython_env.CythonToC(src) for src in pythonscript_godot_pyxs_except_bindings
 ]
-pythonscript_godot_pyx_except_bindings_compiled = [
-    cython_env.CythonCompile(src) for src in pythonscript_godot_pyx_except_bindings_to_c
+pythonscript_godot_pyxs_except_bindings_compiled = [
+    cython_env.CythonCompile(src)
+    for src in pythonscript_godot_pyxs_except_bindings_to_c
 ]
 
 # Define dependencies on .pxd files
-pythonscript_godot_pyxs = [pythonscript_godot_pyx_except_bindings, godot_bindings_pyx]
+pythonscript_godot_pyxs = [pythonscript_godot_pyxs_except_bindings, godot_bindings_pyx]
 pythonscript_godot_pxds = [
     *env.Glob("pythonscript/godot/*.pxd"),
     *env.Glob("pythonscript/godot/_hazmat/*.pxd"),
+    godot_pool_arrays_pxd,
     gdnative_api_struct_pxd,
     godot_bindings_pxd,
 ]
 pythonscript_godot_pyxs_to_c = [
-    pythonscript_godot_pyx_except_bindings_to_c,
+    pythonscript_godot_pyxs_except_bindings_to_c,
     godot_bindings_pyx_to_c,
 ]
 pythonscript_godot_pyxs_compiled = [
-    pythonscript_godot_pyx_except_bindings_compiled,
+    pythonscript_godot_pyxs_except_bindings_compiled,
     godot_bindings_pyx_compiled,
 ]
 env.Depends(pythonscript_godot_pyxs_to_c, pythonscript_godot_pxds)
@@ -539,10 +557,14 @@ env.Alias("godot_binary", godot_binary)
 
 
 # Note: passing absolute path is only really needed on Mac with Godot.app
-if env["debugger"]:
-    test_base_cmd = "${debugger} ${SOURCE} -- --path ${Dir('#').abspath}/tests/"
+if env["pytest_args"]:
+    pytest_args = " ".join(f"--pytest={arg}" for arg in env["pytest_args"].split())
 else:
-    test_base_cmd = "${SOURCE} --path ${Dir('#').abspath}/tests/"
+    pytest_args = ""
+if env["debugger"]:
+    test_base_cmd = "${debugger} ${SOURCE} -- --path ${Dir('#').abspath}/tests/%s " + pytest_args
+else:
+    test_base_cmd = "${SOURCE} --path ${Dir('#').abspath}/tests/%s " + pytest_args
 
 
 if env["HOST_OS"] == "win32":
@@ -584,19 +606,19 @@ else:
 env.Command(
     "tests/bindings",
     ["$godot_binary", init_pythonscript_build_symlinks("tests/bindings")],
-    test_base_cmd + "bindings",
+    test_base_cmd % "bindings",
 )
 env.AlwaysBuild("tests/bindings")
 env.Command(
     "tests/work_with_gdscript",
     ["$godot_binary", init_pythonscript_build_symlinks("tests/work_with_gdscript")],
-    test_base_cmd + "work_with_gdscript",
+    test_base_cmd % "work_with_gdscript",
 )
 env.AlwaysBuild("tests/work_with_gdscript")
 env.Command(
     "tests/helloworld",
     ["$godot_binary", init_pythonscript_build_symlinks("tests/helloworld")],
-    test_base_cmd + "helloworld",
+    test_base_cmd % "helloworld",
 )
 env.AlwaysBuild("tests/helloworld")
 env.AlwaysBuild("tests")

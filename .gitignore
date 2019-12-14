@@ -37,6 +37,8 @@ pythonscript/_godot_api.h
 pythonscript/godot/**/*.c
 pythonscript/godot/bindings.pxd
 pythonscript/godot/bindings.pyx
+pythonscript/godot/pool_arrays.pxd
+pythonscript/godot/pool_arrays.pyx
 
 # scons stuff
 custom.py

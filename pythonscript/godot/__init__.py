@@ -21,10 +21,18 @@ from godot.array import Array
 from godot.basis import Basis
 from godot.color import Color
 from godot.dictionary import Dictionary
+from godot.gdstring import GDString
 from godot.node_path import NodePath
 from godot.plane import Plane
-from godot.pool_int_array import PoolIntArray
-from godot.pool_string_array import PoolStringArray
+from godot.pool_arrays import (
+    PoolIntArray,
+    PoolRealArray,
+    PoolByteArray,
+    PoolVector2Array,
+    PoolVector3Array,
+    PoolColorArray,
+    PoolStringArray,
+)
 from godot.quat import Quat
 from godot.rect2 import Rect2
 from godot.rid import RID
@@ -58,9 +66,16 @@ __all__ = (
     "Basis",
     "Color",
     "Dictionary",
+    "GDString",
     "NodePath",
     "Plane",
     "PoolIntArray",
+    "PoolRealArray",
+    "PoolByteArray",
+    "PoolVector2Array",
+    "PoolVector3Array",
+    "PoolColorArray",
+    "PoolStringArray",
     "Quat",
     "Rect2",
     "RID",
