@@ -2,6 +2,7 @@ import os
 import argparse
 import json
 import re
+from warnings import warn
 from keyword import iskeyword
 from collections import defaultdict
 from jinja2 import Environment, FileSystemLoader
@@ -131,12 +132,12 @@ def strip_unsupported_stuff(classes):
         methods = []
         for meth in klass["methods"]:
             if meth["is_noscript"]:
-                print(
+                warn(
                     f"`{klass['name']}.{meth['name']}` has `is_noscript=True`"
                     " (should never be the case...)"
                 )
             if meth["is_from_script"]:
-                print(
+                warn(
                     f"`{klass['name']}.{meth['name']}` has `is_from_script=True`"
                     " (should never be the case...)"
                 )
@@ -258,7 +259,7 @@ def cook_data(data):
             return specs
         except KeyError:
             pass
-        print(f"Unknwon type: {type_}")
+        warn(f"Unknown type: {type_!r}")
         return {
             "type": type_,
             "binding_type": type_,
@@ -266,7 +267,6 @@ def cook_data(data):
             "is_builtin": False,
             "stack_only": False,
         }
-        # raise RuntimeError(f"Unknown type: {type_}")
 
     def _cook_name(name):
         if iskeyword(name) or name in ("char", "bool", "int", "float", "short", "type"):
