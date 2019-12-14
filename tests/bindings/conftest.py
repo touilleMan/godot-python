@@ -1,5 +1,7 @@
 import pytest
 
+from godot.bindings import OS
+
 
 @pytest.fixture
 def current_node():
@@ -8,3 +10,22 @@ def current_node():
     from main import get_current_node
 
     return get_current_node()
+
+
+@pytest.fixture(autouse=True)
+def check_memory_leak(request):
+    if request.node.get_marker("ignore_leaks"):
+        yield
+    else:
+        dynamic_mem_start = OS.get_dynamic_memory_usage()
+        static_mem_start = OS.get_static_memory_usage()
+
+        yield
+
+        static_mem_end = OS.get_static_memory_usage()
+        dynamic_mem_end = OS.get_dynamic_memory_usage()
+
+        static_leak = static_mem_end - static_mem_start
+        dynamic_leak = dynamic_mem_end - dynamic_mem_start
+        assert static_leak == 0
+        assert dynamic_leak == 0
