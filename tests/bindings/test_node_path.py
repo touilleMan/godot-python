@@ -1,9 +1,22 @@
 import pytest
 
-from godot import Vector3, NodePath
+from godot import Vector3, NodePath, GDString
 
 
 class TestNodePath:
+
+    def test_init(self):
+        v1 = NodePath("parent/child")
+        v2 = NodePath(GDString("parent/child"))
+        assert v1 == v2
+
+    @pytest.mark.parametrize(
+        "arg", [None, 0]
+    )
+    def test_bad_init(self, arg):
+        with pytest.raises(TypeError):
+            NodePath(arg)
+
     def test_equal(self):
         v1 = NodePath("parent/child")
         v2 = NodePath("parent/child")
@@ -49,6 +62,7 @@ class TestNodePath:
         ret = method(*params)
         assert isinstance(ret, ret_type)
 
+    @pytest.mark.ignore_leaks  # Node.get_path() keep cache after first call
     def test_as_binding_return_value(self, current_node):
         ret = current_node.get_path()
         assert isinstance(ret, NodePath)
@@ -58,6 +72,7 @@ class TestNodePath:
 
         assert str(ret) == "/root/main"
 
+    @pytest.mark.ignore_leaks  # Node.get_path() keep cache after first call
     def test_as_binding_param(self, current_node):
         root = current_node.get_parent()
         path = current_node.get_path()

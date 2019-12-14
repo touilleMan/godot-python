@@ -7,6 +7,7 @@ from godot._hazmat.gdapi cimport (
     pythonscript_gdapi12 as gdapi12
 )
 from godot._hazmat.gdnative_api_struct cimport godot_node_path, godot_real, godot_int
+from godot.gdstring cimport GDString
 
 
 @cython.final
@@ -14,7 +15,7 @@ cdef class NodePath:
     cdef godot_node_path _gd_data
 
     @staticmethod
-    cdef inline NodePath new(str from_)
+    cdef inline NodePath new(GDString from_)
 
     @staticmethod
     cdef inline NodePath from_ptr(const godot_node_path *_ptr)

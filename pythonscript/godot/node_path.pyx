@@ -9,16 +9,22 @@ from godot._hazmat.gdapi cimport (
 )
 from godot._hazmat.gdnative_api_struct cimport godot_node_path, godot_real, godot_int, godot_string
 from godot._hazmat.conversion cimport pyobj_to_godot_string, godot_string_to_pyobj
+from godot.gdstring cimport GDString
 
 
 @cython.final
 cdef class NodePath:
 
-    def __init__(self, str from_ not None):
+    def __init__(self, from_):
         cdef godot_string gd_from
-        pyobj_to_godot_string(from_, &gd_from)
-        gdapi.godot_node_path_new(&self._gd_data, &gd_from)
-        gdapi.godot_string_destroy(&gd_from)
+        try:
+            gdapi.godot_node_path_new(&self._gd_data, &(<GDString?>from_)._gd_data)
+        except TypeError:
+            if not isinstance(from_, str):
+                raise TypeError("`from_` must be str or GDString")
+            pyobj_to_godot_string(from_, &gd_from)
+            gdapi.godot_node_path_new(&self._gd_data, &gd_from)
+            gdapi.godot_string_destroy(&gd_from)
 
     def __dealloc__(self):
         # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
@@ -26,13 +32,10 @@ cdef class NodePath:
         gdapi.godot_node_path_destroy(&self._gd_data)
 
     @staticmethod
-    cdef inline NodePath new(str from_):
+    cdef inline NodePath new(GDString from_):
         # Call to __new__ bypasses __init__ constructor
         cdef NodePath ret = NodePath.__new__(NodePath)
-        cdef godot_string gd_from
-        pyobj_to_godot_string(from_, &gd_from)
-        gdapi.godot_node_path_new(&ret._gd_data, &gd_from)
-        gdapi.godot_string_destroy(&gd_from)
+        gdapi.godot_node_path_new(&ret._gd_data, &from_._gd_data)
         return ret
 
     @staticmethod
