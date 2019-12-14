@@ -15,20 +15,25 @@ from godot.rect2 cimport Rect2
 @cython.final
 cdef class Transform2D:
 
-    def __init__(self, rotation=None, position=None, x_axis=None, y_axis=None, origin=None):
-        if rotation is not None or position is not None:
-            if rotation is None or position is None:
-                raise ValueError("`rotation` and `position` params must be provided together")
-            gdapi.godot_transform2d_new(&self._gd_data, rotation, &(<Vector2?>position)._gd_data)
-        elif x_axis is not None or y_axis is not None or origin is not None:
-            if x_axis is None or y_axis is None or origin is None:
-                raise ValueError("`x_axis`, `y_axis` and `origin` params must be provided together")
-            gdapi.godot_transform2d_new_axis_origin(&self._gd_data, &(<Vector2?>x_axis)._gd_data, &(<Vector2?>y_axis)._gd_data, &(<Vector2?>origin)._gd_data)
-        else:
+    def __init__(self, x_axis=None, y_axis=None, origin=None):
+        if x_axis is None and y_axis is None and origin is None:
             gdapi.godot_transform2d_new_identity(&self._gd_data)
+        else:
+            gdapi.godot_transform2d_new_axis_origin(
+                &self._gd_data,
+                &(<Vector2?>x_axis)._gd_data,
+                &(<Vector2?>y_axis)._gd_data,
+                &(<Vector2?>origin)._gd_data,
+            )
 
     @staticmethod
-    cdef inline Transform2D new(godot_real rotation, Vector2 position):
+    def from_rot_pos(godot_real rot, Vector2 pos not None):
+        cdef Transform2D ret = Transform2D.__new__(Transform2D)
+        gdapi.godot_transform2d_new(&ret._gd_data, rot, &pos._gd_data)
+        return ret
+
+    @staticmethod
+    cdef inline Transform2D new_with_rot_pos(godot_real rotation, Vector2 position):
         # Call to __new__ bypasses __init__ constructor
         cdef Transform2D ret = Transform2D.__new__(Transform2D)
         gdapi.godot_transform2d_new(&ret._gd_data, rotation, &(<Vector2?>position)._gd_data)
@@ -81,7 +86,7 @@ cdef class Transform2D:
         except TypeError:
             return True
 
-    def __mul__(self, val):
+    def __mul__(self, Transform2D val not None):
         return Transform2D.operator_multiply(self, val)
 
     # Properties
@@ -176,22 +181,50 @@ cdef class Transform2D:
         ret._gd_data = gdapi.godot_transform2d_translated(&self._gd_data, &offset._gd_data)
         return ret
 
-    cpdef inline Vector2 xform_vector2(self, Vector2 v):
+    def xform(self, v):
+        try:
+            return Transform2D.xform_vector2(self, v)
+        except TypeError:
+            try:
+                return Transform2D.xform_rect2(self, v)
+            except TypeError:
+                raise TypeError("`v` must be Vector2 or Rect2")
+
+    cdef inline Vector2 xform_vector2(self, Vector2 v):
         cdef Vector2 ret = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_transform2d_xform_vector2(&self._gd_data, &v._gd_data)
         return ret
+
+    cdef inline Rect2 xform_rect2(self, Rect2 v):
+        cdef Rect2 ret = Rect2.__new__(Rect2)
+        ret._gd_data = gdapi.godot_transform2d_xform_rect2(&self._gd_data, &v._gd_data)
+        return ret
+
+    def xform_inv(self, v):
+        try:
+            return Transform2D.xform_inv_vector2(self, v)
+        except TypeError:
+            try:
+                return Transform2D.xform_inv_rect2(self, v)
+            except TypeError:
+                raise TypeError("`v` must be Vector2 or Rect2")
 
     cpdef inline Vector2 xform_inv_vector2(self, Vector2 offset):
         cdef Vector2 ret = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_transform2d_xform_inv_vector2(&self._gd_data, &offset._gd_data)
         return ret
 
-    cpdef inline Vector2 basis_xform_vector2(self, Vector2 offset):
+    cdef inline Rect2 xform_inv_rect2(self, Rect2 v):
+        cdef Rect2 ret = Rect2.__new__(Rect2)
+        ret._gd_data = gdapi.godot_transform2d_xform_inv_rect2(&self._gd_data, &v._gd_data)
+        return ret
+
+    cpdef inline Vector2 basis_xform(self, Vector2 offset):
         cdef Vector2 ret = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_transform2d_basis_xform_vector2(&self._gd_data, &offset._gd_data)
         return ret
 
-    cpdef inline Vector2 basis_xform_inv_vector2(self, Vector2 offset):
+    cpdef inline Vector2 basis_xform_inv(self, Vector2 offset):
         cdef Vector2 ret = Vector2.__new__(Vector2)
         ret._gd_data = gdapi.godot_transform2d_basis_xform_inv_vector2(&self._gd_data, &offset._gd_data)
         return ret
@@ -201,16 +234,6 @@ cdef class Transform2D:
         ret._gd_data = gdapi.godot_transform2d_interpolate_with(&self._gd_data, &m._gd_data, c)
         return ret
 
-    cpdef inline Rect2 xform_rect2(self, Rect2 v):
-        cdef Rect2 ret = Rect2.__new__(Rect2)
-        ret._gd_data = gdapi.godot_transform2d_xform_rect2(&self._gd_data, &v._gd_data)
-        return ret
-
-    cpdef inline Rect2 xform_inv_rect2(self, Rect2 v):
-        cdef Rect2 ret = Rect2.__new__(Rect2)
-        ret._gd_data = gdapi.godot_transform2d_xform_inv_rect2(&self._gd_data, &v._gd_data)
-        return ret
-
-    IDENTITY = Transform2D(x_axis=Vector2(1, 0), y_axis=Vector2(0, 1), origin=Vector2(0, 0))
-    FLIP_X = Transform2D(x_axis=Vector2(-1, 0), y_axis=Vector2(0, 1), origin=Vector2(0, 0))
-    FLIP_Y = Transform2D(x_axis=Vector2(1, 0), y_axis=Vector2(0, -1), origin=Vector2(0, 0))
+    IDENTITY = Transform2D(Vector2(1, 0), Vector2(0, 1), Vector2(0, 0))
+    FLIP_X = Transform2D(Vector2(-1, 0), Vector2(0, 1), Vector2(0, 0))
+    FLIP_Y = Transform2D(Vector2(1, 0), Vector2(0, -1), Vector2(0, 0))

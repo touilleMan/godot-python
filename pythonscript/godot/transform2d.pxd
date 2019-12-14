@@ -16,7 +16,7 @@ cdef class Transform2D:
     cdef godot_transform2d _gd_data
 
     @staticmethod
-    cdef inline Transform2D new(godot_real rotation, Vector2 position)
+    cdef inline Transform2D new_with_rot_pos(godot_real rotation, Vector2 position)
 
     @staticmethod
     cdef inline Transform2D new_identity()
@@ -54,10 +54,11 @@ cdef class Transform2D:
     cpdef inline Transform2D rotated(self, godot_real phi)
     cpdef inline Transform2D scaled(self, Vector2 scale)
     cpdef inline Transform2D translated(self, Vector2 offset)
-    cpdef inline Vector2 xform_vector2(self, Vector2 v)
+
+    cdef inline Vector2 xform_vector2(self, Vector2 v)
+    cdef inline Rect2 xform_rect2(self, Rect2 v)
     cpdef inline Vector2 xform_inv_vector2(self, Vector2 offset)
-    cpdef inline Vector2 basis_xform_vector2(self, Vector2 offset)
-    cpdef inline Vector2 basis_xform_inv_vector2(self, Vector2 offset)
+    cdef inline Rect2 xform_inv_rect2(self, Rect2 v)
+    cpdef inline Vector2 basis_xform(self, Vector2 offset)
+    cpdef inline Vector2 basis_xform_inv(self, Vector2 offset)
     cpdef inline Transform2D interpolate_with(self, Transform2D m, godot_real c)
-    cpdef inline Rect2 xform_rect2(self, Rect2 v)
-    cpdef inline Rect2 xform_inv_rect2(self, Rect2 v)
