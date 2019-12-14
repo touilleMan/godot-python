@@ -27,7 +27,8 @@ class Main(Node):
         # Retrieve command line arguments passed through --pytest=...
         prefix = "--pytest="
         pytest_args = []
-        for arg in OS.get_cmdline_args():
+        for gdarg in OS.get_cmdline_args():
+            arg = str(gdarg)
             if arg.startswith(prefix):
                 pytest_args += arg[len(prefix) :].split(",")
         if all(arg.startswith('-') for arg in pytest_args):
