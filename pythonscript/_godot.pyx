@@ -15,6 +15,7 @@ from godot._hazmat.gdnative_api_struct cimport (
     godot_pluginscript_language_data,
 )
 from godot._hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_verbose
+from godot.gdstring cimport GDString
 
 import os
 import sys
@@ -24,25 +25,26 @@ from godot.bindings import OS, ProjectSettings
 
 
 def _setup_config_entry(name, default_value):
-    if not ProjectSettings.has_setting(name):
-        ProjectSettings.set_setting(name, default_value)
-    ProjectSettings.set_initial_value(name, default_value)
+    gdname = GDString(name)
+    if not ProjectSettings.has_setting(gdname):
+        ProjectSettings.set_setting(gdname, default_value)
+    ProjectSettings.set_initial_value(gdname, default_value)
     # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
-    return ProjectSettings.get_setting(name)
+    return ProjectSettings.get_setting(gdname)
 
 
 cdef api godot_pluginscript_language_data *pythonscript_init():
     # Make sure Python starts in the game directory
-    os.chdir(ProjectSettings.globalize_path("res://"))
+    os.chdir(str(ProjectSettings.globalize_path(GDString("res://"))))
 
     # Pass argv arguments
-    sys.argv = ["godot"] + list(OS.get_cmdline_args())
+    sys.argv = ["godot"] + [str(x) for x in OS.get_cmdline_args()]
 
     # Update PYTHONPATH according to configuration
     pythonpath = str(_setup_config_entry("python_script/path", "res://;res://lib"))
     for p in pythonpath.split(";"):
-        p = ProjectSettings.globalize_path(p)
-        sys.path.append(p)
+        p = ProjectSettings.globalize_path(GDString(p))
+        sys.path.append(str(p))
 
     # # Redirect stdout/stderr to have it in the Godot editor console
     # if _setup_config_entry("python_script/io_streams_capture", True):

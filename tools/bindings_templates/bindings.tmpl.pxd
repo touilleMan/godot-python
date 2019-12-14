@@ -9,6 +9,7 @@ from godot.array cimport Array
 from godot.basis cimport Basis
 from godot.color cimport Color
 from godot.dictionary cimport Dictionary
+from godot.gdstring cimport GDString
 from godot.node_path cimport NodePath
 from godot.plane cimport Plane
 from godot.quat cimport Quat

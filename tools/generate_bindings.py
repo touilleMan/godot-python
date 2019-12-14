@@ -245,7 +245,7 @@ def cook_data(data):
             if spec["type"] == "godot_variant":
                 spec["binding_type"] = "object"
             elif spec["type"] == "godot_string":
-                spec["binding_type"] = "str"
+                spec["binding_type"] = "GDString"
             return spec
         except KeyError:
             pass

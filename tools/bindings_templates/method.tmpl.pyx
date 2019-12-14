@@ -35,11 +35,6 @@ if {{ retval }}._gd_ptr == NULL:
     return None
 else:
     return {{ retval }}
-{% elif method["return_type"] == "godot_string" %}
-try:
-    return godot_string_to_pyobj(&{{ retval }})
-finally:
-    gdapi.godot_string_destroy(&{{ retval }})
 {% elif method["return_type"] == "godot_variant" %}
 try:
     return godot_variant_to_pyobj(&{{ retval }})
@@ -62,10 +57,6 @@ cdef const void *{{ argsval }}[{{ method["arguments"] | length }}]
 # {{ arg["type"] }} {{ arg["name"] }}
 {% if arg["type_specs"]["is_object"] %}
 {{ argsval }}[{{ i }}] = <void*>(&{{ arg["name"] }}._gd_ptr)
-{% elif arg["type"] == "godot_string" %}
-cdef godot_string __var_{{ arg["name"] }}
-pyobj_to_godot_string({{ arg["name"] }}, &__var_{{ arg["name"] }})
-{{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
 {% elif arg["type"] == "godot_variant" %}
 cdef godot_variant __var_{{ arg["name"] }}
 pyobj_to_godot_variant({{ arg["name"] }}, &__var_{{ arg["name"] }})
@@ -84,8 +75,6 @@ pyobj_to_godot_variant({{ arg["name"] }}, &__var_{{ arg["name"] }})
 {% set i = loop.index - 1 %}
 {% if arg["type"] == "godot_variant" %}
 gdapi.godot_variant_destroy(&__var_{{ arg["name"] }})
-{% elif arg["type"] == "godot_string" %}
-gdapi.godot_string_destroy(&__var_{{ arg["name"] }})
 {% endif %}
 {% endfor %}
 {%- endmacro %}
@@ -99,10 +88,6 @@ gdapi.godot_string_destroy(&__var_{{ arg["name"] }})
 cdef {{ binding_type }} {{ retval }} = {{ binding_type }}.__new__({{ binding_type }})
 {{ retval }}._gd_ptr_owner = False
 {% set retval_as_arg = "&{}._gd_ptr".format(retval) %}
-{% elif method["return_type"] == "godot_string" %}
-cdef godot_string {{ retval }}
-{% set retval_as_arg = "&{}".format(retval) %}
-gdapi.godot_string_new({{ retval_as_arg }})
 {% elif method["return_type"] == "godot_variant" %}
 cdef godot_variant {{ retval }}
 {% set retval_as_arg = "&{}".format(retval) %}
