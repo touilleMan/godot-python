@@ -15,24 +15,8 @@ from godot.plane cimport Plane
 @cython.final
 cdef class Plane:
 
-    def __init__(self, a=None, b=None, c=None, d=None, v1=None, v2=None, v3=None, normal=None):
-        if a is not None or b is not None or c is not None:  # d is shared with normal
-            if a is None or b is None or c is None or d is None:
-                raise ValueError("`a`, `b`, `c` and `d` params must be provided together")
-            gdapi.godot_plane_new_with_reals(&self._gd_data, a, b, c, d)
-
-        elif v1 is not None or v2 is not None or v3 is not None:
-            if v1 is None or v2 is None or v3 is None:
-                raise ValueError("`v1`, `v2` and `v3` params must be provided together")
-            gdapi.godot_plane_new_with_vectors(&self._gd_data, &(<Vector3>v1)._gd_data, &(<Vector3>v2)._gd_data, &(<Vector3>v3)._gd_data)
-
-        elif normal is not None or d is not None:
-            if normal is None or d is None:
-                raise ValueError("`normal` and `d` params must be provided together")
-            gdapi.godot_plane_new_with_normal(&self._gd_data, &(<Vector3>normal)._gd_data, d)
-
-        else:
-            raise ValueError("Missing params")
+    def __init__(self, godot_real a, godot_real b, godot_real c, godot_real d):
+        gdapi.godot_plane_new_with_reals(&self._gd_data, a, b, c, d)
 
     @staticmethod
     cdef inline Plane new_with_reals(godot_real a, godot_real b, godot_real c, godot_real d):
@@ -42,17 +26,25 @@ cdef class Plane:
         return ret
 
     @staticmethod
-    cdef inline Plane new_with_vectors(Vector3 v1, Vector3 v2, Vector3 v3):
-        # Call to __new__ bypasses __init__ constructor
-        cdef Plane ret = Plane.__new__(Plane)
-        gdapi.godot_plane_new_with_vectors(&ret._gd_data, &v1._gd_data, &v2._gd_data, &v3._gd_data)
-        return ret
+    def from_normal(Vector3 normal not None, godot_real d):
+        return Plane.new_with_normal(normal, d)
 
     @staticmethod
     cdef inline Plane new_with_normal(Vector3 normal, godot_real d):
         # Call to __new__ bypasses __init__ constructor
         cdef Plane ret = Plane.__new__(Plane)
         gdapi.godot_plane_new_with_normal(&ret._gd_data, &normal._gd_data, d)
+        return ret
+
+    @staticmethod
+    def from_vectors(Vector3 v1 not None, Vector3 v2 not None, Vector3 v3 not None):
+        return Plane.new_with_vectors(v1, v2, v3)
+
+    @staticmethod
+    cdef inline Plane new_with_vectors(Vector3 v1, Vector3 v2, Vector3 v3):
+        # Call to __new__ bypasses __init__ constructor
+        cdef Plane ret = Plane.__new__(Plane)
+        gdapi.godot_plane_new_with_vectors(&ret._gd_data, &v1._gd_data, &v2._gd_data, &v3._gd_data)
         return ret
 
     @staticmethod
@@ -104,7 +96,7 @@ cdef class Plane:
         return self.get_d()
 
     @d.setter
-    def d(self, val):
+    def d(self, godot_real val):
         self.set_d(val)
 
     cdef inline Vector3 get_normal(self):
@@ -120,7 +112,7 @@ cdef class Plane:
         return self.get_normal()
 
     @normal.setter
-    def normal(self, val):
+    def normal(self, Vector3 val not None):
         self.set_normal(val)
 
     # Methods
@@ -147,7 +139,12 @@ cdef class Plane:
         return ret
 
     cpdef inline bint is_point_over(self, Vector3 point):
+        if point is None:
+            raise TypeError
         return gdapi.godot_plane_is_point_over(&self._gd_data, &point._gd_data)
+
+    cpdef inline godot_real distance_to(self, Vector3 point):
+        return gdapi.godot_plane_distance_to(&self._gd_data, &point._gd_data)
 
     cpdef inline bint has_point(self, Vector3 point, godot_real epsilon):
         return gdapi.godot_plane_has_point(&self._gd_data, &point._gd_data, epsilon)
@@ -158,16 +155,22 @@ cdef class Plane:
         return ret
 
     cpdef inline Vector3 intersect_3(self, Plane b, Plane c):
+        if b is None or c is None:
+            raise TypeError
         cdef Vector3 ret = Vector3.__new__(Vector3)
         gdapi.godot_plane_intersect_3(&self._gd_data, &ret._gd_data, &b._gd_data, &c._gd_data)
         return ret
 
     cpdef inline Vector3 intersects_ray(self, Vector3 from_, Vector3 dir):
+        if from_ is None or dir is None:
+            raise TypeError
         cdef Vector3 ret = Vector3.__new__(Vector3)
         gdapi.godot_plane_intersects_ray(&self._gd_data, &ret._gd_data, &from_._gd_data, &dir._gd_data)
         return ret
 
     cpdef inline Vector3 intersects_segment(self, Vector3 begin, Vector3 end):
+        if begin is None or end is None:
+            raise TypeError
         cdef Vector3 ret = Vector3.__new__(Vector3)
         gdapi.godot_plane_intersects_segment(&self._gd_data, &ret._gd_data, &begin._gd_data, &end._gd_data)
         return ret

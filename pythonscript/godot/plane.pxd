@@ -46,6 +46,7 @@ cdef class Plane:
     cpdef inline Vector3 center(self)
     cpdef inline Vector3 get_any_point(self)
     cpdef inline bint is_point_over(self, Vector3 point)
+    cpdef inline godot_real distance_to(self, Vector3 point)
     cpdef inline bint has_point(self, Vector3 point, godot_real epsilon)
     cpdef inline Vector3 project(self, Vector3 point)
     cpdef inline Vector3 intersect_3(self, Plane b, Plane c)
