@@ -10,7 +10,6 @@ from godot._hazmat.gdapi cimport (
     pythonscript_gdapi12 as gdapi12,
 )
 
-
 {% set render_target = "rid" %}
 {% include 'render.tmpl.pxd' with context  %}
 {% set render_target = "vector3" %}
@@ -26,4 +25,14 @@ from godot._hazmat.gdapi cimport (
 {% set render_target = "gdstring" %}
 {% include 'render.tmpl.pxd' with context  %}
 {% set render_target = "rect2" %}
+{% include 'render.tmpl.pxd' with context  %}
+{% set render_target = "transform2d" %}
+{% include 'render.tmpl.pxd' with context  %}
+{% set render_target = "plane" %}
+{% include 'render.tmpl.pxd' with context  %}
+{% set render_target = "quat" %}
+{% include 'render.tmpl.pxd' with context  %}
+{% set render_target = "transform" %}
+{% include 'render.tmpl.pxd' with context  %}
+{% set render_target = "node_path" %}
 {% include 'render.tmpl.pxd' with context  %}

@@ -27,8 +27,9 @@ BUILTINS_TYPES = [
     ("quat", "Quat", "godot_quat",),
     ("rect2", "Rect2", "godot_rect2",),
     ("rid", "RID", "godot_rid",),
-    ("transform", "Transform", "godot_transform",),
+    # transforma2d before transform to avoid bad detection in cook_c_signature
     ("transform2d", "Transform2D", "godot_transform2d",),
+    ("transform", "Transform", "godot_transform",),
     ("vector2", "Vector2", "godot_vector2",),
     ("vector3", "Vector3", "godot_vector3",),
     ("pool_byte_array", "PoolByteArray", "godot_pool_byte_array",),

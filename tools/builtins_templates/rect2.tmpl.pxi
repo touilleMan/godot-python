@@ -39,7 +39,9 @@ cdef class Rect2:
 
     @staticmethod
     def from_pos_size(Vector2 position not None, Vector2 size not None):
-        return Rect2.new_with_position_and_size(position, size)
+        cdef Rect2 ret = Rect2.__new__(Rect2)
+        gdapi.godot_rect2_new_with_position_and_size(&ret._gd_data, position, size)
+        return ret
 
     def __repr__(self):
         return f"<Rect2({self.as_string()})>"

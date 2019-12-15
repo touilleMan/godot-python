@@ -27,3 +27,13 @@ from godot._hazmat.gdapi cimport (
 {% include 'render.tmpl.pyx' with context  %}
 {% set render_target = "rect2" %}
 {% include 'render.tmpl.pyx' with context  %}
+{% set render_target = "transform2d" %}
+{% include 'render.tmpl.pyx' with context  %}
+{% set render_target = "plane" %}
+{% include 'render.tmpl.pyx' with context  %}
+{% set render_target = "quat" %}
+{% include 'render.tmpl.pyx' with context  %}
+{% set render_target = "transform" %}
+{% include 'render.tmpl.pyx' with context  %}
+{% set render_target = "node_path" %}
+{% include 'render.tmpl.pyx' with context  %}
