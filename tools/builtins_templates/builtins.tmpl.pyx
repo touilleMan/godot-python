@@ -2,7 +2,6 @@
 # see `tools/generate_builtins.py`
 
 cimport cython
-from libc.stdint cimport uintptr_t
 
 from godot._hazmat.gdnative_api_struct cimport *
 from godot._hazmat.gdapi cimport (
