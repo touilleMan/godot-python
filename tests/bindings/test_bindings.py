@@ -99,21 +99,22 @@ def test_call_with_defaults(generate_obj):
     children_names = [x.name for x in node.get_children()]
     assert children_names == ["@@2"]
 
-# @pytest.mark.xfail(reason="not supported yet")
-# def test_call_with_kwargs(generate_obj):
-#     node = generate_obj(bindings.Node)
-#     child = generate_obj(bindings.Node)
-#     new_child = generate_obj(bindings.Node)
 
-#     node.add_child(child, legible_unique_name=True)
-#     # Check name is readable
-#     children_names = [x.name for x in node.get_children()]
-#     assert children_names == ["Node"]
+@pytest.mark.skip(reason="TODO: investigate why this cause segfault...")
+def test_call_with_kwargs(generate_obj):
+    node = generate_obj(bindings.Node)
+    child = generate_obj(bindings.Node)
+    new_child = generate_obj(bindings.Node)
 
-#     # Kwargs are passed out of order
-#     node.add_child_below_node(
-#         legible_unique_name=True, child_node=child, node=new_child
-#     )
-#     # Check names are still readable
-#     children_names = [x.name for x in node.get_children()]
-#     assert children_names == ["Node", "Node1"]
+    node.add_child(child, legible_unique_name=True)
+    # Check name is readable
+    children_names = [x.name for x in node.get_children()]
+    assert children_names == ["Node"]
+
+    # Kwargs are passed out of order
+    node.add_child_below_node(
+        legible_unique_name=True, child_node=child, node=new_child
+    )
+    # Check names are still readable
+    children_names = [x.name for x in node.get_children()]
+    assert children_names == ["Node", "Node1"]
