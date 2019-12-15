@@ -18,9 +18,13 @@ cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = gdapi
 
 
 {% macro render_method_signature(method) %}
-{{ method["return_type_specs"]["binding_type"] }} {{ method["name"] }}(self,
+{{ method["name"] }}(self,
 {%- for arg in method["arguments"] %}
- {{ arg["type_specs"]["binding_type"] }} {{ arg["name"] }},
+ {{ arg["type_specs"]["binding_type"] }} {{ arg["name"] }}
+{%- if not arg["type_specs"]["is_base_type"] %}
+  not None
+{%- endif %}
+,
 {%- endfor %}
 )
 {%- endmacro %}
@@ -112,7 +116,7 @@ gdapi.godot_method_bind_ptrcall(
 
 {% macro render_method(cls, method) %}
 # {{ render_method_c_signature(method) }}
-cpdef {{ render_method_signature(method) }}:
+def {{ render_method_signature(method) }}:
     {{ _render_method_cook_args(method) | indent }}
     {{ _render_method_call(cls, method) | indent }}
     {{ _render_method_destroy_args(method) | indent }}

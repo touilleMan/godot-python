@@ -15,7 +15,7 @@ cdef godot_class_constructor __{{ cls["name"] }}_constructor = gdapi.godot_get_c
 cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% if not cls["base_class"] %}
     # free is virtual but this is not marked in api.json :'(
-    cpdef void free(self):
+    def free(self):
         gdapi.godot_object_destroy(self._gd_ptr)
 
     def __init__(self):

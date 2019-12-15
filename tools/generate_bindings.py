@@ -222,6 +222,7 @@ def cook_data(data):
                 "binding_type": class_renames[type_],
                 "is_object": True,
                 "is_builtin": False,
+                "is_base_type": False,
                 "stack_only": False,
             }
         except KeyError:
@@ -232,6 +233,7 @@ def cook_data(data):
                 "binding_type": type_,
                 "is_object": False,
                 "is_builtin": True,
+                "is_base_type": False,
                 "stack_only": True,
             }
         except KeyError:
@@ -241,6 +243,7 @@ def cook_data(data):
                 "type": STACK_AND_HEAP_BUILTINS_TYPES[type_],
                 "is_object": False,
                 "is_builtin": True,
+                "is_base_type": False,
                 "stack_only": False,
             }
             if spec["type"] == "godot_variant":
@@ -251,7 +254,7 @@ def cook_data(data):
         except KeyError:
             pass
         try:
-            specs = {"is_object": False, "is_builtin": False, "stack_only": True}
+            specs = {"is_object": False, "is_builtin": False, "stack_only": True, "is_base_type": True}
             if type_.startswith("enum."):
                 specs["binding_type"] = specs["type"] = "godot_int"
             else:

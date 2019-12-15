@@ -44,6 +44,34 @@ def test_call_with_defaults_and_too_few_args(current_node):
         == "add_child() takes exactly 2 positional arguments (0 given)"
     )
 
+
+def test_call_none_in_base_type_args(current_node):
+    with pytest.raises(TypeError) as exc:
+        # signature: def get_child(self, godot_int idx)
+        current_node.get_child(None)
+    assert (
+        str(exc.value) == "an integer is required"
+    )
+
+
+def test_call_none_in_builtin_args(current_node):
+    with pytest.raises(TypeError) as exc:
+        # signature: def get_node(self, NodePath path not None)
+        current_node.get_node(None)
+    assert (
+        str(exc.value) == "Argument 'path' has incorrect type (expected godot.node_path.NodePath, got NoneType)"
+    )
+
+
+def test_call_none_in_bindings_args(current_node):
+    with pytest.raises(TypeError) as exc:
+        # signature: def get_path_to(self, Node node not None)
+        current_node.get_path_to(None)
+    assert (
+        str(exc.value) == "Argument 'node' has incorrect type (expected godot.bindings.Node, got NoneType)"
+    )
+
+
 def test_call_too_many_args(current_node):
     with pytest.raises(TypeError) as exc:
         current_node.get_child(1, 2)
