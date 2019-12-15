@@ -43,9 +43,9 @@ cdef class Transform:
 {% block python_defs %}
     def __init__(self, x_axis=None, y_axis=None, z_axis=None, origin=None):
         if x_axis is None and y_axis is None and z_axis is None and origin is None:
-            gdapi.godot_transform_new_identity(&self._gd_data)
+            gdapi10.godot_transform_new_identity(&self._gd_data)
         else:
-            gdapi.godot_transform_new_with_axis_origin(
+            gdapi10.godot_transform_new_with_axis_origin(
                 &self._gd_data,
                 &(<Vector3?>x_axis)._gd_data,
                 &(<Vector3?>y_axis)._gd_data,
@@ -56,7 +56,7 @@ cdef class Transform:
     @staticmethod
     def from_basis_origin(Basis basis not None, Vector3 origin not None):
         cdef Transform ret = Transform.__new__(Transform)
-        gdapi.godot_transform_new(&ret._gd_data, &basis._gd_data, &origin._gd_data)
+        gdapi10.godot_transform_new(&ret._gd_data, &basis._gd_data, &origin._gd_data)
         return ret
 
     @staticmethod

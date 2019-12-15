@@ -6,7 +6,7 @@ from libc.stdint cimport uintptr_t
 
 from godot._hazmat.gdnative_api_struct cimport *
 from godot._hazmat.gdapi cimport (
-    pythonscript_gdapi as gdapi,
+    pythonscript_gdapi10 as gdapi10,
     pythonscript_gdapi11 as gdapi11,
     pythonscript_gdapi12 as gdapi12,
 )

@@ -38,7 +38,7 @@ cdef class Plane:
 
 {% block python_defs %}
     def __init__(self, godot_real a, godot_real b, godot_real c, godot_real d):
-        gdapi.godot_plane_new_with_reals(&self._gd_data, a, b, c, d)
+        gdapi10.godot_plane_new_with_reals(&self._gd_data, a, b, c, d)
 
     @staticmethod
     def from_normal(Vector3 normal not None, godot_real d):

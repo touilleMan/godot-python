@@ -4,7 +4,7 @@
 
 {# Define rendering macros #}
 
-{% macro render_method(pyname, return_type=None, args=(), gdname=None, gdapi="") %}
+{% macro render_method(pyname, return_type=None, args=(), gdname=None, gdapi="10") %}
 {% set gdname = gdname or pyname %}
 {% set return_type = cook_return_type(return_type) %}
 {% set args = cook_args(args) %}
@@ -51,7 +51,7 @@ gdapi{{ gdapi }}.{{ gd_type }}_{{ gdname }}(&self._gd_data,
 {% macro render_operator_eq() %}
 def __eq__({{ py_type }} self, other):
     try:
-        return gdapi.{{ gd_type }}_operator_equal(&self._gd_data, &(<{{ py_type }}?>other)._gd_data)
+        return gdapi10.{{ gd_type }}_operator_equal(&self._gd_data, &(<{{ py_type }}?>other)._gd_data)
     except TypeError:
         return False
 {% endmacro %}
@@ -59,7 +59,7 @@ def __eq__({{ py_type }} self, other):
 {% macro render_operator_ne() %}
 def __ne__({{ py_type }} self, other):
     try:
-        return not gdapi.{{ gd_type }}_operator_equal(&self._gd_data, &(<{{ py_type }}?>other)._gd_data)
+        return not gdapi10.{{ gd_type }}_operator_equal(&self._gd_data, &(<{{ py_type }}?>other)._gd_data)
     except TypeError:
         return False
 {% endmacro %}
@@ -67,7 +67,7 @@ def __ne__({{ py_type }} self, other):
 {% macro render_operator_lt() %}
 def __lt__({{ py_type }} self, other):
     try:
-        return not gdapi.{{ gd_type }}_operator_less(&self._gd_data, &(<{{ py_type }}?>other)._gd_data)
+        return not gdapi10.{{ gd_type }}_operator_less(&self._gd_data, &(<{{ py_type }}?>other)._gd_data)
     except TypeError:
         return False
 {% endmacro %}

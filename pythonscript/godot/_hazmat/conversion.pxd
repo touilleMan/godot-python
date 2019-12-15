@@ -1,7 +1,7 @@
 from libc.stddef cimport wchar_t
 from libc.stdio cimport printf
 
-from godot._hazmat.gdapi cimport pythonscript_gdapi as gdapi
+from godot._hazmat.gdapi cimport pythonscript_gdapi10 as gdapi10
 from godot._hazmat.gdnative_api_struct cimport (
     godot_string,
     godot_string_name,
@@ -28,31 +28,31 @@ ELSE:
 
 cdef inline str godot_string_to_pyobj(const godot_string *p_gdstr):
     # TODO: unicode&windows support is most likely broken...
-    cdef char *raw = <char*>gdapi.godot_string_wide_str(p_gdstr)
-    cdef godot_int length = gdapi.godot_string_length(p_gdstr)
+    cdef char *raw = <char*>gdapi10.godot_string_wide_str(p_gdstr)
+    cdef godot_int length = gdapi10.godot_string_length(p_gdstr)
     return raw[:length * _STRING_CODEPOINT_LENGTH].decode(_STRING_ENCODING)
 
 
 cdef inline void pyobj_to_godot_string(str pystr, godot_string *p_gdstr):
     # TODO: unicode&windows support is most likely broken...
     cdef bytes raw = pystr.encode(_STRING_ENCODING)
-    gdapi.godot_string_new_with_wide_string(
+    gdapi10.godot_string_new_with_wide_string(
         p_gdstr, (<wchar_t*><char*>raw), len(pystr)
     )
 
 
 cdef inline str godot_string_name_to_pyobj(const godot_string_name *p_gdname):
-    cdef godot_string strname = gdapi.godot_string_name_get_name(p_gdname)
+    cdef godot_string strname = gdapi10.godot_string_name_get_name(p_gdname)
     cdef ret = godot_string_to_pyobj(&strname)
-    gdapi.godot_string_destroy(&strname)
+    gdapi10.godot_string_destroy(&strname)
     return ret
 
 
 cdef inline void pyobj_to_godot_string_name(str pystr, godot_string_name *p_gdname):
     cdef godot_string strname
     pyobj_to_godot_string(pystr, &strname)
-    gdapi.godot_string_name_new(p_gdname, &strname)
-    gdapi.godot_string_destroy(&strname)
+    gdapi10.godot_string_name_new(p_gdname, &strname)
+    gdapi10.godot_string_destroy(&strname)
 
 
 cdef object godot_variant_to_pyobj(const godot_variant *p_gdvar)

@@ -172,14 +172,14 @@ cdef class GDString:
 {% block python_defs %}
     def __init__(self, str pystr=None):
         if not pystr:
-            gdapi.godot_string_new(&self._gd_data)
+            gdapi10.godot_string_new(&self._gd_data)
         else:
             pyobj_to_godot_string(pystr, &self._gd_data)
 
     def __dealloc__(GDString self):
         # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
         # hand otherwise we will get a segfault here
-        gdapi.godot_string_destroy(&self._gd_data)
+        gdapi10.godot_string_destroy(&self._gd_data)
 
     def __repr__(GDString self):
         return f"<GDString({str(self)!r})>"

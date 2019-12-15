@@ -18,7 +18,7 @@ from godot._hazmat.gdnative_api_struct cimport (
     godot_variant_call_error_error,
     godot_variant_type,
 )
-from godot._hazmat.gdapi cimport pythonscript_gdapi as gdapi
+from godot._hazmat.gdapi cimport pythonscript_gdapi10 as gdapi10
 from godot._hazmat.conversion cimport (
     godot_variant_to_pyobj,
     pyobj_to_godot_variant,
@@ -88,7 +88,7 @@ cdef api godot_variant pythonscript_instance_call_method(
 
     except AttributeError:
         r_error.error = godot_variant_call_error_error.GODOT_CALL_ERROR_CALL_ERROR_INVALID_METHOD
-        gdapi.godot_variant_new_nil(&var_ret)
+        gdapi10.godot_variant_new_nil(&var_ret)
         return var_ret
 
     cdef int i
@@ -114,7 +114,7 @@ cdef api godot_variant pythonscript_instance_call_method(
     # TODO: also catch other exceptions types ?
 
     # Something bad occured, return a default None variant
-    gdapi.godot_variant_new_nil(&var_ret)
+    gdapi10.godot_variant_new_nil(&var_ret)
     return var_ret
 
 

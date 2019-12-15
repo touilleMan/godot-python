@@ -3,7 +3,7 @@
 cimport cython
 
 from godot._hazmat.gdapi cimport (
-    pythonscript_gdapi as gdapi,
+    pythonscript_gdapi10 as gdapi10,
     pythonscript_gdapi11 as gdapi11,
     pythonscript_gdapi12 as gdapi12,
 )
@@ -16,25 +16,25 @@ cdef class Array:
 
     def __init__(self, iterable=None):
         if not iterable:
-            gdapi.godot_array_new(&self._gd_data)
+            gdapi10.godot_array_new(&self._gd_data)
         elif isinstance(iterable, Array):
-            gdapi.godot_array_new_copy(&self._gd_data, &(<Array>iterable)._gd_data)
+            gdapi10.godot_array_new_copy(&self._gd_data, &(<Array>iterable)._gd_data)
         # TODO: handle Pool*Array
         else:
-            gdapi.godot_array_new(&self._gd_data)
+            gdapi10.godot_array_new(&self._gd_data)
             for x in iterable:
                 self.append(x)
 
     def __dealloc__(self):
         # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
         # hand otherwise we will get a segfault here
-        gdapi.godot_array_destroy(&self._gd_data)
+        gdapi10.godot_array_destroy(&self._gd_data)
 
     @staticmethod
     cdef inline Array new():
         # Call to __new__ bypasses __init__ constructor
         cdef Array ret = Array.__new__(Array)
-        gdapi.godot_array_new(&ret._gd_data)
+        gdapi10.godot_array_new(&ret._gd_data)
         return ret
 
     @staticmethod
@@ -44,7 +44,7 @@ cdef class Array:
         # `godot_array` is a cheap structure pointing on a refcounted vector
         # of variants. Unlike it name could let think, `godot_array_new_copy`
         # only increment the refcount of the underlying structure.
-        gdapi.godot_array_new_copy(&ret._gd_data, _ptr)
+        gdapi10.godot_array_new_copy(&ret._gd_data, _ptr)
         return ret
 
     def __repr__(self):
@@ -120,9 +120,9 @@ cdef class Array:
             return False
         cdef int i
         for i in range(size):
-            if not gdapi.godot_variant_operator_equal(
-                    gdapi.godot_array_operator_index(&self._gd_data, i),
-                    gdapi.godot_array_operator_index(&other._gd_data, i)
+            if not gdapi10.godot_variant_operator_equal(
+                    gdapi10.godot_array_operator_index(&self._gd_data, i),
+                    gdapi10.godot_array_operator_index(&other._gd_data, i)
                 ):
                 return False
         return True
@@ -142,8 +142,8 @@ cdef class Array:
     cdef inline bint operator_contains(self, object key):
         cdef godot_variant var_key
         pyobj_to_godot_variant(key, &var_key)
-        cdef bint ret = gdapi.godot_array_has(&self._gd_data, &var_key)
-        gdapi.godot_variant_destroy(&var_key)
+        cdef bint ret = gdapi10.godot_array_has(&self._gd_data, &var_key)
+        gdapi10.godot_variant_destroy(&var_key)
         return ret
 
     def __contains__(self, object key):
@@ -152,7 +152,7 @@ cdef class Array:
     cdef inline operator_iadd(self, Array items):
         cdef godot_int self_size = self.size()
         cdef godot_int items_size = items.size()
-        gdapi.godot_array_resize(&self._gd_data, self_size + items_size)
+        gdapi10.godot_array_resize(&self._gd_data, self_size + items_size)
         cdef int i
         for i in range(items_size):
             Array.operator_set(self, self_size + i, items.get(i))
@@ -170,7 +170,7 @@ cdef class Array:
         cdef godot_int self_size = self.size()
         cdef godot_int items_size = items.size()
         cdef Array ret = Array.new()
-        gdapi.godot_array_resize(&ret._gd_data, self_size + items_size)
+        gdapi10.godot_array_resize(&ret._gd_data, self_size + items_size)
         cdef int i
         for i in range(self_size):
             ret.operator_set(i, self.get(i))
@@ -192,14 +192,14 @@ cdef class Array:
 
     cpdef inline Array copy(self):
         cdef Array ret = Array.__new__(Array)
-        gdapi.godot_array_new_copy(&ret._gd_data, &self._gd_data)
+        gdapi10.godot_array_new_copy(&ret._gd_data, &self._gd_data)
         return ret
 
     cpdef inline godot_int hash(self):
-        return gdapi.godot_array_hash(&self._gd_data)
+        return gdapi10.godot_array_hash(&self._gd_data)
 
     cpdef inline godot_int size(self):
-        return gdapi.godot_array_size(&self._gd_data)
+        return gdapi10.godot_array_size(&self._gd_data)
 
     cpdef inline Array duplicate(self, bint deep):
         cdef Array ret = Array.__new__(Array)
@@ -207,135 +207,135 @@ cdef class Array:
         return ret
 
     cpdef inline object get(self, godot_int idx):
-        cdef godot_variant *p_ret = gdapi.godot_array_operator_index(&self._gd_data, idx)
+        cdef godot_variant *p_ret = gdapi10.godot_array_operator_index(&self._gd_data, idx)
         return godot_variant_to_pyobj(p_ret)
 
     # TODO: good idea to use expose `set` ?
     cpdef inline void set(self, godot_int idx, object item):
-        cdef godot_variant *p_ret = gdapi.godot_array_operator_index(&self._gd_data, idx)
-        gdapi.godot_variant_destroy(p_ret)
+        cdef godot_variant *p_ret = gdapi10.godot_array_operator_index(&self._gd_data, idx)
+        gdapi10.godot_variant_destroy(p_ret)
         pyobj_to_godot_variant(item, p_ret)
 
     cpdef inline void append(self, object item):
         cdef godot_variant var_item
         pyobj_to_godot_variant(item, &var_item)
-        gdapi.godot_array_append(&self._gd_data, &var_item)
-        gdapi.godot_variant_destroy(&var_item)
+        gdapi10.godot_array_append(&self._gd_data, &var_item)
+        gdapi10.godot_variant_destroy(&var_item)
 
     cpdef inline void clear(self):
-        gdapi.godot_array_clear(&self._gd_data)
+        gdapi10.godot_array_clear(&self._gd_data)
 
     cpdef inline bint empty(self):
-        return gdapi.godot_array_empty(&self._gd_data)
+        return gdapi10.godot_array_empty(&self._gd_data)
 
     cpdef inline void erase(self, object item):
         cdef godot_variant var_item
         pyobj_to_godot_variant(item, &var_item)
-        gdapi.godot_array_erase(&self._gd_data, &var_item)
-        gdapi.godot_variant_destroy(&var_item)
+        gdapi10.godot_array_erase(&self._gd_data, &var_item)
+        gdapi10.godot_variant_destroy(&var_item)
 
     cpdef inline object front(self):
-        cdef godot_variant var_ret = gdapi.godot_array_front(&self._gd_data)
+        cdef godot_variant var_ret = gdapi10.godot_array_front(&self._gd_data)
         cdef object ret = godot_variant_to_pyobj(&var_ret)
-        gdapi.godot_variant_destroy(&var_ret)
+        gdapi10.godot_variant_destroy(&var_ret)
         return ret
 
     cpdef inline object back(self):
-        cdef godot_variant var_ret = gdapi.godot_array_back(&self._gd_data)
+        cdef godot_variant var_ret = gdapi10.godot_array_back(&self._gd_data)
         cdef object ret = godot_variant_to_pyobj(&var_ret)
-        gdapi.godot_variant_destroy(&var_ret)
+        gdapi10.godot_variant_destroy(&var_ret)
         return ret
 
     cpdef inline godot_int find(self, object what, godot_int from_):
         cdef godot_variant var_what
         pyobj_to_godot_variant(what, &var_what)
-        cdef godot_int ret = gdapi.godot_array_find(&self._gd_data, &var_what, from_)
-        gdapi.godot_variant_destroy(&var_what)
+        cdef godot_int ret = gdapi10.godot_array_find(&self._gd_data, &var_what, from_)
+        gdapi10.godot_variant_destroy(&var_what)
         return ret
 
     cpdef inline godot_int find_last(self, object what):
         cdef godot_variant var_what
         pyobj_to_godot_variant(what, &var_what)
-        cdef godot_int ret = gdapi.godot_array_find_last(&self._gd_data, &var_what)
-        gdapi.godot_variant_destroy(&var_what)
+        cdef godot_int ret = gdapi10.godot_array_find_last(&self._gd_data, &var_what)
+        gdapi10.godot_variant_destroy(&var_what)
         return ret
 
     cpdef inline void insert(self, godot_int pos, object value):
         cdef godot_variant var_value
         pyobj_to_godot_variant(value, &var_value)
-        gdapi.godot_array_insert(&self._gd_data, pos, &var_value)
-        gdapi.godot_variant_destroy(&var_value)
+        gdapi10.godot_array_insert(&self._gd_data, pos, &var_value)
+        gdapi10.godot_variant_destroy(&var_value)
 
     cpdef inline void invert(self):
-        gdapi.godot_array_invert(&self._gd_data)
+        gdapi10.godot_array_invert(&self._gd_data)
 
     cpdef inline object pop_back(self):
-        cdef godot_variant var_ret = gdapi.godot_array_pop_back(&self._gd_data)
+        cdef godot_variant var_ret = gdapi10.godot_array_pop_back(&self._gd_data)
         cdef object ret = godot_variant_to_pyobj(&var_ret)
-        gdapi.godot_variant_destroy(&var_ret)
+        gdapi10.godot_variant_destroy(&var_ret)
         return ret
 
     cpdef inline object pop_front(self):
-        cdef godot_variant var_ret = gdapi.godot_array_pop_front(&self._gd_data)
+        cdef godot_variant var_ret = gdapi10.godot_array_pop_front(&self._gd_data)
         cdef object ret = godot_variant_to_pyobj(&var_ret)
-        gdapi.godot_variant_destroy(&var_ret)
+        gdapi10.godot_variant_destroy(&var_ret)
         return ret
 
     cpdef inline void push_back(self, object value):
         cdef godot_variant var_value
         pyobj_to_godot_variant(value, &var_value)
-        gdapi.godot_array_push_back(&self._gd_data, &var_value)
-        gdapi.godot_variant_destroy(&var_value)
+        gdapi10.godot_array_push_back(&self._gd_data, &var_value)
+        gdapi10.godot_variant_destroy(&var_value)
 
     cpdef inline void push_front(self, object value):
         cdef godot_variant var_value
         pyobj_to_godot_variant(value, &var_value)
-        gdapi.godot_array_push_front(&self._gd_data, &var_value)
-        gdapi.godot_variant_destroy(&var_value)
+        gdapi10.godot_array_push_front(&self._gd_data, &var_value)
+        gdapi10.godot_variant_destroy(&var_value)
 
     cpdef inline void remove(self, godot_int idx):
-        gdapi.godot_array_remove(&self._gd_data, idx)
+        gdapi10.godot_array_remove(&self._gd_data, idx)
 
     cpdef inline void resize(self, godot_int size):
-        gdapi.godot_array_resize(&self._gd_data, size)
+        gdapi10.godot_array_resize(&self._gd_data, size)
 
     cpdef inline bint rfind(self, object what, godot_int from_):
         cdef godot_variant var_what
         pyobj_to_godot_variant(what, &var_what)
-        cdef bint ret = gdapi.godot_array_rfind(&self._gd_data, &var_what, from_)
-        gdapi.godot_variant_destroy(&var_what)
+        cdef bint ret = gdapi10.godot_array_rfind(&self._gd_data, &var_what, from_)
+        gdapi10.godot_variant_destroy(&var_what)
         return ret
 
     cpdef inline void sort(self):
-        gdapi.godot_array_sort(&self._gd_data)
+        gdapi10.godot_array_sort(&self._gd_data)
 
     cdef inline void sort_custom(self, godot_object *p_obj, godot_string *p_func):
-        gdapi.godot_array_sort_custom(&self._gd_data, p_obj, p_func)
+        gdapi10.godot_array_sort_custom(&self._gd_data, p_obj, p_func)
 
     cpdef inline godot_int bsearch(self, object value, bint before):
         cdef godot_variant var_value
         pyobj_to_godot_variant(value, &var_value)
-        cdef godot_int ret = gdapi.godot_array_bsearch(&self._gd_data, &var_value, before)
-        gdapi.godot_variant_destroy(&var_value)
+        cdef godot_int ret = gdapi10.godot_array_bsearch(&self._gd_data, &var_value, before)
+        gdapi10.godot_variant_destroy(&var_value)
         return ret
 
     cdef inline godot_int bsearch_custom(self, object value, godot_object *p_obj, godot_string *p_func, bint before):
         cdef godot_variant var_value
         pyobj_to_godot_variant(value, &var_value)
-        cdef godot_int ret = gdapi.godot_array_bsearch_custom(&self._gd_data, &var_value, p_obj, p_func, before)
-        gdapi.godot_variant_destroy(&var_value)
+        cdef godot_int ret = gdapi10.godot_array_bsearch_custom(&self._gd_data, &var_value, p_obj, p_func, before)
+        gdapi10.godot_variant_destroy(&var_value)
         return ret
 
     cpdef inline object max(self):
         cdef godot_variant var_ret = gdapi11.godot_array_max(&self._gd_data)
         cdef object ret = godot_variant_to_pyobj(&var_ret)
-        gdapi.godot_variant_destroy(&var_ret)
+        gdapi10.godot_variant_destroy(&var_ret)
         return ret
 
     cpdef inline object min(self):
         cdef godot_variant var_ret = gdapi11.godot_array_min(&self._gd_data)
         cdef object ret = godot_variant_to_pyobj(&var_ret)
-        gdapi.godot_variant_destroy(&var_ret)
+        gdapi10.godot_variant_destroy(&var_ret)
         return ret
 
     cpdef inline void shuffle(self):

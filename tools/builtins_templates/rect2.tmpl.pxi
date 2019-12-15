@@ -38,12 +38,12 @@ cdef class Rect2:
 
 {% block python_defs %}
     def __init__(self, godot_real x=0.0, godot_real y=0.0, godot_real width=0.0, godot_real height=0.0):
-        gdapi.godot_rect2_new(&self._gd_data, x, y, width, height)
+        gdapi10.godot_rect2_new(&self._gd_data, x, y, width, height)
 
     @staticmethod
     def from_pos_size(Vector2 position not None, Vector2 size not None):
         cdef Rect2 ret = Rect2.__new__(Rect2)
-        gdapi.godot_rect2_new_with_position_and_size(&ret._gd_data, &position._gd_data, &size._gd_data)
+        gdapi10.godot_rect2_new_with_position_and_size(&ret._gd_data, &position._gd_data, &size._gd_data)
         return ret
 
     def __repr__(Rect2 self):
@@ -57,10 +57,10 @@ cdef class Rect2:
 
     @property
     def end(Rect2 self) -> Vector2:
-        cdef godot_vector2 position = gdapi.godot_rect2_get_position(&self._gd_data)
-        cdef godot_vector2 size = gdapi.godot_rect2_get_size(&self._gd_data)
+        cdef godot_vector2 position = gdapi10.godot_rect2_get_position(&self._gd_data)
+        cdef godot_vector2 size = gdapi10.godot_rect2_get_size(&self._gd_data)
         cdef Vector2 ret = Vector3.__new__(Vector3)
-        ret._gd_data = gdapi.godot_vector2_operator_add(&position, &size)
+        ret._gd_data = gdapi10.godot_vector2_operator_add(&position, &size)
         return ret
 
     {{ render_method(**gd_functions["as_string"]) | indent }}

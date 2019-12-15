@@ -52,22 +52,22 @@ import math
 
 cdef inline Vector3_multiply_vector(Vector3 self, Vector3 b):
     cdef Vector3 ret  = Vector3.__new__(Vector3)
-    ret._gd_data = gdapi.godot_vector3_operator_multiply_vector(&self._gd_data, &b._gd_data)
+    ret._gd_data = gdapi10.godot_vector3_operator_multiply_vector(&self._gd_data, &b._gd_data)
     return ret
 
 cdef inline Vector3_multiply_scalar(Vector3 self, godot_real b):
     cdef Vector3 ret  = Vector3.__new__(Vector3)
-    ret._gd_data = gdapi.godot_vector3_operator_multiply_scalar(&self._gd_data, b)
+    ret._gd_data = gdapi10.godot_vector3_operator_multiply_scalar(&self._gd_data, b)
     return ret
 
 cdef inline Vector3_divide_vector(Vector3 self, Vector3 b):
     cdef Vector3 ret  = Vector3.__new__(Vector3)
-    ret._gd_data = gdapi.godot_vector3_operator_divide_vector(&self._gd_data, &b._gd_data)
+    ret._gd_data = gdapi10.godot_vector3_operator_divide_vector(&self._gd_data, &b._gd_data)
     return ret
 
 cdef inline Vector3_divide_scalar(Vector3 self, godot_real b):
     cdef Vector3 ret  = Vector3.__new__(Vector3)
-    ret._gd_data = gdapi.godot_vector3_operator_divide_scalar(&self._gd_data, b)
+    ret._gd_data = gdapi10.godot_vector3_operator_divide_scalar(&self._gd_data, b)
     return ret
 
 {% endblock -%}
@@ -81,34 +81,34 @@ cdef class Vector3:
 
 {% block python_defs %}
     def __init__(self, godot_real x=0.0, godot_real y=0.0, godot_real z=0.0):
-        gdapi.godot_vector3_new(&self._gd_data, x, y, z)
+        gdapi10.godot_vector3_new(&self._gd_data, x, y, z)
 
     def __repr__(self):
         return f"<Vector3(x={self.x}, y={self.y}, z={self.z})>"
 
     @property
     def x(self) -> godot_real:
-        return gdapi.godot_vector3_get_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_X)
+        return gdapi10.godot_vector3_get_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_X)
 
     @x.setter
     def x(self, godot_real val) -> None:
-        gdapi.godot_vector3_set_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_X, val)
+        gdapi10.godot_vector3_set_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_X, val)
 
     @property
     def y(self) -> godot_real:
-        return gdapi.godot_vector3_get_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Y)
+        return gdapi10.godot_vector3_get_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Y)
 
     @y.setter
     def y(self, godot_real val) -> None:
-        gdapi.godot_vector3_set_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Y, val)
+        gdapi10.godot_vector3_set_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Y, val)
 
     @property
     def z(self) -> godot_real:
-        return gdapi.godot_vector3_get_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Z)
+        return gdapi10.godot_vector3_get_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Z)
 
     @z.setter
     def z(self, godot_real val) -> None:
-        gdapi.godot_vector3_set_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Z, val)
+        gdapi10.godot_vector3_set_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Z, val)
 
     {{ render_operator_eq() | indent }}
     {{ render_operator_ne() | indent }}

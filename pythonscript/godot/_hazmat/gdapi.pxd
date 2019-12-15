@@ -20,7 +20,7 @@ cdef extern from * nogil:
     #else
     # define PYTHONSCRIPT_IMPORT
     #endif
-    PYTHONSCRIPT_IMPORT extern const godot_gdnative_core_api_struct *pythonscript_gdapi;
+    PYTHONSCRIPT_IMPORT extern const godot_gdnative_core_api_struct *pythonscript_gdapi10;
     PYTHONSCRIPT_IMPORT extern const godot_gdnative_core_1_1_api_struct *pythonscript_gdapi11;
     PYTHONSCRIPT_IMPORT extern const godot_gdnative_core_1_2_api_struct *pythonscript_gdapi12;
     PYTHONSCRIPT_IMPORT extern const godot_gdnative_ext_nativescript_api_struct *pythonscript_gdapi_ext_nativescript;
@@ -29,7 +29,7 @@ cdef extern from * nogil:
     PYTHONSCRIPT_IMPORT extern const godot_gdnative_ext_arvr_api_struct *pythonscript_gdapi_ext_arvr;
     """
 
-    cdef const godot_gdnative_core_api_struct *pythonscript_gdapi
+    cdef const godot_gdnative_core_api_struct *pythonscript_gdapi10
     cdef const godot_gdnative_core_1_1_api_struct *pythonscript_gdapi11
     cdef const godot_gdnative_core_1_2_api_struct *pythonscript_gdapi12
     cdef const godot_gdnative_ext_nativescript_api_struct *pythonscript_gdapi_ext_nativescript

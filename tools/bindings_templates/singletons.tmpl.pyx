@@ -8,7 +8,7 @@
 
 {% call(cls) iter_singletons(classes) %}
 {{ cls["singleton_name"] }} = {{ cls["name"] }}.from_ptr(
-	gdapi.godot_global_get_singleton("{{ cls['singleton_name'] }}"),
+	gdapi10.godot_global_get_singleton("{{ cls['singleton_name'] }}"),
 	False
 )
 {% endcall %}

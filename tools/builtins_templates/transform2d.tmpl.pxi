@@ -41,9 +41,9 @@ cdef class Transform2D:
 {% block python_defs %}
     def __init__(self, x_axis=None, y_axis=None, origin=None):
         if x_axis is None and y_axis is None and origin is None:
-            gdapi.godot_transform2d_new_identity(&self._gd_data)
+            gdapi10.godot_transform2d_new_identity(&self._gd_data)
         else:
-            gdapi.godot_transform2d_new_axis_origin(
+            gdapi10.godot_transform2d_new_axis_origin(
                 &self._gd_data,
                 &(<Vector2?>x_axis)._gd_data,
                 &(<Vector2?>y_axis)._gd_data,
@@ -53,7 +53,7 @@ cdef class Transform2D:
     @staticmethod
     def from_rot_pos(godot_real rot, Vector2 pos not None):
         cdef Transform2D ret = Transform2D.__new__(Transform2D)
-        gdapi.godot_transform2d_new(&ret._gd_data, rot, &pos._gd_data)
+        gdapi10.godot_transform2d_new(&ret._gd_data, rot, &pos._gd_data)
         return ret
 
     def __repr__(Transform2D self):

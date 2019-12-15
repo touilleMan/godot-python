@@ -48,13 +48,13 @@ cdef class Quat:
 
 {% block python_defs %}
     def __init__(self, x=0, y=0, z=0, w=0):
-        gdapi.godot_quat_new(&self._gd_data, x, y, z, w)
+        gdapi10.godot_quat_new(&self._gd_data, x, y, z, w)
 
     @staticmethod
     def from_axis_angle(Vector3 axis not None, godot_real angle):
         # Call to __new__ bypasses __init__ constructor
         cdef Quat ret = Quat.__new__(Quat)
-        gdapi.godot_quat_new_with_axis_angle(&ret._gd_data, &axis._gd_data, angle)
+        gdapi10.godot_quat_new_with_axis_angle(&ret._gd_data, &axis._gd_data, angle)
         return ret
 
     @staticmethod
@@ -96,7 +96,7 @@ cdef class Quat:
         if val == 0:
             raise ZeroDivisionError
         cdef Quat ret  = Quat.__new__(Quat)
-        ret._gd_data = gdapi.godot_quat_operator_divide(&self._gd_data, val)
+        ret._gd_data = gdapi10.godot_quat_operator_divide(&self._gd_data, val)
         return ret
 
     {{ render_property("x", "godot_real", "get_x", "set_x") | indent }}

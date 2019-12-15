@@ -25,12 +25,12 @@ cdef class RID:
 {% block python_defs %}
     def __init__(self, Resource from_=None):
         if from_ is not None:
-            gdapi.godot_rid_new_with_resource(
+            gdapi10.godot_rid_new_with_resource(
                 &self._gd_data,
                 from_._gd_ptr
             )
         else:
-            gdapi.godot_rid_new(&self._gd_data)
+            gdapi10.godot_rid_new(&self._gd_data)
 
     def __repr__(RID self):
         return f"<RID(id={self.get_id()})>"
@@ -39,7 +39,7 @@ cdef class RID:
     def from_resource(Resource resource not None):
         # Call to __new__ bypasses __init__ constructor
         cdef RID ret = RID.__new__(RID)
-        gdapi.godot_rid_new_with_resource(&ret._gd_data, resource._gd_ptr)
+        gdapi10.godot_rid_new_with_resource(&ret._gd_data, resource._gd_ptr)
         return ret
 
     {{ render_operator_eq() | indent }}

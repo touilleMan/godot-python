@@ -5,7 +5,7 @@
 {% macro render_class(cls) %}
 
 {% if not cls["singleton"] %}
-cdef godot_class_constructor __{{ cls["name"] }}_constructor = gdapi.godot_get_class_constructor("{{ cls['name'] }}")
+cdef godot_class_constructor __{{ cls["name"] }}_constructor = gdapi10.godot_get_class_constructor("{{ cls['name'] }}")
 {% endif %}
 
 {% for method in cls["methods"] %}
@@ -16,7 +16,7 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% if not cls["base_class"] %}
     # free is virtual but this is not marked in api.json :'(
     def free(self):
-        gdapi.godot_object_destroy(self._gd_ptr)
+        gdapi10.godot_object_destroy(self._gd_ptr)
 
     def __init__(self):
         raise RuntimeError(f"Use `new()` method to instantiate Godot object.")

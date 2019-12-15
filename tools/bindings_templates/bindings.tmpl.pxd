@@ -3,7 +3,7 @@
 
 {% from 'class.tmpl.pxd' import render_class_pxd %}
 from godot._hazmat.gdnative_api_struct cimport *
-from godot._hazmat.gdapi cimport pythonscript_gdapi as gdapi
+from godot._hazmat.gdapi cimport pythonscript_gdapi10 as gdapi10
 from godot.builtins cimport (
 	AABB,
 	Array,

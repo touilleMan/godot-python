@@ -33,18 +33,18 @@ cdef class NodePath:
     def __init__(self, from_):
         cdef godot_string gd_from
         try:
-            gdapi.godot_node_path_new(&self._gd_data, &(<GDString?>from_)._gd_data)
+            gdapi10.godot_node_path_new(&self._gd_data, &(<GDString?>from_)._gd_data)
         except TypeError:
             if not isinstance(from_, str):
                 raise TypeError("`from_` must be str or GDString")
             pyobj_to_godot_string(from_, &gd_from)
-            gdapi.godot_node_path_new(&self._gd_data, &gd_from)
-            gdapi.godot_string_destroy(&gd_from)
+            gdapi10.godot_node_path_new(&self._gd_data, &gd_from)
+            gdapi10.godot_string_destroy(&gd_from)
 
     def __dealloc__(NodePath self):
         # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
         # hand otherwise we will get a segfault here
-        gdapi.godot_node_path_destroy(&self._gd_data)
+        gdapi10.godot_node_path_destroy(&self._gd_data)
 
     def __repr__(NodePath self):
         return f"<NodePath({self.as_string()})>"

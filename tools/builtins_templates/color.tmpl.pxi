@@ -50,9 +50,9 @@ cdef class Color:
 {% block python_defs %}
     def __init__(self, godot_real r=0, godot_real g=0, godot_real b=0, a=None):
         if a is None:
-            gdapi.godot_color_new_rgb(&self._gd_data, r, g, b)
+            gdapi10.godot_color_new_rgb(&self._gd_data, r, g, b)
         else:
-            gdapi.godot_color_new_rgba(&self._gd_data, r, g, b, a)
+            gdapi10.godot_color_new_rgba(&self._gd_data, r, g, b, a)
 
     def __repr__(self):
         return f"<Color(r={self.r}, g={self.g}, b={self.b}, a={self.a})>"
@@ -61,7 +61,7 @@ cdef class Color:
     def from_resource(Resource resource not None):
         # Call to __new__ bypasses __init__ constructor
         cdef RID ret = RID.__new__(RID)
-        gdapi.godot_rid_new_with_resource(&ret._gd_data, resource._gd_ptr)
+        gdapi10.godot_rid_new_with_resource(&ret._gd_data, resource._gd_ptr)
         return ret
 
     @property

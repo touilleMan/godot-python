@@ -4,7 +4,7 @@ __methbind__{{ cls["name"] }}__{{ method["name"] }}
 
 
 {% macro render_method_bind_register(cls, method) %}
-cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = gdapi.godot_method_bind_get_method("{{ cls['bind_register_name'] }}", "{{ method['name'] }}")
+cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = gdapi10.godot_method_bind_get_method("{{ cls['bind_register_name'] }}", "{{ method['name'] }}")
 {%- endmacro %}
 
 
@@ -42,7 +42,7 @@ else:
 try:
     return godot_variant_to_pyobj(&{{ retval }})
 finally:
-    gdapi.godot_variant_destroy(&{{ retval }})
+    gdapi10.godot_variant_destroy(&{{ retval }})
 {% else %}
 return {{ retval }}
 {% endif %}
@@ -75,7 +75,7 @@ pyobj_to_godot_variant({{ arg["name"] }}, &__var_{{ arg["name"] }})
 {% for arg in method["arguments"] %}
 {% set i = loop.index - 1 %}
 {% if arg["type"] == "godot_variant" %}
-gdapi.godot_variant_destroy(&__var_{{ arg["name"] }})
+gdapi10.godot_variant_destroy(&__var_{{ arg["name"] }})
 {% endif %}
 {% endfor %}
 {%- endmacro %}
@@ -101,7 +101,7 @@ cdef {{ method["return_type"] }} {{ retval }}
 {% endif %}
 if {{ get_method_bind_register_name(cls, method) }} == NULL:
     raise NotImplementedError
-gdapi.godot_method_bind_ptrcall(
+gdapi10.godot_method_bind_ptrcall(
     {{ get_method_bind_register_name(cls, method) }},
     self._gd_ptr,
 {% if (method["arguments"] | length )  != 0 %}

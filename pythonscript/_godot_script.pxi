@@ -21,7 +21,7 @@ from godot._hazmat.gdnative_api_struct cimport (
     GODOT_METHOD_FLAG_FROM_SCRIPT,
     GODOT_METHOD_RPC_MODE_DISABLED,
 )
-from godot._hazmat.gdapi cimport pythonscript_gdapi as gdapi
+from godot._hazmat.gdapi cimport pythonscript_gdapi10 as gdapi10
 from godot._hazmat.conversion cimport (
     godot_string_to_pyobj,
     pyobj_to_godot_string,
@@ -43,13 +43,13 @@ import traceback
 cdef inline godot_pluginscript_script_manifest _build_empty_script_manifest():
     cdef godot_pluginscript_script_manifest manifest
     manifest.data = NULL
-    gdapi.godot_string_name_new_data(&manifest.name, "")
+    gdapi10.godot_string_name_new_data(&manifest.name, "")
     manifest.is_tool = False
-    gdapi.godot_string_name_new_data(&manifest.base, "")
-    gdapi.godot_dictionary_new(&manifest.member_lines)
-    gdapi.godot_array_new(&manifest.methods)
-    gdapi.godot_array_new(&manifest.signals)
-    gdapi.godot_array_new(&manifest.properties)
+    gdapi10.godot_string_name_new_data(&manifest.base, "")
+    gdapi10.godot_dictionary_new(&manifest.member_lines)
+    gdapi10.godot_array_new(&manifest.methods)
+    gdapi10.godot_array_new(&manifest.signals)
+    gdapi10.godot_array_new(&manifest.properties)
     return manifest
 
 
@@ -99,7 +99,7 @@ cdef godot_pluginscript_script_manifest _build_script_manifest(object cls):
     manifest.data = <PyObject*>cls
     pyobj_to_godot_string_name(cls.__name__, &manifest.name)
     manifest.is_tool = cls.__tool
-    gdapi.godot_dictionary_new(&manifest.member_lines)
+    gdapi10.godot_dictionary_new(&manifest.member_lines)
 
     if cls.__bases__:
         # Only one Godot parent class (checked at class definition time)
@@ -121,17 +121,17 @@ cdef godot_pluginscript_script_manifest _build_script_manifest(object cls):
         if not inspect.isfunction(meth) or meth.__name__.startswith("__"):
             continue
         methods.append(_build_method_info(meth, methname))
-    gdapi.godot_array_new_copy(&manifest.methods, &methods._gd_data)
+    gdapi10.godot_array_new_copy(&manifest.methods, &methods._gd_data)
 
     signals = Array()
     for signal in cls.__signals.values():
         signals.append(_build_signal_info(signal))
-    gdapi.godot_array_new_copy(&manifest.signals, &signals._gd_data)
+    gdapi10.godot_array_new_copy(&manifest.signals, &signals._gd_data)
 
     properties = Array()
     for prop in cls.__exported.values():
         properties.append(_build_property_info(prop))
-    gdapi.godot_array_new_copy(&manifest.properties, &properties._gd_data)
+    gdapi10.godot_array_new_copy(&manifest.properties, &properties._gd_data)
 
     return manifest
 

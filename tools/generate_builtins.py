@@ -118,10 +118,7 @@ def cook_c_signatures(signatures):
         match = re.match(r"^//\WGDAPI:\W([0-9])\.([0-9])", line)
         if match:
             gdapi_major, gdapi_minor = match.groups()
-            if gdapi_major == "1" and gdapi_minor == "0":
-                gdapi = ""
-            else:
-                gdapi = f"{gdapi_major}{gdapi_minor}"
+            gdapi = f"{gdapi_major}{gdapi_minor}"
             continue
         if not line or line.startswith('//'):
             continue
@@ -130,7 +127,7 @@ def cook_c_signatures(signatures):
     return cooked_signatures
 
 
-def cook_c_signature(signature, gdapi="1.0"):
+def cook_c_signature(signature, gdapi="10"):
     # Hacky signature parsing
     a, b = signature.split('(', 1)
     assert b.endswith(')'), signature

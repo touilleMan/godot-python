@@ -46,7 +46,7 @@ cdef class AABB:
 
 {% block python_defs %}
     def __init__(self, Vector3 pos not None=Vector3(), Vector3 size not None=Vector3()):
-        gdapi.godot_aabb_new(&self._gd_data, &pos._gd_data, &size._gd_data)
+        gdapi10.godot_aabb_new(&self._gd_data, &pos._gd_data, &size._gd_data)
 
     def __repr__(self):
         return f"<AABB({self.as_string()})>"
@@ -54,29 +54,29 @@ cdef class AABB:
     @property
     def position(AABB self) -> Vector3:
         cdef Vector3 ret = Vector3.__new__(Vector3)
-        ret._gd_data = gdapi.godot_aabb_get_position(&self._gd_data)
+        ret._gd_data = gdapi10.godot_aabb_get_position(&self._gd_data)
         return ret
 
     @position.setter
     def position(AABB self, Vector3 val not None) -> None:
-        gdapi.godot_aabb_set_position(&self._gd_data, &val._gd_data)
+        gdapi10.godot_aabb_set_position(&self._gd_data, &val._gd_data)
 
     @property
     def size(AABB self) -> Vector3:
         cdef Vector3 ret = Vector3.__new__(Vector3)
-        ret._gd_data = gdapi.godot_aabb_get_size(&self._gd_data)
+        ret._gd_data = gdapi10.godot_aabb_get_size(&self._gd_data)
         return ret
 
     @size.setter
     def size(AABB self, Vector3 val not None) -> None:
-        gdapi.godot_aabb_set_size(&self._gd_data, &val._gd_data)
+        gdapi10.godot_aabb_set_size(&self._gd_data, &val._gd_data)
 
     @property
     def end(AABB self) -> Vector3:
-        cdef godot_vector3 position = gdapi.godot_aabb_get_position(&self._gd_data)
-        cdef godot_vector3 size = gdapi.godot_aabb_get_size(&self._gd_data)
+        cdef godot_vector3 position = gdapi10.godot_aabb_get_position(&self._gd_data)
+        cdef godot_vector3 size = gdapi10.godot_aabb_get_size(&self._gd_data)
         cdef Vector3 ret = Vector3.__new__(Vector3)
-        ret._gd_data = gdapi.godot_vector3_operator_add(&position, &size)
+        ret._gd_data = gdapi10.godot_vector3_operator_add(&position, &size)
         return ret
 
     {{ render_operator_eq() | indent }}

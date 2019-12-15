@@ -49,22 +49,22 @@ import math
 
 cdef inline Vector2 Vector2_multiply_vector(Vector2 self, Vector2 b):
     cdef Vector2 ret  = Vector2.__new__(Vector2)
-    ret._gd_data = gdapi.godot_vector2_operator_multiply_vector(&self._gd_data, &b._gd_data)
+    ret._gd_data = gdapi10.godot_vector2_operator_multiply_vector(&self._gd_data, &b._gd_data)
     return ret
 
 cdef inline Vector2 Vector2_multiply_scalar(Vector2 self, godot_real b):
     cdef Vector2 ret  = Vector2.__new__(Vector2)
-    ret._gd_data = gdapi.godot_vector2_operator_multiply_scalar(&self._gd_data, b)
+    ret._gd_data = gdapi10.godot_vector2_operator_multiply_scalar(&self._gd_data, b)
     return ret
 
 cdef inline Vector2 Vector2_divide_vector(Vector2 self, Vector2 b):
     cdef Vector2 ret  = Vector2.__new__(Vector2)
-    ret._gd_data = gdapi.godot_vector2_operator_divide_vector(&self._gd_data, &b._gd_data)
+    ret._gd_data = gdapi10.godot_vector2_operator_divide_vector(&self._gd_data, &b._gd_data)
     return ret
 
 cdef inline Vector2 Vector2_divide_scalar(Vector2 self, godot_real b):
     cdef Vector2 ret  = Vector2.__new__(Vector2)
-    ret._gd_data = gdapi.godot_vector2_operator_divide_scalar(&self._gd_data, b)
+    ret._gd_data = gdapi10.godot_vector2_operator_divide_scalar(&self._gd_data, b)
     return ret
 {% endblock -%}
 
@@ -77,7 +77,7 @@ cdef class Vector2:
 
 {% block python_defs %}
     def __init__(self, godot_real x=0.0, godot_real y=0.0):
-        gdapi.godot_vector2_new(&self._gd_data, x, y)
+        gdapi10.godot_vector2_new(&self._gd_data, x, y)
 
     def __repr__(Vector2 self):
         return f"<Vector2(x={self.x}, y={self.y})>"

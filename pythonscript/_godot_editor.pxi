@@ -13,7 +13,7 @@ from godot._hazmat.gdnative_api_struct cimport (
     godot_error,
     godot_dictionary
 )
-from godot._hazmat.gdapi cimport pythonscript_gdapi as gdapi
+from godot._hazmat.gdapi cimport pythonscript_gdapi10 as gdapi10
 from godot._hazmat.conversion cimport (
     godot_string_to_pyobj,
     pyobj_to_godot_string,
@@ -88,10 +88,10 @@ cdef api godot_string pythonscript_make_function(
     cdef int i
     cdef godot_string gdarg
     cdef list args_names = []
-    for i in range(gdapi.godot_pool_string_array_size(p_args)):
-        gdarg = gdapi.godot_pool_string_array_get(p_args, i)
+    for i in range(gdapi10.godot_pool_string_array_size(p_args)):
+        gdarg = gdapi10.godot_pool_string_array_get(p_args, i)
         arg = godot_string_to_pyobj(&gdarg)
-        gdapi.godot_string_destroy(&gdarg)
+        gdapi10.godot_string_destroy(&gdarg)
         args_names.append(arg.split(":", 1)[0])
 
     cdef str src = """\

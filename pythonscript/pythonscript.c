@@ -81,7 +81,7 @@ static godot_pluginscript_language_desc desc;
 #else
 # define PYTHONSCRIPT_EXPORT
 #endif
-PYTHONSCRIPT_EXPORT const godot_gdnative_core_api_struct *pythonscript_gdapi = NULL;
+PYTHONSCRIPT_EXPORT const godot_gdnative_core_api_struct *pythonscript_gdapi10 = NULL;
 PYTHONSCRIPT_EXPORT const godot_gdnative_core_1_1_api_struct *pythonscript_gdapi11 = NULL;
 PYTHONSCRIPT_EXPORT const godot_gdnative_core_1_2_api_struct *pythonscript_gdapi12 = NULL;
 PYTHONSCRIPT_EXPORT const godot_gdnative_ext_nativescript_api_struct *pythonscript_gdapi_ext_nativescript = NULL;
@@ -91,16 +91,16 @@ PYTHONSCRIPT_EXPORT const godot_gdnative_ext_arvr_api_struct *pythonscript_gdapi
 
 
 static void _register_gdapi(const godot_gdnative_init_options *options) {
-    pythonscript_gdapi = (const godot_gdnative_core_api_struct *)options->api_struct;
-    if (pythonscript_gdapi->next) {
-        pythonscript_gdapi11 = (const godot_gdnative_core_1_1_api_struct *)pythonscript_gdapi->next;
+    pythonscript_gdapi10 = (const godot_gdnative_core_api_struct *)options->api_struct;
+    if (pythonscript_gdapi10->next) {
+        pythonscript_gdapi11 = (const godot_gdnative_core_1_1_api_struct *)pythonscript_gdapi10->next;
         if (pythonscript_gdapi11->next) {
             pythonscript_gdapi12 = (const godot_gdnative_core_1_2_api_struct *)pythonscript_gdapi11->next;
         }
     }
 
-    for (unsigned int i = 0; i < pythonscript_gdapi->num_extensions; i++) {
-        const godot_gdnative_api_struct *ext = pythonscript_gdapi->extensions[i];
+    for (unsigned int i = 0; i < pythonscript_gdapi10->num_extensions; i++) {
+        const godot_gdnative_api_struct *ext = pythonscript_gdapi10->extensions[i];
         switch (ext->type) {
             case GDNATIVE_EXT_NATIVESCRIPT:
                 pythonscript_gdapi_ext_nativescript = (const godot_gdnative_ext_nativescript_api_struct *)ext;
@@ -129,14 +129,14 @@ GDN_EXPORT void godot_gdnative_init(godot_gdnative_init_options *options) {
 
     #define GD_PRINT(c_msg) { \
         godot_string gd_msg; \
-        pythonscript_gdapi->godot_string_new_with_wide_string( \
+        pythonscript_gdapi10->godot_string_new_with_wide_string( \
             &gd_msg, c_msg, -1); \
-        pythonscript_gdapi->godot_print(&gd_msg); \
-        pythonscript_gdapi->godot_string_destroy(&gd_msg); \
+        pythonscript_gdapi10->godot_print(&gd_msg); \
+        pythonscript_gdapi10->godot_string_destroy(&gd_msg); \
     }
 
     #define GD_ERROR_PRINT(msg) { \
-        pythonscript_gdapi->godot_print_error(msg, __func__, __FILE__, __LINE__); \
+        pythonscript_gdapi10->godot_print_error(msg, __func__, __FILE__, __LINE__); \
     }
 
     // Check for mandatory plugins
@@ -150,7 +150,7 @@ GDN_EXPORT void godot_gdnative_init(godot_gdnative_init_options *options) {
     // Make sure the shared library has all it symbols loaded
     // (strange bug with libpython3.6 otherwise...)
     {
-        const wchar_t *wpath = pythonscript_gdapi->godot_string_wide_str(
+        const wchar_t *wpath = pythonscript_gdapi10->godot_string_wide_str(
             options->active_library_path
         );
         char path[300];
@@ -170,11 +170,11 @@ GDN_EXPORT void godot_gdnative_init(godot_gdnative_init_options *options) {
     // Retrieve path and set pythonhome
     {
         static wchar_t pythonhome[300];
-        godot_string _pythonhome = pythonscript_gdapi->godot_string_get_base_dir(
+        godot_string _pythonhome = pythonscript_gdapi10->godot_string_get_base_dir(
             options->active_library_path
         );
-        wcsncpy(pythonhome, pythonscript_gdapi->godot_string_wide_str(&_pythonhome), 300);
-        pythonscript_gdapi->godot_string_destroy(&_pythonhome);
+        wcsncpy(pythonhome, pythonscript_gdapi10->godot_string_wide_str(&_pythonhome), 300);
+        pythonscript_gdapi10->godot_string_destroy(&_pythonhome);
         Py_SetPythonHome(pythonhome);
     }
     // TODO: site.USER_SITE seems to point to an invalid location in ~/.local

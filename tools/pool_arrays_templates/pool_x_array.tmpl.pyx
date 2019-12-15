@@ -3,7 +3,7 @@
 {{ dst }} = {{ src }}
 {% else %}
 dst = godot_string_to_pyobj(&src)
-gdapi.godot_string_destroy(&src)
+gdapi10.godot_string_destroy(&src)
 {% endif %}
 {% endmacro %}
 
@@ -18,17 +18,17 @@ cdef class {{ t.py_pool }}:
         cdef {{ t.py_pool }} other_as_pool_array
         cdef Array other_as_array
         if other is None:
-            gdapi.{{ t.gd_pool }}_new(&self._gd_data)
+            gdapi10.{{ t.gd_pool }}_new(&self._gd_data)
         else:
             try:
                 other_as_pool_array = <{{ t.py_pool }}?>other
-                gdapi.{{ t.gd_pool }}_new_copy(&self._gd_data, &other_as_pool_array._gd_data)
+                gdapi10.{{ t.gd_pool }}_new_copy(&self._gd_data, &other_as_pool_array._gd_data)
             except TypeError:
                 try:
                     other_as_array = <Array?>other
-                    gdapi.{{ t.gd_pool }}_new_with_array(&self._gd_data, &other_as_array._gd_data)
+                    gdapi10.{{ t.gd_pool }}_new_with_array(&self._gd_data, &other_as_array._gd_data)
                 except TypeError:
-                    gdapi.{{ t.gd_pool }}_new(&self._gd_data)
+                    gdapi10.{{ t.gd_pool }}_new(&self._gd_data)
                     for item in other:
 {% if t.is_base_type %}
                         {{ t.py_pool }}.append(self, item)
@@ -39,20 +39,20 @@ cdef class {{ t.py_pool }}:
     def __dealloc__(self):
         # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
         # hand otherwise we will get a segfault here
-        gdapi.{{ t.gd_pool }}_destroy(&self._gd_data)
+        gdapi10.{{ t.gd_pool }}_destroy(&self._gd_data)
 
     @staticmethod
     cdef inline {{ t.py_pool }} new():
         # Call to __new__ bypasses __init__ constructor
         cdef {{ t.py_pool }} ret = {{ t.py_pool }}.__new__({{ t.py_pool }})
-        gdapi.{{ t.gd_pool }}_new(&ret._gd_data)
+        gdapi10.{{ t.gd_pool }}_new(&ret._gd_data)
         return ret
 
     @staticmethod
     cdef inline {{ t.py_pool }} new_with_array(Array other):
         # Call to __new__ bypasses __init__ constructor
         cdef {{ t.py_pool }} ret = {{ t.py_pool }}.__new__({{ t.py_pool }})
-        gdapi.{{ t.gd_pool }}_new_with_array(&ret._gd_data, &other._gd_data)
+        gdapi10.{{ t.gd_pool }}_new_with_array(&ret._gd_data, &other._gd_data)
         return ret
 
     @staticmethod
@@ -96,10 +96,10 @@ cdef class {{ t.py_pool }}:
 
     cdef inline {{ t.py_value }} operator_getitem(self, godot_int index):
 {% if t.is_base_type %}
-        return gdapi.{{ t.gd_pool }}_get(&self._gd_data, index)
+        return gdapi10.{{ t.gd_pool }}_get(&self._gd_data, index)
 {% else %}
         cdef {{ t.py_value }} ret = {{ t.py_value }}.__new__({{ t.py_value }})
-        ret._gd_data = gdapi.{{ t.gd_pool }}_get(&self._gd_data, index)
+        ret._gd_data = gdapi10.{{ t.gd_pool }}_get(&self._gd_data, index)
         return ret
 {% endif %}
 
@@ -135,24 +135,24 @@ cdef class {{ t.py_pool }}:
                 return ret
 
         ret.resize(items)
-        cdef {{ t.gd_pool }}_read_access *src_access = gdapi.{{ t.gd_pool }}_read(
+        cdef {{ t.gd_pool }}_read_access *src_access = gdapi10.{{ t.gd_pool }}_read(
             &self._gd_data
         )
-        cdef {{ t.gd_pool }}_write_access *dst_access = gdapi.{{ t.gd_pool }}_write(
+        cdef {{ t.gd_pool }}_write_access *dst_access = gdapi10.{{ t.gd_pool }}_write(
             &ret._gd_data
         )
-        cdef const {{ t.gd_value }} *src_ptr = gdapi.{{ t.gd_pool }}_read_access_ptr(src_access)
-        cdef {{ t.gd_value }} *dst_ptr = gdapi.{{ t.gd_pool }}_write_access_ptr(dst_access)
+        cdef const {{ t.gd_value }} *src_ptr = gdapi10.{{ t.gd_pool }}_read_access_ptr(src_access)
+        cdef {{ t.gd_value }} *dst_ptr = gdapi10.{{ t.gd_pool }}_write_access_ptr(dst_access)
         cdef godot_int i
         for i in range(items):
 {% if t.is_stack_only %}
             dst_ptr[i] = src_ptr[i * step + start]
 {% else %}
-            gdapi.{{ t.gd_value }}_destroy(&dst_ptr[i])
-            gdapi.{{ t.gd_value }}_new_copy(&dst_ptr[i], &src_ptr[i * step + start])
+            gdapi10.{{ t.gd_value }}_destroy(&dst_ptr[i])
+            gdapi10.{{ t.gd_value }}_new_copy(&dst_ptr[i], &src_ptr[i * step + start])
 {% endif %}
-        gdapi.{{ t.gd_pool }}_read_access_destroy(src_access)
-        gdapi.{{ t.gd_pool }}_write_access_destroy(dst_access)
+        gdapi10.{{ t.gd_pool }}_read_access_destroy(src_access)
+        gdapi10.{{ t.gd_pool }}_write_access_destroy(dst_access)
 
         return ret
 
@@ -165,9 +165,9 @@ cdef class {{ t.py_pool }}:
         if index < 0 or index >= size:
             raise IndexError("list index out of range")
 {% if t.is_base_type %}
-        gdapi.{{ t.gd_pool }}_set(&self._gd_data, index, value)
+        gdapi10.{{ t.gd_pool }}_set(&self._gd_data, index, value)
 {% else %}
-        gdapi.{{ t.gd_pool }}_set(&self._gd_data, index, &value._gd_data)
+        gdapi10.{{ t.gd_pool }}_set(&self._gd_data, index, &value._gd_data)
 {% endif %}
 
     # TODO: support slice
@@ -178,7 +178,7 @@ cdef class {{ t.py_pool }}:
             index += size
         if index < 0 or index >= size:
             raise IndexError("list index out of range")
-        gdapi.{{ t.gd_pool }}_remove(&self._gd_data, index)
+        gdapi10.{{ t.gd_pool }}_remove(&self._gd_data, index)
 
     def __len__(self):
         return self.size()
@@ -191,10 +191,10 @@ cdef class {{ t.py_pool }}:
         {% endif %}
         for i in range(self.size()):
 {% if t.is_base_type %}
-            yield gdapi.{{ t.gd_pool }}_get(&self._gd_data, i)
+            yield gdapi10.{{ t.gd_pool }}_get(&self._gd_data, i)
 {% else %}
             item = {{ t.py_value }}.__new__({{ t.py_value }})
-            item._gd_data = gdapi.{{ t.gd_pool }}_get(&self._gd_data, i)
+            item._gd_data = gdapi10.{{ t.gd_pool }}_get(&self._gd_data, i)
             yield item
 {% endif %}
 
@@ -228,26 +228,26 @@ cdef class {{ t.py_pool }}:
         if size != other.size():
             return False
 
-        cdef {{ t.gd_pool }}_read_access *a_access = gdapi.{{ t.gd_pool }}_read(
+        cdef {{ t.gd_pool }}_read_access *a_access = gdapi10.{{ t.gd_pool }}_read(
             &self._gd_data
         )
-        cdef {{ t.gd_pool }}_read_access *b_access = gdapi.{{ t.gd_pool }}_read(
+        cdef {{ t.gd_pool }}_read_access *b_access = gdapi10.{{ t.gd_pool }}_read(
             &other._gd_data
         )
-        cdef const {{ t.gd_value }} *a_ptr = gdapi.{{ t.gd_pool }}_read_access_ptr(a_access)
-        cdef const {{ t.gd_value }} *b_ptr = gdapi.{{ t.gd_pool }}_read_access_ptr(b_access)
+        cdef const {{ t.gd_value }} *a_ptr = gdapi10.{{ t.gd_pool }}_read_access_ptr(a_access)
+        cdef const {{ t.gd_value }} *b_ptr = gdapi10.{{ t.gd_pool }}_read_access_ptr(b_access)
         cdef godot_int i
         cdef bint ret = True
         for i in range(size):
 {% if t.is_base_type %}
             if a_ptr[i] != b_ptr[i]:
 {% else %}
-            if not gdapi.{{ t.gd_value }}_operator_equal(&a_ptr[i], &b_ptr[i]):
+            if not gdapi10.{{ t.gd_value }}_operator_equal(&a_ptr[i], &b_ptr[i]):
 {% endif %}
                 ret = False
                 break
-        gdapi.{{ t.gd_pool }}_read_access_destroy(a_access)
-        gdapi.{{ t.gd_pool }}_read_access_destroy(b_access)
+        gdapi10.{{ t.gd_pool }}_read_access_destroy(a_access)
+        gdapi10.{{ t.gd_pool }}_read_access_destroy(b_access)
         return ret
 
     # Methods
@@ -255,49 +255,49 @@ cdef class {{ t.py_pool }}:
     cpdef inline {{ t.py_pool }} copy(self):
         # Call to __new__ bypasses __init__ constructor
         cdef {{ t.py_pool }} ret = {{ t.py_pool }}.__new__({{ t.py_pool }})
-        gdapi.{{ t.gd_pool }}_new_copy(&ret._gd_data, &self._gd_data)
+        gdapi10.{{ t.gd_pool }}_new_copy(&ret._gd_data, &self._gd_data)
         return ret
 
     cpdef inline void append(self, {{ t.py_value }} data):
 {% if t.is_base_type %}
-        gdapi.{{ t.gd_pool }}_append(&self._gd_data, data)
+        gdapi10.{{ t.gd_pool }}_append(&self._gd_data, data)
 {% else %}
-        gdapi.{{ t.gd_pool }}_append(&self._gd_data, &data._gd_data)
+        gdapi10.{{ t.gd_pool }}_append(&self._gd_data, &data._gd_data)
 {% endif %}
 
     cdef inline void append_array(self, {{ t.py_pool }} array):
-        gdapi.{{ t.gd_pool }}_append_array(&self._gd_data, &array._gd_data)
+        gdapi10.{{ t.gd_pool }}_append_array(&self._gd_data, &array._gd_data)
 
     cpdef inline void invert(self):
-        gdapi.{{ t.gd_pool }}_invert(&self._gd_data)
+        gdapi10.{{ t.gd_pool }}_invert(&self._gd_data)
 
     cpdef inline void push_back(self, {{ t.py_value }} data):
 {% if t.is_base_type %}
-        gdapi.{{ t.gd_pool }}_push_back(&self._gd_data, data)
+        gdapi10.{{ t.gd_pool }}_push_back(&self._gd_data, data)
 {% else %}
-        gdapi.{{ t.gd_pool }}_push_back(&self._gd_data, &data._gd_data)
+        gdapi10.{{ t.gd_pool }}_push_back(&self._gd_data, &data._gd_data)
 {% endif %}
 
     cpdef inline void resize(self, godot_int size):
-        gdapi.{{ t.gd_pool }}_resize(&self._gd_data, size)
+        gdapi10.{{ t.gd_pool }}_resize(&self._gd_data, size)
 
     cdef inline godot_int size(self):
-        return gdapi.{{ t.gd_pool }}_size(&self._gd_data)
+        return gdapi10.{{ t.gd_pool }}_size(&self._gd_data)
 
     # Raw access
 
     @contextmanager
     def raw_access(self):
-        cdef {{ t.gd_pool }}_write_access *access = gdapi.{{ t.gd_pool }}_write(
+        cdef {{ t.gd_pool }}_write_access *access = gdapi10.{{ t.gd_pool }}_write(
             &self._gd_data
         )
         cdef {{ t.py_pool }}WriteAccess pyaccess = {{ t.py_pool }}WriteAccess.__new__({{ t.py_pool }}WriteAccess)
-        pyaccess._gd_ptr = gdapi.{{ t.gd_pool }}_write_access_ptr(access)
+        pyaccess._gd_ptr = gdapi10.{{ t.gd_pool }}_write_access_ptr(access)
         try:
             yield pyaccess
 
         finally:
-            gdapi.{{ t.gd_pool }}_write_access_destroy(access)
+            gdapi10.{{ t.gd_pool }}_write_access_destroy(access)
 
 
 @cython.final
@@ -314,7 +314,7 @@ cdef class {{ t.py_pool }}WriteAccess:
 {% if t.is_stack_only %}
         ret._gd_data = self._gd_ptr[idx]
 {% else %}
-        gdapi.{{ t.gd_value }}_new_copy(&ret._gd_data, &self._gd_ptr[idx])
+        gdapi10.{{ t.gd_value }}_new_copy(&ret._gd_data, &self._gd_ptr[idx])
 {% endif %}
         return ret
 {% endif %}
@@ -325,7 +325,7 @@ cdef class {{ t.py_pool }}WriteAccess:
 {% elif t.is_stack_only %}
         self._gd_ptr[idx] = val._gd_data
 {% else %}
-        gdapi.{{ t.gd_value }}_new_copy(&self._gd_ptr[idx], &val._gd_data)
+        gdapi10.{{ t.gd_value }}_new_copy(&self._gd_ptr[idx], &val._gd_data)
 {% endif %}
 
 {% endmacro %}

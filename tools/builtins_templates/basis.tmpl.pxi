@@ -46,12 +46,12 @@ godot_basis godot_basis_slerp(godot_basis* p_self, godot_basis* p_b, godot_real 
 
 cdef inline Basis Basis_multiply_vector(Basis self, Basis b):
     cdef Basis ret  = Basis.__new__(Basis)
-    ret._gd_data = gdapi.godot_basis_operator_multiply_vector(&self._gd_data, &b._gd_data)
+    ret._gd_data = gdapi10.godot_basis_operator_multiply_vector(&self._gd_data, &b._gd_data)
     return ret
 
 cdef inline Basis Basis_multiply_scalar(Basis self, godot_real b):
     cdef Basis ret  = Basis.__new__(Basis)
-    ret._gd_data = gdapi.godot_basis_operator_multiply_scalar(&self._gd_data, b)
+    ret._gd_data = gdapi10.godot_basis_operator_multiply_scalar(&self._gd_data, b)
     return ret
 
 {%- endblock %}
@@ -64,7 +64,7 @@ cdef class Basis:
 
 {% block python_defs %}
     def __init__(self, Vector3 x not None=Vector3.RIGHT, Vector3 y not None=Vector3.UP, Vector3 z not None=Vector3.BACK):
-        gdapi.godot_basis_new_with_rows(&self._gd_data, &(<Vector3>x)._gd_data, &(<Vector3>y)._gd_data, &(<Vector3>z)._gd_data)
+        gdapi10.godot_basis_new_with_rows(&self._gd_data, &(<Vector3>x)._gd_data, &(<Vector3>y)._gd_data, &(<Vector3>z)._gd_data)
 
     @staticmethod
     def from_euler(from_):
@@ -86,27 +86,27 @@ cdef class Basis:
 
     @property
     def x(Basis self) -> Vector3:
-        return gdapi.godot_basis_get_axis(&self._gd_data, 0)
+        return gdapi10.godot_basis_get_axis(&self._gd_data, 0)
 
     @x.setter
     def x(Basis self, Vector3 val not None) -> None:
-        gdapi.godot_basis_set_axis(&self._gd_data, 0, &val._gd_data)
+        gdapi10.godot_basis_set_axis(&self._gd_data, 0, &val._gd_data)
 
     @property
     def y(Basis self) -> Vector3:
-        return gdapi.godot_basis_get_axis(&self._gd_data, 1)
+        return gdapi10.godot_basis_get_axis(&self._gd_data, 1)
 
     @y.setter
     def y(Basis self, Vector3 val not None) -> None:
-        gdapi.godot_basis_set_axis(&self._gd_data, 1, &val._gd_data)
+        gdapi10.godot_basis_set_axis(&self._gd_data, 1, &val._gd_data)
 
     @property
     def z(Basis self) -> Vector3:
-        return gdapi.godot_basis_get_axis(&self._gd_data, 2)
+        return gdapi10.godot_basis_get_axis(&self._gd_data, 2)
 
     @z.setter
     def z(Basis self, Vector3 val not None) -> None:
-        gdapi.godot_basis_set_axis(&self._gd_data, 2, &val._gd_data)
+        gdapi10.godot_basis_set_axis(&self._gd_data, 2, &val._gd_data)
 
     {{ render_operator_eq() | indent }}
     {{ render_operator_ne() | indent }}
