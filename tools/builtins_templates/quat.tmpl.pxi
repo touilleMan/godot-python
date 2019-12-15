@@ -1,4 +1,5 @@
 {%- set gd_functions = cook_c_signatures("""
+// GDAPI: 1.0
 void godot_quat_new(godot_quat* r_dest, godot_real p_x, godot_real p_y, godot_real p_z, godot_real p_w)
 void godot_quat_new_with_axis_angle(godot_quat* r_dest, godot_vector3* p_axis, godot_real p_angle)
 void godot_quat_new_with_basis(godot_quat* r_dest, godot_basis* p_basis)
@@ -28,7 +29,9 @@ godot_quat godot_quat_operator_subtract(godot_quat* p_self, godot_quat* p_b)
 godot_quat godot_quat_operator_divide(godot_quat* p_self, godot_real p_b)
 godot_bool godot_quat_operator_equal(godot_quat* p_self, godot_quat* p_b)
 godot_quat godot_quat_operator_neg(godot_quat* p_self)
+// GDAPI: 1.1
 void godot_quat_set_axis_angle(godot_quat* p_self, godot_vector3* p_axis, godot_real p_angle)
+// GDAPI: 1.2
 """) -%}
 
 {%- block pxd_header %}
@@ -68,7 +71,7 @@ cdef class Quat:
         gdapi11.godot_quat_new_with_euler(&ret._gd_data, &euler._gd_data)
         return ret
 
-    def __repr__(self):
+    def __repr__(Quat self):
         return f"<Quat(x={self.x}, y={self.y}, z={self.z}, w={self.w})>"
 
     {{ render_operator_eq() | indent }}
@@ -76,20 +79,20 @@ cdef class Quat:
 
     {{ render_method("__neg__", "godot_quat", gdname="operator_neg") | indent }}
 
-    def __pos__(self):
+    def __pos__(Quat self):
         return self
 
     {{ render_method("__add__", "godot_quat", args=[
-        ("godot_quat", "other")
+        ("godot_quat*", "other")
     ], gdname="operator_add") | indent }}
     {{ render_method("__sub__", "godot_quat", args=[
-        ("godot_quat", "other")
+        ("godot_quat*", "other")
     ], gdname="operator_subtract") | indent }}
     {{ render_method("__mul__", "godot_quat", args=[
-        ("godot_real", "other")
+        ("godot_quat*", "other")
     ], gdname="operator_subtract") | indent }}
 
-    def __truediv__(self, godot_real val):
+    def __truediv__(Quat self, godot_real val):
         if val == 0:
             raise ZeroDivisionError
         cdef Quat ret  = Quat.__new__(Quat)
@@ -101,18 +104,18 @@ cdef class Quat:
     {{ render_property("z", "godot_real", "get_z", "set_z") | indent }}
     {{ render_property("w", "godot_real", "get_w", "set_w") | indent }}
 
-	{{ render_method(**gd_functions["as_string"]) | indent }}
-	{{ render_method(**gd_functions["length"]) | indent }}
-	{{ render_method(**gd_functions["length_squared"]) | indent }}
-	{{ render_method(**gd_functions["normalized"]) | indent }}
-	{{ render_method(**gd_functions["is_normalized"]) | indent }}
-	{{ render_method(**gd_functions["inverse"]) | indent }}
-	{{ render_method(**gd_functions["dot"]) | indent }}
-	{{ render_method(**gd_functions["xform"]) | indent }}
-	{{ render_method(**gd_functions["slerp"]) | indent }}
-	{{ render_method(**gd_functions["slerpni"]) | indent }}
-	{{ render_method(**gd_functions["cubic_slerp"]) | indent }}
-	{{ render_method(**gd_functions["set_axis_angle"]) | indent }}
+    {{ render_method(**gd_functions["as_string"]) | indent }}
+    {{ render_method(**gd_functions["length"]) | indent }}
+    {{ render_method(**gd_functions["length_squared"]) | indent }}
+    {{ render_method(**gd_functions["normalized"]) | indent }}
+    {{ render_method(**gd_functions["is_normalized"]) | indent }}
+    {{ render_method(**gd_functions["inverse"]) | indent }}
+    {{ render_method(**gd_functions["dot"]) | indent }}
+    {{ render_method(**gd_functions["xform"]) | indent }}
+    {{ render_method(**gd_functions["slerp"]) | indent }}
+    {{ render_method(**gd_functions["slerpni"]) | indent }}
+    {{ render_method(**gd_functions["cubic_slerp"]) | indent }}
+    {{ render_method(**gd_functions["set_axis_angle"]) | indent }}
 {% endblock %}
 
 {%- block python_consts %}

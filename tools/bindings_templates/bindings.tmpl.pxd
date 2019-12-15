@@ -4,22 +4,22 @@
 {% from 'class.tmpl.pxd' import render_class_pxd %}
 from godot._hazmat.gdnative_api_struct cimport *
 from godot._hazmat.gdapi cimport pythonscript_gdapi as gdapi
-from godot.aabb cimport AABB
-from godot.array cimport Array
-from godot.basis cimport Basis
-from godot.color cimport Color
-from godot.dictionary cimport Dictionary
-from godot.gdstring cimport GDString
-from godot.node_path cimport NodePath
-from godot.plane cimport Plane
-from godot.quat cimport Quat
-from godot.rect2 cimport Rect2
-from godot.rid cimport RID
-from godot.transform cimport Transform
-from godot.transform2d cimport Transform2D
-from godot.vector2 cimport Vector2
-from godot.vector3 cimport Vector3
-from godot.pool_arrays cimport (
+from godot.builtins cimport (
+	AABB,
+	Array,
+	Basis,
+	Color,
+	Dictionary,
+	GDString,
+	NodePath,
+	Plane,
+	Quat,
+	Rect2,
+	RID,
+	Transform,
+	Transform2D,
+	Vector2,
+	Vector3,
     PoolIntArray,
     PoolRealArray,
     PoolByteArray,

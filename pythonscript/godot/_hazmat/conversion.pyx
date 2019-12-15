@@ -11,22 +11,22 @@ from godot._hazmat.gdnative_api_struct cimport (
     godot_variant_type,
 )
 from godot.bindings cimport Object
-from godot.vector2 cimport Vector2
-from godot.rect2 cimport Rect2
-from godot.vector3 cimport Vector3
-from godot.transform2d cimport Transform2D
-from godot.plane cimport Plane
-from godot.quat cimport Quat
-from godot.aabb cimport AABB
-from godot.basis cimport Basis
-from godot.transform cimport Transform
-from godot.color cimport Color
-from godot.node_path cimport NodePath
-from godot.rid cimport RID
-from godot.dictionary cimport Dictionary
-from godot.array cimport Array
-from godot.gdstring cimport GDString
-from godot.pool_arrays cimport (
+from godot.builtins cimport (
+    Vector2,
+    Rect2,
+    Vector3,
+    Transform2D,
+    Plane,
+    Quat,
+    AABB,
+    Basis,
+    Transform,
+    Color,
+    NodePath,
+    RID,
+    Dictionary,
+    Array,
+    GDString,
     PoolByteArray,
     PoolIntArray,
     PoolRealArray,

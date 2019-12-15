@@ -34,8 +34,7 @@ from godot._hazmat.internal cimport (
     destroy_exposed_class,
 )
 from godot.bindings cimport Object
-from godot.array cimport Array
-from godot.dictionary cimport Dictionary
+from godot.builtins cimport Array, Dictionary
 
 import inspect
 import traceback

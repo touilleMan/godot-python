@@ -1,4 +1,5 @@
 {%- set gd_functions = cook_c_signatures("""
+// GDAPI: 1.0
 void godot_transform2d_new(godot_transform2d* r_dest, godot_real p_rot, godot_vector2* p_pos)
 void godot_transform2d_new_axis_origin(godot_transform2d* r_dest, godot_vector2* p_x_axis, godot_vector2* p_y_axis, godot_vector2* p_origin)
 godot_string godot_transform2d_as_string(godot_transform2d* p_self)
@@ -21,6 +22,8 @@ godot_transform2d godot_transform2d_operator_multiply(godot_transform2d* p_self,
 void godot_transform2d_new_identity(godot_transform2d* r_dest)
 godot_rect2 godot_transform2d_xform_rect2(godot_transform2d* p_self, godot_rect2* p_v)
 godot_rect2 godot_transform2d_xform_inv_rect2(godot_transform2d* p_self, godot_rect2* p_v)
+// GDAPI: 1.1
+// GDAPI: 1.2
 """) -%}
 
 {%- block pxd_header %}
@@ -50,17 +53,17 @@ cdef class Transform2D:
     @staticmethod
     def from_rot_pos(godot_real rot, Vector2 pos not None):
         cdef Transform2D ret = Transform2D.__new__(Transform2D)
-        gdapi.godot_transform2d_new(&ret._gd_data, rot, pos)
+        gdapi.godot_transform2d_new(&ret._gd_data, rot, &pos._gd_data)
         return ret
 
-    def __repr__(self):
+    def __repr__(Transform2D self):
         return f"<Transform2D({self.as_string()})>"
 
     {{ render_operator_eq() | indent }}
     {{ render_operator_ne() | indent }}
 
     {{ render_method("__mul__", "godot_transform2d", args=[
-        ("godot_transform2d", "other")
+        ("godot_transform2d*", "other")
     ], gdname="operator_multiply") | indent }}
 
     # TODO: add axis properties once gdnative is updated

@@ -15,7 +15,7 @@ from godot._hazmat.gdnative_api_struct cimport (
     godot_pluginscript_language_data,
 )
 from godot._hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_verbose
-from godot.gdstring cimport GDString
+from godot.builtins cimport GDString
 
 import os
 import sys

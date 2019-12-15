@@ -46,6 +46,8 @@ BASE_TYPES = [
     ("godot_int", "godot_int"),
     ("godot_real", "godot_real"),
     ("bint", "godot_bool"),
+    ("uint32_t", "uint32_t"),
+    ("uint64_t", "uint64_t"),
 ]
 
 GD_TO_PY = {
@@ -89,6 +91,10 @@ def gd_to_py_signature_type(type):
     py_type = gd_to_py_type(type)
     if py_type == 'bint':
         return 'bool'
+    elif py_type == "godot_int":
+        return "int"
+    elif py_type == "godot_real":
+        return "float"
     return py_type
 
 
@@ -106,15 +112,25 @@ def is_object(type):
 
 def cook_c_signatures(signatures):
     cooked_signatures = {}
+    gdapi = ""
     for line in signatures.splitlines():
-        if not line.strip() or line.strip().startswith('//'):
+        line = line.strip()
+        match = re.match(r"^//\WGDAPI:\W([0-9])\.([0-9])", line)
+        if match:
+            gdapi_major, gdapi_minor = match.groups()
+            if gdapi_major == "1" and gdapi_minor == "0":
+                gdapi = ""
+            else:
+                gdapi = f"{gdapi_major}{gdapi_minor}"
             continue
-        cooked = cook_c_signature(line)
+        if not line or line.startswith('//'):
+            continue
+        cooked = cook_c_signature(line, gdapi=gdapi)
         cooked_signatures[cooked['pyname']] = cooked
     return cooked_signatures
 
 
-def cook_c_signature(signature):
+def cook_c_signature(signature, gdapi="1.0"):
     # Hacky signature parsing
     a, b = signature.split('(', 1)
     assert b.endswith(')'), signature
@@ -125,6 +141,7 @@ def cook_c_signature(signature):
         assert arg.count('*') < 2, signature
         if '*' in arg:
             arg_type, arg_name = [x.strip() for x in arg.split('*') if x.strip()]
+            arg_type = f"{arg_type}*"
         else:
             arg_type, arg_name = [x for x in arg.split(' ') if x]
         if arg_name.startswith('p_'):
@@ -134,6 +151,8 @@ def cook_c_signature(signature):
 
     assert '*' not in a, signature
     return_type, gdname = [x for x in a.rsplit(' ', 1) if x]
+    if return_type == 'void':
+        return_type = None
 
     for type_gdname in GD_TO_PY.keys():
         if gdname.startswith(type_gdname):
@@ -142,9 +161,10 @@ def cook_c_signature(signature):
 
     return {
         'pyname': pyname,
-        'gdname': gdname,
+        'gdname': pyname,
         'return_type': return_type,
         "args": args,
+        "gdapi": gdapi,
     }
 
 
@@ -184,14 +204,21 @@ def cook_arg(args):
     except ValueError:
         type, name = args
         default = None
+    if type.endswith('*'):
+        gd_type = type[:-1]
+        is_ptr = True
+    else:
+        gd_type = type
+        is_ptr = False
     return {
         "name": cook_name(name),
-        "gd_type": type,
-        "py_type": gd_to_py_type(type),
-        "signature_type": gd_to_py_signature_type(type),
-        "is_builtin": is_builtin(type),
-        "is_object": is_object(type),
-        "is_base_type": is_base_type(type),
+        "gd_type": gd_type,
+        "py_type": gd_to_py_type(gd_type),
+        "signature_type": gd_to_py_signature_type(gd_type),
+        "is_ptr": is_ptr,
+        "is_builtin": is_builtin(gd_type),
+        "is_object": is_object(gd_type),
+        "is_base_type": is_base_type(gd_type),
         "has_default": default is not None,
         # TODO: handle default here !
     }

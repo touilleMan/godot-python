@@ -1,4 +1,5 @@
 {%- set gd_functions = cook_c_signatures("""
+// GDAPI: 1.0
 void godot_vector2_new(godot_vector2* r_dest, godot_real p_x, godot_real p_y)
 godot_string godot_vector2_as_string(godot_vector2* p_self)
 godot_vector2 godot_vector2_normalized(godot_vector2* p_self)
@@ -12,7 +13,6 @@ godot_real godot_vector2_angle_to(godot_vector2* p_self, godot_vector2* p_to)
 godot_real godot_vector2_angle_to_point(godot_vector2* p_self, godot_vector2* p_to)
 godot_vector2 godot_vector2_linear_interpolate(godot_vector2* p_self, godot_vector2* p_b, godot_real p_t)
 godot_vector2 godot_vector2_cubic_interpolate(godot_vector2* p_self, godot_vector2* p_b, godot_vector2* p_pre_a, godot_vector2* p_post_b, godot_real p_t)
-godot_vector2 godot_vector2_move_toward(godot_vector2* p_self, godot_vector2* p_to, godot_real p_delta)
 godot_vector2 godot_vector2_rotated(godot_vector2* p_self, godot_real p_phi)
 godot_vector2 godot_vector2_tangent(godot_vector2* p_self)
 godot_vector2 godot_vector2_floor(godot_vector2* p_self)
@@ -37,6 +37,9 @@ void godot_vector2_set_x(godot_vector2* p_self, godot_real p_x)
 void godot_vector2_set_y(godot_vector2* p_self, godot_real p_y)
 godot_real godot_vector2_get_x(godot_vector2* p_self)
 godot_real godot_vector2_get_y(godot_vector2* p_self)
+// GDAPI: 1.1
+// GDAPI: 1.2
+godot_vector2 godot_vector2_move_toward(godot_vector2* p_self, godot_vector2* p_to, godot_real p_delta)
 """) -%}
 
 {%- block pxd_header %}
@@ -76,7 +79,7 @@ cdef class Vector2:
     def __init__(self, godot_real x=0.0, godot_real y=0.0):
         gdapi.godot_vector2_new(&self._gd_data, x, y)
 
-    def __repr__(self):
+    def __repr__(Vector2 self):
         return f"<Vector2(x={self.x}, y={self.y})>"
 
     {{ render_operator_eq() | indent }}
@@ -85,17 +88,17 @@ cdef class Vector2:
 
     {{ render_method("__neg__", "godot_vector2", gdname="operator_neg") | indent }}
 
-    def __pos__(self):
+    def __pos__(Vector2 self):
         return self
 
     {{ render_method("__add__", "godot_vector2", args=[
-        ("godot_vector2", "other")
+        ("godot_vector2*", "val")
     ], gdname="operator_add") | indent }}
     {{ render_method("__sub__", "godot_vector2", args=[
-        ("godot_vector2", "other")
+        ("godot_vector2*", "val")
     ], gdname="operator_subtract") | indent }}
 
-    def __mul__(self, val):
+    def __mul__(Vector2 self, val):
         cdef Vector2 _val
         try:
             _val = <Vector2?>val
@@ -104,7 +107,7 @@ cdef class Vector2:
         else:
             return Vector2_multiply_vector(self, _val)
 
-    def __truediv__(self, val):
+    def __truediv__(Vector2 self, val):
         cdef Vector2 _val
         try:
             _val = <Vector2?>val

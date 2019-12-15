@@ -1,4 +1,5 @@
 {%- set gd_functions = cook_c_signatures("""
+// GDAPI: 1.0
 void godot_color_new_rgba(godot_color* r_dest, godot_real p_r, godot_real p_g, godot_real p_b, godot_real p_a)
 void godot_color_new_rgb(godot_color* r_dest, godot_real p_r, godot_real p_g, godot_real p_b)
 godot_real godot_color_get_r(godot_color* p_self)
@@ -14,22 +15,24 @@ godot_real godot_color_get_s(godot_color* p_self)
 godot_real godot_color_get_v(godot_color* p_self)
 godot_string godot_color_as_string(godot_color* p_self)
 godot_int godot_color_to_rgba32(godot_color* p_self)
-godot_int godot_color_to_abgr32(godot_color* p_self)
-godot_int godot_color_to_abgr64(godot_color* p_self)
-godot_int godot_color_to_argb64(godot_color* p_self)
-godot_int godot_color_to_rgba64(godot_color* p_self)
 godot_int godot_color_to_argb32(godot_color* p_self)
 godot_real godot_color_gray(godot_color* p_self)
 godot_color godot_color_inverted(godot_color* p_self)
 godot_color godot_color_contrasted(godot_color* p_self)
 godot_color godot_color_linear_interpolate(godot_color* p_self, godot_color* p_b, godot_real p_t)
 godot_color godot_color_blend(godot_color* p_self, godot_color* p_over)
-godot_color godot_color_darkened(godot_color* p_self, godot_real p_amount)
-godot_color godot_color_from_hsv(godot_color* p_self, godot_real p_h, godot_real p_s, godot_real p_v, godot_real p_a)
-godot_color godot_color_lightened(godot_color* p_self, godot_real p_amount)
 godot_string godot_color_to_html(godot_color* p_self, godot_bool p_with_alpha)
 godot_bool godot_color_operator_equal(godot_color* p_self, godot_color* p_b)
 godot_bool godot_color_operator_less(godot_color* p_self, godot_color* p_b)
+// GDAPI: 1.1
+godot_int godot_color_to_abgr32(godot_color* p_self)
+godot_int godot_color_to_abgr64(godot_color* p_self)
+godot_int godot_color_to_argb64(godot_color* p_self)
+godot_int godot_color_to_rgba64(godot_color* p_self)
+godot_color godot_color_darkened(godot_color* p_self, godot_real p_amount)
+godot_color godot_color_from_hsv(godot_color* p_self, godot_real p_h, godot_real p_s, godot_real p_v, godot_real p_a)
+godot_color godot_color_lightened(godot_color* p_self, godot_real p_amount)
+// GDAPI: 1.2
 """) -%}
 
 {%- block pxd_header %}
@@ -62,35 +65,35 @@ cdef class Color:
         return ret
 
     @property
-    def r8(self):
+    def r8(Color self):
         return int(self.r * 256)
 
     @r8.setter
-    def r8(self, val):
+    def r8(Color self, val):
         self.r = (float(val) / 256)
 
     @property
-    def g8(self):
+    def g8(Color self):
         return int(self.g * 256)
 
     @g8.setter
-    def g8(self, val):
+    def g8(Color self, val):
         self.g = (float(val) / 256)
 
     @property
-    def b8(self):
+    def b8(Color self):
         return int(self.b * 256)
 
     @b8.setter
-    def b8(self, val):
+    def b8(Color self, val):
         self.b = (float(val) / 256)
 
     @property
-    def a8(self):
+    def a8(Color self):
         return int(self.a * 256)
 
     @a8.setter
-    def a8(self, val):
+    def a8(Color self, val):
         self.a = (float(val) / 256)
 
     {{ render_property("r", "godot_real", "get_r", "set_r") | indent }}

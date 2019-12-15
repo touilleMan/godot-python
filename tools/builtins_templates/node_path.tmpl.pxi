@@ -1,4 +1,5 @@
 {%- set gd_functions = cook_c_signatures("""
+// GDAPI: 1.0
 void godot_node_path_new(godot_node_path* r_dest, godot_string* p_from)
 void godot_node_path_new_copy(godot_node_path* r_dest, godot_node_path* p_src)
 void godot_node_path_destroy(godot_node_path* p_self)
@@ -11,7 +12,9 @@ godot_string godot_node_path_get_subname(godot_node_path* p_self, godot_int p_id
 godot_string godot_node_path_get_concatenated_subnames(godot_node_path* p_self)
 godot_bool godot_node_path_is_empty(godot_node_path* p_self)
 godot_bool godot_node_path_operator_equal(godot_node_path* p_self, godot_node_path* p_b)
+// GDAPI: 1.1
 godot_node_path godot_node_path_get_as_property_path(godot_node_path* p_self)
+// GDAPI: 1.2
 """) -%}
 
 {%- block pxd_header %}
@@ -38,15 +41,15 @@ cdef class NodePath:
             gdapi.godot_node_path_new(&self._gd_data, &gd_from)
             gdapi.godot_string_destroy(&gd_from)
 
-    def __dealloc__(self):
+    def __dealloc__(NodePath self):
         # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
         # hand otherwise we will get a segfault here
         gdapi.godot_node_path_destroy(&self._gd_data)
 
-    def __repr__(self):
+    def __repr__(NodePath self):
         return f"<NodePath({self.as_string()})>"
 
-    def __str__(self):
+    def __str__(NodePath self):
         return self.as_string()
 
     {{ render_operator_eq() | indent }}

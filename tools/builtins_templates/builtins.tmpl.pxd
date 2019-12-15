@@ -4,10 +4,22 @@
 cimport cython
 from libc.stdint cimport uintptr_t
 
+from godot._hazmat.gdnative_api_struct cimport *
 from godot._hazmat.gdapi cimport (
     pythonscript_gdapi as gdapi,
     pythonscript_gdapi11 as gdapi11,
     pythonscript_gdapi12 as gdapi12,
+)
+from godot.array cimport Array
+from godot.dictionary cimport Dictionary
+from godot.pool_arrays cimport (
+    PoolIntArray,
+    PoolRealArray,
+    PoolByteArray,
+    PoolVector2Array,
+    PoolVector3Array,
+    PoolColorArray,
+    PoolStringArray,
 )
 
 {% set render_target = "rid" %}

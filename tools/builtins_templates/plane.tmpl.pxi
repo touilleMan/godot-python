@@ -1,4 +1,5 @@
 {%- set gd_functions = cook_c_signatures("""
+// GDAPI: 1.0
 void godot_plane_new_with_reals(godot_plane* r_dest, godot_real p_a, godot_real p_b, godot_real p_c, godot_real p_d)
 void godot_plane_new_with_vectors(godot_plane* r_dest, godot_vector3* p_v1, godot_vector3* p_v2, godot_vector3* p_v3)
 void godot_plane_new_with_normal(godot_plane* r_dest, godot_vector3* p_normal, godot_real p_d)
@@ -19,6 +20,8 @@ void godot_plane_set_normal(godot_plane* p_self, godot_vector3* p_normal)
 godot_vector3 godot_plane_get_normal(godot_plane* p_self)
 godot_real godot_plane_get_d(godot_plane* p_self)
 void godot_plane_set_d(godot_plane* p_self, godot_real p_d)
+// GDAPI: 1.1
+// GDAPI: 1.2
 """) -%}
 
 {%- block pxd_header %}
@@ -41,15 +44,15 @@ cdef class Plane:
     def from_normal(Vector3 normal not None, godot_real d):
         return Plane.new_with_normal(normal, d)
 
-    def __repr__(self):
+    def __repr__(Plane self):
         return f"<Plane({self.as_string()})>"
 
     {{ render_operator_eq() | indent }}
     {{ render_operator_ne() | indent }}
 
-    {{ render_method("__neg__", "godot_vector2", gdname="operator_neg") | indent }}
+    {{ render_method("__neg__", "godot_plane", gdname="operator_neg") | indent }}
 
-    def __pos__(self):
+    def __pos__(Plane self):
         return self
 
     {{ render_property("normal", "godot_vector3", "get_normal", "set_normal") | indent }}

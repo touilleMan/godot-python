@@ -1,4 +1,5 @@
 {%- set gd_functions = cook_c_signatures("""
+// GDAPI: 1.0
 void godot_string_new(godot_string* r_dest)
 void godot_string_new_copy(godot_string* r_dest, godot_string* p_src)
 void godot_string_new_with_wide_string(godot_string* r_dest, wchar_t* p_contents, int p_size)
@@ -9,9 +10,9 @@ godot_bool godot_string_operator_equal(godot_string* p_self, godot_string* p_b)
 godot_bool godot_string_operator_less(godot_string* p_self, godot_string* p_b)
 godot_string godot_string_operator_plus(godot_string* p_self, godot_string* p_b)
 godot_int godot_string_length(godot_string* p_self)
-signed char godot_string_casecmp_to(godot_string* p_self, godot_string* p_str)
-signed char godot_string_nocasecmp_to(godot_string* p_self, godot_string* p_str)
-signed char godot_string_naturalnocasecmp_to(godot_string* p_self, godot_string* p_str)
+// signed char godot_string_casecmp_to(godot_string* p_self, godot_string* p_str)
+// signed char godot_string_nocasecmp_to(godot_string* p_self, godot_string* p_str)
+// signed char godot_string_naturalnocasecmp_to(godot_string* p_self, godot_string* p_str)
 godot_bool godot_string_begins_with(godot_string* p_self, godot_string* p_string)
 godot_bool godot_string_begins_with_char_array(godot_string* p_self, char* p_char_array)
 godot_array godot_string_bigrams(godot_string* p_self)
@@ -25,8 +26,8 @@ godot_int godot_string_findmk_from_in_place(godot_string* p_self, godot_array* p
 godot_int godot_string_findn(godot_string* p_self, godot_string p_what)
 godot_int godot_string_findn_from(godot_string* p_self, godot_string p_what, godot_int p_from)
 godot_int godot_string_find_last(godot_string* p_self, godot_string p_what)
-godot_string godot_string_format(godot_string* p_self, godot_variant* p_values)
-godot_string godot_string_format_with_custom_placeholder(godot_string* p_self, godot_variant* p_values, char* p_placeholder)
+// godot_string godot_string_format(godot_string* p_self, godot_variant* p_values)
+// godot_string godot_string_format_with_custom_placeholder(godot_string* p_self, godot_variant* p_values, char* p_placeholder)
 godot_string godot_string_hex_encode_buffer(uint8_t* p_buffer, godot_int p_len)
 godot_int godot_string_hex_to_int(godot_string* p_self)
 godot_int godot_string_hex_to_int_without_prefix(godot_string* p_self)
@@ -146,12 +147,14 @@ godot_bool godot_string_is_valid_html_color(godot_string* p_self)
 godot_bool godot_string_is_valid_identifier(godot_string* p_self)
 godot_bool godot_string_is_valid_integer(godot_string* p_self)
 godot_bool godot_string_is_valid_ip_address(godot_string* p_self)
+void godot_string_destroy(godot_string* p_self)
+// GDAPI: 1.1
 godot_string godot_string_dedent(godot_string* p_self)
-godot_string godot_string_trim_prefix(godot_string* p_self, godot_string* p_prefix)
-godot_string godot_string_trim_suffix(godot_string* p_self, godot_string* p_suffix)
 godot_string godot_string_rstrip(godot_string* p_self, godot_string* p_chars)
 godot_pool_string_array godot_string_rsplit(godot_string* p_self, godot_string* p_divisor, godot_bool p_allow_empty, godot_int p_maxsplit)
-void godot_string_destroy(godot_string* p_self)
+godot_string godot_string_trim_prefix(godot_string* p_self, godot_string* p_prefix)
+godot_string godot_string_trim_suffix(godot_string* p_self, godot_string* p_suffix)
+// GDAPI: 1.2
 """) -%}
 
 {%- block pxd_header %}
@@ -173,15 +176,15 @@ cdef class GDString:
         else:
             pyobj_to_godot_string(pystr, &self._gd_data)
 
-    def __dealloc__(self):
+    def __dealloc__(GDString self):
         # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
         # hand otherwise we will get a segfault here
         gdapi.godot_string_destroy(&self._gd_data)
 
-    def __repr__(self):
+    def __repr__(GDString self):
         return f"<GDString({str(self)!r})>"
 
-    def __str__(self):
+    def __str__(GDString self):
         return godot_string_to_pyobj(&self._gd_data)
 
     {{ render_operator_eq() | indent }}
@@ -189,7 +192,7 @@ cdef class GDString:
     {{ render_operator_lt() | indent }}
 
     {{ render_method("__add__", "godot_string", args=[
-        ("godot_string", "other")
+        ("godot_string*", "other")
     ], gdname="operator_plus") | indent }}
 
     {{ render_method(**gd_functions["begins_with"]) | indent }}
@@ -197,7 +200,6 @@ cdef class GDString:
     {{ render_method(**gd_functions["c_escape"]) | indent }}
     {{ render_method(**gd_functions["c_unescape"]) | indent }}
     {{ render_method(**gd_functions["capitalize"]) | indent }}
-    {{ render_method(**gd_functions["casecmp_to"]) | indent }}
     {{ render_method(**gd_functions["dedent"]) | indent }}
     {{ render_method(**gd_functions["empty"]) | indent }}
     {{ render_method(**gd_functions["ends_with"]) | indent }}
@@ -205,7 +207,6 @@ cdef class GDString:
     {{ render_method(**gd_functions["find"]) | indent }}
     {{ render_method(**gd_functions["find_last"]) | indent }}
     {{ render_method(**gd_functions["findn"]) | indent }}
-    {{ render_method(**gd_functions["format"]) | indent }}
     {{ render_method(**gd_functions["get_base_dir"]) | indent }}
     {{ render_method(**gd_functions["get_basename"]) | indent }}
     {{ render_method(**gd_functions["get_extension"]) | indent }}
@@ -230,8 +231,6 @@ cdef class GDString:
     {{ render_method(**gd_functions["matchn"]) | indent }}
     {{ render_method(**gd_functions["md5_buffer"]) | indent }}
     {{ render_method(**gd_functions["md5_text"]) | indent }}
-    {{ render_method(**gd_functions["nocasecmp_to"]) | indent }}
-    {{ render_method(**gd_functions["ord_at"]) | indent }}
     {{ render_method(**gd_functions["pad_decimals"]) | indent }}
     {{ render_method(**gd_functions["pad_zeros"]) | indent }}
     {{ render_method(**gd_functions["percent_decode"]) | indent }}

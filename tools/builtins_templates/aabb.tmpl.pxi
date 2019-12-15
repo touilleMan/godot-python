@@ -1,4 +1,5 @@
 {%- set gd_functions = cook_c_signatures("""
+// GDAPI: 1.0
 void godot_aabb_new(godot_aabb* r_dest, godot_vector3* p_pos, godot_vector3* p_size)
 godot_vector3 godot_aabb_get_position(godot_aabb* p_self)
 void godot_aabb_set_position(godot_aabb* p_self, godot_vector3* p_v)
@@ -26,6 +27,8 @@ godot_aabb godot_aabb_expand(godot_aabb* p_self, godot_vector3* p_to_point)
 godot_aabb godot_aabb_grow(godot_aabb* p_self, godot_real p_by)
 godot_vector3 godot_aabb_get_endpoint(godot_aabb* p_self, godot_int p_idx)
 godot_bool godot_aabb_operator_equal(godot_aabb* p_self, godot_aabb* p_b)
+// GDAPI: 1.1
+// GDAPI: 1.2
 """) -%}
 from godot.bindings cimport Resource
 
@@ -49,27 +52,27 @@ cdef class AABB:
         return f"<AABB({self.as_string()})>"
 
     @property
-    def position(self) -> Vector3:
+    def position(AABB self) -> Vector3:
         cdef Vector3 ret = Vector3.__new__(Vector3)
         ret._gd_data = gdapi.godot_aabb_get_position(&self._gd_data)
         return ret
 
     @position.setter
-    def position(self, Vector3 val not None) -> None:
+    def position(AABB self, Vector3 val not None) -> None:
         gdapi.godot_aabb_set_position(&self._gd_data, &val._gd_data)
 
     @property
-    def size(self) -> Vector3:
+    def size(AABB self) -> Vector3:
         cdef Vector3 ret = Vector3.__new__(Vector3)
         ret._gd_data = gdapi.godot_aabb_get_size(&self._gd_data)
         return ret
 
     @size.setter
-    def size(self, Vector3 val not None) -> None:
+    def size(AABB self, Vector3 val not None) -> None:
         gdapi.godot_aabb_set_size(&self._gd_data, &val._gd_data)
 
     @property
-    def end(self) -> Vector3:
+    def end(AABB self) -> Vector3:
         cdef godot_vector3 position = gdapi.godot_aabb_get_position(&self._gd_data)
         cdef godot_vector3 size = gdapi.godot_aabb_get_size(&self._gd_data)
         cdef Vector3 ret = Vector3.__new__(Vector3)

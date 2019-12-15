@@ -1,9 +1,12 @@
 {%- set gd_functions = cook_c_signatures("""
+// GDAPI: 1.0
 void godot_rid_new(godot_rid* r_dest)
 godot_int godot_rid_get_id(godot_rid* p_self)
 void godot_rid_new_with_resource(godot_rid* r_dest, godot_object* p_from)
 godot_bool godot_rid_operator_equal(godot_rid* p_self, godot_rid* p_b)
 godot_bool godot_rid_operator_less(godot_rid* p_self, godot_rid* p_b)
+// GDAPI: 1.1
+// GDAPI: 1.2
 """) -%}
 
 {%- block pxd_header %}
@@ -29,7 +32,7 @@ cdef class RID:
         else:
             gdapi.godot_rid_new(&self._gd_data)
 
-    def __repr__(self):
+    def __repr__(RID self):
         return f"<RID(id={self.get_id()})>"
 
     @staticmethod

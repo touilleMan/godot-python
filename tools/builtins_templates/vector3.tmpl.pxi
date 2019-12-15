@@ -1,4 +1,5 @@
 {%- set gd_functions = cook_c_signatures("""
+// GDAPI: 1.0
 void godot_vector3_new(godot_vector3* r_dest, godot_real p_x, godot_real p_y, godot_real p_z)
 godot_string godot_vector3_as_string(godot_vector3* p_self)
 godot_int godot_vector3_min_axis(godot_vector3* p_self)
@@ -12,7 +13,6 @@ godot_vector3 godot_vector3_snapped(godot_vector3* p_self, godot_vector3* p_by)
 godot_vector3 godot_vector3_rotated(godot_vector3* p_self, godot_vector3* p_axis, godot_real p_phi)
 godot_vector3 godot_vector3_linear_interpolate(godot_vector3* p_self, godot_vector3* p_b, godot_real p_t)
 godot_vector3 godot_vector3_cubic_interpolate(godot_vector3* p_self, godot_vector3* p_b, godot_vector3* p_pre_a, godot_vector3* p_post_b, godot_real p_t)
-godot_vector3 godot_vector3_move_toward(godot_vector3* p_self, godot_vector3* p_to, godot_real p_delta)
 godot_real godot_vector3_dot(godot_vector3* p_self, godot_vector3* p_b)
 godot_vector3 godot_vector3_cross(godot_vector3* p_self, godot_vector3* p_b)
 godot_basis godot_vector3_outer(godot_vector3* p_self, godot_vector3* p_b)
@@ -37,6 +37,9 @@ godot_bool godot_vector3_operator_less(godot_vector3* p_self, godot_vector3* p_b
 godot_vector3 godot_vector3_operator_neg(godot_vector3* p_self)
 void godot_vector3_set_axis(godot_vector3* p_self, godot_vector3_axis p_axis, godot_real p_val)
 godot_real godot_vector3_get_axis(godot_vector3* p_self, godot_vector3_axis p_axis)
+// GDAPI: 1.1
+// GDAPI: 1.2
+godot_vector3 godot_vector3_move_toward(godot_vector3* p_self, godot_vector3* p_to, godot_real p_delta)
 """) -%}
 
 {%- block pxd_header %}
@@ -113,17 +116,17 @@ cdef class Vector3:
 
     {{ render_method("__neg__", "godot_vector3", gdname="operator_neg") | indent }}
 
-    def __pos__(self):
+    def __pos__(Vector3 self):
         return self
 
     {{ render_method("__add__", "godot_vector3", args=[
-        ("godot_vector3", "other")
+        ("godot_vector3*", "other")
     ], gdname="operator_add") | indent }}
     {{ render_method("__sub__", "godot_vector3", args=[
-        ("godot_vector3", "other")
+        ("godot_vector3*", "other")
     ], gdname="operator_subtract") | indent }}
 
-    def __mul__(self, val):
+    def __mul__(Vector3 self, val):
         cdef Vector3 _val
         try:
             _val = <Vector3?>val
@@ -132,7 +135,7 @@ cdef class Vector3:
         else:
             return Vector3_multiply_vector(self, _val)
 
-    def __truediv__(self, val):
+    def __truediv__(Vector3 self, val):
         cdef Vector3 _val
         try:
             _val = <Vector3?>val

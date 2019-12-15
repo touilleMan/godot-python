@@ -337,14 +337,28 @@ env.AlwaysBuild("generate_gdnative_api_struct")
 
 godot_pool_arrays_pyx, godot_pool_arrays_pxd = env.Command(
     target=("pythonscript/godot/pool_arrays.pyx", "pythonscript/godot/pool_arrays.pxd"),
-    source=(),
+    source=("pythonscript/godot/builtins.pxd"),
     action=("python tools/generate_pool_arrays.py  -o ${TARGET}"),
 )
 env.Depends(
     godot_pool_arrays_pyx,
-    ["tools/generate_pool_arrays.py", env.Glob("tools/pool_array_templates/*")],
+    ["tools/generate_pool_arrays.py", env.Glob("tools/pool_arrays_templates/*")],
 )
 env.Alias("generate_pool_arrays", godot_pool_arrays_pyx)
+
+
+### Generate pythonscript/godot/builtins.pyx&pxd ###
+
+godot_builtins_pyx, godot_builtins_pxd = env.Command(
+    target=("pythonscript/godot/builtins.pyx", "pythonscript/godot/builtins.pxd"),
+    source=(),
+    action=("python tools/generate_builtins.py  -o ${TARGET}"),
+)
+env.Depends(
+    godot_builtins_pyx,
+    ["tools/generate_builtins.py", env.Glob("tools/builtins_templates/*")],
+)
+env.Alias("generate_builtins", godot_builtins_pyx)
 
 
 ### Generate pythonscript/godot/bindings.pyx&pxd ###
@@ -352,9 +366,9 @@ env.Alias("generate_pool_arrays", godot_pool_arrays_pyx)
 sample_opt = "--sample" if env["sample"] else ""
 godot_bindings_pyx, godot_bindings_pxd = env.Command(
     target=("pythonscript/godot/bindings.pyx", "pythonscript/godot/bindings.pxd"),
-    source=("%s/api.json" % env["gdnative_include_dir"],),
+    source=("%s/api.json" % env["gdnative_include_dir"], "pythonscript/godot/builtins.pxd"),
     action=(
-        "python tools/generate_bindings.py  -i ${SOURCES} -o ${TARGET} " + sample_opt
+        "python tools/generate_bindings.py  -i ${SOURCE} -o ${TARGET} " + sample_opt
     ),
 )
 env.Depends(
@@ -393,6 +407,7 @@ godot_bindings_pyx_compiled = cython_bindings_env.CythonCompile(godot_bindings_p
 pythonscript_godot_pyxs_except_bindings = [
     *[src for src in env.Glob("pythonscript/godot/*.pyx") if src != godot_bindings_pyx],
     *env.Glob("pythonscript/godot/_hazmat/*.pyx"),
+    godot_builtins_pyx,
     godot_pool_arrays_pyx,
 ]
 pythonscript_godot_pyxs_except_bindings_to_c = [
@@ -409,6 +424,7 @@ pythonscript_godot_pxds = [
     *env.Glob("pythonscript/godot/*.pxd"),
     *env.Glob("pythonscript/godot/_hazmat/*.pxd"),
     godot_pool_arrays_pxd,
+    godot_builtins_pxd,
     gdnative_api_struct_pxd,
     godot_bindings_pxd,
 ]

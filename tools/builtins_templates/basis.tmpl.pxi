@@ -1,4 +1,5 @@
 {%- set gd_functions = cook_c_signatures("""
+// GDAPI: 1.0
 void godot_basis_new_with_rows(godot_basis* r_dest, godot_vector3* p_x_axis, godot_vector3* p_y_axis, godot_vector3* p_z_axis)
 void godot_basis_new_with_axis_and_angle(godot_basis* r_dest, godot_vector3* p_axis, godot_real p_phi)
 void godot_basis_new_with_euler(godot_basis* r_dest, godot_vector3* p_euler)
@@ -12,11 +13,6 @@ godot_basis godot_basis_rotated(godot_basis* p_self, godot_vector3* p_axis, godo
 godot_basis godot_basis_scaled(godot_basis* p_self, godot_vector3* p_scale)
 godot_vector3 godot_basis_get_scale(godot_basis* p_self)
 godot_vector3 godot_basis_get_euler(godot_basis* p_self)
-godot_quat godot_basis_get_quat(godot_basis* p_self)
-void godot_basis_set_quat(godot_basis* p_self, godot_quat* p_quat)
-void godot_basis_set_axis_angle_scale(godot_basis* p_self, godot_vector3* p_axis, godot_real p_phi, godot_vector3* p_scale)
-void godot_basis_set_euler_scale(godot_basis* p_self, godot_vector3* p_euler, godot_vector3* p_scale)
-void godot_basis_set_quat_scale(godot_basis* p_self, godot_quat* p_quat, godot_vector3* p_scale)
 godot_real godot_basis_tdotx(godot_basis* p_self, godot_vector3* p_with)
 godot_real godot_basis_tdoty(godot_basis* p_self, godot_vector3* p_with)
 godot_real godot_basis_tdotz(godot_basis* p_self, godot_vector3* p_with)
@@ -34,7 +30,14 @@ godot_basis godot_basis_operator_add(godot_basis* p_self, godot_basis* p_b)
 godot_basis godot_basis_operator_subtract(godot_basis* p_self, godot_basis* p_b)
 godot_basis godot_basis_operator_multiply_vector(godot_basis* p_self, godot_basis* p_b)
 godot_basis godot_basis_operator_multiply_scalar(godot_basis* p_self, godot_real p_b)
+// GDAPI: 1.1
+godot_quat godot_basis_get_quat(godot_basis* p_self)
+void godot_basis_set_quat(godot_basis* p_self, godot_quat* p_quat)
+void godot_basis_set_axis_angle_scale(godot_basis* p_self, godot_vector3* p_axis, godot_real p_phi, godot_vector3* p_scale)
+void godot_basis_set_euler_scale(godot_basis* p_self, godot_vector3* p_euler, godot_vector3* p_scale)
+void godot_basis_set_quat_scale(godot_basis* p_self, godot_quat* p_quat, godot_vector3* p_scale)
 godot_basis godot_basis_slerp(godot_basis* p_self, godot_basis* p_b, godot_real p_t)
+// GDAPI: 1.2
 """) -%}
 
 {%- block pxd_header -%}
@@ -82,43 +85,40 @@ cdef class Basis:
         return f"<Basis({self.as_string()})>"
 
     @property
-    def x(self) -> Vector3:
+    def x(Basis self) -> Vector3:
         return gdapi.godot_basis_get_axis(&self._gd_data, 0)
 
     @x.setter
-    def x(self, Vector3 val not None) -> None:
+    def x(Basis self, Vector3 val not None) -> None:
         gdapi.godot_basis_set_axis(&self._gd_data, 0, &val._gd_data)
 
     @property
-    def y(self) -> Vector3:
+    def y(Basis self) -> Vector3:
         return gdapi.godot_basis_get_axis(&self._gd_data, 1)
 
     @y.setter
-    def y(self, Vector3 val not None) -> None:
+    def y(Basis self, Vector3 val not None) -> None:
         gdapi.godot_basis_set_axis(&self._gd_data, 1, &val._gd_data)
 
     @property
-    def z(self) -> Vector3:
+    def z(Basis self) -> Vector3:
         return gdapi.godot_basis_get_axis(&self._gd_data, 2)
 
     @z.setter
-    def z(self, Vector3 val not None) -> None:
+    def z(Basis self, Vector3 val not None) -> None:
         gdapi.godot_basis_set_axis(&self._gd_data, 2, &val._gd_data)
 
     {{ render_operator_eq() | indent }}
     {{ render_operator_ne() | indent }}
 
-    def __add__(self, Basis val not None):
-        cdef Basis ret  = Basis.__new__(Basis)
-        ret._gd_data = gdapi.godot_basis_operator_add(&self._gd_data, &val._gd_data)
-        return ret
+    {{ render_method("__add__", "godot_basis", args=[
+        ("godot_basis*", "val")
+    ], gdname="operator_add") | indent }}
+    {{ render_method("__sub__", "godot_basis", args=[
+        ("godot_basis*", "val")
+    ], gdname="operator_subtract") | indent }}
 
-    def __sub__(self, Basis val not None):
-        cdef Basis ret  = Basis.__new__(Basis)
-        ret._gd_data = gdapi.godot_basis_operator_subtract(&self._gd_data, &val._gd_data)
-        return ret
-
-    def __mul__(self, val):
+    def __mul__(Basis self, val):
         cdef Basis _val
 
         try:

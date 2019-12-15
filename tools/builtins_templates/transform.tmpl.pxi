@@ -1,7 +1,7 @@
 {%- set gd_functions = cook_c_signatures("""
+// GDAPI: 1.0
 void godot_transform_new_with_axis_origin(godot_transform* r_dest, godot_vector3* p_x_axis, godot_vector3* p_y_axis, godot_vector3* p_z_axis, godot_vector3* p_origin)
 void godot_transform_new(godot_transform* r_dest, godot_basis* p_basis, godot_vector3* p_origin)
-void godot_transform_new_with_quat(godot_transform* r_dest, godot_quat* p_quat)
 godot_basis godot_transform_get_basis(godot_transform* p_self)
 void godot_transform_set_basis(godot_transform* p_self, godot_basis* p_v)
 godot_vector3 godot_transform_get_origin(godot_transform* p_self)
@@ -23,6 +23,9 @@ godot_vector3 godot_transform_xform_vector3(godot_transform* p_self, godot_vecto
 godot_vector3 godot_transform_xform_inv_vector3(godot_transform* p_self, godot_vector3* p_v)
 godot_aabb godot_transform_xform_aabb(godot_transform* p_self, godot_aabb* p_v)
 godot_aabb godot_transform_xform_inv_aabb(godot_transform* p_self, godot_aabb* p_v)
+// GDAPI: 1.1
+void godot_transform_new_with_quat(godot_transform* r_dest, godot_quat* p_quat)
+// GDAPI: 1.2
 """) -%}
 
 {%- block pxd_header %}
@@ -42,7 +45,7 @@ cdef class Transform:
         if x_axis is None and y_axis is None and z_axis is None and origin is None:
             gdapi.godot_transform_new_identity(&self._gd_data)
         else:
-            gdapi.godot_transform_new_axis_origin(
+            gdapi.godot_transform_new_with_axis_origin(
                 &self._gd_data,
                 &(<Vector3?>x_axis)._gd_data,
                 &(<Vector3?>y_axis)._gd_data,
@@ -53,27 +56,27 @@ cdef class Transform:
     @staticmethod
     def from_basis_origin(Basis basis not None, Vector3 origin not None):
         cdef Transform ret = Transform.__new__(Transform)
-        gdapi.godot_transform_new(&ret._gd_data, basis, origin)
+        gdapi.godot_transform_new(&ret._gd_data, &basis._gd_data, &origin._gd_data)
         return ret
 
     @staticmethod
     def from_quat(Quat quat not None):
         cdef Transform ret = Transform.__new__(Transform)
-        gdapi.godot_transform_new(&ret._gd_data, &quat._gd_data)
+        gdapi11.godot_transform_new_with_quat(&ret._gd_data, &quat._gd_data)
         return ret
 
-    def __repr__(self):
+    def __repr__(Transform self):
         return f"<Transform({self.as_string()})>"
 
     {{ render_operator_eq() | indent }}
     {{ render_operator_ne() | indent }}
 
     {{ render_method("__mul__", "godot_transform", args=[
-        ("godot_transform", "other")
+        ("godot_transform*", "other")
     ], gdname="operator_multiply") | indent }}
 
-    {{ render_property("basis", "godot_vector2", "get_basis", "set_basis") | indent }}
-    {{ render_property("origin", "godot_vector2", "get_origin", "set_origin") | indent }}
+    {{ render_property("basis", "godot_basis", "get_basis", "set_basis") | indent }}
+    {{ render_property("origin", "godot_vector3", "get_origin", "set_origin") | indent }}
 
     {{ render_method(**gd_functions["as_string"]) | indent }}
     {{ render_method(**gd_functions["inverse"]) | indent }}

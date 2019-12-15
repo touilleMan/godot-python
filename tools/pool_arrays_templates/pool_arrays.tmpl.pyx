@@ -17,12 +17,14 @@ from godot._hazmat.gdnative_api_struct cimport (
 	{{ t.gd_pool }}_read_access,
 {% endfor %}
 )
-from godot.array cimport Array
+from godot.builtins cimport (
+	Array,
 {% for t in types %}
 {% if not t.is_base_type %}
-from godot.{{ t.py_value.lower() }} cimport {{ t.py_value }}
+	{{ t.py_value }},
 {% endif %}
 {% endfor %}
+)
 
 from contextlib import contextmanager
 
