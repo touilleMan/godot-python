@@ -1,10 +1,16 @@
-from godot.bindings cimport Resource
-{% set py_type = "RID" %}
+{%- set gd_functions = cook_c_signatures("""
+void godot_rid_new(godot_rid* r_dest)
+godot_int godot_rid_get_id(godot_rid* p_self)
+void godot_rid_new_with_resource(godot_rid* r_dest, godot_object* p_from)
+godot_bool godot_rid_operator_equal(godot_rid* p_self, godot_rid* p_b)
+godot_bool godot_rid_operator_less(godot_rid* p_self, godot_rid* p_b)
+""") -%}
 
-{% block pxd_header %}
-{% endblock %}
-{% block pyx_header %}
-{% endblock %}
+{%- block pxd_header %}
+{% endblock -%}
+{%- block pyx_header %}
+from godot.bindings cimport Resource
+{% endblock -%}
 
 
 @cython.final
@@ -32,9 +38,13 @@ cdef class RID:
         cdef RID ret = RID.__new__(RID)
         gdapi.godot_rid_new_with_resource(&ret._gd_data, resource._gd_ptr)
         return ret
-{% endblock %}
 
     {{ render_operator_eq() | indent }}
     {{ render_operator_ne() | indent }}
     {{ render_operator_lt() | indent }}
-    {{ render_method("get_id", "godot_int") | indent }}
+    {{ render_method(**gd_functions["get_id"]) | indent }}
+
+{% endblock %}
+
+{%- block python_consts %}
+{% endblock -%}

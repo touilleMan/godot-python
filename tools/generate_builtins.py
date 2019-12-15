@@ -103,6 +103,50 @@ def is_object(type):
     return not is_base_type(type) and not is_builtin(type)
 
 
+def cook_c_signatures(signatures):
+    cooked_signatures = {}
+    for line in signatures.splitlines():
+        if not line.strip() or line.strip().startswith('//'):
+            continue
+        cooked = cook_c_signature(line)
+        cooked_signatures[cooked['pyname']] = cooked
+    return cooked_signatures
+
+
+def cook_c_signature(signature):
+    # Hacky signature parsing
+    a, b = signature.split('(', 1)
+    assert b.endswith(')'), signature
+    assert '(' not in b, signature
+    b = b[:-1]
+    args = []
+    for arg in b.split(','):
+        assert arg.count('*') < 2, signature
+        if '*' in arg:
+            arg_type, arg_name = [x.strip() for x in arg.split('*') if x.strip()]
+        else:
+            arg_type, arg_name = [x for x in arg.split(' ') if x]
+        if arg_name.startswith('p_'):
+            arg_name = arg_name[2:]
+        args.append((arg_type, arg_name))
+    args.pop(0)  # Remove self argument
+
+    assert '*' not in a, signature
+    return_type, gdname = [x for x in a.rsplit(' ', 1) if x]
+
+    for type_gdname in GD_TO_PY.keys():
+        if gdname.startswith(type_gdname):
+            pyname = gdname[len(type_gdname) + 1:]
+            break
+
+    return {
+        'pyname': pyname,
+        'gdname': gdname,
+        'return_type': return_type,
+        "args": args,
+    }
+
+
 def cook_return_type(return_type):
     if return_type is None:
         return {
@@ -163,6 +207,8 @@ def generate_pool_array(output_path):
         "cook_return_type": cook_return_type,
         "cook_args": cook_args,
         "cook_arg": cook_arg,
+        "cook_c_signature": cook_c_signature,
+        "cook_c_signatures": cook_c_signatures,
     }
 
     template = env.get_template("builtins.tmpl.pyx")

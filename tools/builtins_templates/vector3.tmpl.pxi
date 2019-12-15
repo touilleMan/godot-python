@@ -1,9 +1,47 @@
-from godot.bindings cimport Resource
-{% set py_type = "Vector3" %}
+{%- set gd_functions = cook_c_signatures("""
+void godot_vector3_new(godot_vector3* r_dest, godot_real p_x, godot_real p_y, godot_real p_z)
+godot_string godot_vector3_as_string(godot_vector3* p_self)
+godot_int godot_vector3_min_axis(godot_vector3* p_self)
+godot_int godot_vector3_max_axis(godot_vector3* p_self)
+godot_real godot_vector3_length(godot_vector3* p_self)
+godot_real godot_vector3_length_squared(godot_vector3* p_self)
+godot_bool godot_vector3_is_normalized(godot_vector3* p_self)
+godot_vector3 godot_vector3_normalized(godot_vector3* p_self)
+godot_vector3 godot_vector3_inverse(godot_vector3* p_self)
+godot_vector3 godot_vector3_snapped(godot_vector3* p_self, godot_vector3* p_by)
+godot_vector3 godot_vector3_rotated(godot_vector3* p_self, godot_vector3* p_axis, godot_real p_phi)
+godot_vector3 godot_vector3_linear_interpolate(godot_vector3* p_self, godot_vector3* p_b, godot_real p_t)
+godot_vector3 godot_vector3_cubic_interpolate(godot_vector3* p_self, godot_vector3* p_b, godot_vector3* p_pre_a, godot_vector3* p_post_b, godot_real p_t)
+godot_vector3 godot_vector3_move_toward(godot_vector3* p_self, godot_vector3* p_to, godot_real p_delta)
+godot_real godot_vector3_dot(godot_vector3* p_self, godot_vector3* p_b)
+godot_vector3 godot_vector3_cross(godot_vector3* p_self, godot_vector3* p_b)
+godot_basis godot_vector3_outer(godot_vector3* p_self, godot_vector3* p_b)
+godot_basis godot_vector3_to_diagonal_matrix(godot_vector3* p_self)
+godot_vector3 godot_vector3_abs(godot_vector3* p_self)
+godot_vector3 godot_vector3_floor(godot_vector3* p_self)
+godot_vector3 godot_vector3_ceil(godot_vector3* p_self)
+godot_real godot_vector3_distance_to(godot_vector3* p_self, godot_vector3* p_b)
+godot_real godot_vector3_distance_squared_to(godot_vector3* p_self, godot_vector3* p_b)
+godot_real godot_vector3_angle_to(godot_vector3* p_self, godot_vector3* p_to)
+godot_vector3 godot_vector3_slide(godot_vector3* p_self, godot_vector3* p_n)
+godot_vector3 godot_vector3_bounce(godot_vector3* p_self, godot_vector3* p_n)
+godot_vector3 godot_vector3_reflect(godot_vector3* p_self, godot_vector3* p_n)
+godot_vector3 godot_vector3_operator_add(godot_vector3* p_self, godot_vector3* p_b)
+godot_vector3 godot_vector3_operator_subtract(godot_vector3* p_self, godot_vector3* p_b)
+godot_vector3 godot_vector3_operator_multiply_vector(godot_vector3* p_self, godot_vector3* p_b)
+godot_vector3 godot_vector3_operator_multiply_scalar(godot_vector3* p_self, godot_real p_b)
+godot_vector3 godot_vector3_operator_divide_vector(godot_vector3* p_self, godot_vector3* p_b)
+godot_vector3 godot_vector3_operator_divide_scalar(godot_vector3* p_self, godot_real p_b)
+godot_bool godot_vector3_operator_equal(godot_vector3* p_self, godot_vector3* p_b)
+godot_bool godot_vector3_operator_less(godot_vector3* p_self, godot_vector3* p_b)
+godot_vector3 godot_vector3_operator_neg(godot_vector3* p_self)
+void godot_vector3_set_axis(godot_vector3* p_self, godot_vector3_axis p_axis, godot_real p_val)
+godot_real godot_vector3_get_axis(godot_vector3* p_self, godot_vector3_axis p_axis)
+""") -%}
 
-{% block pxd_header %}
-{% endblock %}
-{% block pyx_header %}
+{%- block pxd_header %}
+{% endblock -%}
+{%- block pyx_header %}
 from godot._hazmat.gdnative_api_struct cimport godot_vector3_axis
 
 import math
@@ -29,13 +67,13 @@ cdef inline Vector3_divide_scalar(Vector3 self, godot_real b):
     ret._gd_data = gdapi.godot_vector3_operator_divide_scalar(&self._gd_data, b)
     return ret
 
-{% endblock %}
+{% endblock -%}
 
 
 @cython.final
 cdef class Vector3:
 {% block cdef_attributes %}
-    cdef godot_rid _gd_data
+    cdef godot_vector3 _gd_data
 {% endblock %}
 
 {% block python_defs %}
@@ -46,27 +84,27 @@ cdef class Vector3:
         return f"<Vector3(x={self.x}, y={self.y}, z={self.z})>"
 
     @property
-    def x(self):
+    def x(self) -> godot_real:
         return gdapi.godot_vector3_get_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_X)
 
     @x.setter
-    def x(self, godot_real val):
+    def x(self, godot_real val) -> None:
         gdapi.godot_vector3_set_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_X, val)
 
     @property
-    def y(self):
+    def y(self) -> godot_real:
         return gdapi.godot_vector3_get_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Y)
 
     @y.setter
-    def y(self, godot_real val):
+    def y(self, godot_real val) -> None:
         gdapi.godot_vector3_set_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Y, val)
 
     @property
-    def z(self):
+    def z(self) -> godot_real:
         return gdapi.godot_vector3_get_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Z)
 
     @z.setter
-    def z(self, godot_real val):
+    def z(self, godot_real val) -> None:
         gdapi.godot_vector3_set_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Z, val)
 
     {{ render_operator_eq() | indent }}
@@ -84,7 +122,6 @@ cdef class Vector3:
     {{ render_method("__sub__", "godot_vector3", args=[
         ("godot_vector3", "other")
     ], gdname="operator_subtract") | indent }}
-
 
     def __mul__(self, val):
         cdef Vector3 _val
@@ -108,48 +145,34 @@ cdef class Vector3:
                 raise ZeroDivisionError()
             return Vector3_divide_vector(self, _val)
 
-    {{ render_method("min_axis", "godot_int") | indent }}
-    {{ render_method("max_axis", "godot_int") | indent }}
-    {{ render_method("length", "godot_real") | indent }}
-    {{ render_method("length_squared", "godot_real") | indent }}
-    {{ render_method("is_normalized", "godot_bool") | indent }}
-    {{ render_method("normalized", "godot_vector3") | indent }}
-    {{ render_method("inverse", "godot_vector3") | indent }}
-    {{ render_method("snapped", "godot_vector3", args=[("godot_vector3", "by")]) | indent }}
-    {{ render_method("rotated", "godot_vector3", args=[
-        ("godot_vector3", "axis"),
-        ("godot_real", "phi")
-    ]) | indent }}
-    {{ render_method("linear_interpolate", "godot_vector3", args=[
-        ("godot_vector3", "b"),
-        ("godot_real", "t")
-    ]) | indent }}
-    {{ render_method("cubic_interpolate", "godot_vector3", args=[
-        ("godot_vector3", "b"),
-        ("godot_vector3", "pre_a"),
-        ("godot_vector3", "post_b"),
-        ("godot_real", "t")
-    ]) | indent }}
-    {{ render_method("move_toward", "godot_vector3", args=[
-        ("godot_vector3", "to"),
-        ("godot_real", "delta")
-    ]) | indent }}
-    {{ render_method("dot", "godot_real", args=[("godot_vector3", "b")]) | indent }}
-    {{ render_method("cross", "godot_vector3", args=[("godot_vector3", "b")]) | indent }}
-    {{ render_method("outer", "godot_basis", args=[("godot_vector3", "b")]) | indent }}
-    {{ render_method("to_diagonal_matrix", "godot_basis") | indent }}
-    {{ render_method("abs", "godot_vector3") | indent }}
-    {{ render_method("floor", "godot_vector3") | indent }}
-    {{ render_method("ceil", "godot_vector3") | indent }}
-    {{ render_method("distance_to", "godot_real", args=[("godot_vector3", "b")]) | indent }}
-    {{ render_method("distance_squared_to", "godot_real", args=[("godot_vector3", "b")]) | indent }}
-    {{ render_method("angle_to", "godot_real", args=[("godot_vector3", "to")]) | indent }}
-    {{ render_method("slide", "godot_vector3", args=[("godot_vector3", "n")]) | indent }}
-    {{ render_method("bounce", "godot_vector3", args=[("godot_vector3", "n")]) | indent }}
-    {{ render_method("reflect", "godot_vector3", args=[("godot_vector3", "n")]) | indent }}
+    {{ render_method(**gd_functions["min_axis"]) | indent }}
+    {{ render_method(**gd_functions["max_axis"]) | indent }}
+    {{ render_method(**gd_functions["length"]) | indent }}
+    {{ render_method(**gd_functions["length_squared"]) | indent }}
+    {{ render_method(**gd_functions["is_normalized"]) | indent }}
+    {{ render_method(**gd_functions["normalized"]) | indent }}
+    {{ render_method(**gd_functions["inverse"]) | indent }}
+    {{ render_method(**gd_functions["snapped"]) | indent }}
+    {{ render_method(**gd_functions["rotated"]) | indent }}
+    {{ render_method(**gd_functions["linear_interpolate"]) | indent }}
+    {{ render_method(**gd_functions["cubic_interpolate"]) | indent }}
+    {{ render_method(**gd_functions["move_toward"]) | indent }}
+    {{ render_method(**gd_functions["dot"]) | indent }}
+    {{ render_method(**gd_functions["cross"]) | indent }}
+    {{ render_method(**gd_functions["outer"]) | indent }}
+    {{ render_method(**gd_functions["to_diagonal_matrix"]) | indent }}
+    {{ render_method(**gd_functions["abs"]) | indent }}
+    {{ render_method(**gd_functions["floor"]) | indent }}
+    {{ render_method(**gd_functions["ceil"]) | indent }}
+    {{ render_method(**gd_functions["distance_to"]) | indent }}
+    {{ render_method(**gd_functions["distance_squared_to"]) | indent }}
+    {{ render_method(**gd_functions["angle_to"]) | indent }}
+    {{ render_method(**gd_functions["slide"]) | indent }}
+    {{ render_method(**gd_functions["bounce"]) | indent }}
+    {{ render_method(**gd_functions["reflect"]) | indent }}
 {% endblock %}
 
-{% block python_consts %}
+{%- block python_consts %}
     AXIS_X = godot_vector3_axis.GODOT_VECTOR3_AXIS_X
     AXIS_Y = godot_vector3_axis.GODOT_VECTOR3_AXIS_Y
     AXIS_Z = godot_vector3_axis.GODOT_VECTOR3_AXIS_Z

@@ -23,10 +23,12 @@ def {{ pyname }}(self{%- if args -%},{%- endif -%}
 {%- elif return_type["is_object"] %}
     cdef {{ return_type["py_type"] }} __ret = {{ return_type["py_type"] }}.__new__({{ return_type["py_type"] }})
     __ret._gd_ptr =
+{%- elif return_type["py_type"] == "bint" %}
+    return bool
 {%- else %}
     return
 {%- endif %}
- gdapi{{ gdapi }}.{{ gd_type }}_{{ gdname }}(&self._gd_data,
+(gdapi{{ gdapi }}.{{ gd_type }}_{{ gdname }}(&self._gd_data,
 {%- for arg in args %}
 {%- if arg["is_builtin"] %}
  &{{ arg["name"] }}._gd_data,
@@ -36,7 +38,7 @@ def {{ pyname }}(self{%- if args -%},{%- endif -%}
  {{ arg["name"] }},
 {%- endif %}
 {% endfor %}
-)
+))
 {% if return_type["is_builtin"] or return_type["is_object"] %}
     return __ret
 {% endif %}
@@ -66,13 +68,20 @@ def __lt__(self, other):
         return False
 {% endmacro %}
 
+{% macro render_property(pyname, type, gdname_getter, gdname_setter=None) %}
+@property
+{{ render_method(pyname=pyname, gdname=gdname_getter, return_type=type) }}
+{% if gdname_setter is none %}
+@{{ pyname }}.setter
+{{ render_method(pyname=pyname, gdname=gdname_setter, args=[('val', type)]) }}
+{% endif %}
+{% endmacro %}
+
 {# Overwrite blocks to be ignored #}
 
 {% block pxd_header %}
 {% endblock %}
 {% block cdef_attributes %}
-{% endblock %}
-{% block python_consts %}
 {% endblock %}
 
 {# Now the template will be generated with the context #}

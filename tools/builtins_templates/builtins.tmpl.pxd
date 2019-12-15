@@ -15,3 +15,15 @@ from godot._hazmat.gdapi cimport (
 {% include 'render.tmpl.pxd' with context  %}
 {% set render_target = "vector3" %}
 {% include 'render.tmpl.pxd' with context  %}
+{% set render_target = "vector2" %}
+{% include 'render.tmpl.pxd' with context  %}
+{% set render_target = "aabb" %}
+{% include 'render.tmpl.pxd' with context  %}
+{% set render_target = "basis" %}
+{% include 'render.tmpl.pxd' with context  %}
+{% set render_target = "color" %}
+{% include 'render.tmpl.pxd' with context  %}
+{% set render_target = "gdstring" %}
+{% include 'render.tmpl.pxd' with context  %}
+{% set render_target = "rect2" %}
+{% include 'render.tmpl.pxd' with context  %}
