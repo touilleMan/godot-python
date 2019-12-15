@@ -13,12 +13,6 @@ cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }}
 cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% if not cls["base_class"] %}
     cdef godot_object *_gd_ptr
-    cdef bint _gd_ptr_owner
-{% endif %}
-
-{% if not cls["singleton"] and cls["instanciable"] %}
-    @staticmethod
-    cdef {{ cls["name"] }} new()
 {% endif %}
 
     @staticmethod

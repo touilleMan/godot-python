@@ -3,6 +3,37 @@ import pytest
 from godot.bindings import OS
 
 
+__global_objs = []
+
+
+def generate_global_obj(type):
+    obj = type.new()
+    __global_objs.append(obj)
+    return obj
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_global_objs():
+    yield
+    for obj in __global_objs:
+        obj.free()
+
+
+@pytest.fixture()
+def generate_obj():
+    objs = []
+
+    def _generate_obj(type):
+        obj = type.new()
+        objs.append(obj)
+        return obj
+
+    yield _generate_obj
+
+    for obj in objs:
+        obj.free()
+
+
 @pytest.fixture
 def current_node():
     # `conftest.py` is imported weirdly by pytest so we cannot just put a

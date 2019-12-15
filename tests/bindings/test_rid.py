@@ -4,34 +4,49 @@ from godot.bindings import Environment, Node
 from godot import RID
 
 
+@pytest.fixture
+def generate_obj():
+    objs = []
+
+    def _generate_obj(type):
+        obj = type.new()
+        objs.append(obj)
+        return obj
+
+    yield _generate_obj
+
+    for obj in objs:
+        obj.free()
+
+
 def test_base():
     v = RID()
     assert type(v) == RID
 
-def test_equal():
+def test_equal(generate_obj):
     v1 = RID()
     v2 = RID()
     assert v1 == v2
     # Environment is a Ressource which provides unique rid per instance
-    res_a = Environment()
+    res_a = generate_obj(Environment)
     v_a_1 = RID(res_a)
     assert v_a_1 != v1
     v_a_2 = RID(res_a)
     assert v_a_1 == v_a_2
-    res_b = Environment()
+    res_b = generate_obj(Environment)
     v_b = RID(res_b)
     assert not v_a_1 == v_b  # Force use of __eq__
 
 @pytest.mark.parametrize("arg", [None, 0, "foo"])
-def test_bad_equal(arg):
-    arr = RID(Environment())
+def test_bad_equal(generate_obj, arg):
+    arr = RID(generate_obj(Environment))
     assert arr != arg
 
-def test_bad_equal_with_rid():
+def test_bad_equal_with_rid(generate_obj):
     # Doing `RID(Environment())` will cause garbage collection of enclosed
     # Environment object and possible reuse of it id
-    env1 = Environment()
-    env2 = Environment()
+    env1 = generate_obj(Environment)
+    env2 = generate_obj(Environment)
     rid1 = RID(env1)
     rid2 = RID(env2)
     assert rid1 != rid2
@@ -41,11 +56,17 @@ def test_repr():
     assert repr(v) == "<RID(id=0)>"
 
 @pytest.mark.parametrize(
-    "arg", [42, "dummy", Node(), RID()]  # Node doesn't inherit from Resource
+    "arg", [42, "dummy", RID()]
 )
 def test_bad_instantiate(arg):
     with pytest.raises(TypeError):
         RID(arg)
+
+def test_bad_instantiate_with_not_resource(generate_obj):
+    # Node doesn't inherit from Resource
+    node = generate_obj(Node)
+    with pytest.raises(TypeError):
+        RID(node)
 
 @pytest.mark.parametrize("args", [["get_id", int, ()]], ids=lambda x: x[0])
 def test_methods(args):

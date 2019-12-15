@@ -3,7 +3,7 @@ from random import Random
 from inspect import isfunction
 from functools import partial
 
-from godot.bindings import Node, Resource
+from godot.bindings import Node
 from godot import (
     Array,
     Vector2,
@@ -18,6 +18,11 @@ from godot import (
     PoolColorArray,
     PoolStringArray,
 )
+
+from conftest import generate_global_obj
+
+
+NODE = generate_global_obj(Node)
 
 
 class BasePoolArrayBench:
@@ -123,7 +128,7 @@ def test_empty_init(pool_x_array):
         lambda x: (object() for _ in range(1)),  # Must be generated each time
         42,
         "dummy",
-        Node(),
+        NODE,
         Vector2(),
         [object()],
         lambda x: [x.generate_value(), object(), x.generate_value()],
@@ -191,7 +196,7 @@ def test_bad_equal_on_different_types(pool_x_array, other_type):
         (),
         "",
         Vector2(),
-        Node(),
+        NODE,
         lambda s: s.generate_value(),
         lambda s: s.cls(s.generate_values(2)),
     ],
@@ -218,13 +223,13 @@ def test_add(pool_x_array):
     assert arr2 == pool_x_array.cls(v0 + v1 + v2)
 
 
-@pytest.mark.parametrize("arg", [None, [], (), Array(), 0, "foo", Vector2(), Node()])
+@pytest.mark.parametrize("arg", [None, [], (), Array(), 0, "foo", Vector2(), NODE])
 def test_bad_add(pool_x_array, arg):
     with pytest.raises(TypeError):
         pool_x_array.cls() + arg
 
 
-@pytest.mark.parametrize("arg", [None, [], (), Array(), 0, "foo", Vector2(), Node()])
+@pytest.mark.parametrize("arg", [None, [], (), Array(), 0, "foo", Vector2(), NODE])
 def test_bad_iadd(pool_x_array, arg):
     arr = pool_x_array.cls()
     with pytest.raises(TypeError):

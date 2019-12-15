@@ -31,7 +31,6 @@ cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = gdapi
 return
 {% elif method["return_type_specs"]["is_object"] %}
 if {{ retval }}._gd_ptr == NULL:
-    {{ retval }}._gd_ptr_owner = False
     return None
 else:
     return {{ retval }}
@@ -84,7 +83,6 @@ gdapi.godot_variant_destroy(&__var_{{ arg["name"] }})
 {% elif method["return_type_specs"]["is_object"] %}
 {% set binding_type =  method["return_type_specs"]["binding_type"] %}
 cdef {{ binding_type }} {{ retval }} = {{ binding_type }}.__new__({{ binding_type }})
-{{ retval }}._gd_ptr_owner = False
 {% set retval_as_arg = "&{}._gd_ptr".format(retval) %}
 {% elif method["return_type"] == "godot_variant" %}
 cdef godot_variant {{ retval }}

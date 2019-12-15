@@ -14,34 +14,22 @@ cdef godot_class_constructor __{{ cls["name"] }}_constructor = gdapi.godot_get_c
 
 cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% if not cls["base_class"] %}
-    def __dealloc__(self):
-        # De-allocate if not null and flag is set
-        if self._gd_ptr is not NULL and self._gd_ptr_owner is True:
-            gdapi.godot_object_destroy(self._gd_ptr)
-            self._gd_ptr = NULL
-{% endif %}
+    # free is virtual but this is not marked in api.json :'(
+    cpdef void free(self):
+        gdapi.godot_object_destroy(self._gd_ptr)
 
     def __init__(self):
-{% if cls["singleton"] %}
-        raise RuntimeError(f"{type(self)} is a singleton, cannot initialize it.")
-{% elif not cls["instanciable"] %}
-        raise RuntimeError(f"{type(self)} is not instanciable.")
-{% else %}
-        self._gd_ptr = __{{ cls["name"] }}_constructor()
-        if self._gd_ptr is NULL:
-            raise MemoryError
-        self._gd_ptr_owner = True
+        raise RuntimeError(f"Use `new()` method to instantiate Godot object.")
 {% endif %}
 
 {% if not cls["singleton"] and cls["instanciable"] %}
     @staticmethod
-    cdef {{ cls["name"] }} new():
+    def new():
         # Call to __new__ bypasses __init__ constructor
         cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
         wrapper._gd_ptr = __{{ cls["name"] }}_constructor()
         if wrapper._gd_ptr is NULL:
             raise MemoryError
-        wrapper._gd_ptr_owner = True
         return wrapper
 {% endif %}
 
@@ -50,7 +38,6 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         # Call to __new__ bypasses __init__ constructor
         cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
         wrapper._gd_ptr = _ptr
-        wrapper._gd_ptr_owner = owner
         return wrapper
 
     # Constants
@@ -61,7 +48,9 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
     # Methods
 {# TODO: Use typing for params&return #}
 {% for method in cls["methods"] %}
+{% if method["name"] != "free" %}
     {{ render_method(cls, method) | indent }}
+{% endif %}
 {% endfor %}
     # Properties
 {% for prop in cls["properties"] %}

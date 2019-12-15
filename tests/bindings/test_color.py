@@ -3,6 +3,11 @@ import pytest
 from godot import Color, Vector2
 from godot.bindings import Node
 
+from conftest import generate_global_obj
+
+
+NODE = generate_global_obj(Node)
+
 
 def test_base():
     v = Color()
@@ -46,7 +51,7 @@ def test_repr():
     assert repr(v) == "<Color(r=0.0, g=0.0, b=0.0, a=1.0)>"
 
 @pytest.mark.parametrize(
-    "arg", [(None,), (1, None), (1, 2, None), ("dummy",), (Node(),), (Vector2(),)]
+    "arg", [(None,), (1, None), (1, 2, None), ("dummy",), (NODE,), (Vector2(),)]
 )
 def test_bad_instantiate(arg):
     with pytest.raises(TypeError):
