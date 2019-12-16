@@ -20,7 +20,16 @@ def {{ pyname }}({{ py_type }} self{%- if args -%},{%- endif -%}
 {% for arg in args %}
 {% if arg["gd_type"] == "godot_variant" %}
     cdef godot_variant __var_{{ arg["name"] }}
-    pyobj_to_godot_variant({{ arg["name"] }}, &__var_{{ arg["name"] }})
+    if not pyobj_to_godot_variant({{ arg["name"] }}, &__var_{{ arg["name"] }}):
+{% for initialized_arg in args %}
+{% if initialized_arg["name"] == arg["name"] %}
+{% break %}
+{% endif %}
+{% if initialized_arg["gd_type"] == "godot_variant" %}
+        gdapi10.godot_variant_destroy(&__var_{{ initialized_arg["name"] }})
+{% endif %}
+{% endfor %}
+        raise TypeError(f"Cannot convert `{ {{ arg["name"]}} !r}` to Godot Variant")
 {% endif %}
 {% endfor %}
 {% if return_type["gd_type"] == "godot_variant" %}

@@ -56,7 +56,7 @@ cdef inline void pyobj_to_godot_string_name(str pystr, godot_string_name *p_gdna
 
 
 cdef object godot_variant_to_pyobj(const godot_variant *p_gdvar)
-cdef void pyobj_to_godot_variant(object pyobj, godot_variant *p_var)
+cdef bint pyobj_to_godot_variant(object pyobj, godot_variant *p_var)
 
 cdef object godot_type_to_pyobj(godot_variant_type gdtype)
 cdef godot_variant_type pyobj_to_godot_type(object pytype)

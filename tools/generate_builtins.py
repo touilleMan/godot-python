@@ -12,6 +12,7 @@ env = Environment(
     loader=FileSystemLoader(f"{BASEDIR}/builtins_templates"),
     trim_blocks=True,
     lstrip_blocks=False,
+    extensions=['jinja2.ext.loopcontrols'],
 )
 env.filters['merge'] = lambda x, **kwargs: {**x, **kwargs}
 

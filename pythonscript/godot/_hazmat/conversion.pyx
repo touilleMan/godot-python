@@ -328,7 +328,7 @@ cdef inline PoolColorArray _godot_variant_to_pyobj_pool_color_array(const godot_
     return a
 
 
-cdef void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
+cdef bint pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
     if pyobj is None:
         gdapi10.godot_variant_new_nil(p_var)
     elif isinstance(pyobj, bool):
@@ -388,6 +388,8 @@ cdef void pyobj_to_godot_variant(object pyobj, godot_variant *p_var):
     else:
         warn(f"Cannot convert `{type(pyobj)}` to Godot's Variant")
         gdapi10.godot_variant_new_nil(p_var)
+        return False
+    return True
 
 
 # Needed to define gdstr in it own scope

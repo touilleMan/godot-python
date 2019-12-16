@@ -191,9 +191,10 @@ cdef class GDString:
     {{ render_operator_ne() | indent }}
     {{ render_operator_lt() | indent }}
 
-    {{ render_method("__add__", "godot_string", args=[
-        ("godot_string*", "other")
-    ], gdname="operator_plus") | indent }}
+{%set hash_specs = gd_functions['hash'] | merge(pyname="__hash__") %}
+    {{ render_method(**hash_specs) | indent }}
+{%set hash_specs = gd_functions['operator_plus'] | merge(pyname="__add__") %}
+    {{ render_method(**hash_specs) | indent }}
 
     {{ render_method(**gd_functions["begins_with"]) | indent }}
     {{ render_method(**gd_functions["bigrams"]) | indent }}

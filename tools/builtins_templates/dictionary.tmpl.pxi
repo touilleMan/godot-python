@@ -50,11 +50,12 @@ cdef class Dictionary:
             for k, v in iterable.items():
                 self[k] = v
         else:
+            gdapi10.godot_dictionary_new(&self._gd_data)
             try:
                 for k, v in iterable:
                     self[k] = v
-            except ValueError:
-                raise ValueError("dictionary update sequence element #0 has length 1; 2 is required")
+            except ValueError as exc:
+                raise ValueError("dictionary update sequence element has length 1; 2 is required")
 
     def __dealloc__(self):
         # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
@@ -62,11 +63,19 @@ cdef class Dictionary:
         gdapi10.godot_dictionary_destroy(&self._gd_data)
 
     def __repr__(self):
-        return f"<Dictionary({dict(self)})>"
+        repr_dict = {}
+        for k, v in self.items():
+            if isinstance(k, GDString):
+                k = str(k)
+            if isinstance(v, GDString):
+                v = str(v)
+            repr_dict[k] = v
+        return f"<Dictionary({repr_dict})>"
 
     def __getitem__(self, object key):
         cdef godot_variant var_key
-        pyobj_to_godot_variant(key, &var_key)
+        if not pyobj_to_godot_variant(key, &var_key):
+            raise TypeError(f"Cannot convert `{key!r}` to Godot Variant")
         cdef godot_variant *p_var_ret = gdapi10.godot_dictionary_operator_index(&self._gd_data, &var_key)
         gdapi10.godot_variant_destroy(&var_key)
         if p_var_ret == NULL:
@@ -79,11 +88,12 @@ cdef class Dictionary:
 
     def __delitem__(self, object key):
         cdef godot_variant var_key
-        pyobj_to_godot_variant(key, &var_key)
+        if not pyobj_to_godot_variant(key, &var_key):
+            raise TypeError(f"Cannot convert `{key!r}` to Godot Variant")
         cdef godot_bool ret = gdapi11.godot_dictionary_erase_with_return(&self._gd_data, &var_key)
+        gdapi10.godot_variant_destroy(&var_key)
         if not ret:
             raise KeyError(key)
-        gdapi10.godot_variant_destroy(&var_key)
 
     def __iter__(self):
         cdef godot_variant *p_key = NULL
@@ -159,6 +169,23 @@ cdef class Dictionary:
         cdef object ret = godot_variant_to_pyobj(&var_ret)
         gdapi10.godot_variant_destroy(&var_ret)
         return ret
+
+    def update(self, other):
+        cdef object k
+        cdef object v
+        for k, v in other.items():
+            self[k] = v
+
+    def items(self):
+        cdef godot_variant *p_key = NULL
+        cdef godot_variant *p_value
+        # TODO: mid iteration mutation should throw exception ?
+        while True:
+            p_key = gdapi10.godot_dictionary_next(&self._gd_data, p_key)
+            if p_key == NULL:
+                return
+            p_value = gdapi10.godot_dictionary_operator_index(&self._gd_data, p_key)
+            yield godot_variant_to_pyobj(p_key), godot_variant_to_pyobj(p_value)
 
 {%set len_specs = gd_functions['size'] | merge(pyname="__len__") %}
     {{ render_method(**len_specs) | indent }}
