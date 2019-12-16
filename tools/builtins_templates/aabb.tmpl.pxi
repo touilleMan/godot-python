@@ -30,13 +30,11 @@ godot_bool godot_aabb_operator_equal(godot_aabb* p_self, godot_aabb* p_b)
 // GDAPI: 1.1
 // GDAPI: 1.2
 """) -%}
-from godot.bindings cimport Resource
 
-{% block pxd_header %}
-{% endblock %}
-{% block pyx_header %}
-{% endblock %}
-
+{%- block pxd_header -%}
+{%- endblock -%}
+{%- block pyx_header -%}
+{%- endblock -%}
 
 @cython.final
 cdef class AABB:

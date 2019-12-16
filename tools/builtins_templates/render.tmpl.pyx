@@ -1,8 +1,8 @@
-{# `render_target` must be defined by calling context #}
+{#- `render_target` must be defined by calling context -#}
 {% set py_type = render_target_to_py_type(render_target) %}
 {% set gd_type = py_to_gd_type(py_type) %}
 
-{# Define rendering macros #}
+{#- Define rendering macros -#}
 
 {% macro render_method(pyname, return_type=None, args=(), gdname=None, gdapi="10") %}
 {% set gdname = gdname or pyname %}
@@ -109,13 +109,11 @@ def __lt__({{ py_type }} self, other):
 {% endif %}
 {% endmacro %}
 
-{# Overwrite blocks to be ignored #}
+{#- Overwrite blocks to be ignored -#}
 
-{% block pxd_header %}
-{% endblock %}
-{% block cdef_attributes %}
-{% endblock %}
+{% block pxd_header %}{% endblock %}
+{% block cdef_attributes %}{% endblock %}
 
-{# Now the template will be generated with the context #}
+{#- Now the template will be generated with the context -#}
 
 {% extends render_target_to_template(render_target) %}

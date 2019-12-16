@@ -41,7 +41,7 @@ godot_basis godot_basis_slerp(godot_basis* p_self, godot_basis* p_b, godot_real 
 """) -%}
 
 {%- block pxd_header -%}
-{%- endblock %}
+{%- endblock -%}
 {%- block pyx_header -%}
 
 cdef inline Basis Basis_multiply_vector(Basis self, Basis b):
