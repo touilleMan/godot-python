@@ -1,7 +1,7 @@
 from random import random
 
-from godot import exposed, export
-from godot.bindings import Area2D, Input, Vector2
+from godot import exposed, export, Vector2, GDString
+from godot.bindings import Area2D, Input
 
 
 MOTION_SPEED = 150
@@ -22,15 +22,15 @@ class Paddle(Area2D):
 
     def _process(self, delta):
         motion = 0
-        if (Input.is_action_pressed(self.action_prefix + "_move_up")):
+        if (Input.is_action_pressed(self.action_prefix + GDString("_move_up"))):
             motion -= 1
-        elif (Input.is_action_pressed(self.action_prefix + "_move_down")):
+        elif (Input.is_action_pressed(self.action_prefix + GDString("_move_down"))):
             motion += 1
 
         motion *= MOTION_SPEED
         if self.can_move:
             self.translate(Vector2(0, motion * delta))
-        
+
         # set screen limits
         if self.position.y < 0:
             self.position.y = 0
