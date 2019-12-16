@@ -2,9 +2,12 @@
 # https://docs.python.org/3/faq/windows.html#how-can-i-embed-python-into-a-windows-application
 # tl;dr: onyl msvc is supported to link against pythonxx.dll
 
-import os, glob, shutil
-from SCons.Errors import UserError
+import os
+import shutil
 import subprocess
+from itertools import chain
+from pathlib import Path
+from SCons.Errors import UserError
 
 
 Import("env")
@@ -116,30 +119,33 @@ def add_pythonscript_stuff_to_build_dir(
     print(f"Copy {libpythonscript.path} -> {p()}")
     shutil.copy(libpythonscript.path, p())
 
-    print(f"Copy {_godot_module.path} -> {p('lib/')}")
-    shutil.copy(_godot_module.path, p("lib/"))
+    print(f"Copy {_godot_module.path} -> {p('lib/python3.7/site-packages/')}")
+    shutil.copy(_godot_module.path, p("lib/python3.7/site-packages/"))
 
     if env["dev_dyn"]:
         import _winapi
 
-        if os.path.exists(p("lib/godot")):
+        if os.path.exists(p("lib/python3.7/site-packages/godot")):
             print(
-                f"dev_dyn: skip creating NTFS junction, {p('lib/godot')} already exists"
+                f"dev_dyn: skip creating NTFS junction, {p('lib/python3.7/site-packages/godot')} already exists"
             )
         else:
-            print(f"dev_dyn: NTFS junction {godot_module.abspath} -> {p('lib/godot')}")
-            _winapi.CreateJunction(godot_module.abspath, p("lib/godot"))
-        env.NoClean(p("lib/godot"))
+            print(f"dev_dyn: NTFS junction {godot_module.abspath} -> {p('lib/python3.7/site-packages/godot')}")
+            _winapi.CreateJunction(godot_module.abspath, p("lib/python3.7/site-packages/godot"))
+        env.NoClean(p("lib/python3.7/site-packages/godot"))
 
     else:
-        print(f"Copy {godot_module.path} -> {p('lib/godot')}")
-        os.mkdir(p("lib/godot"))
-        for src in (
-            godot_module.glob("*.py")
-            + godot_module.glob("*.dll")
-            + godot_module.glob("*.pxd")
+        dst_dir = Path(p("lib/python3.7/site-packages/godot"))
+        src_dir = Path(godot_module.path)
+        print(f"Copy {src_dir} -> {dst_dir}")
+        for src_item in chain(
+            src_dir.glob("**/*.py"),
+            src_dir.glob("**/*.dll"),
+            src_dir.glob("**/*.pxd"),
         ):
-            shutil.copy(src.abspath, p("lib/godot"))
+            dst_item = dst_dir / src_item.relative_to(src_dir)
+            dst_item.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(str(src_item), str(dst_item))
 
 
 env["add_cpython_to_build_dir"] = add_cpython_to_build_dir

@@ -1,4 +1,7 @@
-import os, glob, shutil
+import os
+import shutil
+from itertools import chain
+from pathlib import Path
 from SCons.Errors import UserError
 
 
@@ -114,16 +117,19 @@ def add_pythonscript_stuff_to_build_dir(
         shutil.copy(libpythonscript.path, p())
 
         print(f"Copy {_godot_module.path} -> {p('lib/')}")
-        shutil.copy(_godot_module.path, p("lib/"))
+        shutil.copy(_godot_module.path, p("lib/python3.7/site-packages/"))
 
-        print(f"Copy {godot_module.path} -> {p('lib/godot')}")
-        os.mkdir(p("lib/godot"))
-        for src in (
-            godot_module.glob("*.py")
-            + godot_module.glob("*.so")
-            + godot_module.glob("*.pxd")
+        dst_dir = Path(p("lib/python3.7/site-packages/godot"))
+        src_dir = Path(godot_module.path)
+        print(f"Copy {src_dir} -> {dst_dir}")
+        for src_item in chain(
+            src_dir.glob("**/*.py"),
+            src_dir.glob("**/*.so"),
+            src_dir.glob("**/*.pxd"),
         ):
-            shutil.copy(src.abspath, p("lib/godot"))
+            dst_item = dst_dir / src_item.relative_to(src_dir)
+            dst_item.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(str(src_item), str(dst_item))
 
 
 env["add_cpython_to_build_dir"] = add_cpython_to_build_dir
