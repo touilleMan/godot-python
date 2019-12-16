@@ -68,25 +68,32 @@ cdef class Basis:
 
     @staticmethod
     def from_euler(from_):
+        cdef Basis ret = Basis.__new__(Basis)
         try:
-            return Basis.new_with_euler(<Vector3?>from_)
+            gdapi10.godot_basis_new_with_euler(&ret._gd_data, &(<Vector3?>from_)._gd_data)
+            return ret
         except TypeError:
             pass
         try:
-            return Basis.new_with_euler_quat(<Quat?>from_)
+            gdapi10.godot_basis_new_with_euler_quat(&ret._gd_data, &(<Quat?>from_)._gd_data)
+            return ret
         except TypeError:
             raise TypeError('`from_` must be Quat or Vector3')
 
     @staticmethod
     def from_axis_angle(Vector3 axis not None, phi):
-        return Basis.new_with_axis_and_angle(axis, phi)
+        cdef Basis ret = Basis.__new__(Basis)
+        gdapi10.godot_basis_new_with_axis_and_angle(&ret._gd_data, &axis._gd_data, phi)
+        return ret
 
     def __repr__(self):
         return f"<Basis({self.as_string()})>"
 
     @property
     def x(Basis self) -> Vector3:
-        return gdapi10.godot_basis_get_axis(&self._gd_data, 0)
+        cdef Vector3 ret = Vector3.__new__(Vector3)
+        ret._gd_data = gdapi10.godot_basis_get_axis(&self._gd_data, 0)
+        return ret
 
     @x.setter
     def x(Basis self, Vector3 val not None) -> None:
@@ -94,7 +101,9 @@ cdef class Basis:
 
     @property
     def y(Basis self) -> Vector3:
-        return gdapi10.godot_basis_get_axis(&self._gd_data, 1)
+        cdef Vector3 ret = Vector3.__new__(Vector3)
+        ret._gd_data = gdapi10.godot_basis_get_axis(&self._gd_data, 1)
+        return ret
 
     @y.setter
     def y(Basis self, Vector3 val not None) -> None:
@@ -102,7 +111,9 @@ cdef class Basis:
 
     @property
     def z(Basis self) -> Vector3:
-        return gdapi10.godot_basis_get_axis(&self._gd_data, 2)
+        cdef Vector3 ret = Vector3.__new__(Vector3)
+        ret._gd_data = gdapi10.godot_basis_get_axis(&self._gd_data, 2)
+        return ret
 
     @z.setter
     def z(Basis self, Vector3 val not None) -> None:

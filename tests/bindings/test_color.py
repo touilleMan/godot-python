@@ -1,6 +1,6 @@
 import pytest
 
-from godot import Color, Vector2
+from godot import Color, Vector2, GDString
 from godot.bindings import Node
 
 from conftest import generate_global_obj
@@ -74,7 +74,7 @@ def test_bad_instantiate(arg):
         ["darkened", Color, (2.2,)],
         ["from_hsv", Color, (1.1, 2.2, 3.3, 4.4)],
         ["lightened", Color, (2.2,)],
-        ["to_html", str, (True,)],
+        ["to_html", GDString, (True,)],
     ],
     ids=lambda x: x[0],
 )

@@ -13,6 +13,7 @@ env = Environment(
     trim_blocks=True,
     lstrip_blocks=False,
 )
+env.filters['merge'] = lambda x, **kwargs: {**x, **kwargs}
 
 
 BUILTINS_TYPES = [

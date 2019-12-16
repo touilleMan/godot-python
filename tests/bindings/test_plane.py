@@ -80,14 +80,14 @@ def test_repr():
         ["distance_to", float, (Vector3(),)],
         ["has_point", bool, (Vector3(), 0.5)],
         ["project", Vector3, (Vector3(),)],
-        ['intersect_3', Vector3, (Plane(1, 1, 1, 1), Plane(1, 1, 1, 1))],
-        ['intersects_ray', Vector3, (Vector3(), Vector3())],
-        ['intersects_segment', Vector3, (Vector3(), Vector3())],
+        ['intersect_3', Vector3, (Plane.PLANE_XZ, Plane.PLANE_XY)],
+        ['intersects_ray', Vector3, (Vector3(1, 0, 0), Vector3(-1, 0, 0))],
+        ['intersects_segment', Vector3, (Vector3(1, 0, 0), Vector3(-1, 0, 0))],
     ],
     ids=lambda x: x[0],
 )
 def test_methods(field, ret_type, params):
-    v = Plane(1, 2, 3, 4)
+    v = Plane.PLANE_YZ
     # Don't test methods' validity but bindings one
     assert hasattr(v, field)
     method = getattr(v, field)
@@ -95,7 +95,7 @@ def test_methods(field, ret_type, params):
     ret = method(*params)
     assert type(ret) == ret_type
 
-@pytest.mark.xfail(reason='TODO: finish None support...')
+
 @pytest.mark.parametrize(
     "field,params",
     [

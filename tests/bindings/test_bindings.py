@@ -59,7 +59,7 @@ def test_call_none_in_builtin_args(current_node):
         # signature: def get_node(self, NodePath path not None)
         current_node.get_node(None)
     assert (
-        str(exc.value) == "Argument 'path' has incorrect type (expected godot.node_path.NodePath, got NoneType)"
+        str(exc.value) == "Argument 'path' has incorrect type (expected godot.builtins.NodePath, got NoneType)"
     )
 
 

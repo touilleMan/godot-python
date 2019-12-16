@@ -78,13 +78,44 @@ cdef class Transform2D:
     {{ render_method(**gd_functions["rotated"]) | indent }}
     {{ render_method(**gd_functions["scaled"]) | indent }}
     {{ render_method(**gd_functions["translated"]) | indent }}
-    {{ render_method(**gd_functions["xform_vector2"]) | indent }}
-    {{ render_method(**gd_functions["xform_inv_vector2"]) | indent }}
-    {{ render_method(**gd_functions["basis_xform_vector2"]) | indent }}
-    {{ render_method(**gd_functions["basis_xform_inv_vector2"]) | indent }}
+
+    def xform(Transform2D self, v):
+        cdef Vector2 ret_v2
+        cdef Rect2 ret_r2
+        try:
+            ret_v2 = Vector2.__new__(Vector2)
+            ret_v2._gd_data = gdapi10.godot_transform2d_xform_vector2(&self._gd_data, &(<Vector2?>v)._gd_data)
+            return ret_v2
+        except TypeError:
+            pass
+        try:
+            ret_r2 = Rect2.__new__(Rect2)
+            ret_r2._gd_data = gdapi10.godot_transform2d_xform_rect2(&self._gd_data, &(<Rect2?>v)._gd_data)
+            return ret_r2
+        except TypeError:
+            raise TypeError("`v` must be Vector2 or Rect2")
+
+    def xform_inv(Transform2D self, v):
+        cdef Vector2 ret_v2
+        cdef Rect2 ret_r2
+        try:
+            ret_v2 = Vector2.__new__(Vector2)
+            ret_v2._gd_data = gdapi10.godot_transform2d_xform_inv_vector2(&self._gd_data, &(<Vector2?>v)._gd_data)
+            return ret_v2
+        except TypeError:
+            pass
+        try:
+            ret_r2 = Rect2.__new__(Rect2)
+            ret_r2._gd_data = gdapi10.godot_transform2d_xform_inv_rect2(&self._gd_data, &(<Rect2?>v)._gd_data)
+            return ret_r2
+        except TypeError:
+            raise TypeError("`v` must be Vector2 or Rect2")
+
+{% set basis_xform_specs = gd_functions["basis_xform_vector2"] | merge(pyname="basis_xform") %}
+    {{ render_method(**basis_xform_specs) | indent }}
+{% set basis_xform_inv_specs = gd_functions["basis_xform_inv_vector2"] | merge(pyname="basis_xform_inv") %}
+    {{ render_method(**basis_xform_inv_specs) | indent }}
     {{ render_method(**gd_functions["interpolate_with"]) | indent }}
-    {{ render_method(**gd_functions["xform_rect2"]) | indent }}
-    {{ render_method(**gd_functions["xform_inv_rect2"]) | indent }}
 {% endblock %}
 
 {%- block python_consts %}

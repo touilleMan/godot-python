@@ -59,7 +59,7 @@ cdef class Rect2:
     def end(Rect2 self) -> Vector2:
         cdef godot_vector2 position = gdapi10.godot_rect2_get_position(&self._gd_data)
         cdef godot_vector2 size = gdapi10.godot_rect2_get_size(&self._gd_data)
-        cdef Vector2 ret = Vector3.__new__(Vector3)
+        cdef Vector2 ret = Vector2.__new__(Vector2)
         ret._gd_data = gdapi10.godot_vector2_operator_add(&position, &size)
         return ret
 

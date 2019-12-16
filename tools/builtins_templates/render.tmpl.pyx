@@ -61,7 +61,7 @@ def __ne__({{ py_type }} self, other):
     try:
         return not gdapi10.{{ gd_type }}_operator_equal(&self._gd_data, &(<{{ py_type }}?>other)._gd_data)
     except TypeError:
-        return False
+        return True
 {% endmacro %}
 
 {% macro render_operator_lt() %}

@@ -82,15 +82,12 @@ cdef class Quat:
     def __pos__(Quat self):
         return self
 
-    {{ render_method("__add__", "godot_quat", args=[
-        ("godot_quat*", "other")
-    ], gdname="operator_add") | indent }}
-    {{ render_method("__sub__", "godot_quat", args=[
-        ("godot_quat*", "other")
-    ], gdname="operator_subtract") | indent }}
-    {{ render_method("__mul__", "godot_quat", args=[
-        ("godot_quat*", "other")
-    ], gdname="operator_subtract") | indent }}
+{%set add_specs = gd_functions['operator_add'] | merge(pyname="__add__") %}
+    {{ render_method(**add_specs) | indent }}
+{%set sub_specs = gd_functions['operator_subtract'] | merge(pyname="__sub__") %}
+    {{ render_method(**sub_specs) | indent }}
+{%set mult_specs = gd_functions['operator_multiply'] | merge(pyname="__mul__") %}
+    {{ render_method(**mult_specs) | indent }}
 
     def __truediv__(Quat self, godot_real val):
         if val == 0:

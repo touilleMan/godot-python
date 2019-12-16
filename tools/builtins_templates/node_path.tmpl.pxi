@@ -50,7 +50,7 @@ cdef class NodePath:
         return f"<NodePath({self.as_string()})>"
 
     def __str__(NodePath self):
-        return self.as_string()
+        return str(self.as_string())
 
     {{ render_operator_eq() | indent }}
     {{ render_operator_ne() | indent }}
