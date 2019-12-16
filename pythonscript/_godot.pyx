@@ -34,9 +34,6 @@ def _setup_config_entry(name, default_value):
 
 
 cdef api godot_pluginscript_language_data *pythonscript_init():
-    # Make sure Python starts in the game directory
-    os.chdir(str(ProjectSettings.globalize_path(GDString("res://"))))
-
     # Pass argv arguments
     sys.argv = ["godot"] + [str(x) for x in OS.get_cmdline_args()]
 

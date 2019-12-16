@@ -110,6 +110,9 @@ cdef api godot_variant pythonscript_instance_call_method(
         r_error.error = godot_variant_call_error_error.GODOT_CALL_ERROR_CALL_ERROR_INVALID_ARGUMENT
         r_error.argument = 1
         r_error.expected = godot_variant_type.GODOT_VARIANT_TYPE_NIL
+    except Exception:
+        traceback.print_exc()
+        r_error.error = godot_variant_call_error_error.GODOT_CALL_ERROR_CALL_ERROR_INVALID_METHOD
 
     # TODO: also catch other exceptions types ?
 

@@ -85,7 +85,11 @@ GD_PY_TYPES = (
 )
 
 
-cdef object godot_type_to_pyobj(godot_variant_type gdtype):
+cdef bint is_pytype_compatible_with_godot_variant(object pytype):
+    return any(True for _, py in GD_PY_TYPES if py == pytype)
+
+
+cdef object godot_type_to_pytype(godot_variant_type gdtype):
     cdef pytype = next((py for gd, py in GD_PY_TYPES if gd == gdtype), None)
     if pytype is None:
         warn(f"No Python equivalent for Godot type `{gdtype}`")
@@ -94,7 +98,7 @@ cdef object godot_type_to_pyobj(godot_variant_type gdtype):
     return pytype
 
 
-cdef godot_variant_type pyobj_to_godot_type(object pytype):
+cdef godot_variant_type pytype_to_godot_type(object pytype):
     cdef gdtype = next((gd for gd, py in GD_PY_TYPES if py == pytype), None)
     if gdtype is None:
         warn(f"No Godot equivalent for Python type `{pytype}`")

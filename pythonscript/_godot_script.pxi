@@ -26,7 +26,7 @@ from godot._hazmat.conversion cimport (
     godot_string_to_pyobj,
     pyobj_to_godot_string,
     pyobj_to_godot_string_name,
-    pyobj_to_godot_type,
+    pytype_to_godot_type,
 )
 from godot._hazmat.internal cimport (
     get_pythonscript_verbose,
@@ -83,7 +83,7 @@ cdef Dictionary _build_method_info(object meth, object methname):
 cdef Dictionary _build_property_info(object prop):
     cdef Dictionary propinfo = Dictionary()
     propinfo["name"] = prop.name
-    propinfo["type"] = pyobj_to_godot_type(prop.type)
+    propinfo["type"] = pytype_to_godot_type(prop.type)
     propinfo["hint"] = prop.hint
     propinfo["hint_string"] = prop.hint_string
     propinfo["usage"] = prop.usage
@@ -171,6 +171,13 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
         # miss an exposed class)
         print(
             f"Got exception loading {path} ({modname}): {traceback.format_exc()}"
+        )
+        r_error[0] = GODOT_ERR_PARSE_ERROR
+        return _build_empty_script_manifest()
+
+    if cls is None:
+        print(
+            f"Cannot load {path} ({modname}) because it doesn't expose any class to Godot"
         )
         r_error[0] = GODOT_ERR_PARSE_ERROR
         return _build_empty_script_manifest()

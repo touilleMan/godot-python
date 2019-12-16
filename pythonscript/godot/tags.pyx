@@ -6,8 +6,16 @@ from godot._hazmat.gdnative_api_struct cimport (
     godot_property_usage_flags,
     godot_method_rpc_mode,
     godot_property_hint,
+    godot_variant,
+)
+from godot._hazmat.gdapi cimport pythonscript_gdapi10 as gdapi10
+from godot._hazmat.conversion cimport (
+    is_pytype_compatible_with_godot_variant,
+    pyobj_to_godot_variant,
+    godot_variant_to_pyobj,
 )
 from godot._hazmat.internal cimport get_exposed_class, set_exposed_class
+from godot.builtins cimport Array, Dictionary, GDString
 from godot.bindings cimport Object
 
 
@@ -128,7 +136,7 @@ class SignalField:
 def signal(name: str=None):
     # If signal name is None, we will determine the name
     # later by using the class's attribute containing it
-    if not isinstance(name, str):
+    if name is not None and not isinstance(name, str):
         raise ValueError("`name` must be a str")
     return SignalField(name)
 
@@ -148,6 +156,25 @@ class ExportedField:
         rpc,
     ):
         self.property = None
+
+        type = GDString if type == str else type
+        type = Array if type == list else type
+        type = Dictionary if type == dict else type
+
+        if not is_pytype_compatible_with_godot_variant(type):
+            raise ValueError(f"{type!r} type value not compatible with Godot")
+
+        cdef godot_variant gd_default
+        if default is not None:
+            # Convert `default` to a Godot-compatible value (e.g. str -> GDString)
+            if not pyobj_to_godot_variant(default, &gd_default):
+                gdapi10.godot_variant_destroy(&gd_default)
+                raise ValueError(f"{default!r} default value not compatible with Godot")
+            default = godot_variant_to_pyobj(&gd_default)
+            gdapi10.godot_variant_destroy(&gd_default)
+
+            if not isinstance(default, type):
+                raise ValueError(f"{default!r} default value not compatible with {type!r} type")
 
         self.type = type
         self.default = default
@@ -286,13 +313,13 @@ def exposed(cls=None, tool=False):
                 if v.property:
                     # If export has been used to decorate a property, expose it
                     # in the generated class
-                    cls.__dict__[k] = v.property
+                    setattr(cls, k, v.property)
                 else:
-                    cls.__dict__[k] = v.default
+                    setattr(cls, k, v.default)
             elif isinstance(v, SignalField):
                 v.name = v.name if v.name else k
                 cls.__signals[v.name] = v
-                cls.__dict__[k] = v
+                setattr(cls, k, v)
 
         set_exposed_class(cls)
         return cls
