@@ -396,7 +396,7 @@ if env["platform"].startswith("windows"):
 cython_bindings_env = cython_env.Clone()
 if not env["sample"]:
     if not env["shitty_compiler"]:
-        cython_bindings_env.Append(CFLAGS=["-Os"])
+        cython_bindings_env.Append(CFLAGS=["-Os", "-Wno-misleading-indentation"])
         cython_bindings_env.Append(LINKFLAGS=["-Wl,--strip-all"])
     else:
         cython_bindings_env.Append(CFLAGS=["/Os"])
