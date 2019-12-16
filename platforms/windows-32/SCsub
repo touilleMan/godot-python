@@ -3,6 +3,7 @@
 # tl;dr: onyl msvc is supported to link against pythonxx.dll
 
 import os
+import glob
 import shutil
 import subprocess
 from itertools import chain
@@ -116,31 +117,36 @@ def add_pythonscript_stuff_to_build_dir(
     def p(subpath=""):
         return os.path.join(target.abspath, "pythonscript", *subpath.split("/"))
 
+    try:
+        os.mkdir(p())
+    except FileExistsError:
+        pass
+
     print(f"Copy {libpythonscript.path} -> {p()}")
     shutil.copy(libpythonscript.path, p())
 
-    print(f"Copy {_godot_module.path} -> {p('lib/python3.7/site-packages/')}")
-    shutil.copy(_godot_module.path, p("lib/python3.7/site-packages/"))
+    print(f"Copy {_godot_module.path} -> {p('lib/site-packages/')}")
+    shutil.copy(_godot_module.path, p("lib/site-packages/"))
 
     if env["dev_dyn"]:
         import _winapi
 
-        if os.path.exists(p("lib/python3.7/site-packages/godot")):
+        if os.path.exists(p("lib/site-packages/godot")):
             print(
-                f"dev_dyn: skip creating NTFS junction, {p('lib/python3.7/site-packages/godot')} already exists"
+                f"dev_dyn: skip creating NTFS junction, {p('lib/site-packages/godot')} already exists"
             )
         else:
-            print(f"dev_dyn: NTFS junction {godot_module.abspath} -> {p('lib/python3.7/site-packages/godot')}")
-            _winapi.CreateJunction(godot_module.abspath, p("lib/python3.7/site-packages/godot"))
-        env.NoClean(p("lib/python3.7/site-packages/godot"))
+            print(f"dev_dyn: NTFS junction {godot_module.abspath} -> {p('lib/site-packages/godot')}")
+            _winapi.CreateJunction(godot_module.abspath, p("lib/site-packages/godot"))
+        env.NoClean(p("lib/site-packages/godot"))
 
     else:
-        dst_dir = Path(p("lib/python3.7/site-packages/godot"))
+        dst_dir = Path(p("lib/site-packages/godot"))
         src_dir = Path(godot_module.path)
         print(f"Copy {src_dir} -> {dst_dir}")
         for src_item in chain(
             src_dir.glob("**/*.py"),
-            src_dir.glob("**/*.dll"),
+            src_dir.glob("**/*.pyd"),
             src_dir.glob("**/*.pxd"),
         ):
             dst_item = dst_dir / src_item.relative_to(src_dir)
