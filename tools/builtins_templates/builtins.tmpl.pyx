@@ -11,7 +11,6 @@ from godot._hazmat.gdapi cimport (
 )
 from godot._hazmat.conversion cimport *
 from godot.array cimport Array
-from godot.dictionary cimport Dictionary
 from godot.pool_arrays cimport (
     PoolIntArray,
     PoolRealArray,
@@ -47,4 +46,6 @@ from godot.pool_arrays cimport (
 {% set render_target = "transform" %}
 {% include 'render.tmpl.pyx' with context  %}
 {% set render_target = "node_path" %}
+{% include 'render.tmpl.pyx' with context  %}
+{% set render_target = "dictionary" %}
 {% include 'render.tmpl.pyx' with context  %}

@@ -11,26 +11,36 @@
 def {{ pyname }}({{ py_type }} self{%- if args -%},{%- endif -%}
 {%- for arg in args %}
  {{ arg["py_type"] }} {{ arg["name"] }}
-{%- if not arg["is_base_type"] %}
+{%- if not arg["is_base_type"] and arg["gd_type"] != "godot_variant" %}
  not None
 {%- endif -%}
 ,
 {%- endfor -%}
 ) -> {{ return_type["signature_type"] }}:
-{% if return_type["is_builtin"] %}
+{% for arg in args %}
+{% if arg["gd_type"] == "godot_variant" %}
+    cdef godot_variant __var_{{ arg["name"] }}
+    pyobj_to_godot_variant({{ arg["name"] }}, &__var_{{ arg["name"] }})
+{% endif %}
+{% endfor %}
+{% if return_type["gd_type"] == "godot_variant" %}
+    cdef godot_variant __var_ret = (
+{%- elif return_type["is_builtin"] %}
     cdef {{ return_type["py_type"] }} __ret = {{ return_type["py_type"] }}.__new__({{ return_type["py_type"] }})
     __ret._gd_data = (
 {%- elif return_type["is_object"] %}
     cdef {{ return_type["py_type"] }} __ret = {{ return_type["py_type"] }}.__new__({{ return_type["py_type"] }})
     __ret._gd_ptr = (
 {%- elif not return_type["is_void"] %}
-    return (
+    cdef {{ return_type["py_type"] }} __ret = (
 {%- else %}
     (
 {%- endif %}
 gdapi{{ gdapi }}.{{ gd_type }}_{{ gdname }}(&self._gd_data,
 {%- for arg in args %}
-{%- if arg["is_builtin"] %}
+{%- if arg["gd_type"] == "godot_variant" %}
+ &__var_{{ arg["name"] }},
+{%- elif arg["is_builtin"] %}
 {%- if arg["is_ptr"] %}
  &{{ arg["name"] }}._gd_data,
 {%- else %}
@@ -43,7 +53,16 @@ gdapi{{ gdapi }}.{{ gd_type }}_{{ gdname }}(&self._gd_data,
 {%- endif %}
 {% endfor %}
 ))
-{% if return_type["is_builtin"] or return_type["is_object"] %}
+{% for arg in args %}
+{% if arg["gd_type"] == "godot_variant" %}
+    gdapi10.godot_variant_destroy(&__var_{{ arg["name"] }})
+{% endif %}
+{% endfor %}
+{% if return_type["gd_type"] == "godot_variant" %}
+    cdef object __ret = godot_variant_to_pyobj(&__var_ret)
+    gdapi10.godot_variant_destroy(&__var_ret)
+    return __ret
+{% elif not return_type["is_void"] %}
     return __ret
 {% endif %}
 {% endmacro %}
@@ -67,7 +86,7 @@ def __ne__({{ py_type }} self, other):
 {% macro render_operator_lt() %}
 def __lt__({{ py_type }} self, other):
     try:
-        return not gdapi10.{{ gd_type }}_operator_less(&self._gd_data, &(<{{ py_type }}?>other)._gd_data)
+        return gdapi10.{{ gd_type }}_operator_less(&self._gd_data, &(<{{ py_type }}?>other)._gd_data)
     except TypeError:
         return False
 {% endmacro %}

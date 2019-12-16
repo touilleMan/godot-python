@@ -17,7 +17,6 @@ from godot.tags import (
     exposed,
 )
 from godot.array import Array
-from godot.dictionary import Dictionary
 from godot.pool_arrays import (
     PoolIntArray,
     PoolRealArray,
@@ -28,6 +27,7 @@ from godot.pool_arrays import (
     PoolStringArray,
 )
 from godot.builtins import (
+    Dictionary,
     AABB,
     Basis,
     Color,

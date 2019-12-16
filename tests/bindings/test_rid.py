@@ -51,6 +51,18 @@ def test_bad_equal_with_rid(generate_obj):
     rid2 = RID(env2)
     assert rid1 != rid2
 
+def test_lt(generate_obj):
+    env1 = generate_obj(Environment)
+    env2 = generate_obj(Environment)
+    rid1 = RID(env1)
+    rid2 = RID(env2)
+    # Ordered is based on resource pointer, so cannot know the order ahead of time
+    small, big = sorted([rid1, rid2])
+    assert small < big
+    assert big > small
+    assert not small > big
+    assert not big < small
+
 def test_repr():
     v = RID()
     assert repr(v) == "<RID(id=0)>"
