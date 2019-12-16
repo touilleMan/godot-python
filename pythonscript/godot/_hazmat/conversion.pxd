@@ -10,6 +10,7 @@ from godot._hazmat.gdnative_api_struct cimport (
     godot_variant,
     godot_variant_type,
 )
+from godot.builtins cimport GDString, NodePath
 
 
 # Godot string are basically a vector of wchar_t, each wchar_t representing
@@ -61,3 +62,6 @@ cdef bint pyobj_to_godot_variant(object pyobj, godot_variant *p_var)
 cdef bint is_pytype_compatible_with_godot_variant(object pytype)
 cdef object godot_type_to_pytype(godot_variant_type gdtype)
 cdef godot_variant_type pytype_to_godot_type(object pytype)
+
+cdef GDString ensure_is_gdstring(object gdstring_or_pystr)
+cdef NodePath ensure_is_nodepath(object nodepath_or_pystr)

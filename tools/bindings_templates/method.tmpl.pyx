@@ -20,7 +20,7 @@ cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = gdapi
 {% macro render_method_signature(method) %}
 {{ method["name"] }}(self,
 {%- for arg in method["arguments"] %}
-{%- if arg["type"] == "godot_string" %}
+{%- if arg["type"] in ("godot_string", "godot_node_path") %}
  object {{ arg["name"] }}
 {%- else %}
  {{ arg["type_specs"]["binding_type"] }} {{ arg["name"] }}
@@ -61,16 +61,11 @@ cdef const void *{{ argsval }}[{{ method["arguments"] | length }}]
 {% set i = loop.index - 1 %}
 # {{ arg["type"] }} {{ arg["name"] }}
 {% if arg["type"] == "godot_string" %}
-cdef GDString __gdstr_{{ arg["name"] }}
-try:
-    __gdstr_{{ arg["name"] }} = <GDString?>{{ arg["name"] }}
-except TypeError:
-    if isinstance({{ arg["name"] }}, str):
-        __gdstr_{{ arg["name"] }} = GDString.__new__(GDString)
-        pyobj_to_godot_string({{ arg["name"] }}, &__gdstr_{{ arg["name"] }}._gd_data)
-    else:
-        raise TypeError("{{ arg['name'] }}")
+cdef GDString __gdstr_{{ arg["name"] }} = ensure_is_gdstring({{ arg["name"] }})
 {{ argsval }}[{{ i }}] = <void*>(&__gdstr_{{ arg["name"] }}._gd_data)
+{% elif arg["type"] == "godot_node_path" %}
+cdef NodePath __nodepath_{{ arg["name"] }} = ensure_is_nodepath({{ arg["name"] }})
+{{ argsval }}[{{ i }}] = <void*>(&__nodepath_{{ arg["name"] }}._gd_data)
 {% elif arg["type_specs"]["is_object"] %}
 {{ argsval }}[{{ i }}] = <void*>(&{{ arg["name"] }}._gd_ptr)
 {% elif arg["type"] == "godot_variant" %}

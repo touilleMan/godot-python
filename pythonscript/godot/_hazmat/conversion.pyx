@@ -404,3 +404,25 @@ cdef inline void _pyobj_to_godot_variant_convert_string(object pyobj, godot_vari
         gdapi10.godot_variant_new_string(p_var, &gdstr)
     finally:
         gdapi10.godot_string_destroy(&gdstr)
+
+
+cdef GDString ensure_is_gdstring(object gdstring_or_pystr):
+    cdef GDString gdstring_converted
+    try:
+        return <GDString?>gdstring_or_pystr
+    except TypeError:
+        try:
+            return GDString(gdstring_or_pystr)
+        except TypeError:
+            raise TypeError(f"Invalid value {gdstring_or_pystr!r}, must be str or GDString")
+
+
+cdef NodePath ensure_is_nodepath(object nodepath_or_pystr):
+    cdef NodePath NodePath_converted
+    try:
+        return <NodePath?>nodepath_or_pystr
+    except TypeError:
+        try:
+            return NodePath(nodepath_or_pystr)
+        except TypeError:
+            raise TypeError(f"Invalid value {nodepath_or_pystr!r}, must be str or NodePath")
