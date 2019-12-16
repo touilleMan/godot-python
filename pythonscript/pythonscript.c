@@ -141,6 +141,10 @@ GDN_EXPORT void godot_gdnative_init(godot_gdnative_init_options *options) {
 
     // Check for mandatory plugins
 
+    if (!pythonscript_gdapi10 || !pythonscript_gdapi11 || !pythonscript_gdapi12) {
+        GD_ERROR_PRINT("Godot-Python requires GDNative API >= v1.2");
+        return;
+    }
     if (!pythonscript_gdapi_ext_pluginscript) {
         GD_ERROR_PRINT("Pluginscript extension not available");
         return;
