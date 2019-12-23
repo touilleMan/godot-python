@@ -8,6 +8,6 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% endif %}
 
     @staticmethod
-    cdef {{ cls["name"] }} from_ptr(godot_object *_ptr, bint owner)
+    cdef {{ cls["name"] }} from_ptr(godot_object *_ptr)
 
 {% endmacro %}

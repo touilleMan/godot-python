@@ -20,6 +20,7 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 
     def __init__(self):
         raise RuntimeError(f"Use `new()` method to instantiate Godot object.")
+
 {% endif %}
 
 {% if not cls["singleton"] and cls["instanciable"] %}
@@ -34,7 +35,7 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% endif %}
 
     @staticmethod
-    cdef {{ cls["name"] }} from_ptr(godot_object *_ptr, bint owner):
+    cdef {{ cls["name"] }} from_ptr(godot_object *_ptr):
         # Call to __new__ bypasses __init__ constructor
         cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
         wrapper._gd_ptr = _ptr

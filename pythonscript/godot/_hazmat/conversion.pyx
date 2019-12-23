@@ -275,7 +275,7 @@ cdef inline RID _godot_variant_to_pyobj_rid(const godot_variant *p_gdvar):
 
 
 cdef inline Object _godot_variant_to_pyobj_object(const godot_variant *p_gdvar):
-    return Object.from_ptr(gdapi10.godot_variant_as_object(p_gdvar), owner=False)
+    return Object.from_ptr(gdapi10.godot_variant_as_object(p_gdvar))
 
 
 cdef inline Dictionary _godot_variant_to_pyobj_dictionary(const godot_variant *p_gdvar):
