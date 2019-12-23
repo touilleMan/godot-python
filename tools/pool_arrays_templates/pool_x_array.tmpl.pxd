@@ -9,9 +9,6 @@ cdef class {{ t.py_pool }}:
     @staticmethod
     cdef inline {{ t.py_pool }} new_with_array(Array other)
 
-    @staticmethod
-    cdef inline {{ t.py_pool }} from_ptr(const {{ t.gd_pool }} *_ptr)
-
     # Operators
 
     cdef inline bint operator_equal(self, {{ t.py_pool }} other)

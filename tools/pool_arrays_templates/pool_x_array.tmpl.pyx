@@ -55,13 +55,6 @@ cdef class {{ t.py_pool }}:
         gdapi10.{{ t.gd_pool }}_new_with_array(&ret._gd_data, &other._gd_data)
         return ret
 
-    @staticmethod
-    cdef inline {{ t.py_pool }} from_ptr(const {{ t.gd_pool }} *_ptr):
-        # Call to __new__ bypasses __init__ constructor
-        cdef {{ t.py_pool }} ret = {{ t.py_pool }}.__new__({{ t.py_pool }})
-        ret._gd_data = _ptr[0]
-        return ret
-
     def __repr__(self):
         return f"<{{ t.py_pool }}([{', '.join(repr(x) for x in self)}])>"
 
