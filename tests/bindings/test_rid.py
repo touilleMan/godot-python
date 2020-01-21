@@ -23,6 +23,7 @@ def test_base():
     v = RID()
     assert type(v) == RID
 
+
 def test_equal(generate_obj):
     v1 = RID()
     v2 = RID()
@@ -37,10 +38,12 @@ def test_equal(generate_obj):
     v_b = RID(res_b)
     assert not v_a_1 == v_b  # Force use of __eq__
 
+
 @pytest.mark.parametrize("arg", [None, 0, "foo"])
 def test_bad_equal(generate_obj, arg):
     arr = RID(generate_obj(Environment))
     assert arr != arg
+
 
 def test_bad_equal_with_rid(generate_obj):
     # Doing `RID(Environment())` will cause garbage collection of enclosed
@@ -50,6 +53,7 @@ def test_bad_equal_with_rid(generate_obj):
     rid1 = RID(env1)
     rid2 = RID(env2)
     assert rid1 != rid2
+
 
 def test_lt(generate_obj):
     env1 = generate_obj(Environment)
@@ -63,22 +67,24 @@ def test_lt(generate_obj):
     assert not small > big
     assert not big < small
 
+
 def test_repr():
     v = RID()
     assert repr(v) == "<RID(id=0)>"
 
-@pytest.mark.parametrize(
-    "arg", [42, "dummy", RID()]
-)
+
+@pytest.mark.parametrize("arg", [42, "dummy", RID()])
 def test_bad_instantiate(arg):
     with pytest.raises(TypeError):
         RID(arg)
+
 
 def test_bad_instantiate_with_not_resource(generate_obj):
     # Node doesn't inherit from Resource
     node = generate_obj(Node)
     with pytest.raises(TypeError):
         RID(node)
+
 
 @pytest.mark.parametrize("args", [["get_id", int, ()]], ids=lambda x: x[0])
 def test_methods(args):

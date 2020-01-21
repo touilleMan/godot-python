@@ -99,15 +99,17 @@ class PoolVector3ArrayBench(BasePoolArrayBench):
 
 
 @pytest.fixture(
-    scope="module", ids=lambda x: x.cls.__name__, params=[
-PoolIntArrayBench,
-PoolRealArrayBench,
-PoolByteArrayBench,
-PoolColorArrayBench,
-PoolStringArrayBench,
-PoolVector2ArrayBench,
-PoolVector3ArrayBench,
-]
+    scope="module",
+    ids=lambda x: x.cls.__name__,
+    params=[
+        PoolIntArrayBench,
+        PoolRealArrayBench,
+        PoolByteArrayBench,
+        PoolColorArrayBench,
+        PoolStringArrayBench,
+        PoolVector2ArrayBench,
+        PoolVector3ArrayBench,
+    ],
 )
 def pool_x_array(request):
     return request.param()

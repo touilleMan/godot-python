@@ -29,7 +29,7 @@ class Main(Node):
             arg = str(gdarg)
             if arg.startswith(prefix):
                 pytest_args += arg[len(prefix) :].split(",")
-        if all(arg.startswith('-') for arg in pytest_args):
+        if all(arg.startswith("-") for arg in pytest_args):
             # Filter to avoid scanning `plugins` and `lib` directories
             pytest_args += [x for x in os.listdir() if x.startswith("test_")]
         # Run tests here

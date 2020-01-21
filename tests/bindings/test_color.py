@@ -13,6 +13,7 @@ def test_base():
     v = Color()
     assert type(v) == Color
 
+
 @pytest.mark.parametrize(
     "arg",
     [
@@ -33,6 +34,7 @@ def test_initialize(arg):
         v2 = Color(*arg)
     assert v1 == v2
 
+
 def test_equal():
     v1 = Color()
     v2 = Color()
@@ -41,14 +43,17 @@ def test_equal():
     vrgb = Color(1, 2, 3)
     assert not vrgb == vrgba  # Force use of __eq__
 
+
 @pytest.mark.parametrize("arg", [None, 0, "foo", Color(1, 2, 3, 5)])
 def test_bad_equal(arg):
     basis = Color(1, 2, 3, 4)
     assert basis != arg
 
+
 def test_repr():
     v = Color()
     assert repr(v) == "<Color(r=0.0, g=0.0, b=0.0, a=1.0)>"
+
 
 @pytest.mark.parametrize(
     "arg", [(None,), (1, None), (1, 2, None), ("dummy",), (NODE,), (Vector2(),)]
@@ -56,6 +61,7 @@ def test_repr():
 def test_bad_instantiate(arg):
     with pytest.raises(TypeError):
         Color(*arg)
+
 
 @pytest.mark.parametrize(
     "field,ret_type,params",
@@ -87,6 +93,7 @@ def test_methods(field, ret_type, params):
     ret = method(*params)
     assert type(ret) == ret_type
 
+
 @pytest.mark.parametrize(
     "small,big",
     [
@@ -98,6 +105,7 @@ def test_methods(field, ret_type, params):
 )
 def test_lt(small, big):
     assert small < big
+
 
 @pytest.mark.parametrize(
     "field,ret_type",
@@ -127,6 +135,7 @@ def test_properties_rw(field, ret_type):
         field_val = getattr(v, field)
         assert field_val == val
 
+
 @pytest.mark.parametrize(
     "args", [("h", float), ("s", float), ("v", float)], ids=lambda x: x[0]
 )
@@ -138,6 +147,7 @@ def test_properties_ro(args):
     assert type(field_val) == ret_type
     with pytest.raises(AttributeError):
         setattr(v, field, 0.5)
+
 
 @pytest.mark.parametrize(
     "args",
@@ -166,6 +176,7 @@ def test_bad_properties(args):
     field, bad_value = args
     with pytest.raises(TypeError):
         setattr(v, field, bad_value)
+
 
 def test_constants():
     assert isinstance(Color.LEMONCHIFFON, Color)

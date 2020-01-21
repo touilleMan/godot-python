@@ -12,37 +12,40 @@ def test_init():
     assert v2 == Transform2D(*args)
     assert v != v2
 
+
 @pytest.mark.parametrize(
-    "args", [
-    ("NaN", Vector2(), Vector2()),
-    (Vector2(), "NaN", Vector2()),
-    (Vector2(), Vector2(), "Nan"),
-    (None, Vector2(), Vector2()),
-    (Vector2(), None, Vector2()),
-    (Vector2(), Vector2(), None),
-])
+    "args",
+    [
+        ("NaN", Vector2(), Vector2()),
+        (Vector2(), "NaN", Vector2()),
+        (Vector2(), Vector2(), "Nan"),
+        (None, Vector2(), Vector2()),
+        (Vector2(), None, Vector2()),
+        (Vector2(), Vector2(), None),
+    ],
+)
 def test_bad_init(args):
     with pytest.raises(TypeError):
         Transform2D(*args)
+
 
 def test_repr():
     v = Transform2D()
     assert repr(v).startswith("<Transform2D(")
 
+
 def test_init_from_rot_pos():
     v = Transform2D.from_rot_pos(1, Vector2())
     assert isinstance(v, Transform2D)
 
+
 @pytest.mark.parametrize(
-    "args", [
-    (1, ),
-    (None, Vector2()),
-    ("NaN", Vector2()),
-    (1, "bad"),
-])
+    "args", [(1,), (None, Vector2()), ("NaN", Vector2()), (1, "bad"),]
+)
 def test_bad_init_from_rot_pos(args):
     with pytest.raises(TypeError):
         Transform2D.from_rot_pos(*args)
+
 
 @pytest.mark.parametrize(
     "field,ret_type,params",
@@ -66,7 +69,7 @@ def test_bad_init_from_rot_pos(args):
     ],
     ids=lambda x: x[0],
 )
-def test_methods(field,ret_type,params):
+def test_methods(field, ret_type, params):
     v = Transform2D()
     # Don't test methods' validity but bindings one
     assert hasattr(v, field)
@@ -74,6 +77,7 @@ def test_methods(field,ret_type,params):
     assert callable(method)
     ret = method(*params)
     assert type(ret) == ret_type
+
 
 @pytest.mark.parametrize(
     "field,params",
@@ -90,11 +94,12 @@ def test_methods(field,ret_type,params):
     ],
     ids=lambda x: x[0],
 )
-def test_methods_call_with_none(field,params):
+def test_methods_call_with_none(field, params):
     v = Transform2D()
     method = getattr(v, field)
     with pytest.raises(TypeError):
         method(*params)
+
 
 def test_mult():
     v1 = Transform2D()
@@ -104,12 +109,12 @@ def test_mult():
     v2 *= v1
     assert v3 == v2
 
-@pytest.mark.parametrize('arg', [
-    None, 'dummy'
-], ids=lambda x: x[0])
+
+@pytest.mark.parametrize("arg", [None, "dummy"], ids=lambda x: x[0])
 def test_bad_mult(arg):
     with pytest.raises(TypeError):
         Transform2D(2, 3) * arg
+
 
 def test_equal():
     arr = Transform2D(Vector2(1, 2), Vector2(3, 4), Vector2(5, 6))
@@ -117,6 +122,7 @@ def test_equal():
     assert arr == other
     bad = Transform2D(Vector2(0, 2), Vector2(3, 4), Vector2(5, 6))
     assert not arr == bad  # Force use of __eq__
+
 
 @pytest.mark.parametrize("arg", [None, 0, "foo", Transform2D()])
 def test_not_equal(arg):

@@ -11,9 +11,11 @@ def test_base():
     assert v2 == Rect2(1, 2, 3, 4)
     assert v != v2
 
+
 def test_repr():
     v = Rect2(1, 2)
     assert repr(v) == "<Rect2(1, 2, 0, 0)>"
+
 
 def test_instantiate():
     # Can build it with int or float or nothing
@@ -24,11 +26,7 @@ def test_instantiate():
         [(1, 2, 1, 2), Vector2(1, 2), Vector2(1, 2)],
     ):
         v = Rect2(*args)
-        assert v.position == expected_pos, msg_tmpl % (
-            v.position,
-            expected_pos,
-            args,
-        )
+        assert v.position == expected_pos, msg_tmpl % (v.position, expected_pos, args,)
         assert v.size == expected_size, msg_tmpl % (v.size, expected_size, args)
     with pytest.raises(TypeError):
         Rect2("a", 2, 3, 4)
@@ -40,6 +38,7 @@ def test_instantiate():
         Rect2(1, 2, 3, "d")
     with pytest.raises(TypeError):
         Rect2(None, 2)
+
 
 @pytest.mark.parametrize(
     "field,ret_type,params",
@@ -68,6 +67,7 @@ def test_methods(field, ret_type, params):
     ret = method(*params)
     assert type(ret) == ret_type
 
+
 @pytest.mark.parametrize(
     "field,ret_type", [("position", Vector2), ("size", Vector2)], ids=lambda x: x[0]
 )
@@ -81,12 +81,14 @@ def test_rw_properties(field, ret_type):
         field_val = getattr(v, field)
         assert field_val == val
 
+
 def test_ro_end_property():
     v = Rect2()
     assert hasattr(v, "end")
     assert type(v.end) == Vector2
     with pytest.raises(AttributeError):
         v.end = Vector2()
+
 
 @pytest.mark.parametrize(
     "field,bad_value",
@@ -105,12 +107,14 @@ def test_bad_rw_properties(field, bad_value):
     with pytest.raises(TypeError):
         setattr(v, field, bad_value)
 
+
 def test_equal():
     arr = Rect2(0.1, 1, 2, 3)
     other = Rect2(0.1, 1, 2, 3)
     assert arr == other
     bad = Rect2(0.1, 1, 2, 4)
     assert not arr == bad  # Force use of __eq__
+
 
 @pytest.mark.parametrize("arg", [None, 0, "foo", Rect2(0.1, 1, 2, 4)])
 def test_bad_equal(arg):

@@ -11,9 +11,11 @@ def test_base():
     assert v2 == AABB(Vector3(1, 2, 3), Vector3(4, 5, 7))
     assert v != v2
 
+
 def test_repr():
     v = AABB(Vector3(1, 2, 3), Vector3(4, 5, 6))
     assert repr(v) == "<AABB(1, 2, 3 - 4, 5, 6)>"
+
 
 def test_instantiate():
     # Can build it with int or float or nothing
@@ -23,16 +25,13 @@ def test_instantiate():
         [(Vector3(0, 1, 0), Vector3(0, 0, 1)), Vector3(0, 1, 0), Vector3(0, 0, 1)],
     ):
         v = AABB(*args)
-        assert v.position == expected_pos, msg_tmpl % (
-            v.position,
-            expected_pos,
-            args,
-        )
+        assert v.position == expected_pos, msg_tmpl % (v.position, expected_pos, args,)
         assert v.size == expected_size, msg_tmpl % (v.size, expected_size, args)
     with pytest.raises(TypeError):
         AABB("a", Vector3())
     with pytest.raises(TypeError):
         AABB(Vector3(), "b")
+
 
 @pytest.mark.parametrize(
     "field,ret_type,params",
@@ -69,6 +68,7 @@ def test_methods(field, ret_type, params):
     ret = method(*params)
     assert type(ret) == ret_type
 
+
 @pytest.mark.parametrize(
     "field,ret_type", [("position", Vector3), ("size", Vector3)], ids=lambda x: x[0]
 )
@@ -81,6 +81,7 @@ def test_properties(field, ret_type):
         setattr(v, field, val)
         field_val = getattr(v, field)
         assert field_val == val
+
 
 @pytest.mark.parametrize(
     "field,bad_value",
@@ -99,12 +100,14 @@ def test_bad_properties(field, bad_value):
     with pytest.raises(TypeError):
         setattr(v, field, bad_value)
 
+
 def test_equal():
     arr = AABB(Vector3(1, 2, 3), Vector3(4, 5, 6))
     other = AABB(Vector3(1, 2, 3), Vector3(4, 5, 6))
     assert arr == other
     bad = AABB(Vector3(6, 5, 4), Vector3(3, 2, 1))
     assert not arr == bad  # Force use of __eq__
+
 
 @pytest.mark.parametrize(
     "arg", [None, 0, "foo", AABB(Vector3(6, 5, 4), Vector3(3, 2, 1))]

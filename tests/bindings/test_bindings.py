@@ -23,25 +23,22 @@ def test_expose_contains_class():
 def test_call_one_arg_short(current_node):
     with pytest.raises(TypeError) as exc:
         current_node.get_child()
-    assert (
-        str(exc.value)
-        == "get_child() takes exactly one argument (0 given)"
-    )
+    assert str(exc.value) == "get_child() takes exactly one argument (0 given)"
+
 
 def test_call_too_few_args(current_node):
     with pytest.raises(TypeError) as exc:
         current_node.move_child()
     assert (
-        str(exc.value)
-        == "move_child() takes exactly 2 positional arguments (0 given)"
+        str(exc.value) == "move_child() takes exactly 2 positional arguments (0 given)"
     )
+
 
 def test_call_with_defaults_and_too_few_args(current_node):
     with pytest.raises(TypeError) as exc:
         current_node.add_child()
     assert (
-        str(exc.value)
-        == "add_child() takes exactly 2 positional arguments (0 given)"
+        str(exc.value) == "add_child() takes exactly 2 positional arguments (0 given)"
     )
 
 
@@ -49,18 +46,14 @@ def test_call_none_in_base_type_args(current_node):
     with pytest.raises(TypeError) as exc:
         # signature: def get_child(self, godot_int idx)
         current_node.get_child(None)
-    assert (
-        str(exc.value) == "an integer is required"
-    )
+    assert str(exc.value) == "an integer is required"
 
 
 def test_call_none_in_builtin_args(current_node):
     with pytest.raises(TypeError) as exc:
         # signature: def get_node(self, NodePath path not None)
         current_node.get_node(None)
-    assert (
-        str(exc.value) == "Invalid value None, must be str or NodePath"
-    )
+    assert str(exc.value) == "Invalid value None, must be str or NodePath"
 
 
 def test_call_none_in_bindings_args(current_node):
@@ -68,23 +61,22 @@ def test_call_none_in_bindings_args(current_node):
         # signature: def get_path_to(self, Node node not None)
         current_node.get_path_to(None)
     assert (
-        str(exc.value) == "Argument 'node' has incorrect type (expected godot.bindings.Node, got NoneType)"
+        str(exc.value)
+        == "Argument 'node' has incorrect type (expected godot.bindings.Node, got NoneType)"
     )
 
 
 def test_call_too_many_args(current_node):
     with pytest.raises(TypeError) as exc:
         current_node.get_child(1, 2)
-    assert (
-        str(exc.value) == "get_child() takes exactly one argument (2 given)"
-    )
+    assert str(exc.value) == "get_child() takes exactly one argument (2 given)"
+
 
 def test_call_with_default_and_too_many_args(current_node):
     with pytest.raises(TypeError) as exc:
         current_node.add_child(1, 2, 3)
     assert (
-        str(exc.value)
-        == "add_child() takes exactly 2 positional arguments (3 given)"
+        str(exc.value) == "add_child() takes exactly 2 positional arguments (3 given)"
     )
 
 

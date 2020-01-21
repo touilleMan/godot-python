@@ -11,9 +11,11 @@ def test_base():
     assert v2 == Vector3(1, -2, 5)
     assert v != v2
 
+
 def test_repr():
     v = Vector3(1, 2, 3)
     assert repr(v) == "<Vector3(x=1.0, y=2.0, z=3.0)>"
+
 
 def test_instantiate():
     # Can build it with int or float or nothing
@@ -36,6 +38,7 @@ def test_instantiate():
         Vector3(1, "b", 5)
     with pytest.raises(TypeError):
         Vector3(None, 2, "c")
+
 
 @pytest.mark.parametrize(
     "field,ret_type,params",
@@ -72,6 +75,7 @@ def test_methods(field, ret_type, params):
     ret = method(*params)
     assert isinstance(ret, ret_type)
 
+
 @pytest.mark.parametrize(
     "field,type", [("x", float), ("y", float), ("z", float)], ids=lambda x: x[0]
 )
@@ -84,22 +88,17 @@ def test_properties(field, type):
     field_val = getattr(v, field)
     assert field_val == val
 
+
 @pytest.mark.parametrize(
     "field,bad_value",
-    [
-        ("x", "NaN"),
-        ("y", "NaN"),
-        ("z", "NaN"),
-        ("x", None),
-        ("y", None),
-        ("z", None),
-    ],
+    [("x", "NaN"), ("y", "NaN"), ("z", "NaN"), ("x", None), ("y", None), ("z", None),],
     ids=lambda x: x[0],
 )
 def test_bad_properties(field, bad_value):
     v = Vector3()
     with pytest.raises(TypeError):
         setattr(v, field, bad_value)
+
 
 @pytest.mark.parametrize(
     "param,result",
@@ -116,6 +115,7 @@ def test_mult(param, result):
     calc = Vector3(2, 3, 4) * param
     assert calc == result
 
+
 @pytest.mark.parametrize(
     "param,result",
     [
@@ -131,6 +131,7 @@ def test_div(param, result):
     calc = Vector3(2, 3, 4) / param
     assert calc == result
 
+
 @pytest.mark.parametrize(
     "param,result",
     [
@@ -143,6 +144,7 @@ def test_div(param, result):
 def test_add(param, result):
     calc = Vector3(2, 3, 4) + param
     assert calc == result
+
 
 @pytest.mark.parametrize(
     "param,result",
@@ -157,20 +159,24 @@ def test_sub(param, result):
     calc = Vector3(2, 3, 4) - param
     assert calc == result
 
+
 @pytest.mark.parametrize("arg", [None, 1, "dummy"], ids=lambda x: x[0])
 def test_bad_add(arg):
     with pytest.raises(TypeError):
         Vector3(2, 3, 4) + arg
+
 
 @pytest.mark.parametrize("arg", [None, 1, "dummy"], ids=lambda x: x[0])
 def test_bad_sub(arg):
     with pytest.raises(TypeError):
         Vector3(2, 3, 4) - arg
 
+
 @pytest.mark.parametrize("arg", [None, "dummy"], ids=lambda x: x[0])
 def test_bad_div(arg):
     with pytest.raises(TypeError):
         Vector3(2, 3, 4) / arg
+
 
 @pytest.mark.parametrize(
     "arg",
@@ -181,10 +187,12 @@ def test_zero_div(arg):
     with pytest.raises(ZeroDivisionError):
         Vector3(2, 3, 4) / arg
 
+
 @pytest.mark.parametrize("arg", [None, "dummy"], ids=lambda x: x[0])
 def test_bad_mult(arg):
     with pytest.raises(TypeError):
         Vector3(2, 3, 4) * arg
+
 
 def test_equal():
     arr = Vector3(1, 2, 3)
@@ -193,10 +201,12 @@ def test_equal():
     bad = Vector3(1, 2, 4)
     assert not arr == bad  # Force use of __eq__
 
+
 @pytest.mark.parametrize("arg", [None, 0, "foo", Vector3(1, 2, 4)])
 def test_bad_equal(arg):
     arr = Vector3(1, 2, 3)
     assert arr != arg
+
 
 @pytest.mark.parametrize(
     "field,type",
