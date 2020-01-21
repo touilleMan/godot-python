@@ -136,7 +136,9 @@ def add_pythonscript_stuff_to_build_dir(
                 f"dev_dyn: {p('lib/site-packages/godot')} already exists, skip creating NTFS junction"
             )
         else:
-            print(f"dev_dyn: NTFS junction {godot_module.abspath} -> {p('lib/site-packages/godot')}")
+            print(
+                f"dev_dyn: NTFS junction {godot_module.abspath} -> {p('lib/site-packages/godot')}"
+            )
             _winapi.CreateJunction(godot_module.abspath, p("lib/site-packages/godot"))
         env.NoClean(p("lib/site-packages/godot"))
 
@@ -145,9 +147,7 @@ def add_pythonscript_stuff_to_build_dir(
         src_dir = Path(godot_module.path)
         print(f"Copy {src_dir} -> {dst_dir}")
         for src_item in chain(
-            src_dir.glob("**/*.py"),
-            src_dir.glob("**/*.pyd"),
-            src_dir.glob("**/*.pxd"),
+            src_dir.glob("**/*.py"), src_dir.glob("**/*.pyd"), src_dir.glob("**/*.pxd"),
         ):
             dst_item = dst_dir / src_item.relative_to(src_dir)
             dst_item.parent.mkdir(parents=True, exist_ok=True)
