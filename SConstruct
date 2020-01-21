@@ -62,8 +62,10 @@ vars.Add(
 )
 vars.Add("CC", "C compiler")
 vars.Add("CFLAGS", "Custom flags for the C compiler")
+vars.Add("BINDINGS_CFLAGS", "Custom flags for the C compiler (for bindings.c only)", "")
 vars.Add("LINK", "linker")
 vars.Add("LINKFLAGS", "Custom flags for the linker")
+vars.Add("BINDINGS_LINKFLAGS", "Custom flags for the linker (for bindings.c only)", "")
 vars.Add(
     "TARGET_ARCH",
     "Target architecture (Windows only) -- x86, x86_64, ia64. Default: host arch.",
@@ -366,7 +368,10 @@ env.Alias("generate_builtins", godot_builtins_pyx)
 sample_opt = "--sample" if env["sample"] else ""
 godot_bindings_pyx, godot_bindings_pxd = env.Command(
     target=("pythonscript/godot/bindings.pyx", "pythonscript/godot/bindings.pxd"),
-    source=("%s/api.json" % env["gdnative_include_dir"], "pythonscript/godot/builtins.pxd"),
+    source=(
+        "%s/api.json" % env["gdnative_include_dir"],
+        "pythonscript/godot/builtins.pxd",
+    ),
     action=(
         "python tools/generate_bindings.py  -i ${SOURCE} -o ${TARGET} " + sample_opt
     ),
@@ -394,10 +399,21 @@ if env["platform"].startswith("windows"):
 
 # `bindings.pyx` is a special snowflake given it size and autogeneration
 cython_bindings_env = cython_env.Clone()
-if not env["sample"]:
+if env["BINDINGS_LINKFLAGS"]:
+    cython_bindings_env.Append(CFLAGS=env["BINDINGS_LINKFLAGS"])
+elif not env["sample"]:
+    if not env["shitty_compiler"]:
+        cython_bindings_env.Append(LINKFLAGS=["-Wl,--strip-all"])
+if env["BINDINGS_CFLAGS"]:
+    cython_bindings_env.Append(CFLAGS=env["BINDINGS_CFLAGS"])
+elif env["sample"]:
+    if not env["shitty_compiler"]:
+        cython_bindings_env.Append(CFLAGS=["-O0"])
+    else:
+        cython_bindings_env.Append(CFLAGS=["/O0"])
+else:
     if not env["shitty_compiler"]:
         cython_bindings_env.Append(CFLAGS=["-Os", "-Wno-misleading-indentation"])
-        cython_bindings_env.Append(LINKFLAGS=["-Wl,--strip-all"])
     else:
         cython_bindings_env.Append(CFLAGS=["/Os"])
 godot_bindings_pyx_to_c = cython_bindings_env.CythonToC(godot_bindings_pyx)
@@ -578,7 +594,9 @@ if env["pytest_args"]:
 else:
     pytest_args = ""
 if env["debugger"]:
-    test_base_cmd = "${debugger} ${SOURCE} -- --path ${Dir('#').abspath}/tests/%s " + pytest_args
+    test_base_cmd = (
+        "${debugger} ${SOURCE} -- --path ${Dir('#').abspath}/tests/%s " + pytest_args
+    )
 else:
     test_base_cmd = "${SOURCE} --path ${Dir('#').abspath}/tests/%s " + pytest_args
 
