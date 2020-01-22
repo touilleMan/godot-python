@@ -45,7 +45,7 @@ vars.Add(
 vars.Add(
     BoolVariable(
         "dev_dyn",
-        "Load at runtime *.inc.py files instead of embedding them (useful for dev)",
+        "Provide godot/_godot modules through symlinks instead of copying them in the build (useful for dev)",
         False,
     )
 )
@@ -202,7 +202,7 @@ def Glob(env, pattern):
     """
     Scons Glob is rather limited
     """
-    return [File(x) for x in glob.glob(pattern, recursive=True)]
+    return sorted([File(x) for x in glob.glob(pattern, recursive=True)])
 
 
 env.AddMethod(Glob, "Glob")
@@ -421,10 +421,12 @@ godot_bindings_pyx_compiled = cython_bindings_env.CythonCompile(godot_bindings_p
 
 # Now the other common folks
 pythonscript_godot_pyxs_except_bindings = [
-    *[src for src in env.Glob("pythonscript/godot/*.pyx") if src != godot_bindings_pyx],
-    *env.Glob("pythonscript/godot/_hazmat/*.pyx"),
     godot_builtins_pyx,
     godot_pool_arrays_pyx,
+    # Keep glob last to avoid changing deps order depending of the other entries
+    # being already generated or not
+    *[src for src in env.Glob("pythonscript/godot/*.pyx") if src != godot_bindings_pyx],
+    *env.Glob("pythonscript/godot/_hazmat/*.pyx"),
 ]
 pythonscript_godot_pyxs_except_bindings_to_c = [
     cython_env.CythonToC(src) for src in pythonscript_godot_pyxs_except_bindings
@@ -437,12 +439,14 @@ pythonscript_godot_pyxs_except_bindings_compiled = [
 # Define dependencies on .pxd files
 pythonscript_godot_pyxs = [pythonscript_godot_pyxs_except_bindings, godot_bindings_pyx]
 pythonscript_godot_pxds = [
-    *env.Glob("pythonscript/godot/*.pxd"),
-    *env.Glob("pythonscript/godot/_hazmat/*.pxd"),
     godot_pool_arrays_pxd,
     godot_builtins_pxd,
     gdnative_api_struct_pxd,
     godot_bindings_pxd,
+    # Keep glob last to avoid changing deps order depending of the other entries
+    # being already generated or not
+    *env.Glob("pythonscript/godot/*.pxd"),
+    *env.Glob("pythonscript/godot/_hazmat/*.pxd"),
 ]
 pythonscript_godot_pyxs_to_c = [
     pythonscript_godot_pyxs_except_bindings_to_c,
@@ -456,10 +460,12 @@ env.Depends(pythonscript_godot_pyxs_to_c, pythonscript_godot_pxds)
 
 # Final target
 pythonscript_godot_targets = [
-    *env.Glob("pythonscript/godot/*.py"),
-    *env.Glob("pythonscript/godot/_hazmat/*.py"),
     *pythonscript_godot_pxds,
     *pythonscript_godot_pyxs_compiled,
+    # Keep glob last to avoid changing deps order depending of the other entries
+    # being already generated or not
+    *env.Glob("pythonscript/godot/*.py"),
+    *env.Glob("pythonscript/godot/_hazmat/*.py"),
 ]
 
 
