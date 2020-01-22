@@ -12,9 +12,9 @@ env = Environment(
     loader=FileSystemLoader(f"{BASEDIR}/builtins_templates"),
     trim_blocks=True,
     lstrip_blocks=False,
-    extensions=['jinja2.ext.loopcontrols'],
+    extensions=["jinja2.ext.loopcontrols"],
 )
-env.filters['merge'] = lambda x, **kwargs: {**x, **kwargs}
+env.filters["merge"] = lambda x, **kwargs: {**x, **kwargs}
 
 
 BUILTINS_TYPES = [
@@ -29,7 +29,7 @@ BUILTINS_TYPES = [
     ("quat", "Quat", "godot_quat",),
     ("rect2", "Rect2", "godot_rect2",),
     ("rid", "RID", "godot_rid",),
-    # transforma2d before transform to avoid bad detection in cook_c_signature
+    # transform2d before transform to avoid bad detection in cook_c_signature
     ("transform2d", "Transform2D", "godot_transform2d",),
     ("transform", "Transform", "godot_transform",),
     ("vector2", "Vector2", "godot_vector2",),
@@ -89,10 +89,10 @@ def gd_to_py_type(type):
 
 def gd_to_py_signature_type(type):
     if type is None:
-        return 'None'
+        return "None"
     py_type = gd_to_py_type(type)
-    if py_type == 'bint':
-        return 'bool'
+    if py_type == "bint":
+        return "bool"
     elif py_type == "godot_int":
         return "int"
     elif py_type == "godot_real":
@@ -122,46 +122,46 @@ def cook_c_signatures(signatures):
             gdapi_major, gdapi_minor = match.groups()
             gdapi = f"{gdapi_major}{gdapi_minor}"
             continue
-        if not line or line.startswith('//'):
+        if not line or line.startswith("//"):
             continue
         cooked = cook_c_signature(line, gdapi=gdapi)
-        cooked_signatures[cooked['pyname']] = cooked
+        cooked_signatures[cooked["pyname"]] = cooked
     return cooked_signatures
 
 
 def cook_c_signature(signature, gdapi="10"):
     # Hacky signature parsing
-    a, b = signature.split('(', 1)
-    assert b.endswith(')'), signature
-    assert '(' not in b, signature
+    a, b = signature.split("(", 1)
+    assert b.endswith(")"), signature
+    assert "(" not in b, signature
     b = b[:-1]
     args = []
-    for arg in b.split(','):
-        assert arg.count('*') < 2, signature
-        if '*' in arg:
-            arg_type, arg_name = [x.strip() for x in arg.split('*') if x.strip()]
+    for arg in b.split(","):
+        assert arg.count("*") < 2, signature
+        if "*" in arg:
+            arg_type, arg_name = [x.strip() for x in arg.split("*") if x.strip()]
             arg_type = f"{arg_type}*"
         else:
-            arg_type, arg_name = [x for x in arg.split(' ') if x]
-        if arg_name.startswith('p_'):
+            arg_type, arg_name = [x for x in arg.split(" ") if x]
+        if arg_name.startswith("p_"):
             arg_name = arg_name[2:]
         args.append((arg_type, arg_name))
     args.pop(0)  # Remove self argument
 
-    assert '*' not in a, signature
-    return_type, gdname = [x for x in a.rsplit(' ', 1) if x]
-    if return_type == 'void':
+    assert "*" not in a, signature
+    return_type, gdname = [x for x in a.rsplit(" ", 1) if x]
+    if return_type == "void":
         return_type = None
 
     for type_gdname in GD_TO_PY.keys():
         if gdname.startswith(type_gdname):
-            pyname = gdname[len(type_gdname) + 1:]
+            pyname = gdname[len(type_gdname) + 1 :]
             break
 
     return {
-        'pyname': pyname,
-        'gdname': pyname,
-        'return_type': return_type,
+        "pyname": pyname,
+        "gdname": pyname,
+        "return_type": return_type,
         "args": args,
         "gdapi": gdapi,
     }
@@ -197,13 +197,14 @@ def cook_args(args):
 def cook_name(name):
     return f"{name}_" if iskeyword(name) else name
 
+
 def cook_arg(args):
     try:
         type, name, default = args
     except ValueError:
         type, name = args
         default = None
-    if type.endswith('*'):
+    if type.endswith("*"):
         gd_type = type[:-1]
         is_ptr = True
     else:
@@ -221,6 +222,7 @@ def cook_arg(args):
         "has_default": default is not None,
         # TODO: handle default here !
     }
+
 
 def generate_pool_array(output_path):
     context = {

@@ -258,7 +258,12 @@ def cook_data(data):
         except KeyError:
             pass
         try:
-            specs = {"is_object": False, "is_builtin": False, "stack_only": True, "is_base_type": True}
+            specs = {
+                "is_object": False,
+                "is_builtin": False,
+                "stack_only": True,
+                "is_base_type": True,
+            }
             if type_.startswith("enum."):
                 specs["binding_type"] = specs["type"] = "godot_int"
             else:
