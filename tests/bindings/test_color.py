@@ -1,7 +1,6 @@
 import pytest
 
-from godot import Color, Vector2, GDString
-from godot.bindings import Node
+from godot import Color, Vector2, GDString, Node
 
 from conftest import generate_global_obj
 

@@ -1,23 +1,23 @@
 import pytest
 
-from godot import Vector3
-from godot import bindings
+import godot
+from godot import Vector3, Node, OK
 
 
 def test_free_node():
-    v = bindings.Node.new()
+    v = Node.new()
     v.free()
     # `check_memory_leak` auto fixture will do the bookkeeping
 
 
 def test_expose_contains_constant():
-    assert "OK" in dir(bindings)
-    assert bindings.OK is not None
+    assert "OK" in dir(godot)
+    assert OK is not None
 
 
 def test_expose_contains_class():
-    assert "Node" in dir(bindings)
-    assert bindings.Node is not None
+    assert "Node" in dir(godot)
+    assert Node is not None
 
 
 def test_call_one_arg_short(current_node):
@@ -82,8 +82,8 @@ def test_call_with_default_and_too_many_args(current_node):
 
 @pytest.mark.xfail(reason="TODO: support defaults")
 def test_call_with_defaults(generate_obj):
-    node = generate_obj(bindings.Node)
-    child = generate_obj(bindings.Node)
+    node = generate_obj(Node)
+    child = generate_obj(Node)
     # signature: void add_child(Node node, bool legible_unique_name=false)
     node.add_child(child)
 
@@ -94,9 +94,9 @@ def test_call_with_defaults(generate_obj):
 
 @pytest.mark.skip(reason="TODO: investigate why this cause segfault...")
 def test_call_with_kwargs(generate_obj):
-    node = generate_obj(bindings.Node)
-    child = generate_obj(bindings.Node)
-    new_child = generate_obj(bindings.Node)
+    node = generate_obj(Node)
+    child = generate_obj(Node)
+    new_child = generate_obj(Node)
 
     node.add_child(child, legible_unique_name=True)
     # Check name is readable

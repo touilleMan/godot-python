@@ -1,5 +1,4 @@
-from godot import exposed, signal, export
-from godot.bindings import Node2D
+from godot import exposed, signal, export, Node2D
 
 
 SCORE_TO_WIN = 10

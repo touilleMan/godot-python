@@ -1,7 +1,6 @@
 import pytest
 
-from godot.bindings import Environment, Node
-from godot import RID
+from godot import RID, Environment, Node
 
 
 @pytest.fixture

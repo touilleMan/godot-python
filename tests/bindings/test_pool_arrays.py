@@ -3,7 +3,6 @@ from random import Random
 from inspect import isfunction
 from functools import partial
 
-from godot.bindings import Node
 from godot import (
     Array,
     Vector2,
@@ -17,6 +16,7 @@ from godot import (
     PoolVector3Array,
     PoolColorArray,
     PoolStringArray,
+    Node,
 )
 
 from conftest import generate_global_obj

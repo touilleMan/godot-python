@@ -239,8 +239,7 @@ example:
 .. code-block:: python
 
 	# Explicit is better than implicit
-	from godot import exposed, export, Vector2
-	from godot.bindings import Node2D
+	from godot import exposed, export, Vector2, Node2D
 
 	SPEED = Vector2(10, 10)
 

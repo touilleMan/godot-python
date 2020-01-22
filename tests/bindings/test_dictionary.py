@@ -6,8 +6,9 @@ from godot import (
     Vector2,
     Array,
     GDString,
+    Node,
+    Resource,
 )
-from godot.bindings import Node, Resource
 
 
 def test_base():

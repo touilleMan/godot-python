@@ -1,5 +1,4 @@
-from godot import exposed, Vector2
-from godot.bindings import Area2D
+from godot import exposed, Vector2, Area2D
 
 
 DEFAULT_SPEED = 220

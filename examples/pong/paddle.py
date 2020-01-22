@@ -1,7 +1,6 @@
 from random import random
 
-from godot import exposed, export, Vector2, GDString
-from godot.bindings import Area2D, Input
+from godot import exposed, export, Vector2, GDString, Area2D, Input
 
 
 MOTION_SPEED = 150

@@ -1,5 +1,4 @@
-from godot import exposed, rpcsync
-from godot.bindings import Area2D, Vector2
+from godot import exposed, rpcsync, Area2D, Vector2
 
 
 DEFAULT_SPEED = 80

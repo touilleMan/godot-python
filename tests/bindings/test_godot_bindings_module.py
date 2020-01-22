@@ -1,28 +1,25 @@
-# import pytest
+import pytest
 
-# from godot import bindings
+import godot
 
 
-# class TestGodotBindingsModule:
-#     def test_expose_contains_constant(self):
-#         assert "OK" in dir(bindings)
-#         assert "OK" in bindings.__all__
-#         assert bindings.OK is not None
+class TestGodotBindingsModule:
+    def test_expose_contains_constant(self):
+        assert "OK" in dir(godot)
+        assert godot.OK is not None
 
-#     def test_expose_contains_builtin(self):
-#         assert "Vector3" in dir(bindings)
-#         assert "Vector3" in bindings.__all__
-#         assert bindings.Vector3 is not None
+    def test_expose_contains_builtin(self):
+        assert "Vector3" in dir(godot)
+        assert godot.Vector3 is not None
 
-#     def test_expose_contains_dynamic_binded(self):
-#         assert "Node" in dir(bindings)
-#         assert "Node" in bindings.__all__
-#         assert bindings.Node is not None
+    def test_expose_contains_cls(self):
+        assert "Node" in dir(godot)
+        assert godot.Node is not None
 
 
 # class TestGodotBindingsModuleMethodCalls:
 #     def test_call_one_arg_short(self):
-#         node = bindings.Node()
+#         node = godot.Node()
 
 #         with pytest.raises(TypeError) as exc:
 #             node.get_child()
@@ -32,7 +29,7 @@
 #         )
 
 #     def test_call_too_few_args(self):
-#         node = bindings.Node()
+#         node = godot.Node()
 
 #         with pytest.raises(TypeError) as exc:
 #             node.move_child()
@@ -42,7 +39,7 @@
 #         )
 
 #     def test_call_with_defaults_and_too_few_args(self):
-#         node = bindings.Node()
+#         node = godot.Node()
 
 #         with pytest.raises(TypeError) as exc:
 #             node.add_child()
@@ -52,7 +49,7 @@
 #         )
 
 #     def test_call_too_many_args(self):
-#         node = bindings.Node()
+#         node = godot.Node()
 
 #         with pytest.raises(TypeError) as exc:
 #             node.get_child(1, 2)
@@ -61,7 +58,7 @@
 #         )
 
 #     def test_call_with_default_and_too_many_args(self):
-#         node = bindings.Node()
+#         node = godot.Node()
 
 #         with pytest.raises(TypeError) as exc:
 #             node.add_child(1, 2, 3)
@@ -71,8 +68,8 @@
 #         )
 
 #     def test_call_with_defaults(self):
-#         node = bindings.Node()
-#         child = bindings.Node()
+#         node = godot.Node()
+#         child = godot.Node()
 #         # signature: void add_child(Node node, bool legible_unique_name=false)
 #         node.add_child(child)
 
@@ -82,9 +79,9 @@
 
 #     @pytest.mark.xfail(reason="not supported yet")
 #     def test_call_with_kwargs(self):
-#         node = bindings.Node()
-#         child = bindings.Node()
-#         new_child = bindings.Node()
+#         node = godot.Node()
+#         child = godot.Node()
+#         new_child = godot.Node()
 
 #         node.add_child(child, legible_unique_name=True)
 #         # Check name is readable
