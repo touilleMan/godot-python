@@ -275,7 +275,10 @@ cdef inline RID _godot_variant_to_pyobj_rid(const godot_variant *p_gdvar):
 
 
 cdef inline Object _godot_variant_to_pyobj_object(const godot_variant *p_gdvar):
-    return Object.from_ptr(gdapi10.godot_variant_as_object(p_gdvar))
+    # TODO: This conversion relies on godot String and lookup into bindings
+    # modules, wouldn't it be better to create a `ObjectFromVariant` lazy
+    # class instead ?
+    return Object.from_variant(p_gdvar)
 
 
 cdef inline Dictionary _godot_variant_to_pyobj_dictionary(const godot_variant *p_gdvar):

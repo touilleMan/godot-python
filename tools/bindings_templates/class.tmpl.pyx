@@ -21,6 +21,12 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
     def __init__(self):
         raise RuntimeError(f"Use `new()` method to instantiate Godot object.")
 
+    @staticmethod
+    cdef Object from_variant(const godot_variant *p_gdvar):
+        cdef godot_object *ptr = gdapi10.godot_variant_as_object(p_gdvar)
+        cdef object obj = Object.from_ptr(ptr)
+        return globals()[str(obj.get_class())]._from_ptr(<size_t>ptr)
+
 {% endif %}
 
 {% if not cls["singleton"] and cls["instanciable"] %}
@@ -39,6 +45,15 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         # Call to __new__ bypasses __init__ constructor
         cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
         wrapper._gd_ptr = _ptr
+        return wrapper
+
+    @staticmethod
+    def _from_ptr(ptr):
+        # Call to __new__ bypasses __init__ constructor
+        cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
+        # /!\ doing `<godot_object*>ptr` would return the address of
+        # the PyObject instead of casting it value !
+        wrapper._gd_ptr = <godot_object *><size_t>ptr
         return wrapper
 
     # Constants

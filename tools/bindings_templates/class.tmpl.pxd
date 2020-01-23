@@ -5,8 +5,11 @@
 cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% if not cls["base_class"] %}
     cdef godot_object *_gd_ptr
-{% endif %}
 
+    @staticmethod
+    cdef Object from_variant(const godot_variant *p_gdvar)
+
+{% endif %}
     @staticmethod
     cdef {{ cls["name"] }} from_ptr(godot_object *_ptr)
 
