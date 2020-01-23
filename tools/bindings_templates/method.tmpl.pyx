@@ -28,6 +28,9 @@ cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = gdapi
   not None
 {%- endif %}
 {%- endif %}
+{%- if arg["has_default_value"] %}
+={{ arg["default_value"] }}
+{%- endif %}
 ,
 {%- endfor %}
 )
@@ -67,7 +70,7 @@ cdef GDString __gdstr_{{ arg["name"] }} = ensure_is_gdstring({{ arg["name"] }})
 cdef NodePath __nodepath_{{ arg["name"] }} = ensure_is_nodepath({{ arg["name"] }})
 {{ argsval }}[{{ i }}] = <void*>(&__nodepath_{{ arg["name"] }}._gd_data)
 {% elif arg["type_specs"]["is_object"] %}
-{{ argsval }}[{{ i }}] = <void*>(&{{ arg["name"] }}._gd_ptr)
+{{ argsval }}[{{ i }}] = <void*>{{ arg["name"] }}._gd_ptr
 {% elif arg["type"] == "godot_variant" %}
 cdef godot_variant __var_{{ arg["name"] }}
 pyobj_to_godot_variant({{ arg["name"] }}, &__var_{{ arg["name"] }})

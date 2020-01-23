@@ -286,6 +286,52 @@ def cook_data(data):
         else:
             return name
 
+    def _cook_default_arg(type, value):
+        # Mostly ad-hoc stuff given default values format in api.json is broken
+        if type in ("godot_bool", "godot_int", "godot_real", "godot_variant"):
+            return value
+        elif type == "godot_string":
+            return f'"{value}"'
+        elif type == "godot_object" and value in ("[Object:null]", "Null"):
+            return "None"
+        elif type == "godot_dictionary" and value == "{}":
+            return "Dictionary()"
+        elif type == "godot_vector2":
+            return f"Vector2{value}"
+        elif type == "godot_rect2":
+            return f"Rect2{value}"
+        elif type == "godot_vector3":
+            return f"Vector3{value}"
+        elif (
+            type == "godot_transform" and value == "1, 0, 0, 0, 1, 0, 0, 0, 1 - 0, 0, 0"
+        ):
+            return "Transform(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1), Vector3(0, 0, 0))"
+        elif type == "godot_transform2d" and value == "((1, 0), (0, 1), (0, 0))":
+            return "Transform2D(Vector2(1, 0), Vector2(0, 1), Vector2(0, 0))"
+        elif value == "[RID]":
+            return "RID()"
+        elif type == "godot_color":
+            return f"Color({value})"
+        elif type == "godot_pool_color_array" and value == "[PoolColorArray]":
+            return "PoolColorArray()"
+        elif type == "godot_array" and value == "[]":
+            return f"Array()"
+        elif type == "godot_pool_vector2_array" and value == "[]":
+            return f"PoolVector2Array()"
+        elif type == "godot_pool_vector3_array" and value == "[]":
+            return f"PoolVector3Array()"
+        elif type == "godot_pool_int_array" and value == "[]":
+            return f"PoolIntArray()"
+        elif type == "godot_pool_real_array" and value == "[]":
+            return f"PoolRealArray()"
+        elif type == "godot_pool_string_array" and value == "[]":
+            return f"PoolStringArray()"
+        elif value == "Null":
+            return "None"
+        else:
+            warn(f"Unknown default arg value: type=`{type}`, value=`{value}`")
+            return "None"
+
     for item in data:
         if item["name"] == "GlobalConstants":
             constants = item["constants"]
@@ -309,6 +355,10 @@ def cook_data(data):
                 specs = _cook_type(arg["type"])
                 arg["type_specs"] = specs
                 arg["type"] = specs["type"]
+                if arg["has_default_value"]:
+                    arg["default_value"] = _cook_default_arg(
+                        arg["type"], arg["default_value"]
+                    )
 
         for prop in item["properties"]:
             prop["name"] = _cook_name(prop["name"])
