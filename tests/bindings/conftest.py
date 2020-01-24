@@ -1,6 +1,6 @@
 import pytest
 
-from godot.bindings import OS
+from godot import OS, Node
 
 
 __global_objs = []
@@ -20,7 +20,10 @@ def cleanup_global_objs():
 
 
 @pytest.fixture()
-def generate_obj():
+def generate_obj(check_memory_leak):
+    # Make this fixture depend on `check_memory_leak` to ensure it will
+    # check for memory leak after our own teardown
+
     objs = []
 
     def _generate_obj(type):
@@ -29,6 +32,13 @@ def generate_obj():
         return obj
 
     yield _generate_obj
+
+    # Node must be removed from the scenetree to avoid segfault on free
+    for obj in objs:
+        if isinstance(obj, Node):
+            parent = obj.get_parent()
+            if parent:
+                parent.remove_child(obj)
 
     for obj in objs:
         obj.free()
