@@ -116,7 +116,7 @@ Install VisualStudio and Python3, then submit a PR to improve this paragraph ;-)
 Create the virtual env
 ----------------------
 
-Godot-Python build system is heavily based on Python (mainly scons, cython and jinja2).
+Godot-Python build system is heavily based on Python (mainly Scons, Cython and Jinja2).
 Hence we have to create a Python virtual env to install all those dependencies
 without clashing with your global Python configuration.
 
@@ -147,7 +147,7 @@ Finally we can install dependencies:
 
 .. code-block:: bash
 
-	godot-python$ pip install -r requirements.txt
+	godot-python(venv)$ pip install -r requirements.txt
 
 
 Running the build
@@ -158,19 +158,19 @@ For Linux:
 
 .. code-block:: bash
 
-	godot-python$ scons platform=x11-64 release
+	godot-python(venv)$ scons platform=x11-64 release
 
 For Windows:
 
 .. code-block:: bash
 
-	godot-python$ scons platform=windows-64 release
+	godot-python(venv)$ scons platform=windows-64 release
 
 For MacOS:
 
 .. code-block:: bash
 
-	godot-python$ scons platform=osx-64 release
+	godot-python(venv)$ scons platform=osx-64 release
 
 Valid platforms are `x11-64`, `x11-32`, `windows-64`, `windows-32` and `osx-64`.
 Check Travis or Appveyor links above to see the current status of your platform.
@@ -193,7 +193,7 @@ Testing your build
 
 .. code-block:: bash
 
-	godot-python$ scons platform=<platform> test
+	godot-python(venv)$ scons platform=<platform> test
 
 This will run pytests defined in `tests/bindings` inside the Godot environment.
 If not present, will download a precompiled Godot binary (defined in SConstruct
@@ -206,7 +206,7 @@ Running the example project
 
 .. code-block:: bash
 
-	godot-python$ scons platform=<platform> example
+	godot-python(venv)$ scons platform=<platform> example
 
 This will run the converted pong example in `examples/pong` inside the Godot
 environment. If not present, will download a precompiled Godot binary
@@ -222,7 +222,7 @@ use that the static library and binary for building and tests.
 
 .. code-block:: bash
 
-	godot-python$ scons platform=x11-64 godot_binary=../godot/bin/godot.x11.opt.64
+	godot-python(venv)$ scons platform=x11-64 godot_binary=../godot/bin/godot.x11.opt.64
 
 
 Additional build options
