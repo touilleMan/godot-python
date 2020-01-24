@@ -121,6 +121,7 @@ cdef api void pythonscript_auto_indent_code(
     int p_from_line,
     int p_to_line
 ):
+    # TODO: use black for this job
 #     try:
 #         import autopep8
 #     except ImportError:

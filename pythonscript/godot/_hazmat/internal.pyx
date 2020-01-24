@@ -3,8 +3,8 @@ cdef bint __pythonscript_verbose = False
 
 # /!\ This dict is strictly private /!\
 # It contains class objects that are referenced
-# from the Godot without refcounting, so droping
-# an item from there will likely cause a segfault
+# from Godot without refcounting, so droping an
+# item from there will likely cause a segfault
 cdef dict __exposed_classes_per_module = {}
 
 

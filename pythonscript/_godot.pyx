@@ -43,7 +43,8 @@ cdef api godot_pluginscript_language_data *pythonscript_init():
         p = ProjectSettings.globalize_path(GDString(p))
         sys.path.append(str(p))
 
-    # # Redirect stdout/stderr to have it in the Godot editor console
+    # TODO
+    # Redirect stdout/stderr to have it in the Godot editor console
     # if _setup_config_entry("python_script/io_streams_capture", True):
     #     enable_capture_io_streams()
 

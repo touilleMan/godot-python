@@ -152,7 +152,7 @@ GDN_EXPORT void godot_gdnative_init(godot_gdnative_init_options *options) {
 
 #ifndef _WIN32
     // Make sure the shared library has all it symbols loaded
-    // (strange bug with libpython3.6 otherwise...)
+    // (strange bug with libpython3.x.so otherwise...)
     {
         const wchar_t *wpath = pythonscript_gdapi10->godot_string_wide_str(
             options->active_library_path

@@ -167,8 +167,8 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
         cls = get_exposed_class(modname)
     except BaseException:
         # If we are here it could be because the file doesn't exists
-        # or (more possibly) the file content is not a valid python (or
-        # miss an exposed class)
+        # or (more possibly) the file content is not valid python (or
+        # doesn't provide an exposed class)
         print(
             f"Got exception loading {path} ({modname}): {traceback.format_exc()}"
         )
