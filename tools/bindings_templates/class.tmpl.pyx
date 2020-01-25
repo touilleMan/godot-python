@@ -21,11 +21,26 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
     def __init__(self):
         raise RuntimeError(f"Use `new()` method to instantiate Godot object.")
 
+    def __repr__(self):
+        return f"<{type(self).__name__} wrapper on 0x{<size_t>self._gd_ptr:x}>"
+
     @staticmethod
     cdef Object from_variant(const godot_variant *p_gdvar):
         cdef godot_object *ptr = gdapi10.godot_variant_as_object(p_gdvar)
         cdef object obj = Object.from_ptr(ptr)
         return globals()[str(obj.get_class())]._from_ptr(<size_t>ptr)
+
+    def __eq__(self, other):
+        try:
+            return self._gd_ptr == (<{{ cls["name"] }}>other)._gd_ptr
+        except TypeError:
+            return False
+
+    def __ne__(self, other):
+        try:
+            return self._gd_ptr != (<{{ cls["name"] }}>other)._gd_ptr
+        except TypeError:
+            return True
 
 {% endif %}
 
