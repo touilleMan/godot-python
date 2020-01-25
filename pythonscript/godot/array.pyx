@@ -18,7 +18,7 @@ cdef class Array:
         if not iterable:
             gdapi10.godot_array_new(&self._gd_data)
         elif isinstance(iterable, Array):
-            gdapi10.godot_array_new_copy(&self._gd_data, &(<Array>iterable)._gd_data)
+            self._gd_data = gdapi11.godot_array_duplicate(&(<Array>iterable)._gd_data, False)
         # TODO: handle Pool*Array
         else:
             gdapi10.godot_array_new(&self._gd_data)
@@ -52,28 +52,84 @@ cdef class Array:
 
     # Operators
 
-    cdef inline Array operator_getslice(self, object slice_):
+    cdef inline Array operator_getslice(self, godot_int start, godot_int stop, godot_int step):
         cdef Array ret = Array.new()
         # TODO: optimize with `godot_array_resize` ?
+        cdef godot_int size = self.size()
+
+        if start > size - 1:
+            start = size - 1
+        elif start < 0:
+            start += size
+            if start < 0:
+                start = 0
+
+        if stop > size:
+            stop = size
+        elif stop < -size:
+            stop = -1
+        elif stop < 0:
+            stop += size
+
+        if step > 0:
+            if start >= stop:
+                return ret
+            items = 1 + (stop - start - 1) // step
+            if items <= 0:
+                return ret
+        else:
+            if start <= stop:
+                return ret
+            items = 1 + (stop - start + 1) // step
+            if items <= 0:
+                return ret
+
+        gdapi10.godot_array_resize(&ret._gd_data, items)
         cdef int i
-        for i in range(slice_.start, slice_.end, slice_.step or 1):
-            ret.append(Array.operator_getitem(self, i))
+        cdef godot_variant *p_item
+        for i in range(items):
+            p_item = gdapi10.godot_array_operator_index(&self._gd_data, i * step + start)
+            gdapi10.godot_array_append(&ret._gd_data, p_item)
+            gdapi10.godot_variant_destroy(p_item)
+
         return ret
 
-    cdef inline object operator_getitem(self, godot_int index):
-        cdef godot_int size = self.size()
-        index = size + index if index < 0 else index
-        if abs(index) >= size:
-            raise IndexError("list index out of range")
-        return self.get(index)
-
+    # TODO: support slice
     def __getitem__(self, index):
-        if isinstance(index, slice):
-            return Array.operator_getslice(self, index)
-        else:
-            return Array.operator_getitem(self, index)
+        cdef godot_int size = self.size()
+        # cdef godot_int start
+        # cdef godot_int stop
+        # cdef godot_int step
+        # cdef godot_int items
+        # if isinstance(index, slice):
+        #     cook_slice(index, size, &start, &stop, &step, &items)
+        #     gdapi10.godot_array_resize(&ret._gd_data, items)
+        #     cdef int i
+        #     cdef godot_variant *p_item
+        #     for i in range(items):
+        #         p_item = gdapi10.godot_array_operator_index(&self._gd_data, i * step + start)
+        #         gdapi10.godot_array_append(&ret._gd_data, p_item)
+        #         gdapi10.godot_variant_destroy(p_item)
 
-    cdef inline void operator_setitem(self, godot_int index, object value):
+
+        #     step = index.step if index.step is not None else 1
+        #     if step == 0:
+        #     elif step > 0:
+        #         start = index.start if index.start is not None else 0
+        #         stop = index.stop if index.stop is not None else size
+        #     else:
+        #         start = index.start if index.start is not None else size
+        #         stop = index.stop if index.stop is not None else -size - 1
+        #     return Array.operator_getslice(self, start, stop, step)
+        # else:
+        if index < 0:
+            index = index + size
+        if index < 0 or index >= size:
+            raise IndexError("list index out of range")
+        return Array.get(self, index)
+
+    # TODO: support slice
+    def __setitem__(self, godot_int index, object value):
         cdef godot_int size = self.size()
         index = size + index if index < 0 else index
         if abs(index) >= size:
@@ -81,19 +137,12 @@ cdef class Array:
         self.set(index, value)
 
     # TODO: support slice
-    def __setitem__(self, godot_int index, object value):
-        Array.operator_setitem(self, index, value)
-
-    cdef inline void operator_delitem(self, godot_int index):
+    def __delitem__(self, godot_int index):
         cdef godot_int size = self.size()
         index = size + index if index < 0 else index
         if abs(index) >= size:
             raise IndexError("list index out of range")
         self.remove(index)
-
-    # TODO: support slice
-    def __delitem__(self, godot_int index):
-        Array.operator_delitem(self, index)
 
     def __len__(self):
         return self.size()
@@ -155,10 +204,10 @@ cdef class Array:
         gdapi10.godot_array_resize(&self._gd_data, self_size + items_size)
         cdef int i
         for i in range(items_size):
-            Array.operator_set(self, self_size + i, items.get(i))
+            Array.set(self, self_size + i, items.get(i))
 
     # TODO: support __iadd__ for other types than Array ?
-    def __iadd__(self, items):
+    def __iadd__(self, items not None):
         try:
             Array.operator_iadd(self, items)
         except TypeError:
@@ -173,27 +222,22 @@ cdef class Array:
         gdapi10.godot_array_resize(&ret._gd_data, self_size + items_size)
         cdef int i
         for i in range(self_size):
-            ret.operator_set(i, self.get(i))
+            Array.set(ret, i, self.get(i))
         for i in range(items_size):
-            ret.operator_set(self_size + i, items.get(i))
+            Array.set(ret, self_size + i, items.get(i))
         return ret
 
     # TODO: support __add__ for other types than Array ?
-    def __add__(self, items):
+    def __add__(self, items not None):
         try:
             return Array.operator_add(self, items)
         except TypeError:
-            ret = Array.copy(self)
+            ret = Array.duplicate(self, False)
             for x in items:
                 ret.append(x)
             return ret
 
     # Methods
-
-    cpdef inline Array copy(self):
-        cdef Array ret = Array.__new__(Array)
-        gdapi10.godot_array_new_copy(&ret._gd_data, &self._gd_data)
-        return ret
 
     cpdef inline godot_int hash(self):
         return gdapi10.godot_array_hash(&self._gd_data)
@@ -227,6 +271,13 @@ cdef class Array:
 
     cpdef inline bint empty(self):
         return gdapi10.godot_array_empty(&self._gd_data)
+
+    cpdef inline godot_int count(self, object value):
+        cdef godot_variant var_value
+        pyobj_to_godot_variant(value, &var_value)
+        cdef godot_int ret = gdapi10.godot_array_count(&self._gd_data, &var_value)
+        gdapi10.godot_variant_destroy(&var_value)
+        return ret
 
     cpdef inline void erase(self, object item):
         cdef godot_variant var_item
@@ -299,10 +350,10 @@ cdef class Array:
     cpdef inline void resize(self, godot_int size):
         gdapi10.godot_array_resize(&self._gd_data, size)
 
-    cpdef inline bint rfind(self, object what, godot_int from_):
+    cpdef inline godot_int rfind(self, object what, godot_int from_):
         cdef godot_variant var_what
         pyobj_to_godot_variant(what, &var_what)
-        cdef bint ret = gdapi10.godot_array_rfind(&self._gd_data, &var_what, from_)
+        cdef godot_int ret = gdapi10.godot_array_rfind(&self._gd_data, &var_what, from_)
         gdapi10.godot_variant_destroy(&var_what)
         return ret
 
