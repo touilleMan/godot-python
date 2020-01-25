@@ -1,14 +1,7 @@
 import pytest
 import json
 
-from godot import (
-    Dictionary,
-    Vector2,
-    Array,
-    GDString,
-    Node,
-    Resource,
-)
+from godot import Dictionary, Vector2, Array, GDString, Node, Resource, OS
 
 
 def test_base():
@@ -16,13 +9,10 @@ def test_base():
     assert type(v) == Dictionary
 
 
-@pytest.mark.xfail(
-    reason="Godot Dictionary equal does lame comparison by pointer so far..."
-)
 def test_equal():
     arr = Dictionary()
     other = Dictionary()
-    for key, value in [("a", 1), ("b", "foo"), ("c", Node()), ("d", Vector2())]:
+    for key, value in [("a", 1), ("b", "foo"), ("c", OS), ("d", Vector2())]:
         other[key] = arr[key] = value
     assert arr == other
     bad = Dictionary({"a": 1})
@@ -201,3 +191,38 @@ def test_to_json():
     v2 = json.loads(str(jsoned))
     assert v2 == {"a": 1, "b": "foo"}
     assert json
+
+
+def test_update():
+    v1 = Dictionary({"a": 1, "b": 2})
+    v2 = Dictionary({"b": 3, "c": 4})
+    v1.update(v2)
+    assert v1 == Dictionary({"a": 1, "b": 3, "c": 4})
+    assert v2 == Dictionary({"b": 3, "c": 4})
+
+    v2.update({"d": 5, "e": 6})
+    assert v1 == Dictionary({"a": 1, "b": 3, "c": 4})
+    assert v2 == Dictionary({"b": 3, "c": 4, "d": 5, "e": 6})
+
+
+@pytest.mark.parametrize("arg", [None, 0, Vector2(), OS, Array([1, 2])])
+def test_bad_update(arg):
+    v = Dictionary()
+    with pytest.raises(TypeError):
+        v.update(arg)
+
+
+@pytest.mark.parametrize("deep", [False, True])
+def test_duplicate(deep):
+    inner = Dictionary({0: 0})
+    d1 = Dictionary({0: inner})
+    d2 = d1.duplicate(deep)
+    d1[0][1] = 1
+    d2[0][2] = 2
+
+    if deep:
+        assert d1 == Dictionary({0: Dictionary({0: 0, 1: 1})})
+        assert d2 == Dictionary({0: Dictionary({0: 0, 2: 2})})
+    else:
+        assert d1 == Dictionary({0: Dictionary({0: 0, 1: 1, 2: 2})})
+        assert d2 == d1

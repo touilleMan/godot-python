@@ -36,6 +36,9 @@ godot_dictionary godot_dictionary_duplicate(godot_dictionary* p_self, godot_bool
 cdef class Dictionary:
 {% block cdef_attributes %}
     cdef godot_dictionary _gd_data
+
+    cdef inline operator_update(self, Dictionary items)
+    cdef inline bint operator_equal(self, Dictionary other)
 {% endblock %}
 
 {% block python_defs %}
@@ -43,7 +46,7 @@ cdef class Dictionary:
         if not iterable:
             gdapi10.godot_dictionary_new(&self._gd_data)
         elif isinstance(iterable, Dictionary):
-            gdapi10.godot_dictionary_new_copy(&self._gd_data, &(<Dictionary>iterable)._gd_data)
+            self._gd_data = gdapi12.godot_dictionary_duplicate(&(<Dictionary>iterable)._gd_data, False)
         # TODO: handle Pool*Array
         elif isinstance(iterable, dict):
             gdapi10.godot_dictionary_new(&self._gd_data)
@@ -125,35 +128,6 @@ cdef class Dictionary:
     def __contains__(self, object key):
         return Dictionary.operator_contains(self, key)
 
-    # TODO: support __iadd__ for other types than Dictionary ?
-    def __iadd__(self, Dictionary items):
-        cdef godot_variant *p_value
-        cdef godot_variant *p_key = NULL
-        while True:
-            p_value = gdapi10.godot_dictionary_next(&items._gd_data, p_key)
-            if p_value == NULL:
-                break
-            gdapi10.godot_dictionary_set(&self._gd_data, p_key, p_value)
-        return self
-
-    # TODO: support __add__ for other types than Dictionary ?
-    def __add__(Dictionary self, Dictionary items):
-        cdef Dictionary dictionary = Dictionary.new()
-        cdef godot_variant *p_value
-        cdef godot_variant *p_key = NULL
-        while True:
-            p_value = gdapi10.godot_dictionary_next(&items._gd_data, p_key)
-            if p_value == NULL:
-                break
-            gdapi10.godot_dictionary_set(&dictionary._gd_data, p_key, p_value)
-        p_key = NULL
-        while True:
-            p_value = gdapi10.godot_dictionary_next(&self._gd_data, p_key)
-            if p_value == NULL:
-                break
-            gdapi10.godot_dictionary_set(&dictionary._gd_data, p_key, p_value)
-        return dictionary
-
     def get(self, object key, object default=None):
         cdef godot_variant var_key
         pyobj_to_godot_variant(key, &var_key)
@@ -170,11 +144,27 @@ cdef class Dictionary:
         gdapi10.godot_variant_destroy(&var_ret)
         return ret
 
+    cdef inline operator_update(self, Dictionary items):
+        cdef godot_variant *p_value
+        cdef godot_variant *p_key = NULL
+        while True:
+            p_key = gdapi10.godot_dictionary_next(&items._gd_data, p_key)
+            if p_key == NULL:
+                break
+            p_value = gdapi10.godot_dictionary_operator_index(&items._gd_data, p_key)
+            gdapi10.godot_dictionary_set(&self._gd_data, p_key, p_value)
+        return self
+
     def update(self, other):
         cdef object k
         cdef object v
-        for k, v in other.items():
-            self[k] = v
+        if isinstance(other, Dictionary):
+            Dictionary.operator_update(self, other)
+        elif isinstance(other, dict):
+            for k, v in other.items():
+                self[k] = v
+        else:
+            raise TypeError("other must be godot.Dictionary or dict")
 
     def items(self):
         cdef godot_variant *p_key = NULL
@@ -187,6 +177,25 @@ cdef class Dictionary:
             p_value = gdapi10.godot_dictionary_operator_index(&self._gd_data, p_key)
             yield godot_variant_to_pyobj(p_key), godot_variant_to_pyobj(p_value)
 
+    cdef inline bint operator_equal(self, Dictionary other):
+        cdef godot_int size = self.size()
+        if size != other.size():
+            return False
+        # TODO: gdnative should provide a function to do that
+        return dict(self) == dict(other)
+
+    def __eq__(self, Dictionary other):
+        try:
+            return Dictionary.operator_equal(self, other)
+        except TypeError:
+            return False
+
+    def __ne__(self, other):
+        try:
+            return not Dictionary.operator_equal(self, other)
+        except TypeError:
+            return True
+
 {%set len_specs = gd_functions['size'] | merge(pyname="__len__") %}
     {{ render_method(**len_specs) | indent }}
 
@@ -195,9 +204,6 @@ cdef class Dictionary:
 
 {%set contains_specs = gd_functions['has'] | merge(pyname="__contains__") %}
     {{ render_method(**contains_specs) | indent }}
-
-    {{ render_operator_eq() | indent }}
-    {{ render_operator_ne() | indent }}
 
     {{ render_method(**gd_functions["duplicate"]) | indent }}
     {{ render_method(**gd_functions["size"]) | indent }}
