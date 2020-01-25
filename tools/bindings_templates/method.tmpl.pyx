@@ -41,10 +41,10 @@ cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = gdapi
 {% if method["return_type"] == "void" %}
 return
 {% elif method["return_type_specs"]["is_object"] %}
-if {{ retval }}._gd_ptr == NULL:
+if {{ retval }} == NULL:
     return None
 else:
-    return {{ retval }}
+    return Object.cast_from_ptr({{ retval }})
 {% elif method["return_type"] == "godot_variant" %}
 try:
     return godot_variant_to_pyobj(&{{ retval }})
@@ -98,9 +98,8 @@ gdapi10.godot_variant_destroy(&__var_{{ arg["name"] }})
 {% if method["return_type"] == "void" %}
 {% set retval_as_arg = "NULL" %}
 {% elif method["return_type_specs"]["is_object"] %}
-{% set binding_type =  method["return_type_specs"]["binding_type"] %}
-cdef {{ binding_type }} {{ retval }} = {{ binding_type }}.__new__({{ binding_type }})
-{% set retval_as_arg = "&{}._gd_ptr".format(retval) %}
+cdef godot_object *{{ retval }}
+{% set retval_as_arg = "&{}".format(retval) %}
 {% elif method["return_type"] == "godot_variant" %}
 cdef godot_variant {{ retval }}
 {% set retval_as_arg = "&{}".format(retval) %}

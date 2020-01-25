@@ -48,8 +48,6 @@ class Ball(Area2D):
 
     @rpcsync
     def bounce(self, left, random):
-        import pdb; pdb.set_trace()
-        print('===================================>BOUNCE', left, random)
         # using sync because both players can make it bounce
         if (self.left):
             self.direction.x = abs(self.direction.x)

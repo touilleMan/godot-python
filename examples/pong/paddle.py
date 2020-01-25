@@ -13,7 +13,6 @@ class Paddle(Area2D):
     action_prefix = export(str, default='')
 
     def _ready(self):
-        print('=====>', self.left)
         self.motion = 0
         self.can_move = True
         self.screen_size = self.get_viewport_rect().size

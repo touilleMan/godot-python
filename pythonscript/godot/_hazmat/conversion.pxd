@@ -33,6 +33,17 @@ cdef inline str godot_string_to_pyobj(const godot_string *p_gdstr):
     cdef godot_int length = gdapi10.godot_string_length(p_gdstr)
     return raw[:length * _STRING_CODEPOINT_LENGTH].decode(_STRING_ENCODING)
 
+    # cdef char *raw = <char*>gdapi10.godot_string_wide_str(p_gdstr)
+    # cdef godot_int length = gdapi10.godot_string_length(p_gdstr)
+    # printf("==========> godot_string_to_pyobj ")
+    # cdef int i
+    # for i in range(length):
+    #     printf("%c ", raw[i * 4]);
+    # printf("\n")
+    # cdef object ret = raw[:length * _STRING_CODEPOINT_LENGTH].decode(_STRING_ENCODING)
+    # print('==>ret: %r' % ret)
+    # return ret
+
 
 cdef inline void pyobj_to_godot_string(str pystr, godot_string *p_gdstr):
     # TODO: unicode&windows support is most likely broken...
@@ -65,3 +76,61 @@ cdef godot_variant_type pytype_to_godot_type(object pytype)
 
 cdef GDString ensure_is_gdstring(object gdstring_or_pystr)
 cdef NodePath ensure_is_nodepath(object nodepath_or_pystr)
+
+
+# TODO: finish this...
+
+# cdef inline object cook_slice(slice slice_, godot_int size, godot_int *r_start, godot_int *r_stop, godot_int *r_step, godot_int *r_items):
+#     cdef godot_int start
+#     cdef godot_int stop
+#     cdef godot_int step
+
+#     step = slice_.step if slice_.step is not None else 1
+#     if step == 0:
+#         raise ValueError("range() arg 3 must not be zero")
+#     elif step > 0:
+#         start = slice_.start if slice_.start is not None else 0
+#         stop = slice_.stop if slice_.stop is not None else size
+#     else:
+#         start = slice_.start if slice_.start is not None else size
+#         stop = slice_.stop if slice_.stop is not None else -size - 1
+
+#     r_start[0] = cook_slice_start(size, start)
+#     r_stop[0] = cook_slice_stop(size, stop)
+#     r_step[0] = step
+#     r_items[0] = cook_slice_get_items(size, start, stop, step)
+
+#     return None
+
+
+# cdef inline godot_int cook_slice_start(godot_int size, godot_int start):
+#     if start > size - 1:
+#         return size - 1
+#     elif start < 0:
+#         start += size
+#         if start < 0:
+#             return 0
+#     return start
+
+
+# cdef inline godot_int cook_slice_stop(godot_int size, godot_int stop):
+#     if stop > size:
+#         return size
+#     elif stop < -size:
+#         return -1
+#     elif stop < 0:
+#         stop += size
+#     return stop
+
+
+# cdef inline godot_int cook_slice_get_items(godot_int size, godot_int start, godot_int stop, godot_int step):
+#     cdef godot_int items
+#     if step > 0:
+#         if start >= stop:
+#             return 0
+#         items = 1 + (stop - start - 1) // step
+#     else:
+#         if start <= stop:
+#             return 0
+#         items = 1 + (stop - start + 1) // step
+#     return items if items > 0 else 0

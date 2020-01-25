@@ -7,7 +7,10 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
     cdef godot_object *_gd_ptr
 
     @staticmethod
-    cdef Object from_variant(const godot_variant *p_gdvar)
+    cdef inline Object cast_from_variant(const godot_variant *p_gdvar)
+
+    @staticmethod
+    cdef inline Object cast_from_ptr(godot_object *ptr)
 
 {% endif %}
     @staticmethod

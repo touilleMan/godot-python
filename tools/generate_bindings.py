@@ -50,6 +50,7 @@ STACK_ONLY_BUILTINS_TYPES = {
 }
 
 
+# Basically provide enough to run the tests and the pong demo
 SAMPLE_CLASSES = {
     "Object",
     "_ProjectSettings",
@@ -67,8 +68,12 @@ SAMPLE_CLASSES = {
     "ARVRInterfaceGDNative",
     "Resource",
     "Environment",
-    # "SceneTree",
     "Viewport",
+    "Script",
+    "PluginScript",
+    "GDScript",
+    "Control",
+    "Label",
     # "_ClassDB",
     # "_Engine",
     # "_Geometry",
