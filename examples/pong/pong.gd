@@ -1,7 +1,7 @@
 
 extends Node2D
 
-const SCORE_TO_WIN=1
+const SCORE_TO_WIN = 2
 
 var score_left = 0
 var score_right = 0

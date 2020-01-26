@@ -11,6 +11,7 @@ class Paddle(Area2D):
 
     left = export(bool, default=False)
     action_prefix = export(str, default='')
+    can_move = export(bool, default=False)
 
     def _ready(self):
         self.motion = 0

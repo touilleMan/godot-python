@@ -1,9 +1,8 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://pong.py" type="Script" id=1]
 [ext_resource path="res://separator.png" type="Texture" id=2]
 [ext_resource path="res://paddle.tscn" type="PackedScene" id=3]
-[ext_resource path="res://paddle.gd" type="Script" id=4]
 [ext_resource path="res://ball.tscn" type="PackedScene" id=5]
 
 [node name="pong" type="Node2D"]
@@ -16,7 +15,6 @@ texture = ExtResource( 2 )
 
 [node name="player1" parent="." instance=ExtResource( 3 )]
 position = Vector2( 19.9447, 267.036 )
-script = ExtResource( 4 )
 
 [node name="sprite" parent="player1" index="0"]
 modulate = Color( 1, 0, 0.960938, 1 )
