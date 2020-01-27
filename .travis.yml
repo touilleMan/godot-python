@@ -4,8 +4,7 @@ sudo: false
 
 os:
   - linux
-# TODO: Currently broken
-#  - osx
+  - osx
 
 dist: xenial
 
