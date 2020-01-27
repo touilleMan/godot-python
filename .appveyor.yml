@@ -50,7 +50,7 @@ artifacts:
 deploy:
   provider: GitHub
   auth_token:
-    secure: l4e/x4qkjGlFQtgm2QDM6ix8T7Ry4DtSIRjRBHnwwPuiyCFJ6Z1y7JRh9fF2eFIo
+    secure: +E+qs6rzwl8SqOPcerXoBpVYG4HUzh3Juyj02aYrHvnF6YqX2wbP1dEDjY5SHBD5
   artifact: GodotPythonRelease
   on:
     appveyor_repo_tag: true
