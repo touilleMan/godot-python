@@ -31,27 +31,17 @@ On top of that, mixing GDscript and Python code inside a project should work fin
 Python and pip are working, however depending on platform and backend they
 - on Windows+CPython use `python.exe` and `python.exe -m pip`
 - on Linux+CPython `bin/python` and `bin/pip` are provided out of the box.
-  However you must provide path to `libpython3.6m.so` to make them run:
+  However you must provide path to `libpython3.7m.so` to make them run:
   ```
   $ LD_LIBRARY_PATH=`pwd`/lib ./bin/pip3  --version
   $ LD_LIBRARY_PATH=`pwd`/lib ./bin/python  --version
-  ```
-- on Linux+Pypy `bin/pypy` runs like a charm, you should use ensurepip to
-  install pip:
-  ```
-  $ bin/pypy -m ensurepip
-  $ bin/pypy -m pip --version
   ```
 
 
 Not so well features
 --------------------
 
-Memory management is a big issue (given Godot and Python garbage collectors should be synchronized)
-so leaks are possible (hence Godot complaining there is still MemoryPool allocs in use at exit...).
-
-Exporting the project hasn't been tested at all (however exporting for linux should be pretty simple and
-may work out of the box...).
+Exporting the project hasn't been tested at all (however exporting for linux should be pretty simple and may work out of the box...).
 
 
 Have fun ;-)
