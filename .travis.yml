@@ -48,7 +48,7 @@ addons:
 #      - valgrind
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew upgrade python; fi;
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew upgrade python; fi;
 # Replace binutils, gcc-9, zlib1g-dev, libssl-dev, and libffi-dev for cross-compile
   - >
     if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$BITS" == "32" ];
