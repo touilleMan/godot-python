@@ -294,7 +294,10 @@ def cook_data(data):
     def _cook_default_arg(type, value):
         # Mostly ad-hoc stuff given default values format in api.json is broken
         if type in ("godot_bool", "godot_int", "godot_real", "godot_variant"):
-            return value
+            if value == "Null":
+                return "None"
+            else:
+                return value
         elif type == "godot_string":
             return f'"{value}"'
         elif type == "godot_object" and value in ("[Object:null]", "Null"):
