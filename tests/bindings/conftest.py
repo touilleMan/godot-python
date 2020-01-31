@@ -1,6 +1,6 @@
 import pytest
 
-from godot import OS, Node
+from godot import OS, Node, Reference
 
 
 __global_objs = []
@@ -40,8 +40,11 @@ def generate_obj(check_memory_leak):
             if parent:
                 parent.remove_child(obj)
 
-    for obj in objs:
-        obj.free()
+    while objs:
+        # Pop values to trigger gc for Reference instances
+        obj = objs.pop()
+        if not isinstance(obj, Reference):
+            obj.free()
 
 
 @pytest.fixture

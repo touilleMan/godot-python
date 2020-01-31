@@ -1,7 +1,7 @@
 import pytest
 
 import godot
-from godot import Vector3, Object, Node, Node2D, OK
+from godot import Vector3, Object, Node, Node2D, PluginScript, OK
 
 
 def test_free_node():
@@ -119,3 +119,22 @@ def test_inheritance(generate_obj):
     isinstance(node, Object)
     isinstance(node2d, Object)
     isinstance(node2d, Node)
+
+
+def test_call_with_refcounted_return_value(current_node):
+    script = current_node.get_script()
+    assert isinstance(script, PluginScript)
+
+
+def test_call_with_refcounted_param_value(generate_obj):
+    node = generate_obj(Node)
+    script = PluginScript.new()
+    node.set_script(script)
+
+
+def test_create_refcounted_value(current_node):
+    script1_ref1 = PluginScript.new()
+    script2_ref1 = PluginScript.new()
+    script1_ref2 = script1_ref1
+    script2_ref2 = script2_ref1
+    del script1_ref1

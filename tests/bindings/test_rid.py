@@ -3,21 +3,6 @@ import pytest
 from godot import RID, Environment, Node
 
 
-@pytest.fixture
-def generate_obj():
-    objs = []
-
-    def _generate_obj(type):
-        obj = type.new()
-        objs.append(obj)
-        return obj
-
-    yield _generate_obj
-
-    for obj in objs:
-        obj.free()
-
-
 def test_base():
     v = RID()
     assert type(v) == RID

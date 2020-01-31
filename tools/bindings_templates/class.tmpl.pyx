@@ -109,18 +109,18 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         if wrapper._gd_ptr is NULL:
             raise MemoryError
 {% if cls["is_reference"] %}
-        cdef godot_bool __is_reference_ret
+        cdef godot_bool __ret
         gdapi10.godot_method_bind_ptrcall(
-            __methbind__Reference__reference,
+            __methbind__Reference__init_ref,
             wrapper._gd_ptr,
             NULL,
-            &__is_reference_ret
+            &__ret
         )
 {% endif %}
         return wrapper
 
-{% if cls["is_reference"] %}
-    def __del__(self):
+{% if cls["name"] == "Reference" %}
+    def __dealloc__(self):
         cdef godot_bool __ret
         gdapi10.godot_method_bind_ptrcall(
             __methbind__Reference__unreference,
@@ -139,13 +139,8 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
         wrapper._gd_ptr = _ptr
 {% if cls["is_reference"] %}
-        cdef godot_bool __is_reference_ret
-        gdapi10.godot_method_bind_ptrcall(
-            __methbind__Reference__reference,
-            wrapper._gd_ptr,
-            NULL,
-            &__is_reference_ret
-        )
+        # Note we steal the reference from the caller given we
+        # don't call `Reference.reference` here
 {% endif %}
         return wrapper
 
@@ -157,13 +152,8 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         # the PyObject instead of casting it value !
         wrapper._gd_ptr = <godot_object *><size_t>ptr
 {% if cls["is_reference"] %}
-        cdef godot_bool __is_reference_ret
-        gdapi10.godot_method_bind_ptrcall(
-            __methbind__Reference__reference,
-            wrapper._gd_ptr,
-            NULL,
-            &__is_reference_ret
-        )
+        # Note we steal the reference from the caller given we
+        # don't call `Reference.reference` here
 {% endif %}
         return wrapper
 
