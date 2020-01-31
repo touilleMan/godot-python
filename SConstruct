@@ -604,7 +604,7 @@ if env["debugger"]:
         "${debugger} ${SOURCE} -- --path ${Dir('#').abspath}/tests/%s " + pytest_args
     )
 else:
-    test_base_cmd = "${SOURCE} --path ${Dir('#').abspath}/tests/%s " + pytest_args
+    test_base_cmd = "${SOURCE.abspath} --path ${Dir('#').abspath}/tests/%s " + pytest_args
 
 
 if env["HOST_OS"] == "win32":
