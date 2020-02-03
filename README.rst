@@ -294,6 +294,10 @@ example:
 FAQ
 ===
 
+**How can I export my project?**
+
+See `this issue <https://github.com/touilleMan/godot-python/issues/146>`_.
+
 **How can I debug my project with PyCharm?**
 
 This can be done using "Attach to Local Process", but first you have to change the Godot binary filename to include :code:`python`, for example :code:`Godot_v3.0.2-stable_win64.exe` to :code:`python_Godot_v3.0.2-stable_win64.exe`.
