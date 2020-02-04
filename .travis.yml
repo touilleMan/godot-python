@@ -27,8 +27,8 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
-# Out of order (http://lists.llvm.org/pipermail/llvm-dev/2016-May/100303.html)
-#      - llvm-toolchain-precise
+      - sourceline: 'deb https://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main'
+        key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
     packages:
       - build-essential
       - pkg-config
@@ -44,22 +44,22 @@ addons:
       - libxrandr-dev
       - libffi-dev
       # Need gcc > 4.6 for -std=c++11 and >= 7 for LTO 6.0 (used by gnative wrapper)
-      - gcc-9
-#      - clang-3.9
+      # - gcc-9
+      - clang-9
 #      - valgrind
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew upgrade python; fi;
-# Replace binutils, gcc-9, zlib1g-dev, libssl-dev, and libffi-dev for cross-compile
+# Replace binutils, clang-9, zlib1g-dev, libssl-dev, and libffi-dev for cross-compile
   - >
     if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$BITS" == "32" ];
       then sudo dpkg --add-architecture i386 &&
       sudo apt update &&
-      sudo apt install binutils:i386 gcc-9:i386 zlib1g-dev:i386 libssl-dev:i386 libffi-dev:i386;
+      sudo apt install binutils:i386 clang-9:i386 zlib1g-dev:i386 libssl-dev:i386 libffi-dev:i386;
     fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pyenv shell 3.7; fi
 # Needed because scons doesn't inherit the customized $PATH env
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CC=gcc-9; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CC=clang-9; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export TARGET_PLATFORM=x11-$BITS; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export TARGET_PLATFORM=osx-$BITS; fi
   - git rev-parse HEAD
