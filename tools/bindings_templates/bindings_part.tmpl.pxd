@@ -4,12 +4,11 @@
 from godot._hazmat.gdnative_api_struct cimport *
 from godot._hazmat.gdapi cimport pythonscript_gdapi10 as gdapi10
 from godot.builtins cimport *
+{% if part_id > 0 -%}
+from godot.bindings_part{{ part_id - 1 }} cimport *
+{%- endif %}
 
-{% if nb_parts == 1 %}
 {% from 'class.tmpl.pxd' import render_class_pxd -%}
 {%- for cls in classes %}
 {{ render_class_pxd(cls) }}
-{%- endfor %}
-{%- else %}
-from godot.bindings_part{{ nb_parts - 1 }} cimport *
-{% endif %}
+{%- endfor -%}

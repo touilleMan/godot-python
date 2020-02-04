@@ -1,4 +1,6 @@
 import os
+import math
+from pathlib import Path
 import argparse
 import json
 import re
@@ -399,33 +401,56 @@ def cook_data(data):
     return sorted_classes, constants
 
 
-def generate_bindings(output_path, input_path, sample):
-    with open(input_path, "r") as fd:
-        raw_data = json.load(fd)
-    classes, constants = cook_data(raw_data)
+def generate_bindings(output_dir_path, api_json_path, nb_parts, sample):
+    classes, constants = cook_data(json.loads(api_json_path.read_text()))
     if sample:
         classes = [klass for klass in classes if klass["name"] in SAMPLE_CLASSES]
     strip_unsupported_stuff(classes)
     patch_stuff(classes)
 
-    template = env.get_template("bindings.tmpl.pyx")
-    out = template.render(classes=classes, constants=constants)
-    with open(output_path, "w") as fd:
-        fd.write(out)
+    template_pxd = env.get_template("bindings.tmpl.pxd")
+    template_pyx = env.get_template("bindings.tmpl.pyx")
+    template_part_pxd = env.get_template("bindings_part.tmpl.pxd")
+    template_part_pyx = env.get_template("bindings_part.tmpl.pyx")
 
-    pxd_output_path = output_path.rsplit(".", 1)[0] + ".pxd"
-    template = env.get_template("bindings.tmpl.pxd")
-    out = template.render(classes=classes, constants=constants)
-    with open(pxd_output_path, "w") as fd:
-        fd.write(out)
+    out = template_pxd.render(nb_parts=nb_parts, classes=classes, constants=constants)
+    (output_dir_path / f"bindings.pxd").write_text(out)
+
+    out = template_pyx.render(nb_parts=nb_parts, classes=classes, constants=constants)
+    (output_dir_path / f"bindings.pyx").write_text(out)
+
+    if nb_parts == 1:
+        return
+
+    per_parts = int(math.ceil(len(classes) / nb_parts))
+    for part_id, part_start in enumerate(range(0, len(classes), per_parts)):
+        part_classes = classes[part_start:part_start+per_parts]
+
+        out = template_part_pxd.render(
+            part_id=part_id,
+            nb_parts=nb_parts,
+            classes=part_classes,
+            constants=constants
+        )
+        (output_dir_path / f"bindings_part{part_id}.pxd").write_text(out)
+
+        out = template_part_pyx.render(
+            part_id=part_id,
+            nb_parts=nb_parts,
+            classes=part_classes,
+            constants=constants
+        )
+        (output_dir_path / f"bindings_part{part_id}.pyx").write_text(out)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate godot api bindings file")
     parser.add_argument(
-        "--input", "-i", help="Path to Godot api.json file", default="api.json"
+        "--input", "-i", help="Path to Godot api.json file",
+        type=Path
     )
-    parser.add_argument("--output", "-o", default="godot_bindings_gen.pyx")
+    parser.add_argument("--output", "-o", type=Path)
+    parser.add_argument("--parts", type=int, default=6)
     parser.add_argument("--sample", action="store_true")
     args = parser.parse_args()
-    generate_bindings(args.output, args.input, args.sample)
+    generate_bindings(args.output, args.input, args.parts, args.sample)

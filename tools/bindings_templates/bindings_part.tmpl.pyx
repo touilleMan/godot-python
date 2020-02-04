@@ -5,25 +5,11 @@ from godot._hazmat.gdnative_api_struct cimport *
 from godot._hazmat.gdapi cimport pythonscript_gdapi10 as gdapi10
 from godot._hazmat.conversion cimport *
 from godot.builtins cimport *
-
-{% if nb_parts == 1 %}
-
-### Classes ###
+{% for part in range(nb_parts) %}
+from godot.bindings_part{{ part }} cimport *
+{% endfor %}
 
 {% from 'class.tmpl.pyx' import render_class -%}
 {%- for cls in classes %}
 {{ render_class(cls) }}
-{%- endfor %}
-{%- else %}
-{% for part_id in range(nb_parts) %}
-from godot.bindings_part{{ part_id }} import *
-{% endfor %}
-{%- endif %}
-
-### Singletons ###
-
-{% include "singletons.tmpl.pyx" %}
-
-### Global constants ###
-
-{% include "global_constants.tmpl.pyx" %}
+{%- endfor -%}

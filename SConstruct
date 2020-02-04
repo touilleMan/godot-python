@@ -363,24 +363,40 @@ env.Depends(
 env.Alias("generate_builtins", godot_builtins_pyx)
 
 
-### Generate pythonscript/godot/bindings.pyx&pxd ###
+### Generate pythonscript/godot/bindings*.pyx&pxd ###
 
-sample_opt = "--sample" if env["sample"] else ""
-godot_bindings_pyx, godot_bindings_pxd = env.Command(
-    target=("pythonscript/godot/bindings.pyx", "pythonscript/godot/bindings.pxd"),
+if env["sample"]:
+    bindings_nb_parts = 4
+    sample_opt = f" --sample --parts={bindings_nb_parts} "
+else:
+    bindings_nb_parts = 10
+    sample_opt = f" --parts={bindings_nb_parts} "
+godot_bindings_pxds = [
+    "pythonscript/godot/bindings.pxd",
+    *(f"pythonscript/godot/bindings_part{i}.pxd" for i in range(bindings_nb_parts)),
+]
+godot_bindings_pyxs = [
+    "pythonscript/godot/bindings.pyx",
+    *(f"pythonscript/godot/bindings_part{i}.pyx" for i in range(bindings_nb_parts)),
+]
+env.Command(
+    target=(
+        *godot_bindings_pxds,
+        *godot_bindings_pyxs,
+    ),
     source=(
         "%s/api.json" % env["gdnative_include_dir"],
         "pythonscript/godot/builtins.pxd",
     ),
     action=(
-        "python tools/generate_bindings.py  -i ${SOURCE} -o ${TARGET} " + sample_opt
+        "python tools/generate_bindings.py  -i ${SOURCE} -o pythonscript/godot " + sample_opt
     ),
 )
 env.Depends(
-    godot_bindings_pyx,
+    godot_bindings_pyxs,
     ["tools/generate_bindings.py", env.Glob("tools/bindings_templates/*")],
 )
-env.Alias("generate_godot_bindings", godot_bindings_pyx)
+env.Alias("generate_godot_bindings", godot_bindings_pyxs)
 
 
 ### Collect and build `pythonscript/godot` module ###
@@ -397,7 +413,7 @@ if env["platform"].startswith("windows"):
     cython_env.Append(LIBPATH=["#pythonscript"])
     cython_env.Append(LIBS=["pythonscript"])
 
-# `bindings.pyx` is a special snowflake given it size and autogeneration
+# `bindings*.pyx` are special snowflakes given their size
 cython_bindings_env = cython_env.Clone()
 if env["BINDINGS_LINKFLAGS"]:
     cython_bindings_env.Append(CFLAGS=env["BINDINGS_LINKFLAGS"])
@@ -416,8 +432,14 @@ else:
         cython_bindings_env.Append(CFLAGS=["-Os", "-Wno-misleading-indentation"])
     else:
         cython_bindings_env.Append(CFLAGS=["/Os"])
-godot_bindings_pyx_to_c = cython_bindings_env.CythonToC(godot_bindings_pyx)
-godot_bindings_pyx_compiled = cython_bindings_env.CythonCompile(godot_bindings_pyx_to_c)
+
+godot_bindings_pyxs_to_c = [
+    cython_env.CythonToC(src) for src in godot_bindings_pyxs
+]
+godot_bindings_pyxs_compiled = [
+    cython_env.CythonCompile(src)
+    for src in godot_bindings_pyxs_to_c
+]
 
 # Now the other common folks
 pythonscript_godot_pyxs_except_bindings = [
@@ -425,7 +447,7 @@ pythonscript_godot_pyxs_except_bindings = [
     godot_pool_arrays_pyx,
     # Keep glob last to avoid changing deps order depending of the other entries
     # being already generated or not
-    *[src for src in env.Glob("pythonscript/godot/*.pyx") if src != godot_bindings_pyx],
+    *[src for src in env.Glob("pythonscript/godot/*.pyx") if not src.path.startswith("pythonscript/godot/bindings")],
     *env.Glob("pythonscript/godot/_hazmat/*.pyx"),
 ]
 pythonscript_godot_pyxs_except_bindings_to_c = [
@@ -437,12 +459,12 @@ pythonscript_godot_pyxs_except_bindings_compiled = [
 ]
 
 # Define dependencies on .pxd files
-pythonscript_godot_pyxs = [pythonscript_godot_pyxs_except_bindings, godot_bindings_pyx]
+pythonscript_godot_pyxs = [pythonscript_godot_pyxs_except_bindings, godot_bindings_pyxs]
 pythonscript_godot_pxds = [
     godot_pool_arrays_pxd,
     godot_builtins_pxd,
     gdnative_api_struct_pxd,
-    godot_bindings_pxd,
+    godot_bindings_pxds,
     # Keep glob last to avoid changing deps order depending of the other entries
     # being already generated or not
     *env.Glob("pythonscript/godot/*.pxd"),
@@ -450,11 +472,11 @@ pythonscript_godot_pxds = [
 ]
 pythonscript_godot_pyxs_to_c = [
     pythonscript_godot_pyxs_except_bindings_to_c,
-    godot_bindings_pyx_to_c,
+    godot_bindings_pyxs_to_c,
 ]
 pythonscript_godot_pyxs_compiled = [
     pythonscript_godot_pyxs_except_bindings_compiled,
-    godot_bindings_pyx_compiled,
+    godot_bindings_pyxs_compiled,
 ]
 env.Depends(pythonscript_godot_pyxs_to_c, pythonscript_godot_pxds)
 
