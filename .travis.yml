@@ -79,7 +79,7 @@ before_script:
 
 script:
   - set -e  # Enable fail on first error
-  - if [[ "$TRAVIS_TAG" == "" ]]; then export SAMPLE_ARG='sample=true'; fi
+  # - if [[ "$TRAVIS_TAG" == "" ]]; then export SAMPLE_ARG='sample=true'; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scons platform=$TARGET_PLATFORM checkstyle; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then scons platform=$TARGET_PLATFORM CC=$CC release_suffix=$TRAVIS_BRANCH $SAMPLE_ARG release; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scons platform=$TARGET_PLATFORM CC=$CC release_suffix=$TRAVIS_BRANCH $SAMPLE_ARG release; fi

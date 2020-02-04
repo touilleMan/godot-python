@@ -26,7 +26,7 @@ before_build:
 build_script:
   # Un-comment if you're in deep troubles...
   # - set SCONS_MSCOMMON_DEBUG=-
-  - ps: if($env:APPVEYOR_REPO_TAG -eq "false") { $env:SAMPLE_ARG = "sample=true" }
+  # - ps: if($env:APPVEYOR_REPO_TAG -eq "false") { $env:SAMPLE_ARG = "sample=true" }
   - scons platform=%TARGET_PLATFORM% release_suffix=%APPVEYOR_REPO_TAG_NAME% %SAMPLE_ARG% release
 
 after_build:
