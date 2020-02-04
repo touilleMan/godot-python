@@ -108,7 +108,6 @@ def add_cpython_to_build_dir(env, target, cpython_build):
             )
 
     _run_or_die("python.exe -m ensurepip")
-    _run_or_die("python.exe -m pip install cffi")
 
 
 def add_pythonscript_stuff_to_build_dir(

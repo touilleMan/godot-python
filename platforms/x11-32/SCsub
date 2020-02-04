@@ -39,7 +39,6 @@ env.NoClean(cpython_src)
 
 cpython_build = Dir("cpython_build")
 # TODO: allow to compile cpython with `--with-pydebug` ?
-# Compile CPython and install cffi through pip
 env.Command(
     cpython_build,
     cpython_src,
@@ -48,9 +47,7 @@ env.Command(
     + "echo Building CPython... && "
     "1>/dev/null make -j4 && "
     + "echo Installing CPython in ${TARGET.get_abspath()}... && "
-    "1>/dev/null make install && "
-    # TODO: still useful to install cffi ?
-    + "LD_LIBRARY_PATH=${TARGET.get_abspath()}/lib ${TARGET.get_abspath()}/bin/pip3 install cffi",
+    "1>/dev/null make install",
 )
 env.NoClean(cpython_build)
 
