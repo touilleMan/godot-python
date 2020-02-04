@@ -413,7 +413,9 @@ elif env["sample"]:
         cython_bindings_env.Append(CFLAGS=["/O0"])
 else:
     if not env["shitty_compiler"]:
-        cython_bindings_env.Append(CFLAGS=["-Os", "-Wno-misleading-indentation"])
+        cython_bindings_env.Append(CFLAGS=["-Os"])
+        if "gcc" in env.get("CC"):
+            cython_bindings_env.Append(CFLAGS=["-Wno-misleading-indentation"])
     else:
         cython_bindings_env.Append(CFLAGS=["/Os"])
 godot_bindings_pyx_to_c = cython_bindings_env.CythonToC(godot_bindings_pyx)
