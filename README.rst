@@ -39,7 +39,7 @@ Building
 To build the project from source, first checkout the repo or download the
 latest tarball.
 
-Godot-Python requires Python >= 3.6 and a C compiler.
+Godot-Python requires Python >= 3.7 and a C compiler.
 
 
 Godot GDNative header
@@ -64,7 +64,7 @@ On a fresh Ubuntu install, you will need to install these:
 
 .. code-block:: bash
 
-	$ apt install python3 python3-pip python3-venv build-essential
+	$ apt install python3.7 python3-pip python3.7-venv build-essential scons
 
 On top of that build the CPython interpreter requires development headers
 of it `extension modules <https://devguide.python.org/setup/#install-dependencies>`_
@@ -82,7 +82,7 @@ and instruct apt to install the needed packages:
 .. code-block:: bash
 
 	$ apt update
-	$ apt build-dep python3.6
+	$ apt build-dep python3.7
 
 See the `Python Developer's Guide <https://devguide.python.org/setup/#build-dependencies>`_
 for instructions on additional platforms.
