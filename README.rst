@@ -53,7 +53,7 @@ The Godot GDNative headers are provided as git submodule:
 	$ git submodule init
 	$ git submodule update
 
-Alternatly, you can get them `from github <https://github.com/GodotNativeTools/godot_headers>`_.
+Alternatively, you can get them `from github <https://github.com/GodotNativeTools/godot_headers>`_.
 
 
 Linux
