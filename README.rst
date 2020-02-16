@@ -247,7 +247,7 @@ example:
 	class Player(Node2D):
 		"""
 		This is the file's main class which will be made available to Godot. This
-		class must inherit from `godot.Node` or any of its children (i.g.
+		class must inherit from `godot.Node` or any of its children (e.g.
 		`godot.KinematicBody`).
 
 		Because Godot scripts only accept file paths, you can't have two `exposed` classes in the same file.
