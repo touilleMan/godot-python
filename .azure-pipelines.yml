@@ -1,7 +1,12 @@
 # See https://aka.ms/yaml for documentation
 
 trigger:
-- master
+  branches:
+    include:
+    - '*'
+  tags:
+    include:
+    - '*'
 
 jobs:
 
@@ -37,11 +42,16 @@ jobs:
       set -eux
       scons platform='$(PLATFORM)' MSVC_USE_SCRIPT=true TARGET_ARCH='$(vs.arch)' sample=true CC=cl.exe release
     displayName: 'Build project'
-  - bash: |
-      set -eux
-      scons platform='$(PLATFORM)' MSVC_USE_SCRIPT=true TARGET_ARCH='$(vs.arch)' sample=true CC=cl.exe tests
-    displayName: 'Run tests'
-
+  # - bash: |
+  #     set -eux
+  #     scons platform='$(PLATFORM)' MSVC_USE_SCRIPT=true TARGET_ARCH='$(vs.arch)' sample=true CC=cl.exe tests
+  #   displayName: 'Run tests'
+  - task: GithubRelease@0
+    displayName: 'Create GitHub Release'
+    inputs:
+      gitHubConnection: github.com_touilleMan
+      repositoryName: touilleMan/godot-python
+      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip
 
 - job: 'Linux'
   timeoutInMinutes: 60
@@ -60,7 +70,6 @@ jobs:
       set -eux
       $CC --version
       python --version
-      sudo apt-get install libpulse -y  # Needed by godot binary
       pip install -U pip
       pip install -r requirements.txt
     displayName: 'Setup venv'
@@ -69,10 +78,16 @@ jobs:
       scons platform='$(PLATFORM)' sample=true CC=$CC checkstyle
       scons platform='$(PLATFORM)' sample=true CC=$CC release
     displayName: 'Build project'
-  - bash: |
-      set -eux
-      scons platform='$(PLATFORM)' sample=true CC=$CC tests
-    displayName: 'Run tests'
+  # - bash: |
+  #     set -eux
+  #     scons platform='$(PLATFORM)' sample=true CC=$CC tests
+  #   displayName: 'Run tests'
+  - task: GithubRelease@0
+    displayName: 'Create GitHub Release'
+    inputs:
+      gitHubConnection: github.com_touilleMan
+      repositoryName: touilleMan/godot-python
+      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip
 
 
 - job: 'macOS'
@@ -108,3 +123,9 @@ jobs:
       set -eux
       scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC tests
     displayName: 'Run tests'
+  - task: GithubRelease@0
+    displayName: 'Create GitHub Release'
+    inputs:
+      gitHubConnection: github.com_touilleMan
+      repositoryName: touilleMan/godot-python
+      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip
