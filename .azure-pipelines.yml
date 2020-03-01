@@ -7,6 +7,7 @@ jobs:
 
 
 - job: 'Windows'
+  timeoutInMinutes: 60
   pool:
     vmImage: 'windows-latest'
   strategy:
@@ -29,6 +30,7 @@ jobs:
   - bash: |
       set -eux
       python --version
+      sudo apt-get install libpulse -y  # Needed by godot binary
       pip install -U pip
       pip install -r requirements.txt
     displayName: 'Setup venv'
@@ -43,6 +45,7 @@ jobs:
 
 
 - job: 'Linux'
+  timeoutInMinutes: 60
   pool:
     vmImage: 'ubuntu-latest'
   variables:
@@ -73,6 +76,7 @@ jobs:
 
 
 - job: 'macOS'
+  timeoutInMinutes: 60
   pool:
     vmImage: 'macOS-latest'
   variables:
@@ -88,16 +92,19 @@ jobs:
       set -eux
       $CC --version
       python --version
+      brew update
+      brew install zlib openssl
       pip install -U pip
       pip install -r requirements.txt
     displayName: 'Setup venv'
   - bash: |
       set -eux
-      EXTRA_CFLAGS="-I$(xcrun --show-sdk-path)/usr/include"
+      export EXTRA_CFLAGS="-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include"
+      export EXTRA_LDFLAGS="-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib"
       echo $EXTRA_CFLAGS
-      scons platform='$(PLATFORM)' CFLAGS=$EXTRA_CFLAGS sample=true CC=$CC release
+      scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC release
     displayName: 'Build project'
   - bash: |
       set -eux
-      scons platform='$(PLATFORM)' CFLAGS=$EXTRA_CFLAGS sample=true CC=$CC tests
+      scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC tests
     displayName: 'Run tests'
