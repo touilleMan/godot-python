@@ -15,20 +15,9 @@ Import("env")
 
 
 env["bits"] = "64"
-
-
-### Godot binary (to run tests) ###
-
-
-if not env["godot_binary"]:
-    env["godot_binary"] = File("godot.windows.opt.debug.64.exe")
-    env.Command(
-        env["godot_binary"],
-        None,
-        "curl -L %s/godot.windows.opt.debug.64.exe -o ${TARGET}"
-        % env["godot_release_base_url"],
-    )
-    env.NoClean(env["godot_binary"])
+env[
+    "godot_default_binary_url"
+] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_win64.exe.zip"
 
 
 ### Python interpreter ###
@@ -147,7 +136,7 @@ def add_pythonscript_stuff_to_build_dir(
         src_dir = Path(godot_module.path)
         print(f"Copy {src_dir} -> {dst_dir}")
         for src_item in chain(
-            src_dir.glob("**/*.py"), src_dir.glob("**/*.pyd"), src_dir.glob("**/*.pxd"),
+            src_dir.glob("**/*.py"), src_dir.glob("**/*.pyd"), src_dir.glob("**/*.pxd")
         ):
             dst_item = dst_dir / src_item.relative_to(src_dir)
             dst_item.parent.mkdir(parents=True, exist_ok=True)
