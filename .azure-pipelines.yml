@@ -30,7 +30,6 @@ jobs:
   - bash: |
       set -eux
       python --version
-      sudo apt-get install libpulse -y  # Needed by godot binary
       pip install -U pip
       pip install -r requirements.txt
     displayName: 'Setup venv'
@@ -61,6 +60,7 @@ jobs:
       set -eux
       $CC --version
       python --version
+      sudo apt-get install libpulse -y  # Needed by godot binary
       pip install -U pip
       pip install -r requirements.txt
     displayName: 'Setup venv'
