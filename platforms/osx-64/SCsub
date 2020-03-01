@@ -32,11 +32,11 @@ env.Command(
     cpython_build,
     cpython_src,
     "cd ${SOURCE} && " + "echo Configuring CPython... && "
-    "1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} --with-openssl=/usr && "
+    "./configure --enable-shared --prefix=${TARGET.get_abspath()} --with-openssl=/usr && "
     + "echo Building CPython... && "
-    "1>/dev/null make -j4 && "
+    "make -j4 && "
     + "echo Installing CPython in ${TARGET.get_abspath()}... && "
-    "1>/dev/null make install && "
+    "make install && "
 )
 env.NoClean(cpython_build)
 
