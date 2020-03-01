@@ -232,14 +232,18 @@ SConscript(f"platforms/{env['platform']}/SCsub")
 
 
 if not env["godot_binary"]:
-    env["godot_binary"] = re.search(
+    godot_binary_name = re.search(
         r"([^/]+)\.zip$", env["godot_default_binary_url"]
     ).groups()[0]
+    env["godot_binary"] = File(f"platforms/{env['platform']}/{godot_binary_name}")
     env.Command(
         env["godot_binary"],
         None,
-        "curl -L %s -o ${TARGET}.zip && unzip ${TARGET}.zip"
-        % env["godot_default_binary_url"],
+        (
+            f"cd platforms/{env['platform']} && "
+            f"curl -L {env['godot_default_binary_url']} -o {godot_binary_name}.zip && "
+            f"unzip {godot_binary_name}.zip"
+        )
     )
 env.NoClean(env["godot_binary"])
 
