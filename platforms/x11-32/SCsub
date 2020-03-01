@@ -36,7 +36,7 @@ env.Command(
     + "echo Building CPython... && "
     "1>/dev/null make -j4 && "
     + "echo Installing CPython in ${TARGET.get_abspath()}... && "
-    "1>/dev/null make install && "
+    "1>/dev/null make install",
 )
 env.NoClean(cpython_build)
 

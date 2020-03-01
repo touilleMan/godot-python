@@ -243,7 +243,7 @@ if not env["godot_binary"]:
             f"cd platforms/{env['platform']} && "
             f"curl -L {env['godot_default_binary_url']} -o {godot_binary_name}.zip && "
             f"unzip {godot_binary_name}.zip"
-        )
+        ),
     )
 env.NoClean(env["godot_binary"])
 
