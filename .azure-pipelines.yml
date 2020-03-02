@@ -46,12 +46,9 @@ jobs:
   #     set -eux
   #     scons platform='$(PLATFORM)' MSVC_USE_SCRIPT=true TARGET_ARCH='$(vs.arch)' sample=true CC=cl.exe tests
   #   displayName: 'Run tests'
-  - task: GithubRelease@0
-    displayName: 'Create GitHub Release'
-    inputs:
-      gitHubConnection: github.com_touilleMan
-      repositoryName: touilleMan/godot-python
-      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip
+  - publish: '$(Build.SourcesDirectory)/godot-python-*.zip'
+    artifact: release
+
 
 - job: 'Linux'
   timeoutInMinutes: 60
@@ -82,12 +79,8 @@ jobs:
   #     set -eux
   #     scons platform='$(PLATFORM)' sample=true CC=$CC tests
   #   displayName: 'Run tests'
-  - task: GithubRelease@0
-    displayName: 'Create GitHub Release'
-    inputs:
-      gitHubConnection: github.com_touilleMan
-      repositoryName: touilleMan/godot-python
-      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip
+  - publish: '$(Build.SourcesDirectory)/godot-python-*.zip'
+    artifact: release
 
 
 - job: 'macOS'
@@ -124,9 +117,25 @@ jobs:
   #     export EXTRA_LDFLAGS="-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib"
   #     scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC tests
     # displayName: 'Run tests'
+  - publish: '$(Build.SourcesDirectory)/godot-python-*.zip'
+    artifact: release
+
+
+- job: 'Release'
+  timeoutInMinutes: 10
+  dependsOn:
+  - Windows
+  - Linux
+  - macOS
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - checkout: none
+  - download: current
   - task: GithubRelease@0
     displayName: 'Create GitHub Release'
     inputs:
       gitHubConnection: github.com_touilleMan
       repositoryName: touilleMan/godot-python
-      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip
+      assets: $(Pipeline.Workspace)/godot-python-*.zip
+      isDraft: true
