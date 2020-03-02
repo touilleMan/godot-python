@@ -116,13 +116,14 @@ jobs:
       set -eux
       export EXTRA_CFLAGS="-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include"
       export EXTRA_LDFLAGS="-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib"
-      echo $EXTRA_CFLAGS
       scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC release
     displayName: 'Build project'
-  - bash: |
-      set -eux
-      scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC tests
-    displayName: 'Run tests'
+  # - bash: |
+  #     set -eux
+  #     export EXTRA_CFLAGS="-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include"
+  #     export EXTRA_LDFLAGS="-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib"
+  #     scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC tests
+    # displayName: 'Run tests'
   - task: GithubRelease@0
     displayName: 'Create GitHub Release'
     inputs:
