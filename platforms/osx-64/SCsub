@@ -11,20 +11,9 @@ Import("env")
 env["bits"] = "64"
 env.Append(CFLAGS="-m64")
 env.Append(LINKFLAGS="-m64")
-
-
-### Godot binary (to run tests) ###
-
-
-if not env["godot_binary"]:
-    env["godot_binary"] = File("godot.osx.opt.debug.fat")
-    env.Command(
-        env["godot_binary"],
-        None,
-        "curl -L %s/godot.osx.opt.debug.fat -o ${TARGET} && chmod 750 ${TARGET}"
-        % env["godot_release_base_url"],
-    )
-env.NoClean(env["godot_binary"])
+env[
+    "godot_default_binary_url"
+] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_osx.64.zip"
 
 
 ### Python interpreter ###
@@ -39,18 +28,14 @@ env.NoClean(cpython_src)
 
 cpython_build = Dir("cpython_build")
 # TODO: allow to compile cpython with `--with-pydebug` ?
-# Compile CPython and install cffi through pip
 env.Command(
     cpython_build,
     cpython_src,
     "cd ${SOURCE} && " + "echo Configuring CPython... && "
-    "1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} --with-openssl=/usr && "
+    "./configure --enable-shared --prefix=${TARGET.get_abspath()} --with-openssl=/usr && "
     + "echo Building CPython... && "
-    "1>/dev/null make -j4 && "
-    + "echo Installing CPython in ${TARGET.get_abspath()}... && "
-    "1>/dev/null make install && "
-    # TODO: still useful to install cffi ?
-    + "LD_LIBRARY_PATH=${TARGET.get_abspath()}/lib ${TARGET.get_abspath()}/bin/pip3 install cffi",
+    "make -j4 && " + "echo Installing CPython in ${TARGET.get_abspath()}... && "
+    "make install",
 )
 env.NoClean(cpython_build)
 

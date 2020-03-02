@@ -1,0 +1,131 @@
+# See https://aka.ms/yaml for documentation
+
+trigger:
+  branches:
+    include:
+    - '*'
+  tags:
+    include:
+    - '*'
+
+jobs:
+
+
+- job: 'Windows'
+  timeoutInMinutes: 60
+  pool:
+    vmImage: 'windows-latest'
+  strategy:
+    matrix:
+      "64bits":
+        PLATFORM: 'windows-64'
+        python.arch: 'x64'
+        vs.arch: 'amd64'
+      "32bits":
+        PLATFORM: 'windows-32'
+        python.arch: 'x86'
+        vs.arch: 'x86'
+  steps:
+  - checkout: self
+    submodules: true
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+      architecture: '$(python.arch)'
+  - bash: |
+      set -eux
+      python --version
+      pip install -U pip
+      pip install -r requirements.txt
+    displayName: 'Setup venv'
+  - bash: |
+      set -eux
+      scons platform='$(PLATFORM)' MSVC_USE_SCRIPT=true TARGET_ARCH='$(vs.arch)' sample=true CC=cl.exe release
+    displayName: 'Build project'
+  # - bash: |
+  #     set -eux
+  #     scons platform='$(PLATFORM)' MSVC_USE_SCRIPT=true TARGET_ARCH='$(vs.arch)' sample=true CC=cl.exe tests
+  #   displayName: 'Run tests'
+  - task: GithubRelease@0
+    displayName: 'Create GitHub Release'
+    inputs:
+      gitHubConnection: github.com_touilleMan
+      repositoryName: touilleMan/godot-python
+      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip
+
+- job: 'Linux'
+  timeoutInMinutes: 60
+  pool:
+    vmImage: 'ubuntu-latest'
+  variables:
+    CC: clang
+    PLATFORM: 'x11-64'
+  steps:
+  - checkout: self
+    submodules: true
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+  - bash: |
+      set -eux
+      $CC --version
+      python --version
+      pip install -U pip
+      pip install -r requirements.txt
+    displayName: 'Setup venv'
+  - bash: |
+      set -eux
+      scons platform='$(PLATFORM)' sample=true CC=$CC checkstyle
+      scons platform='$(PLATFORM)' sample=true CC=$CC release
+    displayName: 'Build project'
+  # - bash: |
+  #     set -eux
+  #     scons platform='$(PLATFORM)' sample=true CC=$CC tests
+  #   displayName: 'Run tests'
+  - task: GithubRelease@0
+    displayName: 'Create GitHub Release'
+    inputs:
+      gitHubConnection: github.com_touilleMan
+      repositoryName: touilleMan/godot-python
+      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip
+
+
+- job: 'macOS'
+  timeoutInMinutes: 60
+  pool:
+    vmImage: 'macOS-latest'
+  variables:
+    CC: clang
+    PLATFORM: 'osx-64'
+  steps:
+  - checkout: self
+    submodules: true
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+  - bash: |
+      set -eux
+      $CC --version
+      python --version
+      brew update
+      brew install zlib openssl
+      pip install -U pip
+      pip install -r requirements.txt
+    displayName: 'Setup venv'
+  - bash: |
+      set -eux
+      export EXTRA_CFLAGS="-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include"
+      export EXTRA_LDFLAGS="-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib"
+      echo $EXTRA_CFLAGS
+      scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC release
+    displayName: 'Build project'
+  - bash: |
+      set -eux
+      scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC tests
+    displayName: 'Run tests'
+  - task: GithubRelease@0
+    displayName: 'Create GitHub Release'
+    inputs:
+      gitHubConnection: github.com_touilleMan
+      repositoryName: touilleMan/godot-python
+      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip

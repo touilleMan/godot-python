@@ -38,11 +38,6 @@ vars.Add("godot_binary", "Path to Godot main binary", "")
 vars.Add("debugger", "Run godot with given debugger", "")
 vars.Add("gdnative_include_dir", "Path to GDnative include directory", "")
 vars.Add(
-    "godot_release_base_url",
-    "URL to the godot builder release to use",
-    "https://github.com/GodotBuilder/godot-builds/releases/download/3.0_20180303-1",
-)
-vars.Add(
     BoolVariable(
         "dev_dyn",
         "Provide godot/_godot modules through symlinks instead of copying them in the build (useful for dev)",
@@ -231,6 +226,26 @@ env["build_dir"] = Dir(f"#build/{env['build_name']}")
 
 Export("env")
 SConscript(f"platforms/{env['platform']}/SCsub")
+
+
+### Godot binary (to run tests) ###
+
+
+if not env["godot_binary"]:
+    godot_binary_name = re.search(
+        r"([^/]+)\.zip$", env["godot_default_binary_url"]
+    ).groups()[0]
+    env["godot_binary"] = File(f"platforms/{env['platform']}/{godot_binary_name}")
+    env.Command(
+        env["godot_binary"],
+        None,
+        (
+            f"cd platforms/{env['platform']} && "
+            f"curl -L {env['godot_default_binary_url']} -o {godot_binary_name}.zip && "
+            f"unzip {godot_binary_name}.zip"
+        ),
+    )
+env.NoClean(env["godot_binary"])
 
 
 ### Display build dir (useful for CI) ###
