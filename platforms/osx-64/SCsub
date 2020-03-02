@@ -9,8 +9,8 @@ Import("env")
 
 
 env["bits"] = "64"
-env.Append(CFLAGS="-m64")
-env.Append(LINKFLAGS="-m64")
+env.Append(CFLAGS=["-m64"])
+env.Append(LINKFLAGS=["-m64"])
 env[
     "godot_default_binary_url"
 ] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_osx.64.zip"
