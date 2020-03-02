@@ -1,11 +1,3 @@
-.. image:: https://travis-ci.org/touilleMan/godot-python.svg?branch=master
-   :target: https://travis-ci.org/touilleMan/godot-python
-   :alt: Automated test status (Linux and MacOS)
-
-.. image:: https://ci.appveyor.com/api/projects/status/af4eyed8o8tc3t0r/branch/master?svg=true
-   :target: https://ci.appveyor.com/project/touilleMan/godot-python/branch/master
-   :alt: Automated test status (Windows)
-
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
    :target: https://github.com/ambv/black
    :alt: Code style: black
