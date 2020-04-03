@@ -105,6 +105,13 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
     def new():
         # Call to __new__ bypasses __init__ constructor
         cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
+        
+        # For some reason, for some specific classes (e.g. OpenSimplexNoise), the constructor is NULL.
+        # It seems some classes are not loaded/available at import time.
+        global __{{ cls["name"] }}_constructor
+        if not __{{ cls["name"] }}_constructor:
+            __{{ cls["name"] }}_constructor = gdapi10.godot_get_class_constructor("{{ cls['name'] }}")
+        
         wrapper._gd_ptr = __{{ cls["name"] }}_constructor()
         if wrapper._gd_ptr is NULL:
             raise MemoryError
