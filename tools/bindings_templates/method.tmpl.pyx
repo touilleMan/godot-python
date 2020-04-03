@@ -111,8 +111,13 @@ cdef {{ binding_type }} {{ retval }} = {{ binding_type }}.__new__({{ binding_typ
 cdef {{ method["return_type"] }} {{ retval }}
 {% set retval_as_arg = "&{}".format(retval) %}
 {% endif %}
+global {{ get_method_bind_register_name(cls, method) }}
 if {{ get_method_bind_register_name(cls, method) }} == NULL:
-    raise NotImplementedError
+    # Method is sometimes NULL because it is not loaded/available at import time (when godot_method_bind_get_method gets called the first time)
+    # So we must try to get it again to make sure it actually is not implemented, or was just not available previously.
+    {{ get_method_bind_register_name(cls, method) }} = gdapi10.godot_method_bind_get_method("{{ cls['bind_register_name'] }}", "{{ method['name'] }}")
+    if {{ get_method_bind_register_name(cls, method) }} == NULL:
+        raise NotImplementedError
 gdapi10.godot_method_bind_ptrcall(
     {{ get_method_bind_register_name(cls, method) }},
     self._gd_ptr,
