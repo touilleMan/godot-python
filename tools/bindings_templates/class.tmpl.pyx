@@ -112,6 +112,9 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         if not __{{ cls["name"] }}_constructor:
             __{{ cls["name"] }}_constructor = gdapi10.godot_get_class_constructor("{{ cls['name'] }}")
         
+        if not __{{ cls["name"] }}_constructor:
+            raise NotImplementedError("No constructor found for class {{ cls["name"] }}")
+        
         wrapper._gd_ptr = __{{ cls["name"] }}_constructor()
         if wrapper._gd_ptr is NULL:
             raise MemoryError
