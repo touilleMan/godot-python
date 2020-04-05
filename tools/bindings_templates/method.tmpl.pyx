@@ -24,8 +24,8 @@ cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = gdapi
  object {{ arg["name"] }}
 {%- else %}
  {{ arg["type_specs"]["binding_type"] }} {{ arg["name"] }}
-{%- if not arg["type_specs"]["is_base_type"] %}
-  not None
+{%- if not arg["type_specs"]["is_base_type"] and not (arg["has_default_value"] and arg["default_value"] == "None") %}
+  not None ## if default value is NULL, none should be allowed
 {%- endif %}
 {%- endif %}
 {%- if arg["has_default_value"] %}
@@ -70,13 +70,18 @@ cdef GDString __gdstr_{{ arg["name"] }} = ensure_is_gdstring({{ arg["name"] }})
 cdef NodePath __nodepath_{{ arg["name"] }} = ensure_is_nodepath({{ arg["name"] }})
 {{ argsval }}[{{ i }}] = <void*>(&__nodepath_{{ arg["name"] }}._gd_data)
 {% elif arg["type_specs"]["is_object"] %}
-{{ argsval }}[{{ i }}] = <void*>{{ arg["name"] }}._gd_ptr
+## if arg is None, pass NULL to godot
+{{ argsval }}[{{ i }}] = <void*>{{ arg["name"] }}._gd_ptr if {{ arg["name"] }} is not None else NULL
 {% elif arg["type"] == "godot_variant" %}
 cdef godot_variant __var_{{ arg["name"] }}
 pyobj_to_godot_variant({{ arg["name"] }}, &__var_{{ arg["name"] }})
 {{ argsval }}[{{ i }}] = <void*>(&__var_{{ arg["name"] }})
 {% elif arg["type_specs"]["is_builtin"] %}
 {{ argsval }}[{{ i }}] = <void*>(&{{ arg["name"] }}._gd_data)
+{% elif arg["type"] == "godot_real" %}
+## ptrcall does not work with single precision floats, so we must convert to a double
+cdef double {{ arg["name"] }}_d = <double>{{ arg["name"] }};
+{{ argsval }}[{{ i }}] = &{{ arg["name"] }}_d
 {% else %}
 {{ argsval }}[{{ i }}] = &{{ arg["name"] }}
 {% endif %}
@@ -107,6 +112,10 @@ cdef godot_variant {{ retval }}
 {% set binding_type =  method["return_type_specs"]["binding_type"] %}
 cdef {{ binding_type }} {{ retval }} = {{ binding_type }}.__new__({{ binding_type }})
 {% set retval_as_arg = "&{}._gd_data".format(retval) %}
+{% elif method["return_type"] == "godot_real" %}
+## ptrcall does not work with single precision floats, so we must convert to a double
+cdef double {{ retval }}
+{% set retval_as_arg = "&{}".format(retval) %}
 {% else %}
 cdef {{ method["return_type"] }} {{ retval }}
 {% set retval_as_arg = "&{}".format(retval) %}
