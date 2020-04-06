@@ -14,11 +14,11 @@ def _cython_to_c_emitter(target, source, env):
     elif not is_List(source):
         source = [source]
     # Consider we always depend on all .pxd files
-    source += env['CYTHON_DEPS']
+    source += env["CYTHON_DEPS"]
 
     # Add .html target if cython is in annotate mode
     if "-a" in env["CYTHONFLAGS"] or "--annotate" in env["CYTHONFLAGS"]:
-        pyx = next(x for x in target if x.name.endswith('.pyx'))
+        pyx = next(x for x in target if x.name.endswith(".pyx"))
         base_name = pyx.get_path().rsplit(".")[0]
         return [target[0], f"{base_name}.html"], source
     else:
@@ -29,7 +29,7 @@ CythonToCBuilder = Builder(
     action="cython $CYTHONFLAGS $SOURCE -o $TARGET",
     suffix=".c",
     src_suffix=".pyx",
-    emitter=_cython_to_c_emitter
+    emitter=_cython_to_c_emitter,
 )
 
 
@@ -37,16 +37,18 @@ CythonToCBuilder = Builder(
 
 
 def _get_relative_path_to_libpython(env, target):
-    *parts, _ = target.abspath.split('/')
+    *parts, _ = target.abspath.split("/")
     # Modules installed in `site-packages` come from `pythonscript` folder
-    hops_to_site_packages = len(list(takewhile(lambda part: part != 'pythonscript', reversed(parts))))
+    hops_to_site_packages = len(
+        list(takewhile(lambda part: part != "pythonscript", reversed(parts)))
+    )
     # Path should be `lib/python3.7/site-packages/` with `lib/libpython3.so`
     hops_to_libpython_dir = hops_to_site_packages + 2
-    return '/'.join(['..'] * hops_to_libpython_dir)
+    return "/".join([".."] * hops_to_libpython_dir)
 
 
 def CythonCompile(env, target, source):
-    env.Depends(source, env['cpython_build'])
+    env.Depends(source, env["cpython_build"])
     if env["platform"].startswith("windows"):
         ret = env.SharedLibrary(
             target=target,
@@ -63,7 +65,7 @@ def CythonCompile(env, target, source):
             LIBPREFIX="",
             SHLIBSUFFIX="$CYTHON_SHLIBSUFFIX",
             LIBS=["python3.7m", "pythonscript"],
-            LINKFLAGS=[f"-Wl,-rpath,'$$ORIGIN/{libpython_path}'", *env['LINKFLAGS']],
+            LINKFLAGS=[f"-Wl,-rpath,'$$ORIGIN/{libpython_path}'", *env["LINKFLAGS"]],
         )
     return ret
 
@@ -88,10 +90,12 @@ def CythonModule(env, target, source=None):
     if not source:
         source.append(f"{mod_target}.pyx")
 
-    pyx_mod, *too_much_mods = [x for x in source if str(x).endswith('.pyx')]
+    pyx_mod, *too_much_mods = [x for x in source if str(x).endswith(".pyx")]
     if too_much_mods:
-        raise UserError(f"Must have exactly one .pyx file in sources (got `{[mod, *too_much_mods]}`)")
-    c_mod = pyx_mod.split('.', 1)[0] + '.c'  # Useful to do `xxx.gen.pyx` ==> `xxx`
+        raise UserError(
+            f"Must have exactly one .pyx file in sources (got `{[mod, *too_much_mods]}`)"
+        )
+    c_mod = pyx_mod.split(".", 1)[0] + ".c"  # Useful to do `xxx.gen.pyx` ==> `xxx`
     CythonToCBuilder(env, target=[c_mod, *other_targets], source=source)
 
     c_compile_target = CythonCompile(env, target=mod_target, source=[c_mod])
@@ -105,20 +109,15 @@ def CythonModule(env, target, source=None):
 def generate(env):
     """Add Builders and construction variables for ar to an Environment."""
 
-    env['CYTHONFLAGS'] = CLVar('--fast-fail -3')
+    env["CYTHONFLAGS"] = CLVar("--fast-fail -3")
 
     # Python native module must have .pyd suffix on windows and .so on POSIX (even on macOS)
     if env["platform"].startswith("windows"):
-        env['CYTHON_SHLIBSUFFIX'] = ".pyd"
+        env["CYTHON_SHLIBSUFFIX"] = ".pyd"
     else:
-        env['CYTHON_SHLIBSUFFIX'] = ".so"
+        env["CYTHON_SHLIBSUFFIX"] = ".so"
 
-
-    env.Append(
-        BUILDERS={
-            "CythonToC": CythonToCBuilder,
-        }
-    )
+    env.Append(BUILDERS={"CythonToC": CythonToCBuilder})
     env.AddMethod(CythonCompile, "CythonCompile")
     env.AddMethod(CythonModule, "CythonModule")
 

@@ -31,9 +31,7 @@ def fetch_build(src, version, target):
         if not os.path.exists(cache_file):
             url = "%s/%s/%s" % (src, version, build_zipname)
             urlretrieve(
-                url,
-                filename=build_zipname,
-                reporthook=lambda *args: print(".", end="", flush=True),
+                url, filename=build_zipname, reporthook=lambda *args: print(".", end="", flush=True)
             )
         return ZipFile(cache_file)
 
@@ -63,23 +61,16 @@ def orchestrator(targets, version, src, dst, buildzip):
     futures = []
     with ThreadPoolExecutor() as executor:
         for target in targets:
-            futures.append(
-                executor.submit(pipeline_executor, target, version, src, dst)
-            )
+            futures.append(executor.submit(pipeline_executor, target, version, src, dst))
     for future in futures:
         if not future.cancelled():
             future.result()  # Raise exception if any
 
     print("add bonuses...")
-    shutil.copy(
-        "%s/../misc/release_pythonscript.gdnlib" % BASEDIR,
-        "%s/pythonscript.gdnlib" % dst,
-    )
+    shutil.copy("%s/../misc/release_pythonscript.gdnlib" % BASEDIR, "%s/pythonscript.gdnlib" % dst)
     shutil.copy("%s/../misc/release_LICENSE.txt" % BASEDIR, "%s/LICENSE.txt" % dst)
     with open("%s/../misc/release_README.txt" % BASEDIR) as fd:
-        readme = fd.read().format(
-            version=version, date=datetime.utcnow().strftime("%Y-%m-%d")
-        )
+        readme = fd.read().format(version=version, date=datetime.utcnow().strftime("%Y-%m-%d"))
     with open("%s/README.txt" % dst, "w") as fd:
         fd.write(readme)
 
@@ -90,9 +81,7 @@ def orchestrator(targets, version, src, dst, buildzip):
 
 def main():
     parser = argparse.ArgumentParser(description="Process some integers.")
-    parser.add_argument(
-        "--backend", "-b", choices=("cpython", "pypy"), default=DEFAULT_BACKEND
-    )
+    parser.add_argument("--backend", "-b", choices=("cpython", "pypy"), default=DEFAULT_BACKEND)
     parser.add_argument("--platforms", "-p", nargs="+")
     parser.add_argument("--src", default=DEFAULT_SRC)
     parser.add_argument("--no-zip", action="store_true")

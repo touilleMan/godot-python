@@ -23,7 +23,7 @@ def boolean_converter(val, env):
     return val
 
 
-vars = Variables('custom.py')
+vars = Variables("custom.py")
 vars.Add(
     EnumVariable(
         "platform",
@@ -40,8 +40,7 @@ vars.Add("LINK", "linker")
 vars.Add("LINKFLAGS", "Custom flags for the linker")
 vars.Add("BINDINGS_LINKFLAGS", "Custom flags for the linker (for bindings.c only)", "")
 vars.Add(
-    "TARGET_ARCH",
-    "Target architecture (Windows only) -- x86, x86_64, ia64. Default: host arch.",
+    "TARGET_ARCH", "Target architecture (Windows only) -- x86, x86_64, ia64. Default: host arch."
 )
 vars.Add(
     "MSVC_VERSION",
@@ -59,7 +58,7 @@ vars.Add(
 
 env = Environment(
     variables=vars,
-    tools=['default', 'cython', "symlink", "virtual_target"],
+    tools=["default", "cython", "symlink", "virtual_target"],
     ENV=os.environ,
     # ENV = {'PATH' : os.environ['PATH']},
 )
@@ -78,7 +77,7 @@ Help(vars.GenerateHelpText(env))
 
 
 env["bindings_generate_sample"] = True
-env["gdnative_include_dir"] = Dir('godot_headers')
+env["gdnative_include_dir"] = Dir("godot_headers")
 env.AppendUnique(CPPPATH=["$gdnative_include_dir"])
 
 
@@ -103,7 +102,7 @@ SConscript(
         f"build/{env['platform']}/pythonscript/SConscript",
         "tests/SConscript",
         # "examples/SConscript",
-    ],
+    ]
 )
 
 env.Default(env["DIST_ROOT"])

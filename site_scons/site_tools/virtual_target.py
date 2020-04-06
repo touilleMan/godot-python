@@ -8,7 +8,7 @@ from SCons.Errors import UserError
 
 
 def install_marker(target):
-    with open(target.abspath, 'w') as fd:
+    with open(target.abspath, "w") as fd:
         fd.write(
             "Dummy file to represent the completion of a virtual action.\n"
             "Modifying or removing this file will force rebuild.\n"
@@ -32,9 +32,9 @@ def virtual_target_command(env, marker, condition, source, action):
             *(action if is_List(action) else [action]),
             Action(
                 lambda target, source, env: install_marker(target[0]),
-                "Write $TARGET to mark task complete"
+                "Write $TARGET to mark task complete",
             ),
-        ]
+        ],
     )
 
 

@@ -15,9 +15,7 @@ def SymlinkAction(target, source, env):
     abs_trg = os.path.abspath(str(target[0]))
 
     if not os.path.isdir(abs_src):
-        raise UserError(
-            "Only folder symlink are allowed due to Windows limitation"
-        )
+        raise UserError("Only folder symlink are allowed due to Windows limitation")
 
     try:
         os.unlink(abs_trg)
@@ -61,7 +59,6 @@ def SymlinkBuilder(env, target, source, action=SymlinkAction):
             env.Action(_rm, f"Removing symlink {abs_trg}"),
         )
     return results
-
 
 
 def CustomClean(env, targets, action):

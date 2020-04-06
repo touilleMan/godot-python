@@ -19,30 +19,30 @@ env.filters["merge"] = lambda x, **kwargs: {**x, **kwargs}
 
 BUILTINS_TYPES = [
     # Render target / Python type / Godot type
-    ("aabb", "AABB", "godot_aabb",),
-    ("array", "Array", "godot_array",),
-    ("basis", "Basis", "godot_basis",),
-    ("color", "Color", "godot_color",),
-    ("dictionary", "Dictionary", "godot_dictionary",),
-    ("node_path", "NodePath", "godot_node_path",),
-    ("plane", "Plane", "godot_plane",),
-    ("quat", "Quat", "godot_quat",),
-    ("rect2", "Rect2", "godot_rect2",),
-    ("rid", "RID", "godot_rid",),
+    ("aabb", "AABB", "godot_aabb"),
+    ("array", "Array", "godot_array"),
+    ("basis", "Basis", "godot_basis"),
+    ("color", "Color", "godot_color"),
+    ("dictionary", "Dictionary", "godot_dictionary"),
+    ("node_path", "NodePath", "godot_node_path"),
+    ("plane", "Plane", "godot_plane"),
+    ("quat", "Quat", "godot_quat"),
+    ("rect2", "Rect2", "godot_rect2"),
+    ("rid", "RID", "godot_rid"),
     # transform2d before transform to avoid bad detection in cook_c_signature
-    ("transform2d", "Transform2D", "godot_transform2d",),
-    ("transform", "Transform", "godot_transform",),
-    ("vector2", "Vector2", "godot_vector2",),
-    ("vector3", "Vector3", "godot_vector3",),
-    ("pool_byte_array", "PoolByteArray", "godot_pool_byte_array",),
-    ("pool_int_array", "PoolIntArray", "godot_pool_int_array",),
-    ("pool_real_array", "PoolRealArray", "godot_pool_real_array",),
-    ("pool_string_array", "PoolStringArray", "godot_pool_string_array",),
-    ("pool_vector2_array", "PoolVector2Array", "godot_pool_vector2_array",),
-    ("pool_vector3_array", "PoolVector3Array", "godot_pool_vector3_array",),
-    ("pool_color_array", "PoolColorArray", "godot_pool_color_array",),
-    ("gdstring", "GDString", "godot_string",),
-    ("variant", "object", "godot_variant",),
+    ("transform2d", "Transform2D", "godot_transform2d"),
+    ("transform", "Transform", "godot_transform"),
+    ("vector2", "Vector2", "godot_vector2"),
+    ("vector3", "Vector3", "godot_vector3"),
+    ("pool_byte_array", "PoolByteArray", "godot_pool_byte_array"),
+    ("pool_int_array", "PoolIntArray", "godot_pool_int_array"),
+    ("pool_real_array", "PoolRealArray", "godot_pool_real_array"),
+    ("pool_string_array", "PoolStringArray", "godot_pool_string_array"),
+    ("pool_vector2_array", "PoolVector2Array", "godot_pool_vector2_array"),
+    ("pool_vector3_array", "PoolVector3Array", "godot_pool_vector3_array"),
+    ("pool_color_array", "PoolColorArray", "godot_pool_color_array"),
+    ("gdstring", "GDString", "godot_string"),
+    ("variant", "object", "godot_variant"),
 ]
 BASE_TYPES = [
     ("godot_int", "godot_int"),
@@ -52,15 +52,9 @@ BASE_TYPES = [
     ("uint64_t", "uint64_t"),
 ]
 
-GD_TO_PY = {
-    **{x[2]: x[1] for x in BUILTINS_TYPES},
-    **{x[1]: x[0] for x in BASE_TYPES},
-}
+GD_TO_PY = {**{x[2]: x[1] for x in BUILTINS_TYPES}, **{x[1]: x[0] for x in BASE_TYPES}}
 
-PY_TO_GD = {
-    **{x[1]: x[2] for x in BUILTINS_TYPES},
-    **{x[0]: x[1] for x in BASE_TYPES},
-}
+PY_TO_GD = {**{x[1]: x[2] for x in BUILTINS_TYPES}, **{x[0]: x[1] for x in BASE_TYPES}}
 
 
 def render_target_to_py_type(render_target):

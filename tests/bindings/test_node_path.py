@@ -23,9 +23,7 @@ def test_equal():
     assert not v1 == other  # Force use of __eq__
 
 
-@pytest.mark.parametrize(
-    "arg", [None, 0, "parent/child", NodePath("parent/other_child")]
-)
+@pytest.mark.parametrize("arg", [None, 0, "parent/child", NodePath("parent/other_child")])
 def test_bad_equal(arg):
     basis = NodePath("parent/child")
     assert basis != arg

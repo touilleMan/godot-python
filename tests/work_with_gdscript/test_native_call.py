@@ -90,8 +90,7 @@ def test_static_method_call(node):
 
 
 @pytest.mark.parametrize(
-    "path,expected_type",
-    [("res://gdnode.gd", GDScript), ("res://pynode.py", PluginScript)],
+    "path,expected_type", [("res://gdnode.gd", GDScript), ("res://pynode.py", PluginScript)]
 )
 def test_load_script(path, expected_type):
     script = ResourceLoader.load(path, "", False)

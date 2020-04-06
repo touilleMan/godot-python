@@ -135,9 +135,7 @@ def test_properties_rw(field, ret_type):
         assert field_val == val
 
 
-@pytest.mark.parametrize(
-    "args", [("h", float), ("s", float), ("v", float)], ids=lambda x: x[0]
-)
+@pytest.mark.parametrize("args", [("h", float), ("s", float), ("v", float)], ids=lambda x: x[0])
 def test_properties_ro(args):
     v = Color(4.2)
     field, ret_type = args

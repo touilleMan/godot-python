@@ -16,8 +16,8 @@ class Pong(Node2D):
         p2 = self.get_node("player2")
         p1.left = True
         p2.left = False
-        p1.action_prefix = 'p1'
-        p2.action_prefix = 'p2'
+        p1.action_prefix = "p1"
+        p2.action_prefix = "p2"
 
     def update_score(self, add_to_left):
         if add_to_left:

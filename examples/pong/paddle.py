@@ -10,7 +10,7 @@ MOTION_SPEED = 150
 class Paddle(Area2D):
 
     left = export(bool, default=False)
-    action_prefix = export(str, default='')
+    action_prefix = export(str, default="")
     can_move = export(bool, default=False)
 
     def _ready(self):
@@ -21,9 +21,9 @@ class Paddle(Area2D):
 
     def _process(self, delta):
         motion = 0
-        if (Input.is_action_pressed(self.action_prefix + GDString("_move_up"))):
+        if Input.is_action_pressed(self.action_prefix + GDString("_move_up")):
             motion -= 1
-        elif (Input.is_action_pressed(self.action_prefix + GDString("_move_down"))):
+        elif Input.is_action_pressed(self.action_prefix + GDString("_move_down")):
             motion += 1
 
         motion *= MOTION_SPEED

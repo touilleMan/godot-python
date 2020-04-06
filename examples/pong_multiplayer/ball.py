@@ -6,10 +6,9 @@ DEFAULT_SPEED = 80
 
 @exposed
 class Ball(Area2D):
-
     @rpcsync
     def _reset_ball(self, for_left):
-        print('RESET BALL', for_left)
+        print("RESET BALL", for_left)
         self.position = self.screen_size / 2
         if for_left:
             self.direction = Vector2(-1, 0)
@@ -28,10 +27,11 @@ class Ball(Area2D):
         if not self.stopped:
             self.translate(self.direction * self.ball_speed * delta)
         # check screen bounds to make ball bounce
-        if ((self.position.y < 0 and self.direction.y < 0) or
-                (self.position.y > self.screen_size.y and self.direction.y > 0)):
+        if (self.position.y < 0 and self.direction.y < 0) or (
+            self.position.y > self.screen_size.y and self.direction.y > 0
+        ):
             self.direction.y = -self.direction.y
-        if (self.is_network_master()):
+        if self.is_network_master():
             # only master will decide when the ball is out in the left side (it's own side)
             # this makes the game playable even if latency is high and ball is going fast
             # otherwise ball might be out in the other player's screen but not this one
@@ -42,14 +42,14 @@ class Ball(Area2D):
             # only the slave will decide when the ball is out in the right side (it's own side)
             # this makes the game playable even if latency is high and ball is going fast
             # otherwise ball might be out in the other player's screen but not this one
-            if (self.position.x > self.screen_size.x):
+            if self.position.x > self.screen_size.x:
                 self.get_parent().rpc("update_score", True)
                 self.rpc("_reset_ball", True)
 
     @rpcsync
     def bounce(self, left, random):
         # using sync because both players can make it bounce
-        if (self.left):
+        if self.left:
             self.direction.x = abs(self.direction.x)
         else:
             self.direction.x = -abs(self.direction.x)
