@@ -11,6 +11,33 @@ trigger:
 jobs:
 
 
+#################################################################################
+
+
+- job: 'qa'
+  displayName: 'Q&A'
+  timeoutInMinutes: 5
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - checkout: self
+    submodules: true
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+  - bash: |
+      set -eux
+      python --version
+      pip install pre-commit
+    displayName: 'Bootstrap'
+  - bash: |
+      pre-commit run --all-files --show-diff-on-failure
+    displayName: 'Pre-commit hooks check'
+
+
+#################################################################################
+
+
 - job: 'Windows'
   timeoutInMinutes: 60
   pool:
@@ -40,18 +67,21 @@ jobs:
     displayName: 'Setup venv'
   - bash: |
       set -eux
-      scons platform='$(PLATFORM)' MSVC_USE_SCRIPT=true TARGET_ARCH='$(vs.arch)' sample=true CC=cl.exe release
+      scons platform='$(PLATFORM)' MSVC_USE_SCRIPT=true TARGET_ARCH='$(vs.arch)' sample=true CC=cl.exe build
     displayName: 'Build project'
   # - bash: |
   #     set -eux
   #     scons platform='$(PLATFORM)' MSVC_USE_SCRIPT=true TARGET_ARCH='$(vs.arch)' sample=true CC=cl.exe tests
   #   displayName: 'Run tests'
-  - task: GithubRelease@0
-    displayName: 'Create GitHub Release'
-    inputs:
-      gitHubConnection: github.com_touilleMan
-      repositoryName: touilleMan/godot-python
-      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip
+  - bash: |
+      python -c "import shutil; shutil.make_archive('build/godot-python-$(git describe --tag)-$(PLATFORM)', 'zip', root_dir='build/dist')"
+    displayName: 'Generate artifact archive'
+  - publish: dist/godot-python-*
+    artifact: $(PLATFORM)_build
+
+
+#################################################################################
+
 
 - job: 'Linux'
   timeoutInMinutes: 60
@@ -75,19 +105,20 @@ jobs:
     displayName: 'Setup venv'
   - bash: |
       set -eux
-      scons platform='$(PLATFORM)' sample=true CC=$CC checkstyle
-      scons platform='$(PLATFORM)' sample=true CC=$CC release
+      scons platform='$(PLATFORM)' sample=true CC=$CC build
     displayName: 'Build project'
   # - bash: |
   #     set -eux
   #     scons platform='$(PLATFORM)' sample=true CC=$CC tests
   #   displayName: 'Run tests'
-  - task: GithubRelease@0
-    displayName: 'Create GitHub Release'
-    inputs:
-      gitHubConnection: github.com_touilleMan
-      repositoryName: touilleMan/godot-python
-      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip
+  - bash: |
+      python -c "import shutil; shutil.make_archive('build/godot-python-$(git describe --tag)-$(PLATFORM)', 'zip', root_dir='build/dist')"
+    displayName: 'Generate artifact archive'
+  - publish: dist/godot-python-*
+    artifact: $(PLATFORM)_build
+
+
+#################################################################################
 
 
 - job: 'macOS'
@@ -116,7 +147,7 @@ jobs:
       set -eux
       export EXTRA_CFLAGS="-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include"
       export EXTRA_LDFLAGS="-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib"
-      scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC release
+      scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC build
     displayName: 'Build project'
   # - bash: |
   #     set -eux
@@ -124,9 +155,8 @@ jobs:
   #     export EXTRA_LDFLAGS="-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib"
   #     scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC tests
     # displayName: 'Run tests'
-  - task: GithubRelease@0
-    displayName: 'Create GitHub Release'
-    inputs:
-      gitHubConnection: github.com_touilleMan
-      repositoryName: touilleMan/godot-python
-      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip
+  - bash: |
+      python -c "import shutil; shutil.make_archive('build/godot-python-$(git describe --tag)-$(PLATFORM)', 'zip', root_dir='build/dist')"
+    displayName: 'Generate artifact archive'
+  - publish: dist/godot-python-*
+    artifact: $(PLATFORM)_build
