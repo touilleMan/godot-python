@@ -1,0 +1,36 @@
+Import('env')
+
+
+SConscript([
+    "godot/SConscript"
+])
+
+
+module, *_ = env.CythonModule(['_godot', '_godot_api.h'], [
+    '_godot.pyx',
+    '_godot_editor.pxi',
+    '_godot_instance.pxi',
+    '_godot_profiling.pxi',
+    '_godot_script.pxi',
+])
+env.Install(
+    "$DIST_SITE_PACKAGES",
+    module
+)
+
+
+c_env = env.Clone()
+env.AppendUnique(LIBPATH=[Dir(".")])
+if env['platform'].startswith('windows'):
+    c_env.AppendUnique(LIBS=["python37"])
+else:  # x11&osx
+    c_env.AppendUnique(LIBS=["python3.7m"])
+    c_env.AppendUnique(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
+    c_env.AppendUnique(CFLAGS=['-Werror-implicit-function-declaration'])
+c_env.Depends('pythonscript.c', env['cpython_build'])
+env.Install(
+	"$DIST_PLATFORM",
+	c_env.SharedLibrary('pythonscript', [
+	    'pythonscript.c',
+	])
+)

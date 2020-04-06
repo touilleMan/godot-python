@@ -1,0 +1,10 @@
+Import("env")
+
+for test in ['bindings', 'helloworld', 'work_with_gdscript']:
+    dist_symlink = env.Symlink(f"{test}/pythonscript", env["DIST_ROOT"])
+    target = env.Command(
+        test,
+        ["$godot_binary", dist_symlink],
+        "${SOURCE} --path ${TARGET}",
+    )
+    env.AlwaysBuild(target)

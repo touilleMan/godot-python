@@ -1,0 +1,45 @@
+Import('env')
+
+
+pxds = [
+    File(x) for x in (
+        '__init__.py',  # Not really a .pxd but still needed
+        'conversion.pxd',
+        'internal.pxd',
+        'gdapi.pxd',
+        'gdnative_api_struct.pxd',
+    )
+]
+env.AppendUnique(CYTHON_DEPS=pxds)
+env.Install("$DIST_SITE_PACKAGES/godot/_hazmat", pxds)
+
+
+### Generate godot api .h -> gdnative_api_struct.pxd ###
+
+
+gdnative_api_struct_pxd = File("gdnative_api_struct.pxd")
+
+# TODO: autopxd doesn't work out of the box, hence
+# `gdnative_api_struct.pxd` has been customized after generation
+# generate_gdnative_api_struct = env.Command(
+#     target=gdnative_api_struct_pxd,
+#     source=(
+#         env["gdnative_include_dir"],
+#         "%s/gdnative_api_struct.gen.h" % env["gdnative_include_dir"],
+#     ),
+#     action="autopxd -I ${SOURCES[0]} ${SOURCES[1]} > ${TARGET}",
+# )
+
+
+### Cython modules ###
+
+
+env.Install(
+    "$DIST_SITE_PACKAGES/godot/_hazmat",
+    env.CythonModule('conversion', 'conversion.pyx')
+)
+
+env.Install(
+    "$DIST_SITE_PACKAGES/godot/_hazmat",
+    env.CythonModule('internal', 'internal.pyx')
+)

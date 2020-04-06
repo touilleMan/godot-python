@@ -1,0 +1,65 @@
+# Worth reading:
+# https://docs.python.org/3/faq/windows.html#how-can-i-embed-python-into-a-windows-application
+# tl;dr: onyl msvc is supported to link against pythonxx.dll
+import os
+
+
+Import("env")
+
+
+cpython_src = Dir("cpython")
+cpython_build_dir = Dir(f"{cpython_src}/PCBuild/amd64")
+
+
+env["bits"] = "64"
+env["godot_default_binary_url"] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_win64.exe.zip"
+env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/site-packages")
+
+
+### Build config for pythonscript ###
+
+
+# env.AppendUnique(LIBPATH=[f"{cpython_build_dir.abspath}"])
+# Cannot use CPPPATH here given headers are within `cpython_build` target,
+# so Scons consider the headers are a missing target
+env.AppendUnique(CFLAGS=[
+    f"-I{cpython_src.abspath}\\Include",
+    f"-I{cpython_src.abspath}\\PC",
+])
+env.AppendUnique(LINKFLAGS=[
+    f"/LIBPATH:{cpython_build_dir.abspath}"
+])
+
+
+### Fetch Python repo ###
+
+
+env.Command(
+    cpython_src,
+    None,
+    "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.7.1 --single-branch ${TARGET}",
+)
+env.NoClean(cpython_src)
+
+
+### Build Python ###
+
+
+# Build dir is within the source dir... which is something scons hates !
+# So use a virtual target to represent the build process
+cpython_build_done_marker = env.File('cpython_build_done.marker')
+env.VirtualTargetCommand(
+    marker=cpython_build_done_marker,
+    condition=lambda env: os.path.exists(cpython_build_dir.abspath),
+    source=cpython_src,
+    action=(
+        f"cd {cpython_src.abspath}\\PCBuild && "
+        "echo Configuring CPython... && "
+        f"get_externals.bat --python=python && "
+        "echo Building CPython... && "
+        f"build.bat -p x64"
+    ),
+)
+env.NoClean(cpython_build_done_marker)
+env["cpython_build"] = cpython_build_done_marker
+env["cpython_build_dir"] = cpython_build_dir
