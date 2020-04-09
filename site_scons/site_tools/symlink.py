@@ -1,5 +1,5 @@
 import os
-from SCons.Script import Builder
+from SCons.Script import Builder, COMMAND_LINE_TARGETS
 from SCons.Util import is_List
 from SCons.Errors import UserError
 
