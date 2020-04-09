@@ -74,9 +74,9 @@ jobs:
   #     scons platform='$(PLATFORM)' MSVC_USE_SCRIPT=true TARGET_ARCH='$(vs.arch)' sample=true CC=cl.exe tests
   #   displayName: 'Run tests'
   - bash: |
-      python -c "import shutil; shutil.make_archive('build/godot-python-$(git describe --tag)-$(PLATFORM)', 'zip', root_dir='build/dist')"
+      python -c "import shutil; shutil.make_archive('$(Pipeline.Workspace)/godot-python-$(git describe --tag)-$(PLATFORM)', 'zip', root_dir='build/dist')"
     displayName: 'Generate artifact archive'
-  - publish: dist/godot-python-*
+  - publish: $(Agent.TempDirectory)/
     artifact: $(PLATFORM)_build
 
 
@@ -112,9 +112,9 @@ jobs:
   #     scons platform='$(PLATFORM)' sample=true CC=$CC tests
   #   displayName: 'Run tests'
   - bash: |
-      python -c "import shutil; shutil.make_archive('build/godot-python-$(git describe --tag)-$(PLATFORM)', 'zip', root_dir='build/dist')"
+      python -c "import shutil; shutil.make_archive('$(Pipeline.Workspace)/godot-python-$(git describe --tag)-$(PLATFORM)', 'zip', root_dir='build/dist')"
     displayName: 'Generate artifact archive'
-  - publish: dist/godot-python-*
+  - publish: $(Agent.TempDirectory)/
     artifact: $(PLATFORM)_build
 
 
@@ -156,7 +156,7 @@ jobs:
   #     scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC tests
     # displayName: 'Run tests'
   - bash: |
-      python -c "import shutil; shutil.make_archive('build/godot-python-$(git describe --tag)-$(PLATFORM)', 'zip', root_dir='build/dist')"
+      python -c "import shutil; shutil.make_archive('$(Pipeline.Workspace)/godot-python-$(git describe --tag)-$(PLATFORM)', 'zip', root_dir='build/dist')"
     displayName: 'Generate artifact archive'
-  - publish: dist/godot-python-*
+  - publish: $(Agent.TempDirectory)/
     artifact: $(PLATFORM)_build
