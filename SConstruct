@@ -103,8 +103,6 @@ if "gcc" in env.get("CC"):
 
 env["shitty_compiler"] = env.get("CC") in ("cl", "cl.exe")
 if not env["shitty_compiler"]:
-    env.Append(CFLAGS=["-std=c11"])
-    env.Append(CFLAGS=["-Werror", "-Wall"])
     if env["debug"]:
         env.Append(CFLAGS=["-g", "-ggdb"])
         env.Append(LINKFLAGS=["-g", "-ggdb"])
