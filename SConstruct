@@ -32,6 +32,14 @@ vars.Add(
         allowed_values=("x11-64", "x11-32", "windows-64", "windows-32", "osx-64"),
     )
 )
+vars.Add(BoolVariable("debug", "Compile with debug symbols", False))
+vars.Add(
+    BoolVariable(
+        "bindings_generate_sample",
+        "Generate only a subset of the bindings (faster build time)",
+        False,
+    )
+)
 vars.Add("godot_binary", "Path to Godot main binary", "")
 vars.Add("CC", "C compiler")
 vars.Add("CFLAGS", "Custom flags for the C compiler")
@@ -90,6 +98,20 @@ if "gcc" in env.get("CC"):
     env.Append(CCFLAGS=["-fdiagnostics-color=always"])
 
 
+### Default compile flags ###
+
+
+env["shitty_compiler"] = env.get("CC") in ("cl", "cl.exe")
+if not env["shitty_compiler"]:
+    env.Append(CFLAGS=["-std=c11"])
+    env.Append(CFLAGS=["-Werror", "-Wall"])
+    if env["debug"]:
+        env.Append(CFLAGS=["-g", "-ggdb"])
+        env.Append(LINKFLAGS=["-g", "-ggdb"])
+else:
+    env.Append(CFLAGS=["/WX", "/W2"])
+
+
 env["DIST_ROOT"] = Dir(f"build/dist")
 env["DIST_PLATFORM"] = Dir(f"{env['DIST_ROOT']}/{env['platform']}")
 VariantDir(f"build/{env['platform']}/platforms", f"platforms")
@@ -106,3 +128,4 @@ SConscript(
 )
 
 env.Default(env["DIST_ROOT"])
+env.Alias("build", env["DIST_ROOT"])

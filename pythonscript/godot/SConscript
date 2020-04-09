@@ -85,7 +85,27 @@ env.Install(
 ### Bindings ###
 
 
-godot_bindings_srcs = env.Command(
+# Bindings module is a special snowflake given it size
+bindings_env = env.Clone()
+sample = env['bindings_generate_sample']
+
+if not sample:
+    if not env["shitty_compiler"]:
+        bindings_env.AppendUnique(LINKFLAGS=["-Wl,--strip-all"])
+
+if sample:
+    if not env["shitty_compiler"]:
+        bindings_env.AppendUnique(CFLAGS=["-O0"])
+    else:
+        bindings_env.AppendUnique(CFLAGS=["/O0"])
+else:
+    if not env["shitty_compiler"]:
+        bindings_env.AppendUnique(CFLAGS=["-Os", "-Wno-misleading-indentation"])
+    else:
+        bindings_env.AppendUnique(CFLAGS=["/Os"])
+
+
+godot_bindings_srcs = bindings_env.Command(
     target=("bindings.pyx", "bindings.pxd"),
     source=(
         "${gdnative_include_dir}/api.json",
@@ -93,15 +113,15 @@ godot_bindings_srcs = env.Command(
     action=(
         "python %s ${opts} -i ${SOURCE} -o ${TARGET} " % File("#/tools/generate_bindings.py")
     ),
-    opts="--sample" if env["bindings_generate_sample"] else ""
+    opts="--sample" if sample else ""
 )
-env.Depends(
+bindings_env.Depends(
     godot_bindings_srcs,
-    ["#/tools/generate_bindings.py", env.Glob("#/tools/bindings_templates/*")],
+    ["#/tools/generate_bindings.py", bindings_env.Glob("#/tools/bindings_templates/*")],
 )
 
 
-env.Install(
+bindings_env.Install(
     "$DIST_SITE_PACKAGES/godot",
-    env.CythonModule('bindings', 'bindings.pyx')
+    bindings_env.CythonModule('bindings', 'bindings.pyx')
 )
