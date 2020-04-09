@@ -10,6 +10,7 @@ Import("env")
 cpython_src = Dir("cpython")
 # CPython does it build here, then we "install" the result with the builtins
 # libraries into `cpython_build`
+cpython_internal_build_done_marker = env.File('cpython_internal_build_done.marker')
 cpython_internal_build_dir = Dir(f"{cpython_src}/PCBuild/amd64")
 cpython_build = Dir("cpython_build")
 
@@ -34,6 +35,7 @@ env.AppendUnique(CFLAGS=[
 env.AppendUnique(LINKFLAGS=[
     f"/LIBPATH:{cpython_build.abspath}"
 ])
+env.AppendUnique(CYTHON_COMPILE_DEPS=[cpython_internal_build_done_marker])
 
 
 ### Fetch Python repo ###
@@ -52,7 +54,6 @@ env.NoClean(cpython_src)
 
 # Build dir is within the source dir... which is something scons hates !
 # So use a virtual target to represent the build process
-cpython_internal_build_done_marker = env.File('cpython_internal_build_done.marker')
 env.VirtualTargetCommand(
     marker=cpython_internal_build_done_marker,
     condition=lambda env: os.path.exists(cpython_internal_build_dir.abspath),

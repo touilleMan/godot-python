@@ -2,7 +2,6 @@ Import('env')
 
 
 c_env = env.Clone()
-env.AppendUnique(LIBPATH=[Dir(".")])  # godot modules depend on libpythonscript
 if env['platform'].startswith('windows'):
     c_env.AppendUnique(LIBS=["python37"])
 else:  # x11&osx
@@ -10,12 +9,18 @@ else:  # x11&osx
     c_env.AppendUnique(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
     c_env.AppendUnique(CFLAGS=['-Werror-implicit-function-declaration'])
 c_env.Depends('pythonscript.c', env['cpython_build'])
+libpythonscript, *_ = c_env.SharedLibrary('pythonscript', [
+    'pythonscript.c',
+])
 env.Install(
     "$DIST_PLATFORM",
-    c_env.SharedLibrary('pythonscript', [
-        'pythonscript.c',
-    ])
+    libpythonscript
 )
+
+
+# Cython modules depend on libpythonscript
+env.AppendUnique(LIBPATH=[Dir(".")])
+env.AppendUnique(CYTHON_COMPILE_DEPS=[libpythonscript])
 
 
 SConscript([

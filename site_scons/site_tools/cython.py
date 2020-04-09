@@ -61,10 +61,12 @@ def CythonCompile(env, target, source):
         ret = env.SharedLibrary(
             target=target,
             source=source,
-            CFLAGS=cflags,
             LIBPREFIX="",
             SHLIBSUFFIX=".pyd",
+            CFLAGS=cflags,
             LIBS=["python37", "pythonscript"],
+            # LIBS=[*env["CYTHON_LIBS"], *env["LIBS"]],
+            # LIBPATH=[*env['CYTHON_LIBPATH'], *env['LIBPATH']]
         )
     else:  # x11&osx
         libpython_path = _get_relative_path_to_libpython(env, env.File(target))
@@ -72,12 +74,16 @@ def CythonCompile(env, target, source):
         ret = env.SharedLibrary(
             target=target,
             source=source,
-            CFLAGS=cflags,
             LIBPREFIX="",
             SHLIBSUFFIX=".so",
-            LIBS=["python3.7m", "pythonscript"],
+            CFLAGS=cflags,
             LINKFLAGS=[f"-Wl,-rpath,'$$ORIGIN/{libpython_path}'", *env["LINKFLAGS"]],
+            LIBS=["python3.7m", "pythonscript"],
+            # LIBS=[*env["CYTHON_LIBS"], *env["LIBS"]],
+            # LIBPATH=[*env['CYTHON_LIBPATH'], *env['LIBPATH']]
         )
+
+    env.Depends(ret, env["CYTHON_COMPILE_DEPS"])
     return ret
 
 
@@ -122,6 +128,7 @@ def generate(env):
 
     env["CYTHON_FLAGS"] = CLVar("--fast-fail -3")
     env["CYTHON_DEPS"] = []
+    env["CYTHON_COMPILE_DEPS"] = []
 
     env.Append(BUILDERS={"CythonToC": CythonToCBuilder})
     env.AddMethod(CythonCompile, "CythonCompile")

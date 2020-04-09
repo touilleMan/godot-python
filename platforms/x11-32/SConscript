@@ -21,9 +21,8 @@ env.AppendUnique(LINKFLAGS=["-m32"])
 # so Scons consider the headers are a missing target
 env.AppendUnique(CFLAGS=[f"-I{cpython_build.abspath}/include/python3.7m/"])
 # env.AppendUnique(LIBPATH=[f"{cpython_build.abspath}/lib"])
-env.AppendUnique(LINKFLAGS=[
-    f"-L{cpython_build.abspath}/lib"
-])
+env.AppendUnique(LINKFLAGS=[f"-L{cpython_build.abspath}/lib"])
+env.AppendUnique(CYTHON_COMPILE_DEPS=[cpython_build])
 
 
 ### Fetch Python repo ###
