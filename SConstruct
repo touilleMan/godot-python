@@ -32,6 +32,10 @@ vars.Add(
         allowed_values=("x11-64", "x11-32", "windows-64", "windows-32", "osx-64"),
     )
 )
+vars.Add("pytest_args", "Pytest arguments passed to tests functions", "")
+vars.Add("release_suffix", "Suffix to add to the release archive", "wip")
+vars.Add("godot_binary", "Path to Godot main binary", "")
+vars.Add("gdnative_include_dir", "Path to GDnative include directory", "")
 vars.Add(BoolVariable("debug", "Compile with debug symbols", False))
 vars.Add(
     BoolVariable(
@@ -40,7 +44,6 @@ vars.Add(
         False,
     )
 )
-vars.Add("godot_binary", "Path to Godot main binary", "")
 vars.Add("CC", "C compiler")
 vars.Add("CFLAGS", "Custom flags for the C compiler")
 vars.Add("BINDINGS_CFLAGS", "Custom flags for the C compiler (for bindings.c only)", "")
@@ -85,7 +88,10 @@ Help(vars.GenerateHelpText(env))
 
 
 env["bindings_generate_sample"] = True
-env["gdnative_include_dir"] = Dir("godot_headers")
+if env["gdnative_include_dir"]:
+    env["gdnative_include_dir"] = Dir(env["gdnative_include_dir"])
+else:
+    env["gdnative_include_dir"] = Dir("godot_headers")
 env.AppendUnique(CPPPATH=["$gdnative_include_dir"])
 
 
@@ -115,6 +121,10 @@ env["DIST_PLATFORM"] = Dir(f"{env['DIST_ROOT']}/{env['platform']}")
 VariantDir(f"build/{env['platform']}/platforms", f"platforms")
 VariantDir(f"build/{env['platform']}/pythonscript", "pythonscript")
 
+
+### Load sub scons scripts ###
+
+
 Export(env=env)
 SConscript(
     [
@@ -125,5 +135,24 @@ SConscript(
     ]
 )
 
+
+### Define default target ###
+
+
 env.Default(env["DIST_ROOT"])
 env.Alias("build", env["DIST_ROOT"])
+
+
+### Release archive ###
+
+
+def generate_release(target, source, env):
+    base_name, format = target[0].abspath.rsplit(".", 1)
+    shutil.make_archive(base_name, format, root_dir=source[0].abspath)
+
+
+release = env.Command(
+    "build/godot-python-${release_suffix}-${platform}.zip", env["DIST_ROOT"], generate_release
+)
+env.Alias("release", release)
+env.AlwaysBuild("release")

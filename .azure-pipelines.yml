@@ -64,19 +64,26 @@ jobs:
       python --version
       pip install -U pip
       pip install -r requirements.txt
+      # Configuration for scons
+      echo 'platform = "$(PLATFORM)"' >> custom.py
+      echo 'bindings_generate_sample = True' >> custom.py
+      echo 'MSVC_USE_SCRIPT = True' >> custom.py
+      echo 'TARGET_ARCH = "$(vs.arch)"' >> custom.py
+      echo 'CC = "cl.exe"' >> custom.py
     displayName: 'Setup venv'
   - bash: |
       set -eux
-      scons platform='$(PLATFORM)' MSVC_USE_SCRIPT=true TARGET_ARCH='$(vs.arch)' sample=true CC=cl.exe build
+      scons build
     displayName: 'Build project'
   # - bash: |
   #     set -eux
-  #     scons platform='$(PLATFORM)' MSVC_USE_SCRIPT=true TARGET_ARCH='$(vs.arch)' sample=true CC=cl.exe tests
+  #     scons tests
   #   displayName: 'Run tests'
   - bash: |
-      python -c "import shutil; shutil.make_archive('$(Pipeline.Workspace)/godot-python-$(git describe --tag)-$(PLATFORM)', 'zip', root_dir='build/dist')"
+      scons release
+      mkdir export && cp build/godot-python-*.zip export
     displayName: 'Generate artifact archive'
-  - publish: $(Agent.TempDirectory)/
+  - publish: export/
     artifact: $(PLATFORM)_build
 
 
@@ -102,19 +109,24 @@ jobs:
       python --version
       pip install -U pip
       pip install -r requirements.txt
+      # Configuration for scons
+      echo 'platform = "$(PLATFORM)"' >> custom.py
+      echo 'bindings_generate_sample = True' >> custom.py
+      echo 'CC = "$(CC)"' >> custom.py
     displayName: 'Setup venv'
   - bash: |
       set -eux
-      scons platform='$(PLATFORM)' sample=true CC=$CC build
+      scons build
     displayName: 'Build project'
   # - bash: |
   #     set -eux
-  #     scons platform='$(PLATFORM)' sample=true CC=$CC tests
+  #     scons tests
   #   displayName: 'Run tests'
   - bash: |
-      python -c "import shutil; shutil.make_archive('$(Pipeline.Workspace)/godot-python-$(git describe --tag)-$(PLATFORM)', 'zip', root_dir='build/dist')"
+      scons release
+      mkdir export && cp build/godot-python-*.zip export
     displayName: 'Generate artifact archive'
-  - publish: $(Agent.TempDirectory)/
+  - publish: export/
     artifact: $(PLATFORM)_build
 
 
@@ -142,21 +154,24 @@ jobs:
       brew install zlib openssl
       pip install -U pip
       pip install -r requirements.txt
+      # Configuration for scons
+      echo 'platform = "$(PLATFORM)"' >> custom.py
+      echo 'bindings_generate_sample = True' >> custom.py
+      echo 'CC = "$(CC)"' >> custom.py
+      echo "CFLAGS = '-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include'" >> custom.py
+      echo "LDFLAGS = '-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib'" >> custom.py
     displayName: 'Setup venv'
   - bash: |
       set -eux
-      export EXTRA_CFLAGS="-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include"
-      export EXTRA_LDFLAGS="-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib"
-      scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC build
+      scons build
     displayName: 'Build project'
   # - bash: |
   #     set -eux
-  #     export EXTRA_CFLAGS="-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include"
-  #     export EXTRA_LDFLAGS="-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib"
-  #     scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC tests
+  #     scons tests
     # displayName: 'Run tests'
   - bash: |
-      python -c "import shutil; shutil.make_archive('$(Pipeline.Workspace)/godot-python-$(git describe --tag)-$(PLATFORM)', 'zip', root_dir='build/dist')"
+      scons release
+      mkdir export && cp build/godot-python-*.zip export
     displayName: 'Generate artifact archive'
-  - publish: $(Agent.TempDirectory)/
+  - publish: export/
     artifact: $(PLATFORM)_build
