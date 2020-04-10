@@ -65,6 +65,8 @@ if not env["godot_binary"]:
             raise UserError(f"Archive doesn't contain {godot_binary_name}")
         with open(target[0].abspath, 'wb') as fd:
             fd.write(zipfile.open(godot_binary_name).read())
+        if env["HOST_OS"] != "win32":
+            os.chmod(target[0].abspath, 0o755)
 
     env.Command(
         env["godot_binary"],
