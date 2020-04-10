@@ -94,10 +94,11 @@ if not sample:
         bindings_env.AppendUnique(LINKFLAGS=["-Wl,--strip-all"])
 
 if sample:
+    # Disable optimization for faster dev builds
     if not env["shitty_compiler"]:
         bindings_env.AppendUnique(CFLAGS=["-O0"])
     else:
-        bindings_env.AppendUnique(CFLAGS=["/O0"])
+        bindings_env.AppendUnique(CFLAGS=["/Od"])
 else:
     if not env["shitty_compiler"]:
         bindings_env.AppendUnique(CFLAGS=["-Os", "-Wno-misleading-indentation"])

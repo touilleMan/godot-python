@@ -8,7 +8,7 @@ else:
 
 
 for test in ['bindings', 'helloworld', 'work_with_gdscript']:
-    dist_symlink = env.Symlink(f"{test}/pythonscript", env["DIST_ROOT"])
+    dist_symlink = env.Symlink(f"{test}/pythonscript", "$DIST_ROOT/pythonscript")
     target = env.Command(
         test,
         ["$godot_binary", dist_symlink],

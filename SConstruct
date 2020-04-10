@@ -1,10 +1,6 @@
-import re
 import os
 import shutil
-import glob
 from datetime import datetime
-from functools import partial
-from SCons.Errors import UserError
 from SCons.Platform.virtualenv import ImportVirtualenv
 
 
@@ -23,6 +19,13 @@ def boolean_converter(val, env):
     return val
 
 
+def extract_version():
+    # Hold my beer...
+    gl = {}
+    exec(open("pythonscript/godot/_version.py").read(), gl)
+    return gl["__version__"]
+
+
 vars = Variables("custom.py")
 vars.Add(
     EnumVariable(
@@ -33,7 +36,7 @@ vars.Add(
     )
 )
 vars.Add("pytest_args", "Pytest arguments passed to tests functions", "")
-vars.Add("release_suffix", "Suffix to add to the release archive", "wip")
+vars.Add("release_suffix", "Suffix to add to the release archive", extract_version())
 vars.Add("godot_binary", "Path to Godot main binary", "")
 vars.Add("gdnative_include_dir", "Path to GDnative include directory", "")
 vars.Add(BoolVariable("debug", "Compile with debug symbols", False))
@@ -46,10 +49,8 @@ vars.Add(
 )
 vars.Add("CC", "C compiler")
 vars.Add("CFLAGS", "Custom flags for the C compiler")
-vars.Add("BINDINGS_CFLAGS", "Custom flags for the C compiler (for bindings.c only)", "")
 vars.Add("LINK", "linker")
 vars.Add("LINKFLAGS", "Custom flags for the linker")
-vars.Add("BINDINGS_LINKFLAGS", "Custom flags for the linker (for bindings.c only)", "")
 vars.Add(
     "TARGET_ARCH", "Target architecture (Windows only) -- x86, x86_64, ia64. Default: host arch."
 )
@@ -117,9 +118,20 @@ else:
 
 
 env["DIST_ROOT"] = Dir(f"build/dist")
-env["DIST_PLATFORM"] = Dir(f"{env['DIST_ROOT']}/{env['platform']}")
+env["DIST_PLATFORM"] = Dir(f"{env['DIST_ROOT']}/pythonscript/{env['platform']}")
 VariantDir(f"build/{env['platform']}/platforms", f"platforms")
 VariantDir(f"build/{env['platform']}/pythonscript", "pythonscript")
+
+
+### Static files added to dist ###
+
+
+env.Command(
+    target=f"$DIST_ROOT/pythonscript.gdnlib",
+    source=f"#/misc/release_pythonscript.gdnlib",
+    action=Copy("$TARGET", "$SOURCE"),
+)
+env.Command(target="$DIST_ROOT/pythonscript/.godotignore", source=None, action=Touch("$TARGET"))
 
 
 ### Load sub scons scripts ###
@@ -131,7 +143,7 @@ SConscript(
         f"build/{env['platform']}/platforms/SConscript",  # Must be kept first
         f"build/{env['platform']}/pythonscript/SConscript",
         "tests/SConscript",
-        # "examples/SConscript",
+        "examples/SConscript",
     ]
 )
 
