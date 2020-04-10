@@ -133,45 +133,45 @@ jobs:
 #################################################################################
 
 
-- job: 'macOS'
-  timeoutInMinutes: 60
-  pool:
-    vmImage: 'macOS-latest'
-  variables:
-    CC: clang
-    PLATFORM: 'osx-64'
-  steps:
-  - checkout: self
-    submodules: true
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.7'
-  - bash: |
-      set -eux
-      $CC --version
-      python --version
-      brew update
-      brew install zlib openssl
-      pip install -U pip
-      pip install -r requirements.txt
-      # Configuration for scons
-      echo 'platform = "$(PLATFORM)"' >> custom.py
-      echo 'bindings_generate_sample = True' >> custom.py
-      echo 'CC = "$(CC)"' >> custom.py
-      echo "CFLAGS = '-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include'" >> custom.py
-      echo "LDFLAGS = '-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib'" >> custom.py
-    displayName: 'Setup venv'
-  - bash: |
-      set -eux
-      scons build
-    displayName: 'Build project'
-  # - bash: |
-  #     set -eux
-  #     scons tests
-    # displayName: 'Run tests'
-  - bash: |
-      scons release
-      mkdir export && cp build/godot-python-*.zip export
-    displayName: 'Generate artifact archive'
-  - publish: export/
-    artifact: $(PLATFORM)_build
+# - job: 'macOS'
+#   timeoutInMinutes: 60
+#   pool:
+#     vmImage: 'macOS-latest'
+#   variables:
+#     CC: clang
+#     PLATFORM: 'osx-64'
+#   steps:
+#   - checkout: self
+#     submodules: true
+#   - task: UsePythonVersion@0
+#     inputs:
+#       versionSpec: '3.7'
+#   - bash: |
+#       set -eux
+#       $CC --version
+#       python --version
+#       brew update
+#       brew install zlib openssl
+#       pip install -U pip
+#       pip install -r requirements.txt
+#       # Configuration for scons
+#       echo 'platform = "$(PLATFORM)"' >> custom.py
+#       echo 'bindings_generate_sample = True' >> custom.py
+#       echo 'CC = "$(CC)"' >> custom.py
+#       echo "CFLAGS = '-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include'" >> custom.py
+#       echo "LDFLAGS = '-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib'" >> custom.py
+#     displayName: 'Setup venv'
+#   - bash: |
+#       set -eux
+#       scons build
+#     displayName: 'Build project'
+#   # - bash: |
+#   #     set -eux
+#   #     scons tests
+#     # displayName: 'Run tests'
+#   - bash: |
+#       scons release
+#       mkdir export && cp build/godot-python-*.zip export
+#     displayName: 'Generate artifact archive'
+#   - publish: export/
+#     artifact: $(PLATFORM)_build
