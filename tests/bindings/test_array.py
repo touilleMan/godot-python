@@ -35,17 +35,7 @@ def test_equal(current_node):
 
 
 @pytest.mark.parametrize(
-    "arg",
-    [
-        None,
-        0,
-        "foo",
-        Vector2(),
-        [1],
-        Array([1, 2]),
-        PoolByteArray([1]),
-        PoolIntArray([1]),
-    ],
+    "arg", [None, 0, "foo", Vector2(), [1], Array([1, 2]), PoolByteArray([1]), PoolIntArray([1])]
 )
 def test_bad_equal(arg):
     arr = Array([1])

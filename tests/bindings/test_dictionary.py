@@ -19,9 +19,7 @@ def test_equal():
     assert not arr == bad  # Force use of __eq__
 
 
-@pytest.mark.parametrize(
-    "arg", [None, 0, "foo", Vector2(), {"a": 1}, Dictionary({"b": 2})]
-)
+@pytest.mark.parametrize("arg", [None, 0, "foo", Vector2(), {"a": 1}, Dictionary({"b": 2})])
 def test_bad_equal(arg):
     arr = Dictionary({"a": 1})
     assert arr != arg
@@ -36,9 +34,7 @@ def test_repr():
         assert item in repr(v)
 
 
-@pytest.mark.parametrize(
-    "arg", [42, "dummy", Vector2(), [object()], {object(): 1}, {1: object()}],
-)
+@pytest.mark.parametrize("arg", [42, "dummy", Vector2(), [object()], {object(): 1}, {1: object()}])
 def test_bad_instantiate(arg):
     with pytest.raises((TypeError, ValueError)):
         Dictionary(arg)

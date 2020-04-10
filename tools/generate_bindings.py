@@ -10,9 +10,7 @@ from jinja2 import Environment, FileSystemLoader
 
 BASEDIR = os.path.dirname(__file__)
 env = Environment(
-    loader=FileSystemLoader(f"{BASEDIR}/bindings_templates"),
-    trim_blocks=True,
-    lstrip_blocks=True,
+    loader=FileSystemLoader(f"{BASEDIR}/bindings_templates"), trim_blocks=True, lstrip_blocks=True
 )
 
 
@@ -162,11 +160,7 @@ def strip_unsupported_stuff(classes):
                 continue
             if not _is_supported_type(meth["return_type_specs"]):
                 continue
-            if any(
-                arg
-                for arg in meth["arguments"]
-                if not _is_supported_type(arg["type_specs"])
-            ):
+            if any(arg for arg in meth["arguments"] if not _is_supported_type(arg["type_specs"])):
                 continue
             methods.append(meth)
         klass["methods"] = methods
@@ -180,11 +174,7 @@ def strip_unsupported_stuff(classes):
 
         signals = []
         for signal in klass["signals"]:
-            if any(
-                arg
-                for arg in signal["arguments"]
-                if not _is_supported_type(arg["type_specs"])
-            ):
+            if any(arg for arg in signal["arguments"] if not _is_supported_type(arg["type_specs"])):
                 continue
             signals.append(signal)
         klass["signals"] = signals
@@ -310,10 +300,10 @@ def cook_data(data):
             return f"Rect2{value}"
         elif type == "godot_vector3":
             return f"Vector3{value}"
-        elif (
-            type == "godot_transform" and value == "1, 0, 0, 0, 1, 0, 0, 0, 1 - 0, 0, 0"
-        ):
-            return "Transform(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1), Vector3(0, 0, 0))"
+        elif type == "godot_transform" and value == "1, 0, 0, 0, 1, 0, 0, 0, 1 - 0, 0, 0":
+            return (
+                "Transform(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1), Vector3(0, 0, 0))"
+            )
         elif type == "godot_transform2d" and value == "((1, 0), (0, 1), (0, 0))":
             return "Transform2D(Vector2(1, 0), Vector2(0, 1), Vector2(0, 0))"
         elif value == "[RID]":
@@ -364,9 +354,7 @@ def cook_data(data):
                 arg["type_specs"] = specs
                 arg["type"] = specs["type"]
                 if arg["has_default_value"]:
-                    arg["default_value"] = _cook_default_arg(
-                        arg["type"], arg["default_value"]
-                    )
+                    arg["default_value"] = _cook_default_arg(arg["type"], arg["default_value"])
 
         for prop in item["properties"]:
             prop["name"] = _cook_name(prop["name"])
@@ -422,9 +410,7 @@ def generate_bindings(output_path, input_path, sample):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate godot api bindings file")
-    parser.add_argument(
-        "--input", "-i", help="Path to Godot api.json file", default="api.json"
-    )
+    parser.add_argument("--input", "-i", help="Path to Godot api.json file", default="api.json")
     parser.add_argument("--output", "-o", default="godot_bindings_gen.pyx")
     parser.add_argument("--sample", action="store_true")
     args = parser.parse_args()

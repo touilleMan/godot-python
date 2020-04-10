@@ -25,7 +25,7 @@ def test_instantiate():
         [(Vector3(0, 1, 0), Vector3(0, 0, 1)), Vector3(0, 1, 0), Vector3(0, 0, 1)],
     ):
         v = AABB(*args)
-        assert v.position == expected_pos, msg_tmpl % (v.position, expected_pos, args,)
+        assert v.position == expected_pos, msg_tmpl % (v.position, expected_pos, args)
         assert v.size == expected_size, msg_tmpl % (v.size, expected_size, args)
     with pytest.raises(TypeError):
         AABB("a", Vector3())
@@ -109,9 +109,7 @@ def test_equal():
     assert not arr == bad  # Force use of __eq__
 
 
-@pytest.mark.parametrize(
-    "arg", [None, 0, "foo", AABB(Vector3(6, 5, 4), Vector3(3, 2, 1))]
-)
+@pytest.mark.parametrize("arg", [None, 0, "foo", AABB(Vector3(6, 5, 4), Vector3(3, 2, 1))])
 def test_bad_equal(arg):
     arr = AABB(Vector3(1, 2, 3), Vector3(4, 5, 6))
     assert arr != arg

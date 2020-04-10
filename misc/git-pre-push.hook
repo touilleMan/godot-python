@@ -1,5 +1,0 @@
-#! /bin/sh
-
-echo 'pre-push: checking style...'
-2>&1 1>/dev/null scons checkstyle | grep 'reformat'
-exit $(( ! $? ))

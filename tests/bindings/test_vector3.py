@@ -91,7 +91,7 @@ def test_properties(field, type):
 
 @pytest.mark.parametrize(
     "field,bad_value",
-    [("x", "NaN"), ("y", "NaN"), ("z", "NaN"), ("x", None), ("y", None), ("z", None),],
+    [("x", "NaN"), ("y", "NaN"), ("z", "NaN"), ("x", None), ("y", None), ("z", None)],
     ids=lambda x: x[0],
 )
 def test_bad_properties(field, bad_value):
@@ -209,9 +209,7 @@ def test_bad_equal(arg):
 
 
 @pytest.mark.parametrize(
-    "field,type",
-    [("AXIS_X", int), ("AXIS_Y", int), ("AXIS_Z", int)],
-    ids=lambda x: x[0],
+    "field,type", [("AXIS_X", int), ("AXIS_Y", int), ("AXIS_Z", int)], ids=lambda x: x[0]
 )
 def test_contants(field, type):
     field_val = getattr(Vector3, field)

@@ -39,9 +39,7 @@ def test_init_from_rot_pos():
     assert isinstance(v, Transform2D)
 
 
-@pytest.mark.parametrize(
-    "args", [(1,), (None, Vector2()), ("NaN", Vector2()), (1, "bad"),]
-)
+@pytest.mark.parametrize("args", [(1,), (None, Vector2()), ("NaN", Vector2()), (1, "bad")])
 def test_bad_init_from_rot_pos(args):
     with pytest.raises(TypeError):
         Transform2D.from_rot_pos(*args)

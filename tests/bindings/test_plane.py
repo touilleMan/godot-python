@@ -29,7 +29,7 @@ def test_bad_init(args):
 
 
 @pytest.mark.parametrize(
-    "expected_normal,expected_d", [(Vector3(0, 0, 0), 0), (Vector3(1, 2, 3), 1),]
+    "expected_normal,expected_d", [(Vector3(0, 0, 0), 0), (Vector3(1, 2, 3), 1)]
 )
 def test_init_from_normal(expected_normal, expected_d):
     v = Plane.from_normal(expected_normal, expected_d)
@@ -39,7 +39,7 @@ def test_init_from_normal(expected_normal, expected_d):
 
 @pytest.mark.parametrize(
     "bad_normal,bad_d",
-    [("dummy", 0), (None, 0), (Vector3(1, 2, 3), "NaN"), (Vector3(1, 2, 3), None),],
+    [("dummy", 0), (None, 0), (Vector3(1, 2, 3), "NaN"), (Vector3(1, 2, 3), None)],
 )
 def test_bad_init_from_normal(bad_normal, bad_d):
     with pytest.raises(TypeError):

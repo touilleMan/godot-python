@@ -11,6 +11,33 @@ trigger:
 jobs:
 
 
+#################################################################################
+
+
+- job: 'qa'
+  displayName: 'Q&A'
+  timeoutInMinutes: 5
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - checkout: self
+    submodules: true
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7'
+  - bash: |
+      set -eux
+      python --version
+      pip install pre-commit
+    displayName: 'Bootstrap'
+  - bash: |
+      pre-commit run --all-files --show-diff-on-failure
+    displayName: 'Pre-commit hooks check'
+
+
+#################################################################################
+
+
 - job: 'Windows'
   timeoutInMinutes: 60
   pool:
@@ -37,21 +64,31 @@ jobs:
       python --version
       pip install -U pip
       pip install -r requirements.txt
+      # Configuration for scons
+      echo 'platform = "$(PLATFORM)"' >> custom.py
+      echo 'bindings_generate_sample = True' >> custom.py
+      echo 'MSVC_USE_SCRIPT = True' >> custom.py
+      echo 'TARGET_ARCH = "$(vs.arch)"' >> custom.py
+      echo 'CC = "cl.exe"' >> custom.py
     displayName: 'Setup venv'
   - bash: |
       set -eux
-      scons platform='$(PLATFORM)' MSVC_USE_SCRIPT=true TARGET_ARCH='$(vs.arch)' sample=true CC=cl.exe release
+      scons build
     displayName: 'Build project'
   # - bash: |
   #     set -eux
-  #     scons platform='$(PLATFORM)' MSVC_USE_SCRIPT=true TARGET_ARCH='$(vs.arch)' sample=true CC=cl.exe tests
+  #     scons tests
   #   displayName: 'Run tests'
-  - task: GithubRelease@0
-    displayName: 'Create GitHub Release'
-    inputs:
-      gitHubConnection: github.com_touilleMan
-      repositoryName: touilleMan/godot-python
-      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip
+  - bash: |
+      scons release
+      mkdir export && cp build/godot-python-*.zip export
+    displayName: 'Generate artifact archive'
+  - publish: export/
+    artifact: $(PLATFORM)_build
+
+
+#################################################################################
+
 
 - job: 'Linux'
   timeoutInMinutes: 60
@@ -72,61 +109,69 @@ jobs:
       python --version
       pip install -U pip
       pip install -r requirements.txt
+      # Configuration for scons
+      echo 'platform = "$(PLATFORM)"' >> custom.py
+      echo 'bindings_generate_sample = True' >> custom.py
+      echo 'CC = "$(CC)"' >> custom.py
     displayName: 'Setup venv'
   - bash: |
       set -eux
-      scons platform='$(PLATFORM)' sample=true CC=$CC checkstyle
-      scons platform='$(PLATFORM)' sample=true CC=$CC release
+      scons build
     displayName: 'Build project'
   # - bash: |
   #     set -eux
-  #     scons platform='$(PLATFORM)' sample=true CC=$CC tests
+  #     scons tests
   #   displayName: 'Run tests'
-  - task: GithubRelease@0
-    displayName: 'Create GitHub Release'
-    inputs:
-      gitHubConnection: github.com_touilleMan
-      repositoryName: touilleMan/godot-python
-      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip
+  - bash: |
+      scons release
+      mkdir export && cp build/godot-python-*.zip export
+    displayName: 'Generate artifact archive'
+  - publish: export/
+    artifact: $(PLATFORM)_build
 
 
-- job: 'macOS'
-  timeoutInMinutes: 60
-  pool:
-    vmImage: 'macOS-latest'
-  variables:
-    CC: clang
-    PLATFORM: 'osx-64'
-  steps:
-  - checkout: self
-    submodules: true
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.7'
-  - bash: |
-      set -eux
-      $CC --version
-      python --version
-      brew update
-      brew install zlib openssl
-      pip install -U pip
-      pip install -r requirements.txt
-    displayName: 'Setup venv'
-  - bash: |
-      set -eux
-      export EXTRA_CFLAGS="-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include"
-      export EXTRA_LDFLAGS="-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib"
-      scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC release
-    displayName: 'Build project'
-  # - bash: |
-  #     set -eux
-  #     export EXTRA_CFLAGS="-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include"
-  #     export EXTRA_LDFLAGS="-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib"
-  #     scons platform='$(PLATFORM)' CFLAGS="$EXTRA_CFLAGS" LINKFLAGS="$EXTRA_LDFLAGS" sample=true CC=$CC tests
-    # displayName: 'Run tests'
-  - task: GithubRelease@0
-    displayName: 'Create GitHub Release'
-    inputs:
-      gitHubConnection: github.com_touilleMan
-      repositoryName: touilleMan/godot-python
-      assets: $(Build.ArtifactStagingDirectory)/godot-python-*.zip
+#################################################################################
+
+
+# - job: 'macOS'
+#   timeoutInMinutes: 60
+#   pool:
+#     vmImage: 'macOS-latest'
+#   variables:
+#     CC: clang
+#     PLATFORM: 'osx-64'
+#   steps:
+#   - checkout: self
+#     submodules: true
+#   - task: UsePythonVersion@0
+#     inputs:
+#       versionSpec: '3.7'
+#   - bash: |
+#       set -eux
+#       $CC --version
+#       python --version
+#       brew update
+#       brew install zlib openssl
+#       pip install -U pip
+#       pip install -r requirements.txt
+#       # Configuration for scons
+#       echo 'platform = "$(PLATFORM)"' >> custom.py
+#       echo 'bindings_generate_sample = True' >> custom.py
+#       echo 'CC = "$(CC)"' >> custom.py
+#       echo "CFLAGS = '-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include'" >> custom.py
+#       echo "LDFLAGS = '-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib'" >> custom.py
+#     displayName: 'Setup venv'
+#   - bash: |
+#       set -eux
+#       scons build
+#     displayName: 'Build project'
+#   # - bash: |
+#   #     set -eux
+#   #     scons tests
+#     # displayName: 'Run tests'
+#   - bash: |
+#       scons release
+#       mkdir export && cp build/godot-python-*.zip export
+#     displayName: 'Generate artifact archive'
+#   - publish: export/
+#     artifact: $(PLATFORM)_build

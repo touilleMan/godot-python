@@ -1,0 +1,128 @@
+Import('env')
+
+
+SConscript([
+    "_hazmat/SConscript"
+])
+
+
+pxds = [
+    File(x) for x in (
+        '__init__.py',  # Not really a .pxd but still needed
+        'array.pxd',
+        'bindings.pxd',
+        'builtins.pxd',
+        'hazmat.pxd',
+        'pool_arrays.pxd'
+    )
+]
+env.Install(
+    "$DIST_SITE_PACKAGES/godot",
+    [
+        File('_version.py'),
+        *pxds,
+    ]
+)
+env.AppendUnique(CYTHON_DEPS=pxds)
+
+
+env.Install(
+    "$DIST_SITE_PACKAGES/godot",
+    env.CythonModule('tags', 'tags.pyx')
+)
+
+
+### Builtins ###
+
+
+# TODO: merge pool_arrays into builtins
+godot_pool_arrays_srcs = env.Command(
+    target=("pool_arrays.pyx", "pool_arrays.pxd"),
+    source=(),
+    action="python %s  -o ${TARGET}" % File('#/tools/generate_pool_arrays.py'),
+)
+env.Depends(
+    godot_pool_arrays_srcs,
+    ["#/tools/generate_pool_arrays.py", env.Glob("#/tools/pool_arrays_templates/*")],
+)
+
+
+godot_builtins_srcs = env.Command(
+    target=("builtins.pyx", "builtins.pxd"),
+    source=(),
+    action="python %s -o ${TARGET}" % File('#/tools/generate_builtins.py'),
+)
+env.Depends(
+    godot_builtins_srcs,
+    ["#/tools/generate_builtins.py", env.Glob("#/tools/builtins_templates/*")],
+)
+# TODO: remove this once pool_array is merged into builtins
+env.Depends(
+    godot_builtins_srcs,
+    godot_pool_arrays_srcs,
+)
+
+
+env.Install(
+    "$DIST_SITE_PACKAGES/godot",
+    env.CythonModule('pool_arrays', 'pool_arrays.pyx'),
+)
+
+
+# TODO: merge array.pyx into builtins
+env.Install(
+    "$DIST_SITE_PACKAGES/godot",
+    env.CythonModule('array', 'array.pyx'),
+)
+
+
+env.Install(
+    "$DIST_SITE_PACKAGES/godot",
+    env.CythonModule('builtins', 'builtins.pyx'),
+)
+
+
+### Bindings ###
+
+
+# Bindings module is a special snowflake given it size
+bindings_env = env.Clone()
+sample = env['bindings_generate_sample']
+
+if not sample:
+    if not env["shitty_compiler"]:
+        bindings_env.AppendUnique(LINKFLAGS=["-Wl,--strip-all"])
+
+if sample:
+    # Disable optimization for faster dev builds
+    if not env["shitty_compiler"]:
+        bindings_env.AppendUnique(CFLAGS=["-O0"])
+    else:
+        bindings_env.AppendUnique(CFLAGS=["/Od"])
+else:
+    if not env["shitty_compiler"]:
+        bindings_env.AppendUnique(CFLAGS=["-Os", "-Wno-misleading-indentation"])
+    else:
+        bindings_env.AppendUnique(CFLAGS=["/Os"])
+
+
+godot_bindings_srcs = bindings_env.Command(
+    target=("bindings.pyx", "bindings.pxd"),
+    source=(
+        "${gdnative_include_dir}/api.json",
+    ),
+    action=(
+        "python %s ${opts} -i ${SOURCE} -o ${TARGET} " % File("#/tools/generate_bindings.py")
+    ),
+    opts="--sample" if sample else ""
+)
+bindings_env.Depends(
+    godot_bindings_srcs,
+    ["#/tools/generate_bindings.py", bindings_env.Glob("#/tools/bindings_templates/*")],
+)
+
+
+bindings_env.Install(
+    "$DIST_SITE_PACKAGES/godot",
+    bindings_env.CythonModule('bindings', 'bindings.pyx')
+)

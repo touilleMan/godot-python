@@ -113,9 +113,7 @@ def test_methods(field, ret_type, params):
 
 
 @pytest.mark.parametrize(
-    "field,ret_type",
-    [("x", float), ("y", float), ("z", float), ("w", float)],
-    ids=lambda x: x[0],
+    "field,ret_type", [("x", float), ("y", float), ("z", float), ("w", float)], ids=lambda x: x[0]
 )
 def test_properties(field, ret_type):
     v = Quat()

@@ -1,0 +1,77 @@
+import os
+import re
+from uuid import uuid4
+from io import BytesIO
+from zipfile import ZipFile
+from urllib.request import urlopen
+
+
+Import("env")
+
+
+SConscript([
+    f"{env['platform']}/SConscript"
+])
+# Platform-dependant variables
+assert 'bits' in env
+assert 'godot_default_binary_url' in env
+assert 'cpython_build' in env
+assert 'cpython_build_dir' in env
+assert 'DIST_SITE_PACKAGES' in env
+
+
+### Install CPython build into dist ###
+
+
+# Installing cpython build into dist cannot be simply done by a
+# `env.InstallAs("$DIST_PLATFORM", cypthon_build)` rule given it would
+# conflict with the rules that install libpythonscript&godot modules.
+# To solve this we represent the installation of the build by a virtual target.
+cpython_build_install_marker = env.File('cpython_build_installed_in_dist.marker')
+env.VirtualTargetCommand(
+    marker=cpython_build_install_marker,
+    condition=lambda env: os.path.exists(env.Dir("$DIST_PLATFORM").abspath),
+    source=env['cpython_build'],  # Note we don't use `cpython_build_dir` !
+    action=
+    [
+        Delete("$DIST_PLATFORM"),
+        Copy("$DIST_PLATFORM", env["cpython_build_dir"]),
+    ]
+)
+
+
+# Replace default Install command to always depend on cpython build install
+env.VanillaInstall = env.Install
+def install(env, target, source):
+    out = env.VanillaInstall(target, source)
+    env.Depends(out, cpython_build_install_marker)
+    return out
+env.AddMethod(install, "Install")
+
+
+### Godot binary (to run tests) ###
+
+
+if not env["godot_binary"]:
+    godot_binary_name = re.search(
+        r"([^/]+)\.zip$", env['godot_default_binary_url']
+    ).groups()[0]
+    env["godot_binary"] = File(godot_binary_name)
+
+    def download_and_extract(target, source, env):
+        resp = urlopen(env['godot_default_binary_url'])
+        zipfile = ZipFile(BytesIO(resp.read()))
+        if godot_binary_name not in zipfile.namelist():
+            raise UserError(f"Archive doesn't contain {godot_binary_name}")
+        with open(target[0].abspath, 'wb') as fd:
+            fd.write(zipfile.open(godot_binary_name).read())
+
+    env.Command(
+        env["godot_binary"],
+        None,
+        Action(
+            download_and_extract,
+            f"Download&extract {env['godot_default_binary_url']}"
+        ),
+    )
+    env.NoClean(env["godot_binary"])

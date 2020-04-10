@@ -1,0 +1,56 @@
+Import("env")
+
+
+cpython_src = Dir("cpython")
+cpython_build = Dir("cpython_build")
+
+
+env["bits"] = "32"
+env["godot_default_binary_url"] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_x11.32.zip"
+env["cpython_build"] = cpython_build
+env["cpython_build_dir"] = cpython_build
+env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/python3.7/site-packages")
+
+
+### Build config for pythonscript ###
+
+
+env.AppendUnique(CFLAGS=["-m32"])
+env.AppendUnique(LINKFLAGS=["-m32"])
+# Cannot use CPPPATH&LIBPATH here given headers are within `cpython_build` target,
+# so Scons consider the headers are a missing target
+env.AppendUnique(CFLAGS=[f"-I{cpython_build.abspath}/include/python3.7m/"])
+# env.AppendUnique(LIBPATH=[f"{cpython_build.abspath}/lib"])
+env.AppendUnique(LINKFLAGS=[f"-L{cpython_build.abspath}/lib"])
+env.AppendUnique(CYTHON_COMPILE_DEPS=[cpython_build])
+
+
+### Fetch Python repo ###
+
+
+env.Command(
+    cpython_src,
+    None,
+    "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.7.1 --single-branch ${TARGET}",
+)
+env.NoClean(cpython_src)
+
+
+### Build Python ###
+
+
+# TODO: allow to compile cpython with `--with-pydebug` ?
+env.Command(
+    cpython_build,
+    cpython_src,
+    (
+        "cd ${SOURCE} && "
+        "echo Configuring CPython... && "
+        "1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} --with-openssl=/usr && "
+        "echo Building CPython... && "
+        "1>/dev/null make -j4 && "
+        "echo Installing CPython in ${TARGET.get_abspath()}... && "
+        "1>/dev/null make -j4 install"
+    )
+)
+env.NoClean(cpython_build)

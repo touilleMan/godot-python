@@ -1,0 +1,85 @@
+# Worth reading:
+# https://docs.python.org/3/faq/windows.html#how-can-i-embed-python-into-a-windows-application
+# tl;dr: onyl msvc is supported to link against pythonxx.dll
+import os
+
+
+Import("env")
+
+
+cpython_src = Dir("cpython")
+# CPython does it build here, then we "install" the result with the builtins
+# libraries into `cpython_build`
+cpython_internal_build_done_marker = env.File('cpython_internal_build_done.marker')
+cpython_internal_build_dir = Dir(f"{cpython_src}/PCBuild/win32")
+cpython_build = Dir("cpython_build")
+
+
+env["bits"] = "32"
+env["godot_default_binary_url"] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_win32.exe.zip"
+env["cpython_build"] = cpython_build
+env["cpython_build_dir"] = cpython_build
+env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/site-packages")
+
+
+### Build config for pythonscript ###
+
+
+# env.AppendUnique(LIBPATH=[f"{cpython_build.abspath}"])
+# Cannot use CPPPATH or LIBPATH here given headers&libs are within
+# `cpython_build` target, so SCons consider them as missing targets
+env.AppendUnique(CFLAGS=[
+    f"-I{cpython_src.abspath}\\Include",
+    f"-I{cpython_src.abspath}\\PC",
+])
+env.AppendUnique(LINKFLAGS=[
+    f"/LIBPATH:{cpython_build.abspath}"
+])
+env.AppendUnique(CYTHON_COMPILE_DEPS=[cpython_internal_build_done_marker])
+
+
+### Fetch Python repo ###
+
+
+env.Command(
+    cpython_src,
+    None,
+    "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.7.1 --single-branch ${TARGET}",
+)
+env.NoClean(cpython_src)
+
+
+### Build Python ###
+
+
+# Build dir is within the source dir... which is something scons hates !
+# So use a virtual target to represent the build process
+env.VirtualTargetCommand(
+    marker=cpython_internal_build_done_marker,
+    condition=lambda env: os.path.exists(cpython_internal_build_dir.abspath),
+    source=cpython_src,
+    action=[
+        (
+            f"cd {cpython_src.abspath}\\PCBuild && "
+            "echo Configuring CPython... && "
+            f"get_externals.bat --python=python && "
+            "echo Building CPython... && "
+            f"build.bat -p Win32"
+        ),
+    ]
+)
+env.NoClean(cpython_internal_build_done_marker)
+
+
+### Extract build and builtin lib ###
+
+
+env.Command(
+    target=cpython_build,
+    source=cpython_internal_build_done_marker,
+    action=[
+        Copy(f"{cpython_build.abspath}", f"{cpython_src.abspath}/PCBuild/win32"),
+        Copy(f"{cpython_build.abspath}/lib", f"{cpython_src.abspath}/Lib"),
+    ]
+)
+env.NoClean(cpython_build)

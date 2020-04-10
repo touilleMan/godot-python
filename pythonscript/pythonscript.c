@@ -21,14 +21,6 @@
 #include "_godot_api.h"
 
 
-// TODO: Anyway, this cause a segfault....
-// static void _pythonscript_finish() {
-//  #ifdef BACKEND_CPYTHON
-//      // TODO: Do we need to deinit the interpreter ?
-//      Py_FinalizeEx();
-//  #endif
-// }
-
 static const char *PYTHONSCRIPT_RECOGNIZED_EXTENSIONS[] = { "py", "pyc", "pyo", "pyd", 0 };
 static const char *PYTHONSCRIPT_RESERVED_WORDS[] = {
     "False",
@@ -252,9 +244,11 @@ GDN_EXPORT void godot_gdnative_init(godot_gdnative_init_options *options) {
     pythonscript_gdapi_ext_pluginscript->godot_pluginscript_register_language(&desc);
 }
 
+
 GDN_EXPORT void godot_gdnative_singleton() {
 }
 
+
 GDN_EXPORT void godot_gdnative_terminate() {
-    Py_Finalize();
+    Py_FinalizeEx();
 }

@@ -6,7 +6,6 @@ DEFAULT_SPEED = 220
 
 @exposed
 class Ball(Area2D):
-
     def _reset_ball(self, for_left):
         self.position = self.screen_size / 2
         if for_left:
@@ -26,18 +25,19 @@ class Ball(Area2D):
             self.translate(self.direction * self.ball_speed * delta)
 
         # check screen bounds to make ball bounce
-        if ((self.position.y < 0 and self.direction.y < 0) or
-                (self.position.y > self.screen_size.y and self.direction.y > 0)):
+        if (self.position.y < 0 and self.direction.y < 0) or (
+            self.position.y > self.screen_size.y and self.direction.y > 0
+        ):
             self.direction.y = -self.direction.y
 
-        if (self.position.x < 0 or self.position.x > self.screen_size.x):
+        if self.position.x < 0 or self.position.x > self.screen_size.x:
             for_left = self.position.x > 0
             self.get_parent().update_score(for_left)
             self._reset_ball(for_left)
 
     def bounce(self, left, random):
         # using sync because both players can make it bounce
-        if (left):
+        if left:
             self.direction.x = abs(self.direction.x)
         else:
             self.direction.x = -abs(self.direction.x)

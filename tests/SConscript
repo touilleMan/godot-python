@@ -1,0 +1,17 @@
+Import("env")
+
+
+if env["pytest_args"]:
+    pytest_args = " ".join(f"--pytest={arg}" for arg in env["pytest_args"].split())
+else:
+    pytest_args = ""
+
+
+for test in ['bindings', 'helloworld', 'work_with_gdscript']:
+    dist_symlink = env.Symlink(f"{test}/pythonscript", "$DIST_ROOT/pythonscript")
+    target = env.Command(
+        test,
+        ["$godot_binary", dist_symlink],
+        "${SOURCE} --path ${TARGET} " + pytest_args,
+    )
+    env.AlwaysBuild(target)

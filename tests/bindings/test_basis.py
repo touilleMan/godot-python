@@ -123,9 +123,7 @@ def test_methods(field, ret_type, params):
 
 
 @pytest.mark.parametrize(
-    "field,ret_type",
-    [("x", Vector3), ("y", Vector3), ("z", Vector3)],
-    ids=lambda x: x[0],
+    "field,ret_type", [("x", Vector3), ("y", Vector3), ("z", Vector3)], ids=lambda x: x[0]
 )
 def test_properties(field, ret_type):
     v = Basis()
