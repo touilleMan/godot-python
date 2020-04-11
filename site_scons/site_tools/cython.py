@@ -36,14 +36,27 @@ CythonToCBuilder = Builder(
 ### C compilation to .so ###
 
 
-def _get_relative_path_to_libpython(env, target):
+def _get_hops_to_site_packages(target):
     *parts, _ = target.abspath.split("/")
     # Modules installed in `site-packages` come from `pythonscript` folder
-    hops_to_site_packages = len(
+    return len(
         list(takewhile(lambda part: part != "pythonscript", reversed(parts)))
     )
-    # Path should be `lib/python3.7/site-packages/` with `lib/libpython3.so`
+
+
+def _get_relative_path_to_libpython(env, target):
+    hops_to_site_packages = _get_hops_to_site_packages(target)
+    # site_packages is in `<platform>/lib/python3.7/site-packages/`
+    # and libpython in `<platform>/lib/libpython3.so`
     hops_to_libpython_dir = hops_to_site_packages + 2
+    return "/".join([".."] * hops_to_libpython_dir)
+
+
+def _get_relative_path_to_libpythonscript(env, target):
+    hops_to_site_packages = _get_hops_to_site_packages(target)
+    # site_packages is in `<platform>/lib/python3.7/site-packages/`
+    # and libpythonscript in `<platform>/libpythonscript.so`
+    hops_to_libpython_dir = hops_to_site_packages + 3
     return "/".join([".."] * hops_to_libpython_dir)
 
 
@@ -69,7 +82,15 @@ def CythonCompile(env, target, source):
             # LIBPATH=[*env['CYTHON_LIBPATH'], *env['LIBPATH']]
         )
     else:  # x11&osx
+        # Cyton modules depend on libpython.so and libpythonscript.so
+        # given they won't be available in the default OS lib path we
+        # must provide their path to the linker
         libpython_path = _get_relative_path_to_libpython(env, env.File(target))
+        libpythonscript_path = _get_relative_path_to_libpythonscript(env, env.File(target))
+        linkflags = [
+            f"-Wl,-rpath,'$$ORIGIN/{libpython_path}'",
+            f"-Wl,-rpath,'$$ORIGIN/{libpythonscript_path}'",
+        ]
         # TODO: use scons `env.LoadableModule` for better macos support ?
         ret = env.SharedLibrary(
             target=target,
@@ -77,7 +98,7 @@ def CythonCompile(env, target, source):
             LIBPREFIX="",
             SHLIBSUFFIX=".so",
             CFLAGS=cflags,
-            LINKFLAGS=[f"-Wl,-rpath,'$$ORIGIN/{libpython_path}'", *env["LINKFLAGS"]],
+            LINKFLAGS=[*linkflags, *env["LINKFLAGS"]],
             LIBS=["python3.7m", "pythonscript"],
             # LIBS=[*env["CYTHON_LIBS"], *env["LIBS"]],
             # LIBPATH=[*env['CYTHON_LIBPATH'], *env['LIBPATH']]
