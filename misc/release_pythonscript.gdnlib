@@ -6,16 +6,18 @@ symbol_prefix="godot_"
 
 [entry]
 
-X11.64="res://pythonscript/x11-64-cpython/libpythonscript.so"
-X11.32="res://pythonscript/x11-32-cpython/libpythonscript.so"
-Windows.64="res://pythonscript/windows-64-cpython/pythonscript.dll"
-Windows.32="res://pythonscript/windows-32-cpython/pythonscript.dll"
-OSX.64="res://pythonscript/osx-64-cpython/libpythonscript.dylib"
+X11.64="res://pythonscript/x11-64/libpythonscript.so"
+X11.32="res://pythonscript/x11-32/libpythonscript.so"
+Server.64="res://pythonscript/x11-64/libpythonscript.so"
+Windows.64="res://pythonscript/windows-64/pythonscript.dll"
+Windows.32="res://pythonscript/windows-32/pythonscript.dll"
+OSX.64="res://pythonscript/osx-64/libpythonscript.dylib"
 
 [dependencies]
 
 X11.64=[]
 X11.32=[]
+Server.64=[]
 Windows.64=[]
 Windows.32=[]
 OSX.64=[]
