@@ -75,10 +75,10 @@ jobs:
       set -eux
       scons build
     displayName: 'Build project'
-  # - bash: |
-  #     set -eux
-  #     scons tests
-  #   displayName: 'Run tests'
+  - bash: |
+      set -eux
+      scons tests
+    displayName: 'Run tests'
   - bash: |
       scons release
       mkdir export && cp build/godot-python-*.zip export
