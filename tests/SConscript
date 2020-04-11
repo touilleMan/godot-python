@@ -1,10 +1,16 @@
 Import("env")
 
 
-if env["pytest_args"]:
-    pytest_args = " ".join(f"--pytest={arg}" for arg in env["pytest_args"].split())
+if env["debugger"]:
+    cmd_prefx = f"{env['debugger']} -ex r --args "
 else:
-    pytest_args = ""
+    cmd_prefx = ""
+
+
+if env["pytest_args"]:
+    cmd_suffix = " ".join(f"--pytest={arg}" for arg in env["pytest_args"].split())
+else:
+    cmd_suffix = ""
 
 
 for test in ['bindings', 'helloworld', 'work_with_gdscript']:
@@ -12,6 +18,6 @@ for test in ['bindings', 'helloworld', 'work_with_gdscript']:
     target = env.Command(
         test,
         ["$godot_binary", dist_symlink],
-        "${SOURCE} --path ${TARGET} " + pytest_args,
+        cmd_prefx + "${SOURCE} --path ${TARGET} " + cmd_suffix,
     )
     env.AlwaysBuild(target)
