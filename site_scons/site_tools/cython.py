@@ -39,9 +39,7 @@ CythonToCBuilder = Builder(
 def _get_hops_to_site_packages(target):
     *parts, _ = target.abspath.split("/")
     # Modules installed in `site-packages` come from `pythonscript` folder
-    return len(
-        list(takewhile(lambda part: part != "pythonscript", reversed(parts)))
-    )
+    return len(list(takewhile(lambda part: part != "pythonscript", reversed(parts))))
 
 
 def _get_relative_path_to_libpython(env, target):
