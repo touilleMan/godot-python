@@ -114,8 +114,14 @@ if not env["shitty_compiler"]:
     if env["debug"]:
         env.Append(CFLAGS=["-g", "-ggdb"])
         env.Append(LINKFLAGS=["-g", "-ggdb"])
+    else:
+        env.Append(CFLAGS=["-O2"])
 else:
-    env.Append(CFLAGS=["/WX", "/W2"])
+    if env["debug"]:
+        env.Append(CFLAGS=["/DEBUG"])
+        env.Append(LINKFLAGS=["/DEBUG"])
+    else:
+        env.Append(CFLAGS=["/WX", "/W2"])
 
 
 env["DIST_ROOT"] = Dir(f"build/dist")
