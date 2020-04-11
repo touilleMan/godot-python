@@ -31,13 +31,27 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
     @staticmethod
     cdef inline Object cast_from_variant(const godot_variant *p_gdvar):
         cdef godot_object *ptr = gdapi10.godot_variant_as_object(p_gdvar)
-        cdef object obj = Object.from_ptr(ptr)
-        return globals()[str(obj.get_class())]._from_ptr(<size_t>ptr)
+        # Retreive class
+        cdef GDString classname = GDString.__new__(GDString)
+        gdapi10.godot_method_bind_ptrcall(
+            __methbind__Object__get_class,
+            ptr,
+            NULL,
+            &classname._gd_data
+        )
+        return globals()[str(classname)]._from_ptr(<size_t>ptr)
 
     @staticmethod
     cdef inline Object cast_from_ptr(godot_object *ptr):
-        cdef object obj = Object.from_ptr(ptr)
-        return globals()[str(obj.get_class())]._from_ptr(<size_t>ptr)
+        # Retreive class
+        cdef GDString classname = GDString.__new__(GDString)
+        gdapi10.godot_method_bind_ptrcall(
+            __methbind__Object__get_class,
+            ptr,
+            NULL,
+            &classname._gd_data
+        )
+        return globals()[str(classname)]._from_ptr(<size_t>ptr)
 
     def __eq__(self, other):
         try:
