@@ -36,7 +36,9 @@ vars.Add(
     )
 )
 vars.Add("pytest_args", "Pytest arguments passed to tests functions", "")
-vars.Add("godot_args", "Additional arguments passed to godot binary when running tests&examples", "")
+vars.Add(
+    "godot_args", "Additional arguments passed to godot binary when running tests&examples", ""
+)
 vars.Add("release_suffix", "Suffix to add to the release archive", extract_version())
 vars.Add("godot_binary", "Path to Godot main binary", "")
 vars.Add("gdnative_include_dir", "Path to GDnative include directory", "")
