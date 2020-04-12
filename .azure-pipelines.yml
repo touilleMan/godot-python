@@ -77,7 +77,7 @@ jobs:
     displayName: 'Build project'
   - bash: |
       set -eux
-      scons tests
+      scons tests godot_args="--verbose --video-driver GLES2"
     displayName: 'Run tests'
   - bash: |
       scons release
