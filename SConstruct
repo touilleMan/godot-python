@@ -138,7 +138,7 @@ env.Command(
     source=f"#/misc/release_pythonscript.gdnlib",
     action=Copy("$TARGET", "$SOURCE"),
 )
-env.Command(target="$DIST_ROOT/pythonscript/.godotignore", source=None, action=Touch("$TARGET"))
+env.Command(target="$DIST_ROOT/pythonscript/.gdignore", source=None, action=Touch("$TARGET"))
 
 
 ### Load sub scons scripts ###
