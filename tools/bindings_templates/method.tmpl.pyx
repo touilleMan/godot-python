@@ -98,12 +98,11 @@ gdapi10.godot_variant_destroy(&__var_{{ arg["name"] }})
 {% if method["return_type"] == "void" %}
 {% set retval_as_arg = "NULL" %}
 {% elif method["return_type_specs"]["is_object"] %}
-# Currently return value must be initialized given it will freed before being set by Godot...
-# (see https://github.com/godotengine/godot/issues/35609 and https://github.com/godotengine/godot/issues/34264)
-# So we init retval with a dummy memory area that represent a fake godot object ready to be freed
-# This is indeed a big shameful hack :'(
-cdef uint64_t dummy = 0
-cdef godot_object *{{ retval }} = &dummy
+# It's important to initialize this pointer to null given
+# in case of Reference, Godot will try to decrease the
+# refcount if the pointer is valid !
+# (see https://github.com/godotengine/godot/issues/35609)
+cdef godot_object *{{ retval }} = NULL
 {% set retval_as_arg = "&{}".format(retval) %}
 {% elif method["return_type"] == "godot_variant" %}
 cdef godot_variant {{ retval }}
