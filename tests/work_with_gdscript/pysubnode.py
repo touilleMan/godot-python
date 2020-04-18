@@ -16,7 +16,7 @@ class PySubNode(PyNode):
         return self._sub_ready_called
 
     def overloaded_by_child_meth(self, attr):
-        return "sub:" + attr
+        return f"sub:{attr}"
 
     @export(str, default="default")
     @property
@@ -25,4 +25,4 @@ class PySubNode(PyNode):
 
     @overloaded_by_child_prop.setter
     def overloaded_by_child_prop(self, value):
-        self._overloaded_by_child_prop_value = "sub:" + value
+        self._overloaded_by_child_prop_value = f"sub:{value}"

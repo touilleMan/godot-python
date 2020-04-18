@@ -1,6 +1,6 @@
 import pytest
 
-from godot.bindings import ResourceLoader
+from godot import ResourceLoader
 
 import pymain
 

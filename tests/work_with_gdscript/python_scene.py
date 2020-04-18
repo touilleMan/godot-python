@@ -1,5 +1,4 @@
-from godot import exposed, export
-from godot.bindings import Node2D
+from godot import exposed, export, Node2D
 
 
 @exposed

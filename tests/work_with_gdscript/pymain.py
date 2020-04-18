@@ -3,8 +3,7 @@
 import os
 import pytest
 
-from godot import exposed
-from godot.bindings import Node, OS
+from godot import exposed, Node, OS
 
 
 root_node = None

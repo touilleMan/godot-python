@@ -3,7 +3,7 @@
 #       - overload native method ?
 import pytest
 
-from godot.bindings import ResourceLoader, GDScript, PluginScript
+from godot import GDString, ResourceLoader, GDScript, PluginScript
 
 
 def test_native_method(node):
@@ -11,7 +11,7 @@ def test_native_method(node):
     try:
         node.set_name("foo")
         name = node.get_name()
-        assert name == "foo"
+        assert name == GDString("foo")
     finally:
         node.set_name(original_name)
 
@@ -41,12 +41,12 @@ def test_subnode_ready_called(subnode):
 
 def test_method_call(anynode):
     ret = anynode.meth("foo")
-    assert ret == "foo"
+    assert ret == GDString("foo")
 
 
 def test_overloaded_method_call(subnode):
     ret = subnode.overloaded_by_child_meth("foo")
-    assert ret == "sub:foo"
+    assert ret == GDString("sub:foo")
 
 
 def test_property_without_default_value(anynode):
@@ -76,17 +76,17 @@ def test_overloaded_property(pynode, pysubnode):
     # Parent property
     pynode.overloaded_by_child_prop = "foo"
     value = pynode.overloaded_by_child_prop
-    assert value == "foo"
+    assert value == GDString("foo")
 
     # Overloaded property
     pysubnode.overloaded_by_child_prop = "foo"
     value = pysubnode.overloaded_by_child_prop
-    assert value == "sub:foo"
+    assert value == GDString("sub:foo")
 
 
 def test_static_method_call(node):
     value = node.static_meth("foo")
-    assert value == "static:foo"
+    assert value == GDString("static:foo")
 
 
 @pytest.mark.parametrize(

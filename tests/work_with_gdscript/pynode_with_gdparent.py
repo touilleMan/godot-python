@@ -1,5 +1,4 @@
-from godot import exposed
-from godot.bindings import ResourceLoader
+from godot import exposed, ResourceLoader
 
 
 GDNode = ResourceLoader.load("res://gdnode.gd", "", False)

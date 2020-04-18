@@ -77,7 +77,7 @@ SAMPLE_CLASSES = {
     # "_Geometry",
     # "_JSON",
     "_OS",
-    # "_ResourceLoader",
+    "_ResourceLoader",
     # "_ResourceSaver",
     # "_VisualScriptEditor",
 }

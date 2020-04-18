@@ -1,5 +1,4 @@
-from godot import exposed, export
-from godot.bindings import Node
+from godot import exposed, export, Node
 
 
 @exposed
@@ -21,7 +20,7 @@ class PyNode(Node):
 
     @staticmethod
     def static_meth(attr):
-        return "static:" + attr
+        return f"static:{attr}"
 
     prop = export(int)
 
