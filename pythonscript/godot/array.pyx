@@ -176,15 +176,15 @@ cdef class Array:
                 return False
         return True
 
-    def __eq__(self, Array other):
+    def __eq__(self, other):
         try:
-            return Array.operator_equal(self, other)
+            return Array.operator_equal(self, <Array?>other)
         except TypeError:
             return False
 
     def __ne__(self, other):
         try:
-            return not Array.operator_equal(self, other)
+            return not Array.operator_equal(self, <Array?>other)
         except TypeError:
             return True
 

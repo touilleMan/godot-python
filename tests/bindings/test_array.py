@@ -32,6 +32,7 @@ def test_equal(current_node):
     assert arr == other
     bad = Array([0, 0, 0])
     assert not arr == bad  # Force use of __eq__
+    assert not arr == None  # Force use of __eq__
 
 
 @pytest.mark.parametrize(

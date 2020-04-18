@@ -17,6 +17,7 @@ def test_equal():
     assert arr == other
     bad = Dictionary({"a": 1})
     assert not arr == bad  # Force use of __eq__
+    assert not arr == None  # Force use of __eq__
 
 
 @pytest.mark.parametrize("arg", [None, 0, "foo", Vector2(), {"a": 1}, Dictionary({"b": 2})])
@@ -161,6 +162,7 @@ def test_in():
     assert "a" in v
     assert 2 in v
     assert "dummy" not in v
+    assert None not in v
 
 
 def test_hash():

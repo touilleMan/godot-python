@@ -113,21 +113,6 @@ cdef class Dictionary:
     def __deepcopy__(self):
         return self.duplicate(True)
 
-    def __eq__(self, Dictionary other):
-        try:
-            return Dictionary.operator_equal(self, other)
-        except TypeError:
-            return False
-
-    def __ne__(self, object other):
-        try:
-            return not Dictionary.operator_equal(self, other)
-        except TypeError:
-            return False
-
-    def __contains__(self, object key):
-        return Dictionary.operator_contains(self, key)
-
     def get(self, object key, object default=None):
         cdef godot_variant var_key
         pyobj_to_godot_variant(key, &var_key)
@@ -178,21 +163,23 @@ cdef class Dictionary:
             yield godot_variant_to_pyobj(p_key), godot_variant_to_pyobj(p_value)
 
     cdef inline bint operator_equal(self, Dictionary other):
+        if other is None:
+            return False
         cdef godot_int size = self.size()
         if size != other.size():
             return False
         # TODO: gdnative should provide a function to do that
         return dict(self) == dict(other)
 
-    def __eq__(self, Dictionary other):
+    def __eq__(self, other):
         try:
-            return Dictionary.operator_equal(self, other)
+            return Dictionary.operator_equal(self, <Dictionary?>other)
         except TypeError:
             return False
 
     def __ne__(self, other):
         try:
-            return not Dictionary.operator_equal(self, other)
+            return not Dictionary.operator_equal(self, <Dictionary?>other)
         except TypeError:
             return True
 
