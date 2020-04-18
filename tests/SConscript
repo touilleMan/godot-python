@@ -21,3 +21,6 @@ for test in ['bindings', 'helloworld', 'work_with_gdscript']:
         cmd_prefx + "${SOURCE} ${godot_args} --path ${TARGET} " + cmd_suffix,
     )
     env.AlwaysBuild(target)
+
+
+env.Alias('test', 'bindings')
