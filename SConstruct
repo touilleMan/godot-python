@@ -92,7 +92,6 @@ Help(vars.GenerateHelpText(env))
 # ImportVirtualenv(env)
 
 
-env["bindings_generate_sample"] = True
 if env["gdnative_include_dir"]:
     env["gdnative_include_dir"] = Dir(env["gdnative_include_dir"])
 else:
