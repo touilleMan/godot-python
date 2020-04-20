@@ -5,7 +5,7 @@ for test in ['pong', 'pong_multiplayer']:
     target = env.Command(
         test,
         ["$godot_binary", dist_symlink],
-        "${SOURCE} --path ${TARGET}",
+        "${SOURCE.abspath} --path ${TARGET}",
     )
     env.AlwaysBuild(target)
 
