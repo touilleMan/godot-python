@@ -17,11 +17,12 @@ from godot._hazmat.gdnative_api_struct cimport (
 from godot._hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_verbose
 from godot.builtins cimport GDString
 
-import os
 import sys
 
-import godot
+# OS and ProjectSettings are singletons exposed as global python objects,
+# hence there are not available from a cimport
 from godot.bindings import OS, ProjectSettings
+from godot._version import __version__ as pythonscript_version
 
 
 def _setup_config_entry(name, default_value):
@@ -55,7 +56,7 @@ cdef api godot_pluginscript_language_data *pythonscript_init():
     # Finally proudly print banner ;-)
     if _setup_config_entry("python_script/print_startup_info", True):
         cooked_sys_version = '.'.join(map(str, sys.version_info))
-        print(f"Pythonscript {godot.__version__} (CPython {cooked_sys_version})")
+        print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})")
 
     if get_pythonscript_verbose():
         print(f"PYTHONPATH: {sys.path}")
