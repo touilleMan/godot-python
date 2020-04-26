@@ -41,7 +41,7 @@ cdef api godot_pluginscript_language_data *pythonscript_init():
     pythonpath = str(_setup_config_entry("python_script/path", "res://;res://lib"))
     for p in pythonpath.split(";"):
         p = ProjectSettings.globalize_path(GDString(p))
-        sys.path.append(str(p))
+        sys.path.insert(0, str(p))
 
     # TODO
     # Redirect stdout/stderr to have it in the Godot editor console
