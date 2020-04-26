@@ -28,7 +28,7 @@ SConscript([
 ])
 
 
-module, *_ = env.CythonModule(['_godot', '_godot_api.h'], [
+*mods, _ = env.CythonModule(['_godot', '_godot_api.h'], [
     '_godot.pyx',
     '_godot_editor.pxi',
     '_godot_instance.pxi',
@@ -37,5 +37,5 @@ module, *_ = env.CythonModule(['_godot', '_godot_api.h'], [
 ])
 env.Install(
     "$DIST_SITE_PACKAGES",
-    module
+    mods
 )
