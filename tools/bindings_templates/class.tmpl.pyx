@@ -1,5 +1,21 @@
 {% from 'property.tmpl.pyx' import render_property %}
-{% from 'method.tmpl.pyx' import render_method, render_method_bind_register %}
+{% from 'method.tmpl.pyx' import render_method, get_method_bind_register_name %}
+
+
+{% macro render_class_gdapi_ptrs_init(cls) %}
+
+{% if not cls["singleton"] %}
+global __{{ cls["name"] }}_constructor
+__{{ cls["name"] }}_constructor = gdapi10.godot_get_class_constructor("{{ cls['name'] }}")
+{% endif %}
+
+{% for method in cls["methods"] %}
+global {{ get_method_bind_register_name(cls, method) }}
+{{ get_method_bind_register_name(cls, method) }} = gdapi10.godot_method_bind_get_method("{{ cls['bind_register_name'] }}", "{{ method['name'] }}")
+{% endfor %}
+
+{% endmacro %}
+
 
 {# TODO: Handle signals #}
 {% macro render_class(cls) %}
@@ -9,11 +25,11 @@ from cpython.object cimport PyObject_GenericGetAttr, PyObject_GenericSetAttr
 {% endif %}
 
 {% if not cls["singleton"] %}
-cdef godot_class_constructor __{{ cls["name"] }}_constructor = gdapi10.godot_get_class_constructor("{{ cls['name'] }}")
+cdef godot_class_constructor __{{ cls["name"] }}_constructor = NULL
 {% endif %}
 
 {% for method in cls["methods"] %}
-{{ render_method_bind_register(cls, method) }}
+cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = NULL
 {% endfor %}
 
 cdef class {{ cls["name"] }}({{ cls["base_class"] }}):

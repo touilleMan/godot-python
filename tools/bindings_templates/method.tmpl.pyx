@@ -3,11 +3,6 @@ __methbind__{{ cls["name"] }}__{{ method["name"] }}
 {%- endmacro %}
 
 
-{% macro render_method_bind_register(cls, method) %}
-cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = gdapi10.godot_method_bind_get_method("{{ cls['bind_register_name'] }}", "{{ method['name'] }}")
-{%- endmacro %}
-
-
 {% macro render_method_c_signature(method) %}
 {{ method["return_type"] }} {{ method["name"] }}(self,
 {%- for arg in method["arguments"] %}

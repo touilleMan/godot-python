@@ -33,7 +33,7 @@ from godot._hazmat.internal cimport (
     get_exposed_class,
     destroy_exposed_class,
 )
-from godot.bindings cimport Object
+from godot.bindings cimport _initialize_bindings, Object
 from godot.builtins cimport Array, Dictionary
 
 import inspect
@@ -142,6 +142,11 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
     const godot_string *p_source,
     godot_error *r_error
 ):
+    # Godot class&singleton are not all available at Pythonscript bootstrap.
+    # Hence we wait until the Pythonscript start being actually used (i.e. until
+    # the first Python script is loaded) before initializing the bindings.
+    _initialize_bindings()
+
     cdef object path = godot_string_to_pyobj(p_path)
     if get_pythonscript_verbose():
         print(f"Loading python script from {path}")

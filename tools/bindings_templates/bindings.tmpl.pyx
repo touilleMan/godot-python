@@ -8,15 +8,59 @@ from godot.builtins cimport *
 
 ### Classes ###
 
-{% from 'class.tmpl.pyx' import render_class -%}
+{% from 'class.tmpl.pyx' import render_class, render_class_gdapi_ptrs_init -%}
 {%- for cls in classes %}
 {{ render_class(cls) }}
 {%- endfor %}
 
-### Singletons ###
-
-{% include "singletons.tmpl.pyx" %}
-
 ### Global constants ###
 
-{% include "global_constants.tmpl.pyx" %}
+{% for key, value in constants.items() %}
+{{key}} = {{value}}
+{% endfor %}
+
+### Class&singletons needed for Pythonscript bootstrap ###
+
+# Godot classes&singletons are not all available when loading Pythonscript.
+# Hence greedy loading is done only for items needed for Pythonscript
+# bootstrap.
+# The remaining loading will be achieved when loading the first python script
+# (where at this point Godot should have finished it initialization).
+
+{% set early_needed_bindings = ["_OS", "_ProjectSettings"] %}
+cdef godot_object *_ptr
+{% for cls in classes %}
+{% if cls["name"] in early_needed_bindings %}
+{{ render_class_gdapi_ptrs_init(cls) }}
+{% if cls["singleton"] %}
+_ptr = gdapi10.godot_global_get_singleton("{{ cls['singleton_name'] }}")
+if _ptr != NULL:
+    {{ cls['singleton_name'] }} = {{ cls["name"] }}.from_ptr(_ptr)
+else:
+    print("ERROR: cannot load singleton `{{ cls['singleton_name'] }}` required for Pythonscript init")
+{% endif %}
+{% endif %}
+{% endfor %}
+
+### Remining bindings late intialization ###
+
+cdef bint _bindings_initialized = False
+
+cdef void _initialize_bindings():
+    global _bindings_initialized
+    if _bindings_initialized:
+        return
+
+    cdef godot_object *ptr
+{%- for cls in classes %}
+{%- if cls["name"] not in early_needed_bindings %}
+    {{ render_class_gdapi_ptrs_init(cls)  | indent }}
+{%- if cls["singleton"] %}
+    ptr = gdapi10.godot_global_get_singleton("{{ cls['singleton_name'] }}")
+    if ptr != NULL:
+        globals()["{{ cls['singleton_name'] }}"] = {{ cls["name"] }}.from_ptr(ptr)
+{%- endif %}
+{%- endif %}
+{%- endfor %}
+
+    _bindings_initialized = True

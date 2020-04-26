@@ -9,3 +9,5 @@ from godot.builtins cimport *
 {%- for cls in classes %}
 {{ render_class_pxd(cls) }}
 {%- endfor %}
+
+cdef void _initialize_bindings()
