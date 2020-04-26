@@ -28,6 +28,8 @@ SConscript([
 ])
 
 
+# `_godot_api.h` is only for internal use between _godot and pythonscript
+# libraries, hence no need to provide it as part of the release
 *mods, _ = env.CythonModule(['_godot', '_godot_api.h'], [
     '_godot.pyx',
     '_godot_editor.pxi',
