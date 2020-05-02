@@ -62,8 +62,8 @@ jobs:
   - bash: |
       set -eux
       python --version
-      pip install -U pip
-      pip install -r requirements.txt
+      python -m pip install --user -U pip
+      python -m pip install --user -r requirements.txt
       # Configuration for scons
       echo 'platform = "$(PLATFORM)"' >> custom.py
       echo 'bindings_generate_sample = True' >> custom.py
