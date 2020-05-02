@@ -46,19 +46,27 @@ else:
 
 cdef bint _bindings_initialized = False
 
+{% for cls in classes %}
+{% if cls["name"] not in early_needed_bindings %}
+{% if cls["singleton"] %}
+{{ cls['singleton_name'] }} = {{ cls["name"] }}.from_ptr(NULL)
+{% endif %}
+{% endif %}
+{% endfor %}
+
 cdef void _initialize_bindings():
     global _bindings_initialized
     if _bindings_initialized:
         return
 
-    cdef godot_object *ptr
 {%- for cls in classes %}
 {%- if cls["name"] not in early_needed_bindings %}
     {{ render_class_gdapi_ptrs_init(cls)  | indent }}
 {%- if cls["singleton"] %}
-    ptr = gdapi10.godot_global_get_singleton("{{ cls['singleton_name'] }}")
-    if ptr != NULL:
-        globals()["{{ cls['singleton_name'] }}"] = {{ cls["name"] }}.from_ptr(ptr)
+    global {{ cls['singleton_name'] }}
+    (<{{ cls["name"] }}>{{ cls['singleton_name'] }})._gd_ptr = gdapi10.godot_global_get_singleton("{{ cls['singleton_name'] }}")
+    if (<{{ cls["name"] }}>{{ cls['singleton_name'] }})._gd_ptr == NULL:
+        print('Cannot retreive singleton {{ cls['singleton_name'] }}')
 {%- endif %}
 {%- endif %}
 {%- endfor %}
