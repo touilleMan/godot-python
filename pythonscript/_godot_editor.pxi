@@ -33,8 +33,7 @@ cdef api godot_string pythonscript_get_template_source_code(
         class_name = godot_string_to_pyobj(p_class_name)
     cdef str base_class_name = godot_string_to_pyobj(p_base_class_name)
     cdef str src = f"""from godot import exposed, export
-from godot.bindings import *
-from godot.globals import *
+from godot import *
 
 
 @exposed
