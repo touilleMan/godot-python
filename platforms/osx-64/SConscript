@@ -47,6 +47,9 @@ env.Command(
     (
         "cd ${SOURCE} && "
         "echo Configuring CPython... && "
+        'export PKG_CONFIG_PATH="$$(brew --prefix openssl)/lib/pkgconfig" && '
+        'export CPPFLAGS="-I$$(brew --prefix readline)/include" && '
+        'export LDFLAGS="-L$$(brew --prefix readline)/lib" && '
         "1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} && "
         "echo Building CPython... && "
         "1>/dev/null make -j4 && "
