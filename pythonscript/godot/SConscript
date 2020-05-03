@@ -90,7 +90,9 @@ bindings_env = env.Clone()
 sample = env['bindings_generate_sample']
 
 if not sample:
-    if not env["shitty_compiler"]:
+    # `--strip-all` doesn't seem to be available on macOS (see
+    # https://github.com/touilleMan/godot-python/issues/165#issuecomment-619472936)
+    if env["platform"].startswith('x11'):
         bindings_env.AppendUnique(LINKFLAGS=["-Wl,--strip-all"])
 
 if sample:
