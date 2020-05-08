@@ -1,14 +1,22 @@
 Import('env')
 
-
 c_env = env.Clone()
 if env['platform'].startswith('windows'):
     c_env.AppendUnique(LIBS=["python37"])
-else:  # x11&osx
+
+elif env['platform'].startswith('osx'):
+    c_env.AppendUnique(LIBS=["python3.7m"])
+    # if we don't give the lib a proper install_name, macos won't be able to find it,
+    # and will link the cython modules with a relative path
+    c_env.AppendUnique(LINKFLAGS=["-Wl,-rpath,'@loader_path/lib'", "-install_name", "@rpath/libpythonscript.dylib"])
+    c_env.AppendUnique(CFLAGS=['-Werror-implicit-function-declaration'])
+
+else:  # x11
     c_env.AppendUnique(LIBS=["python3.7m"])
     c_env.AppendUnique(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
     c_env.AppendUnique(CFLAGS=['-Werror-implicit-function-declaration'])
 c_env.Depends('pythonscript.c', env['cpython_build'])
+
 libpythonscript, *_ = c_env.SharedLibrary('pythonscript', [
     'pythonscript.c',
 ])

@@ -162,7 +162,7 @@ For MacOS:
 
 .. code-block:: bash
 
-	godot-python(venv)$ scons platform=osx-64 release
+	godot-python(venv)$ scons platform=osx-64 CC=clang release
 
 Valid platforms are `x11-64`, `x11-32`, `windows-64`, `windows-32` and `osx-64`.
 Check Travis or Appveyor links above to see the current status of your platform.
