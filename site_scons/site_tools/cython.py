@@ -83,7 +83,7 @@ def CythonCompile(env, target, source):
         # Cyton modules depend on libpython.so and libpythonscript.so
         # given they won't be available in the default OS lib path we
         # must provide their path to the linker
-        loader_token = '@loader_path' if env["platform"].startswith("osx") else '$$ORIGIN'
+        loader_token = "@loader_path" if env["platform"].startswith("osx") else "$$ORIGIN"
         libpython_path = _get_relative_path_to_libpython(env, env.File(target))
         libpythonscript_path = _get_relative_path_to_libpythonscript(env, env.File(target))
         linkflags = [
