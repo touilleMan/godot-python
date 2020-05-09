@@ -57,6 +57,7 @@ vars.Add("CC", "C compiler")
 vars.Add("CFLAGS", "Custom flags for the C compiler")
 vars.Add("LINK", "linker")
 vars.Add("LINKFLAGS", "Custom flags for the linker")
+vars.Add("OPENSSL_PATH", "Path to the root of openssl installation to link cpython against")
 vars.Add(
     "TARGET_ARCH", "Target architecture (Windows only) -- x86, x86_64, ia64. Default: host arch."
 )
