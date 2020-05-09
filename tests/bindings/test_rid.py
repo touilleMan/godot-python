@@ -8,40 +8,40 @@ def test_base():
     assert type(v) == RID
 
 
-def test_equal(generate_obj):
+def test_equal():
     v1 = RID()
     v2 = RID()
     assert v1 == v2
     # Environment is a Ressource which provides unique rid per instance
-    res_a = generate_obj(Environment)
+    res_a = Environment()
     v_a_1 = RID(res_a)
     assert v_a_1 != v1
     v_a_2 = RID(res_a)
     assert v_a_1 == v_a_2
-    res_b = generate_obj(Environment)
+    res_b = Environment()
     v_b = RID(res_b)
     assert not v_a_1 == v_b  # Force use of __eq__
 
 
 @pytest.mark.parametrize("arg", [None, 0, "foo"])
-def test_bad_equal(generate_obj, arg):
-    arr = RID(generate_obj(Environment))
+def test_bad_equal(arg):
+    arr = RID(Environment())
     assert arr != arg
 
 
-def test_bad_equal_with_rid(generate_obj):
+def test_bad_equal_with_rid():
     # Doing `RID(Environment())` will cause garbage collection of enclosed
     # Environment object and possible reuse of it id
-    env1 = generate_obj(Environment)
-    env2 = generate_obj(Environment)
+    env1 = Environment()
+    env2 = Environment()
     rid1 = RID(env1)
     rid2 = RID(env2)
     assert rid1 != rid2
 
 
-def test_lt(generate_obj):
-    env1 = generate_obj(Environment)
-    env2 = generate_obj(Environment)
+def test_lt():
+    env1 = Environment()
+    env2 = Environment()
     rid1 = RID(env1)
     rid2 = RID(env2)
     # Ordered is based on resource pointer, so cannot know the order ahead of time

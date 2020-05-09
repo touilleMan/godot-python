@@ -110,18 +110,20 @@ SUPPORTED_TYPES = {
 
 
 def patch_stuff(classes):
-    # See https://github.com/godotengine/godot/issues/34254
     for klass in classes:
-        if klass["name"] != "_OS":
-            continue
-        for meth in klass["methods"]:
-            if meth["name"] in (
-                "get_static_memory_usage",
-                "get_static_memory_peak_usage",
-                "get_dynamic_memory_usage",
-            ):
-                meth["return_type"] = "uint64_t"
-                meth["return_type_specs"]["binding_type"] = "uint64_t"
+        # TODO: Reference is refcounted but only it children got the is_reference flag
+        if klass["name"] == "Reference":
+            klass["is_reference"] = True
+        # See https://github.com/godotengine/godot/issues/34254
+        if klass["name"] == "_OS":
+            for meth in klass["methods"]:
+                if meth["name"] in (
+                    "get_static_memory_usage",
+                    "get_static_memory_peak_usage",
+                    "get_dynamic_memory_usage",
+                ):
+                    meth["return_type"] = "uint64_t"
+                    meth["return_type_specs"]["binding_type"] = "uint64_t"
 
 
 def strip_unsupported_stuff(classes):
@@ -183,14 +185,6 @@ def strip_unsupported_stuff(classes):
 def camel_to_snake(name):
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
-
-
-def patch_data(data):
-    for item in data:
-        # TODO: BulletPhysicsServer is not marked as a singleton but inherits PhysicsServer
-        if item["name"] == "BulletPhysicsServer":
-            item["singleton"] = True
-    return data
 
 
 def build_class_renames(data):

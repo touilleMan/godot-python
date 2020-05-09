@@ -39,7 +39,9 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         gdapi10.godot_object_destroy(self._gd_ptr)
 
     def __init__(self):
-        raise RuntimeError(f"Use `new()` method to instantiate Godot object.")
+        raise RuntimeError(
+            f"Use `new()` method to instantiate non-refcounted Godot object (and don't forget to free it !)"
+        )
 
     def __repr__(self):
         return f"<{type(self).__name__} wrapper on 0x{<size_t>self._gd_ptr:x}>"
@@ -131,6 +133,22 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% endif %}
 
 {% if not cls["singleton"] and cls["instanciable"] %}
+
+{% if cls["is_reference"] %}
+    def __init__(self):
+        if __{{ cls["name"] }}_constructor == NULL:
+            raise NotImplementedError(__ERR_MSG_BINDING_NOT_AVAILABLE)
+        self._gd_ptr = __{{ cls["name"] }}_constructor()
+        if self._gd_ptr is NULL:
+            raise MemoryError
+        cdef godot_bool __ret
+        gdapi10.godot_method_bind_ptrcall(
+            __methbind__Reference__init_ref,
+            self._gd_ptr,
+            NULL,
+            &__ret
+        )
+{% else %}
     @staticmethod
     def new():
         if __{{ cls["name"] }}_constructor == NULL:
@@ -140,20 +158,18 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         wrapper._gd_ptr = __{{ cls["name"] }}_constructor()
         if wrapper._gd_ptr is NULL:
             raise MemoryError
-{% if cls["is_reference"] %}
-        cdef godot_bool __ret
-        gdapi10.godot_method_bind_ptrcall(
-            __methbind__Reference__init_ref,
-            wrapper._gd_ptr,
-            NULL,
-            &__ret
-        )
-{% endif %}
         return wrapper
+{% endif %}
 
 {% if cls["name"] == "Reference" %}
+    @classmethod
+    def new(cls):
+        raise RuntimeError(f"Refcounted Godot object must be created with `{ cls.__name__ }()`")
+
     def __dealloc__(self):
         cdef godot_bool __ret
+        if self._gd_ptr == NULL:
+            return
         gdapi10.godot_method_bind_ptrcall(
             __methbind__Reference__unreference,
             self._gd_ptr,
@@ -163,6 +179,7 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         if __ret:
             gdapi10.godot_object_destroy(self._gd_ptr)
 {% endif %}
+
 {% endif %}
 
     @staticmethod

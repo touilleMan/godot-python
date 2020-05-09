@@ -124,22 +124,23 @@ def test_call_with_refcounted_return_value(current_node):
 
 def test_call_with_refcounted_param_value(generate_obj):
     node = generate_obj(Node)
-    script = PluginScript.new()
+    script = PluginScript()
     node.set_script(script)
 
 
 def test_create_refcounted_value(current_node):
-    script1_ref1 = PluginScript.new()
-    script2_ref1 = PluginScript.new()
+    script1_ref1 = PluginScript()
+    script2_ref1 = PluginScript()
     script1_ref2 = script1_ref1
     script2_ref2 = script2_ref1
     del script1_ref1
 
 
 def test_late_initialized_bindings_and_float_param_ret():
-    # Float as tricky given they must be converted back and forth to double
-    obj = OpenSimplexNoise.new()
+    # OpenSimplexNoise is refcounted, so no need to create it with `generate_obj`
+    obj = OpenSimplexNoise()
 
+    # Float are tricky given they must be converted back and forth to double
     ret = obj.get_noise_1d(inf)
     assert ret == 0
 
@@ -151,3 +152,13 @@ def test_late_initialized_bindings_and_float_param_ret():
     # Now try with better parameter to have a correct return value
     ret = obj.get_noise_3d(100, 200, 300)
     assert ret == pytest.approx(-0.10482934)
+
+
+def test_bad_meth_to_create_non_refcounted_object():
+    with pytest.raises(RuntimeError):
+        Node()
+
+
+def test_bad_meth_to_create_refcounted_object():
+    with pytest.raises(RuntimeError):
+        OpenSimplexNoise.new()
