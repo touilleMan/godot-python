@@ -1,3 +1,7 @@
+.. image:: https://img.shields.io/azure-devops/tests/godot-python/godot-python/1/master.svg
+    :target: https://dev.azure.com/godot-python/godot-python/_build?definitionId=1&_a=summary
+    :alt: Azure DevOps tests
+
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
    :target: https://github.com/ambv/black
    :alt: Code style: black
