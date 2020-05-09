@@ -162,6 +162,7 @@ jobs:
       echo 'CC = "$(CC)"' >> custom.py
       echo "CFLAGS = '-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include'" >> custom.py
       echo "LDFLAGS = '-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib'" >> custom.py
+      cat custom.py
     displayName: 'Setup venv'
   - bash: |
       set -eux
