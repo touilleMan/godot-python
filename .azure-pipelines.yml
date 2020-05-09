@@ -150,10 +150,9 @@ jobs:
   - bash: |
       set -eux
       $CC --version
-      xcode-select --install
       python --version
       brew update
-      brew install zlib openssl
+      brew install zlib openssl xquartz
       pip install -U pip
       pip install -r requirements.txt
       # Configuration for scons
