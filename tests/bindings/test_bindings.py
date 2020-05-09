@@ -1,7 +1,9 @@
 import pytest
+from math import inf
+from struct import unpack
 
 import godot
-from godot import Vector3, Object, Node, Node2D, PluginScript, OK
+from godot import Vector3, Object, Node, Node2D, PluginScript, OpenSimplexNoise, OK
 
 
 def test_free_node():
@@ -132,3 +134,20 @@ def test_create_refcounted_value(current_node):
     script1_ref2 = script1_ref1
     script2_ref2 = script2_ref1
     del script1_ref1
+
+
+def test_late_initialized_bindings_and_float_param_ret():
+    # Float as tricky given they must be converted back and forth to double
+    obj = OpenSimplexNoise.new()
+
+    ret = obj.get_noise_1d(inf)
+    assert ret == 0
+
+    # Build a double number that cannot be reprented on a float
+    double_only_number, = unpack("!d", b"\x11" * 8)
+    ret = obj.get_noise_1d(double_only_number)
+    assert ret == pytest.approx(-0.02726514)
+
+    # Now try with better parameter to have a correct return value
+    ret = obj.get_noise_3d(100, 200, 300)
+    assert ret == pytest.approx(-0.10482934)
