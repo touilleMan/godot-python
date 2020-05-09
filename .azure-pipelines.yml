@@ -152,7 +152,8 @@ jobs:
       $CC --version
       python --version
       brew update
-      brew install zlib openssl xquartz
+      brew install zlib openssl
+      brew cask install xquartz
       pip install -U pip
       pip install -r requirements.txt
       # Configuration for scons
