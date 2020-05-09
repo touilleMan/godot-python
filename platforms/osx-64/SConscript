@@ -46,15 +46,15 @@ env.Command(
     (
         "cd ${SOURCE} && "
         "echo Configuring CPython... && "
-        '1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} LDFLAGS="-rpath @loader_path/lib" && '
+        './configure --enable-shared --prefix=${TARGET.get_abspath()} LDFLAGS="-rpath @loader_path/lib" && '
         "echo Building CPython... && "
         # Running the python setup inside a virtualenv gets python confused...
         # setting sys._home to None seems to fix the problem.
         # this seems to be a bug in cpython: https://bugs.python.org/issue15366
         "sed -i -e '1s/^/import sys;sys._home=None;/' ${SOURCE.get_abspath()}/setup.py &&"
-        "1>/dev/null make -j4 && "
+        "make -j4 && "
         "echo Installing CPython in ${TARGET.get_abspath()}... && "
-        "1>/dev/null make -j4 install &&"
+        "make -j4 install &&"
         # MacOS does not look for libs the same way other systems do.
         # Lib paths are hardcoded into the executable, and if the lib is not found at the path, then it craps out.
         # Unfortunately compiling python will hardcode the absolute path of libpython.dylib into the executable,
