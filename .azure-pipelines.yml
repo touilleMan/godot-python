@@ -14,121 +14,121 @@ jobs:
 #################################################################################
 
 
-- job: 'qa'
-  displayName: 'Q&A'
-  timeoutInMinutes: 5
-  pool:
-    vmImage: 'ubuntu-latest'
-  steps:
-  - checkout: self
-    submodules: true
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.7'
-  - bash: |
-      set -eux
-      python --version
-      pip install pre-commit
-    displayName: 'Bootstrap'
-  - bash: |
-      pre-commit run --all-files --show-diff-on-failure
-    displayName: 'Pre-commit hooks check'
+# - job: 'qa'
+#   displayName: 'Q&A'
+#   timeoutInMinutes: 5
+#   pool:
+#     vmImage: 'ubuntu-latest'
+#   steps:
+#   - checkout: self
+#     submodules: true
+#   - task: UsePythonVersion@0
+#     inputs:
+#       versionSpec: '3.7'
+#   - bash: |
+#       set -eux
+#       python --version
+#       pip install pre-commit
+#     displayName: 'Bootstrap'
+#   - bash: |
+#       pre-commit run --all-files --show-diff-on-failure
+#     displayName: 'Pre-commit hooks check'
 
 
 #################################################################################
 
 
-- job: 'Windows'
-  timeoutInMinutes: 60
-  pool:
-    vmImage: 'windows-latest'
-  strategy:
-    matrix:
-      "64bits":
-        PLATFORM: 'windows-64'
-        python.arch: 'x64'
-        vs.arch: 'amd64'
-      "32bits":
-        PLATFORM: 'windows-32'
-        python.arch: 'x86'
-        vs.arch: 'x86'
-  steps:
-  - checkout: self
-    submodules: true
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.7'
-      architecture: '$(python.arch)'
-  - bash: |
-      set -eux
-      python --version
-      python -m pip install --user -U pip
-      python -m pip install --user -r requirements.txt
-      xcode-select --install
-      # Configuration for scons
-      echo 'platform = "$(PLATFORM)"' >> custom.py
-      echo 'bindings_generate_sample = True' >> custom.py
-      echo 'MSVC_USE_SCRIPT = True' >> custom.py
-      echo 'TARGET_ARCH = "$(vs.arch)"' >> custom.py
-      echo 'CC = "cl.exe"' >> custom.py
-    displayName: 'Setup venv'
-  - bash: |
-      set -eux
-      scons build
-    displayName: 'Build project'
-  # - bash: |
-  #     set -eux
-  #     scons tests godot_args="--verbose --video-driver GLES2"
-  #   displayName: 'Run tests'
-  - bash: |
-      scons release
-      mkdir export && cp build/godot-python-*.zip export
-    displayName: 'Generate artifact archive'
-  - publish: export/
-    artifact: $(PLATFORM)_build
+# - job: 'Windows'
+#   timeoutInMinutes: 60
+#   pool:
+#     vmImage: 'windows-latest'
+#   strategy:
+#     matrix:
+#       "64bits":
+#         PLATFORM: 'windows-64'
+#         python.arch: 'x64'
+#         vs.arch: 'amd64'
+#       "32bits":
+#         PLATFORM: 'windows-32'
+#         python.arch: 'x86'
+#         vs.arch: 'x86'
+#   steps:
+#   - checkout: self
+#     submodules: true
+#   - task: UsePythonVersion@0
+#     inputs:
+#       versionSpec: '3.7'
+#       architecture: '$(python.arch)'
+#   - bash: |
+#       set -eux
+#       python --version
+#       python -m pip install --user -U pip
+#       python -m pip install --user -r requirements.txt
+#       xcode-select --install
+#       # Configuration for scons
+#       echo 'platform = "$(PLATFORM)"' >> custom.py
+#       echo 'bindings_generate_sample = True' >> custom.py
+#       echo 'MSVC_USE_SCRIPT = True' >> custom.py
+#       echo 'TARGET_ARCH = "$(vs.arch)"' >> custom.py
+#       echo 'CC = "cl.exe"' >> custom.py
+#     displayName: 'Setup venv'
+#   - bash: |
+#       set -eux
+#       scons build
+#     displayName: 'Build project'
+#   # - bash: |
+#   #     set -eux
+#   #     scons tests godot_args="--verbose --video-driver GLES2"
+#   #   displayName: 'Run tests'
+#   - bash: |
+#       scons release
+#       mkdir export && cp build/godot-python-*.zip export
+#     displayName: 'Generate artifact archive'
+#   - publish: export/
+#     artifact: $(PLATFORM)_build
 
 
 #################################################################################
 
 
-- job: 'Linux'
-  timeoutInMinutes: 60
-  pool:
-    vmImage: 'ubuntu-latest'
-  variables:
-    CC: clang
-    PLATFORM: 'x11-64'
-  steps:
-  - checkout: self
-    submodules: true
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.7'
-  - bash: |
-      set -eux
-      $CC --version
-      python --version
-      pip install -U pip
-      pip install -r requirements.txt
-      # Configuration for scons
-      echo 'platform = "$(PLATFORM)"' >> custom.py
-      echo 'bindings_generate_sample = True' >> custom.py
-      echo 'CC = "$(CC)"' >> custom.py
-    displayName: 'Setup venv'
-  - bash: |
-      set -eux
-      scons build
-    displayName: 'Build project'
-  # - bash: |
-  #     set -eux
-  #     scons tests
-  #   displayName: 'Run tests'
-  - bash: |
-      scons release
-      mkdir export && cp build/godot-python-*.zip export
-    displayName: 'Generate artifact archive'
-  - publish: export/
-    artifact: $(PLATFORM)_build
+# - job: 'Linux'
+#   timeoutInMinutes: 60
+#   pool:
+#     vmImage: 'ubuntu-latest'
+#   variables:
+#     CC: clang
+#     PLATFORM: 'x11-64'
+#   steps:
+#   - checkout: self
+#     submodules: true
+#   - task: UsePythonVersion@0
+#     inputs:
+#       versionSpec: '3.7'
+#   - bash: |
+#       set -eux
+#       $CC --version
+#       python --version
+#       pip install -U pip
+#       pip install -r requirements.txt
+#       # Configuration for scons
+#       echo 'platform = "$(PLATFORM)"' >> custom.py
+#       echo 'bindings_generate_sample = True' >> custom.py
+#       echo 'CC = "$(CC)"' >> custom.py
+#     displayName: 'Setup venv'
+#   - bash: |
+#       set -eux
+#       scons build
+#     displayName: 'Build project'
+#   # - bash: |
+#   #     set -eux
+#   #     scons tests
+#   #   displayName: 'Run tests'
+#   - bash: |
+#       scons release
+#       mkdir export && cp build/godot-python-*.zip export
+#     displayName: 'Generate artifact archive'
+#   - publish: export/
+#     artifact: $(PLATFORM)_build
 
 
 #################################################################################
