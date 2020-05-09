@@ -64,6 +64,7 @@ jobs:
       python --version
       python -m pip install --user -U pip
       python -m pip install --user -r requirements.txt
+      xcode-select --install
       # Configuration for scons
       echo 'platform = "$(PLATFORM)"' >> custom.py
       echo 'bindings_generate_sample = True' >> custom.py
