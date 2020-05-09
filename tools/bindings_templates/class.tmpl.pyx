@@ -133,6 +133,8 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% if not cls["singleton"] and cls["instanciable"] %}
     @staticmethod
     def new():
+        if __{{ cls["name"] }}_constructor == NULL:
+            raise NotImplementedError(__ERR_MSG_BINDING_NOT_AVAILABLE)
         # Call to __new__ bypasses __init__ constructor
         cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
         wrapper._gd_ptr = __{{ cls["name"] }}_constructor()

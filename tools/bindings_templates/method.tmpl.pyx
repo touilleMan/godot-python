@@ -111,7 +111,7 @@ cdef {{ method["return_type"] }} {{ retval }}
 {% set retval_as_arg = "&{}".format(retval) %}
 {% endif %}
 if {{ get_method_bind_register_name(cls, method) }} == NULL:
-    raise NotImplementedError
+    raise NotImplementedError(__ERR_MSG_BINDING_NOT_AVAILABLE)
 gdapi10.godot_method_bind_ptrcall(
     {{ get_method_bind_register_name(cls, method) }},
     self._gd_ptr,

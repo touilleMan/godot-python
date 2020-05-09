@@ -6,6 +6,10 @@ from godot._hazmat.gdapi cimport pythonscript_gdapi10 as gdapi10
 from godot._hazmat.conversion cimport *
 from godot.builtins cimport *
 
+
+__ERR_MSG_BINDING_NOT_AVAILABLE = "No Godot binding available"
+
+
 ### Classes ###
 
 {% from 'class.tmpl.pyx' import render_class, render_class_gdapi_ptrs_init -%}
