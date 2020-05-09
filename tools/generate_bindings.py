@@ -238,18 +238,19 @@ def cook_data(data):
         except KeyError:
             pass
         try:
-            spec = {
+            specs = {
                 "type": STACK_AND_HEAP_BUILTINS_TYPES[type_],
                 "is_object": False,
                 "is_builtin": True,
                 "is_base_type": False,
                 "stack_only": False,
             }
-            if spec["type"] == "godot_variant":
-                spec["binding_type"] = "object"
-            elif spec["type"] == "godot_string":
-                spec["binding_type"] = "GDString"
-            return spec
+            if specs["type"] == "godot_variant":
+                specs["binding_type"] = "object"
+            else:
+                assert specs["type"] == "godot_string"  # Sanity check
+                specs["binding_type"] = "GDString"
+            return specs
         except KeyError:
             pass
         try:
@@ -273,6 +274,7 @@ def cook_data(data):
             "is_object": False,
             "is_builtin": False,
             "stack_only": False,
+            "is_base_type": False,
         }
 
     def _cook_name(name):
