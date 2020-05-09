@@ -80,6 +80,13 @@ env = Environment(
     ENV=os.environ,
     # ENV = {'PATH' : os.environ['PATH']},
 )
+
+# Detect compiler
+env["CC_IS_MSVC"] = env.get("CC") in ("cl", "cl.exe")
+env["CC_IS_GCC"] = "gcc" in env.get("CC")
+env["CC_IS_CLANG"] = "clang" in env.get("CC")
+
+
 Help(vars.GenerateHelpText(env))
 # if env["HOST_OS"] == "win32":
 #   # Fix ImportVirtualenv raising error if PATH make reference to other drives
@@ -104,17 +111,15 @@ env.AppendUnique(CPPPATH=["$gdnative_include_dir"])
 ### Save my eyes plz ###
 
 env["ENV"]["TERM"] = os.environ.get("TERM", "")
-if "clang" in env.get("CC"):
+if env["CC_IS_CLANG"]:
     env.Append(CCFLAGS=["-fcolor-diagnostics"])
-if "gcc" in env.get("CC"):
+if env["CC_IS_GCC"]:
     env.Append(CCFLAGS=["-fdiagnostics-color=always"])
 
 
 ### Default compile flags ###
 
-
-env["shitty_compiler"] = env.get("CC") in ("cl", "cl.exe")
-if not env["shitty_compiler"]:
+if not env["CC_IS_MSVC"]:
     if env["debug"]:
         env.Append(CFLAGS=["-g", "-ggdb"])
         env.Append(LINKFLAGS=["-g", "-ggdb"])

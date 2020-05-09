@@ -89,20 +89,25 @@ env.Install(
 bindings_env = env.Clone()
 sample = env['bindings_generate_sample']
 
-if not sample:
-    if not env["shitty_compiler"]:
+# dont strip on debug builds
+if not sample and not env['debug']:
+    if env["CC_IS_GCC"]:
         bindings_env.AppendUnique(LINKFLAGS=["-Wl,--strip-all"])
+    elif env["CC_IS_CLANG"]:
+        bindings_env.AppendUnique(LINKFLAGS=["-Wl,-s"])
 
-if sample:
-    # Disable optimization for faster dev builds
-    if not env["shitty_compiler"]:
+if sample or env['debug']:
+    # Disable optimization for faster dev builds and ease of debugging
+    if not env["CC_IS_MSVC"]:
         bindings_env.AppendUnique(CFLAGS=["-O0"])
     else:
         bindings_env.AppendUnique(CFLAGS=["/Od"])
 else:
-    if not env["shitty_compiler"]:
+    if not env["CC_IS_GCC"]:
         bindings_env.AppendUnique(CFLAGS=["-Os", "-Wno-misleading-indentation"])
-    else:
+    elif not env["CC_IS_CLANG"]:
+        bindings_env.AppendUnique(CFLAGS=["-Os"])
+    elif env["CC_IS_MSVC"]:
         bindings_env.AppendUnique(CFLAGS=["/Os"])
 
 
