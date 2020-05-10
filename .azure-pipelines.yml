@@ -152,14 +152,16 @@ jobs:
       python --version
       brew update
       brew install zlib openssl
+      brew cask install xquartz
       pip install -U pip
       pip install -r requirements.txt
       # Configuration for scons
       echo 'platform = "$(PLATFORM)"' >> custom.py
       echo 'bindings_generate_sample = True' >> custom.py
       echo 'CC = "$(CC)"' >> custom.py
-      echo "CFLAGS = '-I$(brew --prefix zlib)/include -I$(brew --prefix openssl)/include'" >> custom.py
-      echo "LDFLAGS = '-L$(brew --prefix zlib)/lib -L$(brew --prefix openssl)/lib'" >> custom.py
+      echo "CFLAGS = ['-I$(brew --prefix zlib)/include', '-I$(brew --prefix openssl)/include']" >> custom.py
+      echo "LDFLAGS = ['-L$(brew --prefix zlib)/lib', '-L$(brew --prefix openssl)/lib']" >> custom.py
+      echo "OPENSSL_PATH = '$(brew --prefix openssl)/lib'" >> custom.py
     displayName: 'Setup venv'
   - bash: |
       set -eux
