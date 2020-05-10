@@ -29,7 +29,7 @@ from godot._hazmat.conversion cimport (
 cdef api godot_pluginscript_instance_data* pythonscript_instance_init(
     godot_pluginscript_script_data *p_data,
     godot_object *p_owner
-):
+) with gil:
     cdef object instance = (<object>p_data)()
     (<Object>instance)._gd_ptr = p_owner
     Py_INCREF(instance)
@@ -38,7 +38,7 @@ cdef api godot_pluginscript_instance_data* pythonscript_instance_init(
 
 cdef api void pythonscript_instance_finish(
     godot_pluginscript_instance_data *p_data
-):
+) with gil:
     Py_DECREF(<object>p_data)
 
 
@@ -46,7 +46,7 @@ cdef api godot_bool pythonscript_instance_set_prop(
     godot_pluginscript_instance_data *p_data,
     const godot_string *p_name,
     const godot_variant *p_value
-):
+) with gil:
     cdef object instance = <object>p_data
     try:
         setattr(instance, godot_string_to_pyobj(p_name), godot_variant_to_pyobj(p_value))
@@ -60,7 +60,7 @@ cdef api godot_bool pythonscript_instance_get_prop(
     godot_pluginscript_instance_data *p_data,
     const godot_string *p_name,
     godot_variant *r_ret
-):
+) with gil:
     cdef object instance = <object>p_data
     cdef object ret
     try:
@@ -78,7 +78,7 @@ cdef api godot_variant pythonscript_instance_call_method(
     const godot_variant **p_args,
     int p_argcount,
     godot_variant_call_error *r_error
-):
+) with gil:
     cdef godot_variant var_ret
     cdef object instance = <object>p_data
     # TODO: optimize this by caching godot_string_name -> method lookup
@@ -123,7 +123,7 @@ cdef api godot_variant pythonscript_instance_call_method(
 cdef api void pythonscript_instance_notification(
     godot_pluginscript_instance_data *p_data,
     int p_notification
-):
+) with gil:
     cdef object instance = <object>p_data
     # Godot's notification should call all parent `_notification`
     # methods (better not use `super()._notification` in those methods...)

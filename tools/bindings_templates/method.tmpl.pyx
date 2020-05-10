@@ -46,7 +46,8 @@ else:
 try:
     return godot_variant_to_pyobj(&{{ retval }})
 finally:
-    gdapi10.godot_variant_destroy(&{{ retval }})
+    with nogil:
+        gdapi10.godot_variant_destroy(&{{ retval }})
 {% else %}
 return {{ retval }}
 {% endif %}
@@ -93,7 +94,8 @@ cdef double {{ arg["name"] }}_d = <double>{{ arg["name"] }};
 {% for arg in method["arguments"] %}
 {% set i = loop.index - 1 %}
 {% if arg["type"] == "godot_variant" %}
-gdapi10.godot_variant_destroy(&__var_{{ arg["name"] }})
+with nogil:
+    gdapi10.godot_variant_destroy(&__var_{{ arg["name"] }})
 {% endif %}
 {% endfor %}
 {%- endmacro %}
@@ -126,16 +128,17 @@ cdef {{ method["return_type"] }} {{ retval }}
 {% endif %}
 if {{ get_method_bind_register_name(cls, method) }} == NULL:
     raise NotImplementedError(__ERR_MSG_BINDING_NOT_AVAILABLE)
-gdapi10.godot_method_bind_ptrcall(
-    {{ get_method_bind_register_name(cls, method) }},
-    self._gd_ptr,
-{% if (method["arguments"] | length )  != 0 %}
-    {{ argsval }},
-{%else %}
-    NULL,
-{% endif %}
-    {{ retval_as_arg }}
-)
+with nogil:
+    gdapi10.godot_method_bind_ptrcall(
+        {{ get_method_bind_register_name(cls, method) }},
+        self._gd_ptr,
+    {% if (method["arguments"] | length )  != 0 %}
+        {{ argsval }},
+    {%else %}
+        NULL,
+    {% endif %}
+        {{ retval_as_arg }}
+    )
 {%- endmacro %}
 
 

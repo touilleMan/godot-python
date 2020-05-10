@@ -36,7 +36,8 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% if not cls["base_class"] %}
     # free is virtual but this is not marked in api.json :'(
     def free(self):
-        gdapi10.godot_object_destroy(self._gd_ptr)
+        with nogil:
+            gdapi10.godot_object_destroy(self._gd_ptr)
 
     def __init__(self):
         raise RuntimeError(
@@ -51,24 +52,26 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         cdef godot_object *ptr = gdapi10.godot_variant_as_object(p_gdvar)
         # Retreive class
         cdef GDString classname = GDString.__new__(GDString)
-        gdapi10.godot_method_bind_ptrcall(
-            __methbind__Object__get_class,
-            ptr,
-            NULL,
-            &classname._gd_data
-        )
+        with nogil:
+            gdapi10.godot_method_bind_ptrcall(
+                __methbind__Object__get_class,
+                ptr,
+                NULL,
+                &classname._gd_data
+            )
         return globals()[str(classname)]._from_ptr(<size_t>ptr)
 
     @staticmethod
     cdef inline Object cast_from_ptr(godot_object *ptr):
         # Retreive class
         cdef GDString classname = GDString.__new__(GDString)
-        gdapi10.godot_method_bind_ptrcall(
-            __methbind__Object__get_class,
-            ptr,
-            NULL,
-            &classname._gd_data
-        )
+        with nogil:
+            gdapi10.godot_method_bind_ptrcall(
+                __methbind__Object__get_class,
+                ptr,
+                NULL,
+                &classname._gd_data
+            )
         return globals()[str(classname)]._from_ptr(<size_t>ptr)
 
     def __eq__(self, other):
@@ -142,12 +145,13 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         if self._gd_ptr is NULL:
             raise MemoryError
         cdef godot_bool __ret
-        gdapi10.godot_method_bind_ptrcall(
-            __methbind__Reference__init_ref,
-            self._gd_ptr,
-            NULL,
-            &__ret
-        )
+        with nogil:
+            gdapi10.godot_method_bind_ptrcall(
+                __methbind__Reference__init_ref,
+                self._gd_ptr,
+                NULL,
+                &__ret
+            )
 {% else %}
     @staticmethod
     def new():
@@ -155,7 +159,8 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
             raise NotImplementedError(__ERR_MSG_BINDING_NOT_AVAILABLE)
         # Call to __new__ bypasses __init__ constructor
         cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
-        wrapper._gd_ptr = __{{ cls["name"] }}_constructor()
+        with nogil:
+            wrapper._gd_ptr = __{{ cls["name"] }}_constructor()
         if wrapper._gd_ptr is NULL:
             raise MemoryError
         return wrapper
@@ -170,14 +175,15 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         cdef godot_bool __ret
         if self._gd_ptr == NULL:
             return
-        gdapi10.godot_method_bind_ptrcall(
-            __methbind__Reference__unreference,
-            self._gd_ptr,
-            NULL,
-            &__ret
-        )
-        if __ret:
-            gdapi10.godot_object_destroy(self._gd_ptr)
+        with nogil:
+            gdapi10.godot_method_bind_ptrcall(
+                __methbind__Reference__unreference,
+                self._gd_ptr,
+                NULL,
+                &__ret
+            )
+            if __ret:
+                gdapi10.godot_object_destroy(self._gd_ptr)
 {% endif %}
 
 {% endif %}

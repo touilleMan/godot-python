@@ -27,3 +27,6 @@ singletons=[ "res://pythonscript.gdnlib" ]
 
 io_streams_capture=false
 verbose=true
+
+[rendering]
+threads/thread_model=2
