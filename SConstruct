@@ -150,6 +150,11 @@ env.Command(
     source=f"#/misc/release_pythonscript.gdnlib",
     action=Copy("$TARGET", "$SOURCE"),
 )
+env.Command(
+    target=f"$DIST_ROOT/pythonscript/LICENSE.txt",
+    source=f"#/misc/release_LICENSE.txt",
+    action=Copy("$TARGET", "$SOURCE"),
+)
 env.Command(target="$DIST_ROOT/pythonscript/.gdignore", source=None, action=Touch("$TARGET"))
 
 
