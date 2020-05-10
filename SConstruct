@@ -57,7 +57,9 @@ vars.Add("CC", "C compiler")
 vars.Add("CFLAGS", "Custom flags for the C compiler")
 vars.Add("LINK", "linker")
 vars.Add("LINKFLAGS", "Custom flags for the linker")
-vars.Add("OPENSSL_PATH", "Path to the root of openssl installation to link cpython against")
+vars.Add("CPYTHON_CFLAGS", "Custom flags for the C compiler used to compile CPython")
+vars.Add("CPYTHON_LINKFLAGS", "Custom flags for the linker used to compile CPython")
+vars.Add("OPENSSL_PATH", "Path to the root of openssl installation to link CPython against")
 vars.Add(
     "TARGET_ARCH", "Target architecture (Windows only) -- x86, x86_64, ia64. Default: host arch."
 )
@@ -146,6 +148,11 @@ VariantDir(f"build/{env['platform']}/pythonscript", "pythonscript")
 env.Command(
     target=f"$DIST_ROOT/pythonscript.gdnlib",
     source=f"#/misc/release_pythonscript.gdnlib",
+    action=Copy("$TARGET", "$SOURCE"),
+)
+env.Command(
+    target=f"$DIST_ROOT/pythonscript/LICENSE.txt",
+    source=f"#/misc/release_LICENSE.txt",
     action=Copy("$TARGET", "$SOURCE"),
 )
 env.Command(target="$DIST_ROOT/pythonscript/.gdignore", source=None, action=Touch("$TARGET"))

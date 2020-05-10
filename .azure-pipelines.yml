@@ -79,12 +79,23 @@ jobs:
   #     set -eux
   #     scons tests godot_args="--verbose --video-driver GLES2"
   #   displayName: 'Run tests'
-  - bash: |
+  - powershell: |
       scons release
-      mkdir export && cp build/godot-python-*.zip export
+      cp build/godot-python-*.zip $(Build.ArtifactStagingDirectory)
     displayName: 'Generate artifact archive'
-  - publish: export/
-    artifact: $(PLATFORM)_build
+  - task: GithubRelease@0
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    inputs:
+      gitHubConnection: 'github.com_touilleMan'
+      repositoryName: 'touilleMan/godot-python'
+      action: 'edit'
+      target: '$(build.sourceVersion)'
+      tagSource: 'manual'
+      tag: '$(Build.SourceBranchName)'
+      assets: '$(Build.ArtifactStagingDirectory)/godot-python-*.zip'
+      title: '$(Build.SourceBranchName)'
+      assetUploadMode: 'replace'
+      addChangeLog: false
 
 
 #################################################################################
@@ -123,11 +134,23 @@ jobs:
   #     scons tests
   #   displayName: 'Run tests'
   - bash: |
+      set -eux
       scons release
-      mkdir export && cp build/godot-python-*.zip export
+      cp build/godot-python-*.zip $(Build.ArtifactStagingDirectory)/
     displayName: 'Generate artifact archive'
-  - publish: export/
-    artifact: $(PLATFORM)_build
+  - task: GithubRelease@0
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    inputs:
+      gitHubConnection: 'github.com_touilleMan'
+      repositoryName: 'touilleMan/godot-python'
+      action: 'edit'
+      target: '$(build.sourceVersion)'
+      tagSource: 'manual'
+      tag: '$(Build.SourceBranchName)'
+      assets: '$(Build.ArtifactStagingDirectory)/godot-python-*.zip'
+      title: '$(Build.SourceBranchName)'
+      assetUploadMode: 'replace'
+      addChangeLog: false
 
 
 #################################################################################
@@ -159,8 +182,8 @@ jobs:
       echo 'platform = "$(PLATFORM)"' >> custom.py
       echo 'bindings_generate_sample = True' >> custom.py
       echo 'CC = "$(CC)"' >> custom.py
-      echo "CFLAGS = ['-I$(brew --prefix zlib)/include', '-I$(brew --prefix openssl)/include']" >> custom.py
-      echo "LDFLAGS = ['-L$(brew --prefix zlib)/lib', '-L$(brew --prefix openssl)/lib']" >> custom.py
+      echo "CPYTHON_CFLAGS = ['-I$(brew --prefix zlib)/include', '-I$(brew --prefix openssl)/include']" >> custom.py
+      echo "CPYTHON_LDFLAGS = ['-L$(brew --prefix zlib)/lib', '-L$(brew --prefix openssl)/lib']" >> custom.py
       echo "OPENSSL_PATH = '$(brew --prefix openssl)/lib'" >> custom.py
     displayName: 'Setup venv'
   - bash: |
@@ -172,8 +195,20 @@ jobs:
   #     scons tests
     # displayName: 'Run tests'
   - bash: |
+      set -eux
       scons release
-      mkdir export && cp build/godot-python-*.zip export
+      cp build/godot-python-*.zip $(Build.ArtifactStagingDirectory)/
     displayName: 'Generate artifact archive'
-  - publish: export/
-    artifact: $(PLATFORM)_build
+  - task: GithubRelease@0
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    inputs:
+      gitHubConnection: 'github.com_touilleMan'
+      repositoryName: 'touilleMan/godot-python'
+      action: 'edit'
+      target: '$(build.sourceVersion)'
+      tagSource: 'manual'
+      tag: '$(Build.SourceBranchName)'
+      assets: '$(Build.ArtifactStagingDirectory)/godot-python-*.zip'
+      title: '$(Build.SourceBranchName)'
+      assetUploadMode: 'replace'
+      addChangeLog: false

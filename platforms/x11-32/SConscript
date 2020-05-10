@@ -38,6 +38,7 @@ env.NoClean(cpython_src)
 
 ### Build Python ###
 
+openssl_opt = f"--with-openssl={env['OPENSSL_PATH']}" if env.get("OPENSSL_PATH") else ""
 
 # TODO: allow to compile cpython with `--with-pydebug` ?
 env.Command(
@@ -46,7 +47,7 @@ env.Command(
     (
         "cd ${SOURCE} && "
         "echo Configuring CPython... && "
-        "1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} --with-openssl=/usr && "
+        "1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} CFLAGS='${CPYTHON_CFLAGS}' LDFLAGS='${CPYTHON_LINKFLAGS}' " + openssl_opt + " && "
         "echo Building CPython... && "
         "1>/dev/null make -j4 && "
         "echo Installing CPython in ${TARGET.get_abspath()}... && "

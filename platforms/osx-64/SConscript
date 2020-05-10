@@ -36,9 +36,10 @@ env.Command(
 )
 env.NoClean(cpython_src)
 
-openssl = env.get('OPENSSL_PATH', None)
-openssl = f' --with-openssl={openssl}' if openssl else ''
+
 ### Build Python ###
+
+openssl_opt = f"--with-openssl={env['OPENSSL_PATH']}" if env.get("OPENSSL_PATH") else ""
 
 # TODO: allow to compile cpython with `--with-pydebug` ?
 env.Command(
@@ -47,7 +48,7 @@ env.Command(
     (
         "cd ${SOURCE} && "
         "echo Configuring CPython... && "
-        '1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} CFLAGS="${CFLAGS}" LDFLAGS="${LINKFLAGS}" ' + openssl + ' && '
+        "1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} CFLAGS='${CPYTHON_CFLAGS}' LDFLAGS='${CPYTHON_LINKFLAGS}' " + openssl_opt + " && "
         "echo Building CPython... && "
         # Running the python setup inside a virtualenv gets python confused...
         # setting sys._home to None seems to fix the problem.

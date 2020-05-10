@@ -28,14 +28,23 @@ Every Godot core features are expected to work fine:
 
 On top of that, mixing GDscript and Python code inside a project should work fine.
 
-Python and pip are working, however depending on platform and backend they
-- on Windows+CPython use `python.exe` and `python.exe -m pip`
-- on Linux+CPython `bin/python` and `bin/pip` are provided out of the box.
-  However you must provide path to `libpython3.7m.so` to make them run:
-  ```
-  $ LD_LIBRARY_PATH=`pwd`/lib ./bin/pip3  --version
-  $ LD_LIBRARY_PATH=`pwd`/lib ./bin/python  --version
-  ```
+
+Using Pip
+---------
+
+On windows, pip must be installed first with `ensurepip`:
+```
+$ <pythonscript_dir>/windows-64/python.exe -m ensurepip  # Only need to do that once
+$ <pythonscript_dir>/windows-64/python.exe -m pip install whatever
+```
+
+On linux/macOS, pip should be already present:
+```
+$ <pythonscript_dir>/x11-64/bin/python3 -m pip install whatever
+```
+
+Note you must use `python -m pip` to invoke pip (using the command `pip`
+directly will likely fail in a cryptic manner)
 
 
 Not so well features
