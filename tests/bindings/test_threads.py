@@ -1,15 +1,14 @@
-import pytest
-from math import inf
-from struct import unpack
-from threading import Thread
 import time
+import pytest
+from threading import Thread
 
 import godot
-from godot import Vector3, Object, Node, Node2D, PluginScript, OpenSimplexNoise, OK, SurfaceTool, Mesh, MeshInstance
+from godot import Vector3, SurfaceTool, Mesh, MeshInstance
 
 def test_gen_mesh_thread():
-    
+
     done = []
+
     def target():
         st = SurfaceTool()
         st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -22,13 +21,12 @@ def test_gen_mesh_thread():
         done.append([True])
         mi.free()
         
-    
     target()
     t = Thread(target=target)
     t.daemon = True
     t.start()
     time.sleep(3)
     if not done:
-        raise Exception('Thread did not return.')
+        raise Exception("Thread did not return.")
     else:
         t.join()
