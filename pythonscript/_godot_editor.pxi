@@ -25,7 +25,7 @@ cdef api godot_string pythonscript_get_template_source_code(
     godot_pluginscript_language_data *p_data,
     const godot_string *p_class_name,
     const godot_string *p_base_class_name
-):
+) with gil:
     cdef str class_name
     if p_class_name == NULL:
         class_name = "MyExportedCls"
@@ -63,7 +63,7 @@ cdef api godot_bool pythonscript_validate(
     godot_string *r_test_error,
     const godot_string *p_path,
     godot_pool_string_array *r_functions
-):
+) with gil:
     pass
 
 
@@ -71,7 +71,7 @@ cdef api int pythonscript_find_function(
     godot_pluginscript_language_data *p_data,
     const godot_string *p_function,
     const godot_string *p_code
-):
+) with gil:
     return 0
 
 
@@ -80,7 +80,7 @@ cdef api godot_string pythonscript_make_function(
     const godot_string *p_class,
     const godot_string *p_name,
     const godot_pool_string_array *p_args
-):
+) with gil:
     cdef str name = godot_string_to_pyobj(p_name)
 
     # TODO: replace this with PoolStringArray binding once implemented
@@ -110,7 +110,7 @@ cdef api godot_error pythonscript_complete_code(
     godot_array *r_options,
     godot_bool *r_force,
     godot_string *r_call_hint
-):
+) with gil:
     return godot_error.GODOT_OK
 
 
@@ -119,7 +119,7 @@ cdef api void pythonscript_auto_indent_code(
     godot_string *p_code,
     int p_from_line,
     int p_to_line
-):
+) with gil:
     # TODO: use black for this job
 #     try:
 #         import autopep8
@@ -145,7 +145,7 @@ cdef api void pythonscript_add_global_constant(
     godot_pluginscript_language_data *p_data,
     const godot_string *p_variable,
     const godot_variant *p_value
-):
+) with gil:
     name = godot_string_to_pyobj(p_variable)
     value = godot_variant_to_pyobj(p_value)
     # Update `godot.globals` module here
@@ -155,7 +155,7 @@ cdef api void pythonscript_add_global_constant(
 
 cdef api godot_string pythonscript_debug_get_error(
     godot_pluginscript_language_data *p_data
-):
+) with gil:
     cdef godot_string ret
     pyobj_to_godot_string("Nothing", &ret)
     return ret
@@ -163,21 +163,21 @@ cdef api godot_string pythonscript_debug_get_error(
 
 cdef api int pythonscript_debug_get_stack_level_count(
     godot_pluginscript_language_data *p_data
-):
+) with gil:
     return 1
 
 
 cdef api int pythonscript_debug_get_stack_level_line(
     godot_pluginscript_language_data *p_data,
     int p_level
-):
+) with gil:
     return 1
 
 
 cdef api godot_string pythonscript_debug_get_stack_level_function(
     godot_pluginscript_language_data *p_data,
     int p_level
-):
+) with gil:
     cdef godot_string ret
     pyobj_to_godot_string("Nothing", &ret)
     return ret
@@ -186,7 +186,7 @@ cdef api godot_string pythonscript_debug_get_stack_level_function(
 cdef api godot_string pythonscript_debug_get_stack_level_source(
     godot_pluginscript_language_data *p_data,
     int p_level
-):
+) with gil:
     cdef godot_string ret
     pyobj_to_godot_string("Nothing", &ret)
     return ret
@@ -199,7 +199,7 @@ cdef api void pythonscript_debug_get_stack_level_locals(
     godot_array *p_values,
     int p_max_subitems,
     int p_max_depth
-):
+) with gil:
     pass
 
 
@@ -210,7 +210,7 @@ cdef api void pythonscript_debug_get_stack_level_members(
     godot_array *p_values,
     int p_max_subitems,
     int p_max_depth
-):
+) with gil:
     pass
 
 
@@ -220,7 +220,7 @@ cdef api void pythonscript_debug_get_globals(
     godot_array *p_values,
     int p_max_subitems,
     int p_max_depth
-):
+) with gil:
     pass
 
 
@@ -230,7 +230,7 @@ cdef api godot_string pythonscript_debug_parse_stack_level_expression(
     const godot_string *p_expression,
     int p_max_subitems,
     int p_max_depth
-):
+) with gil:
     cdef godot_string ret
     pyobj_to_godot_string("Nothing", &ret)
     return ret
@@ -239,12 +239,12 @@ cdef api godot_string pythonscript_debug_parse_stack_level_expression(
 cdef api void pythonscript_get_public_functions(
     godot_pluginscript_language_data *p_data,
     godot_array *r_functions
-):
+) with gil:
     pass
 
 
 cdef api void pythonscript_get_public_constants(
     godot_pluginscript_language_data *p_data,
     godot_dictionary *r_constants
-):
+) with gil:
     pass
