@@ -140,11 +140,11 @@ cdef api void pythonscript_instance_notification(
 
 # cdef api void pythonscript_instance_refcount_incremented(
 #     godot_pluginscript_instance_data *p_data
-# ):
+# ) with gil:
 #     pass
 
 
 # cdef api bool pythonscript_instance_refcount_decremented(
 #     godot_pluginscript_instance_data *p_data
-# ):
+# ) with gil:
 #     pass

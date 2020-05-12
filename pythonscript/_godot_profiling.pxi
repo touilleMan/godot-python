@@ -135,7 +135,7 @@ cdef object profiler = None
 
 cdef api void pythonscript_profiling_start(
     godot_pluginscript_language_data *p_data
-):
+) with gil:
     global profiler
     profiler = Profiler()
     sys.setprofile(profiler.get_profilefunc())
@@ -143,7 +143,7 @@ cdef api void pythonscript_profiling_start(
 
 cdef api void pythonscript_profiling_stop(
     godot_pluginscript_language_data *p_data
-):
+) with gil:
     global profiler
     profiler = None
     sys.setprofile(None)
@@ -153,7 +153,7 @@ cdef api int pythonscript_profiling_get_accumulated_data(
     godot_pluginscript_language_data *p_data,
     godot_pluginscript_profiling_data *r_info,
     int p_info_max
-):
+) with gil:
     # Sort function to make sure we can display the most consuming ones
     sorted_and_limited = sorted(
         profiler.per_meth_profiling.items(), key=lambda x: -x[1].self_time
@@ -173,7 +173,7 @@ cdef api int pythonscript_profiling_get_frame_data(
     godot_pluginscript_language_data *p_data,
     godot_pluginscript_profiling_data *r_info,
     int p_info_max
-):
+) with gil:
     # Sort function to make sure we can display the most consuming ones
     sorted_and_limited = sorted(
         profiler.per_meth_profiling.items(), key=lambda x: -x[1].last_frame_self_time
@@ -191,6 +191,6 @@ cdef api int pythonscript_profiling_get_frame_data(
 
 cdef api void pythonscript_profiling_frame(
     godot_pluginscript_language_data *p_data
-):
+) with gil:
     if profiler is not None:
         profiler.next_frame()
