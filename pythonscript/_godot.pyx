@@ -9,6 +9,7 @@ include "_godot_editor.pxi"
 include "_godot_profiling.pxi"
 include "_godot_script.pxi"
 include "_godot_instance.pxi"
+include "_godot_io.pxi"
 
 from godot._hazmat.gdnative_api_struct cimport (
     godot_gdnative_init_options,
@@ -34,7 +35,7 @@ def _setup_config_entry(name, default_value):
     return ProjectSettings.get_setting(gdname)
 
 
-cdef api godot_pluginscript_language_data *pythonscript_init():
+cdef api godot_pluginscript_language_data *pythonscript_init() with gil:
     # Pass argv arguments
     sys.argv = ["godot"] + [str(x) for x in OS.get_cmdline_args()]
 
@@ -46,8 +47,8 @@ cdef api godot_pluginscript_language_data *pythonscript_init():
 
     # TODO
     # Redirect stdout/stderr to have it in the Godot editor console
-    # if _setup_config_entry("python_script/io_streams_capture", True):
-    #     enable_capture_io_streams()
+    #if _setup_config_entry("python_script/io_streams_capture", True):
+    GodotIO.enable_capture_io_streams()
 
     # Enable verbose output from pythonscript framework
     if _setup_config_entry("python_script/verbose", False):
