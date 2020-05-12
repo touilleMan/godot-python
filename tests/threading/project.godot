@@ -16,7 +16,7 @@ _global_script_class_icons={
 [application]
 
 run/main_scene="res://main.tscn"
-name="godo-bindings-tests"
+name="godot-threading-tests"
 main_scene="res://main.tscn"
 
 [gdnative]
@@ -27,3 +27,7 @@ singletons=[ "res://pythonscript.gdnlib" ]
 
 io_streams_capture=false
 verbose=true
+
+[rendering]
+
+threads/thread_model=2

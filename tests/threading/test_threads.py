@@ -5,6 +5,24 @@ from threading import Thread
 import godot
 from godot import Vector3, SurfaceTool, Mesh, MeshInstance
 
+
+def test_simple_thread():
+
+    done = []
+
+    def target():
+        done.append([True])
+        
+    t = Thread(target=target)
+    t.daemon = True
+    t.start()
+    time.sleep(0.1)
+    if not done:
+        raise Exception("Thread did not return.")
+    else:
+        t.join()
+
+
 def test_gen_mesh_thread():
 
     done = []
@@ -21,11 +39,10 @@ def test_gen_mesh_thread():
         done.append([True])
         mi.free()
         
-    target()
     t = Thread(target=target)
     t.daemon = True
     t.start()
-    time.sleep(3)
+    time.sleep(0.3)
     if not done:
         raise Exception("Thread did not return.")
     else:
