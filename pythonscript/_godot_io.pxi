@@ -85,11 +85,11 @@ class GodotIO:
         lineno = lineno or 0
         filename = filename or "UNKNOWN"
         name = name or "UNKNOWN"
-        
+
         pystr = pystr.encode('utf-8')
         name = name.encode('utf-8')
         filename = filename.encode('utf-8')
-        
+
         cdef char * c_msg = pystr
         cdef char * c_name = name
         cdef char * c_filename = filename
