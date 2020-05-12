@@ -67,7 +67,7 @@ class GodotIO:
         # we are printing an error message, so we must avoid other errors at all costs,
         # otherwise the user may never see the error message printed, making debugging a living hell
         try:
-            if lineno is not None and filename is not None and name is not None:
+            if lineno is None and filename is None and name is None:
                 # don't try to get exception info if user provided the details.
                 exc_info = sys.exc_info()
                 tb = exc_info[2]
@@ -78,14 +78,14 @@ class GodotIO:
                         filename = tblist[-1].filename
                         name = tblist[-1].name
         except:
-            sys.__stderr__.write('Additional errors occured while printing:\n' + traceback.format_exc() + '\n')
+            sys.__stderr__.write("Additional errors occured while printing:\n" + traceback.format_exc() + "\n")
         
         # default values in case we couldn't get exception info and user have not provided those
+        pystr = pystr or ""
         lineno = lineno or 0
-        filename = filename or '<UNKNOWN>'
-        name = name or '<UNKNOWN>'
+        filename = filename or "UNKNOWN"
+        name = name or "UNKNOWN"
         
-        # TODO: how to handle different encodings?
         pystr = pystr.encode('utf-8')
         name = name.encode('utf-8')
         filename = filename.encode('utf-8')
@@ -94,12 +94,12 @@ class GodotIO:
         cdef char * c_name = name
         cdef char * c_filename = filename
         cdef int c_lineno = <int>lineno
-        
+
         with nogil:
             gdapi10.godot_print_error(c_msg, c_name, c_filename, c_lineno)
     
     @staticmethod
-    def print_override(*objects, sep=' ', end='\n', file=sys.stdout, flush=False):
+    def print_override(*objects, sep=" ", end="\n", file=sys.stdout, flush=False):
         """
             We need to override the builtin print function to avoid multiple calls to stderr.write.
             e.g:
@@ -108,7 +108,6 @@ class GodotIO:
                 Since we are using godot_print_error, that would cause a very weird print to the console,
                 so overriding print and making sure a single call to write is issued solves the problem.
         """
-
         if file == GodotIO.get_godot_stderr_io():
             msg = str(sep).join([str(obj) for obj in objects]) + str(end)
             GodotIO.godot_print_error_pystr(msg)
@@ -151,13 +150,13 @@ class GodotIO:
 
     
     @staticmethod
-    def get_godot_stdout_io(cls):
+    def get_godot_stdout_io():
         if not GodotIO._godot_stderr_io:
-            GodotIO._godot_stderr_io = GodotIOStream(GodotIO.godot_print_error_pystr)
+            GodotIO._godot_stderr_io = GodotIOStream(GodotIO.godot_print_pystr)
         return GodotIO._godot_stderr_io
 
     @staticmethod
-    def get_godot_stderr_io(cls):
+    def get_godot_stderr_io():
         if not GodotIO._godot_stderr_io:
             GodotIO._godot_stderr_io = GodotIOStream(GodotIO.godot_print_error_pystr)
         return GodotIO._godot_stderr_io

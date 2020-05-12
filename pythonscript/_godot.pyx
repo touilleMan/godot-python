@@ -47,8 +47,8 @@ cdef api godot_pluginscript_language_data *pythonscript_init() with gil:
 
     # TODO
     # Redirect stdout/stderr to have it in the Godot editor console
-    #if _setup_config_entry("python_script/io_streams_capture", True):
-    GodotIO.enable_capture_io_streams()
+    if _setup_config_entry("python_script/io_streams_capture", True):
+        GodotIO.enable_capture_io_streams()
 
     # Enable verbose output from pythonscript framework
     if _setup_config_entry("python_script/verbose", False):
