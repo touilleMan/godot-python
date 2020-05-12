@@ -56,44 +56,59 @@ class GodotIO:
             gdapi10.godot_string_destroy(&gdstr)
     
     @staticmethod
-    def godot_print_error_pystr(pystr):
+    def godot_print_error_pystr(pystr, lineno=None, filename=None, name=None):
         """
             Receives a python string (pystr), convert to char*, and print using the godot_print_error function.
             Also tries to get exception information such as, file name, line numer, method name, etc
             and pass that along to godot_print_error
         """
         import traceback
-        sys.__stdout__.write('HERE SYS INFO\n')
-        lineno = 0
-        filename = '<UNKNOWN>'
-        name = '<UNKNOWN>'
 
         # we are printing an error message, so we must avoid other errors at all costs,
         # otherwise the user may never see the error message printed, making debugging a living hell
         try:
-            exc_info = sys.exc_info()
-            tb = exc_info[2]
-            if tb:
-                tblist = traceback.extract_tb(tb)
-                if len(tblist) > 0:
-                    lineno = tblist[-1].lineno
-                    filename = tblist[-1].filename
-                    name = tblist[-1].name
+            if lineno is not None and filename is not None and name is not None:
+                # don't try to get exception info if user provided the details.
+                exc_info = sys.exc_info()
+                tb = exc_info[2]
+                if tb:
+                    tblist = traceback.extract_tb(tb)
+                    if len(tblist) > 0:
+                        lineno = tblist[-1].lineno
+                        filename = tblist[-1].filename
+                        name = tblist[-1].name
         except:
-            pass
+            sys.__stderr__.write('Additional errors occured while printing:\n' + traceback.format_exc() + '\n')
+        
+        # default values in case we couldn't get exception info and user have not provided those
+        lineno = lineno or 0
+        filename = filename or '<UNKNOWN>'
+        name = name or '<UNKNOWN>'
+        
         # TODO: how to handle different encodings?
         pystr = pystr.encode('utf-8')
         name = name.encode('utf-8')
         filename = filename.encode('utf-8')
+        
         cdef char * c_msg = pystr
         cdef char * c_name = name
         cdef char * c_filename = filename
         cdef int c_lineno = <int>lineno
+        
         with nogil:
             gdapi10.godot_print_error(c_msg, c_name, c_filename, c_lineno)
     
     @staticmethod
     def print_override(*objects, sep=' ', end='\n', file=sys.stdout, flush=False):
+        """
+            We need to override the builtin print function to avoid multiple calls to stderr.write.
+            e.g:
+                print(a, b, c, file=sys.stderr)
+                would cause 3 writes to be issued: write(a), write(b) and write(c).
+                Since we are using godot_print_error, that would cause a very weird print to the console,
+                so overriding print and making sure a single call to write is issued solves the problem.
+        """
+
         if file == GodotIO.get_godot_stderr_io():
             msg = str(sep).join([str(obj) for obj in objects]) + str(end)
             GodotIO.godot_print_error_pystr(msg)
@@ -117,9 +132,11 @@ class GodotIO:
         import sys
         import builtins
         import traceback
+        
         # flush existing buffer
         sys.stdout.flush()
         sys.stderr.flush()
+
         # make stdout and stderr the custom iostream defined above
         sys.stdout = GodotIO.get_godot_stdout_io()
         sys.stderr = GodotIO.get_godot_stderr_io()
