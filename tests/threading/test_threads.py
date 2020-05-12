@@ -12,7 +12,7 @@ def test_simple_thread():
 
     def target():
         done.append([True])
-        
+    
     t = Thread(target=target)
     t.daemon = True
     t.start()
@@ -38,7 +38,7 @@ def test_gen_mesh_thread():
         mi.mesh = mesh
         done.append([True])
         mi.free()
-        
+    
     t = Thread(target=target)
     t.daemon = True
     t.start()

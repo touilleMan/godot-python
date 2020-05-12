@@ -20,7 +20,6 @@ def get_current_node():
 
 @exposed
 class Main(Node):
-
     def _ready(self):
         set_current_node(self)
         # Retrieve command line arguments passed through --pytest=...
