@@ -34,7 +34,7 @@ def _setup_config_entry(name, default_value):
     return ProjectSettings.get_setting(gdname)
 
 
-cdef api godot_pluginscript_language_data *pythonscript_init():
+cdef api godot_pluginscript_language_data *pythonscript_init() with gil:
     # Pass argv arguments
     sys.argv = ["godot"] + [str(x) for x in OS.get_cmdline_args()]
 
@@ -64,5 +64,5 @@ cdef api godot_pluginscript_language_data *pythonscript_init():
     return NULL
 
 
-cdef api void pythonscript_finish(godot_pluginscript_language_data *data):
+cdef api void pythonscript_finish(godot_pluginscript_language_data *data) with gil:
     return

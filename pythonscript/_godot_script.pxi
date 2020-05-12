@@ -141,7 +141,7 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
     const godot_string *p_path,
     const godot_string *p_source,
     godot_error *r_error
-):
+) with gil:
     # Godot class&singleton are not all available at Pythonscript bootstrap.
     # Hence we wait until the Pythonscript start being actually used (i.e. until
     # the first Python script is loaded) before initializing the bindings.
@@ -193,5 +193,5 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
 
 cdef api void pythonscript_script_finish(
     godot_pluginscript_script_data *p_data
-):
+) with gil:
     destroy_exposed_class(<object>p_data)
