@@ -85,7 +85,7 @@ def orchestrator(dirs, release_info):
     for entry in ["dist", "pythonscript"]:
         (dirs[entry] / "LICENSE.txt").write_text(license_txt)
     (dirs["dist"] / "pythonscript.gdnlib").write_text(
-        (MISC_DIR / "release_pythonscript.gdnlib").read_text().replace("res://", "res://addons")
+        (MISC_DIR / "release_pythonscript.gdnlib").read_text().replace("res://", "res://addons/")
     )
     (dirs["dist"] / "README.txt").write_text(
         (MISC_DIR / "release_README.txt")
