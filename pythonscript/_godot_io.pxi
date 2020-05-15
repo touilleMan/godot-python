@@ -1,3 +1,6 @@
+import sys
+import builtins
+import traceback
 from io import RawIOBase
 from godot._hazmat.conversion cimport (
     godot_string_to_pyobj,
@@ -29,13 +32,14 @@ class GodotIOStream(RawIOBase):
     def write(self, b):
         self.buffer += b
         if "\n" in self.buffer:
-            *to_print, self.buffer = self.buffer.split("\n")
-            self.godot_print_func("\n".join(to_print))
+            to_print, self.buffer = self.buffer.rsplit("\n", 1)
+            self.godot_print_func(to_print)
 
     def flush(self):
         if self.buffer:
             self.godot_print_func(self.buffer)
             self.buffer = ""
+
 
 class GodotIO:
 
@@ -62,13 +66,12 @@ class GodotIO:
             Also tries to get exception information such as, file name, line numer, method name, etc
             and pass that along to godot_print_error
         """
-        import traceback
 
         # we are printing an error message, so we must avoid other errors at all costs,
         # otherwise the user may never see the error message printed, making debugging a living hell
         try:
+            # don't try to get exception info if user provided the details.
             if lineno is None and filename is None and name is None:
-                # don't try to get exception info if user provided the details.
                 exc_info = sys.exc_info()
                 tb = exc_info[2]
                 if tb:
@@ -118,20 +121,15 @@ class GodotIO:
     def print_exception_override(etype, value, tb, limit=None, file=None, chain=True):
         # We override traceback.print_exception to avoid multiple calls to godot_print_error on newlines,
         # making the traceback look weird
-        from traceback import TracebackException
         if file is None:
             file = sys.stderr
         trace = "\n"
-        for line in TracebackException(type(value), value, tb, limit=limit).format(chain=chain):
+        for line in traceback.TracebackException(type(value), value, tb, limit=limit).format(chain=chain):
             trace += str(line)
         GodotIO.godot_print_error_pystr(trace)
     
     @staticmethod
     def enable_capture_io_streams():
-        import sys
-        import builtins
-        import traceback
-        
         # flush existing buffer
         sys.stdout.flush()
         sys.stderr.flush()
