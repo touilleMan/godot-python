@@ -31,6 +31,7 @@ from godot._hazmat.conversion cimport (
 from godot._hazmat.internal cimport (
     get_pythonscript_verbose,
     get_exposed_class,
+    set_exposed_class,
     destroy_exposed_class,
 )
 from godot.bindings cimport _initialize_bindings, Object
@@ -135,7 +136,6 @@ cdef godot_pluginscript_script_manifest _build_script_manifest(object cls):
 
     return manifest
 
-
 cdef api godot_pluginscript_script_manifest pythonscript_script_init(
     godot_pluginscript_language_data *p_data,
     const godot_string *p_path,
@@ -166,10 +166,23 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
     # TODO: possible bug if res:// is not part of PYTHONPATH
     # Remove `res://`, `.py` and replace / by .
     modname = path[6:].rsplit(".", 1)[0].replace("/", ".")
+    
+    is_reload = modname in sys.modules
+    if is_reload:
+        if get_pythonscript_verbose():
+            print(f"Reloading python script from {path}")
+        # if we are in a reload, remove the class from loaded classes,
+        # and call importlib.reload to reload the code
+        cls = get_exposed_class(modname)
+        destroy_module(cls=cls)
+        from importlib import reload
+        reload(sys.modules[modname])
+
     try:
         __import__(modname)  # Force lazy loading of the module
         # TODO: make sure script reloading works
         cls = get_exposed_class(modname)
+
     except BaseException:
         # If we are here it could be because the file doesn't exists
         # or (more possibly) the file content is not valid python (or
@@ -186,6 +199,14 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
         )
         r_error[0] = GODOT_ERR_PARSE_ERROR
         return _build_empty_script_manifest()
+    
+    if is_reload:
+        # we are in a reload, so we must increase the refcount for this class,
+        # because pythonscript_script_finish is going to be called next.
+        # if we do not increase the refcount, pythonscript_script_finish will remove the class
+        # and bugs ensue.
+        # apparently multiple PluginScript instances can exist at the same time for the same script.
+        set_exposed_class(cls)
 
     r_error[0] = GODOT_OK
     return _build_script_manifest(cls)
@@ -194,4 +215,10 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
 cdef api void pythonscript_script_finish(
     godot_pluginscript_script_data *p_data
 ) with gil:
-    destroy_exposed_class(<object>p_data)
+    cdef object cls = <object>p_data
+    destroy_module(cls=cls)
+
+cdef inline def destroy_class(cls=None):
+    if get_pythonscript_verbose():
+        print(f"Destroying python script")
+    destroy_exposed_class(cls)
