@@ -1,5 +1,7 @@
 # cython: c_string_type=unicode, c_string_encoding=utf8
 
+import importlib
+
 from cpython.ref cimport PyObject
 
 from godot._hazmat.gdnative_api_struct cimport (
@@ -169,17 +171,19 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
     
     is_reload = modname in sys.modules
     if is_reload:
-        if get_pythonscript_verbose():
-            print(f"Reloading python script from {path}")
         # if we are in a reload, remove the class from loaded classes,
         # and call importlib.reload to reload the code
         cls = get_exposed_class(modname)
-        destroy_module(cls=cls)
-        from importlib import reload
-        reload(sys.modules[modname])
+
+        # don't try to reload modules that are not managed by godot - e.g. libs or other modules - user should take care of that
+        if cls:
+            if get_pythonscript_verbose():
+                print(f"Reloading python script from {path}")
+            destroy_module(cls=cls)
+            importlib.reload(sys.modules[modname])
 
     try:
-        __import__(modname)  # Force lazy loading of the module
+        importlib.import_module(modname)  # Force lazy loading of the module
         # TODO: make sure script reloading works
         cls = get_exposed_class(modname)
 
