@@ -15,6 +15,7 @@ else:
 
 for test in ['bindings', 'helloworld', 'work_with_gdscript', 'threading']:
     dist_symlink = env.Symlink(f"{test}/pythonscript", "$DIST_ROOT/pythonscript")
+    dist_symlink = env.Symlink(f"{test}/lib", "_lib_vendors")
     target = env.Command(
         test,
         ["$godot_binary", dist_symlink],

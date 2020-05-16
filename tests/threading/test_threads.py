@@ -1,32 +1,25 @@
-import time
 import pytest
 from threading import Thread
 
-import godot
 from godot import Vector3, SurfaceTool, Mesh, MeshInstance
 
 
 def test_simple_thread():
 
-    done = []
+    thread_said_hello = False
 
     def target():
-        done.append([True])
+        nonlocal thread_said_hello
+        thread_said_hello = True
 
-    t = Thread(target=target)
-    t.daemon = True
+    t = Thread(target=target, daemon=True)
     t.start()
-    time.sleep(0.1)
-    if not done:
-        raise Exception("Thread did not return.")
-    else:
-        t.join()
+
+    t.join(timeout=1)
+    assert thread_said_hello
 
 
-def test_gen_mesh_thread():
-
-    done = []
-
+def test_use_godot_from_thread():
     def target():
         st = SurfaceTool()
         st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -36,14 +29,9 @@ def test_gen_mesh_thread():
         mesh = st.commit()
         mi = MeshInstance.new()
         mi.mesh = mesh
-        done.append([True])
         mi.free()
 
-    t = Thread(target=target)
-    t.daemon = True
+    t = Thread(target=target, daemon=True)
     t.start()
-    time.sleep(0.3)
-    if not done:
-        raise Exception("Thread did not return.")
-    else:
-        t.join()
+
+    t.join(timeout=1)

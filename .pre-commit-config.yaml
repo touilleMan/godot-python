@@ -5,7 +5,7 @@ repos:
     - id: black
       types: [file]  # override `types: [python]`
       files: (\.py$|^SConstruct$|^SConscript$)
-      exclude: (tests|examples)/.*/lib  # Ignore 3rd party stuff
+      exclude: (tests/_lib_vendors|(tests|examples)/lib)  # Ignore 3rd party stuff
       args:
           - "--line-length=100"
       language_version: python3
