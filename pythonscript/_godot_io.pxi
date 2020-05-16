@@ -23,6 +23,7 @@ from godot._hazmat.gdnative_api_struct cimport (
     godot_variant_type
 )
 
+
 class GodotIOStream(RawIOBase):
 
     def __init__(self, godot_print_func):
@@ -80,7 +81,7 @@ class GodotIO:
                         lineno = tblist[-1].lineno
                         filename = tblist[-1].filename
                         name = tblist[-1].name
-        except:
+        except BaseException:
             sys.__stderr__.write("Additional errors occured while printing:\n" + traceback.format_exc() + "\n")
         
         # default values in case we couldn't get exception info and user have not provided those
@@ -89,6 +90,8 @@ class GodotIO:
         filename = filename or "UNKNOWN"
         name = name or "UNKNOWN"
 
+        # Unlike GDString that requires UCS2/UCS4 depending on platform,
+        # godot_print_error is a simple honest dude using regular UTF8 C strings :)
         pystr = pystr.encode('utf-8')
         name = name.encode('utf-8')
         filename = filename.encode('utf-8')
