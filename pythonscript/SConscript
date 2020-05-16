@@ -44,6 +44,7 @@ SConscript([
     '_godot_instance.pxi',
     '_godot_profiling.pxi',
     '_godot_script.pxi',
+    '_godot_io.pxi',
 ])
 env.Install(
     "$DIST_SITE_PACKAGES",
