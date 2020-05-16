@@ -218,7 +218,7 @@ cdef api void pythonscript_script_finish(
     cdef object cls = <object>p_data
     destroy_module(cls=cls)
 
-cdef inline def destroy_class(cls=None):
+cdef inline destroy_module(cls=None):
     if get_pythonscript_verbose():
         print(f"Destroying python script")
     destroy_exposed_class(cls)
