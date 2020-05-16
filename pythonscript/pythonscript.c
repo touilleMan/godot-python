@@ -61,6 +61,7 @@ static const char *PYTHONSCRIPT_RESERVED_WORDS[] = {
 static const char *PYTHONSCRIPT_COMMENT_DELIMITERS[] = { "#", "\"\"\"\"\"\"", 0 };
 static const char *PYTHONSCRIPT_STRING_DELIMITERS[] = { "\" \"", "' '", 0 };
 static godot_pluginscript_language_desc desc;
+static PyThreadState *gilstate = NULL;
 
 
 /*
@@ -186,6 +187,10 @@ GDN_EXPORT void godot_gdnative_init(godot_gdnative_init_options *options) {
     Py_SetProgramName(L"godot");
     // Initialize interpreter but skip initialization registration of signal handlers
     Py_InitializeEx(0);
+    // PyEval_InitThreads acquires the GIL, so we must release it later.
+    // Since python3.7 PyEval_InitThreads is automatically called by Py_InitializeEx, but it's better to leave it here
+    // to be explicit. Calling it again does nothing.
+    PyEval_InitThreads();
     int ret = import__godot();
     if (ret != 0){
         GD_ERROR_PRINT("Cannot load godot python module");
@@ -242,6 +247,9 @@ GDN_EXPORT void godot_gdnative_init(godot_gdnative_init_options *options) {
         desc.profiling_frame = pythonscript_profiling_frame;
     }
     pythonscript_gdapi_ext_pluginscript->godot_pluginscript_register_language(&desc);
+    
+    // release the gil
+    gilstate = PyEval_SaveThread();
 }
 
 
@@ -250,5 +258,7 @@ GDN_EXPORT void godot_gdnative_singleton() {
 
 
 GDN_EXPORT void godot_gdnative_terminate() {
+    // re-acquire the gil in order to finalize properly
+    PyEval_RestoreThread(gilstate);
     Py_FinalizeEx();
 }

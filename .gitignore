@@ -22,3 +22,9 @@ logs
 # Lazy generated symlinks on build
 /examples/*/pythonscript
 /tests/*/pythonscript
+
+# pycharm
+.idea
+
+# mac os thumbs files
+.DS_Store

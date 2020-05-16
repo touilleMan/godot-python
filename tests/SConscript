@@ -13,7 +13,7 @@ else:
     cmd_suffix = ""
 
 
-for test in ['bindings', 'helloworld', 'work_with_gdscript']:
+for test in ['bindings', 'helloworld', 'work_with_gdscript', 'threading']:
     dist_symlink = env.Symlink(f"{test}/pythonscript", "$DIST_ROOT/pythonscript")
     target = env.Command(
         test,
@@ -24,3 +24,4 @@ for test in ['bindings', 'helloworld', 'work_with_gdscript']:
 
 
 env.Alias('test', 'bindings')
+env.Alias('test-threading', 'threading')

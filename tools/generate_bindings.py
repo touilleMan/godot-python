@@ -81,6 +81,13 @@ SAMPLE_CLASSES = {
     "_ResourceLoader",
     # "_ResourceSaver",
     # "_VisualScriptEditor",
+    "SurfaceTool",
+    "Mesh",
+    "ArrayMesh",
+    "Spatial",
+    "VisualInstance",
+    "GeometryInstance",
+    "MeshInstance",
 }
 
 SUPPORTED_TYPES = {

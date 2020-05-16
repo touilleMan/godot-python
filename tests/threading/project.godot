@@ -1,0 +1,33 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=4
+
+_global_script_classes=[  ]
+_global_script_class_icons={
+
+}
+
+[application]
+
+run/main_scene="res://main.tscn"
+name="godot-threading-tests"
+main_scene="res://main.tscn"
+
+[gdnative]
+
+singletons=[ "res://pythonscript.gdnlib" ]
+
+[python_script]
+
+io_streams_capture=false
+verbose=true
+
+[rendering]
+
+threads/thread_model=2
