@@ -216,6 +216,8 @@ cdef class {{ t.py_pool }}:
         return ret
 
     cdef inline bint operator_equal(self, {{ t.py_pool }} other):
+        if other is None:
+            return False
         # TODO `godot_array_operator_equal` is missing in gdapi, submit a PR ?
         cdef godot_int size = self.size()
         if size != other.size():
