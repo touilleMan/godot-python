@@ -61,9 +61,6 @@ vars.Add("CPYTHON_CFLAGS", "Custom flags for the C compiler used to compile CPyt
 vars.Add("CPYTHON_LINKFLAGS", "Custom flags for the linker used to compile CPython")
 vars.Add("OPENSSL_PATH", "Path to the root of openssl installation to link CPython against")
 vars.Add(
-    "TARGET_ARCH", "Target architecture (Windows only) -- x86, x86_64, ia64. Default: host arch."
-)
-vars.Add(
     "MSVC_VERSION",
     "MSVC version to use (Windows only) -- version num X.Y. Default: highest installed.",
 )
@@ -72,9 +69,24 @@ vars.Add(
     "Set to True to let SCons find compiler (with MSVC_VERSION and TARGET_ARCH), "
     "False to use cmd.exe env (MSVC_VERSION and TARGET_ARCH will be ignored), "
     "or vcvarsXY.bat script name to use.",
-    default=False,
+    default=True,
     converter=boolean_converter,
 )
+
+
+# Set Visual Studio arch according to platform target
+vanilla_vars_update = vars.Update
+
+
+def _patched_vars_update(env, args=None):
+    vanilla_vars_update(env, args=None)
+    if env["platform"] == "windows-64":
+        env["TARGET_ARCH"] = "x86_64"
+    elif env["platform"] == "windows-32":
+        env["TARGET_ARCH"] = "x86"
+
+
+vars.Update = _patched_vars_update
 
 
 env = Environment(
@@ -83,6 +95,7 @@ env = Environment(
     ENV=os.environ,
     # ENV = {'PATH' : os.environ['PATH']},
 )
+
 
 # Detect compiler
 env["CC_IS_MSVC"] = env.get("CC") in ("cl", "cl.exe")
