@@ -91,7 +91,7 @@ vars.Update = _patched_vars_update
 
 env = Environment(
     variables=vars,
-    tools=["default", "cython", "symlink", "virtual_target"],
+    tools=["default", "cython", "symlink", "virtual_target", "download"],
     ENV=os.environ,
     # ENV = {'PATH' : os.environ['PATH']},
 )

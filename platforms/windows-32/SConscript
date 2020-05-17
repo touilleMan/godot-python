@@ -1,85 +1,78 @@
-# Worth reading:
-# https://docs.python.org/3/faq/windows.html#how-can-i-embed-python-into-a-windows-application
-# tl;dr: onyl msvc is supported to link against pythonxx.dll
-import os
+import zstandard
+import tarfile
+import json
+import shutil
+import subprocess
+from pathlib import Path
 
 
 Import("env")
 
 
-cpython_src = Dir("cpython")
-# CPython does it build here, then we "install" the result with the builtins
-# libraries into `cpython_build`
-cpython_internal_build_done_marker = env.File('cpython_internal_build_done.marker')
-cpython_internal_build_dir = Dir(f"{cpython_src}/PCBuild/win32")
 cpython_build = Dir("cpython_build")
 
 
 env["bits"] = "32"
-env["godot_default_binary_url"] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_win32.exe.zip"
+env[
+    "godot_default_binary_url"
+] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_win32.exe.zip"
 env["cpython_build"] = cpython_build
 env["cpython_build_dir"] = cpython_build
-env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/site-packages")
+env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/Lib/site-packages")
 
 
 ### Build config for pythonscript ###
 
-
-# env.AppendUnique(LIBPATH=[f"{cpython_build.abspath}"])
-# Cannot use CPPPATH or LIBPATH here given headers&libs are within
-# `cpython_build` target, so SCons consider them as missing targets
-env.AppendUnique(CFLAGS=[
-    f"-I{cpython_src.abspath}\\Include",
-    f"-I{cpython_src.abspath}\\PC",
-])
-env.AppendUnique(LINKFLAGS=[
-    f"/LIBPATH:{cpython_build.abspath}"
-])
-env.AppendUnique(CYTHON_COMPILE_DEPS=[cpython_internal_build_done_marker])
+# Cannot use CPPPATH&LIBPATH here given headers are within `cpython_build` target,
+# so Scons consider the headers are a missing target
+env.AppendUnique(CFLAGS=[f"-I{cpython_build.abspath}/include"])
+env.AppendUnique(LINKFLAGS=[f"/LIBPATH:{cpython_build.abspath}/libs"])
+env.AppendUnique(CYTHON_COMPILE_DEPS=[cpython_build])
 
 
-### Fetch Python repo ###
+### Fetch Python prebuild ###
 
 
-env.Command(
-    cpython_src,
-    None,
-    "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.7.1 --single-branch ${TARGET}",
+CPYTHON_PREBUILD_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20200418/cpython-3.7.7-i686-pc-windows-msvc-shared-pgo-20200418T2311.tar.zst"
+cpython_prebuild_archive = env.Download(
+    target=File(CPYTHON_PREBUILD_URL.rsplit("/", 1)[1]), url=CPYTHON_PREBUILD_URL
 )
-env.NoClean(cpython_src)
+env.NoClean(cpython_prebuild_archive)
 
 
-### Build Python ###
+### Extract prebuild ###
 
 
-# Build dir is within the source dir... which is something scons hates !
-# So use a virtual target to represent the build process
-env.VirtualTargetCommand(
-    marker=cpython_internal_build_done_marker,
-    condition=lambda env: os.path.exists(cpython_internal_build_dir.abspath),
-    source=cpython_src,
-    action=[
-        (
-            f"cd {cpython_src.abspath}\\PCBuild && "
-            "echo Configuring CPython... && "
-            f"get_externals.bat --python=python && "
-            "echo Building CPython... && "
-            f"build.bat -p Win32"
-        ),
-    ]
+def extract_cpython_prebuild(target, source, env):
+    archive_path = source[0].abspath
+    target_path = target[0].abspath
+    with open(archive_path, "rb") as fh:
+        dctx = zstandard.ZstdDecompressor()
+        with dctx.stream_reader(fh) as reader:
+            with tarfile.open(mode="r|", fileobj=reader) as tf:
+                tf.extractall(target_path)
+
+
+cpython_prebuild_src = env.Command(
+    Dir("cpython_prebuild"), cpython_prebuild_archive, extract_cpython_prebuild
 )
-env.NoClean(cpython_internal_build_done_marker)
+env.NoClean(cpython_prebuild_src)
 
 
-### Extract build and builtin lib ###
+### Generate custom build from the prebuild ###
 
 
-env.Command(
-    target=cpython_build,
-    source=cpython_internal_build_done_marker,
-    action=[
-        Copy(f"{cpython_build.abspath}", f"{cpython_src.abspath}/PCBuild/win32"),
-        Copy(f"{cpython_build.abspath}/lib", f"{cpython_src.abspath}/Lib"),
-    ]
-)
+def generate_cpython_build(target, source, env):
+    build = Path(target[0].abspath)
+    prebuild = Path(source[0].abspath) / "python"
+
+    conf = json.loads((prebuild / "PYTHON.json").read_text())
+    assert conf["version"] == "5"
+    assert conf["libpython_link_mode"] == "shared"
+
+    shutil.copytree(str(prebuild / "install"), str(build), symlinks=True)
+    shutil.copytree(str(prebuild / "licenses"), str(build / "licenses"), symlinks=True)
+
+
+env.Command(cpython_build, cpython_prebuild_src, generate_cpython_build)
 env.NoClean(cpython_build)

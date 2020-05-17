@@ -5,6 +5,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
+
 Import("env")
 
 
@@ -35,8 +36,9 @@ env.AppendUnique(CYTHON_COMPILE_DEPS=[cpython_build])
 ### Fetch Python prebuild ###
 
 
-cpython_prebuild_archive = File(
-    "cpython-3.7.7-x86_64-unknown-linux-gnu-noopt-20200516T2227.tar.zst"
+CPYTHON_PREBUILD_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20200418/cpython-3.7.7-x86_64-unknown-linux-gnu-pgo-20200418T2226.tar.zst"
+cpython_prebuild_archive = env.Download(
+    target=File(CPYTHON_PREBUILD_URL.rsplit("/", 1)[1]), url=CPYTHON_PREBUILD_URL
 )
 env.NoClean(cpython_prebuild_archive)
 
