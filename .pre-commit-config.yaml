@@ -4,7 +4,7 @@ repos:
     hooks:
     - id: black
       types: [file]  # override `types: [python]`
-      files: (\.py$|^SConstruct$|^SConscript$)
+      files: (\.py$|^SConstruct$|SConscript$)
       exclude: (tests/_lib_vendors|(tests|examples)/lib)  # Ignore 3rd party stuff
       args:
           - "--line-length=100"
