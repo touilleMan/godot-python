@@ -1,35 +1,25 @@
-Import('env')
+Import("env")
 
 
-SConscript([
-    "_hazmat/SConscript"
-])
+SConscript(["_hazmat/SConscript"])
 
 
 pxds = [
-    File(x) for x in (
-        '__init__.py',  # Not really a .pxd but still needed
-        'array.pxd',
-        'bindings.pxd',
-        'builtins.pxd',
-        'hazmat.pxd',
-        'pool_arrays.pxd'
+    File(x)
+    for x in (
+        "__init__.py",  # Not really a .pxd but still needed
+        "array.pxd",
+        "bindings.pxd",
+        "builtins.pxd",
+        "hazmat.pxd",
+        "pool_arrays.pxd",
     )
 ]
-env.Install(
-    "$DIST_SITE_PACKAGES/godot",
-    [
-        File('_version.py'),
-        *pxds,
-    ]
-)
+env.Install("$DIST_SITE_PACKAGES/godot", [File("_version.py"), *pxds])
 env.AppendUnique(CYTHON_DEPS=pxds)
 
 
-env.Install(
-    "$DIST_SITE_PACKAGES/godot",
-    env.CythonModule('tags', 'tags.pyx')
-)
+env.Install("$DIST_SITE_PACKAGES/godot", env.CythonModule("tags", "tags.pyx"))
 
 
 ### Builtins ###
@@ -39,7 +29,7 @@ env.Install(
 godot_pool_arrays_srcs = env.Command(
     target=("pool_arrays.pyx", "pool_arrays.pxd"),
     source=(),
-    action="python %s  -o ${TARGET}" % File('#/tools/generate_pool_arrays.py'),
+    action="python %s  -o ${TARGET}" % File("#/tools/generate_pool_arrays.py"),
 )
 env.Depends(
     godot_pool_arrays_srcs,
@@ -50,36 +40,23 @@ env.Depends(
 godot_builtins_srcs = env.Command(
     target=("builtins.pyx", "builtins.pxd"),
     source=(),
-    action="python %s -o ${TARGET}" % File('#/tools/generate_builtins.py'),
+    action="python %s -o ${TARGET}" % File("#/tools/generate_builtins.py"),
 )
 env.Depends(
-    godot_builtins_srcs,
-    ["#/tools/generate_builtins.py", env.Glob("#/tools/builtins_templates/*")],
+    godot_builtins_srcs, ["#/tools/generate_builtins.py", env.Glob("#/tools/builtins_templates/*")]
 )
 # TODO: remove this once pool_array is merged into builtins
-env.Depends(
-    godot_builtins_srcs,
-    godot_pool_arrays_srcs,
-)
+env.Depends(godot_builtins_srcs, godot_pool_arrays_srcs)
 
 
-env.Install(
-    "$DIST_SITE_PACKAGES/godot",
-    env.CythonModule('pool_arrays', 'pool_arrays.pyx'),
-)
+env.Install("$DIST_SITE_PACKAGES/godot", env.CythonModule("pool_arrays", "pool_arrays.pyx"))
 
 
 # TODO: merge array.pyx into builtins
-env.Install(
-    "$DIST_SITE_PACKAGES/godot",
-    env.CythonModule('array', 'array.pyx'),
-)
+env.Install("$DIST_SITE_PACKAGES/godot", env.CythonModule("array", "array.pyx"))
 
 
-env.Install(
-    "$DIST_SITE_PACKAGES/godot",
-    env.CythonModule('builtins', 'builtins.pyx'),
-)
+env.Install("$DIST_SITE_PACKAGES/godot", env.CythonModule("builtins", "builtins.pyx"))
 
 
 ### Bindings ###
@@ -87,16 +64,16 @@ env.Install(
 
 # Bindings module is a special snowflake given it size
 bindings_env = env.Clone()
-sample = env['bindings_generate_sample']
+sample = env["bindings_generate_sample"]
 
 # dont strip on debug builds
-if not sample and not env['debug']:
+if not sample and not env["debug"]:
     if env["CC_IS_GCC"]:
         bindings_env.AppendUnique(LINKFLAGS=["-Wl,--strip-all"])
     elif env["CC_IS_CLANG"]:
         bindings_env.AppendUnique(LINKFLAGS=["-Wl,-s"])
 
-if sample or env['debug']:
+if sample or env["debug"]:
     # Disable optimization for faster dev builds and ease of debugging
     if not env["CC_IS_MSVC"]:
         bindings_env.AppendUnique(CFLAGS=["-O0"])
@@ -113,13 +90,9 @@ else:
 
 godot_bindings_srcs = bindings_env.Command(
     target=("bindings.pyx", "bindings.pxd"),
-    source=(
-        "${gdnative_include_dir}/api.json",
-    ),
-    action=(
-        "python %s ${opts} -i ${SOURCE} -o ${TARGET} " % File("#/tools/generate_bindings.py")
-    ),
-    opts="--sample" if sample else ""
+    source=("${gdnative_include_dir}/api.json",),
+    action=("python %s ${opts} -i ${SOURCE} -o ${TARGET} " % File("#/tools/generate_bindings.py")),
+    opts="--sample" if sample else "",
 )
 bindings_env.Depends(
     godot_bindings_srcs,
@@ -128,6 +101,5 @@ bindings_env.Depends(
 
 
 bindings_env.Install(
-    "$DIST_SITE_PACKAGES/godot",
-    bindings_env.CythonModule('bindings', 'bindings.pyx')
+    "$DIST_SITE_PACKAGES/godot", bindings_env.CythonModule("bindings", "bindings.pyx")
 )

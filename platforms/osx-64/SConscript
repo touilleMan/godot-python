@@ -6,7 +6,9 @@ cpython_build = Dir("cpython_build")
 
 
 env["bits"] = "64"
-env["godot_default_binary_url"] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_osx.64.zip"
+env[
+    "godot_default_binary_url"
+] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_osx.64.zip"
 env["cpython_build"] = cpython_build
 env["cpython_build_dir"] = cpython_build
 env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/python3.7/site-packages")
@@ -21,9 +23,7 @@ env.AppendUnique(LINKFLAGS=["-m64"])
 # so Scons consider the headers are a missing target
 env.AppendUnique(CFLAGS=[f"-I{cpython_build.abspath}/include/python3.7m/"])
 # env.AppendUnique(LIBPATH=[f"{cpython_build.abspath}/lib"])
-env.AppendUnique(LINKFLAGS=[
-    f"-L{cpython_build.abspath}/lib"
-])
+env.AppendUnique(LINKFLAGS=[f"-L{cpython_build.abspath}/lib"])
 
 
 ### Fetch Python repo ###
@@ -48,7 +48,9 @@ env.Command(
     (
         "cd ${SOURCE} && "
         "echo Configuring CPython... && "
-        "1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} CFLAGS='${CPYTHON_CFLAGS}' LDFLAGS='${CPYTHON_LINKFLAGS}' " + openssl_opt + " && "
+        "1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} CFLAGS='${CPYTHON_CFLAGS}' LDFLAGS='${CPYTHON_LINKFLAGS}' "
+        + openssl_opt
+        + " && "
         "echo Building CPython... && "
         # Running the python setup inside a virtualenv gets python confused...
         # setting sys._home to None seems to fix the problem.
@@ -65,9 +67,9 @@ env.Command(
         # but an path relative to @loader_path, which is a special symbol that points to the executable.
         # See: http://joaoventura.net/blog/2016/embeddable-python-osx-from-src/ , https://stackoverflow.com/questions/7880454/python-executable-not-finding-libpython-shared-library
         "chmod 655 ${TARGET.get_abspath()}/lib/libpython3.7m.dylib &&"
-        "install_name_tool -id \"@rpath/libpython3.7m.dylib\" ${TARGET.get_abspath()}/lib/libpython3.7m.dylib &&"
+        'install_name_tool -id "@rpath/libpython3.7m.dylib" ${TARGET.get_abspath()}/lib/libpython3.7m.dylib &&'
         "install_name_tool -change ${TARGET.get_abspath()}/lib/libpython3.7m.dylib @loader_path/../lib/libpython3.7m.dylib ${TARGET.get_abspath()}/bin/python3.7 &&"
-        "install_name_tool -add_rpath \"@loader_path/../lib\" ${TARGET.get_abspath()}/bin/python3.7"
-    )
+        'install_name_tool -add_rpath "@loader_path/../lib" ${TARGET.get_abspath()}/bin/python3.7'
+    ),
 )
 env.NoClean(cpython_build)

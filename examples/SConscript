@@ -1,12 +1,10 @@
 Import("env")
 
-for test in ['pong', 'pong_multiplayer']:
+for test in ["pong", "pong_multiplayer"]:
     dist_symlink = env.Symlink(f"{test}/pythonscript", "$DIST_ROOT/pythonscript")
     target = env.Command(
-        test,
-        ["$godot_binary", dist_symlink],
-        "${SOURCE.abspath} --path ${TARGET}",
+        test, ["$godot_binary", dist_symlink], "${SOURCE.abspath} --path ${TARGET}"
     )
     env.AlwaysBuild(target)
 
-env.Alias('example', 'examples/pong')
+env.Alias("example", "examples/pong")
