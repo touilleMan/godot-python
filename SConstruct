@@ -46,6 +46,7 @@ vars.Add(
 vars.Add("gdnative_include_dir", "Path to GDnative include directory", "")
 vars.Add("debugger", "Run test with a debugger", "")
 vars.Add(BoolVariable("debug", "Compile with debug symbols", False))
+vars.Add(BoolVariable("headless", "Run tests in headless mode", False))
 vars.Add(
     BoolVariable(
         "bindings_generate_sample",
