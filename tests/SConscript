@@ -13,7 +13,7 @@ else:
     cmd_suffix = ""
 
 
-for test in ['bindings', 'helloworld', 'work_with_gdscript', 'threading']:
+for test in ["bindings", "helloworld", "work_with_gdscript", "threading"]:
     dist_symlink = env.Symlink(f"{test}/pythonscript", "$DIST_ROOT/pythonscript")
     dist_symlink = env.Symlink(f"{test}/lib", "_lib_vendors")
     target = env.Command(
@@ -24,5 +24,5 @@ for test in ['bindings', 'helloworld', 'work_with_gdscript', 'threading']:
     env.AlwaysBuild(target)
 
 
-env.Alias('test', 'bindings')
-env.Alias('test-threading', 'threading')
+env.Alias("test", "bindings")
+env.Alias("test-threading", "threading")
