@@ -9,15 +9,17 @@ from urllib.request import urlopen
 Import("env")
 
 
-SConscript([
-    f"{env['platform']}/SConscript"
-])
+SConscript([f"{env['platform']}/SConscript"])
 # Platform-dependant variables
-assert 'bits' in env
-assert 'godot_default_binary_url' in env
-assert 'cpython_build' in env
-assert 'cpython_build_dir' in env
-assert 'DIST_SITE_PACKAGES' in env
+assert "bits" in env
+assert "godot_default_binary_url" in env
+assert "cpython_build" in env
+assert "cpython_build_dir" in env
+assert "DIST_SITE_PACKAGES" in env
+
+
+# Cython modules need to link against libpython.so
+env.AppendUnique(CYTHON_COMPILE_DEPS=[env["cpython_build"]])
 
 
 ### Install CPython build into dist ###
@@ -27,25 +29,25 @@ assert 'DIST_SITE_PACKAGES' in env
 # `env.InstallAs("$DIST_PLATFORM", cypthon_build)` rule given it would
 # conflict with the rules that install libpythonscript&godot modules.
 # To solve this we represent the installation of the build by a virtual target.
-cpython_build_install_marker = env.File('cpython_build_installed_in_dist.marker')
+cpython_build_install_marker = env.File("cpython_build_installed_in_dist.marker")
 env.VirtualTargetCommand(
     marker=cpython_build_install_marker,
     condition=lambda env: os.path.exists(env.Dir("$DIST_PLATFORM").abspath),
-    source=env['cpython_build'],  # Note we don't use `cpython_build_dir` !
-    action=
-    [
-        Delete("$DIST_PLATFORM"),
-        Copy("$DIST_PLATFORM", env["cpython_build_dir"]),
-    ]
+    source=env["cpython_build"],  # Note we don't use `cpython_build_dir` !
+    action=[Delete("$DIST_PLATFORM"), Copy("$DIST_PLATFORM", env["cpython_build_dir"])],
 )
 
 
 # Replace default Install command to always depend on cpython build install
 env.VanillaInstall = env.Install
+
+
 def install(env, target, source):
     out = env.VanillaInstall(target, source)
     env.Depends(out, cpython_build_install_marker)
     return out
+
+
 env.AddMethod(install, "Install")
 
 
@@ -53,17 +55,15 @@ env.AddMethod(install, "Install")
 
 
 if not env["godot_binary"]:
-    godot_binary_name = re.search(
-        r"([^/]+)\.zip$", env['godot_default_binary_url']
-    ).groups()[0]
+    godot_binary_name = re.search(r"([^/]+)\.zip$", env["godot_default_binary_url"]).groups()[0]
     env["godot_binary"] = File(godot_binary_name)
 
     def download_and_extract(target, source, env):
-        resp = urlopen(env['godot_default_binary_url'])
+        resp = urlopen(env["godot_default_binary_url"])
         zipfile = ZipFile(BytesIO(resp.read()))
         if godot_binary_name not in zipfile.namelist():
             raise UserError(f"Archive doesn't contain {godot_binary_name}")
-        with open(target[0].abspath, 'wb') as fd:
+        with open(target[0].abspath, "wb") as fd:
             fd.write(zipfile.open(godot_binary_name).read())
         if env["HOST_OS"] != "win32":
             os.chmod(target[0].abspath, 0o755)
@@ -71,9 +71,6 @@ if not env["godot_binary"]:
     env.Command(
         env["godot_binary"],
         None,
-        Action(
-            download_and_extract,
-            f"Download&extract {env['godot_default_binary_url']}"
-        ),
+        Action(download_and_extract, f"Download&extract {env['godot_default_binary_url']}"),
     )
     env.NoClean(env["godot_binary"])

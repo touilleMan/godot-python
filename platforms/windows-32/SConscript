@@ -33,7 +33,7 @@ env.AppendUnique(CYTHON_COMPILE_DEPS=[cpython_build])
 ### Fetch Python prebuild ###
 
 
-CPYTHON_PREBUILD_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20200418/cpython-3.7.7-i686-pc-windows-msvc-shared-pgo-20200418T2311.tar.zst"
+CPYTHON_PREBUILD_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20200517/cpython-3.8.3-i686-pc-windows-msvc-shared-pgo-20200518T0154.tar.zst"
 cpython_prebuild_archive = env.Download(
     target=File(CPYTHON_PREBUILD_URL.rsplit("/", 1)[1]), url=CPYTHON_PREBUILD_URL
 )
@@ -69,6 +69,7 @@ def generate_cpython_build(target, source, env):
     conf = json.loads((prebuild / "PYTHON.json").read_text())
     assert conf["version"] == "5"
     assert conf["libpython_link_mode"] == "shared"
+    assert conf["target_triple"] == "x86-pc-windows-msvc"
 
     shutil.copytree(str(prebuild / "install"), str(build), symlinks=True)
     shutil.copytree(str(prebuild / "licenses"), str(build / "licenses"), symlinks=True)
