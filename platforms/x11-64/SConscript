@@ -28,7 +28,7 @@ env.AppendUnique(CFLAGS=["-m64"])
 env.AppendUnique(LINKFLAGS=["-m64"])
 # Cannot use CPPPATH&LIBPATH here given headers are within `cpython_build` target,
 # so Scons consider the headers are a missing target
-env.AppendUnique(CFLAGS=[f"-I{cpython_build.abspath}/include/python3.8m/"])
+env.AppendUnique(CFLAGS=[f"-I{cpython_build.abspath}/include/python3.8/"])
 env.AppendUnique(LINKFLAGS=[f"-L{cpython_build.abspath}/lib"])
 env.AppendUnique(CYTHON_COMPILE_DEPS=[cpython_build])
 
@@ -74,21 +74,17 @@ def generate_cpython_build(target, source, env):
     assert conf["libpython_link_mode"] == "shared"
     assert conf["target_triple"] == "x86_64-unknown-linux-gnu"
 
-    build.mkdir()
+    shutil.copytree(str(prebuild / "install"), str(build), symlinks=True)
     shutil.copytree(str(prebuild / "licenses"), str(build / "licenses"), symlinks=True)
-    shutil.copytree(str(prebuild / "install/include"), str(build / "include"), symlinks=True)
 
-    shutil.copytree(str(prebuild / "install/lib"), str(build / "lib"), symlinks=True)
+    shutil.rmtree(str(build / "share"))
 
     # Remove static library stuff
-    a_link = list((build / "lib").glob("libpython*.a"))
-    assert len(a_link) == 1
-    a_link[0].unlink()
-    config = list((build / "lib").glob("python*/config-*"))
-    assert len(config) == 1
-    shutil.rmtree(str(config[0]))
-
-    shutil.copytree(str(prebuild / "install/bin"), str(build / "bin"), symlinks=True)
+    config = conf["python_stdlib_platform_config"]
+    assert config.startswith("install/lib/")
+    config = build / config[len("install/") :]
+    assert config.exists()
+    shutil.rmtree(str(config))
 
     # Patch binaries to load libpython.so with a relative path
     prebuild_shared_lib_path = conf["build_info"]["core"]["shared_lib"]

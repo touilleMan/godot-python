@@ -69,7 +69,7 @@ def generate_cpython_build(target, source, env):
     conf = json.loads((prebuild / "PYTHON.json").read_text())
     assert conf["version"] == "5"
     assert conf["libpython_link_mode"] == "shared"
-    assert conf["target_triple"] == "x86-pc-windows-msvc"
+    assert conf["target_triple"] == "i686-pc-windows-msvc"
 
     shutil.copytree(str(prebuild / "install"), str(build), symlinks=True)
     shutil.copytree(str(prebuild / "licenses"), str(build / "licenses"), symlinks=True)
