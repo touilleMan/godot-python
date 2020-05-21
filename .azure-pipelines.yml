@@ -190,10 +190,10 @@ jobs:
       set -eux
       scons build
     displayName: 'Build project'
-  # - bash: |
-  #     set -eux
-  #     scons tests headless=true
-  #   displayName: 'Run tests'
+  - bash: |
+      set -eux
+      scons tests
+    displayName: 'Run tests'
   - bash: |
       set -eux
       scons release
