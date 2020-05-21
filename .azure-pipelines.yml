@@ -77,6 +77,22 @@ jobs:
     displayName: 'Build project'
   - bash: |
       set -eux
+      # Azure pipelines doesn't provide a GPU with an OpenGL driver,
+      # hence we use Mesa3D as software OpenGL driver
+      pushd build/$(PLATFORM)/platforms/
+      if [ "$(PLATFORM)" = "windows-64" ]
+      then
+        curl https://downloads.fdossena.com/Projects/Mesa3D/Builds/MesaForWindows-x64-20.0.7.7z -o mesa.7z
+      else
+        curl https://downloads.fdossena.com/Projects/Mesa3D/Builds/MesaForWindows-20.0.7.7z -o mesa.7z
+      fi
+      # opengl32.dll must be extracted in the same directory than Godot binary
+      tar xf mesa.7z
+      ls -lh opengl32.dll  # Sanity check
+      popd
+    displayName: 'Install Mesa3D OpenGL'
+  - bash: |
+      set -eux
       scons tests headless=true
     displayName: 'Run tests'
   - powershell: |
