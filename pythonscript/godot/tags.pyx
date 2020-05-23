@@ -149,6 +149,7 @@ class ExportedField:
         self,
         type,
         default,
+        name,
         hint,
         usage,
         hint_string,
@@ -184,7 +185,7 @@ class ExportedField:
 
         self.type = type
         self.default = default
-        self.name = None
+        self.name = name
         self.hint = hint
         self.usage = usage
         self.hint_string = hint_string
@@ -262,6 +263,7 @@ def export(
     return ExportedField(
         type=type,
         default=default,
+        name=None,
         hint=hint,
         usage=usage,
         hint_string=hint_string,
