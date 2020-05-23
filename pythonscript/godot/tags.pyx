@@ -16,7 +16,7 @@ from godot._hazmat.conversion cimport (
 )
 from godot._hazmat.internal cimport get_exposed_class, set_exposed_class
 from godot.builtins cimport Array, Dictionary, GDString
-from godot.bindings cimport Object
+from godot.bindings cimport Object, Resource
 
 
 # Make Godot enums accesible from Python at runtime
@@ -149,7 +149,6 @@ class ExportedField:
         self,
         type,
         default,
-        name,
         hint,
         usage,
         hint_string,
@@ -176,9 +175,16 @@ class ExportedField:
             if not isinstance(default, type):
                 raise ValueError(f"{default!r} default value not compatible with {type!r} type")
 
+        if issubclass(type, Resource):
+            if hint not in (PropertyHint.NONE, PropertyHint.RESOURCE_TYPE) or hint_string not in ("", type.__name__):
+                raise ValueError(f"Resource type doesn't support hint/hint_string fields")
+            hint = PropertyHint.RESOURCE_TYPE
+            hint_string = type.__name__
+            type = Object
+
         self.type = type
         self.default = default
-        self.name = name
+        self.name = None
         self.hint = hint
         self.usage = usage
         self.hint_string = hint_string
@@ -229,7 +235,6 @@ class ExportedField:
 def export(
         type,
         default=None,
-        name: str="",
         hint: PropertyHint=PropertyHint.NONE,
         usage: PropertyUsageFlag=PropertyUsageFlag.DEFAULT,
         hint_string: str="",
@@ -257,7 +262,6 @@ def export(
     return ExportedField(
         type=type,
         default=default,
-        name=name,
         hint=hint,
         usage=usage,
         hint_string=hint_string,
