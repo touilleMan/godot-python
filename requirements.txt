@@ -1,5 +1,5 @@
 scons==3.1.1
-cython==0.29.14
+cython==0.29.19
 black==19.10b0
 autopxd==1.0.0
 jinja2==2.10.3
