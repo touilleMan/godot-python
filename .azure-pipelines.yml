@@ -87,13 +87,14 @@ jobs:
         curl https://downloads.fdossena.com/Projects/Mesa3D/Builds/MesaForWindows-20.0.7.7z -o mesa.7z
       fi
       # opengl32.dll must be extracted in the same directory than Godot binary
-      tar xf mesa.7z
+      7z.exe x mesa.7z
       ls -lh opengl32.dll  # Sanity check
       popd
     displayName: 'Install Mesa3D OpenGL'
   - bash: |
       set -eux
-      scons tests headless=true
+      scons tests/bindings
+      scons tests/threading
     displayName: 'Run tests'
   - powershell: |
       scons release
@@ -146,9 +147,16 @@ jobs:
       scons build
     displayName: 'Build project'
   - bash: |
+      /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+      echo ">>> Started xvfb"
+    displayName: 'Start xvfb'
+  - bash: |
       set -eux
-      scons tests headless=true
+      scons tests/bindings headless=true
+      scons tests/threading headless=true
     displayName: 'Run tests'
+    env:
+      DISPLAY: ':99.0'
   - bash: |
       set -eux
       scons release
@@ -198,9 +206,6 @@ jobs:
       echo 'platform = "$(PLATFORM)"' >> custom.py
       echo 'bindings_generate_sample = True' >> custom.py
       echo 'CC = "$(CC)"' >> custom.py
-      echo "CPYTHON_CFLAGS = ['-I$(brew --prefix zlib)/include', '-I$(brew --prefix openssl)/include']" >> custom.py
-      echo "CPYTHON_LDFLAGS = ['-L$(brew --prefix zlib)/lib', '-L$(brew --prefix openssl)/lib']" >> custom.py
-      echo "OPENSSL_PATH = '$(brew --prefix openssl)/lib'" >> custom.py
     displayName: 'Setup venv'
   - bash: |
       set -eux
@@ -208,7 +213,8 @@ jobs:
     displayName: 'Build project'
   - bash: |
       set -eux
-      scons tests
+      scons tests/bindings
+      scons tests/threading
     displayName: 'Run tests'
   - bash: |
       set -eux
