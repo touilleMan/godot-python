@@ -144,8 +144,8 @@ if not env["CC_IS_MSVC"]:
         env.Append(CFLAGS=["-O2"])
 else:
     if env["debug"]:
-        env.Append(CFLAGS=["/DEBUG"])
-        env.Append(LINKFLAGS=["/DEBUG"])
+        env.Append(CFLAGS=["/DEBUG:FULL"])
+        env.Append(LINKFLAGS=["/DEBUG:FULL"])
     else:
         env.Append(CFLAGS=["/WX", "/W2"])
 
