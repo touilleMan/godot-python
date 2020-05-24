@@ -7,4 +7,4 @@ for test in ["pong", "pong_multiplayer"]:
     )
     env.AlwaysBuild(target)
 
-env.Alias("example", "examples/pong")
+env.Alias("example", "pong")
