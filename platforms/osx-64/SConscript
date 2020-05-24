@@ -100,11 +100,7 @@ def generate_cpython_build(target, source, env):
     binary = build / "bin/python3.8"
     assert binary.is_file()
     dylib = build / "lib/libpython3.8.dylib"
-    cmd = f'install_name_tool -id "@rpath/{dylib.name}" {dylib}'
-    subprocess.run(cmd.split(), check=True)
-    cmd = f"install_name_tool -change {dylib} @loader_path/../lib/{dylib.name} {binary}"
-    subprocess.run(cmd.split(), check=True)
-    cmd = f'install_name_tool -add_rpath "@loader_path/../lib" {binary}'
+    cmd = f"install_name_tool -id @rpath/{dylib.name} {dylib}"
     subprocess.run(cmd.split(), check=True)
 
 
