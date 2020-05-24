@@ -86,31 +86,26 @@ def generate_cpython_build(target, source, env):
     assert config.exists()
     shutil.rmtree(str(config))
 
-    # # Patch binaries to load libpython.so with a relative path
-    # prebuild_shared_lib_path = conf["build_info"]["core"]["shared_lib"]
-    # path, _ = prebuild_shared_lib_path.rsplit("/", 1)
-    # assert path == "install/lib"  # Make sure libpython.so is on lib folder
-    # for item in (build / "bin").iterdir():
-    #     if item.is_symlink():
-    #         continue
-    #     assert item.is_file()
-    #     # Simple check on magic number to avoid trying to patch shell scripts
-    #     if item.read_bytes()[:4] != b"\x7fELF":
-    #         continue
-    #     cmd = f"patchelf --set-rpath $ORIGIN/../lib {item}"
-    #     subprocess.run(cmd.split(), check=True)
-
-    # MacOS does not look for libs the same way other systems do.
+    # Patch binaries to load libpython3.x.dylib with a relative path
     # Lib paths are hardcoded into the executable, and if the lib is not found at the path, then it craps out.
     # Unfortunately compiling python will hardcode the absolute path of libpython.dylib into the executable,
     # so if you move it around it will break.
     # the solution here is to modify the executable and make sure the lib path is not an absolute path,
     # but an path relative to @loader_path, which is a special symbol that points to the executable.
-    # See: http://joaoventura.net/blog/2016/embeddable-python-osx-from-src/ , https://stackoverflow.com/questions/7880454/python-executable-not-finding-libpython-shared-library
-    # "chmod 655 ${TARGET.get_abspath()}/lib/libpython3.8m.dylib &&"
-    # "install_name_tool -id \"@rpath/libpython3.8m.dylib\" ${TARGET.get_abspath()}/lib/libpython3.8m.dylib &&"
-    # "install_name_tool -change ${TARGET.get_abspath()}/lib/libpython3.8m.dylib @loader_path/../lib/libpython3.8m.dylib ${TARGET.get_abspath()}/bin/python3.8 &&"
-    # "install_name_tool -add_rpath \"@loader_path/../lib\" ${TARGET.get_abspath()}/bin/python3.8"
+    # See: http://joaoventura.net/blog/2016/embeddable-python-osx-from-src/
+    # and https://stackoverflow.com/questions/7880454/python-executable-not-finding-libpython-shared-library
+    prebuild_shared_lib_path = conf["build_info"]["core"]["shared_lib"]
+    path, _ = prebuild_shared_lib_path.rsplit("/", 1)
+    assert path == "install/lib"  # Make sure libpython.so is on lib folder
+    binary = build / "bin/python3.8"
+    assert binary.is_file()
+    dylib = build / "lib/libpython3.8.dylib"
+    cmd = f'install_name_tool -id "@rpath/{dylib.name}" {dylib}'
+    subprocess.run(cmd.split(), check=True)
+    cmd = f"install_name_tool -change {dylib} @loader_path/../lib/{dylib.name} {binary}"
+    subprocess.run(cmd.split(), check=True)
+    cmd = f'install_name_tool -add_rpath "@loader_path/../lib" {binary}'
+    subprocess.run(cmd.split(), check=True)
 
 
 env.Command(cpython_build, cpython_prebuild_src, generate_cpython_build)
