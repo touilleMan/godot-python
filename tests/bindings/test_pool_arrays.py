@@ -1,3 +1,4 @@
+import sys
 import pytest
 from random import Random
 from inspect import isfunction
@@ -20,6 +21,9 @@ from godot import (
 )
 
 from conftest import generate_global_obj
+
+
+is_windows_32 = (sys.platform == "win32") and (sys.maxsize <= 2 ** 32)
 
 
 NODE = generate_global_obj(Node)
@@ -143,6 +147,9 @@ def test_bad_init(pool_x_array, bad_val):
 
 
 def test_initialized_init(pool_x_array):
+    if is_windows_32:
+        pytest.skip("Cause segfault on windows-32, see issue #185")
+
     vals = pool_x_array.generate_values(4)
     v1 = pool_x_array.cls(vals)
     v2 = pool_x_array.cls(Array(vals))
@@ -176,6 +183,9 @@ def test_equal(pool_x_array):
 
 @pytest.mark.parametrize("other_type", [list, tuple, Array])
 def test_bad_equal_on_different_types(pool_x_array, other_type):
+    if is_windows_32 and other_type is Array:
+        pytest.skip("Cause segfault on windows-32, see issue #185")
+
     vals = pool_x_array.generate_values(4)
 
     pool = pool_x_array.cls(vals)

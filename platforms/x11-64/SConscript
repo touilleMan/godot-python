@@ -1,17 +1,29 @@
+import zstandard
+import tarfile
+import json
+import shutil
+import subprocess
+from pathlib import Path
+
+
 Import("env")
 
 
-cpython_src = Dir("cpython")
 cpython_build = Dir("cpython_build")
 
 
 env["bits"] = "64"
-env[
-    "godot_default_binary_url"
-] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_x11.64.zip"
+if env["headless"]:
+    env[
+        "godot_default_binary_url"
+    ] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_linux_headless.64.zip"
+else:
+    env[
+        "godot_default_binary_url"
+    ] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_x11.64.zip"
 env["cpython_build"] = cpython_build
 env["cpython_build_dir"] = cpython_build
-env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/python3.7/site-packages")
+env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/python3.8/site-packages")
 
 
 ### Build config for pythonscript ###
@@ -21,41 +33,78 @@ env.AppendUnique(CFLAGS=["-m64"])
 env.AppendUnique(LINKFLAGS=["-m64"])
 # Cannot use CPPPATH&LIBPATH here given headers are within `cpython_build` target,
 # so Scons consider the headers are a missing target
-env.AppendUnique(CFLAGS=[f"-I{cpython_build.abspath}/include/python3.7m/"])
-# env.AppendUnique(LIBPATH=[f"{cpython_build.abspath}/lib"])
+env.AppendUnique(CFLAGS=[f"-I{cpython_build.abspath}/include/python3.8/"])
 env.AppendUnique(LINKFLAGS=[f"-L{cpython_build.abspath}/lib"])
 env.AppendUnique(CYTHON_COMPILE_DEPS=[cpython_build])
 
 
-### Fetch Python repo ###
+### Fetch Python prebuild ###
 
 
-env.Command(
-    cpython_src,
-    None,
-    "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.7.1 --single-branch ${TARGET}",
+CPYTHON_PREBUILD_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20200517/cpython-3.8.3-x86_64-unknown-linux-gnu-pgo-20200518T0040.tar.zst"
+cpython_prebuild_archive = env.Download(
+    target=File(CPYTHON_PREBUILD_URL.rsplit("/", 1)[1]), url=CPYTHON_PREBUILD_URL
 )
-env.NoClean(cpython_src)
+env.NoClean(cpython_prebuild_archive)
 
 
-### Build Python ###
+### Extract prebuild ###
 
-openssl_opt = f"--with-openssl={env['OPENSSL_PATH']}" if env.get("OPENSSL_PATH") else ""
 
-# TODO: allow to compile cpython with `--with-pydebug` ?
-env.Command(
-    cpython_build,
-    cpython_src,
-    (
-        "cd ${SOURCE} && "
-        "echo Configuring CPython... && "
-        "1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} CFLAGS='${CPYTHON_CFLAGS}' LDFLAGS='${CPYTHON_LINKFLAGS}' "
-        + openssl_opt
-        + " && "
-        "echo Building CPython... && "
-        "1>/dev/null make -j4 && "
-        "echo Installing CPython in ${TARGET.get_abspath()}... && "
-        "1>/dev/null make -j4 install"
-    ),
+def extract_cpython_prebuild(target, source, env):
+    archive_path = source[0].abspath
+    target_path = target[0].abspath
+    with open(archive_path, "rb") as fh:
+        dctx = zstandard.ZstdDecompressor()
+        with dctx.stream_reader(fh) as reader:
+            with tarfile.open(mode="r|", fileobj=reader) as tf:
+                tf.extractall(target_path)
+
+
+cpython_prebuild_src = env.Command(
+    Dir("cpython_prebuild"), cpython_prebuild_archive, extract_cpython_prebuild
 )
+env.NoClean(cpython_prebuild_src)
+
+
+### Generate custom build from the prebuild ###
+
+
+def generate_cpython_build(target, source, env):
+    build = Path(target[0].abspath)
+    prebuild = Path(source[0].abspath) / "python"
+
+    conf = json.loads((prebuild / "PYTHON.json").read_text())
+    assert conf["version"] == "5"
+    assert conf["libpython_link_mode"] == "shared"
+    assert conf["target_triple"] == "x86_64-unknown-linux-gnu"
+
+    shutil.copytree(str(prebuild / "install"), str(build), symlinks=True)
+    shutil.copytree(str(prebuild / "licenses"), str(build / "licenses"), symlinks=True)
+
+    shutil.rmtree(str(build / "share"))
+
+    # Remove static library stuff
+    config = conf["python_stdlib_platform_config"]
+    assert config.startswith("install/lib/")
+    config = build / config[len("install/") :]
+    assert config.exists()
+    shutil.rmtree(str(config))
+
+    # Patch binaries to load libpython.so with a relative path
+    prebuild_shared_lib_path = conf["build_info"]["core"]["shared_lib"]
+    path, _ = prebuild_shared_lib_path.rsplit("/", 1)
+    assert path == "install/lib"  # Make sure libpython.so is on lib folder
+    for item in (build / "bin").iterdir():
+        if item.is_symlink():
+            continue
+        assert item.is_file()
+        # Simple check on magic number to avoid trying to patch shell scripts
+        if item.read_bytes()[:4] != b"\x7fELF":
+            continue
+        cmd = f"patchelf --set-rpath $ORIGIN/../lib {item}"
+        subprocess.run(cmd.split(), check=True)
+
+
+env.Command(cpython_build, cpython_prebuild_src, generate_cpython_build)
 env.NoClean(cpython_build)

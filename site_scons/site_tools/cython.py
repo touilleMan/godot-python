@@ -75,7 +75,7 @@ def CythonCompile(env, target, source):
             LIBPREFIX="",
             SHLIBSUFFIX=".pyd",
             CFLAGS=cflags,
-            LIBS=["python37", "pythonscript"],
+            LIBS=["python38", "pythonscript"],
             # LIBS=[*env["CYTHON_LIBS"], *env["LIBS"]],
             # LIBPATH=[*env['CYTHON_LIBPATH'], *env['LIBPATH']]
         )
@@ -98,7 +98,7 @@ def CythonCompile(env, target, source):
             SHLIBSUFFIX=".so",
             CFLAGS=cflags,
             LINKFLAGS=[*linkflags, *env["LINKFLAGS"]],
-            LIBS=["python3.7m", "pythonscript"],
+            LIBS=["python3.8", "pythonscript"],
             # LIBS=[*env["CYTHON_LIBS"], *env["LIBS"]],
             # LIBPATH=[*env['CYTHON_LIBPATH'], *env['LIBPATH']]
         )

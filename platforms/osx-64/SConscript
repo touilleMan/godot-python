@@ -1,7 +1,14 @@
+import zstandard
+import tarfile
+import json
+import shutil
+import subprocess
+from pathlib import Path
+
+
 Import("env")
 
 
-cpython_src = Dir("cpython")
 cpython_build = Dir("cpython_build")
 
 
@@ -9,9 +16,10 @@ env["bits"] = "64"
 env[
     "godot_default_binary_url"
 ] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_osx.64.zip"
+env["godot_binary_zip_path"] = "Godot.app/Contents/MacOS/Godot"
 env["cpython_build"] = cpython_build
 env["cpython_build_dir"] = cpython_build
-env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/python3.7/site-packages")
+env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/python3.8/site-packages")
 
 
 ### Build config for pythonscript ###
@@ -21,55 +29,80 @@ env.AppendUnique(CFLAGS=["-m64"])
 env.AppendUnique(LINKFLAGS=["-m64"])
 # Cannot use CPPPATH&LIBPATH here given headers are within `cpython_build` target,
 # so Scons consider the headers are a missing target
-env.AppendUnique(CFLAGS=[f"-I{cpython_build.abspath}/include/python3.7m/"])
-# env.AppendUnique(LIBPATH=[f"{cpython_build.abspath}/lib"])
+env.AppendUnique(CFLAGS=[f"-I{cpython_build.abspath}/include/python3.8/"])
 env.AppendUnique(LINKFLAGS=[f"-L{cpython_build.abspath}/lib"])
 
 
-### Fetch Python repo ###
+### Fetch Python prebuild ###
 
 
-env.Command(
-    cpython_src,
-    None,
-    "git clone https://github.com/python/cpython.git --depth=1 --branch=v3.7.1 --single-branch ${TARGET}",
+CPYTHON_PREBUILD_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20200517/cpython-3.8.3-x86_64-apple-darwin-pgo-20200518T0141.tar.zst"
+cpython_prebuild_archive = env.Download(
+    target=File(CPYTHON_PREBUILD_URL.rsplit("/", 1)[1]), url=CPYTHON_PREBUILD_URL
 )
-env.NoClean(cpython_src)
+env.NoClean(cpython_prebuild_archive)
 
 
-### Build Python ###
+### Extract prebuild ###
 
-openssl_opt = f"--with-openssl={env['OPENSSL_PATH']}" if env.get("OPENSSL_PATH") else ""
 
-# TODO: allow to compile cpython with `--with-pydebug` ?
-env.Command(
-    cpython_build,
-    cpython_src,
-    (
-        "cd ${SOURCE} && "
-        "echo Configuring CPython... && "
-        "1>/dev/null ./configure --enable-shared --prefix=${TARGET.get_abspath()} CFLAGS='${CPYTHON_CFLAGS}' LDFLAGS='${CPYTHON_LINKFLAGS}' "
-        + openssl_opt
-        + " && "
-        "echo Building CPython... && "
-        # Running the python setup inside a virtualenv gets python confused...
-        # setting sys._home to None seems to fix the problem.
-        # this seems to be a bug in cpython: https://bugs.python.org/issue15366
-        "sed -i -e '1s/^/import sys;sys._home=None;/' ${SOURCE.get_abspath()}/setup.py &&"
-        "1>/dev/null make -j4 && "
-        "echo Installing CPython in ${TARGET.get_abspath()}... && "
-        "1>/dev/null make -j4 altinstall &&"
-        # MacOS does not look for libs the same way other systems do.
-        # Lib paths are hardcoded into the executable, and if the lib is not found at the path, then it craps out.
-        # Unfortunately compiling python will hardcode the absolute path of libpython.dylib into the executable,
-        # so if you move it around it will break.
-        # the solution here is to modify the executable and make sure the lib path is not an absolute path,
-        # but an path relative to @loader_path, which is a special symbol that points to the executable.
-        # See: http://joaoventura.net/blog/2016/embeddable-python-osx-from-src/ , https://stackoverflow.com/questions/7880454/python-executable-not-finding-libpython-shared-library
-        "chmod 655 ${TARGET.get_abspath()}/lib/libpython3.7m.dylib &&"
-        'install_name_tool -id "@rpath/libpython3.7m.dylib" ${TARGET.get_abspath()}/lib/libpython3.7m.dylib &&'
-        "install_name_tool -change ${TARGET.get_abspath()}/lib/libpython3.7m.dylib @loader_path/../lib/libpython3.7m.dylib ${TARGET.get_abspath()}/bin/python3.7 &&"
-        'install_name_tool -add_rpath "@loader_path/../lib" ${TARGET.get_abspath()}/bin/python3.7'
-    ),
+def extract_cpython_prebuild(target, source, env):
+    archive_path = source[0].abspath
+    target_path = target[0].abspath
+    with open(archive_path, "rb") as fh:
+        dctx = zstandard.ZstdDecompressor()
+        with dctx.stream_reader(fh) as reader:
+            with tarfile.open(mode="r|", fileobj=reader) as tf:
+                tf.extractall(target_path)
+
+
+cpython_prebuild_src = env.Command(
+    Dir("cpython_prebuild"), cpython_prebuild_archive, extract_cpython_prebuild
 )
+env.NoClean(cpython_prebuild_src)
+
+
+### Generate custom build from the prebuild ###
+
+
+def generate_cpython_build(target, source, env):
+    build = Path(target[0].abspath)
+    prebuild = Path(source[0].abspath) / "python"
+
+    conf = json.loads((prebuild / "PYTHON.json").read_text())
+    assert conf["version"] == "5"
+    assert conf["libpython_link_mode"] == "shared"
+    assert conf["target_triple"] == "x86_64-apple-darwin"
+
+    shutil.copytree(str(prebuild / "install"), str(build), symlinks=True)
+    shutil.copytree(str(prebuild / "licenses"), str(build / "licenses"), symlinks=True)
+
+    shutil.rmtree(str(build / "share"))
+
+    # Remove static library stuff
+    config = conf["python_stdlib_platform_config"]
+    assert config.startswith("install/lib/")
+    config = build / config[len("install/") :]
+    assert config.exists()
+    shutil.rmtree(str(config))
+
+    # Patch binaries to load libpython3.x.dylib with a relative path
+    # Lib paths are hardcoded into the executable, and if the lib is not found at the path, then it craps out.
+    # Unfortunately compiling python will hardcode the absolute path of libpython.dylib into the executable,
+    # so if you move it around it will break.
+    # the solution here is to modify the executable and make sure the lib path is not an absolute path,
+    # but an path relative to @loader_path, which is a special symbol that points to the executable.
+    # See: http://joaoventura.net/blog/2016/embeddable-python-osx-from-src/
+    # and https://stackoverflow.com/questions/7880454/python-executable-not-finding-libpython-shared-library
+    prebuild_shared_lib_path = conf["build_info"]["core"]["shared_lib"]
+    path, _ = prebuild_shared_lib_path.rsplit("/", 1)
+    assert path == "install/lib"  # Make sure libpython.so is on lib folder
+    binary = build / "bin/python3.8"
+    assert binary.is_file()
+    dylib = build / "lib/libpython3.8.dylib"
+    cmd = f"install_name_tool -id @rpath/{dylib.name} {dylib}"
+    subprocess.run(cmd.split(), check=True)
+
+
+env.Command(cpython_build, cpython_prebuild_src, generate_cpython_build)
 env.NoClean(cpython_build)

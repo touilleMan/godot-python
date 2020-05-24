@@ -3,7 +3,7 @@ from math import inf
 from struct import unpack
 
 import godot
-from godot import Vector3, Object, Node, Node2D, PluginScript, OpenSimplexNoise, OK
+from godot import Vector3, Object, Node, CanvasItem, Node2D, PluginScript, OpenSimplexNoise, OS, OK
 
 
 def test_free_node():
@@ -111,10 +111,21 @@ def test_call_with_kwargs(generate_obj):
 
 def test_inheritance(generate_obj):
     node = generate_obj(Node)
-    node2d = generate_obj(Node2D)
-    isinstance(node, Object)
-    isinstance(node2d, Object)
-    isinstance(node2d, Node)
+
+    # CanvasItem is a direct subclass of Node
+    canvas_item = generate_obj(CanvasItem)
+    assert isinstance(node, Object)
+    assert isinstance(canvas_item, Object)
+    assert isinstance(canvas_item, Node)
+
+    # TODO: headless server end up with a static memory leak
+    # when instanciating a Node2D...
+    if not OS.has_feature("Server"):
+        # Node2D is a grand child subclass of Node
+        node2d = generate_obj(Node2D)
+        assert isinstance(node, Object)
+        assert isinstance(node2d, Object)
+        assert isinstance(node2d, Node)
 
 
 def test_call_with_refcounted_return_value(current_node):

@@ -1,6 +1,19 @@
 import pytest
 
-from godot import RID, Environment, Node
+from godot import RID, Environment, Node, OS
+
+
+@pytest.fixture
+def environment_factory():
+    # Environment objects are stubbed on headless server, hence
+    # their corresponding RID is always the same default value
+    if OS.has_feature("Server"):
+        pytest.skip("Not available on headless Godot")
+
+    def _factory():
+        return Environment()
+
+    return _factory
 
 
 def test_base():
@@ -8,17 +21,17 @@ def test_base():
     assert type(v) == RID
 
 
-def test_equal():
+def test_equal(environment_factory):
     v1 = RID()
     v2 = RID()
     assert v1 == v2
     # Environment is a Ressource which provides unique rid per instance
-    res_a = Environment()
+    res_a = environment_factory()
     v_a_1 = RID(res_a)
     assert v_a_1 != v1
     v_a_2 = RID(res_a)
     assert v_a_1 == v_a_2
-    res_b = Environment()
+    res_b = environment_factory()
     v_b = RID(res_b)
     assert not v_a_1 == v_b  # Force use of __eq__
 
@@ -29,19 +42,19 @@ def test_bad_equal(arg):
     assert arr != arg
 
 
-def test_bad_equal_with_rid():
+def test_bad_equal_with_rid(environment_factory):
     # Doing `RID(Environment())` will cause garbage collection of enclosed
     # Environment object and possible reuse of it id
-    env1 = Environment()
-    env2 = Environment()
+    env1 = environment_factory()
+    env2 = environment_factory()
     rid1 = RID(env1)
     rid2 = RID(env2)
     assert rid1 != rid2
 
 
-def test_lt():
-    env1 = Environment()
-    env2 = Environment()
+def test_lt(environment_factory):
+    env1 = environment_factory()
+    env2 = environment_factory()
     rid1 = RID(env1)
     rid2 = RID(env2)
     # Ordered is based on resource pointer, so cannot know the order ahead of time
