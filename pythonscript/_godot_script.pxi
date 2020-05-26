@@ -138,6 +138,7 @@ cdef godot_pluginscript_script_manifest _build_script_manifest(object cls):
 
     return manifest
 
+
 cdef api godot_pluginscript_script_manifest pythonscript_script_init(
     godot_pluginscript_language_data *p_data,
     const godot_string *p_path,
@@ -171,20 +172,20 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
     
     is_reload = modname in sys.modules
     if is_reload:
-        # if we are in a reload, remove the class from loaded classes,
-        # and call importlib.reload to reload the code
+        # Reloading is done in two steps: remove the exported class,
+        # then do module reloading through importlib.
         cls = get_exposed_class(modname)
 
-        # don't try to reload modules that are not managed by godot - e.g. libs or other modules - user should take care of that
+        # If the module has no exported class, it has no real connection with
+        # Godot and doesn't need to be reloaded
         if cls:
             if get_pythonscript_verbose():
-                print(f"Reloading python script from {path}")
-            destroy_module(cls=cls)
+                print(f"Reloading python script from {path} ({modname})")
+            destroy_exposed_class(cls)
             importlib.reload(sys.modules[modname])
 
     try:
         importlib.import_module(modname)  # Force lazy loading of the module
-        # TODO: make sure script reloading works
         cls = get_exposed_class(modname)
 
     except BaseException:
@@ -205,11 +206,11 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
         return _build_empty_script_manifest()
     
     if is_reload:
-        # we are in a reload, so we must increase the refcount for this class,
-        # because pythonscript_script_finish is going to be called next.
-        # if we do not increase the refcount, pythonscript_script_finish will remove the class
-        # and bugs ensue.
-        # apparently multiple PluginScript instances can exist at the same time for the same script.
+        # During reloading, Godot calls the new class init before the old class finish (so
+        # `pythonscript_script_finish` is going to be called after this function returns).
+        # Hence we must manually increase the refcount to prevent finish to remove
+        # the class.
+        # Apparently multiple PluginScript instances can exist at the same time for the same script.
         set_exposed_class(cls)
 
     r_error[0] = GODOT_OK
@@ -220,9 +221,6 @@ cdef api void pythonscript_script_finish(
     godot_pluginscript_script_data *p_data
 ) with gil:
     cdef object cls = <object>p_data
-    destroy_module(cls=cls)
-
-cdef inline destroy_module(cls=None):
     if get_pythonscript_verbose():
-        print(f"Destroying python script")
+        print(f"Destroying python script {cls.__name__}")
     destroy_exposed_class(cls)
