@@ -7,26 +7,31 @@ cdef bint __pythonscript_verbose = False
 
 
 cdef class ModExposedClass:
-    cdef Object kls
+    cdef object kls
     cdef int refcount
 
+    def __init__(self, object kls):
+        self.kls = kls
+        self.refcount = 1
 
-# /!\ Those dicts are strictly private /!\
+
+# /!\ Those containers are strictly private /!\
 # They contain class objects that are referenced from Godot without refcounting,
 # so droping an item from there will likely cause a segfault !
 cdef dict __modules_with_exposed_class = {}
-cdef dict __all_exposed_classes = []
+cdef list __all_exposed_classes = []
 cdef object __exposed_classes_lock = threading.Lock()
 
 
 cdef object get_exposed_class(str module_name):
-    try:
-        return __modules_with_exposed_class[module_name].kls
-    except KeyError:
-        return None
+    with __exposed_classes_lock:
+        try:
+            return (<ModExposedClass>__modules_with_exposed_class[module_name]).kls
+        except KeyError:
+            return None
 
 
-cdef void set_exposed_class(Object cls):
+cdef void set_exposed_class(object cls):
     cdef ModExposedClass mod
     cdef str modname = cls.__module__
 
@@ -41,7 +46,7 @@ cdef void set_exposed_class(Object cls):
         try:
             mod = __modules_with_exposed_class[modname]
         except KeyError:
-            __modules_with_exposed_class[modname] = ModExposedClass(cls, 1)
+            __modules_with_exposed_class[modname] = ModExposedClass(cls)
         else:
             # When reloading a script, Godot calls `pythonscript_script_init` BEFORE
             # `pythonscript_script_finish`. Hence we drop replace the old class
@@ -58,7 +63,7 @@ cdef void set_exposed_class(Object cls):
         __all_exposed_classes.append(cls)
 
 
-cdef void destroy_exposed_class(Object cls):
+cdef void destroy_exposed_class(object cls):
     cdef ModExposedClass mod
     cdef str modname = cls.__module__
 

@@ -1,3 +1,6 @@
+from godot.bindings cimport Object
+
+
 cdef bint __pythonscript_verbose
 
 
