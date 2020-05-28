@@ -6,7 +6,6 @@ from godot import *
 
 @exposed(tool=True)
 class PythonREPL(VBoxContainer):
-
     def _enter_tree(self):
         self.history = []
         self.selected_history = 0

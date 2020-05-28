@@ -19,10 +19,10 @@ class InputBox(LineEdit):
 
     def _process(self, _delta):
         # Hacky, but _input is segfaulting right now
-        if Input.is_action_just_pressed('ui_up') and self.had_focus:
+        if Input.is_action_just_pressed("ui_up") and self.had_focus:
             self.get_parent().get_parent().up_pressed()
 
-        if Input.is_action_just_pressed('ui_down') and self.had_focus:
+        if Input.is_action_just_pressed("ui_down") and self.had_focus:
             self.get_parent().get_parent().down_pressed()
 
         self.had_focus = self.has_focus()

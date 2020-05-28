@@ -1,9 +1,9 @@
 from godot import exposed, export, EditorPlugin
 from godot import *
 
+
 @exposed(tool=True)
 class plugin(EditorPlugin):
-
     def _enter_tree(self):
         # Initialization of the plugin goes here
         self.repl = ResourceLoader.load("res://addons/pythonscript_repl/PythonREPL.tscn").instance()
