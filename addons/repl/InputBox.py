@@ -1,6 +1,7 @@
 from godot import exposed, export
 from godot import *
 
+
 @exposed(tool=True)
 class InputBox(LineEdit):
 
