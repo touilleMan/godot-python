@@ -95,15 +95,6 @@ def generate_cpython_build(target, source, env):
     prebuild_shared_lib_path = conf["build_info"]["core"]["shared_lib"]
     path, _ = prebuild_shared_lib_path.rsplit("/", 1)
     assert path == "install/lib"  # Make sure libpython.so is on lib folder
-    for item in (build / "bin").iterdir():
-        if item.is_symlink():
-            continue
-        assert item.is_file()
-        # Simple check on magic number to avoid trying to patch shell scripts
-        if item.read_bytes()[:4] != b"\x7fELF":
-            continue
-        cmd = f"patchelf --set-rpath $ORIGIN/../lib {item}"
-        subprocess.run(cmd.split(), check=True)
 
 
 env.Command(cpython_build, cpython_prebuild_src, generate_cpython_build)
