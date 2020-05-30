@@ -27,6 +27,10 @@ width=640
 height=400
 stretch_2d=true
 
+[editor_plugins]
+
+enabled=PoolStringArray( "pythonscript_repl" )
+
 [gdnative]
 
 singletons=[ "res://pythonscript.gdnlib" ]
