@@ -156,7 +156,7 @@ else:
 
 
 env["DIST_ROOT"] = Dir(f"build/dist")
-env["DIST_PLATFORM"] = Dir(f"{env['DIST_ROOT']}/pythonscript/{env['platform']}")
+env["DIST_PLATFORM"] = Dir(f"{env['DIST_ROOT']}/addons/pythonscript/{env['platform']}")
 VariantDir(f"build/{env['platform']}/platforms", f"platforms")
 VariantDir(f"build/{env['platform']}/pythonscript", "pythonscript")
 
@@ -170,16 +170,16 @@ env.Command(
     action=Copy("$TARGET", "$SOURCE"),
 )
 env.Command(
-    target=f"$DIST_ROOT/pythonscript/LICENSE.txt",
+    target=f"$DIST_ROOT/addons/pythonscript/LICENSE.txt",
     source=f"#/misc/release_LICENSE.txt",
     action=Copy("$TARGET", "$SOURCE"),
 )
+env.Command(target="$DIST_ROOT/addons/pythonscript/.gdignore", source=None, action=Touch("$TARGET"))
 env.Command(
-    target=f"$DIST_ROOT/pythonscript_repl",
+    target=f"$DIST_ROOT/addons/pythonscript_repl",
     source=f"#/addons/repl",
     action=Copy("$TARGET", "$SOURCE"),
 )
-env.Command(target="$DIST_ROOT/pythonscript/.gdignore", source=None, action=Touch("$TARGET"))
 
 
 ### Load sub scons scripts ###
