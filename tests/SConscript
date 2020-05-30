@@ -28,5 +28,6 @@ for test in ["bindings", "helloworld", "work_with_gdscript", "threading"]:
     env.AlwaysBuild(target)
 
 
+SConscript(["python_binary/SConscript"])
 env.Alias("test", "bindings")
 env.Alias("test-threading", "threading")

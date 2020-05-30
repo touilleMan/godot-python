@@ -1,0 +1,57 @@
+from SCons.Errors import UserError
+import re
+import subprocess
+
+
+Import("env")
+
+
+def test_factory(target, cmd, check=lambda out: None):
+    def run_cmd(target, source, env):
+        try:
+            out = subprocess.run(cmd.split(), check=True, capture_output=True)
+        except subprocess.CalledProcessError as exc:
+            print(f"Error !!! Non-zero return code: {exc.returncode}")
+            print(f"command: {cmd}")
+            print(f"stdout: {exc.stdout.decode()}")
+            print(f"stderr: {exc.stderr.decode()}")
+            raise UserError(f"Test {target[0]} has failed (returncode: {exc.returncode})") from exc
+        else:
+            try:
+                check(out)
+            except Exception as exc:
+                print(f"Error !!! {str(exc)}")
+                print(f"command: {cmd}")
+                print(f"stdout: {out.stdout.decode()}")
+                print(f"stderr: {out.stderr.decode()}")
+                raise UserError(f"Test {target[0]} has failed ({str(exc)})") from exc
+
+    env.Command([target], [], run_cmd, strfunction=lambda target, source, env: f"Test: {target[0]}")
+    env.AlwaysBuild(target)
+
+    return target
+
+
+if env["platform"].startswith("windows"):
+    python = f"{env['DIST_PLATFORM']}/python.exe"
+    scripts = f"{env['DIST_PLATFORM']}/Scripts"
+else:
+    python = f"{env['DIST_PLATFORM']}/bin/python3"
+    scripts = f"{env['DIST_PLATFORM']}/bin"
+
+
+test_factory("run_python", f"{python} --version")
+
+
+def _check_pip_site_packages_location(out):
+    stdout = out.stdout.decode()
+    # Make sure pip installs in the right directory
+    regex = f"{env['DIST_PLATFORM'].abspath}/lib/python.*/site-packages/pip"
+    assert re.search(regex, stdout)
+
+
+test_factory(
+    "run_python_m_pip", f"{python} -m pip --version", check=_check_pip_site_packages_location
+)
+# TODO: scripts are currently not patched
+# test_factory("run_script_pip", f"{scripts}/pip --version", check=_check_pip_site_packages_location)
