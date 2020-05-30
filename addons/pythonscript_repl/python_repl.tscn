@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=2]
 
-[ext_resource path="res://addons/pythonscript_repl/PythonREPL.py" type="Script" id=1]
-[ext_resource path="res://addons/pythonscript_repl/Hack_Regular.tres" type="DynamicFont" id=2]
-[ext_resource path="res://addons/pythonscript_repl/InputBox.py" type="Script" id=3]
+[ext_resource path="res://addons/pythonscript_repl/python_repl.py" type="Script" id=1]
+[ext_resource path="res://addons/pythonscript_repl/hack_regular.tres" type="DynamicFont" id=2]
+[ext_resource path="res://addons/pythonscript_repl/input_box.py" type="Script" id=3]
 
 [node name="Python REPL" type="VBoxContainer"]
 margin_right = 129.0

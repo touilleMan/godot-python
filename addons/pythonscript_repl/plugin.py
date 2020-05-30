@@ -6,7 +6,9 @@ from godot import *
 class plugin(EditorPlugin):
     def _enter_tree(self):
         # Initialization of the plugin goes here
-        self.repl = ResourceLoader.load("res://addons/pythonscript_repl/PythonREPL.tscn").instance()
+        self.repl = ResourceLoader.load(
+            "res://addons/pythonscript_repl/python_repl.tscn"
+        ).instance()
         self.repl_button = self.add_control_to_bottom_panel(self.repl, "Python REPL")
 
     def _exit_tree(self):

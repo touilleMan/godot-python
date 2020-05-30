@@ -10,7 +10,7 @@ class PythonREPL(VBoxContainer):
         self.history = []
         self.selected_history = 0
         self.output_box = self.get_node("OutputBox")
-        font = ResourceLoader.load("res://addons/pythonscript_repl/Hack_Regular.tres")
+        font = ResourceLoader.load("res://addons/pythonscript_repl/hack_regular.tres")
         self.output_box.add_font_override("normal_font", font)
         self.output_box.add_font_override("mono_font", font)
         self.run_button = self.get_node("FooterContainer/RunButton")
