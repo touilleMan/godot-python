@@ -3,6 +3,11 @@ import code
 from godot import exposed, export
 from godot import *
 
+from .plugin import BASE_RES
+
+
+FONT = ResourceLoader.load(f"{BASE_RES}/hack_regular.tres")
+
 
 @exposed(tool=True)
 class PythonREPL(VBoxContainer):
@@ -10,9 +15,8 @@ class PythonREPL(VBoxContainer):
         self.history = []
         self.selected_history = 0
         self.output_box = self.get_node("OutputBox")
-        font = ResourceLoader.load("res://addons/pythonscript_repl/hack_regular.tres")
-        self.output_box.add_font_override("normal_font", font)
-        self.output_box.add_font_override("mono_font", font)
+        self.output_box.add_font_override("normal_font", FONT)
+        self.output_box.add_font_override("mono_font", FONT)
         self.run_button = self.get_node("FooterContainer/RunButton")
         self.copy_button = self.get_node("HeaderContainer/CopyButton")
         self.copy_button.connect("pressed", self, "copy")
