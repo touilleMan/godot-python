@@ -95,6 +95,7 @@ jobs:
       set -eux
       scons tests/bindings
       scons tests/threading
+      scons tests/python_binary
     displayName: 'Run tests'
   - powershell: |
       scons release
@@ -154,6 +155,7 @@ jobs:
       set -eux
       scons tests/bindings headless=true
       scons tests/threading headless=true
+      scons tests/python_binary headless=true
     displayName: 'Run tests'
     env:
       DISPLAY: ':99.0'
@@ -215,6 +217,7 @@ jobs:
       set -eux
       scons tests/bindings
       scons tests/threading
+      scons tests/python_binary
     displayName: 'Run tests'
   - bash: |
       set -eux

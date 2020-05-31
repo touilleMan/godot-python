@@ -1,6 +1,8 @@
-from SCons.Errors import UserError
+import os
 import re
 import subprocess
+from pathlib import Path
+from SCons.Errors import UserError
 
 
 Import("env")
@@ -44,14 +46,26 @@ test_factory("run_python", f"{python} --version")
 
 
 def _check_pip_site_packages_location(out):
-    stdout = out.stdout.decode()
-    # Make sure pip installs in the right directory
-    regex = f"{env['DIST_PLATFORM'].abspath}/lib/python.*/site-packages/pip"
-    assert re.search(regex, stdout)
+    stdout = out.stdout.decode().strip()
+    regex = r"^pip\W+[0-9.]+\W+from\W+(.*)\W+\(python\W+[0-9.+]+\)$"
+    match = re.match(regex, stdout)
+    if match:
+        site_packages_path = match.group(1)
+        try:
+            Path(site_packages_path).relative_to(Path(env["DIST_PLATFORM"].abspath))
+        except ValueError as exc:
+            raise AssertionError(
+                f"pip site-packages is not located inside dist folder `{env['DIST_PLATFORM']}`"
+            ) from exc
+
+    else:
+        raise AssertionError(f"stdout doesn't match regex `{regex}`")
 
 
 test_factory(
-    "run_python_m_pip", f"{python} -m pip --version", check=_check_pip_site_packages_location
+    "run_python_m_pip",
+    f"{python} -m pip --version --disable-pip-version-check",
+    check=_check_pip_site_packages_location,
 )
 # TODO: scripts are currently not patched
 # test_factory("run_script_pip", f"{scripts}/pip --version", check=_check_pip_site_packages_location)
