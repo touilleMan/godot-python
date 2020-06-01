@@ -47,12 +47,13 @@ test_factory("run_python", f"{python} --version")
 
 def _check_pip_site_packages_location(out):
     stdout = out.stdout.decode().strip()
-    regex = r"^pip\W+[0-9.]+\W+from\W+(.*)\W+\(python\W+[0-9.+]+\)$"
+    regex = r"^pip\s+[0-9.]+\s+from\s+(.*)\s+\(python\s+[0-9.+]+\)$"
     match = re.match(regex, stdout)
     if match:
-        site_packages_path = match.group(1)
+        site_packages_path = Path(match.group(1))
+        dist_platform_path = Path(env["DIST_PLATFORM"].abspath)
         try:
-            Path(site_packages_path).relative_to(Path(env["DIST_PLATFORM"].abspath))
+            site_packages_path.relative_to(dist_platform_path)
         except ValueError as exc:
             raise AssertionError(
                 f"pip site-packages is not located inside dist folder `{env['DIST_PLATFORM']}`"
