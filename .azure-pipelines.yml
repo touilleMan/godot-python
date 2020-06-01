@@ -97,7 +97,7 @@ jobs:
       scons tests/threading
     displayName: 'Run tests'
   - powershell: |
-      scons release
+      scons release bindings_generate_sample=false
       cp build/godot-python-*.zip $(Build.ArtifactStagingDirectory)
     displayName: 'Generate artifact archive'
   - task: GithubRelease@0
@@ -159,7 +159,7 @@ jobs:
       DISPLAY: ':99.0'
   - bash: |
       set -eux
-      scons release
+      scons release bindings_generate_sample=false
       cp build/godot-python-*.zip $(Build.ArtifactStagingDirectory)/
     displayName: 'Generate artifact archive'
   - task: GithubRelease@0
@@ -218,7 +218,7 @@ jobs:
     displayName: 'Run tests'
   - bash: |
       set -eux
-      scons release
+      scons release bindings_generate_sample=false
       cp build/godot-python-*.zip $(Build.ArtifactStagingDirectory)/
     displayName: 'Generate artifact archive'
   - task: GithubRelease@0
