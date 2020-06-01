@@ -79,6 +79,10 @@ def generate_cpython_build(target, source, env):
     # Remove tests lib (pretty big and basically useless)
     shutil.rmtree(str(stdlib_path / "test"))
 
+    # Remove .pdb debug symbols
+    for pdbfile in (build / "DLLs").glob("*.pdb"):
+        pdbfile.unlink()
+
     # Also remove __pycache__ & .pyc stuff
     for pycache in stdlib_path.glob("**/__pycache__"):
         shutil.rmtree(str(pycache))
