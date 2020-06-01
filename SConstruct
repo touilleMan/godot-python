@@ -198,12 +198,18 @@ env.Alias("build", env["DIST_ROOT"])
 
 
 def generate_release(target, source, env):
-    base_name, format = target[0].abspath.rsplit(".", 1)
+    for suffix, format in [(".zip", "zip"), (".tar.bz2", "bztar")]:
+        if target[0].name.endswith(suffix):
+            base_name = target[0].abspath[: -len(suffix)]
+            break
     shutil.make_archive(base_name, format, root_dir=source[0].abspath)
 
 
-release = env.Command(
-    "build/godot-python-${release_suffix}-${platform}.zip", env["DIST_ROOT"], generate_release
-)
+# Zip format doesn't support symlinks that are needed for Linux&macOS
+if env["platform"].startswith("windows"):
+    release_target = "build/godot-python-${release_suffix}-${platform}.zip"
+else:
+    release_target = "build/godot-python-${release_suffix}-${platform}.tar.bz2"
+release = env.Command(release_target, env["DIST_ROOT"], generate_release)
 env.Alias("release", release)
 env.AlwaysBuild("release")

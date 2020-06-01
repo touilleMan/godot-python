@@ -156,7 +156,7 @@ jobs:
   - bash: |
       set -eux
       scons release
-      cp build/godot-python-*.zip $(Build.ArtifactStagingDirectory)/
+      cp build/godot-python-*.tar.bz2 $(Build.ArtifactStagingDirectory)/
     displayName: 'Generate artifact archive'
   - task: GithubRelease@0
     condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
@@ -167,7 +167,7 @@ jobs:
       target: '$(build.sourceVersion)'
       tagSource: 'manual'
       tag: '$(Build.SourceBranchName)'
-      assets: '$(Build.ArtifactStagingDirectory)/godot-python-*.zip'
+      assets: '$(Build.ArtifactStagingDirectory)/godot-python-*.tar.bz2'
       title: '$(Build.SourceBranchName)'
       assetUploadMode: 'replace'
       addChangeLog: false
@@ -213,7 +213,7 @@ jobs:
   - bash: |
       set -eux
       scons release
-      cp build/godot-python-*.zip $(Build.ArtifactStagingDirectory)/
+      cp build/godot-python-*.tar.bz2 $(Build.ArtifactStagingDirectory)/
     displayName: 'Generate artifact archive'
   - task: GithubRelease@0
     condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
@@ -224,7 +224,7 @@ jobs:
       target: '$(build.sourceVersion)'
       tagSource: 'manual'
       tag: '$(Build.SourceBranchName)'
-      assets: '$(Build.ArtifactStagingDirectory)/godot-python-*.zip'
+      assets: '$(Build.ArtifactStagingDirectory)/godot-python-*.tar.bz2'
       title: '$(Build.SourceBranchName)'
       assetUploadMode: 'replace'
       addChangeLog: false

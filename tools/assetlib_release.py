@@ -53,7 +53,6 @@ def get_release_info(version=None):
 
 def pipeline_executor(dirs, release_info, platform_name):
     platform_info = release_info["platforms"][platform_name]
-    assert platform_info["name"].endswith(".zip")
     release_archive = dirs["build"] / platform_info["name"]
 
     if not release_archive.exists():
@@ -63,10 +62,23 @@ def pipeline_executor(dirs, release_info, platform_name):
 
     if not (dirs["pythonscript"] / platform_name).exists():
         print(f"{platform_name} - Extracting release")
-        zipobj = ZipFile(release_archive)
-        # Only extract platform-specific stuff
-        members = [x for x in zipobj.namelist() if x.startswith(f"pythonscript/{platform_name}/")]
-        zipobj.extractall(path=dirs["pythonscript"].parent, members=members)
+        shutil.unpack_archive(release_archive.abspath)
+        if platform_info["name"].endswith(".zip"):
+            zipobj = ZipFile(release_archive)
+            # Only extract platform-specific stuff
+            members = (
+                x for x in zipobj.namelist() if x.startswith(f"pythonscript/{platform_name}/")
+            )
+            zipobj.extractall(path=dirs["pythonscript"].parent, members=members)
+
+        if platform_info["name"].endswith(".tar.bz2"):
+            tarobj = tarfile.open(release_archive)
+            # Only extract platform-specific stuff
+            members = (x for x in tarobj if x.name.startswith(f"./pythonscript/{platform_name}/"))
+            tarobj.extractall(path=dirs["pythonscript"].parent, members=members)
+
+        else:
+            raise RuntimeError(f"Unknown archive format for {release_archive}")
 
 
 def orchestrator(dirs, release_info):
