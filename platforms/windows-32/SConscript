@@ -15,7 +15,7 @@ cpython_build = Dir("cpython_build")
 env["bits"] = "32"
 env[
     "godot_default_binary_url"
-] = "https://downloads.tuxfamily.org/godotengine/3.2/Godot_v3.2-stable_win32.exe.zip"
+] = "https://downloads.tuxfamily.org/godotengine/3.2.1/Godot_v3.2.1-stable_win32.exe.zip"
 env["cpython_build"] = cpython_build
 env["cpython_build_dir"] = cpython_build
 env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/Lib/site-packages")
