@@ -75,14 +75,14 @@ if not sample and not env["debug"]:
 
 if sample or env["debug"]:
     # Disable optimization for faster dev builds and ease of debugging
-    if not env["CC_IS_MSVC"]:
-        bindings_env.AppendUnique(CFLAGS=["-O0"])
-    else:
+    if env["CC_IS_MSVC"]:
         bindings_env.AppendUnique(CFLAGS=["/Od"])
+    else:
+        bindings_env.AppendUnique(CFLAGS=["-O0"])
 else:
-    if not env["CC_IS_GCC"]:
+    if env["CC_IS_GCC"]:
         bindings_env.AppendUnique(CFLAGS=["-Os", "-Wno-misleading-indentation"])
-    elif not env["CC_IS_CLANG"]:
+    elif env["CC_IS_CLANG"]:
         bindings_env.AppendUnique(CFLAGS=["-Os"])
     elif env["CC_IS_MSVC"]:
         bindings_env.AppendUnique(CFLAGS=["/Os"])
