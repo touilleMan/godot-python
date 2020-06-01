@@ -91,12 +91,17 @@ def generate_cpython_build(target, source, env):
     assert config.exists()
     shutil.rmtree(str(config))
 
+    stdlib_path = build / "lib/python3.8"
+
     # Remove tests lib (pretty big and basically useless)
-    shutil.rmtree(str(build / "lib/python3.8/test"))
+    shutil.rmtree(str(stdlib_path / "test"))
+
+    # Also remove __pycache__ & .pyc stuff
+    for pycache in stdlib_path.glob("**/__pycache__"):
+        shutil.rmtree(str(pycache))
 
     # Zip the stdlib to save plenty of space \o/
     if env["compressed_stdlib"]:
-        stdlib_path = build / "lib/python3.8"
         tmp_stdlib_path = build / "lib/tmp_python3.8"
         shutil.move(str(stdlib_path), str(tmp_stdlib_path))
         stdlib_path.mkdir()

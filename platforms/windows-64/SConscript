@@ -74,12 +74,17 @@ def generate_cpython_build(target, source, env):
     shutil.copytree(str(prebuild / "install"), str(build), symlinks=True)
     shutil.copytree(str(prebuild / "licenses"), str(build / "licenses"), symlinks=True)
 
+    stdlib_path = build / "Lib"
+
     # Remove tests lib (pretty big and basically useless)
-    shutil.rmtree(str(build / "Lib/test"))
+    shutil.rmtree(str(stdlib_path / "test"))
+
+    # Also remove __pycache__ & .pyc stuff
+    for pycache in stdlib_path.glob("**/__pycache__"):
+        shutil.rmtree(str(pycache))
 
     # Zip the stdlib to save plenty of space \o/
     if env["compressed_stdlib"]:
-        stdlib_path = build / "Lib"
         shutil.make_archive(base_name=build / "python38", format="zip", root_dir=str(stdlib_path))
         shutil.rmtree(str(stdlib_path))
         stdlib_path.mkdir()
