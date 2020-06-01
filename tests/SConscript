@@ -25,6 +25,7 @@ for test in ["bindings", "helloworld", "work_with_gdscript", "threading"]:
         ["$godot_binary", dist_symlink],
         cmd_prefx + "${SOURCE.abspath} ${godot_args} --path ${TARGET} " + cmd_suffix,
     )
+    env.Depends(target, env["DIST_ROOT"])
     env.AlwaysBuild(target)
 
 

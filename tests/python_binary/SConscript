@@ -58,6 +58,7 @@ def test_factory(target, cmd):
         fn.__name__ = f"test_{target}"
 
     env.Command([target], [], fn, strfunction=lambda target, source, env: f"Test: {target[0]}")
+    env.Depends(target, env["DIST_ROOT"])
     env.AlwaysBuild(target)
 
     return target
