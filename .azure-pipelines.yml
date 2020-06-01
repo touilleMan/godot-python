@@ -92,9 +92,7 @@ jobs:
     displayName: 'Install Mesa3D OpenGL'
   - bash: |
       set -eux
-      scons tests/bindings
-      scons tests/threading
-      scons tests/python_binary
+      scons tests
     displayName: 'Run tests'
   - powershell: |
       scons release
@@ -151,9 +149,7 @@ jobs:
     displayName: 'Start xvfb'
   - bash: |
       set -eux
-      scons tests/bindings headless=true
-      scons tests/threading headless=true
-      scons tests/python_binary headless=true
+      scons tests headless=true
     displayName: 'Run tests'
     env:
       DISPLAY: ':99.0'
@@ -212,9 +208,7 @@ jobs:
     displayName: 'Build project'
   - bash: |
       set -eux
-      scons tests/bindings
-      scons tests/threading
-      scons tests/python_binary
+      scons tests
     displayName: 'Run tests'
   - bash: |
       set -eux
