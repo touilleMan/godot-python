@@ -95,6 +95,9 @@ def generate_cpython_build(target, source, env):
         shutil.make_archive(base_name=build / "python38", format="zip", root_dir=str(stdlib_path))
         shutil.rmtree(str(stdlib_path))
         stdlib_path.mkdir()
+        # Oddly enough, os.py must be present (even if empty !) otherwise
+        # Python failed to find it home...
+        (stdlib_path / "os.py").touch()
 
     (stdlib_path / "site-packages").mkdir()
 
