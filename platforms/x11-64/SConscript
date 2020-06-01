@@ -91,10 +91,21 @@ def generate_cpython_build(target, source, env):
     assert config.exists()
     shutil.rmtree(str(config))
 
-    # Patch binaries to load libpython.so with a relative path
-    prebuild_shared_lib_path = conf["build_info"]["core"]["shared_lib"]
-    path, _ = prebuild_shared_lib_path.rsplit("/", 1)
-    assert path == "install/lib"  # Make sure libpython.so is on lib folder
+    # Remove tests lib (pretty big and basically useless)
+    shutil.rmtree(str(build / "lib/python3.8/test"))
+
+    # Zip the stdlib to save plenty of space \o/
+    if env["compressed_stdlib"]:
+        stdlib_path = build / "lib/python3.8"
+        tmp_stdlib_path = build / "lib/tmp_python3.8"
+        shutil.move(str(stdlib_path), str(tmp_stdlib_path))
+        stdlib_path.mkdir()
+        shutil.move(str(tmp_stdlib_path / "lib-dynload"), str(stdlib_path / "lib-dynload"))
+        shutil.move(str(tmp_stdlib_path / "site-packages"), str(stdlib_path / "site-packages"))
+        shutil.make_archive(
+            base_name=build / "lib/python38", format="zip", root_dir=str(tmp_stdlib_path)
+        )
+        shutil.rmtree(str(tmp_stdlib_path))
 
 
 env.Command(cpython_build, cpython_prebuild_src, generate_cpython_build)
