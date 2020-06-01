@@ -112,17 +112,21 @@ def generate_cpython_build(target, source, env):
     for pycache in stdlib_path.glob("**/__pycache__"):
         shutil.rmtree(str(pycache))
 
+    # Make sure site-packages is empty to avoid including pip (ensurepip should be used instead)
+    shutil.rmtree(str(stdlib_path / "site-packages"))
+
     # Zip the stdlib to save plenty of space \o/
     if env["compressed_stdlib"]:
         tmp_stdlib_path = build / "lib/tmp_python3.8"
         shutil.move(str(stdlib_path), str(tmp_stdlib_path))
         stdlib_path.mkdir()
         shutil.move(str(tmp_stdlib_path / "lib-dynload"), str(stdlib_path / "lib-dynload"))
-        shutil.move(str(tmp_stdlib_path / "site-packages"), str(stdlib_path / "site-packages"))
         shutil.make_archive(
             base_name=build / "lib/python38", format="zip", root_dir=str(tmp_stdlib_path)
         )
         shutil.rmtree(str(tmp_stdlib_path))
+
+    (stdlib_path / "site-packages").mkdir()
 
 
 env.Command(cpython_build, cpython_prebuild_src, generate_cpython_build)

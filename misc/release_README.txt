@@ -32,14 +32,17 @@ On top of that, mixing GDscript and Python code inside a project should work fin
 Using Pip
 ---------
 
-On windows, pip must be installed first with `ensurepip`:
+Pip must be installed first with `ensurepip`:
+
+On Windows:
 ```
 $ <pythonscript_dir>/windows-64/python.exe -m ensurepip  # Only need to do that once
 $ <pythonscript_dir>/windows-64/python.exe -m pip install whatever
 ```
 
-On linux/macOS, pip should be already present:
+On Linux/macOS:
 ```
+$ <pythonscript_dir>/x11-64/bin/python3 -m ensurepip  # Only need to do that once
 $ <pythonscript_dir>/x11-64/bin/python3 -m pip install whatever
 ```
 

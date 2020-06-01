@@ -1,72 +1,104 @@
 import os
 import re
+import shutil
+import tempfile
 import subprocess
 from pathlib import Path
 from SCons.Errors import UserError
+from contextlib import contextmanager
 
 
 Import("env")
 
 
-def test_factory(target, cmd, check=lambda out: None):
-    def run_cmd(target, source, env):
-        try:
-            out = subprocess.run(cmd.split(), check=True, capture_output=True)
-        except subprocess.CalledProcessError as exc:
-            print(f"Error !!! Non-zero return code: {exc.returncode}")
-            print(f"command: {cmd}")
-            print(f"stdout: {exc.stdout.decode()}")
-            print(f"stderr: {exc.stderr.decode()}")
-            raise UserError(f"Test {target[0]} has failed (returncode: {exc.returncode})") from exc
-        else:
-            try:
-                check(out)
-            except Exception as exc:
-                print(f"Error !!! {str(exc)}")
-                print(f"command: {cmd}")
-                print(f"stdout: {out.stdout.decode()}")
-                print(f"stderr: {out.stderr.decode()}")
-                raise UserError(f"Test {target[0]} has failed ({str(exc)})") from exc
+if env["platform"].startswith("windows"):
+    PYTHON_RELATIVE_PATH = "python.exe"
+    python = f"{env['DIST_PLATFORM']}/{PYTHON_RELATIVE_PATH}"
+    scripts = f"{env['DIST_PLATFORM']}/Scripts"
+else:
+    PYTHON_RELATIVE_PATH = "bin/python3"
+    python = f"{env['DIST_PLATFORM']}/{PYTHON_RELATIVE_PATH}"
+    scripts = f"{env['DIST_PLATFORM']}/bin"
 
-    env.Command([target], [], run_cmd, strfunction=lambda target, source, env: f"Test: {target[0]}")
+
+def run_cmd(cmd):
+    if isinstance(cmd, str):
+        cmd = cmd.split()
+    try:
+        return subprocess.run(cmd, check=True, capture_output=True)
+    except subprocess.CalledProcessError as exc:
+        print(f"Error !!! Non-zero return code: {exc.returncode}")
+        print(f"command: {cmd}")
+        print(f"stdout: {exc.stdout.decode()}")
+        print(f"stderr: {exc.stderr.decode()}")
+        raise UserError(f"Test has failed (returncode: {exc.returncode})") from exc
+
+
+@contextmanager
+def run_cmd_and_handle_errors(cmd):
+    out = run_cmd(cmd)
+    try:
+        yield out
+    except Exception as exc:
+        print(f"Error !!! {str(exc)}")
+        print(f"command: {cmd}")
+        print(f"stdout: {out.stdout.decode()}")
+        print(f"stderr: {out.stderr.decode()}")
+        raise UserError(f"Test has failed ({str(exc)})") from exc
+
+
+def test_factory(target, cmd):
+    if callable(cmd):
+        fn = cmd
+    else:
+
+        def fn(target, source, env):
+            run_cmd(cmd)
+
+        fn.__name__ = f"test_{target}"
+
+    env.Command([target], [], fn, strfunction=lambda target, source, env: f"Test: {target[0]}")
     env.AlwaysBuild(target)
 
     return target
 
 
-if env["platform"].startswith("windows"):
-    python = f"{env['DIST_PLATFORM']}/python.exe"
-    scripts = f"{env['DIST_PLATFORM']}/Scripts"
-else:
-    python = f"{env['DIST_PLATFORM']}/bin/python3"
-    scripts = f"{env['DIST_PLATFORM']}/bin"
-
-
 test_factory("run_python", f"{python} --version")
 
 
-def _check_pip_site_packages_location(out):
-    stdout = out.stdout.decode().strip()
-    regex = r"^pip\s+[0-9.]+\s+from\s+(.*)\s+\(python\s+[0-9.+]+\)$"
-    match = re.match(regex, stdout)
-    if match:
-        site_packages_path = Path(match.group(1))
-        dist_platform_path = Path(env["DIST_PLATFORM"].abspath)
-        try:
-            site_packages_path.relative_to(dist_platform_path)
-        except ValueError as exc:
-            raise AssertionError(
-                f"pip site-packages is not located inside dist folder `{env['DIST_PLATFORM']}`"
-            ) from exc
+def test_ensurepip_and_run_pip(target, source, env):
+    # ensurepip does modification, so copy dist first
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        pythonscript_path = f"{tmpdirname}/pythonscript"
+        shutil.copytree(str(env["DIST_PLATFORM"].abspath), pythonscript_path, symlinks=True)
+        python = f"{pythonscript_path}/{PYTHON_RELATIVE_PATH}"
 
-    else:
-        raise AssertionError(f"stdout doesn't match regex `{regex}`")
+        run_cmd(f"{python} -m ensurepip")
+
+        with run_cmd_and_handle_errors(
+            f"{python} -m pip --disable-pip-version-check --version"
+        ) as out:
+            # Check pip site-packages location
+            stdout = out.stdout.decode().strip()
+            regex = r"^pip\s+[0-9.]+\s+from\s+(.*)\s+\(python\s+[0-9.+]+\)$"
+            match = re.match(regex, stdout)
+            if match:
+                site_packages_path = Path(match.group(1))
+                dist_platform_path = Path(pythonscript_path)
+                try:
+                    site_packages_path.relative_to(dist_platform_path)
+                except ValueError as exc:
+                    raise AssertionError(
+                        f"pip site-packages is not located inside dist folder `{env['DIST_PLATFORM']}`"
+                    ) from exc
+
+            else:
+                raise AssertionError(f"stdout doesn't match regex `{regex}`")
+
+        run_cmd(
+            f"{python} -m pip install requests"
+        )  # Basically the most downloaded packages on pypi
+        run_cmd([python, "-c", "import requests"])
 
 
-test_factory(
-    "run_python_m_pip",
-    f"{python} -m pip --version --disable-pip-version-check",
-    check=_check_pip_site_packages_location,
-)
-# TODO: scripts are currently not patched
-# test_factory("run_script_pip", f"{scripts}/pip --version", check=_check_pip_site_packages_location)
+test_factory("ensurepip_and_run_pip", test_ensurepip_and_run_pip)
