@@ -124,6 +124,10 @@ if env["gdnative_include_dir"]:
 else:
     env["gdnative_include_dir"] = Dir("godot_headers")
 env.AppendUnique(CPPPATH=["$gdnative_include_dir"])
+# TODO: not sure why, but CPPPATH scan result for cython modules change between
+# first and subsequent runs of scons (module is considered to no longer depend
+# on godot_headers on subsequent run, so the build redone)
+SetOption("implicit_cache", 1)
 
 
 ### Save my eyes plz ###
