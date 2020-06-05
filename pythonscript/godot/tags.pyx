@@ -285,7 +285,6 @@ def exposed(cls=None, tool=False):
             pass
     """
     def wrapper(cls):
-        print(f'Calling wrapper on {cls}')
         if not issubclass(cls, Object):
             raise ValueError(
                 f"{cls!r} must inherit from a Godot (e.g. `godot.bindings.Node`) "
