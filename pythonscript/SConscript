@@ -19,8 +19,9 @@ else:  # x11
     c_env.AppendUnique(CFLAGS=["-Werror-implicit-function-declaration"])
 c_env.Depends("pythonscript.c", env["cpython_build"])
 
-libpythonscript, *_ = c_env.SharedLibrary("pythonscript", ["pythonscript.c"])
-env.Install("$DIST_PLATFORM", libpythonscript)
+
+libpythonscript, *libpythonscript_extra = c_env.SharedLibrary("pythonscript", ["pythonscript.c"])
+env.Install("$DIST_PLATFORM", [libpythonscript, *libpythonscript_extra])
 
 
 # Cython modules depend on libpythonscript
