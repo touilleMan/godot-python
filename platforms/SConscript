@@ -41,6 +41,7 @@ env.VirtualTargetCommand(
 
 # Replace default Install command to always depend on cpython build install
 env.VanillaInstall = env.Install
+env.VanillaInstallAs = env.InstallAs
 
 
 def install(env, target, source):
@@ -49,7 +50,14 @@ def install(env, target, source):
     return out
 
 
+def install_as(env, target, source):
+    out = env.VanillaInstallAs(target, source)
+    env.Depends(out, cpython_build_install_marker)
+    return out
+
+
 env.AddMethod(install, "Install")
+env.AddMethod(install_as, "InstallAs")
 
 
 ### Godot binary (to run tests) ###

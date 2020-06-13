@@ -29,6 +29,6 @@ logs
 /build/
 
 # Lazy generated symlinks on build
-/examples/*/pythonscript
-/tests/*/pythonscript
+/examples/*/addons
+/tests/*/addons
 /tests/*/lib

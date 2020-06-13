@@ -156,25 +156,9 @@ else:
 
 
 env["DIST_ROOT"] = Dir(f"build/dist")
-env["DIST_PLATFORM"] = Dir(f"{env['DIST_ROOT']}/pythonscript/{env['platform']}")
+env["DIST_PLATFORM"] = Dir(f"{env['DIST_ROOT']}/addons/pythonscript/{env['platform']}")
 VariantDir(f"build/{env['platform']}/platforms", f"platforms")
 VariantDir(f"build/{env['platform']}/pythonscript", "pythonscript")
-
-
-### Static files added to dist ###
-
-
-env.Command(
-    target=f"$DIST_ROOT/pythonscript.gdnlib",
-    source=f"#/misc/release_pythonscript.gdnlib",
-    action=Copy("$TARGET", "$SOURCE"),
-)
-env.Command(
-    target=f"$DIST_ROOT/pythonscript/LICENSE.txt",
-    source=f"#/misc/release_LICENSE.txt",
-    action=Copy("$TARGET", "$SOURCE"),
-)
-env.Command(target="$DIST_ROOT/pythonscript/.gdignore", source=None, action=Touch("$TARGET"))
 
 
 ### Load sub scons scripts ###
@@ -196,6 +180,21 @@ SConscript(
 
 env.Default(env["DIST_ROOT"])
 env.Alias("build", env["DIST_ROOT"])
+
+
+### Static files added to dist ###
+
+
+env.VanillaInstallAs(
+    target="$DIST_ROOT/pythonscript.gdnlib", source="#/misc/release_pythonscript.gdnlib"
+)
+env.VanillaInstallAs(
+    target="$DIST_ROOT/addons/pythonscript/LICENSE.txt", source="#/misc/release_LICENSE.txt"
+)
+env.Command(target="$DIST_ROOT/addons/pythonscript/.gdignore", source=None, action=Touch("$TARGET"))
+# SCons install on directory doesn't check for file changes
+for item in env.Glob("addons/pythonscript_repl/*"):
+    env.VanillaInstall(target="$DIST_ROOT/addons/pythonscript_repl", source=item)
 
 
 ### Release archive ###

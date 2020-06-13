@@ -29,17 +29,39 @@ class GodotIOStream(RawIOBase):
     def __init__(self, godot_print_func):
         self.buffer = ""
         self.godot_print_func = godot_print_func
+        self.callbacks = {}
 
     def write(self, b):
         self.buffer += b
         if "\n" in self.buffer:
             to_print, self.buffer = self.buffer.rsplit("\n", 1)
             self.godot_print_func(to_print)
+            self._callback(to_print)
 
     def flush(self):
         if self.buffer:
             self.godot_print_func(self.buffer)
+            self._callback(self.buffer)
             self.buffer = ""
+    
+    def _callback(self, arg):
+        for _, callback in self.callbacks.items():
+            try:
+                callback(arg)
+            except BaseException:
+                sys.__stderr__.write("Error calling GodotIOStream callback:\n" + traceback.format_exc() + "\n")
+    
+    def add_callback(self, callback):
+        try:
+            self.callbacks[id(callback)] = callback
+        except BaseException:
+            sys.__stderr__.write("Error adding GodotIOStream callback:\n" + traceback.format_exc() + "\n")
+    
+    def remove_callback(self, callback):
+        try:
+            self.callbacks.pop(id(callback), None)
+        except BaseException:
+            sys.__stderr__.write("Error removing GodotIOStream callback:\n" + traceback.format_exc() + "\n")
 
 
 class GodotIO:
@@ -105,7 +127,7 @@ class GodotIO:
             gdapi10.godot_print_error(c_msg, c_name, c_filename, c_lineno)
     
     @staticmethod
-    def print_override(*objects, sep=" ", end="\n", file=sys.stdout, flush=False):
+    def print_override(*objects, sep=" ", end="\n", file=None, flush=False):
         """
             We need to override the builtin print function to avoid multiple calls to stderr.write.
             e.g:
@@ -114,11 +136,10 @@ class GodotIO:
                 Since we are using godot_print_error, that would cause a very weird print to the console,
                 so overriding print and making sure a single call to write is issued solves the problem.
         """
-        if file == GodotIO.get_godot_stderr_io():
-            msg = str(sep).join([str(obj) for obj in objects]) + str(end)
-            GodotIO.godot_print_error_pystr(msg)
-        else:
-            GodotIO._builtin_print(*objects, sep=sep, end=end, file=file, flush=flush)
+        if file is None:
+            file = GodotIO.get_godot_stdout_io()
+        msg = str(sep).join([str(obj) for obj in objects]) + str(end)
+        file.write(msg)
     
     @staticmethod
     def print_exception_override(etype, value, tb, limit=None, file=None, chain=True):
