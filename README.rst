@@ -42,8 +42,9 @@ example:
 .. code-block:: python
 
 	# Explicit is better than implicit
-	from godot import exposed, export, Vector2, Node2D
+	from godot import exposed, export, Vector2, Node2D, ResourceLoader
 
+	WEAPON_RES = ResourceLoader.load("res://weapon.tscn")
 	SPEED = Vector2(10, 10)
 
 	@exposed
@@ -71,14 +72,15 @@ example:
 
 		# All methods are exposed to Godot
 		def talk(self, msg):
-			print("I'm saying %s" % msg)
+			print(f"I'm saying {msg}")
 
 		def _ready(self):
 			# Don't confuse `__init__` with Godot's `_ready`!
+			self.weapon = WEAPON_RES.instance()
 			self._age = 42
 			# Of course you can access property & methods defined in the parent
 			name = self.get_name()
-			print('%s position x=%s, y=%s' % (name, self.position.x, self.position.y))
+			print(f"{name} position x={self.position.x}, y={self.position.y}")
 
 		def _process(self, delta):
 			self.position += SPEED * delta
