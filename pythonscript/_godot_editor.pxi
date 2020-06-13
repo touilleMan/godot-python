@@ -146,9 +146,12 @@ cdef api void pythonscript_add_global_constant(
     const godot_string *p_variable,
     const godot_variant *p_value
 ) with gil:
-    _initialize_bindings()
     name = godot_string_to_pyobj(p_variable)
     value = godot_variant_to_pyobj(p_value)
+    # Godot class&singleton bindings are supposed to be initialized on first
+    # python script load. However adding a global constant can occur prior to
+    # that so we must force the init here before using `godot.globals`.
+    _initialize_bindings()
     # Update `godot.globals` module here
     import godot
     godot.globals.__dict__[name] = value
