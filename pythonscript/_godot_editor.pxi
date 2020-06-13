@@ -146,6 +146,7 @@ cdef api void pythonscript_add_global_constant(
     const godot_string *p_variable,
     const godot_variant *p_value
 ) with gil:
+    _initialize_bindings()
     name = godot_string_to_pyobj(p_variable)
     value = godot_variant_to_pyobj(p_value)
     # Update `godot.globals` module here
