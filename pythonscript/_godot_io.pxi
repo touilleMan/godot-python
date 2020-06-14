@@ -50,16 +50,20 @@ class GodotIOStream(RawIOBase):
                 callback(arg)
             except BaseException:
                 sys.__stderr__.write("Error calling GodotIOStream callback:\n" + traceback.format_exc() + "\n")
-
+    
+    @staticmethod
+    def callback_id(callback):
+        return callback.__module__ + "__" + callback.__name__
+    
     def add_callback(self, callback):
         try:
-            self.callbacks[id(callback)] = callback
+            self.callbacks[self.callback_id(callback)] = callback
         except BaseException:
             sys.__stderr__.write("Error adding GodotIOStream callback:\n" + traceback.format_exc() + "\n")
 
     def remove_callback(self, callback):
         try:
-            self.callbacks.pop(id(callback), None)
+            cb = self.callbacks.pop(self.callback_id(callback), None)
         except BaseException:
             sys.__stderr__.write("Error removing GodotIOStream callback:\n" + traceback.format_exc() + "\n")
 

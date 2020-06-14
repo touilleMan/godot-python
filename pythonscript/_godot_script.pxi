@@ -222,5 +222,6 @@ cdef api void pythonscript_script_finish(
 ) with gil:
     cdef object cls = <object>p_data
     if get_pythonscript_verbose():
-        print(f"Destroying python script {cls.__name__}")
+        # Using print here will cause a crash on editor/game shutdown
+        sys.__stdout__.write(f"Destroying python script {cls.__name__}\n")
     destroy_exposed_class(cls)
