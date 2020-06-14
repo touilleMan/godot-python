@@ -54,7 +54,7 @@ class PythonREPL(VBoxContainer):
 
     def output_line(self, line):
         if not self.get_tree():
-			return
+            return
         self.output_box.push_mono()
         self.output_box.add_text(line)
         self.output_box.newline()
