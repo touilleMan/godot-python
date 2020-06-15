@@ -39,11 +39,11 @@ class PythonREPL(VBoxContainer):
 
     def _exit_tree(self):
         self.cleanup()
-    
+
     def cleanup(self):
         if getattr(sys.stdout, "remove_callback", None) is not None:
             sys.stdout.remove_callback(self.output_line)
-    
+
     # make sure we disconnect the IO callback when game/editor is quiting
     def _notification(self, what):
         if what == Object.NOTIFICATION_PREDELETE or what == MainLoop.NOTIFICATION_WM_QUIT_REQUEST:
