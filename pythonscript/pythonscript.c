@@ -260,5 +260,9 @@ GDN_EXPORT void godot_gdnative_singleton() {
 GDN_EXPORT void godot_gdnative_terminate() {
     // re-acquire the gil in order to finalize properly
     PyEval_RestoreThread(gilstate);
+
+    // make sure we have deregistered our custom IO monkeypatches
+    pythonscript_disable_capture_io_streams();
+
     Py_FinalizeEx();
 }

@@ -24,6 +24,10 @@ from godot._hazmat.gdnative_api_struct cimport (
 )
 
 
+cdef inline str callback_id(object callback):
+    return f"{callback.__module__}__{callback.__name__}"
+
+
 class GodotIOStream(RawIOBase):
 
     def __init__(self, godot_print_func):
@@ -44,6 +48,9 @@ class GodotIOStream(RawIOBase):
             self._callback(self.buffer)
             self.buffer = ""
 
+    def _remove_callbacks(self):
+        self.callbacks = []
+
     def _callback(self, arg):
         for _, callback in self.callbacks.items():
             try:
@@ -51,19 +58,15 @@ class GodotIOStream(RawIOBase):
             except BaseException:
                 sys.__stderr__.write("Error calling GodotIOStream callback:\n" + traceback.format_exc() + "\n")
     
-    @staticmethod
-    def callback_id(callback):
-        return callback.__module__ + "__" + callback.__name__
-    
     def add_callback(self, callback):
         try:
-            self.callbacks[self.callback_id(callback)] = callback
+            self.callbacks[callback_id(callback)] = callback
         except BaseException:
             sys.__stderr__.write("Error adding GodotIOStream callback:\n" + traceback.format_exc() + "\n")
 
     def remove_callback(self, callback):
         try:
-            cb = self.callbacks.pop(self.callback_id(callback), None)
+            self.callbacks.pop(callback_id(callback), None)
         except BaseException:
             sys.__stderr__.write("Error removing GodotIOStream callback:\n" + traceback.format_exc() + "\n")
 
@@ -173,7 +176,32 @@ class GodotIO:
         # override traceback.print_exception
         GodotIO._traceback_print_exception = traceback.print_exception
         traceback.print_exception = GodotIO.print_exception_override
+    
+    @staticmethod
+    def disable_capture_io_streams():
 
+        # Removes all callbacks in GodotIOStream objects.
+        # this is not strictly necessary, but in case someone has a stale reference to them,
+        # this will avoid problems.
+        if getattr(sys.stdout, '_remove_callbacks', None):
+            sys.stdout._remove_callbacks()
+        
+        if getattr(sys.stderr, '_remove_callbacks', None):
+            sys.stderr._remove_callbacks()
+
+        # flush existing buffer
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        # make stdout and stderr the custom iostream defined above
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+
+        # get print back
+        builtins.print = GodotIO._builtin_print
+
+        # get traceback.print_exception back
+        traceback.print_exception = GodotIO._traceback_print_exception
 
     @staticmethod
     def get_godot_stdout_io():
@@ -186,3 +214,7 @@ class GodotIO:
         if not GodotIO._godot_stderr_io:
             GodotIO._godot_stderr_io = GodotIOStream(GodotIO.godot_print_error_pystr)
         return GodotIO._godot_stderr_io
+
+
+cdef api void pythonscript_disable_capture_io_streams():
+    GodotIO.disable_capture_io_streams()

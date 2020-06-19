@@ -1,5 +1,6 @@
 import sys
 import code
+from collections import deque
 from godot import exposed, export
 from godot import *
 
@@ -28,6 +29,7 @@ class PythonREPL(VBoxContainer):
         self.interpreter_context = {"__name__": "__console__", "__doc__": None}
         self.interpreter = code.InteractiveConsole(self.interpreter_context)
         self.more = False
+        self.output_queue = deque()
         if getattr(sys.stdout, "add_callback", None) is not None:
             sys.stdout.add_callback(self.output_line)
         # sys.stderr.add_callback(self.output_line)
@@ -52,9 +54,25 @@ class PythonREPL(VBoxContainer):
     def _ready(self):
         pass
 
+    def _process(self, delta):
+        self._output_line()
+
     def output_line(self, line):
+        # Here we use a queue to store the lines to print
+        # instead of spitting them to output_box directly to avoid
+        # multiple threads trying to print at the same time.
+        # (I don't even think that modifying the UI outside the main thread is allowed)
         if not self.get_tree():
             return
+        self.output_queue.append(line)
+
+    def _output_line(self):
+
+        try:
+            line = self.output_queue.popleft()
+        except IndexError:
+            return
+        
         self.output_box.push_mono()
         self.output_box.add_text(line)
         self.output_box.newline()
@@ -65,21 +83,23 @@ class PythonREPL(VBoxContainer):
         self.output_box.scroll_to_line(self.output_box.get_line_count() - 1)
 
     def execute(self, *args, **kwargs):
-        string = self.input_box.get_text()
+        string = str(self.input_box.get_text())
         # avoid adding multiple repeated entries to the command history
         if not (len(self.history) > 0 and self.history[-1] == string):
             self.history.append(string)
         self.selected_history = 0
         self.input_box.clear()
         linestart = "... " if self.more else ">>> "
-        self.output_line(linestart + str(string))
-        self.more = self.interpreter.push(str(string))
+        self.output_line(linestart + string)
+        self.more = self.interpreter.push(string)
 
     def up_pressed(self):
         if len(self.history) >= abs(self.selected_history - 1):
             self.selected_history -= 1
             self.input_box.clear()
-            self.input_box.set_text(self.history[self.selected_history])
+            val = str(self.history[self.selected_history])
+            self.input_box.set_text(val)
+            self.input_box.set_cursor_position(len(val))
         self.input_box.grab_focus()
 
     def down_pressed(self):
@@ -89,7 +109,9 @@ class PythonREPL(VBoxContainer):
         elif self.selected_history + 1 < 0:
             self.selected_history += 1
             self.input_box.clear()
-            self.input_box.set_text(self.history[self.selected_history])
+            val = str(self.history[self.selected_history])
+            self.input_box.set_text(val)
+            self.input_box.set_cursor_position(len(val))
 
         self.input_box.grab_focus()
 
