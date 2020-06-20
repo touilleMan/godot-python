@@ -41,17 +41,22 @@ cdef class Transform:
 {% endblock %}
 
 {% block python_defs %}
-    def __init__(self, x_axis=None, y_axis=None, z_axis=None, origin=None):
-        if x_axis is None and y_axis is None and z_axis is None and origin is None:
-            gdapi10.godot_transform_new_identity(&self._gd_data)
-        else:
-            gdapi10.godot_transform_new_with_axis_origin(
-                &self._gd_data,
-                &(<Vector3?>x_axis)._gd_data,
-                &(<Vector3?>y_axis)._gd_data,
-                &(<Vector3?>z_axis)._gd_data,
-                &(<Vector3?>origin)._gd_data,
-            )
+
+    if gdapi10 != NULL:
+        def __init__(self, x_axis=None, y_axis=None, z_axis=None, origin=None):
+            if x_axis is None and y_axis is None and z_axis is None and origin is None:
+                gdapi10.godot_transform_new_identity(&self._gd_data)
+            else:
+                gdapi10.godot_transform_new_with_axis_origin(
+                    &self._gd_data,
+                    &(<Vector3?>x_axis)._gd_data,
+                    &(<Vector3?>y_axis)._gd_data,
+                    &(<Vector3?>z_axis)._gd_data,
+                    &(<Vector3?>origin)._gd_data,
+                )
+    else:
+        def __init__(self, x_axis=None, y_axis=None, z_axis=None, origin=None):
+            return
 
     @staticmethod
     def from_basis_origin(Basis basis not None, Vector3 origin not None):

@@ -11,7 +11,9 @@ __{{ cls["name"] }}_constructor = gdapi10.godot_get_class_constructor("{{ cls['n
 
 {% for method in cls["methods"] %}
 global {{ get_method_bind_register_name(cls, method) }}
-{{ get_method_bind_register_name(cls, method) }} = gdapi10.godot_method_bind_get_method("{{ cls['bind_register_name'] }}", "{{ method['name'] }}")
+if gdapi10:
+    {{ get_method_bind_register_name(cls, method) }} = gdapi10.godot_method_bind_get_method("{{ cls['bind_register_name'] }}", "{{ method['name'] }}")
+
 {% endfor %}
 
 {% endmacro %}

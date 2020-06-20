@@ -31,17 +31,23 @@ __ERR_MSG_BINDING_NOT_AVAILABLE = "No Godot binding available"
 # The remaining loading will be achieved when loading the first python script
 # (where at this point Godot should have finished it initialization).
 
+if gdapi10 == NULL:
+    print("ERROR: GDNative API is not available!")
+
 {% set early_needed_bindings = ["_OS", "_ProjectSettings"] %}
 cdef godot_object *_ptr
 {% for cls in classes %}
 {% if cls["name"] in early_needed_bindings %}
 {{ render_class_gdapi_ptrs_init(cls) }}
 {% if cls["singleton"] %}
-_ptr = gdapi10.godot_global_get_singleton("{{ cls['singleton_name'] }}")
-if _ptr != NULL:
-    {{ cls['singleton_name'] }} = {{ cls["name"] }}.from_ptr(_ptr)
-else:
-    print("ERROR: cannot load singleton `{{ cls['singleton_name'] }}` required for Pythonscript init")
+{{ cls['singleton_name'] }} = None
+if gdapi10:
+    _ptr = gdapi10.godot_global_get_singleton("{{ cls['singleton_name'] }}")
+    if _ptr != NULL:
+        {{ cls['singleton_name'] }} = {{ cls["name"] }}.from_ptr(_ptr)
+    else:
+        print("ERROR: cannot load singleton `{{ cls['singleton_name'] }}` required for Pythonscript init")
+
 {% endif %}
 {% endif %}
 {% endfor %}

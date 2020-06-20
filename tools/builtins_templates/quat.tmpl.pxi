@@ -47,8 +47,14 @@ cdef class Quat:
 {% endblock %}
 
 {% block python_defs %}
-    def __init__(self, x=0, y=0, z=0, w=0):
-        gdapi10.godot_quat_new(&self._gd_data, x, y, z, w)
+
+    # This check can be made at import time, thus we avoid putting a branch inside init, which may be in the hot path.
+    if gdapi10 != NULL:
+        def __init__(self, x=0, y=0, z=0, w=0):
+            gdapi10.godot_quat_new(&self._gd_data, x, y, z, w)
+    else:
+        def __init__(self, godot_real a, godot_real b, godot_real c, godot_real d):
+            return
 
     @staticmethod
     def from_axis_angle(Vector3 axis not None, godot_real angle):

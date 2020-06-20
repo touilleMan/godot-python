@@ -76,8 +76,13 @@ cdef class Vector2:
 {% endblock %}
 
 {% block python_defs %}
-    def __init__(self, godot_real x=0.0, godot_real y=0.0):
-        gdapi10.godot_vector2_new(&self._gd_data, x, y)
+
+    if gdapi10 != NULL:
+        def __init__(self, godot_real x=0.0, godot_real y=0.0):
+            gdapi10.godot_vector2_new(&self._gd_data, x, y)
+    else:
+        def __init__(self, godot_real x=0.0, godot_real y=0.0):
+            return
 
     def __repr__(Vector2 self):
         return f"<Vector2(x={self.x}, y={self.y})>"

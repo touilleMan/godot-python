@@ -37,8 +37,14 @@ cdef class Plane:
 {% endblock %}
 
 {% block python_defs %}
-    def __init__(self, godot_real a, godot_real b, godot_real c, godot_real d):
-        gdapi10.godot_plane_new_with_reals(&self._gd_data, a, b, c, d)
+
+    # This check can be made at import time, thus we avoid putting a branch inside init, which may be in the hot path.
+    if gdapi10 != NULL:
+        def __init__(self, godot_real a, godot_real b, godot_real c, godot_real d):
+            gdapi10.godot_plane_new_with_reals(&self._gd_data, a, b, c, d)
+    else:
+        def __init__(self, godot_real a, godot_real b, godot_real c, godot_real d):
+            return
 
     @staticmethod
     def from_vectors(Vector3 v1 not None, Vector3 v2 not None, Vector3 v3 not None):

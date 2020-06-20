@@ -49,11 +49,17 @@ cdef class Color:
 {% endblock %}
 
 {% block python_defs %}
-    def __init__(self, godot_real r=0, godot_real g=0, godot_real b=0, a=None):
-        if a is None:
-            gdapi10.godot_color_new_rgb(&self._gd_data, r, g, b)
-        else:
-            gdapi10.godot_color_new_rgba(&self._gd_data, r, g, b, a)
+    
+    # This check can be made at import time, thus we avoid putting a branch inside init, which may be in the hot path.
+    if gdapi10 != NULL:
+        def __init__(self, godot_real r=0, godot_real g=0, godot_real b=0, a=None):
+            if a is None:
+                gdapi10.godot_color_new_rgb(&self._gd_data, r, g, b)
+            else:
+                gdapi10.godot_color_new_rgba(&self._gd_data, r, g, b, a)
+    else:
+        def __init__(self, godot_real r=0, godot_real g=0, godot_real b=0, a=None):
+            return
 
     def __repr__(self):
         return f"<Color(r={self.r}, g={self.g}, b={self.b}, a={self.a})>"

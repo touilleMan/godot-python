@@ -14,16 +14,20 @@ from godot._hazmat.conversion cimport godot_variant_to_pyobj, pyobj_to_godot_var
 @cython.final
 cdef class Array:
 
-    def __init__(self, iterable=None):
-        if not iterable:
-            gdapi10.godot_array_new(&self._gd_data)
-        elif isinstance(iterable, Array):
-            self._gd_data = gdapi11.godot_array_duplicate(&(<Array>iterable)._gd_data, False)
-        # TODO: handle Pool*Array
-        else:
-            gdapi10.godot_array_new(&self._gd_data)
-            for x in iterable:
-                self.append(x)
+    if gdapi10 != NULL:
+        def __init__(self, iterable=None):
+            if not iterable:
+                gdapi10.godot_array_new(&self._gd_data)
+            elif isinstance(iterable, Array):
+                self._gd_data = gdapi11.godot_array_duplicate(&(<Array>iterable)._gd_data, False)
+            # TODO: handle Pool*Array
+            else:
+                gdapi10.godot_array_new(&self._gd_data)
+                for x in iterable:
+                    self.append(x)
+    else:
+        def __init__(self, iterable=None):
+            return
 
     def __dealloc__(self):
         # /!\ if `__init__` is skipped, `_gd_data` must be initialized by

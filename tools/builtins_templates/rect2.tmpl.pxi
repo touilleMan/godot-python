@@ -37,8 +37,12 @@ cdef class Rect2:
 {% endblock %}
 
 {% block python_defs %}
-    def __init__(self, godot_real x=0.0, godot_real y=0.0, godot_real width=0.0, godot_real height=0.0):
-        gdapi10.godot_rect2_new(&self._gd_data, x, y, width, height)
+    if gdapi10 != NULL:
+        def __init__(self, godot_real x=0.0, godot_real y=0.0, godot_real width=0.0, godot_real height=0.0):
+            gdapi10.godot_rect2_new(&self._gd_data, x, y, width, height)
+    else:
+        def __init__(self, godot_real x=0.0, godot_real y=0.0, godot_real width=0.0, godot_real height=0.0):
+            return
 
     @staticmethod
     def from_pos_size(Vector2 position not None, Vector2 size not None):
