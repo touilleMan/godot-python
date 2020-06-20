@@ -72,7 +72,7 @@ class PythonREPL(VBoxContainer):
             line = self.output_queue.popleft()
         except IndexError:
             return
-        
+
         self.output_box.push_mono()
         self.output_box.add_text(line)
         self.output_box.newline()
