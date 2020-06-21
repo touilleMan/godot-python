@@ -178,14 +178,12 @@ cdef class GDString:
         else:
             pyobj_to_godot_string(pystr, &self._gd_data)
 
-    if gdapi10 != NULL:
-        def __dealloc__(GDString self):
-            # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
-            # hand otherwise we will get a segfault here
-            gdapi10.godot_string_destroy(&self._gd_data)
-    else:
-        def __dealloc__(GDString self):
+    def __dealloc__(GDString self):
+        if gdapi10 == NULL:
             return
+        # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
+        # hand otherwise we will get a segfault here
+        gdapi10.godot_string_destroy(&self._gd_data)
 
     def __repr__(GDString self):
         return f"<GDString({str(self)!r})>"

@@ -62,14 +62,12 @@ cdef class Dictionary:
             except ValueError as exc:
                 raise ValueError("dictionary update sequence element has length 1; 2 is required")
 
-    if gdapi10 != NULL:
-        def __dealloc__(self):
-            # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
-            # hand otherwise we will get a segfault here
-            gdapi10.godot_dictionary_destroy(&self._gd_data)
-    else:
-        def __dealloc__(self):
+    def __dealloc__(self):
+        if gdapi10 == NULL:
             return
+        # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
+        # hand otherwise we will get a segfault here
+        gdapi10.godot_dictionary_destroy(&self._gd_data)
 
     def __repr__(self):
         repr_dict = {}
