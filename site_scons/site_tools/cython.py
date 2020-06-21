@@ -26,7 +26,7 @@ def _cython_to_c_emitter(target, source, env):
 
 
 CythonToCBuilder = Builder(
-    action="cython $CYTHON_FLAGS $SOURCE -o $TARGET",
+    action="cython $CYTHON_FLAGS $SOURCE -o $TARGET --directive embedsignature=True",
     suffix=".c",
     src_suffix=".pyx",
     emitter=_cython_to_c_emitter,
