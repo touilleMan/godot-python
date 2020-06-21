@@ -44,12 +44,10 @@ cdef class AABB:
 
 {% block python_defs %}
 
-    if gdapi10 != NULL:
-        def __init__(self, Vector3 pos not None=Vector3(), Vector3 size not None=Vector3()):
-            gdapi10.godot_aabb_new(&self._gd_data, &pos._gd_data, &size._gd_data)
-    else:
-        def __init__(self, Vector3 pos not None=Vector3(), Vector3 size not None=Vector3()):
+    def __init__(self, Vector3 pos not None=Vector3(), Vector3 size not None=Vector3()):
+        if gdapi10 == NULL:
             return
+        gdapi10.godot_aabb_new(&self._gd_data, &pos._gd_data, &size._gd_data)
 
     def __repr__(self):
         return f"<AABB({self.as_string()})>"

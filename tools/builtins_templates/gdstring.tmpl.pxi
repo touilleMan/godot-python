@@ -170,15 +170,13 @@ cdef class GDString:
 {% endblock %}
 
 {% block python_defs %}
-    if gdapi10 != NULL:
-        def __init__(self, str pystr=None):
-            if not pystr:
-                gdapi10.godot_string_new(&self._gd_data)
-            else:
-                pyobj_to_godot_string(pystr, &self._gd_data)
-    else:
-        def __init__(self, str pystr=None):
+    def __init__(self, str pystr=None):
+        if gdapi10 == NULL:
             return
+        if not pystr:
+            gdapi10.godot_string_new(&self._gd_data)
+        else:
+            pyobj_to_godot_string(pystr, &self._gd_data)
 
     if gdapi10 != NULL:
         def __dealloc__(GDString self):

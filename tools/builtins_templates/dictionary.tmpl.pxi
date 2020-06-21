@@ -42,27 +42,25 @@ cdef class Dictionary:
 {% endblock %}
 
 {% block python_defs %}
-    if gdapi10 != NULL:
-        def __init__(self, iterable=None):
-            if not iterable:
-                gdapi10.godot_dictionary_new(&self._gd_data)
-            elif isinstance(iterable, Dictionary):
-                self._gd_data = gdapi12.godot_dictionary_duplicate(&(<Dictionary>iterable)._gd_data, False)
-            # TODO: handle Pool*Array
-            elif isinstance(iterable, dict):
-                gdapi10.godot_dictionary_new(&self._gd_data)
-                for k, v in iterable.items():
-                    self[k] = v
-            else:
-                gdapi10.godot_dictionary_new(&self._gd_data)
-                try:
-                    for k, v in iterable:
-                        self[k] = v
-                except ValueError as exc:
-                    raise ValueError("dictionary update sequence element has length 1; 2 is required")
-    else:
-        def __init__(self, iterable=None):
+    def __init__(self, iterable=None):
+        if gdapi10 == NULL:
             return
+        if not iterable:
+            gdapi10.godot_dictionary_new(&self._gd_data)
+        elif isinstance(iterable, Dictionary):
+            self._gd_data = gdapi12.godot_dictionary_duplicate(&(<Dictionary>iterable)._gd_data, False)
+        # TODO: handle Pool*Array
+        elif isinstance(iterable, dict):
+            gdapi10.godot_dictionary_new(&self._gd_data)
+            for k, v in iterable.items():
+                self[k] = v
+        else:
+            gdapi10.godot_dictionary_new(&self._gd_data)
+            try:
+                for k, v in iterable:
+                    self[k] = v
+            except ValueError as exc:
+                raise ValueError("dictionary update sequence element has length 1; 2 is required")
 
     if gdapi10 != NULL:
         def __dealloc__(self):

@@ -24,18 +24,16 @@ cdef class RID:
 
 {% block python_defs %}
 
-    if gdapi10 != NULL:
-        def __init__(self, Resource from_=None):
-            if from_ is not None:
-                gdapi10.godot_rid_new_with_resource(
-                    &self._gd_data,
-                    from_._gd_ptr
-                )
-            else:
-                gdapi10.godot_rid_new(&self._gd_data)
-    else:
-        def __init__(self, Resource from_=None):
+    def __init__(self, Resource from_=None):
+        if gdapi10 == NULL:
             return
+        if from_ is not None:
+            gdapi10.godot_rid_new_with_resource(
+                &self._gd_data,
+                from_._gd_ptr
+            )
+        else:
+            gdapi10.godot_rid_new(&self._gd_data)
 
     def __repr__(RID self):
         return f"<RID(id={self.get_id()})>"

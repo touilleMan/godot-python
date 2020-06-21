@@ -63,12 +63,10 @@ cdef class Basis:
 {% endblock %}
 
 {% block python_defs %}
-    if gdapi10 != NULL:
-        def __init__(self, Vector3 x not None=Vector3.RIGHT, Vector3 y not None=Vector3.UP, Vector3 z not None=Vector3.BACK):
-            gdapi10.godot_basis_new_with_rows(&self._gd_data, &(<Vector3>x)._gd_data, &(<Vector3>y)._gd_data, &(<Vector3>z)._gd_data)
-    else:
-        def __init__(self, Vector3 x not None=Vector3.RIGHT, Vector3 y not None=Vector3.UP, Vector3 z not None=Vector3.BACK):
+    def __init__(self, Vector3 x not None=Vector3.RIGHT, Vector3 y not None=Vector3.UP, Vector3 z not None=Vector3.BACK):
+        if gdapi10 == NULL:
             return
+        gdapi10.godot_basis_new_with_rows(&self._gd_data, &(<Vector3>x)._gd_data, &(<Vector3>y)._gd_data, &(<Vector3>z)._gd_data)
 
     @staticmethod
     def from_euler(from_):

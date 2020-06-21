@@ -31,20 +31,18 @@ cdef class NodePath:
 
 {% block python_defs %}
 
-    if gdapi10 != NULL:
-        def __init__(self, from_):
-            cdef godot_string gd_from
-            try:
-                gdapi10.godot_node_path_new(&self._gd_data, &(<GDString?>from_)._gd_data)
-            except TypeError:
-                if not isinstance(from_, str):
-                    raise TypeError("`from_` must be str or GDString")
-                pyobj_to_godot_string(from_, &gd_from)
-                gdapi10.godot_node_path_new(&self._gd_data, &gd_from)
-                gdapi10.godot_string_destroy(&gd_from)
-    else:
-        def __init__(self, from_):
-            pass
+    def __init__(self, from_):
+        if gdapi10 == NULL:
+            return
+        cdef godot_string gd_from
+        try:
+            gdapi10.godot_node_path_new(&self._gd_data, &(<GDString?>from_)._gd_data)
+        except TypeError:
+            if not isinstance(from_, str):
+                raise TypeError("`from_` must be str or GDString")
+            pyobj_to_godot_string(from_, &gd_from)
+            gdapi10.godot_node_path_new(&self._gd_data, &gd_from)
+            gdapi10.godot_string_destroy(&gd_from)
 
     if gdapi10 != NULL:
         def __dealloc__(NodePath self):

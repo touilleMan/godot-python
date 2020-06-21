@@ -82,12 +82,11 @@ cdef class Vector3:
 {% block python_defs %}
     
     # This check can be made at import time, thus we avoid putting a branch inside init, which may be in the hot path.
-    if gdapi10 != NULL:
-        def __init__(self, godot_real x=0.0, godot_real y=0.0, godot_real z=0.0):
-            gdapi10.godot_vector3_new(&self._gd_data, x, y, z)
-    else:
-        def __init__(self, godot_real x=0.0, godot_real y=0.0, godot_real z=0.0):
+    
+    def __init__(self, godot_real x=0.0, godot_real y=0.0, godot_real z=0.0):
+        if gdapi10 == NULL:
             return
+        gdapi10.godot_vector3_new(&self._gd_data, x, y, z)
     
     def __repr__(self):
         return f"<Vector3(x={self.x}, y={self.y}, z={self.z})>"

@@ -14,32 +14,30 @@ gdapi10.godot_string_destroy(&src)
 @cython.final
 cdef class {{ t.py_pool }}:
 
-    if gdapi10 != NULL:
-        def __init__(self, other=None):
-            cdef {{ t.py_pool }} other_as_pool_array
-            cdef Array other_as_array
-            if other is None:
-                gdapi10.{{ t.gd_pool }}_new(&self._gd_data)
-            else:
+    def __init__(self, other=None):
+        if gdapi10 == NULL:
+            return
+        cdef {{ t.py_pool }} other_as_pool_array
+        cdef Array other_as_array
+        if other is None:
+            gdapi10.{{ t.gd_pool }}_new(&self._gd_data)
+        else:
+            try:
+                other_as_pool_array = <{{ t.py_pool }}?>other
+                gdapi10.{{ t.gd_pool }}_new_copy(&self._gd_data, &other_as_pool_array._gd_data)
+            except TypeError:
                 try:
-                    other_as_pool_array = <{{ t.py_pool }}?>other
-                    gdapi10.{{ t.gd_pool }}_new_copy(&self._gd_data, &other_as_pool_array._gd_data)
+                    other_as_array = <Array?>other
+                    gdapi10.{{ t.gd_pool }}_new_with_array(&self._gd_data, &other_as_array._gd_data)
                 except TypeError:
-                    try:
-                        other_as_array = <Array?>other
-                        gdapi10.{{ t.gd_pool }}_new_with_array(&self._gd_data, &other_as_array._gd_data)
-                    except TypeError:
-                        gdapi10.{{ t.gd_pool }}_new(&self._gd_data)
-                        for item in other:
+                    gdapi10.{{ t.gd_pool }}_new(&self._gd_data)
+                    for item in other:
 {% if t.is_base_type %}
-                            {{ t.py_pool }}.append(self, item)
+                        {{ t.py_pool }}.append(self, item)
 {% else %}
-                            {{ t.py_pool }}.append(self, (<{{ t.py_value }}?>item))
+                        {{ t.py_pool }}.append(self, (<{{ t.py_value }}?>item))
 {% endif %}
 
-    else:
-        def __init__(self, other=None):
-            return
 
     if gdapi10 != NULL:
         def __dealloc__(self):
