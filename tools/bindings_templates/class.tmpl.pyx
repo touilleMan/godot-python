@@ -88,29 +88,35 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         except TypeError:
             return True
 
-    def __getattr__(self, name):
-        cdef GDString gdname = GDString(name)
-        cdef GDString gdnamefield = GDString("name")
+    if gdapi10 != NULL:
+        def __getattr__(self, name):
+            cdef GDString gdname = GDString(name)
+            cdef GDString gdnamefield = GDString("name")
 
-        # If a script is attached to the object, we expose here it methods
-        if not hasattr(type(self), '__exposed_python_class'):
-            if self.has_method(name):
+            # If a script is attached to the object, we expose here it methods
+            if not hasattr(type(self), '__exposed_python_class'):
+                if self.has_method(name):
 
-                def _call(*args):
-                    print(f'CALLING _CALL {name!r} on {self!r}')
-                    return {{ cls["name"] }}.callv(self, gdname, Array(args))
+                    def _call(*args):
+                        print(f'CALLING _CALL {name!r} on {self!r}')
+                        return {{ cls["name"] }}.callv(self, gdname, Array(args))
 
-                return _call
-                # from functools import partial
-                # return partial(self.call, gdname)
+                    return _call
+                    # from functools import partial
+                    # return partial(self.call, gdname)
 
-            elif any(x for x in self.get_property_list() if x[gdnamefield] == gdname):
-                # TODO: Godot currently lacks a `has_property` method
-                return self.get(gdname)
+                elif any(x for x in self.get_property_list() if x[gdnamefield] == gdname):
+                    # TODO: Godot currently lacks a `has_property` method
+                    return self.get(gdname)
 
-        raise AttributeError(
-            f"`{type(self).__name__}` object has no attribute `{name}`"
-        )
+            raise AttributeError(
+                f"`{type(self).__name__}` object has no attribute `{name}`"
+            )
+    else:
+        def __getattr__(self, name):
+            raise AttributeError(
+                f"`{type(self).__name__}` object has no attribute `{name}`"
+            )
 
     def __setattr__(self, name, value):
         cdef GDString gdname = GDString(name)
