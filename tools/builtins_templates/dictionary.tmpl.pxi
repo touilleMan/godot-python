@@ -64,10 +64,14 @@ cdef class Dictionary:
         def __init__(self, iterable=None):
             return
 
-    def __dealloc__(self):
-        # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
-        # hand otherwise we will get a segfault here
-        gdapi10.godot_dictionary_destroy(&self._gd_data)
+    if gdapi10 != NULL:
+        def __dealloc__(self):
+            # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
+            # hand otherwise we will get a segfault here
+            gdapi10.godot_dictionary_destroy(&self._gd_data)
+    else:
+        def __dealloc__(self):
+            return
 
     def __repr__(self):
         repr_dict = {}

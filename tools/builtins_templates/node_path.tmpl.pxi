@@ -46,10 +46,14 @@ cdef class NodePath:
         def __init__(self, from_):
             pass
 
-    def __dealloc__(NodePath self):
-        # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
-        # hand otherwise we will get a segfault here
-        gdapi10.godot_node_path_destroy(&self._gd_data)
+    if gdapi10 != NULL:
+        def __dealloc__(NodePath self):
+            # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
+            # hand otherwise we will get a segfault here
+            gdapi10.godot_node_path_destroy(&self._gd_data)
+    else:
+        def __dealloc__(NodePath self):
+            return
 
     def __repr__(NodePath self):
         return f"<NodePath({self.as_string()})>"

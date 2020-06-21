@@ -29,10 +29,14 @@ cdef class Array:
         def __init__(self, iterable=None):
             return
 
-    def __dealloc__(self):
-        # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
-        # hand otherwise we will get a segfault here
-        gdapi10.godot_array_destroy(&self._gd_data)
+    if gdapi10 != NULL:
+        def __dealloc__(self):
+            # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
+            # hand otherwise we will get a segfault here
+            gdapi10.godot_array_destroy(&self._gd_data)
+    else:
+        def __dealloc__(self):
+            return
 
     @staticmethod
     cdef inline Array new():

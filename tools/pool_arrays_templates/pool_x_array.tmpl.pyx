@@ -41,10 +41,14 @@ cdef class {{ t.py_pool }}:
         def __init__(self, other=None):
             return
 
-    def __dealloc__(self):
-        # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
-        # hand otherwise we will get a segfault here
-        gdapi10.{{ t.gd_pool }}_destroy(&self._gd_data)
+    if gdapi10 != NULL:
+        def __dealloc__(self):
+            # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
+            # hand otherwise we will get a segfault here
+            gdapi10.{{ t.gd_pool }}_destroy(&self._gd_data)
+    else:
+        def __dealloc__(self):
+            return
 
     @staticmethod
     cdef inline {{ t.py_pool }} new():
