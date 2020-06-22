@@ -427,6 +427,12 @@ def generate_bindings(output_path, input_path, sample):
     out = template.render(classes=classes, constants=constants)
     with open(output_path, "w") as fd:
         fd.write(out)
+    
+    pyi_output_path = output_path.rsplit(".", 1)[0] + ".pyi"
+    template = env.get_template("bindings.tmpl.pyi")
+    out = template.render(classes=classes, constants=constants)
+    with open(pyi_output_path, "w") as fd:
+        fd.write(out)
 
     pxd_output_path = output_path.rsplit(".", 1)[0] + ".pxd"
     template = env.get_template("bindings.tmpl.pxd")
