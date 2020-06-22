@@ -121,7 +121,7 @@ cdef godot_pluginscript_script_manifest _build_script_manifest(object cls):
     # for methname in vars(cls):
     for methname in dir(cls):
         meth = getattr(cls, methname)
-        if not inspect.isfunction(meth) or meth.__name__.startswith("__"):
+        if not callable(meth) or meth.__name__.startswith("__"):
             continue
         methods.append(_build_method_info(meth, methname))
     gdapi10.godot_array_new_copy(&manifest.methods, &methods._gd_data)
