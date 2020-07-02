@@ -1,0 +1,27 @@
+Import("env")
+
+
+if env["platform"].startswith("windows"):
+    PYTHON_RELATIVE_PATH = "python.exe"
+    python = f"{env['DIST_PLATFORM']}/{PYTHON_RELATIVE_PATH}"
+    scripts = f"{env['DIST_PLATFORM']}/Scripts"
+else:
+    PYTHON_RELATIVE_PATH = "bin/python3"
+    python = f"{env['DIST_PLATFORM']}/{PYTHON_RELATIVE_PATH}"
+    scripts = f"{env['DIST_PLATFORM']}/bin"
+
+
+ensurepip = env.Command("ensurepip", [], f"{python} -m ensurepip")
+
+
+install_mypy = env.Command("install_mypy", [ensurepip], f"{python} -m pip install mypy")
+
+
+dist_symlink = env.Symlink("generate_pyi/addons", "$DIST_ROOT/addons")
+target = env.Command(
+    "generate_pyi",
+    ["$godot_binary", dist_symlink, install_mypy],
+    "${SOURCE.abspath} --path ${TARGET}",
+)
+env.Depends(target, env["DIST_ROOT"])
+env.AlwaysBuild(target)

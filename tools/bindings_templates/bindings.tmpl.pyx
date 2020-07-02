@@ -39,7 +39,7 @@ cdef godot_object *_ptr
 {% if cls["singleton"] %}
 _ptr = gdapi10.godot_global_get_singleton("{{ cls['singleton_name'] }}")
 if _ptr != NULL:
-    {{ cls['singleton_name'] }} = {{ cls["name"] }}.from_ptr(_ptr)
+    {{ cls['singleton_name'] }}: {{ cls["name"] }} = {{ cls["name"] }}.from_ptr(_ptr)
 else:
     print("ERROR: cannot load singleton `{{ cls['singleton_name'] }}` required for Pythonscript init")
 {% endif %}
@@ -53,7 +53,7 @@ cdef bint _bindings_initialized = False
 {% for cls in classes %}
 {% if cls["name"] not in early_needed_bindings %}
 {% if cls["singleton"] %}
-{{ cls['singleton_name'] }} = {{ cls["name"] }}.from_ptr(NULL)
+{{ cls['singleton_name'] }}: {{ cls["name"] }} = {{ cls["name"] }}.from_ptr(NULL)
 {% endif %}
 {% endif %}
 {% endfor %}

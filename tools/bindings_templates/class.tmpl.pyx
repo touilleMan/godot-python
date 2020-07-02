@@ -33,18 +33,41 @@ cdef godot_method_bind *{{ get_method_bind_register_name(cls, method) }} = NULL
 {% endfor %}
 
 cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
+    """
+    """
+    def __hash__(self):
+        """
+        """
+        pass
+
+    def __reduce__(self):
+        """
+        """
+        pass
+
+    def __setstate__(self):
+        """
+        """
+        pass
+
 {% if not cls["base_class"] %}
     # free is virtual but this is not marked in api.json :'(
     def free(self):
+        """
+        """
         with nogil:
             gdapi10.godot_object_destroy(self._gd_ptr)
 
     def __init__(self):
+        """
+        """
         raise RuntimeError(
             f"Use `new()` method to instantiate non-refcounted Godot object (and don't forget to free it !)"
         )
 
     def __repr__(self):
+        """
+        """
         return f"<{type(self).__name__} wrapper on 0x{<size_t>self._gd_ptr:x}>"
 
     @staticmethod
@@ -75,18 +98,24 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         return globals()[str(classname)]._from_ptr(<size_t>ptr)
 
     def __eq__(self, other):
+        """
+        """
         try:
             return self._gd_ptr == (<{{ cls["name"] }}>other)._gd_ptr
         except TypeError:
             return False
 
     def __ne__(self, other):
+        """
+        """
         try:
             return self._gd_ptr != (<{{ cls["name"] }}>other)._gd_ptr
         except TypeError:
             return True
 
     def __getattr__(self, name):
+        """
+        """
         cdef GDString gdname = GDString(name)
         cdef GDString gdnamefield = GDString("name")
 
@@ -111,6 +140,8 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         )
 
     def __setattr__(self, name, value):
+        """
+        """
         cdef GDString gdname = GDString(name)
         cdef GDString gdnamefield = GDString("name")
 
@@ -131,6 +162,8 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
         )
 
     def call(self, name, *args):
+        """
+        """
         return self.callv(name, Array(args))
 
 {% endif %}
@@ -139,6 +172,8 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 
 {% if cls["is_reference"] %}
     def __init__(self):
+        """
+        """
         if __{{ cls["name"] }}_constructor == NULL:
             raise NotImplementedError(__ERR_MSG_BINDING_NOT_AVAILABLE)
         self._gd_ptr = __{{ cls["name"] }}_constructor()
@@ -155,6 +190,8 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% else %}
     @staticmethod
     def new():
+        """
+        """
         if __{{ cls["name"] }}_constructor == NULL:
             raise NotImplementedError(__ERR_MSG_BINDING_NOT_AVAILABLE)
         # Call to __new__ bypasses __init__ constructor
@@ -169,9 +206,13 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 {% if cls["name"] == "Reference" %}
     @classmethod
     def new(cls):
+        """
+        """
         raise RuntimeError(f"Refcounted Godot object must be created with `{ cls.__name__ }()`")
 
     def __dealloc__(self):
+        """
+        """
         cdef godot_bool __ret
         if self._gd_ptr == NULL:
             return
@@ -201,6 +242,8 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 
     @staticmethod
     def _from_ptr(ptr):
+        """
+        """
         # Call to __new__ bypasses __init__ constructor
         cdef {{ cls["name"] }} wrapper = {{ cls["name"] }}.__new__({{ cls["name"] }})
         # /!\ doing `<godot_object*>ptr` would return the address of

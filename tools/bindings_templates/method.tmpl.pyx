@@ -24,13 +24,14 @@ __methbind__{{ cls["name"] }}__{{ method["name"] }}
 {%- if not arg["type_specs"]["is_base_type"] and not (arg["has_default_value"] and arg["default_value"] == "None") %}
   not None
 {%- endif %}
+: {{ arg["type_specs"]["binding_type"] }}
 {%- endif %}
 {%- if arg["has_default_value"] %}
 ={{ arg["default_value"] }}
 {%- endif %}
 ,
 {%- endfor %}
-)
+) -> {{ method["return_type_specs"]["binding_type"] }}
 {%- endmacro %}
 
 
@@ -145,6 +146,8 @@ with nogil:
 {% macro render_method(cls, method) %}
 # {{ render_method_c_signature(method) }}
 def {{ render_method_signature(method) }}:
+    """
+    """
     {{ _render_method_cook_args(method) | indent }}
     {{ _render_method_call(cls, method) | indent }}
     {{ _render_method_destroy_args(method) | indent }}

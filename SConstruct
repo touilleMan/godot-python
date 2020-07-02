@@ -171,6 +171,7 @@ SConscript(
         f"build/{env['platform']}/pythonscript/SConscript",
         "tests/SConscript",
         "examples/SConscript",
+        "tools/SConscript",
     ]
 )
 
