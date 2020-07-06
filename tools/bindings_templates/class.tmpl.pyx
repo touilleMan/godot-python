@@ -141,11 +141,13 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
     def __init__(self):
         if __{{ cls["name"] }}_constructor == NULL:
             raise NotImplementedError(__ERR_MSG_BINDING_NOT_AVAILABLE)
-        self._gd_ptr = __{{ cls["name"] }}_constructor()
-        if self._gd_ptr is NULL:
-            raise MemoryError
         cdef godot_bool __ret
         with nogil:
+            self._gd_ptr = __{{ cls["name"] }}_constructor()
+            
+            if self._gd_ptr is NULL:
+                raise MemoryError
+        
             gdapi10.godot_method_bind_ptrcall(
                 __methbind__Reference__init_ref,
                 self._gd_ptr,
