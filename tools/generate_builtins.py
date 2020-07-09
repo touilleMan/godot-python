@@ -239,6 +239,12 @@ def generate_pool_array(output_path):
     with open(output_path, "w") as fd:
         fd.write(out)
 
+    pxd_output_path = output_path.rsplit(".", 1)[0] + ".pyi"
+    template = env.get_template("builtins.tmpl.pyi")
+    out = template.render(**context)
+    with open(pxd_output_path, "w") as fd:
+        fd.write(out)
+
     pxd_output_path = output_path.rsplit(".", 1)[0] + ".pxd"
     template = env.get_template("builtins.tmpl.pxd")
     out = template.render(**context)

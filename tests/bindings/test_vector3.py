@@ -1,4 +1,5 @@
 import pytest
+from enum import IntEnum
 
 from godot import Vector3
 
@@ -209,7 +210,20 @@ def test_bad_equal(arg):
 
 
 @pytest.mark.parametrize(
-    "field,type", [("AXIS_X", int), ("AXIS_Y", int), ("AXIS_Z", int)], ids=lambda x: x[0]
+    "field,type",
+    [
+        ("ZERO", Vector3),
+        ("ONE", Vector3),
+        ("INF", Vector3),
+        ("LEFT", Vector3),
+        ("RIGHT", Vector3),
+        ("UP", Vector3),
+        ("DOWN", Vector3),
+        ("FORWARD", Vector3),
+        ("BACK", Vector3),
+        ("AXIS", type(IntEnum)),
+    ],
+    ids=lambda x: x[0],
 )
 def test_contants(field, type):
     field_val = getattr(Vector3, field)
