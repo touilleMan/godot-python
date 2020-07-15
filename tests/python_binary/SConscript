@@ -67,6 +67,21 @@ def test_factory(target, cmd):
 test_factory("run_python", f"{python} --version")
 
 
+test_factory(
+    "import_godot_module",
+    [
+        python,
+        "-c",
+        """
+try:
+    import godot
+except ImportError as exc:
+    assert "Cannot initialize godot module given Godot GDNative API not available." in str(exc)
+""",
+    ],
+)
+
+
 def test_ensurepip_and_run_pip(target, source, env):
     # ensurepip does modification, so copy dist first
     with tempfile.TemporaryDirectory() as tmpdirname:
