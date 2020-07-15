@@ -20,31 +20,28 @@ def {{ pyname }}(self{%- if args -%},{%- endif -%}
 {% endmacro %}
 
 {% macro render_operator_eq() %}
-def __eq__(self, other): ...
+def __eq__(self, other) -> bool: ...
 {% endmacro %}
 
 {% macro render_operator_ne() %}
-def __ne__(self, other): ...
+def __ne__(self, other) -> bool: ...
 {% endmacro %}
 
 {% macro render_operator_lt() %}
-def __lt__(self, other): ...
+def __lt__(self, other) -> bool: ...
 {% endmacro %}
 
 {% macro render_property(pyname, type, gdname_getter, gdname_setter=None) %}
-@property
-{{ render_method(pyname=pyname, gdname=gdname_getter, return_type=type) }}
-{% if gdname_setter %}
-@{{ pyname }}.setter
-{{ render_method(pyname=pyname, gdname=gdname_setter, args=[(type + "*", 'val')]) }}
-{% endif %}
+{{ pyname }}: {{ type }}
 {% endmacro %}
 
 {#- Overwrite blocks to be ignored -#}
 
+{% block python_defs %}
+	pass
+{% endblock %}
 {% block pxd_header %}{% endblock %}
 {% block pyx_header %}{% endblock %}
-{% block python_defs %}{% endblock %}
 {% block python_consts %}{% endblock %}
 {% block cdef_attributes %}{% endblock %}
 
