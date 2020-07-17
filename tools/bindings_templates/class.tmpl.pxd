@@ -2,8 +2,8 @@
 
 {% macro render_class_pxd(cls) %}
 
-cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
-{% if not cls["base_class"] %}
+cdef class {{ cls.name }}({{ cls.base_class }}):
+{% if not cls.base_class %}
     cdef godot_object *_gd_ptr
 
     @staticmethod
@@ -14,6 +14,6 @@ cdef class {{ cls["name"] }}({{ cls["base_class"] }}):
 
 {% endif %}
     @staticmethod
-    cdef {{ cls["name"] }} from_ptr(godot_object *_ptr)
+    cdef {{ cls.name }} from_ptr(godot_object *_ptr)
 
 {% endmacro %}

@@ -48,6 +48,7 @@ godot_vector3 godot_vector3_move_toward(godot_vector3* p_self, godot_vector3* p_
 from godot._hazmat.gdnative_api_struct cimport godot_vector3_axis
 
 import math
+from enum import IntEnum
 
 
 cdef inline Vector3_multiply_vector(Vector3 self, Vector3 b):
@@ -176,9 +177,11 @@ cdef class Vector3:
 {% endblock %}
 
 {%- block python_consts %}
-    AXIS_X = godot_vector3_axis.GODOT_VECTOR3_AXIS_X
-    AXIS_Y = godot_vector3_axis.GODOT_VECTOR3_AXIS_Y
-    AXIS_Z = godot_vector3_axis.GODOT_VECTOR3_AXIS_Z
+    AXIS = IntEnum("AXIS", {
+        "X": godot_vector3_axis.GODOT_VECTOR3_AXIS_X,
+        "Y": godot_vector3_axis.GODOT_VECTOR3_AXIS_Y,
+        "Z": godot_vector3_axis.GODOT_VECTOR3_AXIS_Z,
+    })
 
     ZERO = Vector3(0, 0, 0)  # Zero vector.
     ONE = Vector3(1, 1, 1)  # One vector.

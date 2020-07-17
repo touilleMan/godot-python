@@ -89,7 +89,7 @@ else:
 
 
 godot_bindings_srcs = bindings_env.Command(
-    target=("bindings.pyx", "bindings.pxd"),
+    target=("bindings.pyx", "bindings.pxd", "bindings.pyi"),
     source=("${gdnative_include_dir}/api.json",),
     action=("python %s ${opts} -i ${SOURCE} -o ${TARGET} " % File("#/tools/generate_bindings.py")),
     opts="--sample" if sample else "",
@@ -103,3 +103,4 @@ bindings_env.Depends(
 bindings_env.Install(
     "$DIST_SITE_PACKAGES/godot", bindings_env.CythonModule("bindings", "bindings.pyx")
 )
+bindings_env.Install("$DIST_SITE_PACKAGES/godot", "bindings.pyi")

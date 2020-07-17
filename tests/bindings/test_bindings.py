@@ -3,7 +3,18 @@ from math import inf
 from struct import unpack
 
 import godot
-from godot import Vector3, Object, Node, CanvasItem, Node2D, PluginScript, OpenSimplexNoise, OS, OK
+from godot import (
+    Vector3,
+    Object,
+    Node,
+    CanvasItem,
+    Node2D,
+    PluginScript,
+    OpenSimplexNoise,
+    OS,
+    Error,
+    OK,
+)
 
 
 def test_free_node():
@@ -90,6 +101,12 @@ def test_call_with_defaults(generate_obj):
     # legible_unique_name is False by default, check name is not human-redable
     children_names = [str(x.name) for x in node.get_children()]
     assert children_names == ["@@2"]
+
+
+def test_call_returns_enum(generate_obj):
+    node = generate_obj(Node)
+    ret = node.connect("foo", node, "bar")
+    assert isinstance(ret, Error)
 
 
 def test_call_with_kwargs(generate_obj):
