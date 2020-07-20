@@ -236,6 +236,9 @@ SAMPLE_CLASSES = {
     "VisualInstance",
     "GeometryInstance",
     "MeshInstance",
+    # For export editor plugin
+    "EditorExportPlugin",
+    "EditorPlugin",
     # For REPL editor plugin
     "GlobalConstants",
     "EditorPlugin",

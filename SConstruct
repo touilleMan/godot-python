@@ -211,6 +211,8 @@ env.Command(target="$DIST_ROOT/addons/pythonscript/.gdignore", source=None, acti
 # SCons install on directory doesn't check for file changes
 for item in env.Glob("addons/pythonscript_repl/*"):
     env.VanillaInstall(target="$DIST_ROOT/addons/pythonscript_repl", source=item)
+for item in env.Glob("addons/pythonscript_export/*"):
+    env.VanillaInstall(target="$DIST_ROOT/addons/pythonscript_export", source=item)
 
 
 ### Release archive ###

@@ -29,7 +29,7 @@ stretch_2d=true
 
 [editor_plugins]
 
-enabled=PoolStringArray( "pythonscript_repl" )
+enabled=PoolStringArray( "pythonscript_export", "pythonscript_repl" )
 
 [gdnative]
 
