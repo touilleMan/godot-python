@@ -25,8 +25,8 @@ gdnative_api_struct_pxd = File("gdnative_api_struct.pxd")
 # generate_gdnative_api_struct = env.Command(
 #     target=gdnative_api_struct_pxd,
 #     source=(
-#         env["gdnative_include_dir"],
-#         "%s/gdnative_api_struct.gen.h" % env["gdnative_include_dir"],
+#         env["godot_headers"],
+#         "%s/gdnative_api_struct.gen.h" % env["godot_headers"],
 #     ),
 #     action="autopxd -I ${SOURCES[0]} ${SOURCES[1]} > ${TARGET}",
 # )

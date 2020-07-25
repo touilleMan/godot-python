@@ -3,17 +3,30 @@ import re
 from uuid import uuid4
 from io import BytesIO
 from zipfile import ZipFile
-from urllib.request import urlopen
+from urllib.request import urlopen, HTTPError
 from SCons.Errors import UserError
 
 
 Import("env")
 
 
+def resolve_godot_download_url(major, minor, patch, extra, platform):
+    version = f"{major}.{minor}.{patch}" if patch != 0 else f"{major}.{minor}"
+    if extra == "stable":
+        return f"https://downloads.tuxfamily.org/godotengine/{version}/Godot_v{version}-{extra}_{platform}.zip"
+    else:
+        return f"https://downloads.tuxfamily.org/godotengine/{version}/{extra}/Godot_v{version}-{extra}_{platform}.zip"
+
+
+def resolve_godot_binary_name(major, minor, patch, extra, platform):
+    version = f"{major}.{minor}.{patch}" if patch != 0 else f"{major}.{minor}"
+    return f"Godot_v{version}-{extra}_{platform}"
+
+
 SConscript([f"{env['platform']}/SConscript"])
 # Platform-dependant variables
 assert "bits" in env
-assert "godot_default_binary_url" in env
+assert "godot_binary_download_platform" in env
 assert "cpython_build" in env
 assert "cpython_build_dir" in env
 assert "DIST_SITE_PACKAGES" in env
@@ -64,13 +77,22 @@ env.AddMethod(install_as, "InstallAs")
 
 
 if not env["godot_binary"]:
-    godot_binary_name = re.search(r"([^/]+)\.zip$", env["godot_default_binary_url"]).groups()[0]
+    godot_download_url = resolve_godot_download_url(
+        *env["godot_binary_download_version"], env["godot_binary_download_platform"]
+    )
+    godot_binary_name = resolve_godot_binary_name(
+        *env["godot_binary_download_version"], env["godot_binary_download_platform"]
+    )
     env["godot_binary"] = File(godot_binary_name)
-    godot_binary_zip_path = env.get("godot_binary_zip_path", godot_binary_name)
+    godot_binary_zip_path = env.get("godot_binary_download_zip_path", godot_binary_name)
 
     def download_and_extract(target, source, env):
-        resp = urlopen(env["godot_default_binary_url"])
-        zipfile = ZipFile(BytesIO(resp.read()))
+        try:
+            with urlopen(godot_download_url) as rep:
+                zipfile = ZipFile(BytesIO(rep.read()))
+        except HTTPError as exc:
+            # It seems SCons swallows HTTPError, so we have to wrap it
+            raise UserError(exc) from exc
         if godot_binary_zip_path not in zipfile.namelist():
             raise UserError(f"Archive doesn't contain {godot_binary_zip_path}")
         with open(target[0].abspath, "wb") as fd:
@@ -81,6 +103,6 @@ if not env["godot_binary"]:
     env.Command(
         env["godot_binary"],
         None,
-        Action(download_and_extract, f"Download&extract {env['godot_default_binary_url']}"),
+        Action(download_and_extract, f"Download&extract {godot_download_url}"),
     )
     env.NoClean(env["godot_binary"])
