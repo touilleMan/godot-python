@@ -13,10 +13,8 @@ cpython_build = Dir("cpython_build")
 
 
 env["bits"] = "64"
-env[
-    "godot_default_binary_url"
-] = "https://downloads.tuxfamily.org/godotengine/3.2.1/Godot_v3.2.1-stable_osx.64.zip"
-env["godot_binary_zip_path"] = "Godot.app/Contents/MacOS/Godot"
+env["godot_binary_download_platform"] = "osx.64"
+env["godot_binary_download_zip_path"] = "Godot.app/Contents/MacOS/Godot"
 env["cpython_build"] = cpython_build
 env["cpython_build_dir"] = cpython_build
 env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/python3.8/site-packages")

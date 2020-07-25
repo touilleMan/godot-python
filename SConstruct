@@ -1,22 +1,13 @@
 import os
+import re
 import shutil
 from datetime import datetime
 from SCons.Platform.virtualenv import ImportVirtualenv
+from SCons.Errors import UserError
 
 
 EnsurePythonVersion(3, 6)
 EnsureSConsVersion(3, 0)
-
-
-def boolean_converter(val, env):
-    """Allowed values are True, False, and a script path"""
-    if val in ("False", "false", "0"):
-        return False
-
-    if val in ("True", "true", "1"):
-        return True
-
-    return val
 
 
 def extract_version():
@@ -24,6 +15,25 @@ def extract_version():
     gl = {}
     exec(open("pythonscript/godot/_version.py").read(), gl)
     return gl["__version__"]
+
+
+def godot_binary_converter(val, env):
+    file = File(val)
+    if file.exists():
+        # Note here `env["godot_binary_download_version"]` is not defined, this is ok given
+        # this variable shouldn't be needed if Godot doesn't have to be downloaded
+        return file
+    # Provided value is version information with format <major>.<minor>.<patch>[-<extra>]
+    match = re.match(r"^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-(\w+))?$", val)
+    if match:
+        major, minor, patch, extra = match.groups()
+    else:
+        raise UserError(
+            f"`{val}` is neither an existing file nor a valid <major>.<minor>.<patch>[-<extra>] Godot version format"
+        )
+    env["godot_binary_download_version"] = (major, minor, patch, extra or "stable")
+    # `godot_binary` is set to None to indicate it should be downloaded
+    return None
 
 
 vars = Variables("custom.py")
@@ -41,9 +51,12 @@ vars.Add(
 )
 vars.Add("release_suffix", "Suffix to add to the release archive", extract_version())
 vars.Add(
-    "godot_binary", "Path to Godot main binary", "", converter=lambda x: File(x) if x else None
+    "godot_binary",
+    "Path to Godot binary or version of Godot to use",
+    default="3.2.2",
+    converter=godot_binary_converter,
 )
-vars.Add("gdnative_include_dir", "Path to GDnative include directory", "")
+vars.Add("godot_headers", "Path to Godot GDnative headers", "")
 vars.Add("debugger", "Run test with a debugger", "")
 vars.Add(BoolVariable("debug", "Compile with debug symbols", False))
 vars.Add(BoolVariable("headless", "Run tests in headless mode", False))
@@ -67,12 +80,15 @@ vars.Add(
     "MSVC version to use (Windows only) -- version num X.Y. Default: highest installed.",
 )
 vars.Add(
-    "MSVC_USE_SCRIPT",
-    "Set to True to let SCons find compiler (with MSVC_VERSION and TARGET_ARCH), "
-    "False to use cmd.exe env (MSVC_VERSION and TARGET_ARCH will be ignored), "
-    "or vcvarsXY.bat script name to use.",
-    default=True,
-    converter=boolean_converter,
+    BoolVariable(
+        "MSVC_USE_SCRIPT",
+        (
+            "Set to True to let SCons find compiler (with MSVC_VERSION and TARGET_ARCH), "
+            "False to use cmd.exe env (MSVC_VERSION and TARGET_ARCH will be ignored), "
+            "or vcvarsXY.bat script name to use."
+        ),
+        True,
+    )
 )
 
 
@@ -119,11 +135,11 @@ Help(vars.GenerateHelpText(env))
 # ImportVirtualenv(env)
 
 
-if env["gdnative_include_dir"]:
-    env["gdnative_include_dir"] = Dir(env["gdnative_include_dir"])
+if env["godot_headers"]:
+    env["godot_headers"] = Dir(env["godot_headers"])
 else:
-    env["gdnative_include_dir"] = Dir("godot_headers")
-env.AppendUnique(CPPPATH=["$gdnative_include_dir"])
+    env["godot_headers"] = Dir("godot_headers")
+env.AppendUnique(CPPPATH=["$godot_headers"])
 # TODO: not sure why, but CPPPATH scan result for cython modules change between
 # first and subsequent runs of scons (module is considered to no longer depend
 # on godot_headers on subsequent run, so the build redone)

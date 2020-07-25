@@ -14,13 +14,9 @@ cpython_build = Dir("cpython_build")
 
 env["bits"] = "64"
 if env["headless"]:
-    env[
-        "godot_default_binary_url"
-    ] = "https://downloads.tuxfamily.org/godotengine/3.2.1/Godot_v3.2.1-stable_linux_headless.64.zip"
+    env["godot_binary_download_platform"] = "linux_headless.64"
 else:
-    env[
-        "godot_default_binary_url"
-    ] = "https://downloads.tuxfamily.org/godotengine/3.2.1/Godot_v3.2.1-stable_x11.64.zip"
+    env["godot_binary_download_platform"] = "x11.64"
 env["cpython_build"] = cpython_build
 env["cpython_build_dir"] = cpython_build
 env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/python3.8/site-packages")

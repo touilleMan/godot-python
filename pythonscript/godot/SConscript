@@ -90,7 +90,7 @@ else:
 
 godot_bindings_srcs = bindings_env.Command(
     target=("bindings.pyx", "bindings.pxd", "bindings.pyi"),
-    source=("${gdnative_include_dir}/api.json",),
+    source=("${godot_headers}/api.json",),
     action=("python %s ${opts} -i ${SOURCE} -o ${TARGET} " % File("#/tools/generate_bindings.py")),
     opts="--sample" if sample else "",
 )
