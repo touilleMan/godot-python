@@ -8,6 +8,10 @@ trigger:
     include:
     - '*'
 
+
+variables: {GODOT_BINARY_VERSION: "3.2.3-rc1"}
+
+
 jobs:
 
 
@@ -65,6 +69,7 @@ jobs:
       python -m pip install --user -U pip
       python -m pip install --user -r requirements.txt
       # Configuration for scons
+      echo 'godot_binary = "$(GODOT_BINARY_VERSION)"' >> custom.py
       echo 'platform = "$(PLATFORM)"' >> custom.py
       echo 'MSVC_USE_SCRIPT = True' >> custom.py
       echo 'TARGET_ARCH = "$(vs.arch)"' >> custom.py
@@ -136,6 +141,7 @@ jobs:
       pip install -U pip
       pip install -r requirements.txt
       # Configuration for scons
+      echo 'godot_binary = "$(GODOT_BINARY_VERSION)"' >> custom.py
       echo 'platform = "$(PLATFORM)"' >> custom.py
       echo 'CC = "$(CC)"' >> custom.py
     displayName: 'Setup venv'
@@ -199,6 +205,7 @@ jobs:
       pip install -U pip
       pip install -r requirements.txt
       # Configuration for scons
+      echo 'godot_binary = "$(GODOT_BINARY_VERSION)"' >> custom.py
       echo 'platform = "$(PLATFORM)"' >> custom.py
       echo 'CC = "$(CC)"' >> custom.py
     displayName: 'Setup venv'
