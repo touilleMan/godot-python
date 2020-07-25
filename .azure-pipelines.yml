@@ -9,7 +9,7 @@ trigger:
     - '*'
 
 
-variables: {GODOT_BINARY_VERSION: "3.2.3-rc1"}
+variables: {PYTHON_VERSION: "3.7", GODOT_BINARY_VERSION: "3.2.3-rc1"}
 
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
     submodules: true
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.7'
+      versionSpec: $(PYTHON_VERSION)
   - bash: |
       set -eux
       python --version
@@ -61,7 +61,7 @@ jobs:
     submodules: true
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.7'
+      versionSpec: $(PYTHON_VERSION)
       architecture: '$(python.arch)'
   - bash: |
       set -eux
@@ -133,7 +133,7 @@ jobs:
     submodules: true
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.7'
+      versionSpec: $(PYTHON_VERSION)
   - bash: |
       set -eux
       $CC --version
@@ -194,7 +194,7 @@ jobs:
     submodules: true
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.7'
+      versionSpec: $(PYTHON_VERSION)
   - bash: |
       set -eux
       $CC --version

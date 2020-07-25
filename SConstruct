@@ -6,7 +6,7 @@ from SCons.Platform.virtualenv import ImportVirtualenv
 from SCons.Errors import UserError
 
 
-EnsurePythonVersion(3, 6)
+EnsurePythonVersion(3, 7)
 EnsureSConsVersion(3, 0)
 
 

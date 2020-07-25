@@ -102,7 +102,7 @@ Building
 To build the project from source, first checkout the repo or download the
 latest tarball.
 
-Godot-Python requires Python >= 3.6 and a C compiler.
+Godot-Python requires Python >= 3.7 and a C compiler.
 
 
 Godot GDNative header
