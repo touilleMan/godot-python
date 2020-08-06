@@ -19,8 +19,6 @@ class PythonREPL(VBoxContainer):
         self.output_box.add_font_override("normal_font", FONT)
         self.output_box.add_font_override("mono_font", FONT)
         self.run_button = self.get_node("FooterContainer/RunButton")
-        self.copy_button = self.get_node("HeaderContainer/CopyButton")
-        self.copy_button.connect("pressed", self, "copy")
         self.clear_button = self.get_node("HeaderContainer/ClearButton")
         self.clear_button.connect("pressed", self, "clear")
         self.input_box = self.get_node("FooterContainer/InputBox")
@@ -114,9 +112,6 @@ class PythonREPL(VBoxContainer):
             self.input_box.set_cursor_position(len(val))
 
         self.input_box.grab_focus()
-
-    def copy(self):
-        pass
 
     def clear(self):
         self.output_box.clear()

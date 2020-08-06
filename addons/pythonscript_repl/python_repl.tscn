@@ -20,12 +20,6 @@ margin_bottom = 17.0
 size_flags_horizontal = 3
 text = "Python REPL:"
 
-[node name="CopyButton" type="Button" parent="HeaderContainer"]
-margin_left = 86.0
-margin_right = 129.0
-margin_bottom = 20.0
-text = "Copy"
-
 [node name="ClearButton" type="Button" parent="HeaderContainer"]
 margin_left = 133.0
 margin_right = 177.0
