@@ -247,7 +247,7 @@ GDN_EXPORT void godot_gdnative_init(godot_gdnative_init_options *options) {
         desc.profiling_frame = pythonscript_profiling_frame;
     }
     pythonscript_gdapi_ext_pluginscript->godot_pluginscript_register_language(&desc);
-    
+
     // release the gil
     gilstate = PyEval_SaveThread();
 }

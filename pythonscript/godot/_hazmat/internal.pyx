@@ -50,10 +50,10 @@ cdef void set_exposed_class(object cls):
         else:
             # When reloading a script, Godot calls `pythonscript_script_init` BEFORE
             # `pythonscript_script_finish`. Hence we drop replace the old class
-            # here but have to increase the refcount so 
+            # here but have to increase the refcount so
             mod.kls = cls
             mod.refcount += 1
-        
+
         # Sometimes Godot fails to reload a script, and when this happens we end
         # up with a stale PyObject* for the class, which is then garbage collected by Python
         # so next time a script is instantiated from Godot we end up with a sefault :(

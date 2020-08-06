@@ -11,8 +11,8 @@ var action_prefix = ''
 onready var screen_size = get_viewport_rect().size
 
 func _process(delta):
-		
-	#is the master of the paddle		
+
+	#is the master of the paddle
 	motion = 0
 	if (Input.is_action_pressed(action_prefix + "_move_up")):
 		motion -= 1
@@ -22,7 +22,7 @@ func _process(delta):
 	motion*=MOTION_SPEED
 	if can_move:
 		translate( Vector2(0,motion*delta) )
-	
+
 	# set screen limits
 	if (position.y < 0 ):
 		position.y = 0

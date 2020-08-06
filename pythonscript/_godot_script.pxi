@@ -169,7 +169,7 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
     # TODO: possible bug if res:// is not part of PYTHONPATH
     # Remove `res://`, `.py` and replace / by .
     modname = path[6:].rsplit(".", 1)[0].replace("/", ".")
-    
+
     is_reload = modname in sys.modules
     if is_reload:
         # Reloading is done in two steps: remove the exported class,
@@ -204,7 +204,7 @@ cdef api godot_pluginscript_script_manifest pythonscript_script_init(
         )
         r_error[0] = GODOT_ERR_PARSE_ERROR
         return _build_empty_script_manifest()
-    
+
     if is_reload:
         # During reloading, Godot calls the new class init before the old class finish (so
         # `pythonscript_script_finish` is going to be called after this function returns).

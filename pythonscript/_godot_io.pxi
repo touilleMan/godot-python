@@ -43,20 +43,20 @@ class GodotIOStream(RawIOBase):
             self.godot_print_func(self.buffer)
             self._callback(self.buffer)
             self.buffer = ""
-    
+
     def _callback(self, arg):
         for _, callback in self.callbacks.items():
             try:
                 callback(arg)
             except BaseException:
                 sys.__stderr__.write("Error calling GodotIOStream callback:\n" + traceback.format_exc() + "\n")
-    
+
     def add_callback(self, callback):
         try:
             self.callbacks[id(callback)] = callback
         except BaseException:
             sys.__stderr__.write("Error adding GodotIOStream callback:\n" + traceback.format_exc() + "\n")
-    
+
     def remove_callback(self, callback):
         try:
             self.callbacks.pop(id(callback), None)
@@ -81,7 +81,7 @@ class GodotIO:
         with nogil:
             gdapi10.godot_print(&gdstr)
             gdapi10.godot_string_destroy(&gdstr)
-    
+
     @staticmethod
     def godot_print_error_pystr(pystr, lineno=None, filename=None, name=None):
         """
@@ -105,7 +105,7 @@ class GodotIO:
                         name = tblist[-1].name
         except BaseException:
             sys.__stderr__.write("Additional errors occured while printing:\n" + traceback.format_exc() + "\n")
-        
+
         # default values in case we couldn't get exception info and user have not provided those
         pystr = pystr or ""
         lineno = lineno or 0
@@ -125,7 +125,7 @@ class GodotIO:
 
         with nogil:
             gdapi10.godot_print_error(c_msg, c_name, c_filename, c_lineno)
-    
+
     @staticmethod
     def print_override(*objects, sep=" ", end="\n", file=None, flush=False):
         """
@@ -140,7 +140,7 @@ class GodotIO:
             file = GodotIO.get_godot_stdout_io()
         msg = str(sep).join([str(obj) for obj in objects]) + str(end)
         file.write(msg)
-    
+
     @staticmethod
     def print_exception_override(etype, value, tb, limit=None, file=None, chain=True):
         # We override traceback.print_exception to avoid multiple calls to godot_print_error on newlines,
@@ -151,7 +151,7 @@ class GodotIO:
         for line in traceback.TracebackException(type(value), value, tb, limit=limit).format(chain=chain):
             trace += str(line)
         GodotIO.godot_print_error_pystr(trace)
-    
+
     @staticmethod
     def enable_capture_io_streams():
         # flush existing buffer
@@ -170,7 +170,7 @@ class GodotIO:
         GodotIO._traceback_print_exception = traceback.print_exception
         traceback.print_exception = GodotIO.print_exception_override
 
-    
+
     @staticmethod
     def get_godot_stdout_io():
         if not GodotIO._godot_stderr_io:
