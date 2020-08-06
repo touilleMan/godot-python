@@ -9,3 +9,10 @@ repos:
       args:
           - "--line-length=100"
       language_version: python3
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.2.3
+    hooks:
+    - id: mixed-line-ending
+      exclude: (tests/_lib_vendors|(tests|examples)/lib)  # Ignore 3rd party stuff
+    - id: trailing-whitespace
+      exclude: (tests/_lib_vendors|(tests|examples)/lib)  # Ignore 3rd party stuff
