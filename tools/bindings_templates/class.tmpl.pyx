@@ -94,7 +94,6 @@ cdef class {{ cls.name }}({{ cls.base_class }}):
             if self.has_method(name):
 
                 def _call(*args):
-                    print(f'CALLING _CALL {name!r} on {self!r}')
                     return {{ cls.name }}.callv(self, gdname, Array(args))
 
                 return _call

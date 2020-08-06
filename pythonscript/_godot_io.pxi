@@ -57,7 +57,7 @@ class GodotIOStream(RawIOBase):
                 callback(arg)
             except BaseException:
                 sys.__stderr__.write("Error calling GodotIOStream callback:\n" + traceback.format_exc() + "\n")
-    
+
     def add_callback(self, callback):
         try:
             self.callbacks[callback_id(callback)] = callback
@@ -176,7 +176,7 @@ class GodotIO:
         # override traceback.print_exception
         GodotIO._traceback_print_exception = traceback.print_exception
         traceback.print_exception = GodotIO.print_exception_override
-    
+
     @staticmethod
     def disable_capture_io_streams():
 
@@ -185,7 +185,7 @@ class GodotIO:
         # this will avoid problems.
         if getattr(sys.stdout, '_remove_callbacks', None):
             sys.stdout._remove_callbacks()
-        
+
         if getattr(sys.stderr, '_remove_callbacks', None):
             sys.stderr._remove_callbacks()
 
