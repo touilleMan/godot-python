@@ -1,5 +1,4 @@
-from godot import exposed, export, EditorPlugin
-from godot import *
+from godot import exposed, EditorPlugin, ProjectSettings, ResourceLoader
 
 
 BASE_RES = str(ProjectSettings.localize_path(__file__)).rsplit("/", 1)[0]
@@ -18,6 +17,3 @@ class plugin(EditorPlugin):
         self.remove_control_from_bottom_panel(self.repl)
         self.repl.queue_free()
         self.repl = None
-
-    def _ready(self):
-        pass

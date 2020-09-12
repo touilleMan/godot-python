@@ -1,7 +1,9 @@
 import sys
 import builtins
 import traceback
-from io import RawIOBase
+from io import TextIOBase
+from threading import Lock
+
 from godot._hazmat.conversion cimport (
     godot_string_to_pyobj,
     pyobj_to_godot_string,
@@ -24,197 +26,104 @@ from godot._hazmat.gdnative_api_struct cimport (
 )
 
 
-cdef inline str callback_id(object callback):
-    return f"{callback.__module__}__{callback.__name__}"
+cpdef inline void godot_print(str pystr):
+    cdef godot_string gdstr
+    pyobj_to_godot_string(pystr, &gdstr)
+    with nogil:
+        gdapi10.godot_print(&gdstr)
+        gdapi10.godot_string_destroy(&gdstr)
 
 
-class GodotIOStream(RawIOBase):
+class StdinCapture(TextIOBase):
+    def __init__(self):
+        self._enabled = False
+        self._old_stdin = None
 
-    def __init__(self, godot_print_func):
+    def install(self):
+        if self._enabled:
+            raise RuntimeError("Already enabled !")
+
+        self._old_stdin = sys.stdin
+        sys.stdin = self
+        self._enabled = True
+
+    def remove(self):
+        if not self._enabled:
+            raise RuntimeError("Not enabled !")
+        sys.stdin = self._old_stdin
+        self._enabled = False
+
+
+class StdoutStderrCapture(TextIOBase):
+    def __init__(self):
+        self._enabled = False
+        self._old_stdout = None
+        self._old_stderr = None
+
+    def install(self):
+        if self._enabled:
+            raise RuntimeError("Already enabled !")
+
+        self._old_stderr = sys.stderr
+        sys.stderr = self
+        self._old_stdout = sys.stdout
+        sys.stdout = self
+        self._enabled = True
+
+        # Don't forget to flush the original streams if any (for instance Windows
+        # GUI app without console have sys.__stdout__/__stderr__ set to None)
+        if self._old_stdout is not None:
+            self._old_stdout.flush()
+        if self._old_stdout is not None:
+            self._old_stdout.flush()
+
+    def remove(self):
+        if not self._enabled:
+            raise RuntimeError("Not enabled !")
+        # # Sanity check, we shouldn't be mixing
+        # if sys.stderr is not self._stderr or sys.stdout is not self._stdout:
+        #     raise RuntimeError("sys.stderr/stdout has been patched in our back !")
+        sys.stderr = self._old_stderr
+        sys.stdout = self._old_stdout
+        self._enabled = False
+
+
+class StdoutStderrCaptureToGodot(StdoutStderrCapture):
+
+    def __init__(self):
         self.buffer = ""
-        self.godot_print_func = godot_print_func
         self.callbacks = {}
+        self._enabled = False
+        self._old_stdout = None
+        self._old_stderr = None
+        self._lock = Lock()
 
     def write(self, b):
-        self.buffer += b
-        if "\n" in self.buffer:
-            to_print, self.buffer = self.buffer.rsplit("\n", 1)
-            self.godot_print_func(to_print)
-            self._callback(to_print)
+        with self._lock:
+            self.buffer += b
+            if "\n" in self.buffer:
+                to_print, self.buffer = self.buffer.rsplit("\n", 1)
+                self._write(to_print)
 
     def flush(self):
-        if self.buffer:
-            self.godot_print_func(self.buffer)
-            self._callback(self.buffer)
-            self.buffer = ""
+        with self._lock:
+            if self.buffer:
+                self._write(self.buffer)
+                self.buffer = ""
 
-    def _remove_callbacks(self):
-        self.callbacks = []
-
-    def _callback(self, arg):
-        for _, callback in self.callbacks.items():
-            try:
-                callback(arg)
-            except BaseException:
-                sys.__stderr__.write("Error calling GodotIOStream callback:\n" + traceback.format_exc() + "\n")
-
-    def add_callback(self, callback):
-        try:
-            self.callbacks[callback_id(callback)] = callback
-        except BaseException:
-            sys.__stderr__.write("Error adding GodotIOStream callback:\n" + traceback.format_exc() + "\n")
-
-    def remove_callback(self, callback):
-        try:
-            self.callbacks.pop(callback_id(callback), None)
-        except BaseException:
-            sys.__stderr__.write("Error removing GodotIOStream callback:\n" + traceback.format_exc() + "\n")
-
-
-class GodotIO:
-
-    _godot_stdout_io = None
-    _godot_stderr_io = None
-    _builtin_print = None
-    _traceback_print_exception = None
-
-    @staticmethod
-    def godot_print_pystr(pystr):
-        """
-            Receives a python string (pystr), convert to a godot string, and print using the godot print function.
-        """
+    def _write(self, buff):
         cdef godot_string gdstr
-        pyobj_to_godot_string(pystr, &gdstr)
+        pyobj_to_godot_string(buff, &gdstr)
         with nogil:
             gdapi10.godot_print(&gdstr)
             gdapi10.godot_string_destroy(&gdstr)
 
-    @staticmethod
-    def godot_print_error_pystr(pystr, lineno=None, filename=None, name=None):
-        """
-            Receives a python string (pystr), convert to char*, and print using the godot_print_error function.
-            Also tries to get exception information such as, file name, line numer, method name, etc
-            and pass that along to godot_print_error
-        """
 
-        # we are printing an error message, so we must avoid other errors at all costs,
-        # otherwise the user may never see the error message printed, making debugging a living hell
-        try:
-            # don't try to get exception info if user provided the details.
-            if lineno is None and filename is None and name is None:
-                exc_info = sys.exc_info()
-                tb = exc_info[2]
-                if tb:
-                    tblist = traceback.extract_tb(tb)
-                    if len(tblist) > 0:
-                        lineno = tblist[-1].lineno
-                        filename = tblist[-1].filename
-                        name = tblist[-1].name
-        except BaseException:
-            sys.__stderr__.write("Additional errors occured while printing:\n" + traceback.format_exc() + "\n")
-
-        # default values in case we couldn't get exception info and user have not provided those
-        pystr = pystr or ""
-        lineno = lineno or 0
-        filename = filename or "UNKNOWN"
-        name = name or "UNKNOWN"
-
-        # Unlike GDString that requires UCS2/UCS4 depending on platform,
-        # godot_print_error is a simple honest dude using regular UTF8 C strings :)
-        pystr = pystr.encode('utf-8')
-        name = name.encode('utf-8')
-        filename = filename.encode('utf-8')
-
-        cdef char * c_msg = pystr
-        cdef char * c_name = name
-        cdef char * c_filename = filename
-        cdef int c_lineno = <int>lineno
-
-        with nogil:
-            gdapi10.godot_print_error(c_msg, c_name, c_filename, c_lineno)
-
-    @staticmethod
-    def print_override(*objects, sep=" ", end="\n", file=None, flush=False):
-        """
-            We need to override the builtin print function to avoid multiple calls to stderr.write.
-            e.g:
-                print(a, b, c, file=sys.stderr)
-                would cause 3 writes to be issued: write(a), write(b) and write(c).
-                Since we are using godot_print_error, that would cause a very weird print to the console,
-                so overriding print and making sure a single call to write is issued solves the problem.
-        """
-        if file is None:
-            file = GodotIO.get_godot_stdout_io()
-        msg = str(sep).join([str(obj) for obj in objects]) + str(end)
-        file.write(msg)
-
-    @staticmethod
-    def print_exception_override(etype, value, tb, limit=None, file=None, chain=True):
-        # We override traceback.print_exception to avoid multiple calls to godot_print_error on newlines,
-        # making the traceback look weird
-        if file is None:
-            file = sys.stderr
-        trace = "\n"
-        for line in traceback.TracebackException(type(value), value, tb, limit=limit).format(chain=chain):
-            trace += str(line)
-        GodotIO.godot_print_error_pystr(trace)
-
-    @staticmethod
-    def enable_capture_io_streams():
-        # flush existing buffer
-        sys.stdout.flush()
-        sys.stderr.flush()
-
-        # make stdout and stderr the custom iostream defined above
-        sys.stdout = GodotIO.get_godot_stdout_io()
-        sys.stderr = GodotIO.get_godot_stderr_io()
-
-        # override python print function
-        GodotIO._builtin_print = builtins.print
-        builtins.print = GodotIO.print_override
-
-        # override traceback.print_exception
-        GodotIO._traceback_print_exception = traceback.print_exception
-        traceback.print_exception = GodotIO.print_exception_override
-
-    @staticmethod
-    def disable_capture_io_streams():
-
-        # Removes all callbacks in GodotIOStream objects.
-        # this is not strictly necessary, but in case someone has a stale reference to them,
-        # this will avoid problems.
-        if getattr(sys.stdout, '_remove_callbacks', None):
-            sys.stdout._remove_callbacks()
-
-        if getattr(sys.stderr, '_remove_callbacks', None):
-            sys.stderr._remove_callbacks()
-
-        # flush existing buffer
-        sys.stdout.flush()
-        sys.stderr.flush()
-
-        # make stdout and stderr the custom iostream defined above
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
-
-        # get print back
-        builtins.print = GodotIO._builtin_print
-
-        # get traceback.print_exception back
-        traceback.print_exception = GodotIO._traceback_print_exception
-
-    @staticmethod
-    def get_godot_stdout_io():
-        if not GodotIO._godot_stderr_io:
-            GodotIO._godot_stderr_io = GodotIOStream(GodotIO.godot_print_pystr)
-        return GodotIO._godot_stderr_io
-
-    @staticmethod
-    def get_godot_stderr_io():
-        if not GodotIO._godot_stderr_io:
-            GodotIO._godot_stderr_io = GodotIOStream(GodotIO.godot_print_error_pystr)
-        return GodotIO._godot_stderr_io
+cdef _capture_io_streams = None
 
 
-cdef api void pythonscript_disable_capture_io_streams():
-    GodotIO.disable_capture_io_streams()
+cdef install_io_streams_capture():
+    global _capture_io_streams
+    assert _capture_io_streams is None
+    _capture_io_streams = StdoutStderrCaptureToGodot()
+    _capture_io_streams.install()
