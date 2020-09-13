@@ -294,8 +294,13 @@ SUPPORTED_TYPES = {
     "godot_transform2d",
     "godot_vector2",
     "godot_vector3",
+    "godot_pool_byte_array",
     "godot_pool_int_array",
+    "godot_pool_real_array",
     "godot_pool_string_array",
+    "godot_pool_vector2_array",
+    "godot_pool_vector3_array",
+    "godot_pool_color_array",
 }
 
 
