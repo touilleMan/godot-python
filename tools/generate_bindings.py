@@ -254,11 +254,22 @@ SAMPLE_CLASSES = {
     "BitmapFont",
     "DynamicFont",
     "DynamicFontData",
+    # Input event & friends stuff
     "InputEvent",
-    "InputEventMouse",
-    "InputEventMouseMotion",
+    "InputEventAction",
+    "InputEventJoypadButton",
+    "InputEventJoypadMotion",
+    "InputEventMIDI",
+    "InputEventScreenDrag",
+    "InputEventScreenTouch",
     "InputEventWithModifiers",
+    "InputEventGesture",
+    "InputEventMagnifyGesture",
+    "InputEventPanGesture",
     "InputEventKey",
+    "InputEventMouse",
+    "InputEventMouseButton",
+    "InputEventMouseMotion",
 }
 
 SUPPORTED_TYPES = {

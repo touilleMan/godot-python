@@ -47,7 +47,9 @@ cdef api godot_pluginscript_language_data *pythonscript_init() with gil:
 
     # Redirect stdout/stderr to have it in the Godot editor console
     if _setup_config_entry("python_script/io_streams_capture", True):
-        GodotIO.enable_capture_io_streams()
+        # Note we don't have to remove the stream capture in `pythonscript_finish` given
+        # Godot print API is available until after the Python interpreter is teardown
+        install_io_streams_capture()
 
     # Enable verbose output from pythonscript framework
     if _setup_config_entry("python_script/verbose", False):
@@ -65,4 +67,8 @@ cdef api godot_pluginscript_language_data *pythonscript_init() with gil:
 
 
 cdef api void pythonscript_finish(godot_pluginscript_language_data *data) with gil:
-    return
+    # /!\ When this function is called, the Python interpreter is fully operational
+    # and might be running user-created threads doing concurrent stuff.
+    # That will continue until `godot_gdnative_terminate` is called (which is
+    # responsible for the actual teardown of the interpreter).
+    pass

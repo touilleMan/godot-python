@@ -5,37 +5,40 @@
 [ext_resource path="res://addons/pythonscript_repl/input_box.py" type="Script" id=3]
 
 [node name="Python REPL" type="VBoxContainer"]
-margin_right = 129.0
-margin_bottom = 24.0
+margin_right = 580.0
+margin_bottom = 234.0
 script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="HeaderContainer" type="HBoxContainer" parent="."]
-margin_right = 177.0
+margin_right = 580.0
 margin_bottom = 20.0
 
 [node name="Label" type="Label" parent="HeaderContainer"]
 margin_top = 3.0
-margin_right = 82.0
+margin_right = 459.0
 margin_bottom = 17.0
 size_flags_horizontal = 3
 text = "Python REPL:"
 
-[node name="CopyButton" type="Button" parent="HeaderContainer"]
-margin_left = 86.0
-margin_right = 129.0
+[node name="KeyboardInterruptButton" type="Button" parent="HeaderContainer"]
+margin_left = 463.0
+margin_right = 532.0
 margin_bottom = 20.0
-text = "Copy"
+text = "Interrupt"
 
 [node name="ClearButton" type="Button" parent="HeaderContainer"]
-margin_left = 133.0
-margin_right = 177.0
+margin_left = 536.0
+margin_right = 580.0
 margin_bottom = 20.0
 text = "Clear"
 
 [node name="OutputBox" type="RichTextLabel" parent="."]
 margin_top = 24.0
-margin_right = 177.0
-margin_bottom = 204.0
+margin_right = 580.0
+margin_bottom = 206.0
 rect_min_size = Vector2( 0, 180 )
 focus_mode = 2
 size_flags_horizontal = 3
@@ -46,18 +49,18 @@ scroll_following = true
 selection_enabled = true
 
 [node name="FooterContainer" type="HBoxContainer" parent="."]
-margin_top = 208.0
-margin_right = 177.0
-margin_bottom = 232.0
+margin_top = 210.0
+margin_right = 580.0
+margin_bottom = 234.0
 
 [node name="InputBox" type="LineEdit" parent="FooterContainer"]
-margin_right = 137.0
+margin_right = 540.0
 margin_bottom = 24.0
 size_flags_horizontal = 3
 script = ExtResource( 3 )
 
 [node name="RunButton" type="Button" parent="FooterContainer"]
-margin_left = 141.0
-margin_right = 177.0
+margin_left = 544.0
+margin_right = 580.0
 margin_bottom = 24.0
 text = "Run"

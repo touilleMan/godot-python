@@ -248,7 +248,7 @@ GDN_EXPORT void godot_gdnative_init(godot_gdnative_init_options *options) {
     }
     pythonscript_gdapi_ext_pluginscript->godot_pluginscript_register_language(&desc);
 
-    // release the gil
+    // Release the Kraken... er I mean the GIL !
     gilstate = PyEval_SaveThread();
 }
 
@@ -258,7 +258,11 @@ GDN_EXPORT void godot_gdnative_singleton() {
 
 
 GDN_EXPORT void godot_gdnative_terminate() {
-    // re-acquire the gil in order to finalize properly
+    // Re-acquire the gil in order to finalize properly
     PyEval_RestoreThread(gilstate);
-    Py_FinalizeEx();
+
+    int ret = Py_FinalizeEx();
+    if (ret != 0) {
+        GD_ERROR_PRINT("Cannot finalize python interpreter");
+    }
 }
