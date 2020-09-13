@@ -31,7 +31,7 @@ env.AppendUnique(CYTHON_COMPILE_DEPS=[cpython_build])
 ### Fetch Python prebuild ###
 
 
-CPYTHON_PREBUILD_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20200517/cpython-3.8.3-x86_64-pc-windows-msvc-shared-pgo-20200517T2207.tar.zst"
+CPYTHON_PREBUILD_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20200830/cpython-3.8.5-x86_64-pc-windows-msvc-shared-pgo-20200830T2254.tar.zst"
 cpython_prebuild_archive = env.Download(
     target=File(CPYTHON_PREBUILD_URL.rsplit("/", 1)[1]), url=CPYTHON_PREBUILD_URL
 )
