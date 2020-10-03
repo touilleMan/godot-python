@@ -4,8 +4,8 @@ repos:
     hooks:
     - id: black
       types: [file]  # override `types: [python]`
-      files: (\.py$|^SConstruct$|SConscript$)
-      exclude: (tests/_lib_vendors|(tests|examples)/lib)  # Ignore 3rd party stuff
+      files: (\.py$|^SConstruct$|/SConscript$)
+      exclude: (^tests/_lib_vendors|^(tests|examples)/lib)  # Ignore 3rd party stuff
       args:
           - "--line-length=100"
       language_version: python3
@@ -13,6 +13,6 @@ repos:
     rev: v2.2.3
     hooks:
     - id: mixed-line-ending
-      exclude: (tests/_lib_vendors|(tests|examples)/lib)  # Ignore 3rd party stuff
+      exclude: (^tests/_lib_vendors|^(tests|examples)/lib)  # Ignore 3rd party stuff
     - id: trailing-whitespace
-      exclude: (tests/_lib_vendors|(tests|examples)/lib)  # Ignore 3rd party stuff
+      exclude: (^tests/_lib_vendors|^(tests|examples)/lib)  # Ignore 3rd party stuff
