@@ -3,73 +3,6 @@
 
 from typing import Union
 
-
-class AABB:
-	pass
-
-class Array:
-	pass
-
-class Basis:
-	pass
-
-class Color:
-	pass
-
-class Dictionary:
-	pass
-
-class NodePath:
-	pass
-
-class Plane:
-	pass
-
-class Quat:
-	pass
-
-class Rect2:
-	pass
-
-class RID:
-	pass
-
-class Transform2D:
-	pass
-
-class Transform:
-	pass
-
-class Vector2:
-	pass
-
-class Vector3:
-	pass
-
-class PoolByteArray:
-	pass
-
-class PoolIntArray:
-	pass
-
-class PoolRealArray:
-	pass
-
-class PoolStringArray:
-	pass
-
-class PoolVector2Array:
-	pass
-
-class PoolVector3Array:
-	pass
-
-class PoolColorArray:
-	pass
-
-class GDString:
-	pass
-
 {% set render_target = "rid" %}
 {% include 'render.tmpl.pyi' with context  %}
 {% set render_target = "vector3" %}
@@ -97,4 +30,6 @@ class GDString:
 {% set render_target = "node_path" %}
 {% include 'render.tmpl.pyi' with context  %}
 {% set render_target = "dictionary" %}
+{% include 'render.tmpl.pyi' with context  %}
+{% set render_target = "array" %}
 {% include 'render.tmpl.pyi' with context  %}

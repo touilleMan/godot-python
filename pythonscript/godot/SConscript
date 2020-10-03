@@ -8,7 +8,6 @@ pxds = [
     File(x)
     for x in (
         "__init__.py",  # Not really a .pxd but still needed
-        "array.pxd",
         "bindings.pxd",
         "builtins.pxd",
         "hazmat.pxd",
@@ -52,12 +51,6 @@ env.Depends(godot_builtins_srcs, godot_pool_arrays_srcs)
 
 
 env.Install("$DIST_SITE_PACKAGES/godot", env.CythonModule("pool_arrays", "pool_arrays.pyx"))
-
-
-# TODO: merge array.pyx into builtins
-env.Install("$DIST_SITE_PACKAGES/godot", env.CythonModule("array", "array.pyx"))
-
-
 env.Install("$DIST_SITE_PACKAGES/godot", env.CythonModule("builtins", "builtins.pyx"))
 
 

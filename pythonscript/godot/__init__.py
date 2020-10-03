@@ -31,7 +31,6 @@ from godot.tags import (
     export,
     exposed,
 )
-from godot.array import Array
 from godot.pool_arrays import (
     PoolIntArray,
     PoolRealArray,

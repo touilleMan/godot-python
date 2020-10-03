@@ -28,6 +28,7 @@ from type_specs import (
     TYPE_TRANSFORM,
     TYPE_NODEPATH,
     TYPE_DICTIONARY,
+    TYPE_ARRAY,
 )
 
 
@@ -140,6 +141,7 @@ TARGET_TO_TYPE_SPEC = {
     "transform": TYPE_TRANSFORM,
     "node_path": TYPE_NODEPATH,
     "dictionary": TYPE_DICTIONARY,
+    "array": TYPE_ARRAY,
 }
 
 
@@ -258,11 +260,7 @@ def load_builtins_specs_from_gdnative_api(gdnative_api_path: str) -> List[Builti
         for func in revision["api"]:
             assert func["name"] not in specs
             # Ignore godot pool (generate by another script)
-            if (
-                func["name"].startswith("godot_pool_")
-                or func["name"].startswith("godot_array_")
-                or func["name"].startswith("godot_variant_")
-            ):
+            if func["name"].startswith("godot_pool_") or func["name"].startswith("godot_variant_"):
                 continue
             spec = load_builtin_method_spec(func, gdapi=revision_gdapi)
             if spec:

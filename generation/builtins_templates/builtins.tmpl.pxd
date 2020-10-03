@@ -4,7 +4,6 @@
 cimport cython
 
 from godot._hazmat.gdnative_api_struct cimport *
-from godot.array cimport Array
 from godot.pool_arrays cimport (
     PoolIntArray,
     PoolRealArray,
@@ -42,4 +41,6 @@ from godot.pool_arrays cimport (
 {% set render_target = "node_path" %}
 {% include 'render.tmpl.pxd' with context  %}
 {% set render_target = "dictionary" %}
+{% include 'render.tmpl.pxd' with context  %}
+{% set render_target = "array" %}
 {% include 'render.tmpl.pxd' with context  %}
