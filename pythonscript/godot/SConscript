@@ -29,21 +29,23 @@ env.Install("$DIST_SITE_PACKAGES/godot", env.CythonModule("tags", "tags.pyx"))
 godot_pool_arrays_srcs = env.Command(
     target=("pool_arrays.pyx", "pool_arrays.pxd"),
     source=(),
-    action="python %s  -o ${TARGET}" % File("#/tools/generate_pool_arrays.py"),
+    action="python %s  --output ${TARGET}" % File("#/generation/generate_pool_arrays.py"),
 )
 env.Depends(
     godot_pool_arrays_srcs,
-    ["#/tools/generate_pool_arrays.py", env.Glob("#/tools/pool_arrays_templates/*")],
+    ["#/generation/generate_pool_arrays.py", env.Glob("#/generation/pool_arrays_templates/*")],
 )
 
 
 godot_builtins_srcs = env.Command(
     target=("builtins.pyx", "builtins.pxd"),
-    source=(),
-    action="python %s -o ${TARGET}" % File("#/tools/generate_builtins.py"),
+    source=("${godot_headers}/gdnative_api.json",),
+    action="python %s --input ${SOURCE} --output ${TARGET}"
+    % File("#/generation/generate_builtins.py"),
 )
 env.Depends(
-    godot_builtins_srcs, ["#/tools/generate_builtins.py", env.Glob("#/tools/builtins_templates/*")]
+    godot_builtins_srcs,
+    ["#/generation/generate_builtins.py", env.Glob("#/generation/builtins_templates/*")],
 )
 # TODO: remove this once pool_array is merged into builtins
 env.Depends(godot_builtins_srcs, godot_pool_arrays_srcs)
@@ -91,12 +93,15 @@ else:
 godot_bindings_srcs = bindings_env.Command(
     target=("bindings.pyx", "bindings.pxd", "bindings.pyi"),
     source=("${godot_headers}/api.json",),
-    action=("python %s ${opts} -i ${SOURCE} -o ${TARGET} " % File("#/tools/generate_bindings.py")),
+    action=(
+        "python %s ${opts} --input ${SOURCE} --output ${TARGET} "
+        % File("#/generation/generate_bindings.py")
+    ),
     opts="--sample" if sample else "",
 )
 bindings_env.Depends(
     godot_bindings_srcs,
-    ["#/tools/generate_bindings.py", bindings_env.Glob("#/tools/bindings_templates/*")],
+    ["#/generation/generate_bindings.py", bindings_env.Glob("#/generation/bindings_templates/*")],
 )
 
 
