@@ -249,9 +249,7 @@ def pre_cook_patch_stuff(gdnative_api):
         revision = revision["next"]
 
 
-def load_builtins_specs_from_gdnative_api(gdnative_api_path: str) -> List[BuiltinMethodSpec]:
-    with open(gdnative_api_path, "r") as fd:
-        gdnative_api = json.load(fd)
+def load_builtins_specs_from_gdnative_api_json(gdnative_api: dict) -> List[BuiltinMethodSpec]:
     pre_cook_patch_stuff(gdnative_api)
     revision = gdnative_api["core"]
     specs = []
@@ -270,9 +268,8 @@ def load_builtins_specs_from_gdnative_api(gdnative_api_path: str) -> List[Builti
     return specs
 
 
-def generate_builtins(output_path, gdnative_api_json_path):
-    builtins_specs = load_builtins_specs_from_gdnative_api(gdnative_api_json_path)
-    methods_c_name_to_spec = {s.c_name: s for s in builtins_specs}
+def generate_builtins(no_suffix_output_path: str, methods_specs: List[BuiltinMethodSpec]):
+    methods_c_name_to_spec = {s.c_name: s for s in methods_specs}
 
     def _get_builtin_method_spec(method_c_name):
         assert isinstance(method_c_name, str)
@@ -316,19 +313,20 @@ def generate_builtins(output_path, gdnative_api_json_path):
     }
 
     template = env.get_template("builtins.tmpl.pyx")
-    print(f"Generating {output_path}")
+    pyx_output_path = f"{no_suffix_output_path}.pyx"
+    print(f"Generating {pyx_output_path}")
     out = template.render(**context)
-    with open(output_path, "w") as fd:
+    with open(pyx_output_path, "w") as fd:
         fd.write(out)
 
-    pyi_output_path = output_path.rsplit(".", 1)[0] + ".pyi"
+    pyi_output_path = f"{no_suffix_output_path}.pyi"
     print(f"Generating {pyi_output_path}")
     template = env.get_template("builtins.tmpl.pyi")
     out = template.render(**context)
     with open(pyi_output_path, "w") as fd:
         fd.write(out)
 
-    pxd_output_path = output_path.rsplit(".", 1)[0] + ".pxd"
+    pxd_output_path = f"{no_suffix_output_path}.pxd"
     print(f"Generating {pxd_output_path}")
     template = env.get_template("builtins.tmpl.pxd")
     out = template.render(**context)
@@ -339,12 +337,33 @@ def generate_builtins(output_path, gdnative_api_json_path):
 
 
 if __name__ == "__main__":
+
+    def _parse_output(val):
+        suffix = ".pyx"
+        if not val.endswith(suffix):
+            raise argparse.ArgumentTypeError(f"Must have a `{suffix}` suffix")
+        return val[: -len(suffix)]
+
     parser = argparse.ArgumentParser(
         description="Generate godot builtins bindings files (except pool arrays)"
     )
     parser.add_argument(
-        "--input", "-i", help="Path to Godot gdnative_api.json file", default="gdnative_api.json"
+        "--input",
+        "-i",
+        required=True,
+        metavar="GDNATIVE_API_PATH",
+        type=argparse.FileType("r", encoding="utf8"),
+        help="Path to Godot gdnative_api.json file",
     )
-    parser.add_argument("--output", "-o", default="godot_builtins_gen.pyx")
+    parser.add_argument(
+        "--output",
+        "-o",
+        required=True,
+        metavar="BUILTINS_PYX",
+        type=_parse_output,
+        help="Path to store the generated builtins.pyx (also used to determine .pxd/.pyi output path)",
+    )
     args = parser.parse_args()
-    generate_builtins(args.output, args.input)
+    gdnative_api_json = json.load(args.input)
+    methods_specs = load_builtins_specs_from_gdnative_api_json(gdnative_api_json)
+    generate_builtins(args.output, methods_specs)

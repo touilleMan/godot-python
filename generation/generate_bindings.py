@@ -7,7 +7,7 @@ from keyword import iskeyword
 from collections import defaultdict
 from jinja2 import Environment, FileSystemLoader
 from dataclasses import dataclass, replace
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
 
 from type_specs import TypeSpec, ALL_TYPES_EXCEPT_OBJECTS
 
@@ -542,41 +542,74 @@ def cook_data(data):
     return sorted_classes, constants
 
 
-def generate_bindings(output_path, api_json_path, sample):
-    with open(api_json_path, "r") as fd:
-        raw_data = json.load(fd)
-    pre_cook_patch_stuff(raw_data)
-    classes, constants = cook_data(raw_data)
+def load_bindings_specs_from_api_json(
+    api_json: dict, sample: bool
+) -> Tuple[List[ClassInfo], Dict[str, int]]:
+    pre_cook_patch_stuff(api_json)
+    classes, constants = cook_data(api_json)
     if sample:
         strip_sample_stuff(classes)
     strip_unsupported_stuff(classes)
     post_cook_patch_stuff(classes)
+    return classes, constants
 
-    print(f"Generating {output_path}")
+
+def generate_bindings(
+    no_suffix_output_path: str, classes_specs: List[ClassInfo], constants_specs: Dict[str, int]
+):
+    pyx_output_path = f"{no_suffix_output_path}.pyx"
+    print(f"Generating {pyx_output_path}")
     template = env.get_template("bindings.tmpl.pyx")
-    out = template.render(classes=classes, constants=constants)
-    with open(output_path, "w") as fd:
+    out = template.render(classes=classes_specs, constants=constants_specs)
+    with open(pyx_output_path, "w") as fd:
         fd.write(out)
 
-    pyi_output_path = output_path.rsplit(".", 1)[0] + ".pyi"
+    pyi_output_path = f"{no_suffix_output_path}.pyi"
     print(f"Generating {pyi_output_path}")
     template = env.get_template("bindings.tmpl.pyi")
-    out = template.render(classes=classes, constants=constants)
+    out = template.render(classes=classes_specs, constants=constants_specs)
     with open(pyi_output_path, "w") as fd:
         fd.write(out)
 
-    pxd_output_path = output_path.rsplit(".", 1)[0] + ".pxd"
+    pxd_output_path = f"{no_suffix_output_path}.pxd"
     print(f"Generating {pxd_output_path}")
     template = env.get_template("bindings.tmpl.pxd")
-    out = template.render(classes=classes, constants=constants)
+    out = template.render(classes=classes_specs, constants=constants_specs)
     with open(pxd_output_path, "w") as fd:
         fd.write(out)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate godot api bindings file")
-    parser.add_argument("--input", "-i", help="Path to Godot api.json file", default="api.json")
-    parser.add_argument("--output", "-o", default="godot_bindings_gen.pyx")
-    parser.add_argument("--sample", action="store_true")
+
+    def _parse_output(val):
+        suffix = ".pyx"
+        if not val.endswith(suffix):
+            raise argparse.ArgumentTypeError(f"Must have a `{suffix}` suffix")
+        return val[: -len(suffix)]
+
+    parser = argparse.ArgumentParser(description="Generate godot api bindings bindings files")
+    parser.add_argument(
+        "--input",
+        "-i",
+        required=True,
+        metavar="API_PATH",
+        type=argparse.FileType("r", encoding="utf8"),
+        help="Path to Godot api.json file",
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        required=True,
+        metavar="BINDINGS_PYX",
+        type=_parse_output,
+        help="Path to store the generated bindings.pyx (also used to determine .pxd/.pyi output path)",
+    )
+    parser.add_argument(
+        "--sample",
+        action="store_true",
+        help="Generate a subset of the bindings (faster to build, useful for dev)",
+    )
     args = parser.parse_args()
-    generate_bindings(args.output, args.input, args.sample)
+    api_json = json.load(args.input)
+    classes_specs, constants_specs = load_bindings_specs_from_api_json(api_json, args.sample)
+    generate_bindings(args.output, classes_specs, constants_specs)
