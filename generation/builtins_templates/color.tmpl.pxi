@@ -1,42 +1,3 @@
-{#
-"""
-// GDAPI: 1.0
-void godot_color_new_rgba(godot_color* r_dest, godot_real p_r, godot_real p_g, godot_real p_b, godot_real p_a)
-void godot_color_new_rgb(godot_color* r_dest, godot_real p_r, godot_real p_g, godot_real p_b)
-godot_real godot_color_get_r(godot_color* p_self)
-void godot_color_set_r(godot_color* p_self, godot_real r)
-godot_real godot_color_get_g(godot_color* p_self)
-void godot_color_set_g(godot_color* p_self, godot_real g)
-godot_real godot_color_get_b(godot_color* p_self)
-void godot_color_set_b(godot_color* p_self, godot_real b)
-godot_real godot_color_get_a(godot_color* p_self)
-void godot_color_set_a(godot_color* p_self, godot_real a)
-godot_real godot_color_get_h(godot_color* p_self)
-godot_real godot_color_get_s(godot_color* p_self)
-godot_real godot_color_get_v(godot_color* p_self)
-godot_string godot_color_as_string(godot_color* p_self)
-godot_int godot_color_to_rgba32(godot_color* p_self)
-godot_int godot_color_to_argb32(godot_color* p_self)
-godot_real godot_color_gray(godot_color* p_self)
-godot_color godot_color_inverted(godot_color* p_self)
-godot_color godot_color_contrasted(godot_color* p_self)
-godot_color godot_color_linear_interpolate(godot_color* p_self, godot_color* p_b, godot_real p_t)
-godot_color godot_color_blend(godot_color* p_self, godot_color* p_over)
-godot_string godot_color_to_html(godot_color* p_self, godot_bool p_with_alpha)
-godot_bool godot_color_operator_equal(godot_color* p_self, godot_color* p_b)
-godot_bool godot_color_operator_less(godot_color* p_self, godot_color* p_b)
-// GDAPI: 1.1
-godot_int godot_color_to_abgr32(godot_color* p_self)
-godot_int godot_color_to_abgr64(godot_color* p_self)
-godot_int godot_color_to_argb64(godot_color* p_self)
-godot_int godot_color_to_rgba64(godot_color* p_self)
-godot_color godot_color_darkened(godot_color* p_self, godot_real p_amount)
-godot_color godot_color_from_hsv(godot_color* p_self, godot_real p_h, godot_real p_s, godot_real p_v, godot_real p_a)
-godot_color godot_color_lightened(godot_color* p_self, godot_real p_amount)
-// GDAPI: 1.2
-"""
-#}
-
 {%- block pxd_header %}
 {% endblock -%}
 {%- block pyx_header %}
@@ -53,8 +14,10 @@ cdef class Color:
 {% block python_defs %}
     def __init__(self, godot_real r=0, godot_real g=0, godot_real b=0, a=None):
         if a is None:
+            {{ force_mark_rendered("godot_color_new_rgb")}}
             gdapi10.godot_color_new_rgb(&self._gd_data, r, g, b)
         else:
+            {{ force_mark_rendered("godot_color_new_rgba")}}
             gdapi10.godot_color_new_rgba(&self._gd_data, r, g, b, a)
 
     def __repr__(self):

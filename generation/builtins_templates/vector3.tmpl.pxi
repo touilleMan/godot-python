@@ -1,50 +1,3 @@
-{#
-"""
-// GDAPI: 1.0
-void godot_vector3_new(godot_vector3* r_dest, godot_real p_x, godot_real p_y, godot_real p_z)
-godot_string godot_vector3_as_string(godot_vector3* p_self)
-godot_int godot_vector3_min_axis(godot_vector3* p_self)
-godot_int godot_vector3_max_axis(godot_vector3* p_self)
-godot_real godot_vector3_length(godot_vector3* p_self)
-godot_real godot_vector3_length_squared(godot_vector3* p_self)
-godot_bool godot_vector3_is_normalized(godot_vector3* p_self)
-godot_vector3 godot_vector3_normalized(godot_vector3* p_self)
-godot_vector3 godot_vector3_inverse(godot_vector3* p_self)
-godot_vector3 godot_vector3_snapped(godot_vector3* p_self, godot_vector3* p_by)
-godot_vector3 godot_vector3_rotated(godot_vector3* p_self, godot_vector3* p_axis, godot_real p_phi)
-godot_vector3 godot_vector3_linear_interpolate(godot_vector3* p_self, godot_vector3* p_b, godot_real p_t)
-godot_vector3 godot_vector3_cubic_interpolate(godot_vector3* p_self, godot_vector3* p_b, godot_vector3* p_pre_a, godot_vector3* p_post_b, godot_real p_t)
-godot_real godot_vector3_dot(godot_vector3* p_self, godot_vector3* p_b)
-godot_vector3 godot_vector3_cross(godot_vector3* p_self, godot_vector3* p_b)
-godot_basis godot_vector3_outer(godot_vector3* p_self, godot_vector3* p_b)
-godot_basis godot_vector3_to_diagonal_matrix(godot_vector3* p_self)
-godot_vector3 godot_vector3_abs(godot_vector3* p_self)
-godot_vector3 godot_vector3_floor(godot_vector3* p_self)
-godot_vector3 godot_vector3_ceil(godot_vector3* p_self)
-godot_real godot_vector3_distance_to(godot_vector3* p_self, godot_vector3* p_b)
-godot_real godot_vector3_distance_squared_to(godot_vector3* p_self, godot_vector3* p_b)
-godot_real godot_vector3_angle_to(godot_vector3* p_self, godot_vector3* p_to)
-godot_vector3 godot_vector3_slide(godot_vector3* p_self, godot_vector3* p_n)
-godot_vector3 godot_vector3_bounce(godot_vector3* p_self, godot_vector3* p_n)
-godot_vector3 godot_vector3_reflect(godot_vector3* p_self, godot_vector3* p_n)
-godot_vector3 godot_vector3_operator_add(godot_vector3* p_self, godot_vector3* p_b)
-godot_vector3 godot_vector3_operator_subtract(godot_vector3* p_self, godot_vector3* p_b)
-godot_vector3 godot_vector3_operator_multiply_vector(godot_vector3* p_self, godot_vector3* p_b)
-godot_vector3 godot_vector3_operator_multiply_scalar(godot_vector3* p_self, godot_real p_b)
-godot_vector3 godot_vector3_operator_divide_vector(godot_vector3* p_self, godot_vector3* p_b)
-godot_vector3 godot_vector3_operator_divide_scalar(godot_vector3* p_self, godot_real p_b)
-godot_bool godot_vector3_operator_equal(godot_vector3* p_self, godot_vector3* p_b)
-godot_bool godot_vector3_operator_less(godot_vector3* p_self, godot_vector3* p_b)
-godot_vector3 godot_vector3_operator_neg(godot_vector3* p_self)
-void godot_vector3_set_axis(godot_vector3* p_self, godot_vector3_axis p_axis, godot_real p_val)
-godot_real godot_vector3_get_axis(godot_vector3* p_self, godot_vector3_axis p_axis)
-// GDAPI: 1.1
-// GDAPI: 1.2
-godot_vector3 godot_vector3_move_toward(godot_vector3* p_self, godot_vector3* p_to, godot_real p_delta)
-godot_vector3 godot_vector3_direction_to(const godot_vector3 *p_self, const godot_vector3 *p_b)
-"""
-#}
-
 {%- block pxd_header %}
 {% endblock -%}
 {%- block pyx_header %}
@@ -56,21 +9,25 @@ from enum import IntEnum
 
 cdef inline Vector3_multiply_vector(Vector3 self, Vector3 b):
     cdef Vector3 ret  = Vector3.__new__(Vector3)
+    {{ force_mark_rendered("godot_vector3_operator_multiply_vector") }}
     ret._gd_data = gdapi10.godot_vector3_operator_multiply_vector(&self._gd_data, &b._gd_data)
     return ret
 
 cdef inline Vector3_multiply_scalar(Vector3 self, godot_real b):
     cdef Vector3 ret  = Vector3.__new__(Vector3)
+    {{ force_mark_rendered("godot_vector3_operator_multiply_scalar") }}
     ret._gd_data = gdapi10.godot_vector3_operator_multiply_scalar(&self._gd_data, b)
     return ret
 
 cdef inline Vector3_divide_vector(Vector3 self, Vector3 b):
     cdef Vector3 ret  = Vector3.__new__(Vector3)
+    {{ force_mark_rendered("godot_vector3_operator_divide_vector") }}
     ret._gd_data = gdapi10.godot_vector3_operator_divide_vector(&self._gd_data, &b._gd_data)
     return ret
 
 cdef inline Vector3_divide_scalar(Vector3 self, godot_real b):
     cdef Vector3 ret  = Vector3.__new__(Vector3)
+    {{ force_mark_rendered("godot_vector3_operator_divide_scalar") }}
     ret._gd_data = gdapi10.godot_vector3_operator_divide_scalar(&self._gd_data, b)
     return ret
 
@@ -85,6 +42,7 @@ cdef class Vector3:
 
 {% block python_defs %}
     def __init__(self, godot_real x=0.0, godot_real y=0.0, godot_real z=0.0):
+        {{ force_mark_rendered("godot_vector3_new") }}
         gdapi10.godot_vector3_new(&self._gd_data, x, y, z)
 
     def __repr__(self):
@@ -92,26 +50,32 @@ cdef class Vector3:
 
     @property
     def x(self) -> godot_real:
+        {{ force_mark_rendered("godot_vector3_get_axis") }}
         return gdapi10.godot_vector3_get_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_X)
 
     @x.setter
     def x(self, godot_real val) -> None:
+        {{ force_mark_rendered("godot_vector3_set_axis") }}
         gdapi10.godot_vector3_set_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_X, val)
 
     @property
     def y(self) -> godot_real:
+        {{ force_mark_rendered("godot_vector3_get_axis") }}
         return gdapi10.godot_vector3_get_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Y)
 
     @y.setter
     def y(self, godot_real val) -> None:
+        {{ force_mark_rendered("godot_vector3_set_axis") }}
         gdapi10.godot_vector3_set_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Y, val)
 
     @property
     def z(self) -> godot_real:
+        {{ force_mark_rendered("godot_vector3_get_axis") }}
         return gdapi10.godot_vector3_get_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Z)
 
     @z.setter
     def z(self, godot_real val) -> None:
+        {{ force_mark_rendered("godot_vector3_set_axis") }}
         gdapi10.godot_vector3_set_axis(&self._gd_data, godot_vector3_axis.GODOT_VECTOR3_AXIS_Z, val)
 
     {{ render_operator_eq() | indent }}
@@ -148,6 +112,7 @@ cdef class Vector3:
                 raise ZeroDivisionError()
             return Vector3_divide_vector(self, _val)
 
+    {{ render_method("as_string") | indent }}
     {{ render_method("min_axis") | indent }}
     {{ render_method("max_axis") | indent }}
     {{ render_method("length") | indent }}
@@ -160,6 +125,7 @@ cdef class Vector3:
     {{ render_method("linear_interpolate") | indent }}
     {{ render_method("cubic_interpolate") | indent }}
     {{ render_method("move_toward") | indent }}
+    {{ render_method("direction_to") | indent }}
     {{ render_method("dot") | indent }}
     {{ render_method("cross") | indent }}
     {{ render_method("outer") | indent }}

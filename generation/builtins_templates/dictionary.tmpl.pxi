@@ -1,43 +1,21 @@
-{#
-"""
-// GDAPI: 1.0
-void godot_dictionary_new(godot_dictionary* r_dest)
-void godot_dictionary_new_copy(godot_dictionary* r_dest, godot_dictionary* p_src)
-void godot_dictionary_destroy(godot_dictionary* p_self)
-godot_int godot_dictionary_size(godot_dictionary* p_self)
-godot_bool godot_dictionary_empty(godot_dictionary* p_self)
-void godot_dictionary_clear(godot_dictionary* p_self)
-godot_bool godot_dictionary_has(godot_dictionary* p_self, godot_variant* p_key)
-godot_bool godot_dictionary_has_all(godot_dictionary* p_self, godot_array* p_keys)
-void godot_dictionary_erase(godot_dictionary* p_self, godot_variant* p_key)
-godot_int godot_dictionary_hash(godot_dictionary* p_self)
-godot_array godot_dictionary_keys(godot_dictionary* p_self)
-godot_array godot_dictionary_values(godot_dictionary* p_self)
-godot_variant godot_dictionary_get(godot_dictionary* p_self, godot_variant* p_key)
-void godot_dictionary_set(godot_dictionary* p_self, godot_variant* p_key, godot_variant* p_value)
-// godot_variant* godot_dictionary_operator_index(godot_dictionary* p_self, godot_variant* p_key)
-// godot_variant* godot_dictionary_operator_index_const(godot_dictionary* p_self, godot_variant* p_key)
-// godot_variant* godot_dictionary_next(godot_dictionary* p_self, godot_variant* p_key)
-godot_bool godot_dictionary_operator_equal(godot_dictionary* p_self, godot_dictionary* p_b)
-godot_string godot_dictionary_to_json(godot_dictionary* p_self)
-// GDAPI: 1.1
-godot_bool godot_dictionary_erase_with_return(godot_dictionary* p_self, godot_variant* p_key)
-godot_variant godot_dictionary_get_with_default(godot_dictionary* p_self, godot_variant* p_key, godot_variant* p_default)
-// GDAPI: 1.2
-godot_dictionary godot_dictionary_duplicate(godot_dictionary* p_self, godot_bool p_deep)
-"""
-#}
-
 {%- block pxd_header %}
 {% endblock -%}
 {%- block pyx_header %}
 {% endblock -%}
 
+{# We can't do const in Python #}
+{{ force_mark_rendered("godot_dictionary_operator_index_const") }}
 
 @cython.final
 cdef class Dictionary:
 {% block cdef_attributes %}
     cdef godot_dictionary _gd_data
+
+    @staticmethod
+    cdef inline Dictionary new()
+
+    @staticmethod
+    cdef inline Dictionary from_ptr(const godot_dictionary *_ptr)
 
     cdef inline operator_update(self, Dictionary items)
     cdef inline bint operator_equal(self, Dictionary other)
@@ -45,6 +23,7 @@ cdef class Dictionary:
 
 {% block python_defs %}
     def __init__(self, iterable=None):
+        {{ force_mark_rendered("godot_dictionary_new") }}
         if not iterable:
             gdapi10.godot_dictionary_new(&self._gd_data)
         elif isinstance(iterable, Dictionary):
@@ -63,9 +42,28 @@ cdef class Dictionary:
                 raise ValueError("dictionary update sequence element has length 1; 2 is required")
 
     def __dealloc__(self):
+        {{ force_mark_rendered("godot_dictionary_destroy") }}
         # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
         # hand otherwise we will get a segfault here
         gdapi10.godot_dictionary_destroy(&self._gd_data)
+
+    @staticmethod
+    cdef inline Dictionary new():
+        # Call to __new__ bypasses __init__ constructor
+        cdef Dictionary ret = Dictionary.__new__(Dictionary)
+        gdapi10.godot_dictionary_new(&ret._gd_data)
+        return ret
+
+    @staticmethod
+    cdef inline Dictionary from_ptr(const godot_dictionary *_ptr):
+        # Call to __new__ bypasses __init__ constructor
+        cdef Dictionary ret = Dictionary.__new__(Dictionary)
+        # `godot_dictionary` is a cheap structure pointing on a refcounted hashmap
+        # of variants. Unlike it name could let think, `godot_dictionary_new_copy`
+        # only increment the refcount of the underlying structure.
+        {{ force_mark_rendered("godot_dictionary_new_copy") }}
+        gdapi10.godot_dictionary_new_copy(&ret._gd_data, _ptr)
+        return ret
 
     def __repr__(self):
         repr_dict = {}
@@ -78,6 +76,7 @@ cdef class Dictionary:
         return f"<Dictionary({repr_dict})>"
 
     def __getitem__(self, object key):
+        {{ force_mark_rendered("godot_dictionary_operator_index") }}
         cdef godot_variant var_key
         if not pyobj_to_godot_variant(key, &var_key):
             raise TypeError(f"Cannot convert `{key!r}` to Godot Variant")
@@ -91,6 +90,7 @@ cdef class Dictionary:
     {{ render_method("set", py_name="__setitem__") | indent }}
 
     def __delitem__(self, object key):
+        {{ force_mark_rendered("godot_dictionary_erase_with_return") }}
         cdef godot_variant var_key
         if not pyobj_to_godot_variant(key, &var_key):
             raise TypeError(f"Cannot convert `{key!r}` to Godot Variant")
@@ -100,6 +100,7 @@ cdef class Dictionary:
             raise KeyError(key)
 
     def __iter__(self):
+        {{ force_mark_rendered("godot_dictionary_next") }}
         cdef godot_variant *p_key = NULL
         # TODO: mid iteration mutation should throw exception ?
         while True:
@@ -115,6 +116,8 @@ cdef class Dictionary:
         return self.duplicate(True)
 
     def get(self, object key, object default=None):
+        {{ force_mark_rendered("godot_dictionary_get") }}
+        {{ force_mark_rendered("godot_dictionary_get_with_default") }}
         cdef godot_variant var_key
         pyobj_to_godot_variant(key, &var_key)
         cdef godot_variant var_ret
@@ -173,6 +176,8 @@ cdef class Dictionary:
         return dict(self) == dict(other)
 
     def __eq__(self, other):
+        {# see https://github.com/godotengine/godot/issues/27615 #}
+        {{ force_mark_rendered("godot_dictionary_operator_equal") }}
         try:
             return Dictionary.operator_equal(self, <Dictionary?>other)
         except TypeError:

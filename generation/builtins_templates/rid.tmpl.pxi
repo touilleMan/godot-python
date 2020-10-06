@@ -1,16 +1,3 @@
-{#
-"""
-// GDAPI: 1.0
-void godot_rid_new(godot_rid* r_dest)
-godot_int godot_rid_get_id(godot_rid* p_self)
-void godot_rid_new_with_resource(godot_rid* r_dest, godot_object* p_from)
-godot_bool godot_rid_operator_equal(godot_rid* p_self, godot_rid* p_b)
-godot_bool godot_rid_operator_less(godot_rid* p_self, godot_rid* p_b)
-// GDAPI: 1.1
-// GDAPI: 1.2
-"""
-#}
-
 {%- block pxd_header %}
 {% endblock -%}
 {%- block pyx_header %}
@@ -27,13 +14,13 @@ cdef class RID:
 {% block python_defs %}
     def __init__(self, Resource from_=None):
         if from_ is not None:
-            {{ mark_rendered("godot_rid_new_with_resource") }}
+            {{ force_mark_rendered("godot_rid_new_with_resource") }}
             gdapi10.godot_rid_new_with_resource(
                 &self._gd_data,
                 from_._gd_ptr
             )
         else:
-            {{ mark_rendered("godot_rid_new") }}
+            {{ force_mark_rendered("godot_rid_new") }}
             gdapi10.godot_rid_new(&self._gd_data)
 
     def __repr__(RID self):

@@ -1,29 +1,9 @@
-{#
-"""
-// GDAPI: 1.0
-void godot_node_path_new(godot_node_path* r_dest, godot_string* p_from)
-void godot_node_path_new_copy(godot_node_path* r_dest, godot_node_path* p_src)
-void godot_node_path_destroy(godot_node_path* p_self)
-godot_string godot_node_path_as_string(godot_node_path* p_self)
-godot_bool godot_node_path_is_absolute(godot_node_path* p_self)
-godot_int godot_node_path_get_name_count(godot_node_path* p_self)
-godot_string godot_node_path_get_name(godot_node_path* p_self, godot_int p_idx)
-godot_int godot_node_path_get_subname_count(godot_node_path* p_self)
-godot_string godot_node_path_get_subname(godot_node_path* p_self, godot_int p_idx)
-godot_string godot_node_path_get_concatenated_subnames(godot_node_path* p_self)
-godot_bool godot_node_path_is_empty(godot_node_path* p_self)
-godot_bool godot_node_path_operator_equal(godot_node_path* p_self, godot_node_path* p_b)
-// GDAPI: 1.1
-godot_node_path godot_node_path_get_as_property_path(godot_node_path* p_self)
-// GDAPI: 1.2
-"""
-#}
-
 {%- block pxd_header %}
 {% endblock -%}
 {%- block pyx_header %}
 {% endblock -%}
 
+{{ force_mark_rendered("godot_node_path_new_copy") }} {# NodePath is const, why does this exists in the first place ? #}
 
 @cython.final
 cdef class NodePath:
@@ -33,6 +13,7 @@ cdef class NodePath:
 
 {% block python_defs %}
     def __init__(self, from_):
+        {{ force_mark_rendered("godot_node_path_new") }}
         cdef godot_string gd_from
         try:
             gdapi10.godot_node_path_new(&self._gd_data, &(<GDString?>from_)._gd_data)
@@ -44,6 +25,7 @@ cdef class NodePath:
             gdapi10.godot_string_destroy(&gd_from)
 
     def __dealloc__(NodePath self):
+        {{ force_mark_rendered("godot_node_path_destroy") }}
         # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
         # hand otherwise we will get a segfault here
         gdapi10.godot_node_path_destroy(&self._gd_data)

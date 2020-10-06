@@ -1,31 +1,3 @@
-{#
-"""
-// GDAPI: 1.0
-void godot_rect2_new_with_position_and_size(godot_rect2* r_dest, godot_vector2* p_pos, godot_vector2* p_size)
-void godot_rect2_new(godot_rect2* r_dest, godot_real p_x, godot_real p_y, godot_real p_width, godot_real p_height)
-godot_string godot_rect2_as_string(godot_rect2* p_self)
-godot_real godot_rect2_get_area(godot_rect2* p_self)
-godot_bool godot_rect2_intersects(godot_rect2* p_self, godot_rect2* p_b)
-godot_bool godot_rect2_encloses(godot_rect2* p_self, godot_rect2* p_b)
-godot_bool godot_rect2_has_no_area(godot_rect2* p_self)
-godot_rect2 godot_rect2_clip(godot_rect2* p_self, godot_rect2* p_b)
-godot_rect2 godot_rect2_merge(godot_rect2* p_self, godot_rect2* p_b)
-godot_bool godot_rect2_has_point(godot_rect2* p_self, godot_vector2* p_point)
-godot_rect2 godot_rect2_grow(godot_rect2* p_self, godot_real p_by)
-godot_rect2 godot_rect2_expand(godot_rect2* p_self, godot_vector2* p_to)
-godot_bool godot_rect2_operator_equal(godot_rect2* p_self, godot_rect2* p_b)
-godot_vector2 godot_rect2_get_position(godot_rect2* p_self)
-godot_vector2 godot_rect2_get_size(godot_rect2* p_self)
-void godot_rect2_set_position(godot_rect2* p_self, godot_vector2* p_pos)
-void godot_rect2_set_size(godot_rect2* p_self, godot_vector2* p_size)
-// GDAPI: 1.1
-godot_rect2 godot_rect2_grow_individual(godot_rect2* p_self, godot_real p_left, godot_real p_top, godot_real p_right, godot_real p_bottom)
-godot_rect2 godot_rect2_grow_margin(godot_rect2* p_self, godot_int p_margin, godot_real p_by)
-godot_rect2 godot_rect2_abs(godot_rect2* p_self)
-// GDAPI: 1.2
-"""
-#}
-
 {%- block pxd_header %}
 {% endblock -%}
 {%- block pyx_header %}
@@ -40,10 +12,12 @@ cdef class Rect2:
 
 {% block python_defs %}
     def __init__(self, godot_real x=0.0, godot_real y=0.0, godot_real width=0.0, godot_real height=0.0):
+        {{ force_mark_rendered("godot_rect2_new") }}
         gdapi10.godot_rect2_new(&self._gd_data, x, y, width, height)
 
     @staticmethod
     def from_pos_size(Vector2 position not None, Vector2 size not None):
+        {{ force_mark_rendered("godot_rect2_new_with_position_and_size") }}
         cdef Rect2 ret = Rect2.__new__(Rect2)
         gdapi10.godot_rect2_new_with_position_and_size(&ret._gd_data, &position._gd_data, &size._gd_data)
         return ret

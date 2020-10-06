@@ -9,7 +9,7 @@ from dataclasses import dataclass, replace
 from collections import defaultdict
 from itertools import product
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
-from typing import List
+from typing import List, Set
 
 from type_specs import (
     TypeSpec,
@@ -244,8 +244,11 @@ def pre_cook_patch_stuff(gdnative_api):
     revision = gdnative_api["core"]
     while revision:
         for func in revision["api"]:
+            # `signed char` is used in some string methods to return comparison
+            # information (see `godot_string_casecmp_to`).
+            # The type in two word messes with our (poor) type parsing.
             if func["return_type"] == "signed char":
-                func["return_type"] = "schar"
+                func["return_type"] = "int8_t"
         revision = revision["next"]
 
 
@@ -268,12 +271,26 @@ def load_builtins_specs_from_gdnative_api_json(gdnative_api: dict) -> List[Built
     return specs
 
 
-def generate_builtins(no_suffix_output_path: str, methods_specs: List[BuiltinMethodSpec]):
+def generate_builtins(
+    no_suffix_output_path: str, methods_specs: List[BuiltinMethodSpec]
+) -> Set[str]:
     methods_c_name_to_spec = {s.c_name: s for s in methods_specs}
+
+    # Track the methods used in the templates to enforce they are in sync with the gdnative_api.json
+    rendered_methods = set()
+
+    def _mark_rendered(method_c_name):
+        rendered_methods.add(method_c_name)
+        return ""  # Return empty string to not output anything when used in a template
+
+    def _render_target_to_template(render_target):
+        assert isinstance(render_target, str)
+        return f"{render_target}.tmpl.pxi"
 
     def _get_builtin_method_spec(method_c_name):
         assert isinstance(method_c_name, str)
         try:
+            _mark_rendered(method_c_name)
             return methods_c_name_to_spec[method_c_name]
         except KeyError:
             raise RuntimeError(f"Unknown method `{method_c_name}`")
@@ -284,10 +301,6 @@ def generate_builtins(no_suffix_output_path: str, methods_specs: List[BuiltinMet
             return next(t for t in ALL_TYPES if t.py_type == py_type)
         except StopIteration:
             raise RuntimeError(f"Unknown type `{py_type}`")
-
-    def _render_target_to_template(render_target):
-        assert isinstance(render_target, str)
-        return f"{render_target}.tmpl.pxi"
 
     def _get_target_method_spec_factory(render_target):
         assert isinstance(render_target, str)
@@ -301,15 +314,12 @@ def generate_builtins(no_suffix_output_path: str, methods_specs: List[BuiltinMet
 
         return _get_target_method_spec
 
-    def _mark_rendered(method_c_name):
-        pass
-
     context = {
-        "get_target_method_spec_factory": _get_target_method_spec_factory,
-        "get_type_spec": _get_type_spec,
-        "get_builtin_method_spec": _get_builtin_method_spec,
         "render_target_to_template": _render_target_to_template,
-        "mark_rendered": _mark_rendered,
+        "get_builtin_method_spec": _get_builtin_method_spec,
+        "get_type_spec": _get_type_spec,
+        "get_target_method_spec_factory": _get_target_method_spec_factory,
+        "force_mark_rendered": _mark_rendered,
     }
 
     template = env.get_template("builtins.tmpl.pyx")
@@ -333,7 +343,24 @@ def generate_builtins(no_suffix_output_path: str, methods_specs: List[BuiltinMet
     with open(pxd_output_path, "w") as fd:
         fd.write(out)
 
-    return True
+    return rendered_methods
+
+
+def ensure_all_methods_has_been_rendered(
+    methods_specs: List[BuiltinMethodSpec], rendered_methods: Set[str]
+):
+    all_methods = {s.c_name for s in methods_specs}
+
+    unknown_rendered_methods = rendered_methods - all_methods
+    for method in sorted(unknown_rendered_methods):
+        print(f"ERROR: `{method}` is used in the templates but not present in gnative_api.json")
+
+    not_rendered_methods = all_methods - rendered_methods
+
+    for method in sorted(not_rendered_methods):
+        print(f"ERROR: `{method}` is listed in gnative_api.json but not used in the templates")
+
+    return not unknown_rendered_methods and not not_rendered_methods
 
 
 if __name__ == "__main__":
@@ -366,4 +393,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     gdnative_api_json = json.load(args.input)
     methods_specs = load_builtins_specs_from_gdnative_api_json(gdnative_api_json)
-    generate_builtins(args.output, methods_specs)
+    rendered_methods = generate_builtins(args.output, methods_specs)
+    if not ensure_all_methods_has_been_rendered(methods_specs, rendered_methods):
+        raise SystemExit(
+            "Generated builtins are not in line with the provided gdnative_api.json :'("
+        )

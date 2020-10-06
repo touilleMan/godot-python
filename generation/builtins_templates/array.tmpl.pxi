@@ -3,25 +3,38 @@
 {%- block pyx_header %}
 {% endblock -%}
 
+{# TODO: conversion from pool arrays is not supported #}
+{{ force_mark_rendered("godot_array_new_pool_byte_array") }}
+{{ force_mark_rendered("godot_array_new_pool_color_array") }}
+{{ force_mark_rendered("godot_array_new_pool_int_array") }}
+{{ force_mark_rendered("godot_array_new_pool_real_array") }}
+{{ force_mark_rendered("godot_array_new_pool_string_array") }}
+{{ force_mark_rendered("godot_array_new_pool_vector2_array") }}
+{{ force_mark_rendered("godot_array_new_pool_vector3_array") }}
+{# We can't do const in Python #}
+{{ force_mark_rendered("godot_array_operator_index_const") }}
 
 @cython.final
 cdef class Array:
 {% block cdef_attributes %}
+    cdef godot_array _gd_data
+
     @staticmethod
     cdef inline Array new()
+
     @staticmethod
     cdef inline Array from_ptr(const godot_array *_ptr)
+
     cdef inline Array operator_getslice(self, godot_int start, godot_int stop, godot_int step)
     cdef inline bint operator_equal(self, Array other)
     cdef inline Array operator_add(self, Array items)
     cdef inline operator_iadd(self, Array items)
-
-    cdef godot_array _gd_data
-
 {% endblock %}
 
 {% block python_defs %}
     def __init__(self, iterable=None):
+        {{ force_mark_rendered("godot_array_new") }}
+        {{ force_mark_rendered("godot_array_duplicate") }}
         if not iterable:
             gdapi10.godot_array_new(&self._gd_data)
         elif isinstance(iterable, Array):
@@ -46,12 +59,14 @@ cdef class Array:
         # `godot_array` is a cheap structure pointing on a refcounted vector
         # of variants. Unlike it name could let think, `godot_array_new_copy`
         # only increment the refcount of the underlying structure.
+        {{ force_mark_rendered("godot_array_new_copy") }}
         gdapi10.godot_array_new_copy(&ret._gd_data, _ptr)
         return ret
 
     def __dealloc__(self):
         # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
         # hand otherwise we will get a segfault here
+        {{ force_mark_rendered("godot_array_destroy") }}
         gdapi10.godot_array_destroy(&self._gd_data)
 
     def __repr__(self):
@@ -60,75 +75,31 @@ cdef class Array:
     # Operators
 
     cdef inline Array operator_getslice(self, godot_int start, godot_int stop, godot_int step):
-        cdef Array ret = Array.new()
-        # TODO: optimize with `godot_array_resize` ?
-        cdef godot_int size = self.size()
-
-        if start > size - 1:
-            start = size - 1
-        elif start < 0:
-            start += size
-            if start < 0:
-                start = 0
-
-        if stop > size:
-            stop = size
-        elif stop < -size:
-            stop = -1
-        elif stop < 0:
-            stop += size
-
-        if step > 0:
-            if start >= stop:
-                return ret
-            items = 1 + (stop - start - 1) // step
-            if items <= 0:
-                return ret
-        else:
-            if start <= stop:
-                return ret
-            items = 1 + (stop - start + 1) // step
-            if items <= 0:
-                return ret
-
-        gdapi10.godot_array_resize(&ret._gd_data, items)
-        cdef int i
-        cdef godot_variant *p_item
-        for i in range(items):
-            p_item = gdapi10.godot_array_operator_index(&self._gd_data, i * step + start)
-            gdapi10.godot_array_append(&ret._gd_data, p_item)
-            gdapi10.godot_variant_destroy(p_item)
-
+        {{ force_mark_rendered("godot_array_slice") }}
+        cdef Array ret = Array.__new__(Array)
+        ret._gd_data = gdapi12.godot_array_slice(&self._gd_data, start, stop, step, False)
         return ret
 
     # TODO: support slice
     def __getitem__(self, index):
+        {{ force_mark_rendered("godot_array_operator_index") }}
         cdef godot_int size = self.size()
-        # cdef godot_int start
-        # cdef godot_int stop
-        # cdef godot_int step
-        # cdef godot_int items
-        # if isinstance(index, slice):
-        #     cook_slice(index, size, &start, &stop, &step, &items)
-        #     gdapi10.godot_array_resize(&ret._gd_data, items)
-        #     cdef int i
-        #     cdef godot_variant *p_item
-        #     for i in range(items):
-        #         p_item = gdapi10.godot_array_operator_index(&self._gd_data, i * step + start)
-        #         gdapi10.godot_array_append(&ret._gd_data, p_item)
-        #         gdapi10.godot_variant_destroy(p_item)
+        cdef godot_int start
+        cdef godot_int stop
+        cdef godot_int step
 
+        if isinstance(index, slice):
+            step = index.step if index.step is not None else 1
+            if step == 0:
+                raise ValueError("slice step cannot be zero")
+            elif step > 0:
+                start = index.start if index.start is not None else 0
+                stop = index.stop if index.stop is not None else size
+            else:
+                start = index.start if index.start is not None else size
+                stop = index.stop if index.stop is not None else -size - 1
+            return Array.operator_getslice(self, start, stop, step)
 
-        #     step = index.step if index.step is not None else 1
-        #     if step == 0:
-        #     elif step > 0:
-        #         start = index.start if index.start is not None else 0
-        #         stop = index.stop if index.stop is not None else size
-        #     else:
-        #         start = index.start if index.start is not None else size
-        #         stop = index.stop if index.stop is not None else -size - 1
-        #     return Array.operator_getslice(self, start, stop, step)
-        # else:
         if index < 0:
             index = index + size
         if index < 0 or index >= size:
@@ -262,9 +233,13 @@ cdef class Array:
     {{ render_method("resize") | indent }}
     {{ render_method("rfind") | indent }}
     {{ render_method("sort") | indent }}
-{# {{ render_method("sort_custom") | indent }} #}
+    {#- TODO: opaque object as param is not supported #}
+    {{- force_mark_rendered("godot_array_sort_custom") }}
+    {#- {{ render_method("sort_custom") | indent }} #}
     {{ render_method("bsearch") | indent }}
-{# {{ render_method("bsearch_custom") | indent }} #}
+    {#- TODO: opaque object as param is not supported #}
+    {{- force_mark_rendered("godot_array_bsearch_custom") }}
+    {#- {{ render_method("bsearch_custom") | indent }} #}
     {{ render_method("max") | indent }}
     {{ render_method("min") | indent }}
     {{ render_method("shuffle") | indent }}

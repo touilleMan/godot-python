@@ -12,6 +12,7 @@ class TypeSpec:
     # Type used in Cython, basically similar to c_type for scalars&enums
     # and to py_type for Godot objects&builtins
     cy_type: str
+    # TODO: typing should be divided between argument and return (e.g. `Union[str, NodePath]` vs `NodePath`)
     # Type used for PEP 484 Python typing
     py_type: str = ""
     # Type is a Godot object (i.e. defined in api.json)
