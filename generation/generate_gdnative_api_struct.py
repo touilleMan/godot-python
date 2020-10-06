@@ -232,6 +232,9 @@ class CCCP:
         self.error_occurred(f"Unknown preprocessor command `{line}`")
 
     def expand_macros(self, line):
+        # Simple optim to discard most of the lines given regex search is cpu heavy
+        if not line or all(key not in line for key in self.defined_vars.keys()):
+            return line
         expanded_line = line
         # Recursive expansion given a macro can reference another one
         while True:
