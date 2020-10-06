@@ -141,20 +141,22 @@ cdef api void pythonscript_auto_indent_code(
     pass
 
 
+__global_constants = {}
+
+
 cdef api void pythonscript_add_global_constant(
     godot_pluginscript_language_data *p_data,
     const godot_string *p_variable,
     const godot_variant *p_value
 ) with gil:
+    # However, Godot add global constants very early (first as an empty variant
+    # placeholder before any script is loaded, then as a proper loaded script).
+    # So it's possible this function get called before `pythonscript_script_init`
+    # (which is supposed to do the lazy `_initialize_bindings`).
+    _initialize_bindings()
     name = godot_string_to_pyobj(p_variable)
     value = godot_variant_to_pyobj(p_value)
-    # Godot class&singleton bindings are supposed to be initialized on first
-    # python script load. However adding a global constant can occur prior to
-    # that so we must force the init here before using `godot.globals`.
-    _initialize_bindings()
-    # Update `godot.globals` module here
-    import godot
-    godot.globals.__dict__[name] = value
+    __global_constants[name] = value
 
 
 cdef api godot_string pythonscript_debug_get_error(

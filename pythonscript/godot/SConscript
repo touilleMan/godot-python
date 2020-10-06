@@ -15,7 +15,7 @@ pxds = [
         "pool_arrays.pxd",
     )
 ]
-env.Install("$DIST_SITE_PACKAGES/godot", [File("_version.py"), *pxds])
+env.Install("$DIST_SITE_PACKAGES/godot", [File("_version.py"), File("globals.py"), *pxds])
 env.AppendUnique(CYTHON_DEPS=pxds)
 
 
