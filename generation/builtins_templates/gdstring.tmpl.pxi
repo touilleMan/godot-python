@@ -185,7 +185,14 @@ cdef class GDString:
     {{ render_method("hex_to_int") | indent }}
     {{ render_method("http_escape") | indent }}
     {{ render_method("http_unescape") | indent }}
-    {{ render_method("humanize_size") | indent }}
+
+    @staticmethod
+    def humanize_size(size_t size):
+        {{ force_mark_rendered("godot_string_humanize_size") }}
+        cdef GDString __ret = GDString.__new__(GDString)
+        __ret._gd_data = gdapi10.godot_string_humanize_size(size)
+        return __ret
+
     {{ render_method("insert") | indent }}
     {{ render_method("is_abs_path") | indent }}
     {{ render_method("is_rel_path") | indent }}
