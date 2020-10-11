@@ -94,6 +94,14 @@ cdef Dictionary _build_property_info(object prop):
     propinfo["rset_mode"] = prop.rpc
     return propinfo
 
+cdef inline object is_method(object meth):
+    if inspect.isfunction(meth):
+        return True
+    
+    if 'cython_function' in type(meth).__name__:
+        return True
+    
+    return False
 
 cdef godot_pluginscript_script_manifest _build_script_manifest(object cls):
     cdef godot_pluginscript_script_manifest manifest
@@ -121,7 +129,7 @@ cdef godot_pluginscript_script_manifest _build_script_manifest(object cls):
     # for methname in vars(cls):
     for methname in dir(cls):
         meth = getattr(cls, methname)
-        if not inspect.isfunction(meth) or meth.__name__.startswith("__"):
+        if not is_method(meth) or meth.__name__.startswith("__") or methname.startswith('__'):
             continue
         methods.append(_build_method_info(meth, methname))
     gdapi10.godot_array_new_copy(&manifest.methods, &methods._gd_data)
