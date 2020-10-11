@@ -297,7 +297,7 @@ cdef inline Array _godot_variant_to_pyobj_array(const godot_variant *p_gdvar):
 
 
 cdef inline PoolByteArray _godot_variant_to_pyobj_pool_byte_array(const godot_variant *p_gdvar):
-    cdef PoolByteArray a = PoolByteArray.__new__(PoolIntArray)
+    cdef PoolByteArray a = PoolByteArray.__new__(PoolByteArray)
     a._gd_data = gdapi10.godot_variant_as_pool_byte_array(p_gdvar)
     return a
 
