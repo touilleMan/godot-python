@@ -97,10 +97,10 @@ cdef Dictionary _build_property_info(object prop):
 cdef inline object is_method(object meth):
     if inspect.isfunction(meth):
         return True
-    
+
     if 'cython_function' in type(meth).__name__:
         return True
-    
+
     return False
 
 cdef godot_pluginscript_script_manifest _build_script_manifest(object cls):
