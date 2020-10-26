@@ -125,29 +125,20 @@ def test_bad_instantiate(arg):
 
 
 def test_instantiate_with_non_godot_data(recwarn):
-    v = Array([object()])
-    assert list(v) == [None]
-    assert [str(w.message) for w in recwarn.list] == [
-        "Cannot convert `<class 'object'>` to Godot's Variant"
-    ]
+    with pytest.raises(TypeError):
+        Array([object()])
 
 
 def test_append_with_non_godot_data(recwarn):
     v = Array()
-    v.append(object())
-    assert list(v) == [None]
-    assert [str(w.message) for w in recwarn.list] == [
-        "Cannot convert `<class 'object'>` to Godot's Variant"
-    ]
+    with pytest.raises(TypeError):
+        v.append(object())
 
 
 def test_add_with_non_godot_data(recwarn):
     v = Array()
-    v += [object()]
-    assert list(v) == [None]
-    assert [str(w.message) for w in recwarn.list] == [
-        "Cannot convert `<class 'object'>` to Godot's Variant"
-    ]
+    with pytest.raises(TypeError):
+        v += [object()]
 
 
 @pytest.mark.parametrize(

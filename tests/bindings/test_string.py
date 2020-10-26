@@ -23,6 +23,8 @@ def test_base():
     assert GDString("abc").length() == 3
     assert GDString("3.14").to_float() == pytest.approx(3.14)
     assert GDString("42").to_int() == 42
+    # GDString.humanize_size is a static method
+    assert GDString.humanize_size(133790307) == GDString("127.5 MiB")
 
 
 @pytest.mark.parametrize("char", ["e", "é", "€", "蛇", "🐍"])
