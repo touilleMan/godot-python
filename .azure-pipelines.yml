@@ -9,7 +9,7 @@ trigger:
     - '*'
 
 
-variables: {PYTHON_VERSION: "3.7", GODOT_BINARY_VERSION: "3.2.3-rc1"}
+variables: {PYTHON_VERSION: "3.7", GODOT_BINARY_VERSION: "3.2.3"}
 
 
 jobs:
