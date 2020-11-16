@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.request import urlopen
 
 import argparse
+import tarfile
 from datetime import datetime
 import os
 import shutil
@@ -62,20 +63,23 @@ def pipeline_executor(dirs, release_info, platform_name):
 
     if not (dirs["pythonscript"] / platform_name).exists():
         print(f"{platform_name} - Extracting release")
-        shutil.unpack_archive(release_archive.abspath)
         if platform_info["name"].endswith(".zip"):
             zipobj = ZipFile(release_archive)
             # Only extract platform-specific stuff
             members = (
-                x for x in zipobj.namelist() if x.startswith(f"pythonscript/{platform_name}/")
+                x
+                for x in zipobj.namelist()
+                if x.startswith(f"addons/pythonscript/{platform_name}/")
             )
-            zipobj.extractall(path=dirs["pythonscript"].parent, members=members)
+            zipobj.extractall(path=dirs["dist"], members=members)
 
-        if platform_info["name"].endswith(".tar.bz2"):
+        elif platform_info["name"].endswith(".tar.bz2"):
             tarobj = tarfile.open(release_archive)
             # Only extract platform-specific stuff
-            members = (x for x in tarobj if x.name.startswith(f"./pythonscript/{platform_name}/"))
-            tarobj.extractall(path=dirs["pythonscript"].parent, members=members)
+            members = (
+                x for x in tarobj if x.name.startswith(f"./addons/pythonscript/{platform_name}/")
+            )
+            tarobj.extractall(path=dirs["dist"], members=members)
 
         else:
             raise RuntimeError(f"Unknown archive format for {release_archive}")
@@ -97,7 +101,7 @@ def orchestrator(dirs, release_info):
     for entry in ["dist", "pythonscript"]:
         (dirs[entry] / "LICENSE.txt").write_text(license_txt)
     (dirs["dist"] / "pythonscript.gdnlib").write_text(
-        (MISC_DIR / "release_pythonscript.gdnlib").read_text().replace("res://", "res://addons/")
+        (MISC_DIR / "release_pythonscript.gdnlib").read_text()
     )
     (dirs["dist"] / "README.txt").write_text(
         (MISC_DIR / "release_README.txt")
@@ -114,7 +118,7 @@ def main():
     release_info = get_release_info(args.version)
     print(f"Release version: {release_info['version']}")
 
-    build_dir = Path(f"pythonscript-assetlib-release-{release_info['version']}")
+    build_dir = Path(f"pythonscript-assetlib-release-{release_info['version']}").resolve()
     dist_dir = build_dir / f"pythonscript-{release_info['version']}"
     addons_dir = dist_dir / "addons"
     pythonscript_dir = addons_dir / "pythonscript"
