@@ -320,15 +320,15 @@ In essence, godot-python installs a python interpreter inside your project which
 First, locate the correct python interpreter. This will be inside your project at :code:`addons\pythonscript\windows-64\python.exe` for 64-bit Windows, :code:`addons/pythonscript/ox-64/bin/python3` for OSX, etc. Then install pip by running:
 
 .. code-block::
-	
+
 	addons\pythonscript\windows-64\python.exe -m ensurepip
 
 (substituting the correct python for your system). Any other method of installing pip at this location is fine too, and this only needs to be done once. Afterward, any desired packages can be installed by running
 
 .. code-block::
-	
+
 	addons\pythonscript\windows-64\python.exe -m pip install numpy
-	
+
 again, substituting the correct python executable, and replacing numpy with whatever packages you desire. The package can now be imported in your Python code as normal.
 
 Note that this will only install packages onto the target platform (here, windows-64), so when exporting the project to a different platform, care must be taken to provide all the necessary libraries.
