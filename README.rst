@@ -299,7 +299,39 @@ FAQ
 
 **How can I export my project?**
 
-See `this issue <https://github.com/touilleMan/godot-python/issues/146>`_.
+Currently, godot-python does not support automatic export, which means that the python environment is not copied to the release when using Godot's export menu. A release can be created manually:
+
+First, export the project in .zip format.
+
+Second, extract the .zip in a directory. For sake of example let's say the directory is called :code:`godotpythonproject`.
+
+Third, copy the correct Python environment into this folder (if it hasn't been automatically included in the export). Inside your project folder, you will need to find :code:`/addons/pythonscript/x11-64`, replacing "x11-64" with the correct target system you are deploying to. Copy the entire folder for your system, placing it at the same relative position, e.g. :code:`godotpythonproject/addons/pythonscript/x11-64` if your unzipped directory was "godotpythonproject". Legally speaking you should also copy LICENSE.txt from the pythonscript folder. (The lazy option at this point is to simply copy the entire addons folder from your project to your unzipped directory.)
+
+Fourth, place a godot release into the directory. The Godot export menu has probably downloaded an appropriate release already, or you can go to Editor -> Manage Export Templates inside Godot to download fresh ones. These are stored in a location which depends on your operating system. For example, on Windows they may be found at :code:`%APPDATA%\Godot\templates\ `; in Linux or OSX it is :code:`~/.godot/templates/`. Copy the file matching your export. (It may matter whether you selected "Export With Debug" when creating the .zip file; choose the debug or release version accordingly.)
+
+Running the Godot release should now properly execute your release. However, if you were developing on a different Python environment (say, the one held in the osx-64 folder) than you include with the release (for example the windows-64 folder), and you make any alterations to that environment, such as installing Python packages, these will not carry over; take care to produce a suitable Python environment for the target platform.
+
+See also `this issue <https://github.com/touilleMan/godot-python/issues/146>`_.
+
+**How can I use Python packages in my project?**
+
+In essence, godot-python installs a python interpreter inside your project which can then be distributed as part of the final game. Python packages you want to use need to be installed for that interpreter and of course included in the final release. This can be accomplished by using pip to install packages; however, pip is not provided, so it must be installed too.
+
+First, locate the correct python interpreter. This will be inside your project at :code:`addons\pythonscript\windows-64\python.exe` for 64-bit Windows, :code:`addons/pythonscript/ox-64/bin/python3` for OSX, etc. Then install pip by running:
+
+.. code-block::
+	
+	addons\pythonscript\windows-64\python.exe -m ensurepip
+
+(substituting the correct python for your system). Any other method of installing pip at this location is fine too, and this only needs to be done once. Afterward, any desired packages can be installed by running
+
+.. code-block::
+	
+	addons\pythonscript\windows-64\python.exe -m pip install numpy
+	
+again, substituting the correct python executable, and replacing numpy with whatever packages you desire. The package can now be imported in your Python code as normal.
+
+Note that this will only install packages onto the target platform (here, windows-64), so when exporting the project to a different platform, care must be taken to provide all the necessary libraries.
 
 **How can I debug my project with PyCharm?**
 
