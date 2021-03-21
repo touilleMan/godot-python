@@ -40,7 +40,7 @@ class CCCP:
     .pxd file that will (in conjuction with a .pyx) be used to generate a .c
     file that will include the godot api headers. So there is no need to handle
     platform specific (or even opaque structure size !) detail here: they will
-    be ignored by cython and leave to the final C compilation.
+    be ignored by cython and leaft to the final C compilation.
     """
 
     def __init__(
