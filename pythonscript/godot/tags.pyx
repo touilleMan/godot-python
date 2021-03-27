@@ -209,6 +209,9 @@ class ExportedField:
         )
 
     def __call__(self, decorated):
+        if self.default is not None:
+            raise ValueError("export should not define a default attribute when used as a decorator")
+
         # This object is used as a decorator
         if not callable(decorated) and not isinstance(decorated, builtins.property):
             raise ValueError("@export should decorate function or property.")
@@ -248,15 +251,15 @@ def export(
     usage::
         @exposed
         class CustomObject(godot.bindings.Object):
-            a = exposed(str)  # Expose attribute
-            b = exposed(int, default=42)
+            a = export(str)  # Expose attribute
+            b = export(int, default=42)
 
-            @exposed(int)  # Expose property
+            @export(int)  # Expose property
             @property
             def c(self):
                 return 42
 
-            @exposed(str)  # Expose method
+            @export(str)  # Expose method
             def d(self):
                 return "foo"
     """
@@ -298,20 +301,17 @@ def exposed(cls=None, tool=False):
                 f" (already got {existing_cls_for_module!r})"
             )
 
-        # Overwrite parent __init__ to avoid creating a Godot object given
-        # exported script are always initialized with an existing Godot object
-        cls.__init__ = lambda self: None
         cls.__tool = tool
         cls.__exposed_python_class = True
         cls.__exported = {}
-        cls.__signals = {}
 
-        # Retrieve parent exported fields
+        # Retrieve parent exported stuff
         for b in cls.__bases__:
             cls.__exported.update(getattr(b, "__exported", {}))
-            cls.__signals.update(getattr(b, "__signals", {}))
 
-        # Collect exported fields
+        init_func_code = "def __init__(self):\n    pass\n"
+
+        # Collect exported stuff: attributes (marked with @exported), properties, signals, and methods
         for k, v in cls.__dict__.items():
             if isinstance(v, ExportedField):
                 cls.__exported[k] = v
@@ -321,11 +321,25 @@ def exposed(cls=None, tool=False):
                     # in the generated class
                     setattr(cls, k, v.property)
                 else:
-                    setattr(cls, k, v.default)
+                    # Otherwise, the value must be initialized as part of __init__
+                    if v.default is None or isinstance(v.default, (int, float, bool)):
+                        init_func_code += f"    self.{k} = {repr(v.default)}\n"
+                    else:
+                        init_func_code += f"    self.{k} = self.__exported['{k}'].default\n"
             elif isinstance(v, SignalField):
-                v.name = v.name if v.name else k
-                cls.__signals[v.name] = v
+                v.name = v.name or k
+                cls.__exported[v.name] = v
                 setattr(cls, k, v)
+            elif callable(v):
+                cls.__exported[k] = v
+
+        # Overwrite parent __init__ to avoid creating a Godot object given
+        # exported script are always initialized with an existing Godot object
+        # On top of that, we must initialize the attributes defined in the class
+        # and it parents
+        g = {}
+        exec(init_func_code, g)
+        cls.__init__ = g['__init__']
 
         set_exposed_class(cls)
         return cls

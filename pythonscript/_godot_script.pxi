@@ -42,6 +42,8 @@ from godot.builtins cimport Array, Dictionary
 import inspect
 import traceback
 
+from godot.tags import ExportedField, SignalField
+
 
 cdef inline godot_pluginscript_script_manifest _build_empty_script_manifest():
     cdef godot_pluginscript_script_manifest manifest
@@ -125,23 +127,18 @@ cdef godot_pluginscript_script_manifest _build_script_manifest(object cls):
         pyobj_to_godot_string_name(base, &manifest.base)
 
     methods = Array()
-    # TODO: include inherited in exposed methods ? Expose Godot base class' ones ?
-    # for methname in vars(cls):
-    for methname in dir(cls):
-        meth = getattr(cls, methname)
-        if not is_method(meth) or meth.__name__.startswith("__") or methname.startswith('__'):
-            continue
-        methods.append(_build_method_info(meth, methname))
-    gdapi10.godot_array_new_copy(&manifest.methods, &methods._gd_data)
-
     signals = Array()
-    for signal in cls.__signals.values():
-        signals.append(_build_signal_info(signal))
-    gdapi10.godot_array_new_copy(&manifest.signals, &signals._gd_data)
-
     properties = Array()
-    for prop in cls.__exported.values():
-        properties.append(_build_property_info(prop))
+    for k, v in cls.__exported.items():
+        if isinstance(v, ExportedField):
+            properties.append(_build_property_info(v))
+        elif isinstance(v, SignalField):
+            signals.append(_build_signal_info(v))
+        else:
+            assert is_method(v)
+            methods.append(_build_method_info(v, k))
+    gdapi10.godot_array_new_copy(&manifest.methods, &methods._gd_data)
+    gdapi10.godot_array_new_copy(&manifest.signals, &signals._gd_data)
     gdapi10.godot_array_new_copy(&manifest.properties, &properties._gd_data)
 
     return manifest

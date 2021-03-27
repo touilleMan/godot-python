@@ -61,12 +61,28 @@ cdef api godot_bool pythonscript_instance_get_prop(
     const godot_string *p_name,
     godot_variant *r_ret
 ) with gil:
+    # Should look among properties added by the script and it parents,
+    # not Godot native properties that are handled by the caller
     cdef object instance = <object>p_data
     cdef object ret
+    cdef object field
+    cdef str key = godot_string_to_pyobj(p_name)
     try:
-        ret = getattr(instance, godot_string_to_pyobj(p_name))
-        pyobj_to_godot_variant(ret, r_ret)
+        field = instance.__exported[key]
+    except KeyError:
+        return False
+    try:
+        if isinstance(field, ExportedField):
+            ret = getattr(instance, godot_string_to_pyobj(p_name))
+            pyobj_to_godot_variant(ret, r_ret)
+        elif isinstance(field, SignalField):
+            # TODO: Not sure how to create a Variant::Signal from GDNative
+            return False
+        else:
+            # TODO: Not sure how to create a Variant::Callable from GDNative
+            return False
         return True
+
     except Exception:
         traceback.print_exc()
         return False
@@ -81,11 +97,12 @@ cdef api godot_variant pythonscript_instance_call_method(
 ) with gil:
     cdef godot_variant var_ret
     cdef object instance = <object>p_data
-    # TODO: optimize this by caching godot_string_name -> method lookup
-    try:
-        meth = getattr(instance, godot_string_name_to_pyobj(p_method))
+    cdef object fn
+    cdef str key = godot_string_name_to_pyobj(p_method)
 
-    except AttributeError:
+    # TODO: optimize this by caching godot_string_name -> method lookup
+    fn = instance.__exported.get(key)
+    if not callable(fn):
         r_error.error = godot_variant_call_error_error.GODOT_CALL_ERROR_CALL_ERROR_INVALID_METHOD
         gdapi10.godot_variant_new_nil(&var_ret)
         return var_ret
@@ -95,7 +112,7 @@ cdef api godot_variant pythonscript_instance_call_method(
     cdef object ret
     try:
         pyargs = [godot_variant_to_pyobj(p_args[i]) for i in range(p_argcount)]
-        ret = meth(*pyargs)
+        ret = fn(instance, *pyargs)
         r_error.error = godot_variant_call_error_error.GODOT_CALL_ERROR_CALL_OK
         pyobj_to_godot_variant(ret, &var_ret)
         return var_ret
@@ -130,10 +147,11 @@ cdef api void pythonscript_instance_notification(
     # TODO: cache the methods to call ?
     for parentcls in instance.__class__.__mro__:
         try:
-            # TODO: Should only call _notification for class inheriting `bindings.Object` ?
-            parentcls.__dict__["_notification"](instance, p_notification)
-        except (KeyError, NotImplementedError):
+            fn = parentcls.__exported["_notification"]
+        except (AttributeError, KeyError):
             pass
+        else:
+            fn(instance, p_notification)
 
 
 # Useful ?
