@@ -16,7 +16,20 @@ from godot import (
     OS,
     Error,
     OK,
+    exposed,
 )
+
+
+@exposed
+class virtualtestbedcls(Node):
+    def _to_string(self):
+        # Implemented for test_bindings::test_virtual_to_string_customize
+        return GDString("<Main Node>")
+
+    def _notification(self, what):
+        on_notification = getattr(self, "on_notification", None)
+        if on_notification:
+            on_notification(what)
 
 
 def test_free_node():
@@ -165,13 +178,80 @@ def test_access_property(generate_obj):
     assert node._import_path == path
 
 
-def test_call_virtual(generate_obj):
+@pytest.mark.xfail(reason="Create Python class from Python not implemented yet")
+def test_new_on_overloaded_class(generate_obj):
+    node = generate_obj(virtualtestbedcls)
+    # Make sure doing MyClass.new() doesn't return an instance of the
+    # Godot class we inherit from
+    assert isinstance(node, virtualtestbedcls)
+
+
+@pytest.mark.xfail(reason="Create Python class from Python not implemented yet")
+def test_virtual_call_overloaded_notification(generate_obj):
+    node = generate_obj(virtualtestbedcls)
+
+    notifications = []
+
+    def _on_notification(what):
+        notifications.append(what)
+
+    node.on_notification = _on_notification
+    try:
+        node.notification(1)
+        node.notification(2)
+        node.notification(3)
+
+    finally:
+        node.on_notification = None
+
+    assert notifications == [1, 2, 3]
+
+
+@pytest.mark.xfail(reason="Pluginscript doesn't support _to_string overloading")
+def test_virtual_to_string_customize(generate_obj):
+    node = generate_obj(virtualtestbedcls)
+    # Object.to_string() can be customized when defining _to_string()
+    expected = GDString("<Main Node>")
+    assert node._to_string() == expected
+    assert node.to_string() == expected
+
+    # Try to access undefined _to_string
     node = generate_obj(Node)
-    ret = node._to_string()
-    assert isinstance(ret, GDString)
+    with pytest.raises(AttributeError):
+        node._to_string()
 
 
-def test_create_refcounted_value(current_node):
+@pytest.fixture(params=["godot_class", "python_subclass"])
+def node_for_access(request, current_node, generate_obj):
+    if request.param == "godot_class":
+        return generate_obj(Node)
+    else:
+        return current_node
+
+
+@pytest.mark.xfail(reason="Current implement uses Object.callv which doesn't inform of the failure")
+def test_virtual_call__to_string_not_customized(node_for_access):
+    with pytest.raises(AttributeError):
+        node_for_access._to_string()
+
+
+@pytest.mark.xfail(reason="Current implement uses Object.callv which doesn't inform of the failure")
+def test_virtual_call__notification_not_customized(node_for_access):
+    with pytest.raises(AttributeError):
+        node_for_access._notification(42)
+
+
+def test_access_unknown_attribute(node_for_access):
+    with pytest.raises(AttributeError):
+        node_for_access.dummy
+
+
+def test_call_unknown_method(node_for_access):
+    with pytest.raises(AttributeError):
+        node_for_access.dummy(42)
+
+
+def test_create_refcounted_value():
     script1_ref1 = PluginScript()
     script2_ref1 = PluginScript()
     script1_ref2 = script1_ref1
