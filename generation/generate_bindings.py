@@ -26,6 +26,13 @@ class PropertyInfo:
     setter: str
     index: Optional[int]
 
+    # If using feature we don't support yet
+    unsupported_reason: Optional[str] = None
+
+    @property
+    def is_supported(self) -> bool:
+        return self.unsupported_reason is None
+
 
 @dataclass
 class ArgumentInfo:
@@ -43,6 +50,13 @@ class SignalInfo:
     name: str
     arguments: List[ArgumentInfo]
 
+    # If using feature we don't support yet
+    unsupported_reason: Optional[str] = None
+
+    @property
+    def is_supported(self) -> bool:
+        return self.unsupported_reason is None
+
 
 @dataclass
 class MethodInfo:
@@ -56,6 +70,13 @@ class MethodInfo:
     has_varargs: bool
     is_from_script: bool
     arguments: List[ArgumentInfo]
+
+    # If using feature we don't support yet
+    unsupported_reason: Optional[str] = None
+
+    @property
+    def is_supported(self) -> bool:
+        return self.unsupported_reason is None
 
 
 @dataclass
@@ -240,66 +261,43 @@ def strip_unsupported_stuff(classes):
         else:
             return True
 
-    kept_classes = []
     for klass in classes:
-        methods = []
         for meth in klass.methods:
+            unsupported_reason = None
             # TODO: handle default param values
             # TODO: handle those flags
             if meth.is_editor:
-                # warn(f"Ignoring `{klass.name}.{meth.name}` (attribute `is_editor=True` not supported)")
-                continue
+                unsupported_reason = "attribute `is_editor=True` not supported"
             if meth.is_reverse:
-                warn(
-                    f"Ignoring `{klass.name}.{meth.name}` (attribute `is_reverse=True` not supported)"
-                )
-                continue
-            if meth.is_virtual:
-                # warn(f"Ignoring `{klass.name}.{meth.name}` (attribute `is_virtual=True` not supported)")
-                continue
+                unsupported_reason = "attribute `is_reverse=True` not supported"
             if meth.has_varargs:
-                # warn(f"Ignoring `{klass.name}.{meth.name}` (attribute `has_varargs=True` not supported)")
-                continue
+                unsupported_reason = "attribute `has_varargs=True` not supported"
             if not _is_supported_type(meth.return_type):
-                warn(
-                    f"Ignoring `{klass.name}.{meth.name}` (return type {meth.return_type} not supported)"
-                )
-                continue
+                unsupported_reason = f"return type {meth.return_type} not supported"
             bad_arg = next(
                 (arg for arg in meth.arguments if not _is_supported_type(arg.type)), None
             )
             if bad_arg:
-                warn(f"Ignoring `{klass.name}.{meth.name}` (argument type {bad_arg} not supported)")
-                continue
-            methods.append(meth)
-        klass.methods = methods
+                unsupported_reason = f"argument type {bad_arg} not supported"
 
-        properties = []
+            if unsupported_reason:
+                warn(f"Ignoring `{klass.name}.{meth.name}` ({unsupported_reason})")
+                meth.unsupported_reason = unsupported_reason
+
         for prop in klass.properties:
             if not _is_supported_type(prop.type):
-                warn(
-                    f"Ignoring property `{klass.name}.{prop.name}` (property type {prop.type} not supported)"
-                )
-                continue
-            properties.append(prop)
-        klass.properties = properties
+                unsupported_reason = f"property type {prop.type} not supported"
+                warn(f"Ignoring property `{klass.name}.{prop.name}` ({unsupported_reason})")
+                prop.unsupported_reason = unsupported_reason
 
-        signals = []
         for signal in klass.signals:
             bad_arg = next(
                 (arg for arg in signal.arguments if not _is_supported_type(arg.type)), None
             )
             if bad_arg:
-                warn(
-                    f"Ignoring signal `{klass.name}.{signal.name}` (argument type {bad_arg} not supported)"
-                )
-                continue
-            signals.append(signal)
-        klass.signals = signals
-
-        kept_classes.append(klass)
-
-    return kept_classes
+                unsupported_reason = f"argument type {bad_arg} not supported"
+                warn(f"Ignoring signal `{klass.name}.{signal.name}` ({unsupported_reason})")
+                signal.unsupported_reason = unsupported_reason
 
 
 def strip_sample_stuff(classes):

@@ -147,8 +147,12 @@ with nogil:
 {% macro render_method(cls, method) %}
 # {{ render_method_c_signature(method) }}
 def {{ render_method_signature(method) }}:
+{% if method.is_supported %}
     {{ _render_method_cook_args(method) | indent }}
     {{ _render_method_call(cls, method) | indent }}
     {{ _render_method_destroy_args(method) | indent }}
     {{ _render_method_return(method) | indent }}
+{% else %}
+    raise NotImplementedError("{{method.unsupported_reason}}")
+{% endif %}
 {% endmacro %}

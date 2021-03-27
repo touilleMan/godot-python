@@ -5,6 +5,8 @@ from struct import unpack
 import godot
 from godot import (
     Vector3,
+    GDString,
+    NodePath,
     Object,
     Node,
     CanvasItem,
@@ -154,6 +156,19 @@ def test_call_with_refcounted_param_value(generate_obj):
     node = generate_obj(Node)
     script = PluginScript()
     node.set_script(script)
+
+
+def test_access_property(generate_obj):
+    node = generate_obj(Node)
+    path = NodePath("/foo/bar")
+    node._import_path = path
+    assert node._import_path == path
+
+
+def test_call_virtual(generate_obj):
+    node = generate_obj(Node)
+    ret = node._to_string()
+    assert isinstance(ret, GDString)
 
 
 def test_create_refcounted_value(current_node):

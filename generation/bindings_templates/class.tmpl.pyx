@@ -250,12 +250,20 @@ TODO: see PinJoint.params/bias for a good example
 
     @property
     def {{ prop.name }}(self):
+{% if prop.is_supported %}
         return self.{{ prop.getter }}({% if prop.index is not none %}{{ prop.index }}{% endif %})
+{% else %}
+        raise NotImplementedError("{{prop.unsupported_reason}}")
+{% endif %}
 
 {% if prop.setter %}
     @{{ prop.name }}.setter
     def {{ prop.name }}(self, val):
+{% if prop.is_supported %}
         self.{{ prop.setter }}({% if prop.index is not none %}{{ prop.index }},{% endif %}val)
+{% else %}
+        raise NotImplementedError("{{prop.unsupported_reason}}")
+{% endif %}
 {% endif %}
 
 {% endfor %}
