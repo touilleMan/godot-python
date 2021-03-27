@@ -339,7 +339,23 @@ def exposed(cls=None, tool=False):
         # and it parents
         g = {}
         exec(init_func_code, g)
-        cls.__init__ = g['__init__']
+        cls.__init__ = g["__init__"]
+        # Also overwrite parent new otherwise we would return an instance
+        # of a Godot class without our script attached to it...
+        @classmethod
+        def new(cls):
+            raise NotImplementedError("Instantiating Python script from Python is not implemented yet :'(")
+            # try:
+            #     ptr = cls._new()
+            # except AttributeError:
+            #     # It's also possible we try to instantiate a singleton, but a better
+            #     # message will be provided anyway if the user try the provided hint
+            #     raise RuntimeError(f"Refcounted Godot object must be created with `{ cls.__name__ }()`")
+            # instance = cls._from_ptr(ptr)
+            # # TODO: We should generate a Resource instance containing the script
+            # # and attach it to the main class here.
+            # # instance.set_script(???)
+        cls.new = new
 
         set_exposed_class(cls)
         return cls

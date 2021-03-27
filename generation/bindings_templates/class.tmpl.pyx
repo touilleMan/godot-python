@@ -199,6 +199,15 @@ cdef class {{ cls.name }}({{ cls.base_class }}):
 {% endif %}
         return wrapper
 
+{% if not cls.singleton and cls.instantiable %}
+    @classmethod
+    def _new(cls):
+        cdef godot_object* ptr = __{{ cls.name }}_constructor()
+        if ptr is NULL:
+            raise MemoryError
+        return <size_t>ptr
+{% endif %}
+
     @staticmethod
     def _from_ptr(ptr):
         # Call to __new__ bypasses __init__ constructor
