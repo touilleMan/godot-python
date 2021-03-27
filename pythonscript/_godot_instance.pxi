@@ -48,8 +48,19 @@ cdef api godot_bool pythonscript_instance_set_prop(
     const godot_variant *p_value
 ) with gil:
     cdef object instance = <object>p_data
+    cdef str key = godot_string_to_pyobj(p_name)
+
+    # Should look among properties added by the script and it parents,
+    # not Godot native properties that are handled by the caller
     try:
-        setattr(instance, godot_string_to_pyobj(p_name), godot_variant_to_pyobj(p_value))
+        field = instance.__exported[key]
+    except KeyError:
+        return False
+    if not isinstance(field, ExportedField):
+        return False
+
+    try:
+        setattr(instance, key, godot_variant_to_pyobj(p_value))
         return True
     except Exception:
         traceback.print_exc()
@@ -61,16 +72,18 @@ cdef api godot_bool pythonscript_instance_get_prop(
     const godot_string *p_name,
     godot_variant *r_ret
 ) with gil:
-    # Should look among properties added by the script and it parents,
-    # not Godot native properties that are handled by the caller
     cdef object instance = <object>p_data
     cdef object ret
     cdef object field
     cdef str key = godot_string_to_pyobj(p_name)
+
+    # Should look among properties added by the script and it parents,
+    # not Godot native properties that are handled by the caller
     try:
         field = instance.__exported[key]
     except KeyError:
         return False
+
     try:
         if isinstance(field, ExportedField):
             ret = getattr(instance, godot_string_to_pyobj(p_name))
