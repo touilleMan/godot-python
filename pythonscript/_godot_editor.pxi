@@ -64,7 +64,7 @@ cdef api godot_bool pythonscript_validate(
     const godot_string *p_path,
     godot_pool_string_array *r_functions
 ) with gil:
-    pass
+    return True
 
 
 cdef api int pythonscript_find_function(
