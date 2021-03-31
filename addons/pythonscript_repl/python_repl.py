@@ -219,7 +219,7 @@ class PythonREPL(VBoxContainer):
             self.input_box.clear()
             val = str(self.history[self.selected_history])
             self.input_box.set_text(val)
-            self.input_box.set_cursor_position(len(val))
+            self.input_box.caret_position = len(val)
         self.input_box.grab_focus()
 
     def down_pressed(self):
@@ -231,7 +231,7 @@ class PythonREPL(VBoxContainer):
             self.input_box.clear()
             val = str(self.history[self.selected_history])
             self.input_box.set_text(val)
-            self.input_box.set_cursor_position(len(val))
+            self.input_box.caret_position = len(val)
         self.input_box.grab_focus()
 
     def clear(self):
