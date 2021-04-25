@@ -22,11 +22,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
         with:
             submodules: true
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Bootstrap
@@ -50,11 +50,11 @@ jobs:
       PLATFORM: 'x11-64'
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v2
+        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
         with:
             submodules: true
       - name: 'Set up Python'
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: 'Setup venv'
@@ -87,7 +87,7 @@ jobs:
           set -eux
           scons release
       - name: 'Export release artifact'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
         with:
           name: ${{ env.PLATFORM }}-release
           path: 'build/godot-python-*.tar.bz2'
@@ -110,11 +110,11 @@ jobs:
             VS_ARCH: 'x86'
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v2
+        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
         with:
             submodules: true
       - name: 'Set up Python'
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           architecture: ${{ matrix.PYTHON_ARCH }}
@@ -163,7 +163,7 @@ jobs:
         run: |
           scons release
       - name: 'Export release artifact'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
         with:
           name: ${{ matrix.PLATFORM }}-release
           path: 'build/godot-python-*.zip'
@@ -180,11 +180,11 @@ jobs:
       PLATFORM: 'osx-64'
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v2
+        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
         with:
             submodules: true
       - name: 'Set up Python'
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: 'Setup venv'
@@ -214,7 +214,7 @@ jobs:
           set -eux
           scons release
       - name: 'Export release artifact'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
         with:
           name: ${{ env.PLATFORM }}-release
           path: 'build/godot-python-*.tar.bz2'
@@ -239,10 +239,10 @@ jobs:
           - PLATFORM: windows-32
           - PLATFORM: osx-64
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@0ede0875b5db9a2824878bbbbe3d758a75eb8268  # pin@v2
         name: ${{ matrix.PLATFORM }}-release
       - name: 'Upload release'
-        uses: svenstaro/upload-release-action@v2
+        uses: svenstaro/upload-release-action@483c1e56f95e88835747b1c7c60581215016cbf2  # pin@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}

@@ -16,3 +16,11 @@ repos:
       exclude: (^tests/_lib_vendors|^(tests|examples)/lib)  # Ignore 3rd party stuff
     - id: trailing-whitespace
       exclude: (^tests/_lib_vendors|^(tests|examples)/lib)  # Ignore 3rd party stuff
+-   repo: local
+    hooks:
+    - id: git_actions_pin
+      name: "Gitub actions pin 3rd party repos"
+      entry: python ./misc/pin_github_actions.py check
+      language: python
+      language_version: python3
+      files: ^.github/
