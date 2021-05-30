@@ -19,6 +19,10 @@ Godot Python, because you want Python on Godot !
 The goal of this project is to provide Python language support as a scripting
 module for the `Godot <http://godotengine.org>`_ game engine.
 
+Notes
+====
+
+This version is a hack to build godot-python on aarch64 (tested on RaspberryPi 4 2GB, swap maxxed out to 11+GB, Raspberry Pi OS / Debian 10.5), replacing platform x11-64. Before launching the build with the usual instructions below, grab manually an aarch64 build from `python-build-standalone project <https://github.com/indygreg/python-build-standalone/>`_ under the CI menu ("actions") -- aarch64 linux is not part of official releases and only comes with python3.9 as of 2021-05-30. Prefer a version without debug and optimisations, e.g. "lto". Place the .tar.zst package in ``/tmp/cpython-3.9.5-aarch64-unknown-linux-gnu.tar.zst``. Compilation will likely take hours.
 
 Quickstart
 ==========

@@ -19,17 +19,17 @@ else:
     env["godot_binary_download_platform"] = "x11.64"
 env["cpython_build"] = cpython_build
 env["cpython_build_dir"] = cpython_build
-env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/python3.8/site-packages")
+env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/python3.9/site-packages")
 
 
 ### Build config for pythonscript ###
 
 
-env.AppendUnique(CFLAGS=["-m64"])
-env.AppendUnique(LINKFLAGS=["-m64"])
+#env.AppendUnique(CFLAGS=["-m64"])
+#env.AppendUnique(LINKFLAGS=["-m64"])
 # Cannot use CPPPATH&LIBPATH here given headers are within `cpython_build` target,
 # so Scons consider the headers are a missing target
-env.AppendUnique(CFLAGS=[f"-I{cpython_build.abspath}/include/python3.8/"])
+env.AppendUnique(CFLAGS=[f"-I{cpython_build.abspath}/include/python3.9/"])
 env.AppendUnique(LINKFLAGS=[f"-L{cpython_build.abspath}/lib"])
 env.AppendUnique(CYTHON_COMPILE_DEPS=[cpython_build])
 
@@ -37,7 +37,9 @@ env.AppendUnique(CYTHON_COMPILE_DEPS=[cpython_build])
 ### Fetch Python prebuild ###
 
 
-CPYTHON_PREBUILD_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20200822/cpython-3.8.5-x86_64-unknown-linux-gnu-pgo-20200823T0036.tar.zst"
+#CPYTHON_PREBUILD_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20200822/cpython-3.8.5-x86_64-unknown-linux-gnu-pgo-20200823T0036.tar.zst"
+# download manually a binary for aarch64-unknown-linux-gnu and place it in /tmp/ E.g. grab a release or CI artifacts from https://github.com/indygreg/python-build-standalone -- prefer a version with optimisations and no debug, i.e. "lto"
+PYTHON_PREBUILD_URL = "file:///tmp/cpython-3.9.5-aarch64-unknown-linux-gnu.tar.zst"
 cpython_prebuild_archive = env.Download(
     target=File(CPYTHON_PREBUILD_URL.rsplit("/", 1)[1]), url=CPYTHON_PREBUILD_URL
 )
@@ -71,9 +73,9 @@ def generate_cpython_build(target, source, env):
     prebuild = Path(source[0].abspath) / "python"
 
     conf = json.loads((prebuild / "PYTHON.json").read_text())
-    assert conf["version"] == "5"
+    assert conf["version"] == "7"
     assert conf["libpython_link_mode"] == "shared"
-    assert conf["target_triple"] == "x86_64-unknown-linux-gnu"
+    assert conf["target_triple"] == "aarch64-unknown-linux-gnu"
 
     shutil.copytree(str(prebuild / "install"), str(build), symlinks=True)
     shutil.copytree(str(prebuild / "licenses"), str(build / "licenses"), symlinks=True)
@@ -87,7 +89,7 @@ def generate_cpython_build(target, source, env):
     assert config.exists()
     shutil.rmtree(str(config))
 
-    stdlib_path = build / "lib/python3.8"
+    stdlib_path = build / "lib/python3.9"
 
     # Remove tests lib (pretty big and basically useless)
     shutil.rmtree(str(stdlib_path / "test"))
@@ -101,12 +103,12 @@ def generate_cpython_build(target, source, env):
 
     # Zip the stdlib to save plenty of space \o/
     if env["compressed_stdlib"]:
-        tmp_stdlib_path = build / "lib/tmp_python3.8"
+        tmp_stdlib_path = build / "lib/tmp_python3.9"
         shutil.move(str(stdlib_path), str(tmp_stdlib_path))
         stdlib_path.mkdir()
         shutil.move(str(tmp_stdlib_path / "lib-dynload"), str(stdlib_path / "lib-dynload"))
         shutil.make_archive(
-            base_name=build / "lib/python38", format="zip", root_dir=str(tmp_stdlib_path)
+            base_name=build / "lib/python39", format="zip", root_dir=str(tmp_stdlib_path)
         )
         shutil.rmtree(str(tmp_stdlib_path))
         # Oddly enough, os.py must be present (even if empty !) otherwise
