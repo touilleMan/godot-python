@@ -1,5 +1,5 @@
 pip-tools~=6.0.1
-black~=20.8b1
+black~=21.9b0
 scons~=3.1
 cython~=0.29.21
 autopxd2~=1.1.0
