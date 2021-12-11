@@ -1,2 +1,0 @@
-# Python-standalone-build doesn't support linux 32bits platform
-assert False, "platform x11-32 is not supported yet :'-("

@@ -1,23 +1,23 @@
 Import("env")
 
 c_env = env.Clone()
-if env["platform"].startswith("windows"):
-    c_env.AppendUnique(LIBS=["python38"])
+# if env["platform"].startswith("windows"):
+#     c_env.AppendUnique(LIBS=["python38"])
 
-elif env["platform"].startswith("osx"):
-    c_env.AppendUnique(LIBS=["python3.8"])
-    # if we don't give the lib a proper install_name, macos won't be able to find it,
-    # and will link the cython modules with a relative path
-    c_env.AppendUnique(
-        LINKFLAGS=["-Wl,-rpath,'@loader_path/lib'", "-install_name", "@rpath/libpythonscript.dylib"]
-    )
-    c_env.AppendUnique(CFLAGS=["-Werror-implicit-function-declaration"])
+# elif env["platform"].startswith("osx"):
+#     c_env.AppendUnique(LIBS=["python3.8"])
+#     # if we don't give the lib a proper install_name, macos won't be able to find it,
+#     # and will link the cython modules with a relative path
+#     c_env.AppendUnique(
+#         LINKFLAGS=["-Wl,-rpath,'@loader_path/lib'", "-install_name", "@rpath/libpythonscript.dylib"]
+#     )
+#     c_env.AppendUnique(CFLAGS=["-Werror-implicit-function-declaration"])
 
-else:  # x11
-    c_env.AppendUnique(LIBS=["python3.8"])
-    c_env.AppendUnique(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
-    c_env.AppendUnique(CFLAGS=["-Werror-implicit-function-declaration"])
-c_env.Depends("pythonscript.c", env["cpython_build"])
+# else:  # x11
+#     c_env.AppendUnique(LIBS=["python3.8"])
+#     c_env.AppendUnique(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
+#     c_env.AppendUnique(CFLAGS=["-Werror-implicit-function-declaration"])
+# c_env.Depends("pythonscript.c", env["cpython_build"])
 
 
 libpythonscript, *libpythonscript_extra = c_env.SharedLibrary("pythonscript", ["pythonscript.c"])
@@ -32,17 +32,17 @@ env.AppendUnique(CYTHON_COMPILE_DEPS=[libpythonscript])
 SConscript(["godot/SConscript"])
 
 
-# `_godot_api.h` is only for internal use between _godot and pythonscript
+# `_pythonscript_api.h` is only for internal use between _godot and pythonscript
 # libraries, hence no need to provide it as part of the release
 *mods, _ = env.CythonModule(
-    ["_godot", "_godot_api.h"],
+    ["_pythonscript", "_pythonscript_api.h"],
     [
-        "_godot.pyx",
-        "_godot_editor.pxi",
-        "_godot_instance.pxi",
-        "_godot_profiling.pxi",
-        "_godot_script.pxi",
-        "_godot_io.pxi",
+        "_pythonscript.pyx",
+        # "_godot_editor.pxi",
+        # "_godot_instance.pxi",
+        # "_godot_profiling.pxi",
+        # "_godot_script.pxi",
+        # "_godot_io.pxi",
     ],
 )
 env.Install("$DIST_SITE_PACKAGES", mods)

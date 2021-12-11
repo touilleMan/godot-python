@@ -18,7 +18,7 @@ if env["headless"]:
 
 
 # TODO: fix&reenable work_with_gdscript test...
-for test in ["bindings", "helloworld", "threading", "global_constants"]:
+for test in ["bindings", "helloworld", "pythonscript4_poc", "threading", "global_constants"]:
     dist_symlink = env.Symlink(f"{test}/addons", "$DIST_ROOT/addons")
     dist_symlink = env.Symlink(f"{test}/lib", "_lib_vendors")
     target = env.Command(

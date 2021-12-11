@@ -1,13 +1,14 @@
 import os
+import sys
 import re
+import struct
 import shutil
-from datetime import datetime
 from SCons.Platform.virtualenv import ImportVirtualenv
 from SCons.Errors import UserError
 
 
 EnsurePythonVersion(3, 7)
-EnsureSConsVersion(3, 0)
+EnsureSConsVersion(4, 0)
 
 
 def extract_version():
@@ -41,10 +42,11 @@ vars.Add(
     EnumVariable(
         "platform",
         "Target platform",
-        "",
-        allowed_values=("x11-64", "x11-32", "windows-64", "windows-32", "osx-64"),
+        default="default",
+        allowed_values=("default", "linux", "windows", "osx"),
     )
 )
+vars.Add(EnumVariable("bits", "Target platform bits", default="default", allowed_values=("default", "32", "64")))
 vars.Add("pytest_args", "Pytest arguments passed to tests functions", "")
 vars.Add(
     "godot_args", "Additional arguments passed to godot binary when running tests&examples", ""
@@ -115,6 +117,31 @@ env = Environment(
 )
 
 
+if env["platform"] == "default":
+    if sys.platform == "linux":
+        env["platform"] = "linux"
+    elif sys.platform == "darwin":
+        env["platform"] = "osx"
+    elif sys.platform == "win32":
+        env["platform"] = "windows"
+    else:
+        raise RuntimeError("Cannot detect platform automatically.")
+
+
+if env["bits"] == "default":
+    version = struct.calcsize("P") * 8
+    if version == 64:
+        env["bits"] =  "64"
+    elif version == 32:
+        env["bits"] = "32"
+    else:
+        raise RuntimeError("Cannot detect bits automatically.")
+
+
+env["platform_bits"] = f"{env['platform']}-{env['bits']}"
+print(f"platform={env['platform']}, bits={env['bits']}")
+
+
 # Detect compiler
 env["CC_IS_MSVC"] = env.get("CC") in ("cl", "cl.exe")
 env["CC_IS_GCC"] = "gcc" in env.get("CC")
@@ -172,9 +199,9 @@ else:
 
 
 env["DIST_ROOT"] = Dir(f"build/dist")
-env["DIST_PLATFORM"] = Dir(f"{env['DIST_ROOT']}/addons/pythonscript/{env['platform']}")
-VariantDir(f"build/{env['platform']}/platforms", f"platforms")
-VariantDir(f"build/{env['platform']}/pythonscript", "pythonscript")
+env["DIST_PLATFORM"] = Dir(f"{env['DIST_ROOT']}/addons/pythonscript/{env['platform_bits']}")
+VariantDir(f"build/{env['platform_bits']}/platforms", f"platforms")
+VariantDir(f"build/{env['platform_bits']}/pythonscript", "pythonscript")
 
 
 ### Load sub scons scripts ###
@@ -183,8 +210,8 @@ VariantDir(f"build/{env['platform']}/pythonscript", "pythonscript")
 Export(env=env)
 SConscript(
     [
-        f"build/{env['platform']}/platforms/SConscript",  # Must be kept first
-        f"build/{env['platform']}/pythonscript/SConscript",
+        f"build/{env['platform_bits']}/platforms/SConscript",  # Must be kept first
+        f"build/{env['platform_bits']}/pythonscript/SConscript",
         "tests/SConscript",
         "examples/SConscript",
     ]
@@ -201,16 +228,19 @@ env.Alias("build", env["DIST_ROOT"])
 ### Static files added to dist ###
 
 
-env.VanillaInstallAs(
-    target="$DIST_ROOT/pythonscript.gdnlib", source="#/misc/release_pythonscript.gdnlib"
+# env.VanillaInstallAs(
+env.InstallAs(
+    target="$DIST_ROOT/pythonscript.gdextension", source="#/misc/release_pythonscript.gdextension"
 )
-env.VanillaInstallAs(
+# env.VanillaInstallAs(
+env.InstallAs(
     target="$DIST_ROOT/addons/pythonscript/LICENSE.txt", source="#/misc/release_LICENSE.txt"
 )
 env.Command(target="$DIST_ROOT/addons/pythonscript/.gdignore", source=None, action=Touch("$TARGET"))
 # SCons install on directory doesn't check for file changes
 for item in env.Glob("addons/pythonscript_repl/*"):
-    env.VanillaInstall(target="$DIST_ROOT/addons/pythonscript_repl", source=item)
+    # env.VanillaInstall(target="$DIST_ROOT/addons/pythonscript_repl", source=item)
+    env.Install(target="$DIST_ROOT/addons/pythonscript_repl", source=item)
 
 
 ### Release archive ###

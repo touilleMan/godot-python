@@ -1,6 +1,6 @@
 Import("env")
 
-for test in ["pong", "pong_multiplayer"]:
+for test in ["pong2", "pong_multiplayer"]:
     dist_symlink = env.Symlink(f"{test}/addons", "$DIST_ROOT/addons")
     target = env.Command(
         test, ["$godot_binary", dist_symlink], "${SOURCE.abspath} ${godot_args} --path ${TARGET}"

@@ -6,15 +6,11 @@
 ;   [section] ; section goes between []
 ;   param=value ; assign values to parameters
 
-config_version=3
+config_version=5
 
 [application]
 
+config/name="pythonscript4_poc"
 run/main_scene="res://main.tscn"
-name="godo-helloworld-tests"
-main_scene="res://main.tscn"
-
-[python_script]
-
-io_streams_capture=false
-verbose=true
+config/icon="res://icon.png"
+config/features=PackedStringArray("4.0", "Vulkan Clustered")
