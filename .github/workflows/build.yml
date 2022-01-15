@@ -172,8 +172,8 @@ jobs:
 #################################################################################
 
 
-  macos-build:
-    name: '🍎 macOS build'
+  macos-intel-build:
+    name: 'macOS/intel build'
     runs-on: macos-latest
     env:
       CC: clang
@@ -205,10 +205,10 @@ jobs:
         run: |
           set -eux
           scons build -j2
-      - name: 'Run tests'
-        run: |
-          set -eux
-          scons tests
+      # - name: 'Run tests'
+      #   run: |
+      #     set -eux
+      #     scons tests
       - name: 'Generate artifact archive'
         run: |
           set -eux
@@ -219,6 +219,56 @@ jobs:
           name: ${{ env.PLATFORM }}-release
           path: 'build/godot-python-*.tar.bz2'
 
+
+#################################################################################
+
+
+  macos-m1-build:
+    name: '🍏 macOS/m1 build'
+    runs-on: macos-latest
+    env:
+      CC: clang
+      PLATFORM: 'osx-64'
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
+        with:
+            submodules: true
+      - name: 'Set up Python'
+        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: 'Setup venv'
+        run: |
+          set -eux
+          ${{ env.CC }} --version
+          python --version
+          brew update
+          brew install zlib openssl
+          brew install --cask xquartz
+          pip install -U pip
+          pip install -r requirements.txt
+          # Configuration for scons
+          echo 'godot_binary = "${{ env.GODOT_BINARY_VERSION }}"' >> custom.py
+          echo 'platform = "${{ env.PLATFORM }}"' >> custom.py
+          echo 'CC = "${{ env.CC }}"' >> custom.py
+      - name: 'Build project'
+        run: |
+          set -eux
+          scons build -j2
+      # - name: 'Run tests'
+      #   run: |
+      #     set -eux
+      #     scons tests
+      - name: 'Generate artifact archive'
+        run: |
+          set -eux
+          scons release
+      - name: 'Export release artifact'
+        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
+        with:
+          name: ${{ env.PLATFORM }}-release
+          path: 'build/godot-python-*.tar.bz2'
 
 #################################################################################
 
