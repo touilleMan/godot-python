@@ -42,7 +42,7 @@ vars.Add(
         "platform",
         "Target platform",
         "",
-        allowed_values=("x11-64", "x11-32", "windows-64", "windows-32", "osx-64"),
+        allowed_values=("x11-64", "x11-32", "windows-64", "windows-32", "osx-64", "osx-aarch64"),
     )
 )
 vars.Add("pytest_args", "Pytest arguments passed to tests functions", "")

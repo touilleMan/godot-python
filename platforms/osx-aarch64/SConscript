@@ -13,7 +13,7 @@ cpython_build = Dir("cpython_build")
 
 
 env["bits"] = "64"
-env["godot_binary_download_platform"] = "osx.aarch64"
+env["godot_binary_download_platform"] = "osx.64"
 env["godot_binary_download_zip_path"] = "Godot.app/Contents/MacOS/Godot"
 env["cpython_build"] = cpython_build
 env["cpython_build_dir"] = cpython_build
@@ -68,7 +68,7 @@ def generate_cpython_build(target, source, env):
     prebuild = Path(source[0].abspath) / "python"
 
     conf = json.loads((prebuild / "PYTHON.json").read_text())
-    assert conf["version"] == "5"
+    assert conf["version"] == "7"
     assert conf["libpython_link_mode"] == "shared"
     assert conf["target_triple"] == "aarch64-apple-darwin"
 
