@@ -173,7 +173,7 @@ jobs:
 
 
   macos-intel-build:
-    name: 'macOS/intel build'
+    name: '🍎 macOS/intel build'
     runs-on: macos-latest
     env:
       CC: clang
@@ -205,10 +205,10 @@ jobs:
         run: |
           set -eux
           scons build -j2
-      # - name: 'Run tests'
-      #   run: |
-      #     set -eux
-      #     scons tests
+      - name: 'Run tests'
+        run: |
+          set -eux
+          scons tests
       - name: 'Generate artifact archive'
         run: |
           set -eux
