@@ -235,7 +235,7 @@ For MacOS:
 
 	godot-python(venv)$ scons platform=osx-64 CC=clang release
 
-Valid platforms are `x11-64`, `x11-32`, `windows-64`, `windows-32`, `osx-64`, and `osx-aarch64`.
+Valid platforms are `x11-64`, `x11-32`, `windows-64`, `windows-32`, `osx-64`, and `osx`.
 Check Travis or Appveyor links above to see the current status of your platform.
 
 This command will checkout CPython repo, move to a pinned commit and build

@@ -4,17 +4,12 @@ c_env = env.Clone()
 if env["platform"].startswith("windows"):
     c_env.AppendUnique(LIBS=["python38"])
 
-elif env["platform"].startswith("osx-aarch"):
-    c_env.AppendUnique(LIBS=["python3.9"])
-    # if we don't give the lib a proper install_name, macos won't be able to find it,
-    # and will link the cython modules with a relative path
-    c_env.AppendUnique(
-        LINKFLAGS=["-Wl,-rpath,'@loader_path/lib'", "-install_name", "@rpath/libpythonscript.dylib"]
-    )
-    c_env.AppendUnique(CFLAGS=["-Werror-implicit-function-declaration"])
-
 elif env["platform"].startswith("osx"):
-    c_env.AppendUnique(LIBS=["python3.8"])
+    if env["arch"] == "arm64":
+        c_env.AppendUnique(LIBS=["python3.9"])
+    else:
+        c_env.AppendUnique(LIBS=["python3.8"])
+
     # if we don't give the lib a proper install_name, macos won't be able to find it,
     # and will link the cython modules with a relative path
     c_env.AppendUnique(

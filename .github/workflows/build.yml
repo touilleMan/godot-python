@@ -228,7 +228,8 @@ jobs:
     runs-on: macos-latest
     env:
       CC: clang
-      PLATFORM: 'osx-64'
+      PLATFORM: 'osx'
+      ARCH: 'arm64'
     steps:
       - name: 'Checkout'
         uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
@@ -251,6 +252,7 @@ jobs:
           # Configuration for scons
           echo 'godot_binary = "${{ env.GODOT_BINARY_VERSION }}"' >> custom.py
           echo 'platform = "${{ env.PLATFORM }}"' >> custom.py
+          echo 'arch = "${{ env.ARCH }}"' >> custom.py
           echo 'CC = "${{ env.CC }}"' >> custom.py
       - name: 'Build project'
         run: |
@@ -267,7 +269,7 @@ jobs:
       - name: 'Export release artifact'
         uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
         with:
-          name: ${{ env.PLATFORM }}-release
+          name: ${{ env.PLATFORM }}-{{ env.ARCH }}-release
           path: 'build/godot-python-*.tar.bz2'
 
 #################################################################################

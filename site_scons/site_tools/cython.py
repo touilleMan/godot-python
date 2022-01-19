@@ -91,6 +91,7 @@ def CythonCompile(env, target, source):
             f"-Wl,-rpath,'{loader_token}/{libpythonscript_path}'",
         ]
         # TODO: use scons `env.LoadableModule` for better macos support ?
+        version = "python3.9" if env["platform"] == 'osx' else "python3.8"
         ret = env.SharedLibrary(
             target=target,
             source=source,
@@ -98,7 +99,7 @@ def CythonCompile(env, target, source):
             SHLIBSUFFIX=".so",
             CFLAGS=cflags,
             LINKFLAGS=[*linkflags, *env["LINKFLAGS"]],
-            LIBS=["python3.8", "pythonscript"],
+            LIBS=[version, "pythonscript"],
             # LIBS=[*env["CYTHON_LIBS"], *env["LIBS"]],
             # LIBPATH=[*env['CYTHON_LIBPATH'], *env['LIBPATH']]
         )

@@ -42,9 +42,10 @@ vars.Add(
         "platform",
         "Target platform",
         "",
-        allowed_values=("x11-64", "x11-32", "windows-64", "windows-32", "osx-64", "osx-aarch64"),
+        allowed_values=("x11-64", "x11-32", "windows-64", "windows-32", "osx-64", "osx"),
     )
 )
+vars.Add("arch", "Platform-dependent architecture (arm/arm64/x86/x64/mips/...)", allowed_values=("x86_64", "arm64"))
 vars.Add("pytest_args", "Pytest arguments passed to tests functions", "")
 vars.Add(
     "godot_args", "Additional arguments passed to godot binary when running tests&examples", ""

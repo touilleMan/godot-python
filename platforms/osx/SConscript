@@ -13,18 +13,43 @@ cpython_build = Dir("cpython_build")
 
 
 env["bits"] = "64"
-env["godot_binary_download_platform"] = "osx.64"
+env["godot_binary_download_platform"] = "osx.universal"
 env["godot_binary_download_zip_path"] = "Godot.app/Contents/MacOS/Godot"
 env["cpython_build"] = cpython_build
 env["cpython_build_dir"] = cpython_build
 env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/python3.9/site-packages")
-
+env["CC"] = "clang"
+env["CXX"] = "clang++"
 
 ### Build config for pythonscript ###
 
-
 env.AppendUnique(CFLAGS=["-m64"])
 env.AppendUnique(LINKFLAGS=["-m64"])
+
+if env["arch"] == "arm64":
+    print("Building for macOS 10.15+, platform arm64.")
+    env.Append(CCFLAGS=["-arch", "arm64", "-mmacosx-version-min=10.15"])
+    env.Append(LINKFLAGS=["-arch", "arm64", "-mmacosx-version-min=10.15"])
+else:
+    print("Building for macOS 10.12+, platform x86_64.")
+    env.Append(CCFLAGS=["-arch", "x86_64", "-mmacosx-version-min=10.12"])
+    env.Append(LINKFLAGS=["-arch", "x86_64", "-mmacosx-version-min=10.12"])
+
+try:
+    sdk_name = "macosx"
+    sdk_path = subprocess.check_output(["xcrun", "--sdk", sdk_name, "--show-sdk-path"]).strip().decode("utf-8")
+    if sdk_path:
+        env["MACOS_SDK_PATH"] = sdk_path
+except (subprocess.CalledProcessError, OSError):
+    print("Failed to find SDK path while running xcrun --sdk {} --show-sdk-path.".format(sdk_name))
+    raise
+
+env.Append(CPPFLAGS=['-isysroot', '$MACOS_SDK_PATH'])
+env.Append(LINKFLAGS=['-isysroot', '$MACOS_SDK_PATH'])
+
+env.Append(CCFLAGS=["-isysroot", "$MACOS_SDK_PATH"])
+env.Append(LINKFLAGS=["-isysroot", "$MACOS_SDK_PATH"])
+
 # Cannot use CPPPATH&LIBPATH here given headers are within `cpython_build` target,
 # so Scons consider the headers are a missing target
 env.AppendUnique(CFLAGS=[f"-I{cpython_build.abspath}/include/python3.9/"])
@@ -33,8 +58,11 @@ env.AppendUnique(LINKFLAGS=[f"-L{cpython_build.abspath}/lib"])
 
 ### Fetch Python prebuild ###
 
+ARCH = "aarch64" if env["arch"] == "arm64" else "x86_64"
+CPYTHON_DOWNLOADS_URL = "https://github.com/indygreg/python-build-standalone/releases/download"
+CPYTHON_PREBUILD = f"20210506/cpython-3.9.5-{ARCH}-apple-darwin-pgo-20210506T0943.tar.zst"
+CPYTHON_PREBUILD_URL = f"{CPYTHON_DOWNLOADS_URL}/{CPYTHON_PREBUILD}"
 
-CPYTHON_PREBUILD_URL = "https://github.com/indygreg/python-build-standalone/releases/download/20210506/cpython-3.9.5-aarch64-apple-darwin-pgo-20210506T0943.tar.zst"
 cpython_prebuild_archive = env.Download(
     target=File(CPYTHON_PREBUILD_URL.rsplit("/", 1)[1]), url=CPYTHON_PREBUILD_URL
 )
@@ -70,7 +98,10 @@ def generate_cpython_build(target, source, env):
     conf = json.loads((prebuild / "PYTHON.json").read_text())
     assert conf["version"] == "7"
     assert conf["libpython_link_mode"] == "shared"
-    assert conf["target_triple"] == "aarch64-apple-darwin"
+    if env["arch"] == "arm64":
+        assert conf["target_triple"] == "aarch64-apple-darwin"
+    else:
+        assert conf["target_triple"] == "x86_64-apple-darwin"
 
     shutil.copytree(str(prebuild / "install"), str(build), symlinks=True)
     shutil.copytree(str(prebuild / "licenses"), str(build / "licenses"), symlinks=True)
