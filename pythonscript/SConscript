@@ -5,7 +5,7 @@ if env["platform"].startswith("windows"):
     c_env.AppendUnique(LIBS=["python38"])
 
 elif env["platform"].startswith("osx"):
-    if env["arch"] == "arm64":
+    if env["platform"] == "osx":
         c_env.AppendUnique(LIBS=["python3.9"])
     else:
         c_env.AppendUnique(LIBS=["python3.8"])
