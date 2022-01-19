@@ -47,9 +47,6 @@ except (subprocess.CalledProcessError, OSError):
 env.Append(CPPFLAGS=['-isysroot', '$MACOS_SDK_PATH'])
 env.Append(LINKFLAGS=['-isysroot', '$MACOS_SDK_PATH'])
 
-env.Append(CCFLAGS=["-isysroot", "$MACOS_SDK_PATH"])
-env.Append(LINKFLAGS=["-isysroot", "$MACOS_SDK_PATH"])
-
 # Cannot use CPPPATH&LIBPATH here given headers are within `cpython_build` target,
 # so Scons consider the headers are a missing target
 env.AppendUnique(CFLAGS=[f"-I{cpython_build.abspath}/include/python3.9/"])
