@@ -6,9 +6,7 @@ import isengard
 
 @pytest.fixture
 def isg(tmp_path):
-    return isengard.Isengard(
-        self_file=tmp_path / "build.py", db=tmp_path / ".isengard.sqlite"
-    )
+    return isengard.Isengard(self_file=tmp_path / "build.py", db=tmp_path / ".isengard.sqlite")
 
 
 def test_dump_graph_before_configured(isg):

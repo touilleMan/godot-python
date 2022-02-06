@@ -49,9 +49,7 @@ def isg(tmp_path):
     @isg.rule(output="{buildir}/a.out", inputs=["{buildir}/x.o", "{buildir}/y.o"])
     def link_aout(output, inputs, cc, linkflags):
         inputs = sorted(str(_clean_path(input)) for input in inputs)
-        isg.test_events.append(
-            f"{cc} {linkflags} -o {_clean_path(output)} {' '.join(inputs)}"
-        )
+        isg.test_events.append(f"{cc} {linkflags} -o {_clean_path(output)} {' '.join(inputs)}")
 
     @isg.rule(output="distdir@", input="{buildir}/a.out")
     def generate_distdir(output, input, buildir, host_platform):
@@ -62,9 +60,7 @@ def isg(tmp_path):
     @isg.rule(output="distzip@", input="distdir@")
     def generate_distdir(output, input, buildir):
         output_path = input.parent / f"{input.name}.tar.bz2"
-        isg.test_events.append(
-            f"tar -cjf {_clean_path(output_path)} {_clean_path(input)}"
-        )
+        isg.test_events.append(f"tar -cjf {_clean_path(output_path)} {_clean_path(input)}")
         output.resolve(output_path)
 
     isg.configure(

@@ -268,7 +268,7 @@ def test_late_initialized_bindings_and_float_param_ret():
     assert ret == 0
 
     # Build a double number that cannot be reprented on a float
-    double_only_number, = unpack("!d", b"\x11" * 8)
+    (double_only_number,) = unpack("!d", b"\x11" * 8)
     ret = obj.get_noise_1d(double_only_number)
     assert ret == pytest.approx(-0.02726514)
 

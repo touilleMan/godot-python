@@ -11,7 +11,12 @@ isg = isengard.get_parent()
 
 
 @isg.rule(output="godot_binary@")
-def fetch_godot_binary(output: isengard.VirtualTargetResolver, build_platform_dir: Path, godot_binary_hint: Tuple[str, str, str, str], build_platform: str):
+def fetch_godot_binary(
+    output: isengard.VirtualTargetResolver,
+    build_platform_dir: Path,
+    godot_binary_hint: Tuple[str, str, str, str],
+    build_platform: str,
+):
     import os
     from io import BytesIO
     from zipfile import ZipFile
@@ -32,7 +37,7 @@ def fetch_godot_binary(output: isengard.VirtualTargetResolver, build_platform_di
 
     if isinstance(godot_binary_hint, Path):
         # Consider hint is pointing to an already existing binary
-        binary_path =  godot_binary_hint
+        binary_path = godot_binary_hint
 
     else:
         major, minor, patch, extra = godot_binary_hint

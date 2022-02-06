@@ -55,7 +55,6 @@ class Target(metaclass=ABCMeta):
     def __repr__(self):
         return f"<{type(self).__name__} {self._label}>"
 
-
     def __hash__(self) -> int:
         return hash(self._label)
 

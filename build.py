@@ -132,14 +132,16 @@ if __name__ == "__main__":
             )
         return (major, minor, patch, extra or "stable")
 
-    parser = argparse.ArgumentParser(description='Build the project')
-    parser.add_argument('target')
-    parser.add_argument('--host-cpython-version',
+    parser = argparse.ArgumentParser(description="Build the project")
+    parser.add_argument("target")
+    parser.add_argument(
+        "--host-cpython-version",
         help="Version of CPython that will be shipped in the extension (default: 3.9.7)",
         default="3.9.7",
         type=_parse_host_cypthon_version_argument,
     )
-    parser.add_argument('--godot-binary',
+    parser.add_argument(
+        "--godot-binary",
         help="Path to Godot binary or version of Godot to use (default: 4.0.0-alpha1)",
         default="4.0.0-alpha1",
         type=_parse_godot_binary_argument,
@@ -155,7 +157,7 @@ if __name__ == "__main__":
         help="Display dependency graph",
         action="store_true",
     )
-    parser.add_argument('--debug', action="store_true")
+    parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
 
@@ -181,25 +183,22 @@ if __name__ == "__main__":
             build_platform += "-x86_64"
         else:
             raise RuntimeError(f"Unknown machine {machine}")
-        
+
         return build_platform
-    
+
     build_platform = get_build_platform()
     host_platform = build_platform  # No cross-compilation
     isg.configure(
         build_platform=build_platform,
         host_platform=host_platform,
-
         godot_binary_hint=args.godot_binary,
         godot_headers=args.godot_headers,
         cpython_compressed_stdlib=True,
         host_cpython_version=args.host_cpython_version,
-
         godot_args=(),
         pytest_args=(),
         debugger="",
         headless=False,
-
         cc="clang",
         # TODO: should be lazy_config depending on host_platform I guess
         cflags=(
@@ -208,9 +207,7 @@ if __name__ == "__main__":
             "-Werror-implicit-function-declaration",
             "-fcolor-diagnostics",
         ),
-        linkflags=(
-            "-m64",
-        )
+        linkflags=("-m64",),
     )
 
     if args.target == "targets":
@@ -221,7 +218,9 @@ if __name__ == "__main__":
     else:
         try:
             if args.dump_graph:
-                print(isg.dump_graph(args.target, display_configured=True, display_relative_path=True))
+                print(
+                    isg.dump_graph(args.target, display_configured=True, display_relative_path=True)
+                )
             isg.run(args.target)
         except isengard.IsengardRunError as exc:
             if args.debug:

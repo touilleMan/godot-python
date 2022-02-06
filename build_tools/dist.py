@@ -30,17 +30,26 @@ def dist_gdextension(
     output: Path,
     input: Path,
 ) -> None:
-    output.mkdir(parents=True, exist_ok=True)
+    if output.exists():  # TODO: remove me
+        return
+    output.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(input, output)
 
 
 @isg.rule(
     output="{build_dir}/dist/addons/",
-    inputs=["{build_pythonscript_dir}/pytonscript.so"],
+    inputs=["{build_pythonscript_dir}/pytonscript.so", "{build_platform_dir}/cpython_distrib/"],
 )
 def dist_addons(
     output: Path,
     inputs: List[Path],
+    host_platform: str,
 ) -> None:
-    output.mkdir(parents=True, exist_ok=True)
-    shutil.copy(inputs[0], output)
+    if output.exists():  # TODO: remove me
+        return
+    pythonscript_so, cpython_distrib = inputs
+    platform_output = output / "pythonscript" / host_platform
+    platform_output.parent.mkdir(parents=True, exist_ok=True)
+    # Put CPython distrib into the plaform dir and add pythonscript.so
+    shutil.copytree(cpython_distrib, platform_output, symlinks=True)
+    shutil.copy(pythonscript_so, platform_output)

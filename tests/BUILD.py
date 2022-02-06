@@ -10,19 +10,18 @@ isg = isengard.get_parent()
 def symlink(src: Path, trg: Path):
     try:
         import _winapi
+
         _winapi.CreateJunction(str(src), str(trg))
     except Exception:
         import os
+
         os.symlink(str(src), str(trg))
 
 
 def rule_install_extension_in_test_dir(test_name: str) -> str:
     @isg.rule(
         output=f"{test_name}/addons#",
-        inputs=[
-            f"{test_name}/",
-            "{build_dir}/dist/"
-        ],
+        inputs=[f"{test_name}/", "{build_dir}/dist/"],
     )
     def symlink_addons(
         output: Path,
@@ -85,9 +84,7 @@ def rule_install_extension_in_test_dir(test_name: str) -> str:
     return f"tests/{test_name}@"
 
 
-tests = [
-    rule_install_extension_in_test_dir("helloworld")
-]
+tests = [rule_install_extension_in_test_dir("helloworld")]
 
 
 @isg.rule(output="tests@", inputs=tests)

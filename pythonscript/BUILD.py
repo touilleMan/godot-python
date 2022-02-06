@@ -28,15 +28,23 @@ def compile_pythonscript_c(
     godot_headers: Path,
 ) -> None:
     import subprocess
+
     src, python_cflags = inputs
     cmd = [
-        cc, "-o", str(output), "-c", *cflags, *python_cflags, "-fPIC", f"-I{godot_headers}",
+        cc,
+        "-o",
+        str(output),
+        "-c",
+        *cflags,
+        *python_cflags,
+        "-fPIC",
+        f"-I{godot_headers}",
         "-DGODOT_VERSION_MAJOR=4",
         "-DGODOT_VERSION_MINOR=0",
         "-DGODOT_VERSION_PATCH=0",
         str(src),
     ]
-    print(' '.join(cmd))
+    print(" ".join(cmd))
     subprocess.check_call(cmd)
 
 
@@ -52,6 +60,7 @@ def link_pythonscript_so(
     build_platform: str,
 ) -> None:
     import subprocess
+
     src, python_linkflags = inputs
 
     cmd = [cc, "-o", str(output), str(src), *linkflags, *python_linkflags]
@@ -60,7 +69,7 @@ def link_pythonscript_so(
         cmd += ("-Wl,-rpath,'$ORIGIN/lib'", "--shared")
     # TODO: handle other platforms
 
-    print(' '.join(cmd))
+    print(" ".join(cmd))
     subprocess.check_call(cmd)
 
 

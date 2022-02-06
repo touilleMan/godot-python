@@ -7,24 +7,18 @@ import isengard
 
 @pytest.fixture
 def isg(tmp_path):
-    isg = isengard.Isengard(
-        self_file=tmp_path / "build.py", db=tmp_path / ".isengard.sqlite"
-    )
+    isg = isengard.Isengard(self_file=tmp_path / "build.py", db=tmp_path / ".isengard.sqlite")
 
     @isg.rule(output="x.o", input="x.c")
     @isg.rule(output="y.o", input="y.c")
     @isg.rule(output="z.o", input="z.c")
     def compile_c(output: Path, input: Path, basedir: Path):
-        isg.events.append(
-            f"cc -c {input.relative_to(basedir)} -o {output.relative_to(basedir)}"
-        )
+        isg.events.append(f"cc -c {input.relative_to(basedir)} -o {output.relative_to(basedir)}")
         output.touch()
 
     @isg.rule(output="a.out", inputs=["x.o", "y.o"])
     def link_c(output: Path, inputs: List[Path], basedir: Path):
-        isg.events.append(
-            f"cc -c {input.relative_to(basedir)} -o {output.relative_to(basedir)}"
-        )
+        isg.events.append(f"cc -c {input.relative_to(basedir)} -o {output.relative_to(basedir)}")
         output.touch()
 
     isg.test_output = tmp_path / "a.out"

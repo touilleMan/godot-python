@@ -134,10 +134,12 @@ class Isengard:
         try:
             relative_subscript = subscript.relative_to(self._entrypoint_dir)
         except ValueError:
-            raise IsengardDefinitionError(f"Subscript must be within the root folder `{self._entrypoint_dir}`")
+            raise IsengardDefinitionError(
+                f"Subscript must be within the root folder `{self._entrypoint_dir}`"
+            )
 
         assert not relative_subscript.is_absolute()
-        modname = '.'.join([*relative_subscript.parent.parts, relative_subscript.stem])
+        modname = ".".join([*relative_subscript.parent.parts, relative_subscript.stem])
 
         previous_workdir = self._workdir
         token = _parent.set(self)
@@ -202,14 +204,14 @@ class Isengard:
                 # Unknown config or recursive dependency between two lazy configs
                 errors = []
                 for fn in cannot_run_yet:
-                    missings = '/'.join(f"`{x}`" for x in extract_params_from_signature(fn) - config.keys())
+                    missings = "/".join(
+                        f"`{x}`" for x in extract_params_from_signature(fn) - config.keys()
+                    )
                     if missings:
                         errors.append(
                             f"Lazy config `{fn.__name__}` contains unknwon config item(s) {missings}"
                         )
-                raise IsengardConsistencyError(
-                    f"Invalid lazy config: {', '.join(errors)}"
-                )
+                raise IsengardConsistencyError(f"Invalid lazy config: {', '.join(errors)}")
             else:
                 to_run = cannot_run_yet
                 cannot_run_yet = []
@@ -220,9 +222,7 @@ class Isengard:
         for rule in self._rules:
             for target in rule.outputs:
                 configured = target.configure(**config)
-                assigned_rule = self._configured_target_to_rule.setdefault(
-                    configured, rule
-                )
+                assigned_rule = self._configured_target_to_rule.setdefault(configured, rule)
                 if assigned_rule is not rule:
                     raise IsengardConsistencyError(
                         f"Multiple rules to produce `{configured}`: `{rule.name}` and `{assigned_rule.name}`"
@@ -273,39 +273,27 @@ class Isengard:
 
             if output is not None:
                 if outputs is not None:
-                    raise TypeError(
-                        "Cannot define both `output` and `outputs` parameters"
-                    )
+                    raise TypeError("Cannot define both `output` and `outputs` parameters")
                 else:
                     outputs = [output]
                 if "output" not in fn_params or "outputs" in fn_params:
-                    raise TypeError(
-                        "Function must have a `output` and no `outputs` parameter"
-                    )
+                    raise TypeError("Function must have a `output` and no `outputs` parameter")
             elif outputs is not None:
                 if "outputs" not in fn_params or "output" in fn_params:
-                    raise TypeError(
-                        "Function must have a `outputs` and no `output` parameter"
-                    )
+                    raise TypeError("Function must have a `outputs` and no `output` parameter")
             else:
                 raise TypeError("One of `output` or `outputs` parameters is mandatory")
 
             if input is not None:
                 if inputs is not None:
-                    raise TypeError(
-                        "Cannot define both `input` and `inputs` parameters"
-                    )
+                    raise TypeError("Cannot define both `input` and `inputs` parameters")
                 else:
                     inputs = [input]
                 if "input" not in fn_params or "inputs" in fn_params:
-                    raise TypeError(
-                        "Function must have an `input` and no `inputs` parameter"
-                    )
+                    raise TypeError("Function must have an `input` and no `inputs` parameter")
             elif inputs is not None:
                 if "inputs" not in fn_params or "input" in fn_params:
-                    raise TypeError(
-                        "Function must have an `inputs` and no `input` parameter"
-                    )
+                    raise TypeError("Function must have an `inputs` and no `input` parameter")
             else:
                 inputs = []
 
@@ -418,7 +406,7 @@ class Isengard:
             else:
                 kwargs[k] = self._config[k]
 
-        print(f'> {rule.name}')
+        print(f"> {rule.name}")
         try:
             rule.fn(**kwargs)
         except Exception as exc:
@@ -474,7 +462,12 @@ class Isengard:
             configured = target.configure(**self._config)
         return configured
 
-    def dump_graph(self, target: Optional[TargetLike] = None, display_configured: bool = False, display_relative_path: bool=False):
+    def dump_graph(
+        self,
+        target: Optional[TargetLike] = None,
+        display_configured: bool = False,
+        display_relative_path: bool = False,
+    ):
         """
         Graph example:
             a.out#
@@ -510,9 +503,13 @@ class Isengard:
             if not ordered_rules:
                 ordered_rules.append(to_order_rule)
             else:
-                to_order_rule_configured_outputs = set(t.configure(**self._config) for t in to_order_rule.outputs)
+                to_order_rule_configured_outputs = set(
+                    t.configure(**self._config) for t in to_order_rule.outputs
+                )
                 for i, ordered_rule in enumerate(ordered_rules):
-                    if to_order_rule_configured_outputs & set(t.configure(**self._config) for t in ordered_rule.inputs):
+                    if to_order_rule_configured_outputs & set(
+                        t.configure(**self._config) for t in ordered_rule.inputs
+                    ):
                         # `to_order_rule` is a dependency of `ordered_rule`, it must be ordered before
                         ordered_rules.insert(i, to_order_rule)
                         break
@@ -553,7 +550,9 @@ class Isengard:
                             depend_target = f"{configured}{target.discriminant}"
                             if display_relative_path:
                                 try:
-                                    relative_configured = configured.relative_to(self._entrypoint_dir)
+                                    relative_configured = configured.relative_to(
+                                        self._entrypoint_dir
+                                    )
                                     depend_target = f"{relative_configured}{target.discriminant}"
                                 except ValueError:
                                     # Configured is not relative to root dir, just keep it absolute

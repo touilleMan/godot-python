@@ -1,5 +1,7 @@
 from typing import Tuple
 from pathlib import Path
+import shutil
+import json
 
 import isengard
 
@@ -22,7 +24,9 @@ PLATFORM_TO_PREBUILDS = {
 def cpython_prebuild_url(host_platform: str, host_cpython_version: str) -> str:
     per_platform = PLATFORM_TO_PREBUILDS.get(host_cpython_version)
     if not per_platform:
-        raise RuntimeError(f"Unsupported CPython version `{host_cpython_version}`, valid values are: {', '.join(PLATFORM_TO_PREBUILDS.keys())}")
+        raise RuntimeError(
+            f"Unsupported CPython version `{host_cpython_version}`, valid values are: {', '.join(PLATFORM_TO_PREBUILDS.keys())}"
+        )
     prebuild_url = per_platform.get(host_platform)
     if not prebuild_url:
         raise RuntimeError(f"No CPython prebuild for host_platform `{host_platform}`")
@@ -52,7 +56,7 @@ def download_cpython_prebuild_archive(
         "python_linkflags@",
         "python_cflags@",
     ],
-    input="cpython_prebuild_archive@"
+    input="cpython_prebuild_archive@",
 )
 def extract_cpython_prebuild_archive(
     outputs: Tuple[Path, isengard.VirtualTargetResolver, isengard.VirtualTargetResolver],
@@ -61,10 +65,10 @@ def extract_cpython_prebuild_archive(
 ) -> None:
     output, python_linkflags, python_cflags = outputs
 
-    major, minor, _ = host_cpython_version.split('.')
+    major, minor, _ = host_cpython_version.split(".")
     python_header_dir = output / f"python/install/include/python{major}.{minor}"
     python_lib_dir = output / "python/install/lib"
-    python_cflags.resolve((f"-I{python_header_dir}", ))
+    python_cflags.resolve((f"-I{python_header_dir}",))
     python_linkflags.resolve((f"-L{python_lib_dir}", f"-lpython{major}.{minor}"))
 
     # TODO: should be handled by rule starter
@@ -85,57 +89,60 @@ def extract_cpython_prebuild_archive(
 ### Generate custom build from the prebuild ###
 
 
-@isg.rule(output="{build_platform_dir}/cpython_build/", input="{build_platform_dir}/cpython_prebuild/")
-def generate_cpython_build(
-    output: Path, input: Path, host_cpython_version: str, cpython_compressed_stdlib: bool, host_platform: str
+@isg.rule(
+    output="{build_platform_dir}/cpython_distrib/", input="{build_platform_dir}/cpython_prebuild/"
+)
+def generate_cpython_distrib(
+    output: Path,
+    input: Path,
+    host_cpython_version: str,
+    cpython_compressed_stdlib: bool,
+    host_platform: str,
 ):
     # TODO: should be handled by rule starter
     if output.exists():
         return
 
-    global _generate_cpython_build_linux, _generate_cpython_build_windows
-    import json
+    global _generate_cpython_distrib_linux, _generate_cpython_distrib_windows
 
     prebuild = input / "python"
-    build = output
+    distrib = output
 
     conf = json.loads((prebuild / "PYTHON.json").read_text())
-    assert conf["version"] == "5"
+    assert conf["version"] == "7"
     assert conf["libpython_link_mode"] == "shared"
-    breakpoint()
     if host_platform.startswith("linux"):
-        _generate_cpython_build_linux(conf, build, prebuild, host_cpython_version, cpython_compressed_stdlib)
+        _generate_cpython_distrib_linux(
+            conf, distrib, prebuild, host_cpython_version, cpython_compressed_stdlib
+        )
     elif host_platform.startswith("windows"):
-        _generate_cpython_build_windows(
-            conf, build, prebuild, host_cpython_version, cpython_compressed_stdlib
+        _generate_cpython_distrib_windows(
+            conf, distrib, prebuild, host_cpython_version, cpython_compressed_stdlib
         )
     else:
-        raise RuntimeError(
-            f"Don't know how to build for host_platform `{host_platform}`"
-        )
+        raise RuntimeError(f"Don't know how to build for host_platform `{host_platform}`")
 
 
-def _generate_cpython_build_linux(
-    conf: dict, build: Path, prebuild: Path, host_cpython_version: str, compressed_stdlib: bool
+def _generate_cpython_distrib_linux(
+    conf: dict, distrib: Path, prebuild: Path, host_cpython_version: str, compressed_stdlib: bool
 ) -> None:
-    import shutil
-
     assert conf["target_triple"] in ("x86_64-unknown-linux-gnu", "x86-unknown-linux-gnu")
-    major, minor, _ = host_cpython_version.split('.')
+    major, minor, _ = host_cpython_version.split(".")
 
-    shutil.copytree(str(prebuild / "install"), str(build), symlinks=True)
-    shutil.copytree(str(prebuild / "licenses"), str(build / "licenses"), symlinks=True)
+    shutil.copytree(str(prebuild / "install"), str(distrib), symlinks=True)
+    shutil.copytree(str(prebuild / "licenses"), str(distrib / "licenses"), symlinks=True)
 
-    shutil.rmtree(str(build / "share"))
+    shutil.rmtree(str(distrib / "share"))
 
     # Remove static library stuff
     config = conf["python_stdlib_platform_config"]
     assert config.startswith("install/lib/")
-    config = build / config[len("install/") :]
+    config = distrib / config[len("install/") :]
     assert config.exists()
     shutil.rmtree(str(config))
+    (distrib / f"lib/libpython{major}.{minor}.a").unlink()  # Remove symlink
 
-    stdlib_path = build / f"lib/python{major}.{minor}"
+    stdlib_path = distrib / f"lib/python{major}.{minor}"
 
     # Remove tests lib (pretty big and basically useless)
     shutil.rmtree(str(stdlib_path / "test"))
@@ -149,14 +156,12 @@ def _generate_cpython_build_linux(
 
     # Zip the stdlib to save plenty of space \o/
     if compressed_stdlib:
-        tmp_stdlib_path = build / f"lib/tmp_python{major}.{minor}"
+        tmp_stdlib_path = distrib / f"lib/tmp_python{major}.{minor}"
         shutil.move(str(stdlib_path), str(tmp_stdlib_path))
         stdlib_path.mkdir()
-        shutil.move(
-            str(tmp_stdlib_path / "lib-dynload"), str(stdlib_path / "lib-dynload")
-        )
+        shutil.move(str(tmp_stdlib_path / "lib-dynload"), str(stdlib_path / "lib-dynload"))
         shutil.make_archive(
-            base_name=str(build / f"lib/python{major}{minor}"),
+            base_name=str(distrib / f"lib/python{major}{minor}"),
             format="zip",
             root_dir=str(tmp_stdlib_path),
         )
@@ -168,24 +173,22 @@ def _generate_cpython_build_linux(
     (stdlib_path / "site-packages").mkdir()
 
 
-def _generate_cpython_build_windows(
-    conf: dict, build: Path, prebuild: Path, host_cpython_version: str, compressed_stdlib: bool
+def _generate_cpython_distrib_windows(
+    conf: dict, distrib: Path, prebuild: Path, host_cpython_version: str, compressed_stdlib: bool
 ) -> None:
-    import shutil
-
     assert conf["target_triple"] in ("x86_64-pc-windows-msvc", "x86-pc-windows-msvc")
-    major, minor, _ = host_cpython_version.split('.')
+    major, minor, _ = host_cpython_version.split(".")
 
-    shutil.copytree(str(prebuild / "install"), str(build), symlinks=True)
-    shutil.copytree(str(prebuild / "licenses"), str(build / "licenses"), symlinks=True)
+    shutil.copytree(str(prebuild / "install"), str(distrib), symlinks=True)
+    shutil.copytree(str(prebuild / "licenses"), str(distrib / "licenses"), symlinks=True)
 
-    stdlib_path = build / "Lib"
+    stdlib_path = distrib / "Lib"
 
     # Remove tests lib (pretty big and basically useless)
     shutil.rmtree(str(stdlib_path / "test"))
 
     # Remove .pdb debug symbols
-    for pdbfile in (build / "DLLs").glob("*.pdb"):
+    for pdbfile in (distrib / "DLLs").glob("*.pdb"):
         pdbfile.unlink()
 
     # Also remove __pycache__ & .pyc stuff
@@ -198,7 +201,9 @@ def _generate_cpython_build_windows(
     # Zip the stdlib to save plenty of space \o/
     if compressed_stdlib:
         shutil.make_archive(
-            base_name=str(build / f"python{major}{minor}"), format="zip", root_dir=str(stdlib_path)
+            base_name=str(distrib / f"python{major}{minor}"),
+            format="zip",
+            root_dir=str(stdlib_path),
         )
         shutil.rmtree(str(stdlib_path))
         stdlib_path.mkdir()
