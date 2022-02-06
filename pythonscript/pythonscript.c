@@ -75,10 +75,6 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
     // Initialize interpreter but skip initialization registration of signal handlers
     Py_InitializeEx(0);
 
-    // PyEval_InitThreads acquires the GIL, so we must release it later.
-    // Since python3.7 PyEval_InitThreads is automatically called by Py_InitializeEx, but it's better to leave it here
-    // to be explicit. Calling it again does nothing.
-    PyEval_InitThreads();
 
     int ret = import__pythonscript();
     if (ret != 0){
@@ -117,13 +113,29 @@ GDNativeBool GDN_EXPORT pythonscript_init(
     }
     gdapi = p_interface;
 
-    if (p_interface) {
-        if (
-            p_interface->version_major != SUPPORTED_GODOT_VERSION_MAJOR ||
-            p_interface->version_minor != SUPPORTED_GODOT_VERSION_MINOR ||
-            p_interface->version_patch != SUPPORTED_GODOT_VERSION_PATCH
-        ) {
-        }
+    // Check compatibility between the Godot version that has been used for building
+    // (i.e. the bindings has been generated against) and the version currently executed.
+    if (p_interface->version_major != GODOT_VERSION_MAJOR) {
+        printf(
+            "Pythonscript: Incompatible Godot version (expected ~%d.%d, got %d.%d.%d)\n",
+            GODOT_VERSION_MAJOR,
+            GODOT_VERSION_MINOR,
+            p_interface->version_major,
+            p_interface->version_minor,
+            p_interface->version_patch
+        );
+        return false;
+    }
+    if (p_interface->version_minor != GODOT_VERSION_MINOR) {
+        printf(
+            "Pythonscript: extension is built for Godot ~%d.%d, but your are running %d.%d.%d. This may cause issues !\n",
+            GODOT_VERSION_MAJOR,
+            GODOT_VERSION_MINOR,
+            p_interface->version_major,
+            p_interface->version_minor,
+            p_interface->version_patch
+        );
+        return false;
     }
 
     // TODO: Or is it GDNATIVE_INITIALIZATION_SERVERS ?

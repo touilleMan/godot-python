@@ -15,6 +15,9 @@ StablePath = NewType("StablePath", Path)
 class ConfiguredVirtualTarget(str):
     __slots__ = ()
 
+    def __repr__(self):
+        return f"<{type(self).__name__} {str(self)} >"
+
 
 class VirtualTargetResolver:
     __slots__ = ("_configured", "_resolved")
@@ -50,12 +53,15 @@ class Target(metaclass=ABCMeta):
         return f"<{type(self).__name__} {self._label}>"
 
     def __eq__(self, other) -> bool:
-        if not isinstance(other, type(self)):
-            return NotImplemented
-        return self._label == other._label and self._workdir == self._workdir
+        raise NotImplementedError()
+
+    # def __eq__(self, other) -> bool:
+    #     if not isinstance(other, type(self)):
+    #         return NotImplemented
+    #     return self._label == other._label and self._workdir == self._workdir
 
     def __hash__(self) -> int:
-        return hash((self._workdir, self._label))
+        return hash(self._label)
 
     @property
     @abstractproperty

@@ -18,27 +18,50 @@ def build_pythonscript_dir(build_platform_dir: Path):
 
 @isg.rule(
     output="{build_pythonscript_dir}/pytonscript.os",
-    inputs=["pythonscript.c", "python_headers_dir@"],
+    inputs=["pythonscript.c", "python_cflags@"],
 )
 def compile_pythonscript_c(
     output: Path,
-    inputs: Tuple[Path, Path],
+    inputs: Tuple[Path, Tuple[str]],
     cc: str,
     cflags: Tuple[str],
     godot_headers: Path,
 ) -> None:
     import subprocess
-    src, python_headers = inputs
-    extra_cflags = [
-        f"-I{python_headers}",
-        "-fPIC",
-        f"-I{godot_headers}",
+    src, python_cflags = inputs
+    cmd = [
+        cc, "-o", str(output), "-c", *cflags, *python_cflags, "-fPIC", f"-I{godot_headers}",
+        "-DGODOT_VERSION_MAJOR=4",
+        "-DGODOT_VERSION_MINOR=0",
+        "-DGODOT_VERSION_PATCH=0",
+        str(src),
     ]
-    cmd = f"{cc} {' '.join(cflags)} {' '.join(extra_cflags)} -o {output} -c {src}"
-    print(cmd)
-    subprocess.check_call(
-        cmd.split()
-    )
+    print(' '.join(cmd))
+    subprocess.check_call(cmd)
+
+
+@isg.rule(
+    output="{build_pythonscript_dir}/pytonscript.so",
+    inputs=["{build_pythonscript_dir}/pytonscript.os", "python_linkflags@"],
+)
+def link_pythonscript_so(
+    output: Path,
+    inputs: Tuple[Path, Tuple[str]],
+    cc: str,
+    linkflags: Tuple[str],
+    build_platform: str,
+) -> None:
+    import subprocess
+    src, python_linkflags = inputs
+
+    cmd = [cc, "-o", str(output), str(src), *linkflags, *python_linkflags]
+
+    if build_platform.startswith("linux"):
+        cmd += ("-Wl,-rpath,'$ORIGIN/lib'", "--shared")
+    # TODO: handle other platforms
+
+    print(' '.join(cmd))
+    subprocess.check_call(cmd)
 
 
 # clang -o build/x11-64/pythonscript/pythonscript.os -c -O2 -m64 -I/home/emmanuel/projects/godot/godot-python/build/x11-64/platforms/x11-64/cpython_build/include/python3.8/ -Werror-implicit-function-declaration -fcolor-diagnostics -fPIC -Igodot_headers build/x11-64/pythonscript/pythonscript.c

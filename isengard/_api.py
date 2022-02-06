@@ -1,4 +1,5 @@
 from contextvars import ContextVar
+from multiprocessing.sharedctypes import Value
 from pathlib import Path
 from typing import Dict, List, Set, Callable, Union, Optional, Any, Union, TypeVar, Type
 import inspect
@@ -99,38 +100,42 @@ class Isengard:
     def register_target_cooker(self, suffix: str, target_cls: Type[Target]):
         self._target_cookers[suffix] = target_cls
 
-    def subdir(self, subdir: str, filename: Optional[str] = None) -> None:
-        previous_workdir = self._workdir
-        token = _parent.set(self)
-        try:
-            # Temporary self modification is not a very clean approach
-            # but at least it's fast&simple ;-)
-            self._workdir /= subdir
-            subscript_path = self._workdir / (filename or self._subdir_default_filename)
+    def _load_file_as_module(self, name: str, path: Path) -> None:
+        import sys
+        from types import ModuleType
+        from importlib.util import spec_from_file_location, module_from_spec
 
-            # TODO: find the best way to do that...
-
-            # import importlib.util
-            # spec = importlib.util.spec_from_file_location(subscript_path, subscript_path)
-            # mod = importlib.util.module_from_spec(spec)
-            # spec.loader.exec_module(mod)
-            # foo.MyClass()
-
-            import sys
-            sys.path.insert(0, str(subscript_path.parent))
-            __import__(subscript_path.name.split('.', 1)[0])
-            sys.path.pop(0)
-
-            # code = compile(subscript_path.read_text(), subscript_path, "exec")
-            # exec(code)
-
-        finally:
-            self._workdir = previous_workdir
-            _parent.reset(token)
+        spec = spec_from_file_location(name, path)
+        module = module_from_spec(spec)
+        spec.loader.exec_module(module)
+        sys.modules[name] = module
+        # Ensure the module's parents are loaded to avoid loading the wrong parent when
+        # doing "import foo.bar" while only "foo.bar" is declared as helper module
+        child_module = module
+        parent_name = name
+        while True:
+            try:
+                parent_name, child_name = parent_name.rsplit(".", 1)
+            except ValueError:
+                break
+            try:
+                parent_module = sys.modules[parent_name]
+            except KeyError:
+                parent_module = ModuleType(parent_name)
+                sys.modules[parent_name] = parent_module
+            setattr(parent_module, child_name, child_module)
 
     def subscript(self, subscript: Union[str, Path]) -> None:
         if not isinstance(subscript, Path):
             subscript = self._workdir / subscript
+
+        try:
+            relative_subscript = subscript.relative_to(self._entrypoint_dir)
+        except ValueError:
+            raise IsengardDefinitionError(f"Subscript must be within the root folder `{self._entrypoint_dir}`")
+
+        assert not relative_subscript.is_absolute()
+        modname = '.'.join([*relative_subscript.parent.parts, relative_subscript.stem])
 
         previous_workdir = self._workdir
         token = _parent.set(self)
@@ -138,16 +143,22 @@ class Isengard:
             # Temporary self modification is not a very clean approach
             # but at least it's fast&simple ;-)
             self._workdir = subscript.parent
-            subscript_path = subscript
 
-            import sys
-            sys.path.insert(0, str(subscript_path.parent))
-            __import__(subscript_path.name.split('.', 1)[0])
-            sys.path.pop(0)
+            self._load_file_as_module(modname, subscript)
+
+            # subscript_path = subscript
+            # import sys
+            # sys.path.insert(0, str(subscript_path.parent))
+            # __import__(subscript_path.name.split('.', 1)[0])
+            # sys.path.pop(0)
 
         finally:
             self._workdir = previous_workdir
             _parent.reset(token)
+
+    def subdir(self, subdir: str, filename: Optional[str] = None) -> None:
+        subscript_path = self._workdir / subdir / (filename or self._subdir_default_filename)
+        self.subscript(subscript_path)
 
     def configure(self, **config: ConstTypes):
         """
@@ -323,6 +334,7 @@ class Isengard:
                     raise IsengardConsistencyError(
                         f"Multiple rules to make target {target}: {rule} and {existing}"
                     )
+            print('~~~~~~~~~~~ APPEND RULE', rule.name, rule.outputs)
             self._rules.append(rule)
 
             return fn
@@ -464,7 +476,18 @@ class Isengard:
                 configureds.append(configured)
         return configureds
 
-    def dump_graph(self):
+    def _target_like_to_configured(self, target: Optional[TargetLike] = None) -> ConfiguredTarget:
+        if isinstance(target, Path):
+            if target.is_absolute():
+                configured = StablePath(target.resolve())
+            else:
+                configured = StablePath((self.rootdir / target).resolve())
+        else:
+            target = self._parse_target_like(target)
+            configured = target.configure(**self._config)
+        return configured
+
+    def dump_graph(self, target: Optional[TargetLike] = None):
         """
         Graph example:
             a.out#
@@ -485,9 +508,13 @@ class Isengard:
                 ├─rule:generate_headers
                 └─…
         """
+        filter_by_configured = None
+        if target:
+            filter_by_configured = self._target_like_to_configured(target)
+
         # Order rules by dependencies
         to_order = self._rules.copy()
-        ordered_rules = []
+        ordered_rules: List[Rule] = []
         while to_order:
             to_order_rule = to_order.pop()
             if not ordered_rules:
@@ -508,7 +535,7 @@ class Isengard:
                         continue
                 else:
                     # not rule depends of `to_order_rule` so far, we can insert it last
-                    ordered_rules.append(ordered_rule)
+                    ordered_rules.append(to_order_rule)
 
         graph = ""
         already_dumped_rules = set()
@@ -525,6 +552,8 @@ class Isengard:
                 for config_name in sorted(rule.needed_config):
                     depends.append(f"─config:{config_name}")
                 for target in rule.inputs:
+                    if "dist" in target.label:
+                        breakpoint()
                     depend_target = f"{target.label}{target.discriminant}"
                     target_rule = self._target_to_rule.get(target)
                     if target_rule:
@@ -550,6 +579,15 @@ class Isengard:
             dump += "└─"
             dump += _multilines_paste(last_depend, next_line_suffix="  ")
             return dump
+
+        if filter_by_configured:
+            filtered_ordered_rules = []
+            for rule in reversed(ordered_rules):
+                for target in rule.outputs:
+                    if target.configure(**self._config) == filter_by_configured:
+                        already_dumped_targets.update(t for t in rule.outputs if t != target)
+                        filtered_ordered_rules.append(rule)
+            ordered_rules = filtered_ordered_rules
 
         for rule in reversed(ordered_rules):
             should_dump_rule = False

@@ -1,3 +1,4 @@
+from typing import Tuple
 from pathlib import Path
 
 import isengard
@@ -30,12 +31,12 @@ def cpython_prebuild_url(host_platform: str, host_cpython_version: str) -> str:
 
 @isg.rule(output="cpython_prebuild_archive@")
 def download_cpython_prebuild_archive(
-    output: isengard.VirtualTargetResolver, build_dir: Path, cpython_prebuild_url: str
+    output: isengard.VirtualTargetResolver, build_platform_dir: Path, cpython_prebuild_url: str
 ) -> None:
     from urllib.request import urlopen
 
     _, name = cpython_prebuild_url.rsplit("/", 1)
-    path = build_dir / name
+    path = build_platform_dir / name
     # TODO: should be handled by rule starter
     if not path.exists():
         print(f"Downloading {cpython_prebuild_url}...")
@@ -45,8 +46,27 @@ def download_cpython_prebuild_archive(
     output.resolve(path)
 
 
-@isg.rule(output="{build_dir}/cpython_prebuild/", input="cpython_prebuild_archive@")
-def extract_cpython_prebuild_archive(output: Path, input: Path) -> None:
+@isg.rule(
+    outputs=[
+        "{build_platform_dir}/cpython_prebuild/",
+        "python_linkflags@",
+        "python_cflags@",
+    ],
+    input="cpython_prebuild_archive@"
+)
+def extract_cpython_prebuild_archive(
+    outputs: Tuple[Path, isengard.VirtualTargetResolver, isengard.VirtualTargetResolver],
+    input: Path,
+    host_cpython_version: str,
+) -> None:
+    output, python_linkflags, python_cflags = outputs
+
+    major, minor, _ = host_cpython_version.split('.')
+    python_header_dir = output / f"python/install/include/python{major}.{minor}"
+    python_lib_dir = output / "python/install/lib"
+    python_cflags.resolve((f"-I{python_header_dir}", ))
+    python_linkflags.resolve((f"-L{python_lib_dir}", f"-lpython{major}.{minor}"))
+
     # TODO: should be handled by rule starter
     if output.exists():
         return
@@ -62,21 +82,10 @@ def extract_cpython_prebuild_archive(output: Path, input: Path) -> None:
                 tf.extractall(output)
 
 
-@isg.rule(output="python_headers_dir@", input="{build_dir}/cpython_prebuild/")
-def define_python_headers_dir(output: isengard.VirtualTargetResolver, input: Path, host_cpython_version: str) -> None:
-    major, minor, _ = host_cpython_version.split('.')
-    output.resolve(input / f"python/install/include/python{major}.{minor}")
-
-
-@isg.rule(output="python_lib_dir@", input="{build_dir}/cpython_prebuild/")
-def define_python_lib_dir(output: isengard.VirtualTargetResolver, input: Path) -> None:
-    output.resolve(input / "python/install/lib")
-
-
 ### Generate custom build from the prebuild ###
 
 
-@isg.rule(output="{build_dir}/cpython_build/", input="{build_dir}/cpython_prebuild/")
+@isg.rule(output="{build_platform_dir}/cpython_build/", input="{build_platform_dir}/cpython_prebuild/")
 def generate_cpython_build(
     output: Path, input: Path, host_cpython_version: str, cpython_compressed_stdlib: bool, host_platform: str
 ):

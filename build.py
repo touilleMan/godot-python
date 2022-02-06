@@ -90,9 +90,11 @@ isg = isengard.Isengard(__file__, subdir_default_filename="BUILD.py")
 #     return _shared_library
 
 
+isg.subscript("build_tools/dist.py")
 isg.subscript("build_tools/godot_binary.py")
 isg.subscript("build_tools/python_distrib.py")
 isg.subdir("pythonscript")
+isg.subdir("tests")
 
 
 @isg.lazy_config
@@ -148,6 +150,11 @@ if __name__ == "__main__":
         default="./godot_headers",
         type=lambda x: Path(x).resolve().absolute(),
     )
+    parser.add_argument(
+        "--dump-graph",
+        help="Display dependency graph",
+        action="store_true",
+    )
     parser.add_argument('--debug', action="store_true")
 
     args = parser.parse_args()
@@ -188,14 +195,22 @@ if __name__ == "__main__":
         cpython_compressed_stdlib=True,
         host_cpython_version=args.host_cpython_version,
 
+        godot_args=(),
+        pytest_args=(),
+        debugger="",
+        headless=False,
+
         cc="clang",
-        # extra_cflags=(
+        # TODO: should be lazy_config depending on host_platform I guess
         cflags=(
             "-O2",
             "-m64",
             "-Werror-implicit-function-declaration",
             "-fcolor-diagnostics",
         ),
+        linkflags=(
+            "-m64",
+        )
     )
 
     if args.target == "targets":
@@ -205,6 +220,8 @@ if __name__ == "__main__":
             print(target)
     else:
         try:
+            if args.dump_graph:
+                print(isg.dump_graph(args.target))
             isg.run(args.target)
         except isengard.IsengardRunError as exc:
             if args.debug:
