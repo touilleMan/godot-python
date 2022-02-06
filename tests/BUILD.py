@@ -18,9 +18,9 @@ def symlink(src: Path, trg: Path):
 
 def rule_install_extension_in_test_dir(test_name: str) -> str:
     @isg.rule(
-        output=f"tests/{test_name}/addons#",
+        output=f"{test_name}/addons#",
         inputs=[
-            f"tests/{test_name}/",
+            f"{test_name}/",
             "{build_dir}/dist/"
         ],
     )
@@ -29,13 +29,16 @@ def rule_install_extension_in_test_dir(test_name: str) -> str:
         inputs: Tuple[Path, Path],
     ) -> None:
         _, dist_path = inputs
+        # TODO: remove me
+        if output.exists():
+            return
         symlink(dist_path / "addons", output)
 
     @isg.rule(
-        output=f"tests/{test_name}/lib#",
+        output=f"{test_name}/lib#",
         inputs=[
-            f"tests/{test_name}/",
-            "tests/_lib_vendors/",
+            f"{test_name}/",
+            "_lib_vendors/",
         ],
     )
     def symlink_lib_vendors(
@@ -43,18 +46,21 @@ def rule_install_extension_in_test_dir(test_name: str) -> str:
         inputs: Tuple[Path, Path],
     ) -> None:
         _, lib_vendors_path = inputs
+        # TODO: remove me
+        if output.exists():
+            return
         symlink(lib_vendors_path, output)
 
     @isg.rule(
         outputs=[f"run_{test_name}@", f"tests/{test_name}@"],
-        inputs=["godot_binary@", f"tests/{test_name}/", f"tests/{test_name}/addons#", f"tests/{test_name}/lib#"],
+        inputs=["godot_binary@", f"{test_name}/", f"{test_name}/addons#", f"{test_name}/lib#"],
     )
     def run_test(
         outputs: Tuple[isengard.VirtualTargetResolver, isengard.VirtualTargetResolver],
         inputs: Tuple[Path, Path, Path],
         debugger: str,
-        pytest_args: str,
-        godot_args: str,
+        pytest_args: Tuple[str],
+        godot_args: Tuple[str],
         headless: bool,
     ) -> None:
         godot_binary, test_path, *_ = inputs
@@ -65,15 +71,15 @@ def rule_install_extension_in_test_dir(test_name: str) -> str:
             cmd_prefix = []
 
         if pytest_args:
-            cmd_suffix = [f"--pytest={arg}" for arg in pytest_args.split()]
+            cmd_suffix = [f"--pytest={arg}" for arg in pytest_args]
         else:
             cmd_suffix = []
 
         if headless:
             cmd_suffix.append("--no-window")
 
-        cmd = [*cmd_prefix, str(godot_binary), godot_args, "--path", str(test_path), *cmd_suffix]
-        print(' '.join(cmd))
+        cmd = [*cmd_prefix, str(godot_binary), *godot_args, "--path", str(test_path), *cmd_suffix]
+        print(" ".join(cmd))
         subprocess.check_call(cmd)
 
     return f"tests/{test_name}@"

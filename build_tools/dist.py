@@ -35,7 +35,7 @@ def dist_gdextension(
 
 
 @isg.rule(
-    output="{build_dir}/dist/addons",
+    output="{build_dir}/dist/addons/",
     inputs=["{build_pythonscript_dir}/pytonscript.so"],
 )
 def dist_addons(

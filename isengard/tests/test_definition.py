@@ -11,6 +11,11 @@ def isg(tmp_path):
     )
 
 
+def test_dump_graph_before_configured(isg):
+    with pytest.raises(isengard.IsengardStateError):
+        isg.dump_graph()
+
+
 def test_rule(isg):
     @isg.rule(output="x.o", input="x.c")
     def compile_c(output, input):
@@ -63,40 +68,34 @@ def test_graph_on_nested_rule(isg):
     assert isg.dump_graph() == (
         "a.out#\n"
         "├──rule:link_aout\n"
-        "├──config:cc\n"
-        "├──config:linkflags\n"
+        "├──configs:cc, linkflags\n"
         "├─xyz.so#\n"
         "│ ├──rule:link_xyz\n"
-        "│ ├──config:cc\n"
-        "│ ├──config:linkflags\n"
+        "│ ├──configs:cc, linkflags\n"
         "│ ├─x.o#\n"
         "│ │ ├──rule:compile_x\n"
-        "│ │ ├──config:cc\n"
-        "│ │ ├──config:cflags\n"
+        "│ │ ├──configs:cc, cflags\n"
         "│ │ ├─x.c#\n"
         "│ │ └─config.h#\n"
         "│ │   ├──rule:generate_config_header\n"
-        "│ │   └──config:host_platform\n"
+        "│ │   └──configs:host_platform\n"
         "│ ├─y.o#\n"
         "│ │ ├──rule:compile_y\n"
-        "│ │ ├──config:cc\n"
-        "│ │ ├──config:cflags\n"
+        "│ │ ├──configs:cc, cflags\n"
         "│ │ ├─y.c#\n"
         "│ │ └─config.h#\n"
         "│ │   ├──rule:generate_config_header\n"
         "│ │   └─…\n"
         "│ └─z.o#\n"
         "│   ├──rule:compile_z\n"
-        "│   ├──config:cc\n"
-        "│   ├──config:cflags\n"
+        "│   ├──configs:cc, cflags\n"
         "│   ├─z.c#\n"
         "│   └─config.h#\n"
         "│     ├──rule:generate_config_header\n"
         "│     └─…\n"
         "└─main.o#\n"
         "  ├──rule:compile_main\n"
-        "  ├──config:cc\n"
-        "  ├──config:cflags\n"
+        "  ├──configs:cc, cflags\n"
         "  └─main.c#\n"
         "xyz.a#\n"
         "├──rule:link_xyz\n"
@@ -108,10 +107,6 @@ def test_rule_missing_config(isg):
     @isg.rule(output="x.o", input="x.c")
     def compile_c(output, input, missing):
         pass
-
-    assert isg.dump_graph() == (
-        "x.o#\n" "├──rule:compile_c\n" "├──config:missing\n" "└─x.c#\n"
-    )
 
     with pytest.raises(isengard.IsengardConsistencyError):
         isg.configure()

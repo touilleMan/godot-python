@@ -221,7 +221,7 @@ if __name__ == "__main__":
     else:
         try:
             if args.dump_graph:
-                print(isg.dump_graph(args.target))
+                print(isg.dump_graph(args.target, display_configured=True, display_relative_path=True))
             isg.run(args.target)
         except isengard.IsengardRunError as exc:
             if args.debug:

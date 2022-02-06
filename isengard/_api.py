@@ -1,4 +1,6 @@
 from contextvars import ContextVar
+from dis import dis
+from distutils.command.config import config
 from multiprocessing.sharedctypes import Value
 from pathlib import Path
 from typing import Dict, List, Set, Callable, Union, Optional, Any, Union, TypeVar, Type
@@ -83,7 +85,7 @@ class Isengard:
         self._config: Optional[Dict[str, ConstTypes]] = None
         self._rules: List[Rule] = []
         self._lazy_configs: List[Callable] = []
-        self._target_to_rule: Dict[Target, Rule] = {}
+        # self._target_to_rule: Dict[Target, Rule] = {}
         self._configured_target_to_rule: Dict[ConfiguredTarget, Rule] = {}
         self._configured_to_executed: Dict[ConfiguredTarget, ConstTypes] = {}
 
@@ -145,12 +147,6 @@ class Isengard:
             self._workdir = subscript.parent
 
             self._load_file_as_module(modname, subscript)
-
-            # subscript_path = subscript
-            # import sys
-            # sys.path.insert(0, str(subscript_path.parent))
-            # __import__(subscript_path.name.split('.', 1)[0])
-            # sys.path.pop(0)
 
         finally:
             self._workdir = previous_workdir
@@ -229,7 +225,7 @@ class Isengard:
                 )
                 if assigned_rule is not rule:
                     raise IsengardConsistencyError(
-                        f"Multiple rules to produce target {target!r}: {rule.name} and {assigned_rule.name}"
+                        f"Multiple rules to produce `{configured}`: `{rule.name}` and `{assigned_rule.name}`"
                     )
             for config_name in rule.needed_config:
                 if config_name not in self._config:
@@ -327,14 +323,6 @@ class Isengard:
                 inputs=cooked_inputs,
                 fn=fn,
             )
-
-            for target in rule.outputs:
-                existing = self._target_to_rule.setdefault(target, rule)
-                if existing is not rule:
-                    raise IsengardConsistencyError(
-                        f"Multiple rules to make target {target}: {rule} and {existing}"
-                    )
-            print('~~~~~~~~~~~ APPEND RULE', rule.name, rule.outputs)
             self._rules.append(rule)
 
             return fn
@@ -361,9 +349,9 @@ class Isengard:
         configured: ConfiguredTarget
         if isinstance(target, Path):
             if target.is_absolute():
-                configured = StablePath(target.resolve())
+                configured = StablePath(target)
             else:
-                configured = StablePath((self.rootdir / target).resolve())
+                configured = StablePath((self.rootdir / target))
         else:
             target = self._parse_target_like(target)
             configured = target.configure(**self._config)
@@ -448,7 +436,7 @@ class Isengard:
 
         configured: ConfiguredTarget
         if isinstance(target, Path):
-            configured = StablePath(target.absolute().resolve())
+            configured = StablePath(target.absolute())
             for rule in self._rules:
                 for target in rule.outputs:
                     candidate_configured = target.configure(**self._config)
@@ -468,8 +456,7 @@ class Isengard:
             raise IsengardStateError("Must call `configure` before !")
 
         configureds: List[Union[Path, str]] = []
-        for target in self._target_to_rule.keys():
-            configured = target.configure(**self._config)
+        for configured in self._configured_target_to_rule.keys():
             if isinstance(configured, ConfiguredVirtualTarget):
                 configureds.append(f"{configured}@")
             else:
@@ -479,15 +466,15 @@ class Isengard:
     def _target_like_to_configured(self, target: Optional[TargetLike] = None) -> ConfiguredTarget:
         if isinstance(target, Path):
             if target.is_absolute():
-                configured = StablePath(target.resolve())
+                configured = StablePath(target)
             else:
-                configured = StablePath((self.rootdir / target).resolve())
+                configured = StablePath((self.rootdir / target))
         else:
             target = self._parse_target_like(target)
             configured = target.configure(**self._config)
         return configured
 
-    def dump_graph(self, target: Optional[TargetLike] = None):
+    def dump_graph(self, target: Optional[TargetLike] = None, display_configured: bool = False, display_relative_path: bool=False):
         """
         Graph example:
             a.out#
@@ -508,6 +495,9 @@ class Isengard:
                 ├─rule:generate_headers
                 └─…
         """
+        if self._config is None:
+            raise IsengardStateError("Must call `configure` before !")
+
         filter_by_configured = None
         if target:
             filter_by_configured = self._target_like_to_configured(target)
@@ -520,8 +510,9 @@ class Isengard:
             if not ordered_rules:
                 ordered_rules.append(to_order_rule)
             else:
+                to_order_rule_configured_outputs = set(t.configure(**self._config) for t in to_order_rule.outputs)
                 for i, ordered_rule in enumerate(ordered_rules):
-                    if set(to_order_rule.outputs) & set(ordered_rule.inputs):
+                    if to_order_rule_configured_outputs & set(t.configure(**self._config) for t in ordered_rule.inputs):
                         # `to_order_rule` is a dependency of `ordered_rule`, it must be ordered before
                         ordered_rules.insert(i, to_order_rule)
                         break
@@ -539,7 +530,9 @@ class Isengard:
 
         graph = ""
         already_dumped_rules = set()
-        already_dumped_targets = set()
+        # Different targets can lead to the same configured value, hence we
+        # we use the configured value as discriminant.
+        already_dumped_configured = set()
 
         def _dump_rule(rule: Rule) -> str:
             depends = [f"─rule:{rule.name}"]
@@ -549,15 +542,27 @@ class Isengard:
             else:
                 already_dumped_rules.add(rule)
 
-                for config_name in sorted(rule.needed_config):
-                    depends.append(f"─config:{config_name}")
+                if rule.needed_config:
+                    depends.append("─configs:" + ", ".join(sorted(rule.needed_config)))
                 for target in rule.inputs:
-                    if "dist" in target.label:
-                        breakpoint()
-                    depend_target = f"{target.label}{target.discriminant}"
-                    target_rule = self._target_to_rule.get(target)
+                    configured = target.configure(**self._config)
+                    if display_configured:
+                        if isinstance(target, VirtualTarget):
+                            depend_target = f"{target.label}{target.discriminant}"
+                        else:
+                            depend_target = f"{configured}{target.discriminant}"
+                            if display_relative_path:
+                                try:
+                                    relative_configured = configured.relative_to(self._entrypoint_dir)
+                                    depend_target = f"{relative_configured}{target.discriminant}"
+                                except ValueError:
+                                    # Configured is not relative to root dir, just keep it absolute
+                                    pass
+                    else:  # Display targets without configuration
+                        depend_target = f"{target.label}{target.discriminant}"
+                    target_rule = self._configured_target_to_rule.get(configured)
                     if target_rule:
-                        already_dumped_targets.add(target)
+                        already_dumped_configured.add(configured)
                         depend_target += "\n"
                         depend_target += _dump_rule(target_rule)
                     depends.append(depend_target)
@@ -584,18 +589,23 @@ class Isengard:
             filtered_ordered_rules = []
             for rule in reversed(ordered_rules):
                 for target in rule.outputs:
-                    if target.configure(**self._config) == filter_by_configured:
-                        already_dumped_targets.update(t for t in rule.outputs if t != target)
+                    configured = target.configure(**self._config)
+                    if configured == filter_by_configured:
+                        for target_to_ignore in rule.outputs:
+                            configured_to_ignore = target_to_ignore.configure(**self._config)
+                            if configured_to_ignore != configured:
+                                already_dumped_configured.add(configured_to_ignore)
                         filtered_ordered_rules.append(rule)
             ordered_rules = filtered_ordered_rules
 
         for rule in reversed(ordered_rules):
             should_dump_rule = False
             for target in rule.outputs:
-                if target not in already_dumped_targets:
+                configured = target.configure(**self._config)
+                if configured not in already_dumped_configured:
                     graph += f"{target.label}{target.discriminant}\n"
                     should_dump_rule = True
-                already_dumped_targets.add(target)
+                    already_dumped_configured.add(configured)
             if should_dump_rule:
                 graph += _dump_rule(rule)
 

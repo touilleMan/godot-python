@@ -18,8 +18,8 @@ def isg(tmp_path):
         return f"cc-{host_platform}"
 
     @isg.lazy_config
-    def buildir(basedir, host_platform):
-        buildir_path = basedir / f"build-{host_platform}"
+    def buildir(rootdir, host_platform):
+        buildir_path = rootdir / f"build-{host_platform}"
         isg.test_events.append("define buildir")
         return buildir_path
 
@@ -60,7 +60,7 @@ def isg(tmp_path):
         output.resolve(output_path)
 
     @isg.rule(output="distzip@", input="distdir@")
-    def generate_distdir(output, input, basedir, buildir):
+    def generate_distdir(output, input, buildir):
         output_path = input.parent / f"{input.name}.tar.bz2"
         isg.test_events.append(
             f"tar -cjf {_clean_path(output_path)} {_clean_path(input)}"

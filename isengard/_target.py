@@ -43,6 +43,9 @@ ConfiguredTarget = Union[StablePath, ConfiguredVirtualTarget]
 
 
 class Target(metaclass=ABCMeta):
+    # Note: Target is not stable enough to be compared (e.g. different workdir
+    # and label can end up with the same configured value)
+
     __slots__ = ("_label", "_workdir")
 
     def __init__(self, label: str, workdir: Path):
@@ -52,13 +55,6 @@ class Target(metaclass=ABCMeta):
     def __repr__(self):
         return f"<{type(self).__name__} {self._label}>"
 
-    def __eq__(self, other) -> bool:
-        raise NotImplementedError()
-
-    # def __eq__(self, other) -> bool:
-    #     if not isinstance(other, type(self)):
-    #         return NotImplemented
-    #     return self._label == other._label and self._workdir == self._workdir
 
     def __hash__(self) -> int:
         return hash(self._label)
@@ -101,7 +97,7 @@ class FSTarget(Target):
             )
         if not configured.is_absolute():
             configured = self._workdir / configured
-        return StablePath(configured.resolve())
+        return StablePath(configured)
 
 
 class FileTarget(FSTarget):

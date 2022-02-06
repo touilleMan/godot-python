@@ -1,0 +1,11 @@
+[configuration]
+
+entry_symbol = "pythonscript_init"
+
+[libraries]
+
+linux.64="res://addons/pythonscript/linux-64/libpythonscript.so"
+linux.32="res://addons/pythonscript/linux-32/libpythonscript.so"
+windows.64="res://addons/pythonscript/windows-64/pythonscript.dll"
+windows.32="res://addons/pythonscript/windows-32/pythonscript.dll"
+osx.64="res://addons/pythonscript/osx-64/libpythonscript.dylib"
