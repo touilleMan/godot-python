@@ -31,12 +31,19 @@ def compile_pythonscript_c(
 ) -> None:
     src, python_cflags = inputs
     if host_platform.startswith("windows"):
-        # cl /Fobuild\windows-64\pythonscript\pythonscript.obj /c build\windows-64\pythonscript\pythonscript.c /WX /W2 -IC:\Users\gbleu\source\repos\godot\godot-python\build\windows-64\platforms\windows-64\cpython_build/include /nologo /Igodot_headers
+        # cl
+        #  /Fobuild\windows-64\pythonscript\pythonscript.obj
+        #  /c build\windows-64\pythonscript\pythonscript.c
+        #  /WX /W2
+        #  -IC:\Users\gbleu\source\repos\godot\godot-python\build\windows-64\platforms\windows-64\cpython_build/include
+        #  /nologo
+        #  /Igodot_headers
         cmd = [
             cc,
             f"/Fo{output}",
             "/c",
-            str(src) * cflags,
+            str(src),
+            *cflags,
             *python_cflags,
             "/nologo",
             f"-I{godot_headers}",
@@ -45,7 +52,16 @@ def compile_pythonscript_c(
             "-DGODOT_VERSION_PATCH=0",
         ]
     elif host_platform.startswith("linux"):
-        # clang -o build/x11-64/pythonscript/pythonscript.os -c -O2 -m64 -I/home/emmanuel/projects/godot/godot-python/build/x11-64/platforms/x11-64/cpython_build/include/python3.8/ -Werror-implicit-function-declaration -fcolor-diagnostics -fPIC -Igodot_headers build/x11-64/pythonscript/pythonscript.c
+        # clang
+        #  -o build/x11-64/pythonscript/pythonscript.os
+        #  -c
+        #  -O2 -m64
+        #  -I/home/emmanuel/projects/godot/godot-python/build/x11-64/platforms/x11-64/cpython_build/include/python3.8/
+        #  -Werror-implicit-function-declaration
+        #  -fcolor-diagnostics
+        #  -fPIC
+        #  -Igodot_headers
+        #  build/x11-64/pythonscript/pythonscript.c
         cmd = [
             cc,
             "-o",
@@ -80,94 +96,107 @@ def link_pythonscript_so(
 ) -> None:
     src, python_linkflags = inputs
 
-    # if host_platform.startswith("windows"):
-    #     # link /nologo /LIBPATH:C:\Users\gbleu\source\repos\godot\godot-python\build\windows-64\platforms\windows-64\cpython_build/libs /dll /out:build\windows-64\pythonscript\pythonscript.dll /implib:build\windows-64\pythonscript\pythonscript.lib python38.lib build\windows-64\pythonscript\pythonscript.obj
-    #     cmd = [
-    #         link,
-    #         "/nologo",
-    #         f"/LIBPATH:{}"
-    #         "/dll",
-    #         f"/out{}",
-    #         f"/implib{}",
-    #         *python_linkflags,
-    #         str(src),
-    #     ]
-    # elif host_platform.startswith("linux"):
-    #     # clang -o build/x11-64/pythonscript/libpythonscript.so -m64 -L/home/emmanuel/projects/godot/godot-python/build/x11-64/platforms/x11-64/cpython_build/lib -Wl,-rpath,'$ORIGIN/lib' -shared build/x11-64/pythonscript/pythonscript.os -lpython3.8
-    #     cmd = [
-    #         link,
-    #         "-o",
-    #         str(output),
-    #         *linkflags,
-    #         "-Wl,-rpath,'$ORIGIN/lib'",
-    #         "--shared",
-    #         *python_linkflags,
-    #         str(src),
-    #     ]
-    # else:
-    #     raise NotImplementedError()
+    if host_platform.startswith("windows"):
+        # link
+        #  /nologo
+        #  /LIBPATH:C:\Users\gbleu\source\repos\godot\godot-python\build\windows-64\platforms\windows-64\cpython_build/libs
+        #  /dll
+        #  /out:build\windows-64\pythonscript\pythonscript.dll
+        #  /implib:build\windows-64\pythonscript\pythonscript.lib
+        #  python38.lib
+        #  build\windows-64\pythonscript\pythonscript.obj
+        cmd = [
+            link,
+            "/nologo",
+            "/dll",
+            f"/out:{output}",
+            # f"/implib:{}",  # TODO
+            *python_linkflags,
+            str(src),
+        ]
+    elif host_platform.startswith("linux"):
+        # clang
+        #  -o build/x11-64/pythonscript/libpythonscript.so
+        #  -m64
+        #  -L/home/emmanuel/projects/godot/godot-python/build/x11-64/platforms/x11-64/cpython_build/lib
+        #  -Wl,-rpath,'$ORIGIN/lib'
+        #  -shared
+        #  build/x11-64/pythonscript/pythonscript.os
+        #  -lpython3.8
+        cmd = [
+            link,
+            "-o",
+            str(output),
+            *linkflags,
+            "-Wl,-rpath,'$ORIGIN/lib'",
+            "--shared",
+            *python_linkflags,
+            str(src),
+        ]
+    else:
+        raise NotImplementedError()
 
-    cmd = [cc, "-o", str(output), str(src), *linkflags, *python_linkflags]
+    # cmd = [link, "-o", str(output), str(src), *linkflags, *python_linkflags]
 
-    if build_platform.startswith("linux"):
-        cmd += ("-Wl,-rpath,'$ORIGIN/lib'", "--shared")
+    # if host_platform.startswith("linux"):
+    #     cmd += ("-Wl,-rpath,'$ORIGIN/lib'", "--shared")
     # TODO: handle other platforms
 
     print(" ".join(cmd))
     subprocess.check_call(cmd)
 
 
-@isg.lazy_config
-def pythonscript_cflags(cflags, host_platform):
-    if build_platform.startswith("linux"):
-        cmd += ("-Wl,-rpath,'$ORIGIN/lib'", "--shared")
-    # TODO: handle other platforms
+# @isg.lazy_config
+# def pythonscript_cflags(cflags, host_platform):
+#     if host_platform.startswith("linux"):
+#         cmd += ("-Wl,-rpath,'$ORIGIN/lib'", "--shared")
+#     # TODO: handle other platforms
 
 
-@isg.lazy_rule
-def pythonscript_rule(
-    register_rule: Callable, host_platform: str, cflags: Tuple[str], linkflags: Tuple[str]
-):
-    cflags = list(cflags)
-    linkflags = list(linkflags)
-    libs = []
-    if host_platform.startswith("windows"):
-        libs.append("python38")
-        outputs = ["{build_pythonscript_dir}/pytonscript.os"]
+# @isg.lazy_rule
+# def pythonscript_rule(
+#     register_rule: Callable, host_platform: str, cflags: Tuple[str], linkflags: Tuple[str]
+# ):
+#     cflags = list(cflags)
+#     linkflags = list(linkflags)
+#     libs = []
+#     if host_platform.startswith("windows"):
+#         libs.append("python38")
+#         outputs = ["{build_pythonscript_dir}/pytonscript.os"]
 
-    elif host_platform.startswith("linux"):
-        libs.append("python3.8")
-        linkflags += ["-Wl,-rpath,'$$ORIGIN/lib'"]
-        cflags += ["-Werror-implicit-function-declaration"]
+#     elif host_platform.startswith("linux"):
+#         libs.append("python3.8")
+#         linkflags += ["-Wl,-rpath,'$$ORIGIN/lib'"]
+#         cflags += ["-Werror-implicit-function-declaration"]
 
-    elif host_platform.startswith("osx"):
-        libs.append("python3.8")
-        # if we don't give the lib a proper install_name, macos won't be able to find it,
-        # and will link the cython modules with a relative path
-        linkflags += [
-            "-Wl,-rpath,'@loader_path/lib'",
-            "-install_name",
-            "@rpath/libpythonscript.dylib",
-        ]
-        cflags += ["-Werror-implicit-function-declaration"]
+#     elif host_platform.startswith("osx"):
+#         libs.append("python3.8")
+#         # if we don't give the lib a proper install_name, macos won't be able to find it,
+#         # and will link the cython modules with a relative path
+#         linkflags += [
+#             "-Wl,-rpath,'@loader_path/lib'",
+#             "-install_name",
+#             "@rpath/libpythonscript.dylib",
+#         ]
+#         cflags += ["-Werror-implicit-function-declaration"]
 
-    libpythonscript, *libpythonscript_extra = c_env.SharedLibrary(
-        "pythonscript", ["pythonscript.c"]
-    )
-
-
-c_env.Depends("pythonscript.c", env["cpython_build"])
+#     libpythonscript, *libpythonscript_extra = c_env.SharedLibrary(
+#         "pythonscript", ["pythonscript.c"]
+#     )
 
 
-# cmd += ("-Wl,-rpath,'$ORIGIN/lib'", "--shared")
+# c_env.Depends("pythonscript.c", env["cpython_build"])
 
 
-outputs = isg.shared_library(
-    "pythonscript",
-    inputs=["pythonscript.c"],
-    overwrite_cflags="pythonscript_cflags",
-    overwrite_linkflags="pythonscript_linkflags",
-)
+# # cmd += ("-Wl,-rpath,'$ORIGIN/lib'", "--shared")
+
+
+# outputs = isg.shared_library(
+#     "pythonscript",
+#     inputs=["pythonscript.c"],
+#     overwrite_cflags="pythonscript_cflags",
+#     overwrite_linkflags="pythonscript_linkflags",
+# )
 
 
 # pythonscript_lib = isg.shared_library("pythonscript", ["pythonscript.c"])

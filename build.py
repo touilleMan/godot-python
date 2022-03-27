@@ -3,7 +3,7 @@ import platform
 from multiprocessing.sharedctypes import Value
 import sys
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple
 import argparse
 
 import isengard
@@ -98,21 +98,21 @@ isg.subdir("tests")
 
 
 @isg.lazy_config
-def build_dir(rootdir):
+def build_dir(rootdir: Path) -> Path:
     build_dir = rootdir / "build"
     build_dir.mkdir(parents=True, exist_ok=True)
     return build_dir
 
 
 @isg.lazy_config
-def build_platform_dir(build_dir: Path, host_platform: str):
+def build_platform_dir(build_dir: Path, host_platform: str) -> Path:
     build_platform_dir = build_dir / host_platform
     build_platform_dir.mkdir(parents=True, exist_ok=True)
     return build_platform_dir
 
 
 @isg.lazy_config
-def cflags(host_platform: str):
+def cflags(host_platform: str) -> Tuple[str, ...]:
     if host_platform.startswith("windows"):
         return ("/WX", "/W2")
     else:
@@ -217,6 +217,7 @@ if __name__ == "__main__":
         pytest_args=(),
         debugger="",
         headless=False,
+        cc_is_msvc=host_platform.startswith("windows"),
         cc="cl.exe" if host_platform.startswith("windows") else "clang",
         link="link.exe" if host_platform.startswith("windows") else "clang",
     )

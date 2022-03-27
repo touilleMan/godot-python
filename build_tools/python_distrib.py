@@ -62,14 +62,27 @@ def extract_cpython_prebuild_archive(
     outputs: Tuple[Path, isengard.VirtualTargetResolver, isengard.VirtualTargetResolver],
     input: Path,
     host_cpython_version: str,
+    host_platform: str,
+    cc_is_msvc: bool,
 ) -> None:
     output, python_linkflags, python_cflags = outputs
 
     major, minor, _ = host_cpython_version.split(".")
-    python_header_dir = output / f"python/install/include/python{major}.{minor}"
-    python_lib_dir = output / "python/install/lib"
-    python_cflags.resolve((f"-I{python_header_dir}",))
-    python_linkflags.resolve((f"-L{python_lib_dir}", f"-lpython{major}.{minor}"))
+    if host_platform.startswith("windows"):
+        python_header_dir = output / f"python/install/include"
+        python_lib_dir = output / "python/install/libs"
+        python_lib = f"python{major}{minor}"
+    else:
+        python_header_dir = output / f"python/install/include/python{major}.{minor}"
+        python_lib_dir = output / "python/install/lib"
+        python_lib = f"python{major}.{minor}"
+
+    if cc_is_msvc:
+        python_cflags.resolve((f"/I{python_header_dir}",))
+        python_linkflags.resolve((f"/LIBPATH:{python_lib_dir}", f"{python_lib}.lib"))
+    else:
+        python_cflags.resolve((f"-I{python_header_dir}",))
+        python_linkflags.resolve((f"-L{python_lib_dir}", f"-l{python_lib}"))
 
     # TODO: should be handled by rule starter
     if output.exists():

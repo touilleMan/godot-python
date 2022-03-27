@@ -3,7 +3,7 @@ from dis import dis
 from distutils.command.config import config
 from multiprocessing.sharedctypes import Value
 from pathlib import Path
-from typing import Dict, List, Set, Callable, Union, Optional, Any, Union, TypeVar, Type
+from typing import Dict, List, Sequence, Set, Callable, Union, Optional, Any, Union, TypeVar, Type
 import inspect
 
 from ._utils import ConstTypes, validate_const_data
@@ -258,9 +258,9 @@ class Isengard:
 
     def rule(
         self,
-        outputs: Optional[List[TargetLike]] = None,
+        outputs: Optional[Sequence[TargetLike]] = None,
         output: Optional[TargetLike] = None,
-        inputs: Optional[List[TargetLike]] = None,
+        inputs: Optional[Sequence[TargetLike]] = None,
         input: Optional[TargetLike] = None,
         name: Optional[str] = None,
     ) -> Callable[[C], C]:
@@ -354,7 +354,7 @@ class Isengard:
 
         self._run(rule, [])
 
-    def _run(self, rule: Rule, parent_rules: List[Rule]) -> None:
+    def _run(self, rule: Rule, parent_rules: Sequence[Rule]) -> None:
         assert self._config is not None
 
         # Now we can configure input targets
@@ -442,7 +442,7 @@ class Isengard:
 
         target.clean(configured)
 
-    def list_configured_targets(self) -> List[Union[Path, str]]:
+    def list_configured_targets(self) -> Sequence[Union[Path, str]]:
         if self._config is None:
             raise IsengardStateError("Must call `configure` before !")
 
@@ -454,7 +454,7 @@ class Isengard:
                 configureds.append(configured)
         return configureds
 
-    def _target_like_to_configured(self, target: Optional[TargetLike] = None) -> ConfiguredTarget:
+    def _target_like_to_configured(self, target: TargetLike) -> ConfiguredTarget:
         if isinstance(target, Path):
             if target.is_absolute():
                 configured = StablePath(target)
