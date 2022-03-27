@@ -43,6 +43,7 @@ static const GDNativeInterface *gdapi = NULL;
 }
 
 static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
+    printf("=============== _initialize\n");
     if (p_level != GDNATIVE_INITIALIZATION_CORE) {
         return;
     }
@@ -88,7 +89,9 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
 }
 
 static void _deinitialize(void *userdata, GDNativeInitializationLevel p_level) {
+    printf("=============== _deinitialize %d\n", p_level);
     if (p_level != GDNATIVE_INITIALIZATION_CORE) {
+        printf("=============== _deinitialize skipped %d\n", p_level);
         return;
     }
     // Re-acquire the gil in order to finalize properly
@@ -100,6 +103,7 @@ static void _deinitialize(void *userdata, GDNativeInitializationLevel p_level) {
     if (ret != 0) {
         GD_PRINT_ERROR("Pythonscript: Cannot finalize Python interpreter");
     }
+    printf("=============== _deinitialize done %d\n", p_level);
 }
 
 GDNativeBool GDN_EXPORT pythonscript_init(

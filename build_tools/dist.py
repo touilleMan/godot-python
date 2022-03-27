@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 from pathlib import Path
 import shutil
 
@@ -38,18 +38,19 @@ def dist_gdextension(
 
 @isg.rule(
     output="{build_dir}/dist/addons/",
-    inputs=["{build_pythonscript_dir}/pytonscript.so", "{build_platform_dir}/cpython_distrib/"],
+    # inputs=["{build_pythonscript_dir}/pythonscript.so", "{build_platform_dir}/cpython_distrib/"],
+    inputs=["pythonscript_lib@", "{build_platform_dir}/cpython_distrib/"],
 )
 def dist_addons(
     output: Path,
-    inputs: List[Path],
+    inputs: Tuple[isengard.VirtualTargetResolver, Path],
     host_platform: str,
 ) -> None:
-    if output.exists():  # TODO: remove me
-        return
-    pythonscript_so, cpython_distrib = inputs
+    pythonscript_libs, cpython_distrib = inputs
     platform_output = output / "pythonscript" / host_platform
-    platform_output.parent.mkdir(parents=True, exist_ok=True)
-    # Put CPython distrib into the plaform dir and add pythonscript.so
-    shutil.copytree(cpython_distrib, platform_output, symlinks=True)
-    shutil.copy(pythonscript_so, platform_output)
+    if not platform_output.exists():  # TODO: remove me
+        platform_output.parent.mkdir(parents=True, exist_ok=True)
+        # Put CPython distrib into the plaform dir and add pythonscript.so
+        shutil.copytree(cpython_distrib, platform_output, symlinks=True)
+    for item in pythonscript_libs:
+        shutil.copy(item, platform_output)

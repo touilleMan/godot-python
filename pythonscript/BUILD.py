@@ -1,4 +1,5 @@
 from os import link
+from platform import python_branch
 from typing import Callable, List, Tuple
 from pathlib import Path
 import subprocess
@@ -18,12 +19,15 @@ def build_pythonscript_dir(build_platform_dir: Path):
 
 
 @isg.rule(
-    output="{build_pythonscript_dir}/pytonscript.os",
+    # output="{build_pythonscript_dir}/pythonscript.os",
+    output="pythonscript_obj@",
     inputs=["pythonscript.c", "python_cflags@"],
 )
 def compile_pythonscript_c(
-    output: Path,
+    # output: Path,
+    output: isengard.VirtualTargetResolver,
     inputs: Tuple[Path, Tuple[str]],
+    build_pythonscript_dir: Path,
     cc: str,
     cflags: Tuple[str],
     godot_headers: Path,
@@ -31,6 +35,8 @@ def compile_pythonscript_c(
 ) -> None:
     src, python_cflags = inputs
     if host_platform.startswith("windows"):
+        pythonscript_obj = build_pythonscript_dir / "pythonscript.obj"
+        output.resolve(pythonscript_obj)
         # cl
         #  /Fobuild\windows-64\pythonscript\pythonscript.obj
         #  /c build\windows-64\pythonscript\pythonscript.c
@@ -40,7 +46,7 @@ def compile_pythonscript_c(
         #  /Igodot_headers
         cmd = [
             cc,
-            f"/Fo{output}",
+            f"/Fo{pythonscript_obj}",
             "/c",
             str(src),
             *cflags,
@@ -52,6 +58,8 @@ def compile_pythonscript_c(
             "-DGODOT_VERSION_PATCH=0",
         ]
     elif host_platform.startswith("linux"):
+        pythonscript_obj = build_pythonscript_dir / "pythonscript.os"
+        output.resolve(pythonscript_obj)
         # clang
         #  -o build/x11-64/pythonscript/pythonscript.os
         #  -c
@@ -65,7 +73,7 @@ def compile_pythonscript_c(
         cmd = [
             cc,
             "-o",
-            str(output),
+            str(pythonscript_obj),
             "-c",
             *cflags,
             *python_cflags,
@@ -84,12 +92,16 @@ def compile_pythonscript_c(
 
 
 @isg.rule(
-    output="{build_pythonscript_dir}/pytonscript.so",
-    inputs=["{build_pythonscript_dir}/pytonscript.os", "python_linkflags@"],
+    output="pythonscript_lib@",
+    # output="{build_pythonscript_dir}/pythonscript.so",
+    inputs=["pythonscript_obj@", "python_linkflags@"]
+    # inputs=["{build_pythonscript_dir}/pythonscript.os", "python_linkflags@"],
 )
 def link_pythonscript_so(
-    output: Path,
+    output: isengard.VirtualTargetResolver,
+    # output: Path,
     inputs: Tuple[Path, Tuple[str]],
+    build_pythonscript_dir: Path,
     link: str,
     linkflags: Tuple[str],
     host_platform: str,
@@ -97,6 +109,9 @@ def link_pythonscript_so(
     src, python_linkflags = inputs
 
     if host_platform.startswith("windows"):
+        pythonscript_lib = build_pythonscript_dir / "pythonscript.lib"
+        pythonscript_dll = build_pythonscript_dir / "pythonscript.dll"
+        output.resolve((pythonscript_lib, pythonscript_dll))
         # link
         #  /nologo
         #  /LIBPATH:C:\Users\gbleu\source\repos\godot\godot-python\build\windows-64\platforms\windows-64\cpython_build/libs
@@ -109,12 +124,14 @@ def link_pythonscript_so(
             link,
             "/nologo",
             "/dll",
-            f"/out:{output}",
-            # f"/implib:{}",  # TODO
+            f"/out:{pythonscript_dll}",
+            # f"/implib:{pythonscript_lib}",
             *python_linkflags,
             str(src),
         ]
     elif host_platform.startswith("linux"):
+        pythonscript_so = build_pythonscript_dir / "pythonscript.so"
+        output.resolve((pythonscript_so,))
         # clang
         #  -o build/x11-64/pythonscript/libpythonscript.so
         #  -m64
@@ -126,7 +143,7 @@ def link_pythonscript_so(
         cmd = [
             link,
             "-o",
-            str(output),
+            str(pythonscript_so),
             *linkflags,
             "-Wl,-rpath,'$ORIGIN/lib'",
             "--shared",
@@ -162,7 +179,7 @@ def link_pythonscript_so(
 #     libs = []
 #     if host_platform.startswith("windows"):
 #         libs.append("python38")
-#         outputs = ["{build_pythonscript_dir}/pytonscript.os"]
+#         outputs = ["{build_pythonscript_dir}/pythonscript.os"]
 
 #     elif host_platform.startswith("linux"):
 #         libs.append("python3.8")
