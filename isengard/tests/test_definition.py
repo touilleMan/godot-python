@@ -14,6 +14,33 @@ def test_dump_graph_before_configured(isg):
         isg.dump_graph()
 
 
+def test_double_configure(isg):
+    @isg.rule(output="x.o", input="x.c")
+    def compile_c(output, input):
+        pass
+
+    isg.configure()
+
+    with pytest.raises(isengard.IsengardStateError):
+        isg.configure()
+
+
+def test_define_after_configure(isg):
+    isg.configure()
+
+    with pytest.raises(isengard.IsengardStateError):
+
+        @isg.rule(output="x.o", input="x.c")
+        def compile_c(output, input):
+            pass
+
+    with pytest.raises(isengard.IsengardStateError):
+
+        @isg.lazy_config
+        def foo():
+            pass
+
+
 def test_rule(isg):
     @isg.rule(output="x.o", input="x.c")
     def compile_c(output, input):

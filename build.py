@@ -111,6 +111,24 @@ def build_platform_dir(build_dir: Path, host_platform: str):
     return build_platform_dir
 
 
+@isg.lazy_config
+def cflags(host_platform: str):
+    if host_platform.startswith("windows"):
+        return ("/WX", "/W2")
+    else:
+        return (
+            "-O2",
+            "-m64",
+            "-Werror-implicit-function-declaration",
+            "-fcolor-diagnostics",
+        )
+
+
+@isg.lazy_config
+def linkflags(host_platform: str):
+    return ("-m64",)
+
+
 if __name__ == "__main__":
 
     def _parse_host_cypthon_version_argument(val):
@@ -199,15 +217,8 @@ if __name__ == "__main__":
         pytest_args=(),
         debugger="",
         headless=False,
-        cc="clang",
-        # TODO: should be lazy_config depending on host_platform I guess
-        cflags=(
-            "-O2",
-            "-m64",
-            "-Werror-implicit-function-declaration",
-            "-fcolor-diagnostics",
-        ),
-        linkflags=("-m64",),
+        cc="cl.exe" if host_platform.startswith("windows") else "clang",
+        link="link.exe" if host_platform.startswith("windows") else "clang",
     )
 
     if args.target == "targets":

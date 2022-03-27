@@ -165,6 +165,9 @@ class Isengard:
         well with dependency injection in the rule where configuration is requested
         by using it name as function argument.
         """
+        if self._config:
+            raise IsengardStateError("`configure` has already been called !")
+
         # Check provided config
         try:
             for k, v in config.items():
@@ -235,7 +238,7 @@ class Isengard:
 
     def lazy_config(self, fn):
         if self._config is not None:
-            raise IsengardConsistencyError(
+            raise IsengardStateError(
                 "Cannot create new lazy configuration value once `configure` has been called !"
             )
 
