@@ -175,6 +175,11 @@ if __name__ == "__main__":
         help="Display dependency graph",
         action="store_true",
     )
+    parser.add_argument(
+        "--pdb",
+        help="Start postmortem debugger on error",
+        action="store_true",
+    )
     parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
@@ -217,6 +222,7 @@ if __name__ == "__main__":
         pytest_args=(),
         debugger="",
         headless=False,
+        cython_flags=("-3", "--fast-fail"),
         cc_is_msvc=host_platform.startswith("windows"),
         cc="cl.exe" if host_platform.startswith("windows") else "clang",
         link="link.exe" if host_platform.startswith("windows") else "clang",
@@ -235,6 +241,13 @@ if __name__ == "__main__":
                 )
             isg.run(args.target)
         except isengard.IsengardRunError as exc:
+            if args.pdb:
+                import pdb
+
+                if exc.__cause__:
+                    pdb.post_mortem(exc.__cause__.__traceback__)
+                else:
+                    pdb.post_mortem(exc.__traceback__)
             if args.debug:
                 raise
             else:

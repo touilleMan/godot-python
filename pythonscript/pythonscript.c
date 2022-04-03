@@ -43,7 +43,6 @@ static const GDNativeInterface *gdapi = NULL;
 }
 
 static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
-    printf("=============== _initialize\n");
     if (p_level != GDNATIVE_INITIALIZATION_CORE) {
         return;
     }

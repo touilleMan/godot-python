@@ -11,6 +11,9 @@ isg = isengard.get_parent()
 isg.subdir("godot")
 
 
+### pythonscript.c ###
+
+
 @isg.lazy_config
 def build_pythonscript_dir(build_platform_dir: Path):
     build_pythonscript_dir = build_platform_dir / "pythonscript"
@@ -158,6 +161,170 @@ def link_pythonscript_so(
     # if host_platform.startswith("linux"):
     #     cmd += ("-Wl,-rpath,'$ORIGIN/lib'", "--shared")
     # TODO: handle other platforms
+
+    print(" ".join(cmd))
+    subprocess.check_call(cmd)
+
+
+### _pythonscript.pyx ###
+
+
+@isg.rule(
+    outputs=[
+        "{build_pythonscript_dir}/_pythonscript.c",
+        "{build_pythonscript_dir}/_pythonscript_api.h",
+    ],
+    input="_pythonscript.pyx",
+)
+def compile_underscore_pythonscript_pyx(
+    outputs: Tuple[Path, Path],
+    input: Path,
+    cython_flags: Tuple[str],
+) -> None:
+    # cython
+    #  --fast-fail
+    #  -3
+    #  build/x11-64/pythonscript/_godot.pyx
+    #  -o build/x11-64/pythonscript/_godot.c
+    cmd = [
+        "cython",
+        *cython_flags,
+        str(input),
+        "-o",
+        str(outputs[0]),
+    ]
+
+    print(" ".join(cmd))
+    subprocess.check_call(cmd)
+
+
+@isg.rule(
+    output="underscore_pythonscript_obj@",
+    inputs=["{build_pythonscript_dir}/_pythonscript.c", "python_cflags@"],
+)
+def compile_underscore_pythonscript_pyx(
+    output: Path,
+    inputs: Tuple[Path, Tuple[str]],
+    build_pythonscript_dir: Path,
+    cc: str,
+    cflags: Tuple[str],
+    godot_headers: Path,
+    host_platform: str,
+) -> None:
+    src, python_cflags = inputs
+    if host_platform.startswith("windows"):
+        underscore_pythonscript_obj = build_pythonscript_dir / "_pythonscript.obj"
+        output.resolve(underscore_pythonscript_obj)
+        # cl
+        #  /Fobuild\windows-64\pythonscript\_godot.obj
+        #  /c build\windows-64\pythonscript\_godot.c
+        #  /WX /W2
+        #  -IC:\Users\gbleu\source\repos\godot\godot-python\build\windows-64\platforms\windows-64\cpython_build/include
+        #  /nologo
+        #  /Igodot_headers
+        cmd = [
+            cc,
+            f"/Fo{underscore_pythonscript_obj}",
+            "/c",
+            str(src),
+            *cflags,
+            *python_cflags,
+            "/nologo",
+            f"-I{godot_headers}",
+        ]
+    elif host_platform.startswith("linux"):
+        underscore_pythonscript_obj = build_pythonscript_dir / "_pythonscript.os"
+        output.resolve(underscore_pythonscript_obj)
+        # gcc
+        #  -o build/x11-64/pythonscript/_godot.os
+        #  -c
+        #  -Wno-unused -O2 -m64
+        #  -I/mnt/c/Users/gbleu/source/repos/godot/godot-python/build/x11-64/platforms/x11-64/cpython_build/include/python3.8/
+        #  -fdiagnostics-color=always
+        #  -fPIC
+        #  -Igodot_headers
+        #  build/x11-64/pythonscript/_godot.c
+        cmd = [
+            cc,
+            "-o",
+            str(underscore_pythonscript_obj),
+            "-c",
+            *cflags,
+            *python_cflags,
+            "-fPIC",
+            f"-I{godot_headers}",
+            str(src),
+        ]
+    else:
+        raise NotImplementedError()
+
+    print(" ".join(cmd))
+    subprocess.check_call(cmd)
+
+
+@isg.rule(
+    output="underscore_pythonscript_lib@",
+    inputs=["underscore_pythonscript_obj@", "python_linkflags@"],
+)
+def link_underscore_pythonscript_so(
+    output: isengard.VirtualTargetResolver,
+    inputs: Tuple[Path, Tuple[str]],
+    build_pythonscript_dir: Path,
+    link: str,
+    linkflags: Tuple[str],
+    host_platform: str,
+) -> None:
+    src, python_linkflags = inputs
+
+    if host_platform.startswith("windows"):
+        underscore_pythonscript_lib = build_pythonscript_dir / "_pythonscript.lib"
+        underscore_pythonscript_dll = build_pythonscript_dir / "_pythonscript.pyd"
+        output.resolve((underscore_pythonscript_lib, underscore_pythonscript_dll))
+        # link
+        #  /nologo
+        #  /LIBPATH:C:\Users\gbleu\source\repos\godot\godot-python\build\windows-64\platforms\windows-64\cpython_build/libs
+        #  /dll
+        #  /out:build\windows-64\pythonscript\_godot.pyd
+        #  /implib:build\windows-64\pythonscript\_godot.lib
+        #  /LIBPATH:build\windows-64\pythonscript   # Needed ?
+        #  python38.lib
+        #  pythonscript.lib  # Needed ?
+        #  build\windows-64\pythonscript\_godot.obj
+        cmd = [
+            link,
+            "/nologo",
+            "/dll",
+            f"/out:{underscore_pythonscript_dll}",
+            f"/implib:{underscore_pythonscript_lib}",
+            *python_linkflags,
+            str(src),
+        ]
+    elif host_platform.startswith("linux"):
+        underscore_pythonscript_so = build_pythonscript_dir / "_pythonscript.so"
+        output.resolve((underscore_pythonscript_so,))
+        # gcc
+        #  -o build/x11-64/pythonscript/_godot.so
+        #  -Wl,-rpath,'$ORIGIN/../..'  # Needed ?
+        #  -Wl,-rpath,'$ORIGIN/../../..'  # Needed ?
+        #  -m64
+        #  -L/mnt/c/Users/gbleu/source/repos/godot/godot-python/build/x11-64/platforms/x11-64/cpython_build/lib
+        #  -shared
+        #  build/x11-64/pythonscript/_godot.os
+        #  -Lbuild/x11-64/pythonscript  # Needed ?
+        #  -lpython3.8
+        #  -lpythonscript  # Needed ?
+        cmd = [
+            link,
+            "-o",
+            str(underscore_pythonscript_so),
+            *linkflags,
+            "-Wl,-rpath,'$ORIGIN/lib'",
+            "--shared",
+            *python_linkflags,
+            str(src),
+        ]
+    else:
+        raise NotImplementedError()
 
     print(" ".join(cmd))
     subprocess.check_call(cmd)
