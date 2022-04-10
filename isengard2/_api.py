@@ -1,20 +1,9 @@
 from contextvars import ContextVar
 from pathlib import Path
 from typing import Dict, List, Sequence, Set, Callable, Union, Optional, Any, Union, TypeVar, Type
-import inspect
 
-from ._utils import ConstTypes, validate_const_data
-from ._target import (
-    Target,
-    VirtualTarget,
-    FileTarget,
-    FolderTarget,
-    ConfiguredTarget,
-    ConfiguredVirtualTarget,
-    VirtualTargetResolver,
-    StablePath,
-)
-from ._rule import Rule, _INPUT_OUTPUT_CONFIG_NAMES
+from ._const import ConstTypes, validate_const_data
+from ._rule import Rule, INPUT_OUTPUT_CONFIG_NAMES
 from ._exceptions import (
     IsengardError,
     IsengardStateError,
@@ -29,7 +18,7 @@ TargetLike = Union[str, Target]
 
 
 _RESERVED_CONFIG_NAMES = {
-    *_INPUT_OUTPUT_CONFIG_NAMES,
+    *INPUT_OUTPUT_CONFIG_NAMES,
     "rootdir",  # Entrypoint script's directory
     "ruledir",  # Directory of the script the current rule was defined in
 }

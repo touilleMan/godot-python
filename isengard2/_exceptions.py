@@ -16,3 +16,7 @@ class IsengardConsistencyError(IsengardError):
 
 class IsengardRunError(IsengardError):
     pass
+
+
+class IsengardDBError(IsengardRunError):
+    pass

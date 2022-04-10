@@ -2,6 +2,7 @@ from typing import List, Dict
 
 from ._rule import ResolvedRule
 from ._const import ConstTypes
+from ._exceptions import IsengardRunError
 
 
 class Runner:
@@ -9,3 +10,6 @@ class Runner:
         self.target_to_rule = target_to_rule
         self.rules = rules
         self.config = config
+
+    def run(self, target: str) -> None:
+        pass
