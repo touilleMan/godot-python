@@ -1,5 +1,7 @@
-from typing import Callable, Set, Optional, Sequence, TypeVar, List
+from typing import Callable, Set, Optional, Sequence, TypeVar, List, Dict, Any
 import inspect
+
+from ._const import ConstTypes
 
 
 INPUT_OUTPUT_CONFIG_NAMES = {"inputs", "input", "outputs", "output"}
@@ -105,3 +107,19 @@ class ResolvedRule(Rule):
         self.inputs = inputs
         self.resolved_outputs = resolved_outputs
         self.resolved_inputs = resolved_inputs
+
+    def run(self, outputs: List[Any], inputs: List[Any], config: Dict[str, ConstTypes]) -> None:
+        kwargs: Dict[str, Any] = {}
+        for k in self.params:
+            if k == "output":
+                kwargs["output"] = outputs[0]
+            elif k == "outputs":
+                kwargs["outputs"] = outputs
+            elif k == "input":
+                kwargs["input"] = inputs[0]
+            elif k == "inputs":
+                kwargs["inputs"] = inputs
+            else:
+                kwargs[k] = config[k]
+
+        self.fn(**kwargs)

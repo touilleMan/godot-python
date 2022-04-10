@@ -53,7 +53,11 @@ def test_ok(collector, rule, config):
 
     collector.add_lazy_rule(lazy_rule_gen_multiple)
 
-    collector.configure(**config)
+    resolved_rules = collector.configure(**config)
+    assert len(resolved_rules) == 4
+    breakpoint()
+    # TODO: test clashing lazy rule namings !
+    assert {r.id for r in resolved_rules} == {'isengard2.tests.test_collector.linkstuff', 'compile_x'}
 
 
 def test_rule_duplication(collector, rule, config):

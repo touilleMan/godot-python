@@ -18,5 +18,9 @@ class IsengardRunError(IsengardError):
     pass
 
 
+class IsengardUnknownTargetError(IsengardRunError):
+    pass
+
+
 class IsengardDBError(IsengardRunError):
     pass

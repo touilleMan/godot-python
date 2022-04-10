@@ -1,6 +1,5 @@
 from typing import Optional, List, Callable, Tuple, Any, Set, Dict
 
-from ._runner import Runner
 from ._const import ConstTypes
 from ._exceptions import IsengardConsistencyError
 from ._rule import Rule, ResolvedRule, extract_params_from_signature, INPUT_OUTPUT_CONFIG_NAMES
@@ -43,7 +42,7 @@ class Collector:
         id = id or fn.__name__
         self.lazy_configs.append((id, fn, params))
 
-    def configure(self, **config: ConstTypes) -> Runner:
+    def configure(self, **config: ConstTypes) -> List[ResolvedRule]:
         # First, resolve lazy config
         to_run = self.lazy_configs
         cannot_run_yet = []
@@ -158,4 +157,4 @@ class Collector:
             ))
 
         # All set !
-        return Runner(target_to_rule, resolved_rules, config)
+        return resolved_rules

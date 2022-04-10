@@ -1,4 +1,4 @@
-from typing import Optional, Any, TypeVar, Generic, Tuple, Type, Dict
+from typing import Optional, Any, TypeVar, Generic, Tuple, Type, Dict, Sequence
 from pathlib import Path
 from struct import pack
 from hashlib import sha256
@@ -7,7 +7,7 @@ from stat import S_ISDIR
 import pickle
 # from shutil import rmtree
 
-from ._exceptions import IsengardDefinitionError
+from ._exceptions import IsengardDefinitionError, IsengardConsistencyError, IsengardRunError
 from ._const import ConstTypes
 
 
@@ -20,11 +20,45 @@ def resolve_target(target: str, config: Dict[str, ConstTypes]) -> str:
         )
 
 
+class TargetHandlersBundle:
+    def __init__(self, target_handlers: Sequence["BaseTargetHandler"], default_handler=Optional["BaseTargetHandler"]):
+        self.default_handler = default_handler
+        handler_per_suffix: Dict[str, BaseTargetHandler] = {}
+
+        for handler in target_handlers:
+            if handler.DISCRIMINANT_SUFFIX:
+                ambiguous = next((h for h in target_handlers if h.DISCRIMINANT_SUFFIX.endswith(handler.DISCRIMINANT_SUFFIX) and h is not handler), None)
+                if ambiguous:
+                    raise IsengardConsistencyError(
+                        f"Ambiguous target handler suffix `{handler.DISCRIMINANT_SUFFIX}`, would clash between {handler} and {ambiguous}"
+                    )
+                handler_per_suffix[handler.DISCRIMINANT_SUFFIX] = handler
+
+        self.handler_per_suffix = handler_per_suffix
+
+    def cook_target(self, target: str, previous_fingerprint: Optional[bytes]) -> Tuple[Any, "BaseTargetHandler"]:
+        for suffix, handler in self.handler_per_suffix.items():
+            if target.endswith(suffix):
+                return (handler.cook(target, previous_fingerprint), handler)
+        else:
+            if self.default_handler:
+                return (self.default_handler.cook(target, previous_fingerprint), self.default_handler)
+            else:
+                raise IsengardConsistencyError(f"No handler for target `{target}` (is discriminant suffix valid ?)")
+
+
 T = TypeVar('T')
 
 
 class BaseTargetHandler(Generic[T]):
     TARGET_TYPE: Type[T]
+    DISCRIMINANT_SUFFIX: str
+    # Allow target that exists before any rule is run (i.e. basically the source
+    # files by opposition of the generated files and virtual targets)
+    ALLOW_NON_RULE_GENERATED_TARGET: bool
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(discriminant_suffix={self.DISCRIMINANT_SUFFIX!r}, target_type={self.TARGET_TYPE!r})"
 
     def cook(self, id: str, previous_fingerprint: Optional[bytes]) -> Optional[T]:
         raise NotImplementedError
@@ -41,14 +75,11 @@ class BaseTargetHandler(Generic[T]):
 
 class FileTargetHandler(BaseTargetHandler):
     TARGET_TYPE = Path
-
-    def __init__(self, discriminant: str = "#"):
-        self.discriminant = discriminant
+    DISCRIMINANT_SUFFIX = "#"
+    ALLOW_NON_RULE_GENERATED_TARGET = True
 
     def cook(self, id: str, previous_fingerprint: Optional[bytes]) -> Optional[Path]:
-        if not id.endswith(self.discriminant):
-            return None
-        return Path(id[:-1])
+        return Path(id)
 
     def clean(self, target: Path) -> None:
         try:
@@ -80,14 +111,11 @@ class FileTargetHandler(BaseTargetHandler):
 
 class FolderTargetHandler(BaseTargetHandler):
     TARGET_TYPE = Path
-
-    def __init__(self, discriminant: str = "/"):
-        self.discriminant = discriminant
+    DISCRIMINANT_SUFFIX = "/"
+    ALLOW_NON_RULE_GENERATED_TARGET = True
 
     def cook(self, id: str, previous_fingerprint: Optional[bytes]) -> Optional[Path]:
-        if not id.endswith(self.discriminant):
-            return None
-        return Path(id[:-1])
+        return Path(id)
 
     def clean(self, target: Path) -> None:
         # TODO: be sure about that...
@@ -114,13 +142,10 @@ class VirtualTargetHandler(BaseTargetHandler):
     """
 
     TARGET_TYPE = str
-
-    def __init__(self, discriminant: str = "@"):
-        self.discriminant = discriminant
+    DISCRIMINANT_SUFFIX = "@"
+    ALLOW_NON_RULE_GENERATED_TARGET = False
 
     def cook(self, id: str, previous_fingerprint: Optional[bytes]) -> Optional[str]:
-        if not id.endswith(self.discriminant):
-            return None
         return id
 
     def clean(self, id: str) -> None:
@@ -142,9 +167,9 @@ class DeferredTarget:
 
     def resolve(self, target: Any, handler: BaseTargetHandler) -> None:
         if not isinstance(target, handler.TARGET_TYPE):
-            raise RuntimeError(f"Incorrect type for target, handler expects {handler.TARGET_TYPE}")
+            raise IsengardRunError(f"Incorrect type for target, handler expects `{handler.TARGET_TYPE}`")
         if hasattr(self, "_resolved"):
-            raise RuntimeError("Target already resolved !")
+            raise IsengardRunError("Target already resolved !")
         setattr(self, "_resolved", (target, handler))
 
     @property
@@ -170,9 +195,8 @@ class DeferredTargetHandler(BaseTargetHandler):
     """
 
     TARGET_TYPE = DeferredTarget
-
-    def __init__(self, discriminant: str = "?"):
-        self.discriminant = discriminant
+    DISCRIMINANT_SUFFIX = "?"
+    ALLOW_NON_RULE_GENERATED_TARGET = False
 
     def _load_previous_fingerprint(self, previous_fingerprint: bytes) -> Optional[Tuple[Any, BaseTargetHandler, bytes]]:
         # Resolved target info has been stored in the fingerprint, so cunning !
@@ -185,8 +209,6 @@ class DeferredTargetHandler(BaseTargetHandler):
         return resolved_target, resolved_handler, resolved_previous_fingerprint
 
     def cook(self, id: str, previous_fingerprint: Optional[bytes]) -> Optional[DeferredTarget]:
-        if not id.endswith(self.discriminant):
-            return None
         target = DeferredTarget(id)
         if previous_fingerprint:
             resolved = self._load_previous_fingerprint(previous_fingerprint)
