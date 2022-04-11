@@ -34,8 +34,8 @@ def test_ok(collector, rule, config):
     collector.add_lazy_config(lambda cflags, cc: None, id="ldflags")
 
     def lazy_rule_gen(register_rule):
-        @register_rule(output="foo.so", input="foo.o")
-        def linkstuff(output, input, ldflags, cc):
+        @register_rule(output="foo.so", input="foo.o", id="linkstuff")
+        def whatever(output, input, ldflags, cc):
             pass
 
     collector.add_lazy_rule(lazy_rule_gen)
@@ -44,38 +44,69 @@ def test_ok(collector, rule, config):
         assert cc == config["cc"]
 
         @register_rule(outputs=["foo.c", "foo_api.h"], inputs=["foo.pyx", "bar.pyi"])
-        def linkstuff(outputs, inputs):
+        def generate_foo_c(outputs, inputs):
             pass
 
         @register_rule(outputs=["foo.o"], inputs=["foo.c"])
-        def linkstuff(outputs, inputs, cc, cflags):
+        def compile_foo_c(outputs, inputs, cc, cflags):
             pass
 
     collector.add_lazy_rule(lazy_rule_gen_multiple)
 
     resolved_rules = collector.configure(**config)
-    assert len(resolved_rules) == 4
-    breakpoint()
-    # TODO: test clashing lazy rule namings !
-    assert {r.id for r in resolved_rules} == {'isengard2.tests.test_collector.linkstuff', 'compile_x'}
+    assert resolved_rules.keys() == {
+        'compile_x',
+        'isengard2.tests.test_collector.compile_foo_c',
+        'isengard2.tests.test_collector.generate_foo_c',
+        'linkstuff',
+    }
 
 
-def test_rule_duplication(collector, rule, config):
+@pytest.mark.parametrize("kind", ["same_rule", "same_id"])
+def test_rule_duplication(collector, rule, config, kind):
     collector.add_rule(rule)
-    collector.add_rule(rule)
+
+    if kind == "same_rule":
+        collector.add_rule(rule)
+    else:
+        assert kind == "same_id"
+        rule2 = Rule(
+            fn=lambda output: None,
+            id=rule.id,
+            output="whatever#",
+        )
+        collector.add_rule(rule2)
 
     with pytest.raises(IsengardConsistencyError):
         collector.configure(**config)
 
 
-def test_lazy_rule_duplication(collector):
+@pytest.mark.parametrize("kind", ["same_rule", "same_id", "with_non_lazy_rule"])
+def test_lazy_rule_duplication(collector, kind):
     def genrule(register_rule):
         @register_rule(output="foo")
         def my_rule(output):
             pass
+    collector.add_lazy_rule(genrule)
 
-    collector.add_lazy_rule(genrule)
-    collector.add_lazy_rule(genrule)
+    if kind == "same_rule":
+        collector.add_lazy_rule(genrule)
+
+    elif kind == "same_id":
+        def genrule2(register_rule):
+            @register_rule(output="foo", id="isengard2.tests.test_collector.my_rule")
+            def whatever(output):
+                pass
+        collector.add_lazy_rule(genrule2)
+
+    else:
+        assert kind == "with_non_lazy_rule"
+        rule2 = Rule(
+            fn=lambda output: None,
+            id="isengard2.tests.test_collector.my_rule",
+            output="whatever#",
+        )
+        collector.add_rule(rule2)
 
     with pytest.raises(IsengardConsistencyError):
         collector.configure()
@@ -106,7 +137,7 @@ def test_lazy_config_duplication_with_regular_config(collector):
     def foo():
         pass
 
-    collector.add_lazy_config(foo)
+    collector.add_lazy_config(foo, id="foo")
 
     with pytest.raises(IsengardConsistencyError):
         collector.configure(foo=42)

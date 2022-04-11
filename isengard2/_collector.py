@@ -39,10 +39,10 @@ class Collector:
     ):
         # Extract params early to provide better error report
         params = extract_params_from_signature(fn)
-        id = id or fn.__name__
+        id = id or f"{fn.__module__}.{fn.__name__}"
         self.lazy_configs.append((id, fn, params))
 
-    def configure(self, **config: ConstTypes) -> List[ResolvedRule]:
+    def configure(self, **config: ConstTypes) -> Dict[str, ResolvedRule]:
         # First, resolve lazy config
         to_run = self.lazy_configs
         cannot_run_yet = []
@@ -113,7 +113,7 @@ class Collector:
 
         # Finally resolve inputs/outputs and check config params in each rule
         allowed_params = INPUT_OUTPUT_CONFIG_NAMES | config.keys()
-        resolved_rules = []
+        resolved_rules: Dict[str, ResolvedRule] = {}
         target_to_rule: Dict[str, str] = {}
         for rule in rules:
             resolved_inputs = []
@@ -147,14 +147,17 @@ class Collector:
                     f"Rule `{rule.id}` contains unknown config item(s) {missings}"
                 )
 
-            resolved_rules.append(ResolvedRule(
+            resolved_rule = ResolvedRule(
                 id=rule.id,
                 fn=rule.fn,
                 params=rule.params,
                 outputs=rule.outputs,
                 inputs=rule.inputs,
                 resolved_outputs=resolved_outputs, resolved_inputs=resolved_inputs
-            ))
+            )
+            setted = resolved_rules.setdefault(rule.id, resolved_rule)
+            if setted is not resolved_rule:
+                raise IsengardConsistencyError(f"Multiple rules have the same ID `{rule.id}`: {setted} and {resolved_rule}")
 
         # All set !
         return resolved_rules
