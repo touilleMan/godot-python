@@ -5,7 +5,7 @@ from hashlib import sha256
 from os import stat
 from stat import S_ISDIR
 import pickle
-# from shutil import rmtree
+from shutil import rmtree
 
 from ._exceptions import IsengardDefinitionError, IsengardConsistencyError, IsengardRunError
 from ._const import ConstTypes
@@ -15,6 +15,8 @@ from ._const import ConstTypes
 # that are relative to their rule's workdir and contains config variables.
 # Resolution turn them into unique absolute ID (e.g. `/home/x/project/build/foo.c#`,
 # `/home/x/project/bar.log#`)
+# Note both unresolved and resolved targets must contain a discriminant suffix.
+UnresolvedTargetID = NewType('UnresolvedTargetID', str)
 ResolvedTargetID = NewType('ResolvedTargetID', str)
 
 
@@ -37,10 +39,11 @@ class TargetHandlersBundle:
     def resolve_target(self, target: str, config: Dict[str, ConstTypes], workdir: Path) -> Tuple[ResolvedTargetID, "BaseTargetHandler"]:
         for suffix, handler in self.handler_per_suffix.items():
             if target.endswith(suffix):
-                return (handler.resolve(target, config, workdir), handler)
+                return (handler.resolve(UnresolvedTargetID(target), config, workdir), handler)
         else:
             if self.default_handler:
-                return (self.default_handler.resolve(target, config, workdir), self.default_handler)
+                patched_target = UnresolvedTargetID(target + self.default_handler.DISCRIMINANT_SUFFIX)
+                return (self.default_handler.resolve(patched_target, config, workdir), self.default_handler)
             else:
                 raise IsengardConsistencyError(f"No handler for target `{target}` (is discriminant suffix valid ?)")
 
@@ -68,7 +71,7 @@ class BaseTargetHandler(Generic[T]):
     def __repr__(self) -> str:
         return f"{type(self).__name__}(discriminant_suffix={self.DISCRIMINANT_SUFFIX!r}, target_type={self.TARGET_TYPE!r})"
 
-    def resolve(self, id: str, config: Dict[str, ConstTypes], workdir: Path) -> ResolvedTargetID:
+    def resolve(self, id: UnresolvedTargetID, config: Dict[str, ConstTypes], workdir: Path) -> ResolvedTargetID:
         try:
             return ResolvedTargetID(id.format(**config))
         except KeyError as exc:
@@ -79,14 +82,14 @@ class BaseTargetHandler(Generic[T]):
     def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> T:
         raise NotImplementedError
 
-    def clean(self, target: T) -> None:
+    def clean(self, cooked: T) -> None:
         raise NotImplementedError
 
-    def compute_fingerprint(self, target: T) -> Optional[bytes]:
+    def compute_fingerprint(self, cooked: T) -> Optional[bytes]:
         raise NotImplementedError
 
-    def need_rebuild(self, target: T, previous_fingerprint: bytes) -> bool:
-        return self.compute_fingerprint(target) == previous_fingerprint
+    def need_rebuild(self, cooked: T, previous_fingerprint: bytes) -> bool:
+        return self.compute_fingerprint(cooked) != previous_fingerprint
 
 
 class FileTargetHandler(BaseTargetHandler):
@@ -94,41 +97,43 @@ class FileTargetHandler(BaseTargetHandler):
     DISCRIMINANT_SUFFIX = "#"
     ALLOW_NON_RULE_GENERATED_TARGET = True
 
-    def resolve(self, id: str, config: Dict[str, ConstTypes], workdir: Path) -> ResolvedTargetID:
+    def resolve(self, id: UnresolvedTargetID, config: Dict[str, ConstTypes], workdir: Path) -> ResolvedTargetID:
         resolved = super().resolve(id, config, workdir)
         if resolved:
+            # Note `resolved` contains the discriminant suffix, hence `Path(resolved)`
+            # doesn't really correspond to the actual cooked path
             if not Path(resolved).is_absolute():
                 return ResolvedTargetID(str(workdir / resolved))
         return resolved
 
     def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> Path:
-        return Path(id)
+        return Path(id[:-1])
 
-    def clean(self, target: Path) -> None:
+    def clean(self, cooked: Path) -> None:
         try:
-            target.unlink()
+            cooked.unlink()
         except FileNotFoundError:
             pass
 
-    def compute_fingerprint(self, target: Path) -> Optional[bytes]:
+    def compute_fingerprint(self, cooked: Path) -> Optional[bytes]:
         fingerprint = bytearray(40)  # 8 bytes timestamp + 32 bytes sha256 hash
         try:
-            fingerprint[:32] = pack("!q", stat(target).st_mtime)
-            with open(target, "rb") as fd:
-                fingerprint[32:] = sha256(fd.read()).digest()
+            fingerprint[:8] = pack("!d", stat(cooked).st_mtime)
+            with open(cooked, "rb") as fd:
+                fingerprint[8:] = sha256(fd.read()).digest()
             return fingerprint
-        except FileNotFoundError:
+        except (FileNotFoundError, IsADirectoryError):
             return None
 
-    def need_rebuild(self, target: Path, previous_fingerprint: bytes) -> bool:
+    def need_rebuild(self, cooked: Path, previous_fingerprint: bytes) -> bool:
         try:
-            if previous_fingerprint[:32] != pack("!q", stat(target).st_mtime):
+            if previous_fingerprint[:8] != pack("!d", stat(cooked).st_mtime):
                 return True
-            with open(target, "rb") as fd:
-                if previous_fingerprint[32:] != sha256(fd.read()).digest():
+            with open(cooked, "rb") as fd:
+                if previous_fingerprint[8:] != sha256(fd.read()).digest():
                     return True
             return False
-        except FileNotFoundError:
+        except (FileNotFoundError, IsADirectoryError):
             return True
 
 
@@ -137,31 +142,32 @@ class FolderTargetHandler(BaseTargetHandler):
     DISCRIMINANT_SUFFIX = "/"
     ALLOW_NON_RULE_GENERATED_TARGET = True
 
-    def resolve(self, id: str, config: Dict[str, ConstTypes], workdir: Path) -> ResolvedTargetID:
+    def resolve(self, id: UnresolvedTargetID, config: Dict[str, ConstTypes], workdir: Path) -> ResolvedTargetID:
         resolved = super().resolve(id, config, workdir)
         if resolved:
+            # Note `resolved` contains the discriminant suffix, hence `Path(resolved)`
+            # doesn't really correspond to the actual cooked path
             if not Path(resolved).is_absolute():
-                return ResolvedTargetID(str(workdir / resolved))
+                # Discriminant being a `/` is is removed when converting Path back to str
+                return ResolvedTargetID(str(workdir / resolved) + "/")
         return resolved
 
     def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> Path:
-        return Path(id)
+        return Path(id[:-1])
 
-    def clean(self, target: Path) -> None:
-        # TODO: be sure about that...
-        # try:
-        #     rmtree(target)
-        # except FileNotFoundError:
-        #     pass
-        print(f"Now, should be doing `rm -rf {target}`")
+    def clean(self, cooked: Path) -> None:
+        try:
+            rmtree(cooked)
+        except FileNotFoundError:
+            pass
 
-    def compute_fingerprint(self, target: Path) -> Optional[bytes]:
+    def compute_fingerprint(self, cooked: Path) -> Optional[bytes]:
         # TODO: recursively check the folder ?
         try:
-            id_stats = stat(target)
+            id_stats = stat(cooked)
             if not S_ISDIR(id_stats.st_mode):
                 return None
-            return pack("!q", id_stats.st_mtime)
+            return pack("!d", id_stats.st_mtime)
         except FileNotFoundError:
             return None
 
@@ -178,13 +184,13 @@ class VirtualTargetHandler(BaseTargetHandler):
     def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> str:
         return id
 
-    def clean(self, id: str) -> None:
+    def clean(self, cooked: str) -> None:
         pass
 
-    def compute_fingerprint(self, id: str) -> Optional[bytes]:
+    def compute_fingerprint(self, cooked: str) -> Optional[bytes]:
         return None
 
-    def need_rebuild(self, target: str, previous_fingerprint: bytes) -> bool:
+    def need_rebuild(self, cooked: str, previous_fingerprint: bytes) -> bool:
         return True
 
 
@@ -193,7 +199,6 @@ class DeferredTarget:
 
     def __init__(self, target: Any):
         self.target = target
-        self._resolved = None
 
     def resolve(self, target: Any, handler: BaseTargetHandler) -> None:
         if not isinstance(target, handler.TARGET_TYPE):
@@ -231,12 +236,11 @@ class DeferredTargetHandler(BaseTargetHandler):
     def _load_previous_fingerprint(self, previous_fingerprint: bytes) -> Optional[Tuple[Any, BaseTargetHandler, bytes]]:
         # Resolved target info has been stored in the fingerprint, so cunning !
         try:
-            resolved_target, resolved_handler, resolved_previous_fingerprint = pickle.loads(previous_fingerprint)
+            return pickle.loads(previous_fingerprint)
         except Exception:
             # Something wrong occured, we consider the previous fingerprint is
             # no longer compatible with the codebase and hence discard it
-            pass
-        return resolved_target, resolved_handler, resolved_previous_fingerprint
+            return None
 
     def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> DeferredTarget:
         target = DeferredTarget(id)
@@ -247,25 +251,25 @@ class DeferredTargetHandler(BaseTargetHandler):
                 target.resolve(resolved_target, resolved_handler)
         return target
 
-    def clean(self, target: DeferredTarget) -> None:
-        if not target.resolved:
+    def clean(self, cooked: DeferredTarget) -> None:
+        if not cooked.resolved:
             return None
-        resolved_target, resolved_handler = target.resolved
+        resolved_target, resolved_handler = cooked.resolved
         resolved_handler.clean(resolved_target)
 
-    def compute_fingerprint(self, target: DeferredTarget) -> Optional[bytes]:
-        if not target.resolved:
+    def compute_fingerprint(self, cooked: DeferredTarget) -> Optional[bytes]:
+        if not cooked.resolved:
             return None
 
-        resolved_target, resolved_handler = target.resolved
+        resolved_target, resolved_handler = cooked.resolved
         resolved_fingerprint = resolved_handler.compute_fingerprint(resolved_target)
 
         return pickle.dumps((resolved_target, resolved_handler, resolved_fingerprint))
 
-    def need_rebuild(self, target: DeferredTarget, previous_fingerprint: bytes) -> bool:
-        if not target.resolved:
+    def need_rebuild(self, cooked: DeferredTarget, previous_fingerprint: bytes) -> bool:
+        if not cooked.resolved:
             return True
-        resolved_target, resolved_handler = target.resolved
+        resolved_target, resolved_handler = cooked.resolved
         resolved = self._load_previous_fingerprint(previous_fingerprint)
         if not resolved:
             return True
