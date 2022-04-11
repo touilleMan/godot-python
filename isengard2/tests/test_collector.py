@@ -40,7 +40,7 @@ def test_ok(collector, rule, config):
     collector.add_lazy_config("ldflags", lambda cflags, cc: None)
 
     def lazy_rule_gen(register_rule):
-        @register_rule(output="foo.so", input="foo.o", id="linkstuff")
+        @register_rule(output="foo.so#", input="foo.o#", id="linkstuff")
         def whatever(output, input, ldflags, cc):
             pass
 
@@ -49,11 +49,11 @@ def test_ok(collector, rule, config):
     def lazy_rule_gen_multiple(register_rule, cc):
         assert cc == config["cc"]
 
-        @register_rule(outputs=["foo.c", "foo_api.h"], inputs=["foo.pyx", "bar.pyi"])
+        @register_rule(outputs=["foo.c#", "foo_api.h#"], inputs=["foo.pyx#", "bar.pyi#"])
         def generate_foo_c(outputs, inputs):
             pass
 
-        @register_rule(outputs=["foo.o"], inputs=["foo.c"])
+        @register_rule(outputs=["foo.o#"], inputs=["foo.c#"])
         def compile_foo_c(outputs, inputs, cc, cflags):
             pass
 

@@ -1,10 +1,12 @@
 from typing import Optional, List, Dict, Sequence, Tuple, Any
 from pathlib import Path
+from hashlib import sha256
+from pickle import dumps as pickle_dumps
 
 from ._rule import ResolvedRule
 from ._const import ConstTypes
 from ._exceptions import IsengardRunError, IsengardUnknownTargetError, IsengardConsistencyError
-from ._target import TargetHandlersBundle, BaseTargetHandler
+from ._target import TargetHandlersBundle, BaseTargetHandler, ResolvedTargetID
 from ._db import DB
 
 
@@ -18,7 +20,7 @@ class Runner:
         self.target_handlers = target_handlers
         self.db_path = db_path
 
-    def clean(self, target: str) -> None:
+    def clean(self, target: ResolvedTargetID) -> None:
         try:
             rule = self.target_to_rule[target]
         except KeyError:
@@ -54,11 +56,11 @@ class Runner:
         with DB.connect(self.db_path) as db:
             _clean(rule, [])
 
-    def run(self, target: str) -> bool:
+    def run(self, target: ResolvedTargetID) -> bool:
         # {<target>: (<cooked>, <handler>, <has_changed>)}
         targets_eval_cache: Dict[str, Tuple[Any, BaseTargetHandler, bool]] = {}
 
-        def _run(target: str, parent_rule: Optional[ResolvedRule]) -> Tuple[Any, BaseTargetHandler, bool]:
+        def _run(target: ResolvedTargetID, parent_rule: Optional[ResolvedRule]) -> Tuple[Any, BaseTargetHandler, bool]:
             # 0) Fast track if the target's rule has already been evaluated
             try:
                 return targets_eval_cache[target]
@@ -90,16 +92,36 @@ class Runner:
             rebuild_needed = False
             inputs: List[Any] = []
 
+            # Run fingerprint is computed from the config and the rule's ID.
+            # Hence we don't check if the rule's code itself has changed (the
+            # user should declare the script file as input of the rule if this
+            # check in needed)
+            h = sha256(rule.id.encode("utf8"))
+            for k in sorted(rule.needed_config):
+                h.update(pickle_dumps(self.config[k]))
+            run_fingerprint = h.digest()
+
             # 2) Evaluate each input
             for input_target in rule.resolved_inputs:
                 input_cooked, _, input_has_changed = _run(input_target, rule)
                 rebuild_needed |= input_has_changed
                 inputs.append(input_cooked)
 
-            # 3) Evaluate the outputs
-            outputs: List[Any] = []
+            # 3) No inputs have changed, check if the rule's config have
+            # changed since it last run
+            if not rebuild_needed:
+                rule_previous_run_id = db.fetch_rule_previous_run(run_fingerprint)
+                if rule_previous_run_id is None:
+                    # No run occured with this fingerprint
+                    rebuild_needed = True
+
+            # 4) Evaluate the outputs
+            outputs: List[Tuple[ResolvedTargetID, Any, BaseTargetHandler]] = []
             for output_target in rule.resolved_outputs:
-                output_previous_fingerprint = db.fetch_previous_fingerprint(output_target)
+                if rule_previous_run_id:
+                    output_previous_fingerprint = db.fetch_target_output_fingerprint(rule_previous_run_id, output_target)
+                else:
+                    output_previous_fingerprint = None
                 output_cooked, output_handler = self.target_handlers.cook_target(output_target, output_previous_fingerprint)
                 if output_previous_fingerprint is not None:
                     rebuild_needed |= handler.need_rebuild(output_cooked, output_previous_fingerprint)
@@ -107,7 +129,7 @@ class Runner:
                     rebuild_needed = True
                 outputs.append((output_target, output_cooked, output_handler))
 
-            # 4) Actually run the rule if needed
+            # 5) Actually run the rule if needed
             if rebuild_needed:
                 print(f"> {rule.id}")
                 try:
@@ -115,9 +137,17 @@ class Runner:
                 except Exception as exc:
                     raise IsengardRunError(f"Error in rule `{rule.id}`: {exc}") from exc
 
-            # 5) Update the build cache
+            # 6) Update the build cache
+            outputs_db = []
             for output_target, output_cooked, output_handler in outputs:
+                output_fingerprint = output_handler.compute_fingerprint(output_cooked)
+                # In theory output fingerprint should not be empty given we've just run
+                # the rule generating it, but the rule may be broken or a concurrent
+                # removal has just occured...
+                if output_fingerprint is not None:
+                    outputs_db.append((output_target, output_fingerprint))
                 targets_eval_cache[output_target] = (output_cooked, output_handler, rebuild_needed)
+            db.set_rule_previous_run(run_fingerprint, outputs_db)
 
             return targets_eval_cache[target]
 

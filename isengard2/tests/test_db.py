@@ -1,6 +1,7 @@
 import pytest
 import sqlite3
 from contextlib import contextmanager
+from pathlib import Path
 
 from .._exceptions import IsengardDBError
 from .._db import DB, DB_VERSION
@@ -107,3 +108,21 @@ def test_invalid_db_path(tmp_path):
     with pytest.raises(IsengardDBError):
         with DB.connect(path=tmp_path / "foo/bar.sqlite"):
             pass
+
+
+def test_access_run(memory_sqlite3):
+    run_fingerprint = b"<run fgp>"
+    with DB.connect(path=Path("foo.sqlite")) as db:
+        assert db.fetch_rule_previous_run(fingerprint=run_fingerprint) is None
+
+        run_id = db.set_rule_previous_run(fingerprint=run_fingerprint, outputs=[("/foo.c#", b"<foo fgp>"), ("/bar/", b"<bar fgp>")])
+
+        assert db.fetch_target_output_fingerprint(run_id=run_id, target="/foo.c#") == b"<foo fgp>"
+        assert db.fetch_target_output_fingerprint(run_id=run_id, target="/bar/") == b"<bar fgp>"
+
+        assert db.fetch_rule_previous_run(fingerprint=run_fingerprint) == run_id
+
+        run_id = db.set_rule_previous_run(fingerprint=run_fingerprint, outputs=[("/foo.c#", b"<foo2 fgp>"), ("spam?", b"<spam fgp>")])
+        assert db.fetch_target_output_fingerprint(run_id=run_id, target="/bar/") is None
+        assert db.fetch_target_output_fingerprint(run_id=run_id, target="/foo.c#") == b"<foo2 fgp>"
+        assert db.fetch_target_output_fingerprint(run_id=run_id, target="spam?") == b"<spam fgp>"
