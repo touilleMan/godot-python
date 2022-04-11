@@ -1,4 +1,4 @@
-from typing import Optional, List, Callable, Tuple, Any, Set, Dict
+from typing import Optional, List, Callable, Sequence, Tuple, Any, Set, Dict, Iterable
 
 from ._const import ConstTypes
 from ._exceptions import IsengardConsistencyError
@@ -13,38 +13,45 @@ class Collector:
     def __init__(self, target_handlers: List[BaseTargetHandler]):
         self.target_handlers = target_handlers
         self.rules: List[Rule] = []
-        self.lazy_rules: List[Tuple[str, Callable, Set[str]]] = []
-        self.lazy_configs: List[Tuple[str, Callable, Set[str]]] = []
+        # <id>: (<id>, <fn>, <fn params>)
+        self.lazy_rules: Dict[str, Tuple[str, Callable, Set[str]]] = {}
+        # <id>: (<id>, <fn>, <fn params>)
+        self.lazy_configs: Dict[str, Tuple[str, Callable, Set[str]]] = {}
 
     def add_rule(
         self,
         rule: Rule,
     ):
+        # Don't check for `rule.id` unicity given lazy rules are not generated yet
         self.rules.append(rule)
 
     def add_lazy_rule(
         self,
+        id: str,
         fn: Callable,
-        id: Optional[str] = None,
     ):
         # Extract params early to provide better error report
         params = extract_params_from_signature(fn)
-        id = id or f"{fn.__module__}.{fn.__name__}"
-        self.lazy_rules.append((id, fn, params))
+        value = (id, fn, params)
+        setted = self.lazy_rules.setdefault(id, value)
+        if setted is not value:
+            raise IsengardConsistencyError(f"Multiple lazy rules have the same ID `{id}`: {setted[0]} and {fn}")
 
     def add_lazy_config(
         self,
+        id: str,
         fn: Callable,
-        id: Optional[str] = None,
     ):
         # Extract params early to provide better error report
         params = extract_params_from_signature(fn)
-        id = id or f"{fn.__module__}.{fn.__name__}"
-        self.lazy_configs.append((id, fn, params))
+        value = (id, fn, params)
+        setted = self.lazy_configs.setdefault(id, value)
+        if setted is not value:
+            raise IsengardConsistencyError(f"Multiple lazy rules have the same ID `{id}`: {setted[0]} and {fn}")
 
     def configure(self, **config: ConstTypes) -> Dict[str, ResolvedRule]:
         # First, resolve lazy config
-        to_run = self.lazy_configs
+        to_run = self.lazy_configs.values()
         cannot_run_yet = []
         while to_run:
             for id, fn, params in to_run:
@@ -56,15 +63,14 @@ class Collector:
                         cannot_run_yet.append((id, fn, params))
                         break
                 else:
-                    if id in config:
-                        # Look if the name clash comes from another lazy config...
-                        other: Any = next((candidate_fn for candidate_id, candidate_fn, _ in self.lazy_configs if candidate_id == id), None)
-                        if not other or other is fn:
-                            other = config[id] 
+                    value = fn(**lc_kwargs)
+                    setted = config.setdefault(id, value)
+                    if setted is not value:
+                        # Lazy config IDs are check when added, hence the only possible
+                        # clash is between a lazy config and a regular config
                         raise IsengardConsistencyError(
-                            f"Config `{id}` is defined multiple times: {fn} and {other}"
+                            f"Config `{id}` is defined multiple times: {fn} and {config[id]!r}"
                         )
-                    config[id] = fn(**lc_kwargs)
 
             if to_run == cannot_run_yet:
                 # Unknown config or recursive dependency between two lazy configs
@@ -79,24 +85,28 @@ class Collector:
                         )
                 raise IsengardConsistencyError(f"Invalid lazy configs: {', '.join(errors)}")
             else:
-                to_run = cannot_run_yet
+                to_run = cannot_run_yet  # type: ignore
                 cannot_run_yet = []
 
         # Now we can resolve the lazy rules
         rules = self.rules.copy()
 
-        def register_rule(**kwargs):
-            def wrapper(fn):
-                rules.append(Rule(fn, **kwargs))
-                return fn
-            return wrapper
+        for lazy_rule_id, fn, params in self.lazy_rules.values():
 
-        for id, fn, params in self.lazy_rules:
+            def register_rule(id=None, **kwargs):
+                def wrapper(fn):
+                    nonlocal id
+                    id = id or f"{lazy_rule_id}::{fn.__name__}"
+                    rules.append(Rule(fn, id=id, **kwargs))
+                    return fn
+                return wrapper
+
             lr_kwargs: Dict[str, Any] = {"register_rule": register_rule}
             if "register_rule" not in params:
                 raise IsengardConsistencyError(
-                    f"Lazy rule `{id}` is missing mandatory `register_rule` parameter"
+                    f"Lazy rule `{lazy_rule_id}` is missing mandatory `register_rule` parameter"
                 )
+
             for k in params:
                 try:
                     lr_kwargs[k] = config[k]
@@ -107,8 +117,9 @@ class Collector:
                         f"`{x}`" for x in params - config.keys()
                     )
                     raise IsengardConsistencyError(
-                        f"Lazy rule `{id}` contains unknown config item(s) {missings}"
+                        f"Lazy rule `{lazy_rule_id}` contains unknown config item(s) {missings}"
                     )
+
             fn(**lr_kwargs)
 
         # Finally resolve inputs/outputs and check config params in each rule

@@ -70,7 +70,7 @@ class Rule:
         else:
             inputs = []
 
-        self.id = id or f"{fn.__module__}.{fn.__name__}"
+        self.id = id or fn.__name__
         self.outputs = outputs
         self.inputs = inputs
         self.fn = fn
@@ -81,7 +81,7 @@ class Rule:
         return self.params - INPUT_OUTPUT_CONFIG_NAMES
 
     def __repr__(self):
-        return f"<{type(self).__name__} {self.id}>"
+        return f"<{type(self).__name__} id={self.id} fn={self.fn}>"
 
 
 class ResolvedRule(Rule):

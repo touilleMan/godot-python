@@ -35,9 +35,8 @@ def test_good_init():
 
     def rule_fn(output, inputs):
         pass
-    rule_fn.__module__ = "foo.bar"
     rule = Rule(output="spam", inputs=["foo", "bar"], fn=rule_fn)
-    assert rule.id == "foo.bar.rule_fn"
+    assert rule.id == "rule_fn"
     assert rule.needed_config == set()
     assert rule.outputs == ["spam"]
     assert rule.inputs == ["foo", "bar"]
