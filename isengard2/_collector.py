@@ -64,12 +64,12 @@ class Collector:
                         break
                 else:
                     value = fn(**lc_kwargs)
-                    setted = config.setdefault(id, value)
-                    if setted is not value:
+                    c_setted = config.setdefault(id, value)
+                    if c_setted is not value:
                         # Lazy config IDs are check when added, hence the only possible
                         # clash is between a lazy config and a regular config
                         raise IsengardConsistencyError(
-                            f"Config `{id}` is defined multiple times: {fn} and {config[id]!r}"
+                            f"Config `{id}` is defined multiple times: {fn} and {c_setted!r}"
                         )
 
             if to_run == cannot_run_yet:
@@ -167,9 +167,9 @@ class Collector:
                 resolved_outputs=resolved_outputs,
                 resolved_inputs=resolved_inputs
             )
-            setted = resolved_rules.setdefault(rule.id, resolved_rule)
-            if setted is not resolved_rule:
-                raise IsengardConsistencyError(f"Multiple rules have the same ID `{rule.id}`: {setted!r} and {resolved_rule!r}")
+            r_setted = resolved_rules.setdefault(rule.id, resolved_rule)
+            if r_setted is not resolved_rule:
+                raise IsengardConsistencyError(f"Multiple rules have the same ID `{rule.id}`: {r_setted!r} and {resolved_rule!r}")
 
         # All set !
         return resolved_rules
