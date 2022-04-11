@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 
 from .._rule import Rule
 
@@ -27,7 +28,13 @@ def test_bad_init(kwargs):
 
 
 def test_good_init():
-    rule = Rule(outputs=["foo", "bar"], input="spam", fn=lambda outputs, input, conf1, conf2: None, id="good_rule")
+    rule = Rule(
+        id="good_rule",
+        fn=lambda outputs, input, conf1, conf2: None,
+        outputs=["foo", "bar"],
+        input="spam",
+        workdir=Path("/foo/bar"),
+    )
     assert rule.id == "good_rule"
     assert rule.needed_config == {"conf1", "conf2"}
     assert rule.outputs == ["foo", "bar"]
@@ -35,7 +42,12 @@ def test_good_init():
 
     def rule_fn(output, inputs):
         pass
-    rule = Rule(output="spam", inputs=["foo", "bar"], fn=rule_fn)
+    rule = Rule(
+        fn=rule_fn,
+        output="spam",
+        inputs=["foo", "bar"],
+        workdir=Path("/foo/bar"),
+    )
     assert rule.id == "rule_fn"
     assert rule.needed_config == set()
     assert rule.outputs == ["spam"]

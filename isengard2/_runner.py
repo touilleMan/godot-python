@@ -9,9 +9,9 @@ from ._db import DB
 
 
 class Runner:
-    def __init__(self, rules: List[ResolvedRule], config: Dict[str, ConstTypes], target_handlers: TargetHandlersBundle, db_path: Path):
+    def __init__(self, rules: Dict[str, ResolvedRule], config: Dict[str, ConstTypes], target_handlers: TargetHandlersBundle, db_path: Path):
         self.target_to_rule = {
-            output: rule for rule in rules for output in rule.resolved_outputs
+            output: rule for rule in rules.values() for output in rule.resolved_outputs
         }
         self.rules = rules
         self.config = config
@@ -54,7 +54,7 @@ class Runner:
         with DB.connect(self.db_path) as db:
             _clean(rule, [])
 
-    async def run(self, target: str) -> bool:
+    def run(self, target: str) -> bool:
         # {<target>: (<cooked>, <handler>, <has_changed>)}
         targets_eval_cache: Dict[str, Tuple[Any, BaseTargetHandler, bool]] = {}
 

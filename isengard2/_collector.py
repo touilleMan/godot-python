@@ -1,20 +1,21 @@
 from typing import Optional, List, Callable, Sequence, Tuple, Any, Set, Dict, Iterable
+from pathlib import Path
 
 from ._const import ConstTypes
 from ._exceptions import IsengardConsistencyError
 from ._rule import Rule, ResolvedRule, extract_params_from_signature, INPUT_OUTPUT_CONFIG_NAMES
-from ._target import BaseTargetHandler
+from ._target import TargetHandlersBundle, ResolvedTargetID
 
 
 RuleFn = Callable[..., Any]
 
 
 class Collector:
-    def __init__(self, target_handlers: List[BaseTargetHandler]):
+    def __init__(self, target_handlers: TargetHandlersBundle):
         self.target_handlers = target_handlers
         self.rules: List[Rule] = []
-        # <id>: (<id>, <fn>, <fn params>)
-        self.lazy_rules: Dict[str, Tuple[str, Callable, Set[str]]] = {}
+        # <id>: (<id>, <fn>, <fn params>, <workdir>)
+        self.lazy_rules: Dict[str, Tuple[str, Callable, Set[str], Path]] = {}
         # <id>: (<id>, <fn>, <fn params>)
         self.lazy_configs: Dict[str, Tuple[str, Callable, Set[str]]] = {}
 
@@ -29,10 +30,11 @@ class Collector:
         self,
         id: str,
         fn: Callable,
+        workdir: Path,
     ):
         # Extract params early to provide better error report
         params = extract_params_from_signature(fn)
-        value = (id, fn, params)
+        value = (id, fn, params, workdir)
         setted = self.lazy_rules.setdefault(id, value)
         if setted is not value:
             raise IsengardConsistencyError(f"Multiple lazy rules have the same ID `{id}`: {setted[0]} and {fn}")
@@ -91,64 +93,55 @@ class Collector:
         # Now we can resolve the lazy rules
         rules = self.rules.copy()
 
-        for lazy_rule_id, fn, params in self.lazy_rules.values():
+        for lr_id, lr_fn, lr_params, lr_workdir in self.lazy_rules.values():
 
-            def register_rule(id=None, **kwargs):
+            def register_rule(**kwargs):
                 def wrapper(fn):
-                    nonlocal id
-                    id = id or f"{lazy_rule_id}::{fn.__name__}"
-                    rules.append(Rule(fn, id=id, **kwargs))
+                    kwargs.setdefault("id", f"{lr_id}::{fn.__name__}")
+                    kwargs.setdefault("workdir", lr_workdir)
+                    kwargs["fn"] = fn
+                    rules.append(Rule(**kwargs))
                     return fn
                 return wrapper
 
             lr_kwargs: Dict[str, Any] = {"register_rule": register_rule}
-            if "register_rule" not in params:
+            if "register_rule" not in lr_params:
                 raise IsengardConsistencyError(
-                    f"Lazy rule `{lazy_rule_id}` is missing mandatory `register_rule` parameter"
+                    f"Lazy rule `{lr_id}` is missing mandatory `register_rule` parameter"
                 )
 
-            for k in params:
+            for k in lr_params:
                 try:
                     lr_kwargs[k] = config[k]
                 except KeyError:
                     if k == "register_rule":
                         continue
                     missings = "/".join(
-                        f"`{x}`" for x in params - config.keys()
+                        f"`{x}`" for x in lr_params - config.keys()
                     )
                     raise IsengardConsistencyError(
-                        f"Lazy rule `{lazy_rule_id}` contains unknown config item(s) {missings}"
+                        f"Lazy rule `{lr_id}` contains unknown config item(s) {missings}"
                     )
 
-            fn(**lr_kwargs)
+            lr_fn(**lr_kwargs)
 
         # Finally resolve inputs/outputs and check config params in each rule
         allowed_params = INPUT_OUTPUT_CONFIG_NAMES | config.keys()
         resolved_rules: Dict[str, ResolvedRule] = {}
         target_to_rule: Dict[str, str] = {}
         for rule in rules:
-            resolved_inputs: List[str] = []
-            for target in rule.inputs:
-                try:
-                    resolved_inputs.append(target.format(**config))
-                except KeyError as exc:
-                    raise IsengardConsistencyError(
-                        f"Invalid rule `{rule.id}`: input target `{target}` contains unknown configuration `{exc.args[0]}`"
-                    )
+            resolved_inputs: List[ResolvedTargetID] = []
+            for ri_target in rule.inputs:
+                resolved_inputs.append(self.target_handlers.resolve_target(ri_target, config, rule.workdir)[0])
 
-            resolved_outputs: List[str] = []
-            for target in rule.outputs:
-                try:
-                    resolved_outputs.append(target.format(**config))
-                except KeyError as exc:
+            resolved_outputs: List[ResolvedTargetID] = []
+            for ro_target in rule.outputs:
+                resolved_outputs.append(self.target_handlers.resolve_target(ro_target, config, rule.workdir)[0])
+                if ro_target in target_to_rule:
                     raise IsengardConsistencyError(
-                        f"Invalid rule `{rule.id}`: output target `{target}` contains unknown configuration `{exc.args[0]}`"
+                        f"Multiple rules to produce `{ro_target}`: `{rule.id}` and `{target_to_rule[ro_target]}`"
                     )
-                if target in target_to_rule:
-                    raise IsengardConsistencyError(
-                        f"Multiple rules to produce `{target}`: `{rule.id}` and `{target_to_rule[target]}`"
-                    )
-                target_to_rule[target] = rule.id
+                target_to_rule[ro_target] = rule.id
 
             missings = "/".join(
                 f"`{x}`" for x in rule.params - allowed_params
@@ -159,13 +152,14 @@ class Collector:
                 )
 
             resolved_rule = ResolvedRule(
+                workdir=rule.workdir,
                 id=rule.id,
                 fn=rule.fn,
                 params=rule.params,
                 outputs=rule.outputs,
                 inputs=rule.inputs,
                 resolved_outputs=resolved_outputs,
-                resolved_inputs=resolved_inputs
+                resolved_inputs=resolved_inputs,
             )
             r_setted = resolved_rules.setdefault(rule.id, resolved_rule)
             if r_setted is not resolved_rule:

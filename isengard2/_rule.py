@@ -1,7 +1,9 @@
 from typing import Callable, Set, Optional, Sequence, TypeVar, List, Dict, Any
 import inspect
+from pathlib import Path
 
 from ._const import ConstTypes
+from ._target import ResolvedTargetID
 
 
 INPUT_OUTPUT_CONFIG_NAMES = {"inputs", "input", "outputs", "output"}
@@ -24,6 +26,7 @@ def extract_params_from_signature(fn: Callable) -> Set[str]:
 
 class Rule:
     __slots__ = (
+        "workdir",
         "id",
         "outputs",
         "inputs",
@@ -33,6 +36,7 @@ class Rule:
 
     def __init__(
         self,
+        workdir: Path,
         fn: Callable,
         outputs: Optional[Sequence[str]] = None,
         output: Optional[str] = None,
@@ -70,6 +74,7 @@ class Rule:
         else:
             inputs = []
 
+        self.workdir = workdir
         self.id = id or fn.__name__
         self.outputs = outputs
         self.inputs = inputs
@@ -92,14 +97,16 @@ class ResolvedRule(Rule):
 
     def __init__(
         self,
+        workdir: Path,
         id: str,
         fn: Callable,
         params: Set[str],
         outputs: List[str],
         inputs: List[str],
-        resolved_outputs: List[str],
-        resolved_inputs: List[str],
+        resolved_outputs: List[ResolvedTargetID],
+        resolved_inputs: List[ResolvedTargetID],
     ):
+        self.workdir = workdir
         self.id = id
         self.fn = fn
         self.params = params

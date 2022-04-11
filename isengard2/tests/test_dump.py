@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 
 from .._dump import dump_graph
 from .._rule import ResolvedRule
@@ -13,6 +14,7 @@ def rule_factory(id, outputs, inputs, params, resolved_outputs=None, resolved_in
         inputs=inputs,
         resolved_outputs=resolved_outputs or outputs,
         resolved_inputs=resolved_inputs or inputs,
+        workdir=Path("/foo/bar"),
     )
 
 

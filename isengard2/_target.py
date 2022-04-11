@@ -1,4 +1,4 @@
-from typing import Optional, Any, TypeVar, Generic, Tuple, Type, Dict, Sequence
+from typing import Optional, Any, TypeVar, Generic, Tuple, Type, Dict, Sequence, NewType
 from pathlib import Path
 from struct import pack
 from hashlib import sha256
@@ -11,17 +11,15 @@ from ._exceptions import IsengardDefinitionError, IsengardConsistencyError, Isen
 from ._const import ConstTypes
 
 
-def resolve_target(target: str, config: Dict[str, ConstTypes]) -> str:
-    try:
-        return target.format(**config)
-    except KeyError as exc:
-        raise IsengardDefinitionError(
-            f"Missing configuration `{exc.args[0]}` needed in `{target}`"
-        )
+# Rules are defined with unresolved target ID (e.g. `{build}/foo.c#`, `bar.log#`)
+# that are relative to their rule's workdir and contains config variables.
+# Resolution turn them into unique absolute ID (e.g. `/home/x/project/build/foo.c#`,
+# `/home/x/project/bar.log#`)
+ResolvedTargetID = NewType('ResolvedTargetID', str)
 
 
 class TargetHandlersBundle:
-    def __init__(self, target_handlers: Sequence["BaseTargetHandler"], default_handler=Optional["BaseTargetHandler"]):
+    def __init__(self, target_handlers: Sequence["BaseTargetHandler"], default_handler: Optional["BaseTargetHandler"] =None):
         self.default_handler = default_handler
         handler_per_suffix: Dict[str, BaseTargetHandler] = {}
 
@@ -36,7 +34,17 @@ class TargetHandlersBundle:
 
         self.handler_per_suffix = handler_per_suffix
 
-    def cook_target(self, target: str, previous_fingerprint: Optional[bytes]) -> Tuple[Any, "BaseTargetHandler"]:
+    def resolve_target(self, target: str, config: Dict[str, ConstTypes], workdir: Path) -> Tuple[ResolvedTargetID, "BaseTargetHandler"]:
+        for suffix, handler in self.handler_per_suffix.items():
+            if target.endswith(suffix):
+                return (handler.resolve(target, config, workdir), handler)
+        else:
+            if self.default_handler:
+                return (self.default_handler.resolve(target, config, workdir), self.default_handler)
+            else:
+                raise IsengardConsistencyError(f"No handler for target `{target}` (is discriminant suffix valid ?)")
+
+    def cook_target(self, target: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> Tuple[Any, "BaseTargetHandler"]:
         for suffix, handler in self.handler_per_suffix.items():
             if target.endswith(suffix):
                 return (handler.cook(target, previous_fingerprint), handler)
@@ -60,7 +68,15 @@ class BaseTargetHandler(Generic[T]):
     def __repr__(self) -> str:
         return f"{type(self).__name__}(discriminant_suffix={self.DISCRIMINANT_SUFFIX!r}, target_type={self.TARGET_TYPE!r})"
 
-    def cook(self, id: str, previous_fingerprint: Optional[bytes]) -> Optional[T]:
+    def resolve(self, id: str, config: Dict[str, ConstTypes], workdir: Path) -> ResolvedTargetID:
+        try:
+            return ResolvedTargetID(id.format(**config))
+        except KeyError as exc:
+            raise IsengardDefinitionError(
+                f"Missing configuration `{exc.args[0]}` needed in `{id}`"
+            )
+
+    def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> T:
         raise NotImplementedError
 
     def clean(self, target: T) -> None:
@@ -78,7 +94,14 @@ class FileTargetHandler(BaseTargetHandler):
     DISCRIMINANT_SUFFIX = "#"
     ALLOW_NON_RULE_GENERATED_TARGET = True
 
-    def cook(self, id: str, previous_fingerprint: Optional[bytes]) -> Optional[Path]:
+    def resolve(self, id: str, config: Dict[str, ConstTypes], workdir: Path) -> ResolvedTargetID:
+        resolved = super().resolve(id, config, workdir)
+        if resolved:
+            if not Path(resolved).is_absolute():
+                return ResolvedTargetID(str(workdir / resolved))
+        return resolved
+
+    def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> Path:
         return Path(id)
 
     def clean(self, target: Path) -> None:
@@ -114,7 +137,14 @@ class FolderTargetHandler(BaseTargetHandler):
     DISCRIMINANT_SUFFIX = "/"
     ALLOW_NON_RULE_GENERATED_TARGET = True
 
-    def cook(self, id: str, previous_fingerprint: Optional[bytes]) -> Optional[Path]:
+    def resolve(self, id: str, config: Dict[str, ConstTypes], workdir: Path) -> ResolvedTargetID:
+        resolved = super().resolve(id, config, workdir)
+        if resolved:
+            if not Path(resolved).is_absolute():
+                return ResolvedTargetID(str(workdir / resolved))
+        return resolved
+
+    def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> Path:
         return Path(id)
 
     def clean(self, target: Path) -> None:
@@ -145,7 +175,7 @@ class VirtualTargetHandler(BaseTargetHandler):
     DISCRIMINANT_SUFFIX = "@"
     ALLOW_NON_RULE_GENERATED_TARGET = False
 
-    def cook(self, id: str, previous_fingerprint: Optional[bytes]) -> Optional[str]:
+    def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> str:
         return id
 
     def clean(self, id: str) -> None:
@@ -208,7 +238,7 @@ class DeferredTargetHandler(BaseTargetHandler):
             pass
         return resolved_target, resolved_handler, resolved_previous_fingerprint
 
-    def cook(self, id: str, previous_fingerprint: Optional[bytes]) -> Optional[DeferredTarget]:
+    def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> DeferredTarget:
         target = DeferredTarget(id)
         if previous_fingerprint:
             resolved = self._load_previous_fingerprint(previous_fingerprint)
