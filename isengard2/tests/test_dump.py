@@ -12,8 +12,8 @@ def rule_factory(id, outputs, inputs, params, resolved_outputs=None, resolved_in
         params=params,
         outputs=outputs,
         inputs=inputs,
-        resolved_outputs=resolved_outputs or outputs,
-        resolved_inputs=resolved_inputs or inputs,
+        resolved_outputs=resolved_outputs or [f"/foo/bar/{x}" for x in outputs],
+        resolved_inputs=resolved_inputs or [f"/foo/bar/{x}" for x in inputs],
         workdir=Path("/foo/bar"),
     )
 
@@ -24,7 +24,7 @@ def rules():
         rule_factory(
             id="generate_config_header",
             outputs=["{gen_dir}/config.h#"],
-            resolved_outputs=["generated/config.h#"],
+            resolved_outputs=["/foo/bar/generated/config.h#"],
             inputs=[],
             params={"host_platform"},
         ),
@@ -32,21 +32,21 @@ def rules():
             id="compile_x",
             outputs=["x.o#"],
             inputs=["x.c#", "{gen_dir}/config.h#"],
-            resolved_inputs=["x.c#", "generated/config.h#"],
+            resolved_inputs=["/foo/bar/x.c#", "/foo/bar/generated/config.h#"],
             params={"cc", "cflags"},
         ),
         rule_factory(
             id="compile_y",
             outputs=["y.o#"],
             inputs=["y.c#", "{gen_dir}/config.h#"],
-            resolved_inputs=["y.c#", "generated/config.h#"],
+            resolved_inputs=["/foo/bar/y.c#", "/foo/bar/generated/config.h#"],
             params={"cc", "cflags"},
         ),
         rule_factory(
             id="compile_z",
             outputs=["z.o#"],
             inputs=["z.c#", "{gen_dir}/config.h#"],
-            resolved_inputs=["z.c#", "generated/config.h#"],
+            resolved_inputs=["/foo/bar/z.c#", "/foo/bar/generated/config.h#"],
             params={"cc", "cflags"},
         ),
         rule_factory(
@@ -84,7 +84,7 @@ def test_unknown_target(rules):
 
 
 def test_single_target(rules):
-    assert dump_graph(rules, resolved_target_filter="x.o#") == (
+    assert dump_graph(rules, resolved_target_filter="/foo/bar/x.o#") == (
         "x.o#\n"
         "├──rule:compile_x\n"
         "├──configs:cc, cflags\n"
@@ -97,40 +97,41 @@ def test_single_target(rules):
 
 @pytest.mark.parametrize("display_resolved", (False, True))
 def test_full(rules, display_resolved):
-    gen_prefix = "generated/" if display_resolved else "{gen_dir}/"
+    gen_prefix = "/foo/bar/generated/" if display_resolved else "{gen_dir}/"
+    prefix = "/foo/bar/" if display_resolved else ""
     assert dump_graph(rules, display_resolved=display_resolved) == (
-        "a.out#\n"
+        "{prefix}a.out#\n"
         "├──rule:link_aout\n"
         "├──configs:cc, linkflags\n"
-        "├─xyz.so#\n"
+        "├─{prefix}xyz.so#\n"
         "│ ├──rule:link_xyz\n"
         "│ ├──configs:cc, linkflags\n"
-        "│ ├─x.o#\n"
+        "│ ├─{prefix}x.o#\n"
         "│ │ ├──rule:compile_x\n"
         "│ │ ├──configs:cc, cflags\n"
-        "│ │ ├─x.c#\n"
+        "│ │ ├─{prefix}x.c#\n"
         "│ │ └─{gen_prefix}config.h#\n"
         "│ │   ├──rule:generate_config_header\n"
         "│ │   └──configs:host_platform\n"
-        "│ ├─y.o#\n"
+        "│ ├─{prefix}y.o#\n"
         "│ │ ├──rule:compile_y\n"
         "│ │ ├──configs:cc, cflags\n"
-        "│ │ ├─y.c#\n"
+        "│ │ ├─{prefix}y.c#\n"
         "│ │ └─{gen_prefix}config.h#\n"
         "│ │   ├──rule:generate_config_header\n"
         "│ │   └─…\n"
-        "│ └─z.o#\n"
+        "│ └─{prefix}z.o#\n"
         "│   ├──rule:compile_z\n"
         "│   ├──configs:cc, cflags\n"
-        "│   ├─z.c#\n"
+        "│   ├─{prefix}z.c#\n"
         "│   └─{gen_prefix}config.h#\n"
         "│     ├──rule:generate_config_header\n"
         "│     └─…\n"
-        "└─main.o#\n"
+        "└─{prefix}main.o#\n"
         "  ├──rule:compile_main\n"
         "  ├──configs:cc, cflags\n"
-        "  └─main.c#\n"
-        "xyz.a#\n"
+        "  └─{prefix}main.c#\n"
+        "{prefix}xyz.a#\n"
         "├──rule:link_xyz\n"
         "└─…\n"
-    ).format(gen_prefix=gen_prefix)
+    ).format(prefix=prefix, gen_prefix=gen_prefix)
