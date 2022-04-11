@@ -52,7 +52,7 @@ class Collector:
     def configure(self, **config: ConstTypes) -> Dict[str, ResolvedRule]:
         # First, resolve lazy config
         to_run = self.lazy_configs.values()
-        cannot_run_yet = []
+        cannot_run_yet: List[Tuple[str, Callable, Set[str]]] = []
         while to_run:
             for id, fn, params in to_run:
                 lc_kwargs = {}
@@ -127,7 +127,7 @@ class Collector:
         resolved_rules: Dict[str, ResolvedRule] = {}
         target_to_rule: Dict[str, str] = {}
         for rule in rules:
-            resolved_inputs = []
+            resolved_inputs: List[str] = []
             for target in rule.inputs:
                 try:
                     resolved_inputs.append(target.format(**config))
@@ -136,7 +136,7 @@ class Collector:
                         f"Invalid rule `{rule.id}`: input target `{target}` contains unknown configuration `{exc.args[0]}`"
                     )
 
-            resolved_outputs = []
+            resolved_outputs: List[str] = []
             for target in rule.outputs:
                 try:
                     resolved_outputs.append(target.format(**config))
@@ -164,11 +164,12 @@ class Collector:
                 params=rule.params,
                 outputs=rule.outputs,
                 inputs=rule.inputs,
-                resolved_outputs=resolved_outputs, resolved_inputs=resolved_inputs
+                resolved_outputs=resolved_outputs,
+                resolved_inputs=resolved_inputs
             )
             setted = resolved_rules.setdefault(rule.id, resolved_rule)
             if setted is not resolved_rule:
-                raise IsengardConsistencyError(f"Multiple rules have the same ID `{rule.id}`: {setted} and {resolved_rule}")
+                raise IsengardConsistencyError(f"Multiple rules have the same ID `{rule.id}`: {setted!r} and {resolved_rule!r}")
 
         # All set !
         return resolved_rules
