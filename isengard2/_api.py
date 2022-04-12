@@ -1,6 +1,6 @@
 from contextvars import ContextVar
 from pathlib import Path
-from typing import Dict, List, Sequence, Set, Callable, Union, Optional, Any, Union, TypeVar, Type
+from typing import Dict, Tuple, List, Sequence, Set, Callable, Union, Optional, Any, Union, TypeVar, Type
 
 from ._const import ConstTypes, validate_const_data
 from ._rule import Rule, INPUT_OUTPUT_CONFIG_NAMES
@@ -87,7 +87,7 @@ class Isengard:
     def clean(self, target: Union[TargetLike, Path]) -> None:
         raise NotImplementedError
 
-    def list_configured_targets(self) -> Sequence[Union[Path, str]]:
+    def list_targets(self) -> List[Tuple[str, str]]:
         raise NotImplementedError
 
     def dump_graph(

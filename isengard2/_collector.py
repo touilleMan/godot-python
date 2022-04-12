@@ -34,6 +34,13 @@ class Collector:
     ):
         # Extract params early to provide better error report
         params = extract_params_from_signature(fn)
+        # By removing the mandatory `register_rule` param, we obtain the needed configs
+        try:
+            params.remove("register_rule")
+        except KeyError:
+            raise IsengardConsistencyError(
+                f"Lazy rule `{id}` is missing mandatory `register_rule` parameter"
+            )
         value = (id, fn, params, workdir)
         setted = self.lazy_rules.setdefault(id, value)
         if setted is not value:
@@ -93,31 +100,25 @@ class Collector:
         # Now we can resolve the lazy rules
         rules = self.rules.copy()
 
-        for lr_id, lr_fn, lr_params, lr_workdir in self.lazy_rules.values():
+        for lr_id, lr_fn, lr_needed_config, lr_workdir in self.lazy_rules.values():
 
             def register_rule(**kwargs):
                 def wrapper(fn):
                     kwargs.setdefault("id", f"{lr_id}::{fn.__name__}")
                     kwargs.setdefault("workdir", lr_workdir)
+                    kwargs["extra_config"] = lr_needed_config
                     kwargs["fn"] = fn
                     rules.append(Rule(**kwargs))
                     return fn
                 return wrapper
 
             lr_kwargs: Dict[str, Any] = {"register_rule": register_rule}
-            if "register_rule" not in lr_params:
-                raise IsengardConsistencyError(
-                    f"Lazy rule `{lr_id}` is missing mandatory `register_rule` parameter"
-                )
-
-            for k in lr_params:
+            for k in lr_needed_config:
                 try:
                     lr_kwargs[k] = config[k]
                 except KeyError:
-                    if k == "register_rule":
-                        continue
                     missings = "/".join(
-                        f"`{x}`" for x in lr_params - config.keys()
+                        f"`{x}`" for x in lr_needed_config - config.keys()
                     )
                     raise IsengardConsistencyError(
                         f"Lazy rule `{lr_id}` contains unknown config item(s) {missings}"

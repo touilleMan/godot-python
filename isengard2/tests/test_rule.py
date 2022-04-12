@@ -52,3 +52,15 @@ def test_good_init():
     assert rule.needed_config == set()
     assert rule.outputs == ["spam"]
     assert rule.inputs == ["foo", "bar"]
+
+
+def test_rule_with_extra_config():
+    rule = Rule(
+        fn=lambda output, a: a + 1,
+        workdir=Path("/foo/bar"),
+        output="foo",
+        extra_config={"b", "c"},
+    )
+
+    assert rule.needed_config == {"a", "b", "c"}
+    assert rule.fn(output=None, a=41, b=2, c=3) == 42

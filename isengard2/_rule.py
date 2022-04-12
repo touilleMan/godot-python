@@ -1,6 +1,7 @@
 from typing import Callable, Set, Optional, Sequence, TypeVar, List, Dict, Any
 import inspect
 from pathlib import Path
+from functools import wraps
 
 from ._const import ConstTypes
 from ._target import ResolvedTargetID
@@ -43,6 +44,7 @@ class Rule:
         inputs: Optional[Sequence[str]] = None,
         input: Optional[str] = None,
         id: Optional[str] = None,
+        extra_config: Optional[Set[str]] = None
     ):
         params = extract_params_from_signature(fn)
 
@@ -80,6 +82,20 @@ class Rule:
         self.inputs = inputs
         self.fn = fn
         self.params = params
+
+        # Lazy-generated rules can rely on additonal configs that is not part of the
+        # function's parameters. We solve this by wrapping the function to accept
+        # the additional parameters.
+        if extra_config:
+            extra_config -= params
+            if extra_config:
+                @wraps(fn)
+                def fn_with_extra_params(**kwargs):
+                    for k in extra_config:
+                        kwargs.pop(k)
+                    return fn(**kwargs)
+                self.fn = fn_with_extra_params
+                self.params |= extra_config
 
     @property
     def needed_config(self) -> Set[str]:

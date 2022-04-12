@@ -103,8 +103,10 @@ def test_rule_duplication(collector, rule, config, kind):
 
     if kind == "same_rule":
         collector.add_rule(rule)
+        expected_err = "Multiple rules to produce `x.o#`: `compile_x` and `compile_x`"
     else:
         assert kind == "same_id"
+        expected_err = r'Multiple rules have the same ID `compile_x`: <ResolvedRule id=compile_x .*> and <ResolvedRule id=compile_x .*>'
         rule2 = Rule(
             id=rule.id,
             workdir=WORKDIR,
@@ -113,7 +115,7 @@ def test_rule_duplication(collector, rule, config, kind):
         )
         collector.add_rule(rule2)
 
-    with pytest.raises(IsengardConsistencyError):
+    with pytest.raises(IsengardConsistencyError, match=expected_err):
         collector.configure(**config)
 
 
@@ -124,14 +126,16 @@ def test_lazy_rule_duplication(collector, kind):
     collector.add_lazy_rule(id="genrule", fn=genrule, workdir=WORKDIR)
 
     if kind == "same_rule":
-        with pytest.raises(IsengardConsistencyError):
+        expected_err = r'Multiple lazy rules have the same ID `genrule`: genrule and <function'
+        with pytest.raises(IsengardConsistencyError, match=expected_err):
             collector.add_lazy_rule(id="genrule", fn=genrule, workdir=WORKDIR)
 
     else:
         assert kind == "same_id"
         def genrule2(register_rule):
             pass
-        with pytest.raises(IsengardConsistencyError):
+        expected_err = r'Multiple lazy rules have the same ID `genrule`: genrule and <function'
+        with pytest.raises(IsengardConsistencyError, match=expected_err):
             collector.add_lazy_rule(id="genrule", fn=genrule2, workdir=WORKDIR)
 
 
@@ -179,10 +183,9 @@ def test_lazy_rule_missing_register_rule_param(collector):
     def genrule():
         pass
 
-    collector.add_lazy_rule(id="genrule", fn=genrule, workdir=WORKDIR)
-
-    with pytest.raises(IsengardConsistencyError):
-        collector.configure()
+    expected_err = r'Lazy rule `genrule` is missing mandatory `register_rule` parameter'
+    with pytest.raises(IsengardConsistencyError, match=expected_err):
+        collector.add_lazy_rule(id="genrule", fn=genrule, workdir=WORKDIR)
 
 
 @pytest.mark.parametrize("kind", ["same_fn", "same_id"])
@@ -193,12 +196,14 @@ def test_lazy_config_duplication(collector, kind):
     collector.add_lazy_config("genconfig", genconfig)
 
     if kind == "same_fn":
-        with pytest.raises(IsengardConsistencyError):
+        expected_err = r"Multiple lazy rules have the same ID `genconfig`: genconfig and <function"
+        with pytest.raises(IsengardConsistencyError, match=expected_err):
             collector.add_lazy_config("genconfig", genconfig)
     elif kind == "same_id":
         def genconfig2():
             pass
-        with pytest.raises(IsengardConsistencyError):
+        expected_err = r"Multiple lazy rules have the same ID `genconfig`: genconfig and <function"
+        with pytest.raises(IsengardConsistencyError, match=expected_err):
             collector.add_lazy_config("genconfig", genconfig2)
 
 
@@ -209,7 +214,8 @@ def test_lazy_config_duplication_with_regular_config(collector):
 
     collector.add_lazy_config("foo", foo)
 
-    with pytest.raises(IsengardConsistencyError):
+    expected_err = r"Config `foo` is defined multiple times: <function .*> and 42"
+    with pytest.raises(IsengardConsistencyError, match=expected_err):
         collector.configure(foo=42)
 
 
@@ -218,5 +224,6 @@ def test_missing_config(collector, rule, config):
 
     config.pop("cc")
 
-    with pytest.raises(IsengardConsistencyError):
+    expected_err = r"Rule `compile_x` contains unknown config item\(s\) `cc`"
+    with pytest.raises(IsengardConsistencyError, match=expected_err):
         collector.configure(**config)
