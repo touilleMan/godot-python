@@ -29,8 +29,7 @@ def rule():
 
 @pytest.fixture
 def config():
-    return {"cc": "clang", "cflags": ("-O2", "-std=c99"), "gen_dir": "generated/"}
-
+    return {"cc": "clang", "cflags": ("-O2", "-std=c99"), "gen_dir": "generated/", "host_platform": "linux-x86"}
 
 
 def test_ok(collector, rule, config):
@@ -46,7 +45,7 @@ def test_ok(collector, rule, config):
 
     collector.add_lazy_rule(id="lazy_rule_gen", fn=lazy_rule_gen, workdir=WORKDIR)
 
-    def lazy_rule_gen_multiple(register_rule, cc):
+    def lazy_rule_gen_multiple(register_rule, cc, host_platform):
         assert cc == config["cc"]
 
         @register_rule(outputs=["foo.c#", "foo_api.h#"], inputs=["foo.pyx#", "bar.pyi#"])
@@ -66,6 +65,10 @@ def test_ok(collector, rule, config):
         "lazy_rule_gen_multiple::generate_foo_c",
         "lazy_rule_gen_multiple::compile_foo_c",
     }
+    # Ensure lazy rules also contains their generator config dependencies
+    assert resolved_rules["lazy_rule_gen_multiple::generate_foo_c"].needed_config == {"cc", "host_platform"}
+    assert resolved_rules["lazy_rule_gen_multiple::compile_foo_c"].needed_config == {"cc", "cflags", "host_platform"}
+
 
 @pytest.mark.parametrize("kind", ["relative", "absolute"])
 def test_resolve_target_relative_path(collector, rule, kind):
