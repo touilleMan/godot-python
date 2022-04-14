@@ -4,24 +4,29 @@ from pathlib import Path
 from .._rule import Rule
 
 
-@pytest.mark.parametrize("kwargs", [
-    # Name not matching
-    {"output": "foo", "fn": lambda outputs: None},
-    {"outputs": ["foo", "spam"], "fn": lambda output: None},
-    {"output": "foo", "input": "bar", "fn": lambda output, inputs: None},
-    {"output": "foo", "inputs": ["bar", "spam"], "fn": lambda output, input: None},
-    # Clashing params
-    {"output": "foo", "outputs": ["foo", "bar"], "fn": lambda output, outputs: None},
-    {"input": "foo", "inputs": ["foo", "bar"], "fn": lambda input,  inputs: None},
-    # Output or outputs is mandatory
-    {"fn": lambda: None},
-    {"fn": lambda output: None},
-    {"fn": lambda outputs: None},
-    # defauld/args/kwargs not allowed in fn
-    {"output": "foo", "fn": lambda *args, output: None},
-    {"output": "foo", "fn": lambda output, **kwargs: None},
-    {"output": "foo", "fn": lambda output=42: None},
-])
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        # Name not matching
+        {"output": "foo", "fn": lambda outputs: None},
+        {"outputs": ["foo", "spam"], "fn": lambda output: None},
+        {"output": "foo", "input": "bar", "fn": lambda output, inputs: None},
+        {"output": "foo", "inputs": ["bar", "spam"], "fn": lambda output, input: None},
+        # Clashing params
+        {"output": "foo", "outputs": ["foo", "bar"], "fn": lambda output, outputs: None},
+        {"input": "foo", "inputs": ["foo", "bar"], "fn": lambda input, inputs: None},
+        # Output or outputs is mandatory
+        {"fn": lambda: None},
+        {"fn": lambda output: None},
+        {"fn": lambda outputs: None},
+        # Outputs cannot be empty
+        {"outputs": [], "fn": lambda outputs: None},
+        # defauld/args/kwargs not allowed in fn
+        {"output": "foo", "fn": lambda *args, output: None},
+        {"output": "foo", "fn": lambda output, **kwargs: None},
+        {"output": "foo", "fn": lambda output=42: None},
+    ],
+)
 def test_bad_init(kwargs):
     with pytest.raises(TypeError):
         Rule(**kwargs)
@@ -42,6 +47,7 @@ def test_good_init():
 
     def rule_fn(output, inputs):
         pass
+
     rule = Rule(
         fn=rule_fn,
         output="spam",

@@ -1,11 +1,12 @@
-from typing import Optional, List, Set
+from typing import Optional, List, Set, Dict
 
 from ._rule import ResolvedRule
+from ._target import ResolvedTargetID
 
 
 def dump_graph(
     rules: List[ResolvedRule],
-    resolved_target_filter: Optional[str] = None,
+    target_filter: Optional[ResolvedTargetID] = None,
     display_resolved: bool = False,
 ) -> str:
     """
@@ -28,13 +29,13 @@ def dump_graph(
             ├─rule:generate_headers
             └─…
     """
-    target_to_rule = {}
+    target_to_rule: Dict[ResolvedTargetID, ResolvedRule] = {}
     for rule in rules:
         for output in rule.resolved_outputs:
             target_to_rule[output] = rule
 
-    if resolved_target_filter and resolved_target_filter not in target_to_rule:
-        raise RuntimeError(f"No rule has target `{resolved_target_filter}` as output !")
+    if target_filter and target_filter not in target_to_rule:
+        raise RuntimeError(f"No rule has target `{target_filter}` as output !")
 
     # Order rules by dependencies
     to_order = rules.copy()
@@ -108,12 +109,14 @@ def dump_graph(
         return dump
 
     # Special case if we want to dump a single target
-    if resolved_target_filter:
+    if target_filter:
         filtered_ordered_rules: List[ResolvedRule] = []
         for rule in reversed(ordered_rules):
             for target in rule.resolved_outputs:
-                if target == resolved_target_filter:
-                    already_dumped_targets |= {x for x in rule.resolved_outputs if x != resolved_target_filter}
+                if target == target_filter:
+                    already_dumped_targets |= {
+                        x for x in rule.resolved_outputs if x != target_filter
+                    }
                     filtered_ordered_rules.append(rule)
         ordered_rules = filtered_ordered_rules
 

@@ -4,20 +4,20 @@ from typing import Dict
 from pathlib import Path
 
 from .._target import (
-ConstTypes,
-UnresolvedTargetID,
-ResolvedTargetID,
-BaseTargetHandler, FileTargetHandler, FolderTargetHandler, VirtualTargetHandler, DeferredTargetHandler,
+    ConstTypes,
+    UnresolvedTargetID,
+    ResolvedTargetID,
+    BaseTargetHandler,
+    FileTargetHandler,
+    FolderTargetHandler,
+    VirtualTargetHandler,
+    DeferredTargetHandler,
 )
 
 
 @pytest.fixture(
-    params=[
-        FileTargetHandler, FolderTargetHandler
-    ],
-    ids=[
-        "file", "folder"
-    ],
+    params=[FileTargetHandler, FolderTargetHandler],
+    ids=["file", "folder"],
 )
 def fs_based_target_handler(request):
     return request.param()
@@ -25,10 +25,12 @@ def fs_based_target_handler(request):
 
 @pytest.fixture(
     params=[
-        VirtualTargetHandler, DeferredTargetHandler,
+        VirtualTargetHandler,
+        DeferredTargetHandler,
     ],
     ids=[
-        "virtual", "deferred",
+        "virtual",
+        "deferred",
     ],
 )
 def non_fs_based_target_handler(request):
@@ -169,7 +171,7 @@ def test_file_target_handler_compute_fingerprint(tmp_path):
     assert fingerprint2 is not None
     # Same data, different timestamp
     mtime1 = cooked.stat().st_mtime
-    time.sleep(0.01)
+    time.sleep(0.01)  # mtime may not get modified if 2nd touch is too soon
     cooked.touch()
     mtime2 = cooked.stat().st_mtime
     assert mtime1 != mtime2
@@ -197,7 +199,7 @@ def test_folder_target_handler_compute_fingerprint(tmp_path):
     assert fingerprint is not None
     # Folder exists, but different timestamp
     mtime1 = cooked.stat().st_mtime
-    time.sleep(0.01)
+    time.sleep(0.01)  # mtime may not get modified if 2nd touch is too soon
     cooked.touch()
     mtime2 = cooked.stat().st_mtime
     assert mtime1 != mtime2

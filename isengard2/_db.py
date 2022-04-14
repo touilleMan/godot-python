@@ -1,4 +1,4 @@
-from typing import Optional, Iterator, NewType, Sequence, Tuple
+from typing import Optional, Iterator, NewType, Sequence, Tuple, Dict
 from contextlib import contextmanager
 from sqlite3 import connect as sqlite3_connect, Connection, OperationalError
 from pathlib import Path
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS target_output(
 
     UNIQUE(run, target),
     FOREIGN KEY (run)
-       REFERENCES rule_run (_id) 
+       REFERENCES rule_run (_id)
 )"""
 
 # Queries
@@ -55,7 +55,11 @@ ON CONFLICT(fingerprint) DO UPDATE SET fingerprint = excluded.fingerprint
 """
 SQL_DELETE_TARGET_OUTPUTS = "DELETE FROM target_output WHERE run = ?"
 SQL_INSERT_TARGET_OUTPUT = "INSERT INTO target_output(run, target, fingerprint) VALUES(?, ?, ?)"
-SQL_FETCH_TARGET_OUTPUT = "SELECT fingerprint FROM target_output WHERE run = ? AND target = ?"
+SQL_FETCH_PREVIOUS_RUN = f"""
+SELECT target_output.target, target_output.fingerprint
+FROM target_output INNER JOIN rule_run ON target_output.run = rule_run._id
+WHERE rule_run.fingerprint = ?
+"""
 
 
 def init_or_reset_db(path: Path):
@@ -67,7 +71,7 @@ def init_or_reset_db(path: Path):
     # Optimistic check: the database is already initialized in the correct version
     try:
         cur = con.execute(SQL_FETCH_VERSION_ROW)
-        current_db_version,  = cur.fetchone()
+        (current_db_version,) = cur.fetchone()
     except OperationalError as exc:
         # Just consider the database is invalid
         current_db_version = -1
@@ -111,25 +115,27 @@ class DB:
         finally:
             con.close()
 
-    def fetch_rule_previous_run(self, fingerprint: bytes) -> Optional[RuleRunID]:
-        row = self.con.execute(SQL_FETCH_RULE_RUN, (fingerprint, )).fetchone()
-        return row[0] if row else None
+    def fetch_rule_previous_run(
+        self, fingerprint: bytes
+    ) -> Optional[Dict[ResolvedTargetID, bytes]]:
+        rows = self.con.execute(SQL_FETCH_PREVIOUS_RUN, (fingerprint,)).fetchall()
+        if not rows:
+            return None
+        return {row[0]: row[1] for row in rows}
 
-    def set_rule_previous_run(self, fingerprint: bytes, outputs: Sequence[Tuple[ResolvedTargetID, bytes]]) -> RuleRunID:
+    def set_rule_previous_run(
+        self, fingerprint: bytes, target_fingerprints: Sequence[Tuple[ResolvedTargetID, bytes]]
+    ) -> RuleRunID:
         with self.con:
             cur = self.con.cursor()
             # TODO: Combine the set+fetch queries together with a RETURNING once SQLite >=3.35
             # is widely available in Python (see https://www.sqlite.org/lang_returning.html)
-            cur.execute(SQL_UPDATE_RULE_RUN, (fingerprint, ))
-            row = self.con.execute(SQL_FETCH_RULE_RUN, (fingerprint, )).fetchone()
+            cur.execute(SQL_UPDATE_RULE_RUN, (fingerprint,))
+            row = self.con.execute(SQL_FETCH_RULE_RUN, (fingerprint,)).fetchone()
             run_id = row[0]
             assert run_id is not None
 
-            cur.execute(SQL_DELETE_TARGET_OUTPUTS, (run_id, ))
-            cur.executemany(SQL_INSERT_TARGET_OUTPUT, [(run_id, *o) for o in outputs])
+            cur.execute(SQL_DELETE_TARGET_OUTPUTS, (run_id,))
+            cur.executemany(SQL_INSERT_TARGET_OUTPUT, [(run_id, *o) for o in target_fingerprints])
 
         return run_id
-
-    def fetch_target_output_fingerprint(self, run_id: RuleRunID, target: ResolvedTargetID) -> Optional[bytes]:
-        row = self.con.execute(SQL_FETCH_TARGET_OUTPUT, (run_id, target)).fetchone()
-        return row[0] if row else None

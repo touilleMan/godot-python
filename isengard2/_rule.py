@@ -44,7 +44,7 @@ class Rule:
         inputs: Optional[Sequence[str]] = None,
         input: Optional[str] = None,
         id: Optional[str] = None,
-        extra_config: Optional[Set[str]] = None
+        extra_config: Optional[Set[str]] = None,
     ):
         params = extract_params_from_signature(fn)
 
@@ -61,6 +61,11 @@ class Rule:
                 raise TypeError("Function must have a `outputs` and no `output` parameter")
         else:
             raise TypeError("One of `output` or `outputs` parameters is mandatory")
+
+        if not outputs:
+            raise TypeError(
+                "Rule must output at least one target (tip: use a virtual target if you rule has no on-disk side effect)"
+            )
 
         if input is not None:
             if inputs is not None:
@@ -89,11 +94,13 @@ class Rule:
         if extra_config:
             extra_config -= params
             if extra_config:
+
                 @wraps(fn)
                 def fn_with_extra_params(**kwargs):
                     for k in extra_config:
                         kwargs.pop(k)
                     return fn(**kwargs)
+
                 self.fn = fn_with_extra_params
                 self.params |= extra_config
 
@@ -142,6 +149,8 @@ class ResolvedRule(Rule):
                 kwargs["input"] = inputs[0]
             elif k == "inputs":
                 kwargs["inputs"] = inputs
+            elif k == "ruledir":  # Additional config
+                kwargs[k] = self.workdir
             else:
                 kwargs[k] = config[k]
 

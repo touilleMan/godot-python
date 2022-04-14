@@ -1,4 +1,4 @@
-# from ._api import Isengard
+from ._api import Isengard
 from ._rule import Rule, ResolvedRule
 from ._exceptions import (
     IsengardError,
@@ -20,7 +20,8 @@ __all__ = (
     "IsengardRunError",
     # misc
     "QUOTES",
-    "get_parent",)
+    "get_parent",
+)
 
 
 QUOTES = [

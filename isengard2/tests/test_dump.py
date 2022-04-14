@@ -3,6 +3,7 @@ from pathlib import Path
 
 from .._dump import dump_graph
 from .._rule import ResolvedRule
+from .._target import ResolvedTargetID
 
 
 def rule_factory(id, outputs, inputs, params, resolved_outputs=None, resolved_inputs=None):
@@ -80,11 +81,11 @@ def test_empty():
 
 def test_unknown_target(rules):
     with pytest.raises(RuntimeError):
-        dump_graph(rules, resolved_target_filter="dummy")
+        dump_graph(rules, target_filter=ResolvedTargetID("dummy"))
 
 
 def test_single_target(rules):
-    assert dump_graph(rules, resolved_target_filter="/foo/bar/x.o#") == (
+    assert dump_graph(rules, target_filter=ResolvedTargetID("/foo/bar/x.o#")) == (
         "x.o#\n"
         "├──rule:compile_x\n"
         "├──configs:cc, cflags\n"

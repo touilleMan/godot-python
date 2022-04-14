@@ -1,27 +1,60 @@
 from contextvars import ContextVar
 from pathlib import Path
-from typing import Dict, Tuple, List, Sequence, Set, Callable, Union, Optional, Any, Union, TypeVar, Type
+from typing import (
+    Dict,
+    Tuple,
+    List,
+    Sequence,
+    Set,
+    Callable,
+    Union,
+    Optional,
+    Any,
+    Union,
+    TypeVar,
+    Type,
+)
+from unittest import defaultTestLoader
 
 from ._const import ConstTypes, validate_const_data
-from ._rule import Rule, INPUT_OUTPUT_CONFIG_NAMES
+from ._rule import Rule, ResolvedRule, INPUT_OUTPUT_CONFIG_NAMES
+from ._dump import dump_graph
+from ._runner import Runner
+from ._target import (
+    ResolvedTargetID,
+    TargetHandlersBundle,
+    BaseTargetHandler,
+    FileTargetHandler,
+    FolderTargetHandler,
+    VirtualTargetHandler,
+    DeferredTargetHandler,
+)
+from ._collector import Collector
 from ._exceptions import (
     IsengardError,
     IsengardStateError,
-    IsengardDefinitionError,
     IsengardConsistencyError,
-    IsengardRunError,
 )
 
 
-C = TypeVar("C", bound=Callable[..., None])
-TargetLike = Union[str, Target]
-
-
-_RESERVED_CONFIG_NAMES = {
+RESERVED_CONFIG_NAMES = {
     *INPUT_OUTPUT_CONFIG_NAMES,
+    "register_rule",  # Callback used in the lazy config
     "rootdir",  # Entrypoint script's directory
     "ruledir",  # Directory of the script the current rule was defined in
 }
+
+
+DEFAULT_DEFAULT_TARGET_HANDLER = FileTargetHandler()
+DEFAULT_TARGET_HANDLERS = [
+    DEFAULT_DEFAULT_TARGET_HANDLER,
+    FolderTargetHandler(),
+    VirtualTargetHandler(),
+    DeferredTargetHandler(),
+]
+
+
+C = TypeVar("C", bound=Callable[..., None])
 
 
 _parent: ContextVar["Isengard"] = ContextVar("context")
@@ -40,61 +73,188 @@ class Isengard:
         self_file: Union[str, Path],
         db: Union[str, Path] = ".isengard.sqlite",
         subdir_default_filename: Optional[str] = None,
+        target_handlers: Sequence[BaseTargetHandler] = DEFAULT_TARGET_HANDLERS,
+        default_target_handler: Optional[BaseTargetHandler] = DEFAULT_DEFAULT_TARGET_HANDLER,
     ):
-        raise NotImplementedError
+        entrypoint_path = Path(self_file).resolve()
+        self._entrypoint_dir = entrypoint_path.parent
+        self._entrypoint_name = entrypoint_path.name
+        self._subdir_default_filename = subdir_default_filename or self._entrypoint_name
+        self._workdir = self._entrypoint_dir  # Modified when reading subdir
+
+        if not isinstance(db, Path):
+            db = Path(db)
+        if not db.is_absolute():
+            db = self._entrypoint_dir / db
+        self._db_path = db
+
+        self._target_handlers_bundle = TargetHandlersBundle(
+            target_handlers=target_handlers,
+            default_target_handler=default_target_handler,
+        )
+        self._collector = Collector(target_handlers=self._target_handlers_bundle)
+
+        # Defined when configured is called
+        self._config: Optional[Dict[str, ConstTypes]] = None
+        self._runner: Optional[Runner] = None
 
     @property
     def rootdir(self):
-        raise NotImplementedError
-
-    def register_target_cooker(self, suffix: str, target_cls: Type[Target]):
-        raise NotImplementedError
+        return self._entrypoint_dir
 
     def subscript(self, subscript: Union[str, Path]) -> None:
-        raise NotImplementedError
+        if not isinstance(subscript, Path):
+            subscript = self._workdir / subscript
+
+        try:
+            relative_subscript = subscript.relative_to(self._entrypoint_dir)
+        except ValueError:
+            raise IsengardConsistencyError(
+                f"Subscript must be within the root folder `{self._entrypoint_dir}`"
+            )
+
+        assert not relative_subscript.is_absolute()
+        modname = ".".join([*relative_subscript.parent.parts, relative_subscript.stem])
+
+        previous_workdir = self._workdir
+        token = _parent.set(self)
+        try:
+            # Temporary self modification is not a very clean approach
+            # but at least it's fast&simple ;-)
+            self._workdir = subscript.parent
+
+            self._load_file_as_module(modname, subscript)
+
+        finally:
+            self._workdir = previous_workdir
+            _parent.reset(token)
 
     def subdir(self, subdir: str, filename: Optional[str] = None) -> None:
-        raise NotImplementedError
+        subscript_path = self._workdir / subdir / (filename or self._subdir_default_filename)
+        self.subscript(subscript_path)
 
-    def configure(self, **config: ConstTypes):
+    def configure(self, **config: ConstTypes) -> None:
         """
         Note passing configuration as function arguments limit the name you can use
         (e.g. `compiler.c.flags` is not a valid name). This is intended to work
         well with dependency injection in the rule where configuration is requested
         by using it name as function argument.
         """
-        raise NotImplementedError
+        if self._config:
+            raise IsengardStateError("`configure` has already been called !")
 
-    def lazy_config(self, fn):
-        raise NotImplementedError
+        setted = config.setdefault("rootdir", self._entrypoint_dir)
+        if setted is not self._entrypoint_dir:
+            raise IsengardConsistencyError(f"Config `rootdir` is a reserved name")
+        self._rules = self._collector.configure(**config)
+        self._config = config
+        self._runner = Runner(
+            rules=self._rules,
+            config=self._config,
+            target_handlers=self._target_handlers_bundle,
+            db_path=self._db_path,
+        )
 
-    def lazy_rule(self, fn):
-        raise NotImplementedError
+    def lazy_config(self, fn: C) -> C:
+        if self._config is not None:
+            raise IsengardStateError(
+                "Cannot create new lazy configuration value once `configure` has been called !"
+            )
+
+        config_name = fn.__name__
+        if config_name in RESERVED_CONFIG_NAMES:
+            raise IsengardConsistencyError(f"Config `{config_name}` is a reserved name")
+
+        self._collector.add_lazy_config(config_name, fn)
+
+        return fn
+
+    def lazy_rule(self, fn: C) -> C:
+        if self._config is not None:
+            raise IsengardStateError(
+                "Cannot create new lazy rule generator once `configure` has been called !"
+            )
+
+        self._collector.add_lazy_rule(fn.__name__, fn, self._workdir)
+
+        return fn
 
     def rule(
         self,
-        outputs: Optional[Sequence[TargetLike]] = None,
-        output: Optional[TargetLike] = None,
-        inputs: Optional[Sequence[TargetLike]] = None,
-        input: Optional[TargetLike] = None,
-        name: Optional[str] = None,
+        outputs: Optional[Sequence[str]] = None,
+        output: Optional[str] = None,
+        inputs: Optional[Sequence[str]] = None,
+        input: Optional[str] = None,
+        id: Optional[str] = None,
     ) -> Callable[[C], C]:
-        raise NotImplementedError
+        def wrapper(fn: C) -> C:
+            if self._config is not None:
+                raise IsengardStateError(
+                    "Cannot create new rules once `configure` has been called !"
+                )
 
-    def run(self, target: Union[TargetLike, Path]) -> None:
-        raise NotImplementedError
+            rule = Rule(
+                workdir=self._workdir,
+                fn=fn,
+                outputs=outputs,
+                output=output,
+                inputs=inputs,
+                input=input,
+                id=id,
+            )
+            self._collector.add_rule(rule)
 
-    def clean(self, target: Union[TargetLike, Path]) -> None:
-        raise NotImplementedError
+            return fn
 
-    def list_targets(self) -> List[Tuple[str, str]]:
-        raise NotImplementedError
+        return wrapper
+
+    def run(self, target: Union[str, Path]) -> bool:
+        """
+        Raises:
+            IsengardUnknownTargetError
+            IsengardConsistencyError
+            IsengardRunError
+        """
+        if self._config is None:
+            raise IsengardStateError("Must call `configure` before !")
+
+        resolved = self.resolve_target(target)
+        return self._runner.run(target=resolved)
+
+    def clean(self, target: Union[str, Path]) -> None:
+        """
+        Raises:
+            IsengardUnknownTargetError
+            IsengardConsistencyError
+            IsengardRunError
+        """
+        if self._config is None:
+            raise IsengardStateError("Must call `configure` before !")
+
+        resolved = self.resolve_target(target)
+        self._runner.clean(resolved)
+
+    def resolve_target(self, target: Union[str, Path]) -> ResolvedTargetID:
+        if isinstance(target, Path):
+            target = target.resolve().as_posix()
+        resolved, _ = self._target_handlers_bundle.resolve_target(
+            target, self._config, workdir=self._entrypoint_dir
+        )
+        return resolved
+
+    def list_targets(self) -> List[Tuple[str, ResolvedTargetID]]:
+        if self._config is None:
+            raise IsengardStateError("Must call `configure` before !")
+
+        targets = []
+        for rule in self._rules.values():
+            targets += list(zip(rule.outputs, rule.resolved_outputs))
+        return targets
 
     def dump_graph(
         self,
-        target: Optional[TargetLike] = None,
-        display_configured: bool = False,
-        display_relative_path: bool = False,
+        target: Optional[Union[str, Path]] = None,
+        display_resolved: bool = False,
     ) -> str:
         """
         Graph example:
@@ -116,4 +276,13 @@ class Isengard:
                 ├─rule:generate_headers
                 └─…
         """
-        raise NotImplementedError
+        if self._config is None:
+            raise IsengardStateError("Must call `configure` before !")
+
+        if target is not None:
+            resolved = self.resolve_target(target)
+        else:
+            resolved = None
+        return dump_graph(
+            rules=self._rules.values(), target_filter=resolved, display_resolved=display_resolved
+        )
