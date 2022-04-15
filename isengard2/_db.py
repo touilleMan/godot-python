@@ -49,10 +49,7 @@ SQL_INIT_VERSION_ROW = f"INSERT INTO version(value) VALUES({DB_VERSION})"
 SQL_FETCH_VERSION_ROW = f"SELECT value FROM version WHERE magic = {VERSION_MAGIC_NUMBER}"
 
 SQL_FETCH_RULE_RUN = "SELECT _id FROM rule_run WHERE fingerprint = ?"
-SQL_UPDATE_RULE_RUN = """
-INSERT INTO rule_run(fingerprint) VALUES(?)
-ON CONFLICT(fingerprint) DO UPDATE SET fingerprint = excluded.fingerprint
-"""
+SQL_CREATE_RULE_RUN = "INSERT OR IGNORE INTO rule_run(fingerprint) VALUES(?)"
 SQL_DELETE_TARGET_OUTPUTS = "DELETE FROM target_output WHERE run = ?"
 SQL_INSERT_TARGET_OUTPUT = "INSERT INTO target_output(run, target, fingerprint) VALUES(?, ?, ?)"
 SQL_FETCH_PREVIOUS_RUN = f"""
@@ -130,8 +127,8 @@ class DB:
             cur = self.con.cursor()
             # TODO: Combine the set+fetch queries together with a RETURNING once SQLite >=3.35
             # is widely available in Python (see https://www.sqlite.org/lang_returning.html)
-            cur.execute(SQL_UPDATE_RULE_RUN, (fingerprint,))
-            row = self.con.execute(SQL_FETCH_RULE_RUN, (fingerprint,)).fetchone()
+            cur.execute(SQL_CREATE_RULE_RUN, (fingerprint,))
+            row = cur.execute(SQL_FETCH_RULE_RUN, (fingerprint,)).fetchone()
             run_id = row[0]
             assert run_id is not None
 

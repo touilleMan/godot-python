@@ -14,10 +14,10 @@ from typing import (
     TypeVar,
     Type,
 )
-from unittest import defaultTestLoader
 
-from ._const import ConstTypes, validate_const_data
-from ._rule import Rule, ResolvedRule, INPUT_OUTPUT_CONFIG_NAMES
+from ._const import ConstTypes
+from ._rule import Rule, RULE_RESERVED_PARAMS, LAZY_RULE_RESERVED_REGISTER_PARAM
+
 from ._dump import dump_graph
 from ._runner import Runner
 from ._target import (
@@ -38,8 +38,8 @@ from ._exceptions import (
 
 
 RESERVED_CONFIG_NAMES = {
-    *INPUT_OUTPUT_CONFIG_NAMES,
-    "register_rule",  # Callback used in the lazy config
+    *RULE_RESERVED_PARAMS,
+    LAZY_RULE_RESERVED_REGISTER_PARAM,
     "rootdir",  # Entrypoint script's directory
     "ruledir",  # Directory of the script the current rule was defined in
 }
@@ -237,9 +237,11 @@ class Isengard:
     def resolve_target(self, target: Union[str, Path]) -> ResolvedTargetID:
         if isinstance(target, Path):
             target = target.resolve().as_posix()
+
         resolved, _ = self._target_handlers_bundle.resolve_target(
             target, self._config, workdir=self._entrypoint_dir
         )
+
         return resolved
 
     def list_targets(self) -> List[Tuple[str, ResolvedTargetID]]:
@@ -249,6 +251,7 @@ class Isengard:
         targets = []
         for rule in self._rules.values():
             targets += list(zip(rule.outputs, rule.resolved_outputs))
+
         return targets
 
     def dump_graph(
@@ -283,6 +286,7 @@ class Isengard:
             resolved = self.resolve_target(target)
         else:
             resolved = None
+
         return dump_graph(
             rules=self._rules.values(), target_filter=resolved, display_resolved=display_resolved
         )

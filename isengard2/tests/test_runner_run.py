@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 import time
+import sys
 
 from .._runner import Runner
 
@@ -10,9 +11,18 @@ from .conftest import resolvify
 def test_run_single_output(tmp_path: Path, runner_factory, rule_factory):
     target_path = tmp_path / "target.txt"
     resolved_target = resolvify(target_path)
+
+    def fn(output, used):
+        # Remove file before writting it to ensure ctime AND mtime are modified
+        try:
+            output.unlink()
+        except FileNotFoundError:
+            pass
+        output.write_text(str(time.monotonic()))
+
     rules = [
         rule_factory(
-            fn=lambda output, used: output.write_text(str(time.monotonic())),
+            fn=fn,
             resolved_outputs=[resolved_target],
         ),
     ]
@@ -22,62 +32,96 @@ def test_run_single_output(tmp_path: Path, runner_factory, rule_factory):
         config=config,
     )
 
+    last_ctime = None  # last modification of metadata
     last_mtime = None  # last modification of file content
     last_content = None
 
     def assert_has_changed():
-        assert target_path.exists()
-        nonlocal last_mtime, last_content
-        new_ctime = target_path.stat().st_mtime
+        nonlocal last_ctime, last_mtime, last_content
+
         new_content = target_path.read_text()
-        assert new_ctime != last_mtime
         assert new_content != last_content
-        last_mtime = new_ctime
+
+        new_stats = target_path.stat()
+        assert new_stats.st_ctime != last_ctime
+        assert new_stats.st_mtime != last_mtime
+
+        last_ctime = new_stats.st_ctime
+        last_mtime = new_stats.st_mtime
         last_content = new_content
 
     def assert_has_not_changed():
-        assert target_path.exists()
-        assert target_path.stat().st_mtime == last_mtime
         assert target_path.read_text() == last_content
+        stats = target_path.stat()
+        assert stats.st_ctime == last_ctime
+        assert stats.st_mtime == last_mtime
+
+    def wait_beyond_stime_ctime_resolution_atomicity():
+        # Time resolution for ctime/mtime depend on OS/FS and can be suprisingly long
+        # (e.g. Windows/FAT32 has a 2-second resolution for mtime !)
+        # Create a brand new file, and wait until we can change it mtime/ctime.
+        # This is to ensure any file created before will have it mtime/ctime updated
+        # on file modification.
+        file = tmp_path / f"stat-resolution-{time.monotonic()}"
+        file.write_text("whatever")
+        stats = file.stat()
+        for i in range(30):
+            time.sleep(0.01)
+            file.unlink()
+            file.write_text("whatever")  # recreate should update mtime and ctime
+            stats2 = file.stat()
+            print(i, stats2.st_ctime != stats.st_ctime, stats2.st_mtime != stats.st_mtime)
+            if stats2.st_ctime != stats.st_ctime and stats2.st_mtime != stats.st_mtime:
+                break
+        else:
+            raise AssertionError(
+                "Waited too long for ctime/mtime changes, you OS/FS might have a very long long time resolution"
+            )
 
     # Run the rule
     runner.run(resolved_target)
     assert target_path.exists()
-    last_mtime = target_path.stat().st_mtime
+    stats = target_path.stat()
+    last_ctime = stats.st_ctime
+    last_mtime = stats.st_mtime
     last_content = target_path.read_text()
-
-    time.sleep(0.01)  # Ensure time has changed enough !
 
     # Re-running should be a noop
     runner.run(resolved_target)
     assert_has_not_changed()
 
-    time.sleep(0.01)  # Ensure time has changed enough !
+    if sys.platform != "win32":
+        wait_beyond_stime_ctime_resolution_atomicity()
+        # If ctime (metadata) has changed, rule should be rerun
+        target_path.touch()
+        assert target_path.stat().st_ctime != last_ctime
+        wait_beyond_stime_ctime_resolution_atomicity()
+        runner.run(resolved_target)
+        assert_has_changed()
 
-    # If ctime has changed, rule should be rerun
-    target_path.unlink()
+    # If mtime (data) has changed, rule should be rerun
+    wait_beyond_stime_ctime_resolution_atomicity()
     target_path.write_text(last_content)
-    runner.run(resolved_target)
-    assert_has_changed()
-
-    time.sleep(0.01)  # Ensure time has changed enough !
-
-    # If mtime has changed, rule should be rerun
-    target_path.touch()
+    assert target_path.stat().st_mtime != last_mtime
+    wait_beyond_stime_ctime_resolution_atomicity()
     runner.run(resolved_target)
     assert_has_changed()
 
     # If content has changed, of course rule should be rerun !
-    target_path.write_text("dummy")
+    wait_beyond_stime_ctime_resolution_atomicity()
+    target_path.write_text("whatever")
+    wait_beyond_stime_ctime_resolution_atomicity()
     runner.run(resolved_target)
     assert_has_changed()
 
     # Using another runner should not change anything
+    wait_beyond_stime_ctime_resolution_atomicity()
     other_runner: Runner = runner_factory(rules=rules, config=config)
     other_runner.run(resolved_target)
     assert_has_not_changed()
 
     # If config has changed, rule should be rerun...
+    wait_beyond_stime_ctime_resolution_atomicity()
     config2 = config.copy()
     config2["used"] += 1
     runner_config_changed: Runner = runner_factory(rules=rules, config=config2)
@@ -85,6 +129,7 @@ def test_run_single_output(tmp_path: Path, runner_factory, rule_factory):
     assert_has_changed()
 
     # ...but unused config can be changed without being rerun
+    wait_beyond_stime_ctime_resolution_atomicity()
     config3 = config2.copy()
     config3["unused"] += 1
     runner_config_unused_changed: Runner = runner_factory(rules=rules, config=config3)

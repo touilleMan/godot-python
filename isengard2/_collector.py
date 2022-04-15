@@ -3,7 +3,13 @@ from pathlib import Path
 
 from ._const import ConstTypes
 from ._exceptions import IsengardConsistencyError
-from ._rule import Rule, ResolvedRule, extract_params_from_signature, INPUT_OUTPUT_CONFIG_NAMES
+from ._rule import (
+    Rule,
+    ResolvedRule,
+    extract_params_from_signature,
+    RULE_RESERVED_PARAMS,
+    LAZY_RULE_RESERVED_REGISTER_PARAM,
+)
 from ._target import TargetHandlersBundle, ResolvedTargetID
 
 
@@ -34,17 +40,19 @@ class Collector:
     ):
         # Extract params early to provide better error report
         params = extract_params_from_signature(fn)
-        # By removing the mandatory `register_rule` param, we obtain the needed configs
+        # By removing the mandatory register rule callback param, we obtain the needed configs
         try:
-            params.remove("register_rule")
+            params.remove(LAZY_RULE_RESERVED_REGISTER_PARAM)
         except KeyError:
             raise IsengardConsistencyError(
-                f"Lazy rule `{id}` is missing mandatory `register_rule` parameter"
+                f"Lazy rule `{id}` is missing mandatory `{LAZY_RULE_RESERVED_REGISTER_PARAM}` parameter"
             )
         value = (id, fn, params, workdir)
         setted = self.lazy_rules.setdefault(id, value)
         if setted is not value:
-            raise IsengardConsistencyError(f"Multiple lazy rules have the same ID `{id}`: {setted[0]} and {fn}")
+            raise IsengardConsistencyError(
+                f"Multiple lazy rules have the same ID `{id}`: {setted[0]} and {fn}"
+            )
 
     def add_lazy_config(
         self,
@@ -56,7 +64,9 @@ class Collector:
         value = (id, fn, params)
         setted = self.lazy_configs.setdefault(id, value)
         if setted is not value:
-            raise IsengardConsistencyError(f"Multiple lazy rules have the same ID `{id}`: {setted[0]} and {fn}")
+            raise IsengardConsistencyError(
+                f"Multiple lazy rules have the same ID `{id}`: {setted[0]} and {fn}"
+            )
 
     def configure(self, **config: ConstTypes) -> Dict[str, ResolvedRule]:
         # First, resolve lazy config
@@ -85,9 +95,7 @@ class Collector:
                 # Unknown config or recursive dependency between two lazy configs
                 errors = []
                 for id, fn, params in cannot_run_yet:
-                    missings = "/".join(
-                        f"`{x}`" for x in params - config.keys()
-                    )
+                    missings = "/".join(f"`{x}`" for x in params - config.keys())
                     if missings:
                         errors.append(
                             f"Lazy config `{id}` contains unknown config item(s) {missings}"
@@ -110,6 +118,7 @@ class Collector:
                     kwargs["fn"] = fn
                     rules.append(Rule(**kwargs))
                     return fn
+
                 return wrapper
 
             lr_kwargs: Dict[str, Any] = {"register_rule": register_rule}
@@ -117,9 +126,7 @@ class Collector:
                 try:
                     lr_kwargs[k] = config[k]
                 except KeyError:
-                    missings = "/".join(
-                        f"`{x}`" for x in lr_needed_config - config.keys()
-                    )
+                    missings = "/".join(f"`{x}`" for x in lr_needed_config - config.keys())
                     raise IsengardConsistencyError(
                         f"Lazy rule `{lr_id}` contains unknown config item(s) {missings}"
                     )
@@ -127,26 +134,28 @@ class Collector:
             lr_fn(**lr_kwargs)
 
         # Finally resolve inputs/outputs and check config params in each rule
-        allowed_params = INPUT_OUTPUT_CONFIG_NAMES | config.keys()
+        allowed_params = RULE_RESERVED_PARAMS | config.keys()
         resolved_rules: Dict[str, ResolvedRule] = {}
         target_to_rule: Dict[str, str] = {}
         for rule in rules:
             resolved_inputs: List[ResolvedTargetID] = []
             for ri_target in rule.inputs:
-                resolved_inputs.append(self.target_handlers.resolve_target(ri_target, config, rule.workdir)[0])
+                resolved_inputs.append(
+                    self.target_handlers.resolve_target(ri_target, config, rule.workdir)[0]
+                )
 
             resolved_outputs: List[ResolvedTargetID] = []
             for ro_target in rule.outputs:
-                resolved_outputs.append(self.target_handlers.resolve_target(ro_target, config, rule.workdir)[0])
+                resolved_outputs.append(
+                    self.target_handlers.resolve_target(ro_target, config, rule.workdir)[0]
+                )
                 if ro_target in target_to_rule:
                     raise IsengardConsistencyError(
                         f"Multiple rules to produce `{ro_target}`: `{rule.id}` and `{target_to_rule[ro_target]}`"
                     )
                 target_to_rule[ro_target] = rule.id
 
-            missings = "/".join(
-                f"`{x}`" for x in rule.params - allowed_params
-            )
+            missings = "/".join(f"`{x}`" for x in rule.params - allowed_params)
             if missings:
                 raise IsengardConsistencyError(
                     f"Rule `{rule.id}` contains unknown config item(s) {missings}"
@@ -164,7 +173,9 @@ class Collector:
             )
             r_setted = resolved_rules.setdefault(rule.id, resolved_rule)
             if r_setted is not resolved_rule:
-                raise IsengardConsistencyError(f"Multiple rules have the same ID `{rule.id}`: {r_setted!r} and {resolved_rule!r}")
+                raise IsengardConsistencyError(
+                    f"Multiple rules have the same ID `{rule.id}`: {r_setted!r} and {resolved_rule!r}"
+                )
 
         # All set !
         return resolved_rules

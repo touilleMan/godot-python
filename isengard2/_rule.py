@@ -7,7 +7,8 @@ from ._const import ConstTypes
 from ._target import ResolvedTargetID
 
 
-INPUT_OUTPUT_CONFIG_NAMES = {"inputs", "input", "outputs", "output"}
+RULE_RESERVED_PARAMS = {"inputs", "input", "outputs", "output"}
+LAZY_RULE_RESERVED_REGISTER_PARAM = "register_rule"
 C = TypeVar("C", bound=Callable[..., None])
 
 
@@ -106,7 +107,7 @@ class Rule:
 
     @property
     def needed_config(self) -> Set[str]:
-        return self.params - INPUT_OUTPUT_CONFIG_NAMES
+        return self.params - RULE_RESERVED_PARAMS
 
     def __repr__(self):
         return f"<{type(self).__name__} id={self.id} fn={self.fn}>"
