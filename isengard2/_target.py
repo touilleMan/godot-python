@@ -135,6 +135,34 @@ class FileTargetHandler(BaseTargetHandler):
     DISCRIMINANT_SUFFIX = "#"
     ON_DISK_TARGET = True
 
+    def __init__(self, fingerprint_strategy: str = "stat+checksum"):
+        """
+        Fingerprint strategies:
+            stat: Use file's st_mtime/st_size/st_mode/st_ino/st_uid/st_gid as fingerprint.
+                This strategy is the fastest (only a `os.stat` call is needed) but can
+                lead to false negative (i.e. a rule erroneously not being rebuilt) given
+                we don't compare the actual content of the file.
+                Note `os.stat` work differently depending on the OS/FS (e.g. there is
+                no inode on Windows so st_ino correspond to the file index) so we don't
+                try to be clever and just consider *any* modification a reason to rebuild.
+                See https://apenwarr.ca/log/20181113 for a very cool article on this ;-)
+
+            stat+checksum: Actually compute the sha256 of the file as part of the fingerprint.
+                Computing the file hash is much slower that just doing a stat, but prevent
+                all false negative.
+                Regarding the slowdown part:
+                - Hashing is fast, so this should be an issue only on big projects
+                - Modern FS keep a cache on recently used files, so the read part of the
+                  hash computing should be amortized by the fact the file is going to
+                  be read anyway if rebuild is needed
+                - On the other hand if rebuild is not needed, the read time is a net lost :(
+                  This is a shame given the typical rebuild scenario is having a single
+                  file modified in the project...
+        """
+        self.fingerprint_strategy = fingerprint_strategy
+        if fingerprint_strategy not in ("stat", "stat+checksum"):
+            raise ValueError('`fingerprint_strategy` value must be "stat" or "stat+checksum"')
+
     def resolve(
         self, id: UnresolvedTargetID, config: Dict[str, ConstTypes], workdir: Path
     ) -> ResolvedTargetID:
@@ -158,38 +186,66 @@ class FileTargetHandler(BaseTargetHandler):
             pass
 
     def compute_fingerprint(self, cooked: Path) -> Optional[bytes]:
-        fingerprint = bytearray(40)  # 8 bytes timestamp + 32 bytes sha256 hash
+        fingerprint = bytearray(
+            64
+        )  # 32 bytes sha256 stats hash + 32 bytes sha256 file content hash
         try:
-            # mtime is "modified time", ctime is "change time" (and not "created time")
-            # thanks for nothing POSIX naming !
-            # ctime and mtime track modification respectly on metadata (e.g. ownership)
-            # and data (so file content).
-            # For simplicity we only keep the latest of the two, considering ctime/mtime
-            # are always updated according to the arrow of time, so any change should
-            # lead to a bigger `max(mtime, ctime)`.
+            # Trivia: mtime is "modified time", ctime is "change time" (and not
+            # "created time") thanks for nothing POSIX naming !
+            # But wait there's more ! This is true only for POSIX, on Windows
+            # ctime actually contains the created time ^^
+            # Long story short: ctime is too messy so we just ignore it
             stats = stat(cooked)
-            print(
-                "=========>",
-                cooked.name,
-                max(stats.st_mtime, stats.st_ctime),
-                stats.st_mtime,
-                stats.st_ctime,
-            )
-            fingerprint[:8] = pack("!d", max(stats.st_mtime, stats.st_ctime))
-            with open(cooked, "rb") as fd:
-                fingerprint[8:] = sha256(fd.read()).digest()
+            if S_ISDIR(stats.st_mode):
+                return None
+            fingerprint[:32] = sha256(
+                # Use native byteorder for packing given the fingerprint is not going to be
+                # shared with another machine.
+                pack(
+                    "=dQQQQQ",
+                    stats.st_mtime,
+                    stats.st_size,
+                    stats.st_ino,
+                    stats.st_mode,
+                    stats.st_uid,
+                    stats.st_gid,
+                )
+            ).digest()
+            if self.fingerprint_strategy == "stat+checksum":
+                with open(cooked, "rb") as fd:
+                    fingerprint[32:] = sha256(fd.read()).digest()
+
             return fingerprint
+
         except OSError:
             return None
 
     def need_rebuild(self, cooked: Path, previous_fingerprint: bytes) -> bool:
         try:
-            if previous_fingerprint[:8] != pack("!d", stat(cooked).st_mtime):
+            stats = stat(cooked)
+            if S_ISDIR(stats.st_mode):
+                return None
+            if (
+                previous_fingerprint[:32]
+                != sha256(
+                    pack(
+                        "=dQQQQQ",
+                        stats.st_mtime,
+                        stats.st_size,
+                        stats.st_ino,
+                        stats.st_mode,
+                        stats.st_uid,
+                        stats.st_gid,
+                    )
+                ).digest()
+            ):
                 return True
-            with open(cooked, "rb") as fd:
-                if previous_fingerprint[8:] != sha256(fd.read()).digest():
-                    return True
+            if self.fingerprint_strategy == "stat+checksum":
+                with open(cooked, "rb") as fd:
+                    if previous_fingerprint[32:] != sha256(fd.read()).digest():
+                        return True
             return False
+
         except OSError:
             return True
 
@@ -223,19 +279,23 @@ class FolderTargetHandler(BaseTargetHandler):
             pass
 
     def compute_fingerprint(self, cooked: Path) -> Optional[bytes]:
-        # TODO: recursively check the folder ?
         try:
             stats = stat(cooked)
             if not S_ISDIR(stats.st_mode):
                 return None
-            # mtime is "modified time", ctime is "change time" (and not "created time")
-            # thanks for nothing POSIX naming !
-            # ctime and mtime track modification respectly on metadata (e.g. ownership)
-            # and data (so file content).
-            # For simplicity we only keep the latest of the two, considering ctime/mtime
-            # are always updated according to the arrow of time, so any change should
-            # lead to a bigger `max(mtime, ctime)`.
-            return pack("!d", max(stats.st_mtime, stats.st_ctime))
+            return sha256(
+                # Use native byteorder for packing given the fingerprint is not going to be
+                # shared with another machine.
+                pack(
+                    "=dQQQQQ",
+                    stats.st_mtime,
+                    stats.st_size,
+                    stats.st_ino,
+                    stats.st_mode,
+                    stats.st_uid,
+                    stats.st_gid,
+                )
+            ).digest()
 
         except OSError:
             return None
