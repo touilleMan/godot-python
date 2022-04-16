@@ -6,10 +6,6 @@ class IsengardStateError(Exception):
     pass
 
 
-class IsengardDefinitionError(IsengardError):
-    pass
-
-
 class IsengardConsistencyError(IsengardError):
     pass
 

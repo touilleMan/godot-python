@@ -10,7 +10,6 @@ from ._target import (
 from ._exceptions import (
     IsengardError,
     IsengardStateError,
-    IsengardDefinitionError,
     IsengardConsistencyError,
     IsengardRunError,
 )
@@ -31,7 +30,6 @@ __all__ = (
     # _exceptions
     "IsengardError",
     "IsengardStateError",
-    "IsengardDefinitionError",
     "IsengardConsistencyError",
     "IsengardRunError",
     # misc

@@ -7,7 +7,7 @@ from stat import S_ISDIR
 import pickle
 from shutil import rmtree
 
-from ._exceptions import IsengardDefinitionError, IsengardConsistencyError, IsengardRunError
+from ._exceptions import IsengardConsistencyError, IsengardRunError
 from ._const import ConstTypes
 
 
@@ -115,7 +115,9 @@ class BaseTargetHandler(Generic[T]):
         try:
             return ResolvedTargetID(id.format(**config))
         except KeyError as exc:
-            raise IsengardDefinitionError(f"Missing configuration `{exc.args[0]}` needed in `{id}`")
+            raise IsengardConsistencyError(
+                f"Missing configuration `{exc.args[0]}` needed in `{id}`"
+            )
 
     def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> T:
         raise NotImplementedError
