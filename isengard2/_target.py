@@ -324,10 +324,10 @@ class VirtualTargetHandler(BaseTargetHandler):
 
 
 class DeferredTarget:
-    __slot__ = ("target", "_resolved")
+    __slot__ = ("id", "_resolved")
 
-    def __init__(self, target: Any):
-        self.target = target
+    def __init__(self, id: Any):
+        self.id = id
 
     def resolve(self, target: Any, handler: BaseTargetHandler) -> None:
         if not isinstance(target, handler.TARGET_TYPE):

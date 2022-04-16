@@ -25,9 +25,18 @@ from .._rule import Rule
         {"output": "foo", "fn": lambda *args, output: None},
         {"output": "foo", "fn": lambda output, **kwargs: None},
         {"output": "foo", "fn": lambda output=42: None},
+        # Output/input types must be str
+        {"output": Path("foo"), "fn": lambda output: None},
+        {"outputs": [Path("foo")], "fn": lambda outputs: None},
+        {"output": "bar", "input": Path("foo"), "fn": lambda output, input: None},
+        {"output": "bar", "inputs": [Path("foo")], "fn": lambda output, inputs: None},
     ],
 )
 def test_bad_init(kwargs):
+    # Sanity check: ensure what we expected as valid *is* actually valid
+    Rule(output="foo", fn=lambda output: None, workdir=Path("/foo/bar"))
+
+    kwargs.setdefault("workdir", Path("/foo/bar"))
     with pytest.raises(TypeError):
         Rule(**kwargs)
 

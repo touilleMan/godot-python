@@ -5,14 +5,11 @@ from typing import (
     Tuple,
     List,
     Sequence,
-    Set,
     Callable,
     Union,
     Optional,
-    Any,
     Union,
     TypeVar,
-    Type,
 )
 
 from ._const import ConstTypes
@@ -99,7 +96,7 @@ class Isengard:
         self._runner: Optional[Runner] = None
 
     @property
-    def rootdir(self):
+    def rootdir(self) -> Path:
         return self._entrypoint_dir
 
     def subscript(self, subscript: Union[str, Path]) -> None:
@@ -146,8 +143,7 @@ class Isengard:
         setted = config.setdefault("rootdir", self._entrypoint_dir)
         if setted is not self._entrypoint_dir:
             raise IsengardConsistencyError(f"Config `rootdir` is a reserved name")
-        self._rules = self._collector.configure(**config)
-        self._config = config
+        self._rules, self._config = self._collector.configure(**config)
         self._runner = Runner(
             rules=self._rules,
             config=self._config,
@@ -236,13 +232,24 @@ class Isengard:
 
     def resolve_target(self, target: Union[str, Path]) -> ResolvedTargetID:
         if isinstance(target, Path):
-            target = target.resolve().as_posix()
+            # Identifying a target by it Path on the FS is convenient for the user,
+            # but not for us given we use the `ResolvedTagetID` instead precisely to
+            # unify Virtual and on-disk targets...
+            # So we consider only the targets from the default handler can be
+            # represented as Path.
+            if not target.is_absolute():
+                target = self._workdir / target
+            resolved_without_suffix = target.resolve().as_posix()
+            return ResolvedTargetID(
+                resolved_without_suffix
+                + self._target_handlers_bundle.default_target_handler.DISCRIMINANT_SUFFIX
+            )
 
-        resolved, _ = self._target_handlers_bundle.resolve_target(
-            target, self._config, workdir=self._entrypoint_dir
-        )
-
-        return resolved
+        else:
+            resolved, _ = self._target_handlers_bundle.resolve_target(
+                target, self._config, workdir=self._entrypoint_dir
+            )
+            return resolved
 
     def list_targets(self) -> List[Tuple[str, ResolvedTargetID]]:
         if self._config is None:
@@ -288,5 +295,7 @@ class Isengard:
             resolved = None
 
         return dump_graph(
-            rules=self._rules.values(), target_filter=resolved, display_resolved=display_resolved
+            rules=list(self._rules.values()),
+            target_filter=resolved,
+            display_resolved=display_resolved,
         )

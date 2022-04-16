@@ -68,7 +68,12 @@ class Collector:
                 f"Multiple lazy rules have the same ID `{id}`: {setted[0]} and {fn}"
             )
 
-    def configure(self, **config: ConstTypes) -> Dict[str, ResolvedRule]:
+    def configure(
+        self, **config: ConstTypes
+    ) -> Tuple[Dict[str, ResolvedRule], Dict[str, ConstTypes]]:
+        """
+        Returns: ({<rule_id>: <rule>}, {<config_id>: <config_value>}
+        """
         # First, resolve lazy config
         to_run = self.lazy_configs.values()
         cannot_run_yet: List[Tuple[str, Callable, Set[str]]] = []
@@ -178,4 +183,4 @@ class Collector:
                 )
 
         # All set !
-        return resolved_rules
+        return resolved_rules, config

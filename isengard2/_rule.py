@@ -82,6 +82,15 @@ class Rule:
         else:
             inputs = []
 
+        # It's easy to incorrectly provide `pathlib.Path` objects as input/output
+        # so we do eager type checking here to save user some tedious debugging ^^
+        for output in outputs:
+            if not isinstance(output, str):
+                raise TypeError(f"Output values must be str, got {output!r}")
+        for input in inputs:
+            if not isinstance(input, str):
+                raise TypeError(f"Input values must be str, got {input!r}")
+
         self.workdir = workdir
         self.id = id or fn.__name__
         self.outputs = outputs
