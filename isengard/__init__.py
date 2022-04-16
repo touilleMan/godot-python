@@ -1,17 +1,15 @@
-from ._api import Isengard, get_parent
+from ._api import get_parent, Isengard
+from ._const import ConstTypes
 from ._target import (
-    Target,
-    VirtualTarget,
-    ConfiguredVirtualTarget,
-    VirtualTargetResolver,
-    FSTarget,
-    FileTarget,
-    FolderTarget,
+    BaseTargetHandler,
+    FileTargetHandler,
+    FolderTargetHandler,
+    VirtualTargetHandler,
+    DeferredTargetHandler,
 )
 from ._exceptions import (
     IsengardError,
     IsengardStateError,
-    IsengardDefinitionError,
     IsengardConsistencyError,
     IsengardRunError,
 )
@@ -19,20 +17,19 @@ from ._exceptions import (
 
 __all__ = (
     # _api
-    "Isengard",
     "get_parent",
+    "Isengard",
+    # _const
+    "ConstTypes",
     # _target
-    "Target",
-    "VirtualTarget",
-    "ConfiguredVirtualTarget",
-    "VirtualTargetResolver",
-    "FSTarget",
-    "FileTarget",
-    "FolderTarget",
+    "BaseTargetHandler",
+    "FileTargetHandler",
+    "FolderTargetHandler",
+    "VirtualTargetHandler",
+    "DeferredTargetHandler",
     # _exceptions
     "IsengardError",
     "IsengardStateError",
-    "IsengardDefinitionError",
     "IsengardConsistencyError",
     "IsengardRunError",
     # misc

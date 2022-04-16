@@ -6,13 +6,17 @@ class IsengardStateError(Exception):
     pass
 
 
-class IsengardDefinitionError(IsengardError):
-    pass
-
-
 class IsengardConsistencyError(IsengardError):
     pass
 
 
 class IsengardRunError(IsengardError):
+    pass
+
+
+class IsengardUnknownTargetError(IsengardRunError):
+    pass
+
+
+class IsengardDBError(IsengardRunError):
     pass
