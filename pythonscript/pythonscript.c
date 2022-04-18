@@ -13,7 +13,14 @@
 #include <godot/gdnative_interface.h>
 
 #define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#ifdef _DEBUG
+  #undef _DEBUG
+  #include <python.h>
+  #define _DEBUG
+#else
+  #include <python.h>
+#endif
+// #include <Python.h>
 
 #ifdef __GNUC__
 # define GDN_EXPORT __attribute__((visibility("default")))
@@ -43,6 +50,7 @@ static const GDNativeInterface *gdapi = NULL;
 }
 
 static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
+    (void) userdata;  // acknowledge unreferenced parameter
     if (p_level != GDNATIVE_INITIALIZATION_CORE) {
         return;
     }
@@ -88,6 +96,7 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
 }
 
 static void _deinitialize(void *userdata, GDNativeInitializationLevel p_level) {
+    (void) userdata;  // acknowledge unreferenced parameter
     printf("=============== _deinitialize %d\n", p_level);
     if (p_level != GDNATIVE_INITIALIZATION_CORE) {
         printf("=============== _deinitialize skipped %d\n", p_level);
@@ -110,6 +119,7 @@ GDNativeBool GDN_EXPORT pythonscript_init(
     const GDNativeExtensionClassLibraryPtr p_library,
     GDNativeInitialization *r_initialization
 ) {
+    (void) p_library;  // acknowledge unreferenced parameter
     if (p_interface == NULL || r_initialization == NULL) {
         printf("Pythonscript: Invalid init parameters provided by Godot (this should never happen !)\n");
         return false;

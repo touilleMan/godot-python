@@ -198,6 +198,39 @@ class Isengard:
 
         return fn
 
+    def rule_command(
+        self,
+        cmd: str,
+        outputs: Sequence[RawTargetID],
+        inputs: Sequence[RawTargetID],
+        id: Optional[str] = None,
+    ):
+        import string
+        from itertools import takewhile
+
+        # Extract needed config from the command
+        kwargs_params = {}
+        for _, param_with_accessor, _, _ in string.Formatter().parse(cmd):
+            # e.g. `foo[0]` => `foo`
+            param = "".join(takewhile(str.isidentifier, param_with_accessor))
+            if param not in ("input", "inputs", "outputs", "output"):
+                kwargs_params.add(param)
+
+        def _run_cmd(outputs, inputs, **kwargs):
+            import subprocess
+
+            cmd.format(
+                outputs=outputs,
+                output=outputs[0],
+                inputs=inputs,
+                input=inputs[0] if len(inputs) else None,
+                **kwargs,
+            )
+            print(cmd)
+            subprocess.check_call(cmd.split())
+
+        self.rule(id=id, outputs=outputs, inputs=inputs, kwargs_params=kwargs_params)(_run_cmd)
+
     def rule(
         self,
         outputs: Optional[Sequence[RawTargetID]] = None,

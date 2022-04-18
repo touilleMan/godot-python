@@ -163,7 +163,7 @@ class ConfiguredRule(Rule):
             elif k == "outputs":
                 kwargs["outputs"] = outputs
             elif k == "input":
-                kwargs["input"] = inputs[0]
+                kwargs["input"] = inputs[0] if len(inputs) else None
             elif k == "inputs":
                 kwargs["inputs"] = inputs
             elif k == "ruledir":  # Additional config

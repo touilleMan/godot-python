@@ -1,138 +1,39 @@
 import re
 import platform
-from multiprocessing.sharedctypes import Value
-import sys
 from pathlib import Path
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, Tuple, FrozenSet
 import argparse
 
 import isengard
 
-
-# class IsengardCMixin:
-#     def shared_library(self, name: str, sources: List[str], extra_cflags=None, extra_linkflags=None):
-#         for source in sources:
-#             assert sources.endswith()
-#         @self.rule()
-#         def _shared_library():
-#             pass
-
-# clang -o build/x11-64/pythonscript/pythonscript.os -c -O2 -m64 -I/home/emmanuel/projects/godot/godot-python/build/x11-64/platforms/x11-64/cpython_build/include/python3.8/ -Werror-implicit-function-declaration -fcolor-diagnostics -fPIC -Igodot_headers build/x11-64/pythonscript/pythonscript.c
-# clang -o build/x11-64/pythonscript/libpythonscript.so -m64 -L/home/emmanuel/projects/godot/godot-python/build/x11-64/platforms/x11-64/cpython_build/lib -Wl,-rpath,'$ORIGIN/lib' -shared build/x11-64/pythonscript/pythonscript.os -lpython3.8
+from build_tools.c import IsengardCMixin
 
 
-# class IsengardCythonMixin:
-#     pass
+class CustomizedIsengard(IsengardCMixin, isengard.Isengard):
+    pass
 
 
-# class CustomizedIsengard(isengard.Isengard, IsengardCMixin, IsengardCythonMixin):
-#     pass
+isg = CustomizedIsengard(__file__, subdir_default_filename="BUILD.py")
 
 
-# isg = CustomizedIsengard(__file__, subdir_default_filename="BUILD.py")
-isg = isengard.Isengard(__file__, subdir_default_filename="BUILD.py")
-
-
-# @isg.lazy_config()
-# def release_format_ext(host_platform: str) -> str:
-#     # Zip format doesn't support symlinks that are needed for Linux&macOS
-#     if host_platform == "windows":
-#         return "zip"
-#     else:
-#         return "tar.bz2"
-
-
-# @isg.rule(output="{build_dir}/godot-python-{release_suffix}-{host_platform}.{release_format_ext}", input="{build_dir}/dist/")
-# def generate_release(output: Path, input: Path) -> None:
-#     for suffix, format in [(".zip", "zip"), (".tar.bz2", "bztar")]:
-#         if output.name.endswith(suffix):
-#             base_name = str(output)[: -len(suffix)]
-#             break
-
-#     from shutil import make_archive
-#     make_archive(base_name, format, root_dir=input)
-
-
-# libfoo = isg.cython_module("foo.pyx")
-# isg.install(libfoo)
-
-# pythonscript_pyx_src, pythonscript_pyx_header = isg.cython_to_c("_pythonscript.pyx")
-# pythonscript_lib = isg.shared_library("_pythonscript", ["pythonscript.c", pythonscript_pyx_src, pythonscript_pyx_header])
-# isg.install(pythonscript_lib)
-
-
-# def _customize_cflags(cflags, *args):
-#     return [[*cflags, "-O2"], *args]
-
-# isg.c("foo.c", config_hook=_customize_cflags)
-
-# @isg.meta_rule
-# def cython(source: str, config_hook: Optional[Callable]=None):
-#     name, ext = source.rsplit(".")
-#     if ext != "pyx":
-#         raise ValueError("Expects .pyx file as source")
-#     output = f"{name}.so"
-
-#     @isg.rule(output=f"{{__DST__}}/{name}.so", input=source)
-#     def _cython_rule(output: Path, input: Path, cflags: List[str], linkflags: List[str]):
-#         if config_hook:
-#             cflags, linkflags = config_hook(cflags, linkflags)
-#         pass
-
-#     return isengard.Rule(f"cythonize_{source}", outputs=[output], inputs=[source], fn=_cython)
-
-# @isg.meta_rule
-# def shared_library(libname, sources):
-#     def _shared_library():
-#         pass
-
-#     return _shared_library
-
-isg2 = isengard.Isengard(__file__)
-
-
-@isg.lazy_config(substage=isg2, substage_input="python?")
-def python_cflags(substage_input) -> Tuple[str, ...]:
-    return substage_input.resolved.cflags
-
-
-@isg.lazy_config(substage=isg2, substage_input="python?")
-def python_linkflags(substage_input) -> Tuple[str, ...]:
-    return substage_input.resolved.linkflags
-
-
-isg.subscript("build_tools/dist.py")
-isg.subscript("build_tools/godot_binary.py")
-isg.subscript("build_tools/python_distrib.py")
+# isg.subscript("build_tools/dist.py")
+# isg.subscript("build_tools/godot_binary.py")
+# isg.subscript("build_tools/python_distrib.py")
 isg.subdir("pythonscript")
-isg.subdir("tests")
+# isg.subdir("tests")
 
 
 @isg.lazy_config
-def build_dir(rootdir: Path) -> Path:
-    build_dir = rootdir / "build"
-    build_dir.mkdir(parents=True, exist_ok=True)
-    return build_dir
-
-
-@isg.lazy_config
-def build_platform_dir(build_dir: Path, host_platform: str) -> Path:
-    build_platform_dir = build_dir / host_platform
-    build_platform_dir.mkdir(parents=True, exist_ok=True)
-    return build_platform_dir
-
-
-@isg.lazy_config
-def cflags(host_platform: str) -> Tuple[str, ...]:
-    if host_platform.startswith("windows"):
-        return ("/WX", "/W2")
+def cflags(cc_is_msvc: bool, build_type: str) -> FrozenSet[str]:
+    if cc_is_msvc:
+        args = ("/WX", "/W2")
     else:
-        return (
-            "-O2",
-            "-m64",
-            "-Werror-implicit-function-declaration",
-            "-fcolor-diagnostics",
-        )
+        args = ["-Werror-implicit-function-declaration", "-fcolor-diagnostics", "-m64"]
+        if build_type == "release":
+            args += ("-O2", "-m64")
+        else:
+            assert build_type == "debug"
+    return frozenset(args)
 
 
 @isg.lazy_config
@@ -187,9 +88,16 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
-        "--pdb",
-        help="Start postmortem debugger on error",
-        action="store_true",
+        "--build-type",
+        help="Build configuration: debug (default) or release",
+        default="debug",
+        choices=("debug", "release"),
+    )
+    parser.add_argument(
+        "--build-dir",
+        help="Path the build directory",
+        default="build",
+        type=lambda x: Path(x).resolve().absolute(),
     )
     parser.add_argument("--debug", action="store_true")
 
@@ -222,9 +130,20 @@ if __name__ == "__main__":
 
     build_platform = get_build_platform()
     host_platform = build_platform  # No cross-compilation
+
+    build_dir = args.build_dir
+    build_platform_dir = build_dir / host_platform
+    build_platform_dir.mkdir(parents=True, exist_ok=True)
+    dist_dir = build_dir / "dist"
+
     isg.configure(
         build_platform=build_platform,
         host_platform=host_platform,
+        build_type=args.build_type,
+        build_dir=build_dir,
+        build_platform_dir=build_platform_dir,
+        dist_dir=dist_dir,
+        dist_platform_dir=dist_dir / host_platform,
         godot_binary_hint=args.godot_binary,
         godot_headers=args.godot_headers,
         cpython_compressed_stdlib=True,
@@ -236,29 +155,21 @@ if __name__ == "__main__":
         cython_flags=("-3", "--fast-fail"),
         cc_is_msvc=host_platform.startswith("windows"),
         cc="cl.exe" if host_platform.startswith("windows") else "clang",
-        link="link.exe" if host_platform.startswith("windows") else "clang",
+        ld="link.exe" if host_platform.startswith("windows") else "clang",
     )
 
     if args.target == "targets":
-        for target in isg.list_configured_targets():
-            if isinstance(target, Path):
-                target = target.relative_to(isg.rootdir)
-            print(target)
+        # TODO
+        for raw, configured in isg.list_targets():
+            # if isinstance(target, Path):
+            #     target = target.relative_to(isg.rootdir)
+            print(raw, configured)
     else:
         try:
             if args.dump_graph:
-                print(
-                    isg.dump_graph(args.target, display_configured=True, display_relative_path=True)
-                )
+                print(isg.dump_graph(args.target, display_configured=True))
             isg.run(args.target)
-        except isengard.IsengardRunError as exc:
-            if args.pdb:
-                import pdb
-
-                if exc.__cause__:
-                    pdb.post_mortem(exc.__cause__.__traceback__)
-                else:
-                    pdb.post_mortem(exc.__traceback__)
+        except isengard.IsengardError as exc:
             if args.debug:
                 raise
             else:

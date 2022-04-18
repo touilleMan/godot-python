@@ -141,7 +141,7 @@ class Runner:
 
                     if not input_handler.TARGET_WITHOUT_RULE_ALLOWED:
                         raise IsengardUnknownTargetError(
-                            f"No rule has target `{input_target!r}` as output (needed by rule `{rule.id}`)"
+                            f"No rule has target `{input_target}` as output (needed by rule `{rule.id}`)"
                         )
                     else:
                         # The target is most likely a source file existing on disk

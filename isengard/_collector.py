@@ -32,6 +32,7 @@ class Collector:
         # Don't check for `rule.id` unicity given lazy rules are not generated yet
         self.rules.append(rule)
 
+    # TODO: unique ID really needed for this ?
     def add_lazy_rule(
         self,
         id: str,
