@@ -4,6 +4,7 @@ from pathlib import Path
 from .._dump import dump_graph
 from .._rule import ConfiguredRule
 from .._target import ConfiguredTargetID
+from .._exceptions import IsengardRunError
 
 
 def rule_factory(id, outputs, inputs, params, configured_outputs=None, configured_inputs=None):
@@ -79,9 +80,17 @@ def test_empty():
     assert graph == ""
 
 
-def test_unknown_target(rules):
-    with pytest.raises(RuntimeError):
-        dump_graph(rules, target_filter=ConfiguredTargetID("dummy"))
+@pytest.mark.parametrize("kind", ("bad_discriminant", "bad_target"))
+def test_unknown_target(rules, kind):
+    if kind == "bad_discriminant":
+        target_filter = ConfiguredTargetID("dummy")
+    else:
+        assert kind == "bad_target"
+        target_filter = ConfiguredTargetID("dummy#")
+
+    expected_err = r"No rule has target `dummy#?` as output !"
+    with pytest.raises(IsengardRunError, match=expected_err):
+        dump_graph(rules, target_filter=target_filter)
 
 
 def test_single_target(rules):

@@ -6,7 +6,7 @@ from pickle import dumps as pickle_dumps
 from ._rule import ConfiguredRule
 from ._const import ConstTypes
 from ._exceptions import IsengardRunError, IsengardUnknownTargetError, IsengardConsistencyError
-from ._target import TargetHandlersBundle, BaseTargetHandler, ConfiguredTargetID
+from ._target import TargetHandlersBundle, BaseTargetHandler, ConfiguredTargetID, ConfigID
 from ._db import DB
 
 
@@ -14,7 +14,7 @@ class Runner:
     def __init__(
         self,
         rules: Dict[str, ConfiguredRule],
-        config: Dict[str, ConstTypes],
+        config: Dict[ConfigID, ConstTypes],
         target_handlers: TargetHandlersBundle,
         db_path: Path,
     ):

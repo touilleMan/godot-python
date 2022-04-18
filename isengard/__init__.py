@@ -1,6 +1,9 @@
 from ._api import get_parent, Isengard
 from ._const import ConstTypes
 from ._target import (
+    RawTargetID,
+    ConfiguredTargetID,
+    ConfigID,
     BaseTargetHandler,
     FileTargetHandler,
     FolderTargetHandler,
@@ -23,6 +26,9 @@ __all__ = (
     # _const
     "ConstTypes",
     # _target
+    "RawTargetID",
+    "ConfiguredTargetID",
+    "ConfigID",
     "BaseTargetHandler",
     "FileTargetHandler",
     "FolderTargetHandler",

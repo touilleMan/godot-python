@@ -4,7 +4,7 @@ from pathlib import Path
 from functools import wraps
 
 from ._const import ConstTypes
-from ._target import RawTargetID, ConfiguredTargetID
+from ._target import RawTargetID, ConfiguredTargetID, ConfigID
 
 
 RULE_RESERVED_PARAMS = {"inputs", "input", "outputs", "output"}
@@ -20,8 +20,10 @@ def extract_params_from_signature(fn: Callable) -> Set[str]:
             raise TypeError(f"Default value to parameters not allowed")
         if param.kind == param.VAR_POSITIONAL:
             raise TypeError(f"*args parameter not allowed")
+        # Unlike *args, we allow **kwargs given it's useful when the rule is too
+        # dynamic to know the name of the params when the callback is defined
         if param.kind == param.VAR_KEYWORD:
-            raise TypeError(f"**kwargs parameter not allowed")
+            continue
         params.add(param.name)
     return params
 
@@ -46,8 +48,11 @@ class Rule:
         input: Optional[RawTargetID] = None,
         id: Optional[str] = None,
         extra_config: Optional[Set[str]] = None,
+        kwargs_params: Optional[Set[str]] = None,
     ):
         params = extract_params_from_signature(fn)
+        if kwargs_params:
+            params |= kwargs_params
 
         if output is not None:
             if outputs is not None:
@@ -148,7 +153,9 @@ class ConfiguredRule(Rule):
         self.configured_outputs = configured_outputs
         self.configured_inputs = configured_inputs
 
-    def run(self, outputs: List[Any], inputs: List[Any], config: Dict[str, ConstTypes]) -> None:
+    def run(
+        self, outputs: List[Any], inputs: List[Any], config: Dict[ConfigID, ConstTypes]
+    ) -> None:
         kwargs: Dict[str, Any] = {}
         for k in self.params:
             if k == "output":

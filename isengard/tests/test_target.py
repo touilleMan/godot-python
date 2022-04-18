@@ -31,7 +31,7 @@ def test_fs_based_target_handlers_configure(fs_based_target_handler: BaseTargetH
     assert handler.DISCRIMINANT
 
     id = "{a}/{b}/spam" + handler.DISCRIMINANT
-    config: Dict[str, ConstTypes] = {"a": 1, "b": "bay"}
+    config: Dict[ConfigID, ConstTypes] = {"a": 1, "b": "bay"}
     expected_configured_path = "/foo/bar/1/bay/spam"
     if kind == "absolute":
         id = "/foo/bar/" + id
@@ -54,7 +54,7 @@ def test_non_fs_based_target_handlers_configure(target_handlers_bundle, kind):
     assert handler.DISCRIMINANT
 
     workdir = Path("/foo/bar")
-    config: Dict[str, ConstTypes] = {"a": 1, "b": "bay"}
+    config: Dict[ConfigID, ConstTypes] = {"a": 1, "b": "bay"}
     id = "{a}/{b}/spam" + handler.DISCRIMINANT
 
     configured = handler.configure(id=RawTargetID(id), config=config, workdir=workdir)

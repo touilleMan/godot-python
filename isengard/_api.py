@@ -1,9 +1,13 @@
+import sys
+from importlib.util import spec_from_file_location, module_from_spec
+from types import ModuleType
 from contextvars import ContextVar
 from pathlib import Path
 from typing import (
     Dict,
     Tuple,
     List,
+    Set,
     Sequence,
     Callable,
     Union,
@@ -97,6 +101,27 @@ class Isengard:
     def rootdir(self) -> Path:
         return self._entrypoint_dir
 
+    def _load_file_as_module(self, name: str, path: Path) -> None:
+        spec = spec_from_file_location(name, path)
+        module = module_from_spec(spec)
+        spec.loader.exec_module(module)
+        sys.modules[name] = module
+        # Ensure the module's parents are loaded to avoid loading the wrong parent when
+        # doing "import foo.bar" while only "foo.bar" is declared as helper module
+        child_module = module
+        parent_name = name
+        while True:
+            try:
+                parent_name, child_name = parent_name.rsplit(".", 1)
+            except ValueError:
+                break
+            try:
+                parent_module = sys.modules[parent_name]
+            except KeyError:
+                parent_module = ModuleType(parent_name)
+                sys.modules[parent_name] = parent_module
+            setattr(parent_module, child_name, child_module)
+
     def subscript(self, subscript: Union[str, Path]) -> None:
         if not isinstance(subscript, Path):
             subscript = self._workdir / subscript
@@ -149,7 +174,7 @@ class Isengard:
             db_path=self._db_path,
         )
 
-    def lazy_config(self, fn: C, id: Optional[str] = None) -> C:
+    def lazy_config(self, fn: C, id: Optional[str] = None, kwargs_params: Set[str] = set()) -> C:
         if self._config is not None:
             raise IsengardStateError(
                 "Cannot create new lazy configuration value once `configure` has been called !"
@@ -159,17 +184,17 @@ class Isengard:
         if config_id in RESERVED_CONFIG_IDS:
             raise IsengardConsistencyError(f"Config `{config_id}` is a reserved name")
 
-        self._collector.add_lazy_config(config_id, fn)
+        self._collector.add_lazy_config(config_id, fn, kwargs_params)
 
         return fn
 
-    def lazy_rule(self, fn: C, id: Optional[str] = None) -> C:
+    def lazy_rule(self, fn: C, id: Optional[str] = None, kwargs_params: Set[str] = set()) -> C:
         if self._config is not None:
             raise IsengardStateError(
                 "Cannot create new lazy rule generator once `configure` has been called !"
             )
 
-        self._collector.add_lazy_rule(id or fn.__name__, fn, self._workdir)
+        self._collector.add_lazy_rule(id or fn.__name__, fn, self._workdir, kwargs_params)
 
         return fn
 
@@ -180,6 +205,7 @@ class Isengard:
         inputs: Optional[Sequence[RawTargetID]] = None,
         input: Optional[RawTargetID] = None,
         id: Optional[str] = None,
+        kwargs_params: Set[str] = set(),
     ) -> Callable[[C], C]:
         def wrapper(fn: C) -> C:
             if self._config is not None:
@@ -195,6 +221,7 @@ class Isengard:
                 inputs=inputs,
                 input=input,
                 id=id,
+                kwargs_params=kwargs_params,
             )
             self._collector.add_rule(rule)
 
@@ -250,6 +277,8 @@ class Isengard:
             )
             return configured
 
+    # TODO: it should be possible to return the list of cooked element (which is useful to
+    # retreive a target from a given path) by loading previous fingerprint for deferred targets
     def list_targets(self) -> List[Tuple[RawTargetID, ConfiguredTargetID]]:
         if self._config is None:
             raise IsengardStateError("Must call `configure` before !")

@@ -18,6 +18,7 @@ from ._const import ConstTypes
 # Note both raw and configured targets must contain a discriminant suffix.
 RawTargetID = NewType("RawTargetID", str)
 ConfiguredTargetID = NewType("ConfiguredTargetID", str)
+ConfigID = NewType("CookedTarget", str)
 
 # A discriminant suffix is present on raw/configured targets to retrieve it
 # corresponding target handler (which in turn is use to work on the target)
@@ -52,7 +53,7 @@ class TargetHandlersBundle:
         self.discriminant_to_handler = discriminant_to_handler
 
     def configure_target(
-        self, target: RawTargetID, config: Dict[str, ConstTypes], workdir: Path
+        self, target: RawTargetID, config: Dict[ConfigID, ConstTypes], workdir: Path
     ) -> Tuple[ConfiguredTargetID, "BaseTargetHandler"]:
         try:
             handler = self.discriminant_to_handler[target[-1]]
@@ -98,7 +99,7 @@ class BaseTargetHandler(Generic[T]):
         return f"{type(self).__name__}(discriminant={self.DISCRIMINANT!r}, cooked_type={self.COOKED_TYPE!r})"
 
     def configure(
-        self, id: RawTargetID, config: Dict[str, ConstTypes], workdir: Path
+        self, id: RawTargetID, config: Dict[ConfigID, ConstTypes], workdir: Path
     ) -> ConfiguredTargetID:
         try:
             return ConfiguredTargetID(id.format(**config))
@@ -154,7 +155,7 @@ class FileTargetHandler(BaseTargetHandler):
             raise ValueError('`fingerprint_strategy` value must be "stat" or "stat+checksum"')
 
     def configure(
-        self, id: RawTargetID, config: Dict[str, ConstTypes], workdir: Path
+        self, id: RawTargetID, config: Dict[ConfigID, ConstTypes], workdir: Path
     ) -> ConfiguredTargetID:
         configured = super().configure(id, config, workdir)
         if configured:
@@ -246,7 +247,7 @@ class FolderTargetHandler(BaseTargetHandler):
     TARGET_WITHOUT_RULE_ALLOWED = True
 
     def configure(
-        self, id: RawTargetID, config: Dict[str, ConstTypes], workdir: Path
+        self, id: RawTargetID, config: Dict[ConfigID, ConstTypes], workdir: Path
     ) -> ConfiguredTargetID:
         configured = super().configure(id, config, workdir)
         if configured:
@@ -313,6 +314,10 @@ class VirtualTargetHandler(BaseTargetHandler):
         return True
 
 
+# TODO: it would be better to only have `DeferredTarget` in output parameters and
+# directly pass the resolved value to the inputs parameters.
+# On top of that we should check that `resolve()` has been called in the rule the output
+# depend on, and have a cleaner separation with the resolution from previous fingerprint.
 class DeferredTarget(Generic[T]):
     __slot__ = ("id", "_resolved")
 

@@ -243,6 +243,31 @@ def test_lazy_config_duplication_with_regular_config(collector):
         collector.configure(foo=42)
 
 
+def test_lazy_config_with_kwargs(collector):
+    def foo(**kwargs):
+        return kwargs["bar"] * 2
+
+    collector.add_lazy_config("foo", foo, kwargs_params={"bar"})
+    _, config = collector.configure(bar=21)
+    assert config == {"bar": 21, "foo": 42}
+
+
+def test_lazy_rule_with_kwargs(collector):
+    def genrule(register_rule, **kwargs):
+        @register_rule(id=kwargs["generated_id"], output=kwargs["generated_output"])
+        def fn(output):
+            pass
+
+    collector.add_lazy_rule(
+        id="genrule",
+        fn=genrule,
+        workdir=WORKDIR,
+        kwargs_params={"generated_id", "generated_output"},
+    )
+    rules, _ = collector.configure(generated_id="generated42", generated_output="generated?")
+    assert rules["generated42"].outputs == ["generated?"]
+
+
 def test_missing_config(collector, rule, config):
     collector.add_rule(rule)
 

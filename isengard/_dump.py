@@ -2,6 +2,7 @@ from typing import Optional, List, Set, Dict
 
 from ._rule import ConfiguredRule
 from ._target import ConfiguredTargetID
+from ._exceptions import IsengardRunError
 
 
 def dump_graph(
@@ -35,7 +36,7 @@ def dump_graph(
             target_to_rule[output] = rule
 
     if target_filter and target_filter not in target_to_rule:
-        raise RuntimeError(f"No rule has target `{target_filter}` as output !")
+        raise IsengardRunError(f"No rule has target `{target_filter}` as output !")
 
     # Order rules by dependencies
     to_order = rules.copy()

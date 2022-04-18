@@ -23,7 +23,6 @@ from .._rule import Rule
         {"outputs": [], "fn": lambda outputs: None},
         # defauld/args/kwargs not allowed in fn
         {"output": "foo", "fn": lambda *args, output: None},
-        {"output": "foo", "fn": lambda output, **kwargs: None},
         {"output": "foo", "fn": lambda output=42: None},
         # Output/input types must be str
         {"output": Path("foo"), "fn": lambda output: None},
@@ -79,3 +78,15 @@ def test_rule_with_extra_config():
 
     assert rule.needed_config == {"a", "b", "c"}
     assert rule.fn(output=None, a=41, b=2, c=3) == 42
+
+
+def test_rule_with_kwargs():
+    rule = Rule(
+        fn=lambda output, a, **kwargs: a + sum(kwargs.values()),
+        workdir=Path("/foo/bar"),
+        output="foo",
+        kwargs_params={"b", "c"},
+    )
+
+    assert rule.needed_config == {"a", "b", "c"}
+    assert rule.fn(output=None, a=39, b=2, c=1) == 42

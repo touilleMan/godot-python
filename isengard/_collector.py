@@ -37,9 +37,10 @@ class Collector:
         id: str,
         fn: Callable,
         workdir: Path,
+        kwargs_params: Set[str] = set(),
     ):
         # Extract params early to provide better error report
-        params = extract_params_from_signature(fn)
+        params = extract_params_from_signature(fn) | kwargs_params
         # By removing the mandatory register rule callback param, we obtain the needed configs
         try:
             params.remove(LAZY_RULE_RESERVED_REGISTER_PARAM)
@@ -58,9 +59,10 @@ class Collector:
         self,
         id: str,
         fn: Callable,
+        kwargs_params: Set[str] = set(),
     ):
         # Extract params early to provide better error report
-        params = extract_params_from_signature(fn)
+        params = extract_params_from_signature(fn) | kwargs_params
         value = (id, fn, params)
         setted = self.lazy_configs.setdefault(id, value)
         if setted is not value:
