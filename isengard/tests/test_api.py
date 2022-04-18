@@ -3,7 +3,7 @@ from typing import Union
 from pathlib import Path
 
 from .._api import Isengard
-from .._target import FileTargetHandler, FolderTargetHandler
+from .._target import DeferredTarget
 from .._exceptions import IsengardUnknownTargetError
 
 
@@ -21,31 +21,31 @@ def isg(memory_sqlite3, tmp_path):
         return path.relative_to(tmp_path).as_posix()
 
     @isg.lazy_config
-    def cc(host_platform):
+    def cc(host_platform: str) -> str:
         isg.test_events.append("define cc")
         return f"cc-{host_platform}"
 
     @isg.lazy_config
-    def buildir(rootdir, host_platform):
+    def buildir(rootdir: Path, host_platform: str) -> Path:
         buildir_path = rootdir / f"build-{host_platform}"
         isg.test_events.append("define buildir")
         return buildir_path
 
-    @isg.rule(output="{buildir}/includes/config.h")
-    def genarate_config_header(output):
+    @isg.rule(output="{buildir}/includes/config.h#")
+    def genarate_config_header(output: Path):
         isg.test_events.append(f"generate {_clean_path(output)}")
 
     @isg.rule(
-        output="{buildir}/x.o",
-        inputs=["x.c", "{buildir}/includes/config.h"],
+        output="{buildir}/x.o#",
+        inputs=["x.c#", "{buildir}/includes/config.h#"],
         id="compile_x",
     )
     @isg.rule(
-        output="{buildir}/y.o",
-        inputs=["y.c", "{buildir}/includes/config.h"],
+        output="{buildir}/y.o#",
+        inputs=["y.c#", "{buildir}/includes/config.h#"],
         id="compile_y",
     )
-    def compile(output, inputs, cc, cflags):
+    def compile(output: Path, inputs: Path, cc: str, cflags: str):
         cmd = f"{cc} {cflags} -o {_clean_path(output)}"
         for input in inputs:
             if input.name.endswith(".c"):
@@ -54,31 +54,33 @@ def isg(memory_sqlite3, tmp_path):
                 cmd += f" -I {_clean_path(input.parent)}"
         isg.test_events.append(cmd)
 
-    @isg.rule(output="{buildir}/a.out", inputs=["{buildir}/x.o", "{buildir}/y.o"])
-    def link_aout(output, inputs, cc, linkflags):
+    @isg.rule(output="{buildir}/a.out#", inputs=["{buildir}/x.o#", "{buildir}/y.o#"])
+    def link_aout(output: Path, inputs: Path, cc: str, linkflags: str):
         inputs = sorted(str(_clean_path(input)) for input in inputs)
         isg.test_events.append(f"{cc} {linkflags} -o {_clean_path(output)} {' '.join(inputs)}")
 
-    @isg.rule(output="tests@", input="{buildir}/a.out")
-    def run_tests(output, input):
+    @isg.rule(output="tests@", input="{buildir}/a.out#")
+    def run_tests(output: str, input: Path):
         isg.test_events.append("run tests")
 
     @isg.lazy_rule
-    def lazy_generate_distdir(host_platform, register_rule):
+    def lazy_generate_distdir(register_rule, host_platform: str):
         isg.test_events.append("define generate_distdir")
 
-        @register_rule(output="distdir?", input="{buildir}/a.out")
-        def generate_distdir(output, input, buildir):
+        @register_rule(output="distdir?", input="{buildir}/a.out#")
+        def generate_distdir(
+            output: DeferredTarget[Path], input: DeferredTarget[Path], buildir: Path
+        ):
             output_path = buildir / f"foobar-{host_platform}"
             isg.test_events.append(f"cp {_clean_path(input)} {_clean_path(output_path)}")
-            output.resolve(output_path, FolderTargetHandler())
+            output.resolve(output_path, discriminant="/")
 
     @isg.rule(output="distzip?", input="distdir?")
-    def generate_distzip(output, input):
-        input_path, _ = input.resolved
+    def generate_distzip(output: DeferredTarget[Path], input: DeferredTarget[Path]):
+        input_path = input.resolved
         output_path = input_path.parent / f"{input_path.name}.tar.bz2"
         isg.test_events.append(f"tar -cjf {_clean_path(output_path)} {_clean_path(input_path)}")
-        output.resolve(output_path, FileTargetHandler())
+        output.resolve(output_path, discriminant="#")
 
     isg.configure(
         cflags="--std=c99 -O2",
@@ -108,7 +110,7 @@ def test_run_bad_target(isg: IsengardForTest, run_arg: Union[str, Path]):
     "run_arg",
     [
         "{buildir}/a.out#",
-        "{buildir}/a.out",  # `#` is the default handler, so can omit it
+        # "{buildir}/a.out",  # `#` is the default handler, so can omit it
         "build-x86/a.out#",
         Path("build-x86/a.out"),
         Path("build-x86/foo/../a.out"),
@@ -164,20 +166,20 @@ def test_dump_graph(isg: IsengardForTest):
     assert isg.dump_graph() == (
         "tests@\n"
         "├──rule:run_tests\n"
-        "└─{buildir}/a.out\n"
+        "└─{buildir}/a.out#\n"
         "  ├──rule:link_aout\n"
         "  ├──configs:cc, linkflags\n"
-        "  ├─{buildir}/x.o\n"
+        "  ├─{buildir}/x.o#\n"
         "  │ ├──rule:compile_x\n"
         "  │ ├──configs:cc, cflags\n"
-        "  │ ├─x.c\n"
-        "  │ └─{buildir}/includes/config.h\n"
+        "  │ ├─x.c#\n"
+        "  │ └─{buildir}/includes/config.h#\n"
         "  │   └──rule:genarate_config_header\n"
-        "  └─{buildir}/y.o\n"
+        "  └─{buildir}/y.o#\n"
         "    ├──rule:compile_y\n"
         "    ├──configs:cc, cflags\n"
-        "    ├─y.c\n"
-        "    └─{buildir}/includes/config.h\n"
+        "    ├─y.c#\n"
+        "    └─{buildir}/includes/config.h#\n"
         "      ├──rule:genarate_config_header\n"
         "      └─…\n"
         "distzip?\n"
@@ -185,7 +187,7 @@ def test_dump_graph(isg: IsengardForTest):
         "└─distdir?\n"
         "  ├──rule:lazy_generate_distdir::generate_distdir\n"
         "  ├──configs:buildir, host_platform\n"
-        "  └─{buildir}/a.out\n"
+        "  └─{buildir}/a.out#\n"
         "    ├──rule:link_aout\n"
         "    └─…\n"
     )

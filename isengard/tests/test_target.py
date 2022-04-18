@@ -12,8 +12,9 @@ from .._target import (
     FolderTargetHandler,
     VirtualTargetHandler,
     DeferredTargetHandler,
+    TargetHandlersBundle,
 )
-from .._exceptions import IsengardRunError
+from .._exceptions import IsengardRunError, IsengardConsistencyError
 
 
 @pytest.fixture(
@@ -82,7 +83,9 @@ def test_deferred_target_handler_cook_fs_based(tmp_path, target_handlers_bundle,
     handler = DeferredTargetHandler(target_handlers_bundle)
     cooked = handler.cook(ConfiguredTargetID("foo?"), previous_fingerprint=None)
     assert isinstance(cooked, handler.COOKED_TYPE)
-    assert cooked.resolved is None
+    expected_err = r"Deferred target `foo\?` not resolved yet !"
+    with pytest.raises(IsengardRunError, match=expected_err):
+        cooked.resolved
 
     # 2) Actual resolve
     resolved_cooked = tmp_path / "foo"
@@ -124,12 +127,14 @@ def test_deferred_target_handler_cook_fs_based(tmp_path, target_handlers_bundle,
     )  # Resolution doesn't even have to be of the same discriminant
     assert cooked.resolved == "<resolved_as_virtual>"
     # ...unlike regular resolve that can be only donc once
-    expected_err = r""
+    expected_err = r"Deferred target `foo\?` already resolved !"
     with pytest.raises(IsengardRunError, match=expected_err):
         cooked.resolve("<resolved_as_virtual>", "@")
     # Broken fingerprint
     cooked = handler.cook(ConfiguredTargetID("foo?"), previous_fingerprint=b"foo")
-    assert cooked.resolved is None
+    expected_err = r"Deferred target `foo\?` not resolved yet !"
+    with pytest.raises(IsengardRunError, match=expected_err):
+        cooked.resolved
 
 
 def test_deferred_target_handler_cook_unresolved(target_handlers_bundle):
@@ -236,3 +241,13 @@ def test_fs_based_target_handlers_cook_and_co(tmp_path, fs_based_target_handler:
     handler.clean(cooked)
     assert not cooked.exists()
     handler.clean(cooked)  # Clean is idempotent
+
+
+def test_bundle_configure_target_with_invalid_suffix(target_handlers_bundle: TargetHandlersBundle):
+    excepted_err = r"Invalid/missing discriminant suffix for target `foo`, accepted discriminants: `\?`, `#`, `/`, `@`"
+    with pytest.raises(IsengardConsistencyError, match=excepted_err):
+        target_handlers_bundle.configure_target(
+            target="foo",
+            config={},
+            workdir=Path("/foo/bar"),
+        )

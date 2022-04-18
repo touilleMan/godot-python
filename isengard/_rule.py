@@ -4,7 +4,7 @@ from pathlib import Path
 from functools import wraps
 
 from ._const import ConstTypes
-from ._target import ConfiguredTargetID
+from ._target import RawTargetID, ConfiguredTargetID
 
 
 RULE_RESERVED_PARAMS = {"inputs", "input", "outputs", "output"}
@@ -40,10 +40,10 @@ class Rule:
         self,
         workdir: Path,
         fn: Callable,
-        outputs: Optional[Sequence[str]] = None,
-        output: Optional[str] = None,
-        inputs: Optional[Sequence[str]] = None,
-        input: Optional[str] = None,
+        outputs: Optional[Sequence[RawTargetID]] = None,
+        output: Optional[RawTargetID] = None,
+        inputs: Optional[Sequence[RawTargetID]] = None,
+        input: Optional[RawTargetID] = None,
         id: Optional[str] = None,
         extra_config: Optional[Set[str]] = None,
     ):
@@ -134,8 +134,8 @@ class ConfiguredRule(Rule):
         id: str,
         fn: Callable,
         params: Set[str],
-        outputs: List[str],
-        inputs: List[str],
+        outputs: List[RawTargetID],
+        inputs: List[RawTargetID],
         configured_outputs: List[ConfiguredTargetID],
         configured_inputs: List[ConfiguredTargetID],
     ):

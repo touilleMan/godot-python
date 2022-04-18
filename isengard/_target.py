@@ -46,7 +46,7 @@ class TargetHandlersBundle:
             setted = discriminant_to_handler.setdefault(handler.DISCRIMINANT, handler)
             if setted is not handler:
                 raise IsengardConsistencyError(
-                    f"Multiple target handler with suffix `{handler.DISCRIMINANT}`:  {setted} and {handler}"
+                    f"Multiple target handler with discriminant suffix `{handler.DISCRIMINANT}`:  {setted} and {handler}"
                 )
 
         self.discriminant_to_handler = discriminant_to_handler
@@ -61,7 +61,7 @@ class TargetHandlersBundle:
                 [f"`{d}`" for d in self.discriminant_to_handler.keys()]
             )
             raise IsengardConsistencyError(
-                f"No handler for target `{target}`, accepted discriminants: {display_discriminants}"
+                f"Invalid/missing discriminant suffix for target `{target}`, accepted discriminants: {display_discriminants}"
             )
         return (handler.configure(target, config, workdir), handler)
 
@@ -74,7 +74,7 @@ class TargetHandlersBundle:
                 [f"`{d}`" for d in self.discriminant_to_handler.keys()]
             )
             raise IsengardConsistencyError(
-                f"No handler for target `{target}`, accepted discriminants: {display_discriminants}"
+                f"Invalid/missing discriminant suffix for target `{target}`, accepted discriminants: {display_discriminants}"
             )
 
     def cook_target(
@@ -339,8 +339,11 @@ class DeferredTarget(Generic[T]):
         try:
             handler = self._target_handlers_bundle.discriminant_to_handler[discriminant]
         except KeyError:
-            raise IsengardRunError(
-                f"Incorrect discriminant `{discriminant}`, valid options are: {', '.join(self._target_handlers_bundle.discriminant_to_handler.keys())}"
+            display_discriminants = ", ".join(
+                [f"`{d}`" for d in self._target_handlers_bundle.discriminant_to_handler.keys()]
+            )
+            raise IsengardConsistencyError(
+                f"Invalid discriminant `{discriminant}`, accepted discriminants: {display_discriminants}"
             )
 
         if not isinstance(resolved, handler.COOKED_TYPE):
@@ -362,16 +365,26 @@ class DeferredTarget(Generic[T]):
             #    In such case the resolution gets replaced if we detect the rule related
             #    to this target needs to be run.
             if already_resolved_previous_fingerprint is None:  # case 1)
-                raise IsengardRunError("Target already resolved !")
+                raise IsengardRunError(f"Deferred target `{self.id}` already resolved !")
 
         setattr(self, "_resolved", (resolved, handler, previous_fingerprint))
 
     @property
-    def resolved(self) -> Optional[Tuple[T, BaseTargetHandler]]:
+    def is_resolved(self) -> bool:
+        try:
+            _, _, resolved_previous_fingerprint = getattr(self, "_resolved")[0]
+        except AttributeError:
+            return False
+        else:
+            # See explanation in `_resolve`
+            return resolved_previous_fingerprint is None
+
+    @property
+    def resolved(self) -> T:
         try:
             return getattr(self, "_resolved")[0]
         except AttributeError:
-            return None
+            raise IsengardRunError(f"Deferred target `{self.id}` not resolved yet !")
 
     @property
     def _resolved_handler(self) -> Optional[BaseTargetHandler]:

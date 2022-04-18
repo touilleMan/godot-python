@@ -5,7 +5,7 @@ import sqlite3
 from pathlib import Path
 
 from .. import _db
-from .._api import DEFAULT_TARGET_HANDLERS
+from .._api import Isengard
 from .._const import ConstTypes
 from .._runner import Runner
 from .._target import TargetHandlersBundle, FileTargetHandler, ConfiguredTargetID
@@ -24,7 +24,7 @@ def memory_sqlite3(monkeypatch):
 @pytest.fixture
 def target_handlers_bundle():
     return TargetHandlersBundle(
-        target_handlers=DEFAULT_TARGET_HANDLERS,
+        target_handlers=Isengard.DEFAULT_TARGET_HANDLERS,
     )
 
 

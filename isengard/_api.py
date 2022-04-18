@@ -18,13 +18,14 @@ from ._rule import Rule, RULE_RESERVED_PARAMS, LAZY_RULE_RESERVED_REGISTER_PARAM
 from ._dump import dump_graph
 from ._runner import Runner
 from ._target import (
+    RawTargetID,
+    TargetDiscriminant,
     ConfiguredTargetID,
     TargetHandlersBundle,
     BaseTargetHandler,
     FileTargetHandler,
     FolderTargetHandler,
     VirtualTargetHandler,
-    DeferredTargetHandler,
 )
 from ._collector import Collector
 from ._exceptions import (
@@ -42,14 +43,6 @@ RESERVED_CONFIG_IDS = {
 }
 
 
-DEFAULT_TARGET_HANDLERS = [
-    FileTargetHandler(),
-    FolderTargetHandler(),
-    VirtualTargetHandler(),
-    # Not `DeferredTargetHandler` is automatically added by the target bundle
-]
-
-
 C = TypeVar("C", bound=Callable[..., None])
 
 
@@ -64,6 +57,14 @@ def get_parent() -> "Isengard":
 
 
 class Isengard:
+
+    DEFAULT_TARGET_HANDLERS = [
+        FileTargetHandler(),
+        FolderTargetHandler(),
+        VirtualTargetHandler(),
+        # Not `DeferredTargetHandler` is automatically added by the target bundle
+    ]
+
     def __init__(
         self,
         self_file: Union[str, Path],
@@ -174,10 +175,10 @@ class Isengard:
 
     def rule(
         self,
-        outputs: Optional[Sequence[str]] = None,
-        output: Optional[str] = None,
-        inputs: Optional[Sequence[str]] = None,
-        input: Optional[str] = None,
+        outputs: Optional[Sequence[RawTargetID]] = None,
+        output: Optional[RawTargetID] = None,
+        inputs: Optional[Sequence[RawTargetID]] = None,
+        input: Optional[RawTargetID] = None,
         id: Optional[str] = None,
     ) -> Callable[[C], C]:
         def wrapper(fn: C) -> C:
@@ -201,7 +202,7 @@ class Isengard:
 
         return wrapper
 
-    def run(self, target: Union[str, Path]) -> bool:
+    def run(self, target: Union[RawTargetID, Path]) -> bool:
         """
         Raises:
             IsengardUnknownTargetError
@@ -214,7 +215,7 @@ class Isengard:
         configured = self.configure_target(target)
         return self._runner.run(target=configured)
 
-    def clean(self, target: Union[str, Path]) -> None:
+    def clean(self, target: Union[RawTargetID, Path]) -> None:
         """
         Raises:
             IsengardUnknownTargetError
@@ -227,20 +228,21 @@ class Isengard:
         configured = self.configure_target(target)
         self._runner.clean(configured)
 
-    def configure_target(self, target: Union[str, Path]) -> ConfiguredTargetID:
+    def configure_target(
+        self,
+        target: Union[RawTargetID, Path],
+        path_discriminant: TargetDiscriminant = FileTargetHandler.DISCRIMINANT,
+    ) -> ConfiguredTargetID:
         if isinstance(target, Path):
             # Identifying a target by it Path on the FS is convenient for the user,
             # but not for us given we use the `ConfiguredTargetID` instead precisely to
-            # unify Virtual and on-disk targets...
+            # unify virtual and on-disk targets...
             # So we consider only the targets from the default handler can be
             # represented as Path.
             if not target.is_absolute():
                 target = self._workdir / target
-            configured_without_suffix = target.resolve().as_posix()
-            return ConfiguredTargetID(
-                configured_without_suffix
-                + self._target_handlers_bundle.default_target_handler.DISCRIMINANT
-            )
+            configured_without_discriminant = target.resolve().as_posix()
+            return ConfiguredTargetID(configured_without_discriminant + path_discriminant)
 
         else:
             configured, _ = self._target_handlers_bundle.configure_target(
@@ -248,7 +250,7 @@ class Isengard:
             )
             return configured
 
-    def list_targets(self) -> List[Tuple[str, ConfiguredTargetID]]:
+    def list_targets(self) -> List[Tuple[RawTargetID, ConfiguredTargetID]]:
         if self._config is None:
             raise IsengardStateError("Must call `configure` before !")
 
@@ -260,7 +262,7 @@ class Isengard:
 
     def dump_graph(
         self,
-        target: Optional[Union[str, Path]] = None,
+        target: Optional[Union[RawTargetID, Path]] = None,
         display_configured: bool = False,
     ) -> str:
         """
