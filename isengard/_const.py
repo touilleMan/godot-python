@@ -1,11 +1,11 @@
-from typing import Union, Tuple
+from typing import FrozenSet, Union, Tuple
 from pathlib import Path
 import pickle
 
 
 # Note bool is a subclass of int
 ConstScalarTypes = Union[Path, int, float, str, bytes, None]
-ConstTypes = Union[ConstScalarTypes, Tuple[ConstScalarTypes, ...]]
+ConstTypes = Union[ConstScalarTypes, Tuple[ConstScalarTypes, ...], FrozenSet[ConstScalarTypes]]
 
 CONST_SCALAR_TYPES = (Path, str, bytes, int, float, type(None))
 

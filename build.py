@@ -66,7 +66,6 @@ isg = isengard.Isengard(__file__, subdir_default_filename="BUILD.py")
 
 # isg.c("foo.c", config_hook=_customize_cflags)
 
-
 # @isg.meta_rule
 # def cython(source: str, config_hook: Optional[Callable]=None):
 #     name, ext = source.rsplit(".")
@@ -88,6 +87,18 @@ isg = isengard.Isengard(__file__, subdir_default_filename="BUILD.py")
 #         pass
 
 #     return _shared_library
+
+isg2 = isengard.Isengard(__file__)
+
+
+@isg.lazy_config(substage=isg2, substage_input="python?")
+def python_cflags(substage_input) -> Tuple[str, ...]:
+    return substage_input.resolved.cflags
+
+
+@isg.lazy_config(substage=isg2, substage_input="python?")
+def python_linkflags(substage_input) -> Tuple[str, ...]:
+    return substage_input.resolved.linkflags
 
 
 isg.subscript("build_tools/dist.py")

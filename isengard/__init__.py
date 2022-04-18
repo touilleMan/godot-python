@@ -6,6 +6,7 @@ from ._target import (
     FolderTargetHandler,
     VirtualTargetHandler,
     DeferredTargetHandler,
+    DeferredTarget,
 )
 from ._exceptions import (
     IsengardError,
@@ -27,6 +28,7 @@ __all__ = (
     "FolderTargetHandler",
     "VirtualTargetHandler",
     "DeferredTargetHandler",
+    "DeferredTarget",
     # _exceptions
     "IsengardError",
     "IsengardStateError",

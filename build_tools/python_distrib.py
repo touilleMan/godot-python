@@ -1,7 +1,10 @@
 from typing import Tuple
+from urllib.request import urlopen
 from pathlib import Path
 import shutil
 import json
+import tarfile
+from zstandard import ZstdDecompressor
 
 import isengard
 
@@ -33,64 +36,70 @@ def cpython_prebuild_url(host_platform: str, host_cpython_version: str) -> str:
     return prebuild_url
 
 
-@isg.rule(output="cpython_prebuild_archive@")
-def download_cpython_prebuild_archive(
-    output: isengard.VirtualTargetResolver, build_platform_dir: Path, cpython_prebuild_url: str
-) -> None:
-    from urllib.request import urlopen
-
+@isg.lazy_config
+def cpython_prebuild_archive_path(build_platform_dir: Path, cpython_prebuild_url: str) -> str:
     _, name = cpython_prebuild_url.rsplit("/", 1)
-    path = build_platform_dir / name
-    # TODO: should be handled by rule starter
-    if not path.exists():
-        print(f"Downloading {cpython_prebuild_url}...")
-        with urlopen(cpython_prebuild_url) as infd:
-            with open(path, "bw") as outfd:
-                outfd.write(infd.read())
-    output.resolve(path)
+    return build_platform_dir / name
+
+
+@isg.lazy_config
+def libpython_config(
+    host_cpython_version: str,
+    host_platform: str,
+    cc_is_msvc: bool,
+    build_platform_dir: Path,
+) -> str:
+    basedir = build_platform_dir / "cpython_prebuild"
+
+    major, minor, _ = host_cpython_version.split(".")
+    if host_platform.startswith("windows"):
+        python_header_dir = basedir / "python/install/include"
+        python_lib_dir = basedir / "python/install/libs"
+        python_lib = f"python{major}{minor}"
+    else:
+        python_header_dir = basedir / f"python/install/include/python{major}.{minor}"
+        python_lib_dir = basedir / "python/install/lib"
+        python_lib = f"python{major}.{minor}"
+
+    if cc_is_msvc:
+        cflags = (f"/I{python_header_dir}",)
+        linkflags = (f"/LIBPATH:{python_lib_dir}", f"{python_lib}.lib")
+    else:
+        cflags = (f"-I{python_header_dir}",)
+        linkflags = (f"-L{python_lib_dir}", f"-l{python_lib}")
+
+    return (cflags, linkflags)
+
+
+@isg.lazy_config
+def libpython_cflags(python_config: Tuple[Tuple[str, ...], Tuple[str, ...]]) -> Tuple[str, ...]:
+    return python_config[0]
+
+
+@isg.lazy_config
+def libpython_linkflags(python_config: Tuple[Tuple[str, ...], Tuple[str, ...]]) -> Tuple[str, ...]:
+    return python_config[1]
+
+
+@isg.rule(output="{cpython_prebuild_archive_path}#")
+def download_cpython_prebuild_archive(output: Path, cpython_prebuild_url: str) -> None:
+    print(f"Downloading {cpython_prebuild_url}...")
+    with urlopen(cpython_prebuild_url) as infd:
+        with open(output, "bw") as outfd:
+            outfd.write(infd.read())
 
 
 @isg.rule(
-    outputs=[
-        "{build_platform_dir}/cpython_prebuild/",
-        "python_linkflags@",
-        "python_cflags@",
-    ],
-    input="cpython_prebuild_archive@",
+    output="{build_platform_dir}/cpython_prebuild/",
+    input="{cpython_prebuild_archive_path}#",
 )
 def extract_cpython_prebuild_archive(
-    outputs: Tuple[Path, isengard.VirtualTargetResolver, isengard.VirtualTargetResolver],
+    output: Path,
     input: Path,
     host_cpython_version: str,
     host_platform: str,
     cc_is_msvc: bool,
 ) -> None:
-    output, python_linkflags, python_cflags = outputs
-
-    major, minor, _ = host_cpython_version.split(".")
-    if host_platform.startswith("windows"):
-        python_header_dir = output / f"python/install/include"
-        python_lib_dir = output / "python/install/libs"
-        python_lib = f"python{major}{minor}"
-    else:
-        python_header_dir = output / f"python/install/include/python{major}.{minor}"
-        python_lib_dir = output / "python/install/lib"
-        python_lib = f"python{major}.{minor}"
-
-    if cc_is_msvc:
-        python_cflags.resolve((f"/I{python_header_dir}",))
-        python_linkflags.resolve((f"/LIBPATH:{python_lib_dir}", f"{python_lib}.lib"))
-    else:
-        python_cflags.resolve((f"-I{python_header_dir}",))
-        python_linkflags.resolve((f"-L{python_lib_dir}", f"-l{python_lib}"))
-
-    # TODO: should be handled by rule starter
-    if output.exists():
-        return
-
-    import tarfile
-    from zstandard import ZstdDecompressor
-
     print(f"Extracting {input}...")
     with open(input, "rb") as fh:
         dctx = ZstdDecompressor()
@@ -112,10 +121,6 @@ def generate_cpython_distrib(
     cpython_compressed_stdlib: bool,
     host_platform: str,
 ):
-    # TODO: should be handled by rule starter
-    if output.exists():
-        return
-
     global _generate_cpython_distrib_linux, _generate_cpython_distrib_windows
 
     prebuild = input / "python"

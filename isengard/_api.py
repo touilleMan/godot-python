@@ -34,7 +34,7 @@ from ._exceptions import (
 )
 
 
-RESERVED_CONFIG_NAMES = {
+RESERVED_CONFIG_IDS = {
     *RULE_RESERVED_PARAMS,
     LAZY_RULE_RESERVED_REGISTER_PARAM,
     "rootdir",  # Entrypoint script's directory
@@ -151,27 +151,27 @@ class Isengard:
             db_path=self._db_path,
         )
 
-    def lazy_config(self, fn: C) -> C:
+    def lazy_config(self, fn: C, id: Optional[str] = None) -> C:
         if self._config is not None:
             raise IsengardStateError(
                 "Cannot create new lazy configuration value once `configure` has been called !"
             )
 
-        config_name = fn.__name__
-        if config_name in RESERVED_CONFIG_NAMES:
-            raise IsengardConsistencyError(f"Config `{config_name}` is a reserved name")
+        config_id = id or fn.__name__
+        if config_id in RESERVED_CONFIG_IDS:
+            raise IsengardConsistencyError(f"Config `{config_id}` is a reserved name")
 
-        self._collector.add_lazy_config(config_name, fn)
+        self._collector.add_lazy_config(config_id, fn)
 
         return fn
 
-    def lazy_rule(self, fn: C) -> C:
+    def lazy_rule(self, fn: C, id: Optional[str] = None) -> C:
         if self._config is not None:
             raise IsengardStateError(
                 "Cannot create new lazy rule generator once `configure` has been called !"
             )
 
-        self._collector.add_lazy_rule(fn.__name__, fn, self._workdir)
+        self._collector.add_lazy_rule(id or fn.__name__, fn, self._workdir)
 
         return fn
 
@@ -242,7 +242,7 @@ class Isengard:
             resolved_without_suffix = target.resolve().as_posix()
             return ResolvedTargetID(
                 resolved_without_suffix
-                + self._target_handlers_bundle.default_target_handler.DISCRIMINANT_SUFFIX
+                + self._target_handlers_bundle.default_target_handler.DISCRIMINANT
             )
 
         else:
