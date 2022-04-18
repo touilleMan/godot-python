@@ -4,7 +4,7 @@ from sqlite3 import connect as sqlite3_connect, Connection, OperationalError
 from pathlib import Path
 
 from ._exceptions import IsengardDBError
-from ._target import ResolvedTargetID
+from ._target import ConfiguredTargetID
 
 
 RuleRunID = NewType("RuleRunID", int)
@@ -114,14 +114,14 @@ class DB:
 
     def fetch_rule_previous_run(
         self, fingerprint: bytes
-    ) -> Optional[Dict[ResolvedTargetID, bytes]]:
+    ) -> Optional[Dict[ConfiguredTargetID, bytes]]:
         rows = self.con.execute(SQL_FETCH_PREVIOUS_RUN, (fingerprint,)).fetchall()
         if not rows:
             return None
         return {row[0]: row[1] for row in rows}
 
     def set_rule_previous_run(
-        self, fingerprint: bytes, target_fingerprints: Sequence[Tuple[ResolvedTargetID, bytes]]
+        self, fingerprint: bytes, target_fingerprints: Sequence[Tuple[ConfiguredTargetID, bytes]]
     ) -> RuleRunID:
         with self.con:
             cur = self.con.cursor()

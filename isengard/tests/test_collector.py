@@ -63,20 +63,20 @@ def test_ok(collector, rule, config):
 
     collector.add_lazy_rule(id="lazy_rule_gen_multiple", fn=lazy_rule_gen_multiple, workdir=WORKDIR)
 
-    resolved_rules, resolved_config = collector.configure(**config)
-    assert resolved_rules.keys() == {
+    configured_rules, configured_config = collector.configure(**config)
+    assert configured_rules.keys() == {
         "compile_x",
         "linkstuff",
         "lazy_rule_gen_multiple::generate_foo_c",
         "lazy_rule_gen_multiple::compile_foo_c",
     }
-    assert resolved_config.keys() == {"cc", "gen_dir", "host_platform", "cflags", "ldflags"}
+    assert configured_config.keys() == {"cc", "gen_dir", "host_platform", "cflags", "ldflags"}
     # Ensure lazy rules also contains their generator config dependencies
-    assert resolved_rules["lazy_rule_gen_multiple::generate_foo_c"].needed_config == {
+    assert configured_rules["lazy_rule_gen_multiple::generate_foo_c"].needed_config == {
         "cc",
         "host_platform",
     }
-    assert resolved_rules["lazy_rule_gen_multiple::compile_foo_c"].needed_config == {
+    assert configured_rules["lazy_rule_gen_multiple::compile_foo_c"].needed_config == {
         "cc",
         "cflags",
         "host_platform",
@@ -84,20 +84,20 @@ def test_ok(collector, rule, config):
 
 
 @pytest.mark.parametrize("kind", ["relative", "absolute"])
-def test_resolve_target_relative_path(collector, rule, kind):
+def test_configure_target_relative_path(collector, rule, kind):
     if kind == "relative":
         outputs = ["{build_dir}/x.o#", "logs/compile.log#"]
         inputs = ["{gen_dir}/config.h#", "x.c#"]
         config = {"build_dir": Path("build"), "gen_dir": Path("gen/headers")}
-        expected_resolved_outputs = ["/home/u/build/x.o#", "/home/u/logs/compile.log#"]
-        expected_resolved_inputs = ["/home/u/gen/headers/config.h#", "/home/u/x.c#"]
+        expected_configured_outputs = ["/home/u/build/x.o#", "/home/u/logs/compile.log#"]
+        expected_configured_inputs = ["/home/u/gen/headers/config.h#", "/home/u/x.c#"]
     else:
         assert kind == "absolute"
         outputs = ["{build_dir}/x.o#", "/logs/compile.log#"]
         inputs = ["{gen_dir}/config.h#", "/x.c#"]
         config = {"build_dir": Path("/build"), "gen_dir": Path("/gen/headers")}
-        expected_resolved_outputs = ["/build/x.o#", "/logs/compile.log#"]
-        expected_resolved_inputs = ["/gen/headers/config.h#", "/x.c#"]
+        expected_configured_outputs = ["/build/x.o#", "/logs/compile.log#"]
+        expected_configured_inputs = ["/gen/headers/config.h#", "/x.c#"]
 
     rule = Rule(
         id="compile_x",
@@ -107,10 +107,10 @@ def test_resolve_target_relative_path(collector, rule, kind):
         workdir=Path("/home/u"),
     )
     collector.add_rule(rule)
-    resolved_rules, _ = collector.configure(**config)
+    configured_rules, _ = collector.configure(**config)
 
-    assert resolved_rules["compile_x"].resolved_outputs == expected_resolved_outputs
-    assert resolved_rules["compile_x"].resolved_inputs == expected_resolved_inputs
+    assert configured_rules["compile_x"].configured_outputs == expected_configured_outputs
+    assert configured_rules["compile_x"].configured_inputs == expected_configured_inputs
 
 
 @pytest.mark.parametrize("kind", ["same_rule", "same_id"])
@@ -122,7 +122,7 @@ def test_rule_duplication(collector, rule, config, kind):
         expected_err = "Multiple rules to produce `x.o#`: `compile_x` and `compile_x`"
     else:
         assert kind == "same_id"
-        expected_err = r"Multiple rules have the same ID `compile_x`: <ResolvedRule id=compile_x .*> and <ResolvedRule id=compile_x .*>"
+        expected_err = r"Multiple rules have the same ID `compile_x`: <ConfiguredRule id=compile_x .*> and <ConfiguredRule id=compile_x .*>"
         rule2 = Rule(
             id=rule.id,
             workdir=WORKDIR,

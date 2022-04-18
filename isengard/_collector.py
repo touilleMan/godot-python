@@ -5,12 +5,12 @@ from ._const import ConstTypes
 from ._exceptions import IsengardConsistencyError
 from ._rule import (
     Rule,
-    ResolvedRule,
+    ConfiguredRule,
     extract_params_from_signature,
     RULE_RESERVED_PARAMS,
     LAZY_RULE_RESERVED_REGISTER_PARAM,
 )
-from ._target import TargetHandlersBundle, ResolvedTargetID
+from ._target import TargetHandlersBundle, ConfiguredTargetID
 
 
 RuleFn = Callable[..., Any]
@@ -70,7 +70,7 @@ class Collector:
 
     def configure(
         self, **config: ConstTypes
-    ) -> Tuple[Dict[str, ResolvedRule], Dict[str, ConstTypes]]:
+    ) -> Tuple[Dict[str, ConfiguredRule], Dict[str, ConstTypes]]:
         """
         Returns: ({<rule_id>: <rule>}, {<config_id>: <config_value>}
         """
@@ -140,19 +140,19 @@ class Collector:
 
         # Finally resolve inputs/outputs and check config params in each rule
         allowed_params = RULE_RESERVED_PARAMS | config.keys()
-        resolved_rules: Dict[str, ResolvedRule] = {}
+        configured_rules: Dict[str, ConfiguredRule] = {}
         target_to_rule: Dict[str, str] = {}
         for rule in rules:
-            resolved_inputs: List[ResolvedTargetID] = []
+            configured_inputs: List[ConfiguredTargetID] = []
             for ri_target in rule.inputs:
-                resolved_inputs.append(
-                    self.target_handlers.resolve_target(ri_target, config, rule.workdir)[0]
+                configured_inputs.append(
+                    self.target_handlers.configure_target(ri_target, config, rule.workdir)[0]
                 )
 
-            resolved_outputs: List[ResolvedTargetID] = []
+            configured_outputs: List[ConfiguredTargetID] = []
             for ro_target in rule.outputs:
-                resolved_outputs.append(
-                    self.target_handlers.resolve_target(ro_target, config, rule.workdir)[0]
+                configured_outputs.append(
+                    self.target_handlers.configure_target(ro_target, config, rule.workdir)[0]
                 )
                 if ro_target in target_to_rule:
                     raise IsengardConsistencyError(
@@ -166,21 +166,21 @@ class Collector:
                     f"Rule `{rule.id}` contains unknown config item(s) {missings}"
                 )
 
-            resolved_rule = ResolvedRule(
+            configured_rule = ConfiguredRule(
                 workdir=rule.workdir,
                 id=rule.id,
                 fn=rule.fn,
                 params=rule.params,
                 outputs=rule.outputs,
                 inputs=rule.inputs,
-                resolved_outputs=resolved_outputs,
-                resolved_inputs=resolved_inputs,
+                configured_outputs=configured_outputs,
+                configured_inputs=configured_inputs,
             )
-            r_setted = resolved_rules.setdefault(rule.id, resolved_rule)
-            if r_setted is not resolved_rule:
+            r_setted = configured_rules.setdefault(rule.id, configured_rule)
+            if r_setted is not configured_rule:
                 raise IsengardConsistencyError(
-                    f"Multiple rules have the same ID `{rule.id}`: {r_setted!r} and {resolved_rule!r}"
+                    f"Multiple rules have the same ID `{rule.id}`: {r_setted!r} and {configured_rule!r}"
                 )
 
         # All set !
-        return resolved_rules, config
+        return configured_rules, config

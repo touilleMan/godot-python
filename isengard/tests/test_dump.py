@@ -2,19 +2,19 @@ import pytest
 from pathlib import Path
 
 from .._dump import dump_graph
-from .._rule import ResolvedRule
-from .._target import ResolvedTargetID
+from .._rule import ConfiguredRule
+from .._target import ConfiguredTargetID
 
 
-def rule_factory(id, outputs, inputs, params, resolved_outputs=None, resolved_inputs=None):
-    return ResolvedRule(
+def rule_factory(id, outputs, inputs, params, configured_outputs=None, configured_inputs=None):
+    return ConfiguredRule(
         id=id,
         fn=lambda: None,  # Bad params, but this is not checked here
         params=params,
         outputs=outputs,
         inputs=inputs,
-        resolved_outputs=resolved_outputs or [f"/foo/bar/{x}" for x in outputs],
-        resolved_inputs=resolved_inputs or [f"/foo/bar/{x}" for x in inputs],
+        configured_outputs=configured_outputs or [f"/foo/bar/{x}" for x in outputs],
+        configured_inputs=configured_inputs or [f"/foo/bar/{x}" for x in inputs],
         workdir=Path("/foo/bar"),
     )
 
@@ -25,7 +25,7 @@ def rules():
         rule_factory(
             id="generate_config_header",
             outputs=["{gen_dir}/config.h#"],
-            resolved_outputs=["/foo/bar/generated/config.h#"],
+            configured_outputs=["/foo/bar/generated/config.h#"],
             inputs=[],
             params={"host_platform"},
         ),
@@ -33,21 +33,21 @@ def rules():
             id="compile_x",
             outputs=["x.o#"],
             inputs=["x.c#", "{gen_dir}/config.h#"],
-            resolved_inputs=["/foo/bar/x.c#", "/foo/bar/generated/config.h#"],
+            configured_inputs=["/foo/bar/x.c#", "/foo/bar/generated/config.h#"],
             params={"cc", "cflags"},
         ),
         rule_factory(
             id="compile_y",
             outputs=["y.o#"],
             inputs=["y.c#", "{gen_dir}/config.h#"],
-            resolved_inputs=["/foo/bar/y.c#", "/foo/bar/generated/config.h#"],
+            configured_inputs=["/foo/bar/y.c#", "/foo/bar/generated/config.h#"],
             params={"cc", "cflags"},
         ),
         rule_factory(
             id="compile_z",
             outputs=["z.o#"],
             inputs=["z.c#", "{gen_dir}/config.h#"],
-            resolved_inputs=["/foo/bar/z.c#", "/foo/bar/generated/config.h#"],
+            configured_inputs=["/foo/bar/z.c#", "/foo/bar/generated/config.h#"],
             params={"cc", "cflags"},
         ),
         rule_factory(
@@ -81,11 +81,11 @@ def test_empty():
 
 def test_unknown_target(rules):
     with pytest.raises(RuntimeError):
-        dump_graph(rules, target_filter=ResolvedTargetID("dummy"))
+        dump_graph(rules, target_filter=ConfiguredTargetID("dummy"))
 
 
 def test_single_target(rules):
-    assert dump_graph(rules, target_filter=ResolvedTargetID("/foo/bar/x.o#")) == (
+    assert dump_graph(rules, target_filter=ConfiguredTargetID("/foo/bar/x.o#")) == (
         "x.o#\n"
         "├──rule:compile_x\n"
         "├──configs:cc, cflags\n"
@@ -96,11 +96,11 @@ def test_single_target(rules):
     )
 
 
-@pytest.mark.parametrize("display_resolved", (False, True))
-def test_full(rules, display_resolved):
-    gen_prefix = "/foo/bar/generated/" if display_resolved else "{gen_dir}/"
-    prefix = "/foo/bar/" if display_resolved else ""
-    assert dump_graph(rules, display_resolved=display_resolved) == (
+@pytest.mark.parametrize("display_configured", (False, True))
+def test_full(rules, display_configured):
+    gen_prefix = "/foo/bar/generated/" if display_configured else "{gen_dir}/"
+    prefix = "/foo/bar/" if display_configured else ""
+    assert dump_graph(rules, display_configured=display_configured) == (
         "{prefix}a.out#\n"
         "├──rule:link_aout\n"
         "├──configs:cc, linkflags\n"

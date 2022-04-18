@@ -5,14 +5,15 @@ from pathlib import Path
 
 from .._target import (
     ConstTypes,
-    UnresolvedTargetID,
-    ResolvedTargetID,
+    RawTargetID,
+    ConfiguredTargetID,
     BaseTargetHandler,
     FileTargetHandler,
     FolderTargetHandler,
     VirtualTargetHandler,
     DeferredTargetHandler,
 )
+from .._exceptions import IsengardRunError
 
 
 @pytest.fixture(
@@ -23,28 +24,14 @@ def fs_based_target_handler(request):
     return request.param()
 
 
-@pytest.fixture(
-    params=[
-        VirtualTargetHandler,
-        DeferredTargetHandler,
-    ],
-    ids=[
-        "virtual",
-        "deferred",
-    ],
-)
-def non_fs_based_target_handler(request):
-    return request.param()
-
-
 @pytest.mark.parametrize("kind", ["absolute", "relative"])
-def test_fs_based_target_handlers_resolve(fs_based_target_handler: BaseTargetHandler, kind):
+def test_fs_based_target_handlers_configure(fs_based_target_handler: BaseTargetHandler, kind):
     handler = fs_based_target_handler
     assert handler.DISCRIMINANT
 
     id = "{a}/{b}/spam" + handler.DISCRIMINANT
     config: Dict[str, ConstTypes] = {"a": 1, "b": "bay"}
-    expected_resolved_path = "/foo/bar/1/bay/spam"
+    expected_configured_path = "/foo/bar/1/bay/spam"
     if kind == "absolute":
         id = "/foo/bar/" + id
         workdir = Path("/whatever/")
@@ -52,28 +39,33 @@ def test_fs_based_target_handlers_resolve(fs_based_target_handler: BaseTargetHan
         assert kind == "relative"
         workdir = Path("/foo/bar/")
 
-    resolved = handler.resolve(id=UnresolvedTargetID(id), config=config, workdir=workdir)
-    assert resolved == str(expected_resolved_path) + handler.DISCRIMINANT
+    configured = handler.configure(id=RawTargetID(id), config=config, workdir=workdir)
+    assert configured == str(expected_configured_path) + handler.DISCRIMINANT
 
 
-def test_non_fs_based_target_handlers_resolve(non_fs_based_target_handler: BaseTargetHandler):
-    handler = non_fs_based_target_handler
+@pytest.mark.parametrize("kind", ["virtual", "deferred"])
+def test_non_fs_based_target_handlers_configure(target_handlers_bundle, kind):
+    if kind == "virtual":
+        handler = VirtualTargetHandler()
+    else:
+        assert kind == "deferred"
+        handler = DeferredTargetHandler(target_handlers_bundle)
     assert handler.DISCRIMINANT
 
     workdir = Path("/foo/bar")
     config: Dict[str, ConstTypes] = {"a": 1, "b": "bay"}
     id = "{a}/{b}/spam" + handler.DISCRIMINANT
 
-    resolved = handler.resolve(id=UnresolvedTargetID(id), config=config, workdir=workdir)
-    assert resolved == "1/bay/spam" + handler.DISCRIMINANT
+    configured = handler.configure(id=RawTargetID(id), config=config, workdir=workdir)
+    assert configured == "1/bay/spam" + handler.DISCRIMINANT
 
 
 def test_virtual_target_handler_cook_and_co():
     handler = VirtualTargetHandler()
-    resolved = ResolvedTargetID("foo@")
+    configured = ConfiguredTargetID("foo@")
 
     # 1) Cook
-    cooked = handler.cook(id=resolved, previous_fingerprint=None)
+    cooked = handler.cook(id=configured, previous_fingerprint=None)
     assert cooked == "foo@"
 
     # 2) Compute fingerprint
@@ -85,23 +77,23 @@ def test_virtual_target_handler_cook_and_co():
 
 
 @pytest.mark.parametrize("kind", ["file", "folder"])
-def test_deferred_target_handler_cook_fs_based(tmp_path, kind):
+def test_deferred_target_handler_cook_fs_based(tmp_path, target_handlers_bundle, kind):
     # 1) Cook
-    handler = DeferredTargetHandler()
-    cooked = handler.cook(ResolvedTargetID("foo?"), previous_fingerprint=None)
+    handler = DeferredTargetHandler(target_handlers_bundle)
+    cooked = handler.cook(ConfiguredTargetID("foo?"), previous_fingerprint=None)
     assert isinstance(cooked, handler.COOKED_TYPE)
     assert cooked.resolved is None
 
     # 2) Actual resolve
     resolved_cooked = tmp_path / "foo"
     if kind == "file":
-        resolved_handler = FileTargetHandler()
+        resolved_discriminant = "#"
         create_resolved_cooked = resolved_cooked.touch
     else:
         assert kind == "folder"
-        resolved_handler = FolderTargetHandler()
+        resolved_discriminant = "/"
         create_resolved_cooked = resolved_cooked.mkdir
-    cooked.resolve(resolved_cooked, resolved_handler)
+    cooked.resolve(resolved_cooked, resolved_discriminant)
 
     # 3) Compute fingerprint
     nop_fingerprint = handler.compute_fingerprint(cooked)
@@ -124,23 +116,26 @@ def test_deferred_target_handler_cook_fs_based(tmp_path, kind):
     handler.clean(cooked)  # Idempotent
 
     # 5) Bonus: cook with fingerprint resolve automatically !
-    cooked = handler.cook(ResolvedTargetID("foo?"), previous_fingerprint=fingerprint)
-    assert cooked.resolved[0] == resolved_cooked
-    assert isinstance(cooked.resolved[1], type(resolved_handler))
+    cooked = handler.cook(ConfiguredTargetID("foo?"), previous_fingerprint=fingerprint)
+    assert cooked.resolved == resolved_cooked
+    # Resolve from fingerprint can be re-resolved...
+    cooked.resolve(
+        "<resolved_as_virtual>", "@"
+    )  # Resolution doesn't even have to be of the same discriminant
+    assert cooked.resolved == "<resolved_as_virtual>"
+    # ...unlike regular resolve that can be only donc once
+    expected_err = r""
+    with pytest.raises(IsengardRunError, match=expected_err):
+        cooked.resolve("<resolved_as_virtual>", "@")
     # Broken fingerprint
-    cooked = handler.cook(ResolvedTargetID("foo?"), previous_fingerprint=b"foo")
-    assert cooked.resolved is None
-    # Fingerprint on unresolved
-    unresolved_cooked = handler.cook(ResolvedTargetID("foo?"), previous_fingerprint=None)
-    unresolved_fingerprint = handler.compute_fingerprint(unresolved_cooked)
-    cooked = handler.cook(ResolvedTargetID("foo?"), previous_fingerprint=unresolved_fingerprint)
+    cooked = handler.cook(ConfiguredTargetID("foo?"), previous_fingerprint=b"foo")
     assert cooked.resolved is None
 
 
-def test_deferred_target_handler_cook_unresolved():
+def test_deferred_target_handler_cook_unresolved(target_handlers_bundle):
     # 1) Cook
-    handler = DeferredTargetHandler()
-    cooked = handler.cook(ResolvedTargetID("foo?"), previous_fingerprint=None)
+    handler = DeferredTargetHandler(target_handlers_bundle)
+    cooked = handler.cook(ConfiguredTargetID("foo?"), previous_fingerprint=None)
     assert isinstance(cooked, handler.COOKED_TYPE)
 
     # 2) Compute fingerprint
@@ -214,13 +209,13 @@ def test_folder_target_handler_compute_fingerprint(tmp_path):
 
 def test_fs_based_target_handlers_cook_and_co(tmp_path, fs_based_target_handler: BaseTargetHandler):
     handler = fs_based_target_handler
-    id = UnresolvedTargetID(str(tmp_path / "foo") + handler.DISCRIMINANT)
-    resolved = handler.resolve(id=id, config={}, workdir=Path("/"))
+    id = RawTargetID(str(tmp_path / "foo") + handler.DISCRIMINANT)
+    configured = handler.configure(id=id, config={}, workdir=Path("/"))
 
     # 1) Cook
-    cooked = handler.cook(id=resolved, previous_fingerprint=None)
+    cooked = handler.cook(id=configured, previous_fingerprint=None)
     assert cooked == Path(id[:-1])
-    recooked = handler.cook(id=resolved, previous_fingerprint=b"dummy")
+    recooked = handler.cook(id=configured, previous_fingerprint=b"dummy")
     assert recooked == cooked
 
     # 2) Compute fingerprint

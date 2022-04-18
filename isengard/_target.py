@@ -11,16 +11,16 @@ from ._exceptions import IsengardConsistencyError, IsengardRunError
 from ._const import ConstTypes
 
 
-# Rules are defined with unresolved target ID (e.g. `{build}/foo.c#`, `bar.log#`)
-# that are relative to their rule's workdir and contains config variables.
-# Resolution turn them into unique absolute ID (e.g. `/home/x/project/build/foo.c#`,
-# `/home/x/project/bar.log#`)
-# Note both unresolved and resolved targets must contain a discriminant suffix.
-UnresolvedTargetID = NewType("UnresolvedTargetID", str)
-ResolvedTargetID = NewType("ResolvedTargetID", str)
+# Rules are defined with raw target IDs (e.g. `{build}/foo.c#`, `bar.log#`) that
+# are relative to their rule's workdir and contains config variables.
+# Configuration turn them into unique absolute ID (e.g.
+# `/home/x/project/build/foo.c#`, `/home/x/project/bar.log#`)
+# Note both raw and configured targets must contain a discriminant suffix.
+RawTargetID = NewType("RawTargetID", str)
+ConfiguredTargetID = NewType("ConfiguredTargetID", str)
 
-# A discriminant suffix is used on unresolved/resolved target to retrieve it
-# target handler (which in turn is use to work on the target)
+# A discriminant suffix is present on raw/configured targets to retrieve it
+# corresponding target handler (which in turn is use to work on the target)
 class TargetDiscriminant(str):
     def __new__(cls, raw):
         if len(raw) != 1:
@@ -28,8 +28,8 @@ class TargetDiscriminant(str):
         return str.__new__(cls, raw)
 
 
-# Once resolved, a target is cooked by it target handler, resulting in an arbitrary
-# object that will be provided as parameter to the rule function
+# Once configured, a target is cooked by it target handler, resulting in an
+# arbitrary object that will be provided as parameter to the rule function
 CookedTarget = NewType("CookedTarget", Any)
 
 
@@ -37,75 +37,51 @@ class TargetHandlersBundle:
     def __init__(
         self,
         target_handlers: Sequence["BaseTargetHandler"],
-        default_target_handler: Optional["BaseTargetHandler"] = None,
     ):
-        if default_target_handler and default_target_handler not in target_handlers:
-            raise ValueError(
-                "`default_target_handler` must be among the values of `target_handlers`"
-            )
-
-        self.default_target_handler = default_target_handler
-        discriminant_to_handler: Dict[TargetDiscriminant, BaseTargetHandler] = {}
+        discriminant_to_handler: Dict[TargetDiscriminant, BaseTargetHandler] = {
+            DeferredTargetHandler.DISCRIMINANT: DeferredTargetHandler(self)
+        }
 
         for handler in target_handlers:
-            if handler.DISCRIMINANT:
-                ambiguous = next(
-                    (
-                        h
-                        for h in target_handlers
-                        if h.DISCRIMINANT.endswith(handler.DISCRIMINANT) and h is not handler
-                    ),
-                    None,
+            setted = discriminant_to_handler.setdefault(handler.DISCRIMINANT, handler)
+            if setted is not handler:
+                raise IsengardConsistencyError(
+                    f"Multiple target handler with suffix `{handler.DISCRIMINANT}`:  {setted} and {handler}"
                 )
-                if ambiguous:
-                    raise IsengardConsistencyError(
-                        f"Ambiguous target handler suffix `{handler.DISCRIMINANT}`, would clash between {handler} and {ambiguous}"
-                    )
-                discriminant_to_handler[handler.DISCRIMINANT] = handler
 
         self.discriminant_to_handler = discriminant_to_handler
 
-    def resolve_target(
-        self, target: str, config: Dict[str, ConstTypes], workdir: Path
-    ) -> Tuple[ResolvedTargetID, "BaseTargetHandler"]:
-        for suffix, handler in self.discriminant_to_handler.items():
-            if target.endswith(suffix):
-                return (handler.resolve(UnresolvedTargetID(target), config, workdir), handler)
-        else:
-            if self.default_target_handler:
-                patched_target = UnresolvedTargetID(
-                    target + self.default_target_handler.DISCRIMINANT
-                )
-                return (
-                    self.default_target_handler.resolve(patched_target, config, workdir),
-                    self.default_target_handler,
-                )
-            else:
-                raise IsengardConsistencyError(
-                    f"No handler for target `{target}` (is discriminant suffix valid ?)"
-                )
-
-    def get_handler(self, target: ResolvedTargetID) -> "BaseTargetHandler":
-        for suffix, handler in self.discriminant_to_handler.items():
-            if target.endswith(suffix):
-                return handler
-        else:
-            # In theory we shouldn't reach this point given `target` has been obtained through `get_handler`
+    def configure_target(
+        self, target: RawTargetID, config: Dict[str, ConstTypes], workdir: Path
+    ) -> Tuple[ConfiguredTargetID, "BaseTargetHandler"]:
+        try:
+            handler = self.discriminant_to_handler[target[-1]]
+        except KeyError:
+            display_discriminants = ", ".join(
+                [f"`{d}`" for d in self.discriminant_to_handler.keys()]
+            )
             raise IsengardConsistencyError(
-                f"No handler for target `{target}` (is discriminant suffix valid ?)"
+                f"No handler for target `{target}`, accepted discriminants: {display_discriminants}"
+            )
+        return (handler.configure(target, config, workdir), handler)
+
+    def get_handler(self, target: ConfiguredTargetID) -> "BaseTargetHandler":
+        try:
+            return self.discriminant_to_handler[target[-1]]
+        except KeyError:
+            # In theory we shouldn't reach this point given `target` has been obtained through `configure_target`
+            display_discriminants = ", ".join(
+                [f"`{d}`" for d in self.discriminant_to_handler.keys()]
+            )
+            raise IsengardConsistencyError(
+                f"No handler for target `{target}`, accepted discriminants: {display_discriminants}"
             )
 
     def cook_target(
-        self, target: ResolvedTargetID, previous_fingerprint: Optional[bytes]
+        self, target: ConfiguredTargetID, previous_fingerprint: Optional[bytes]
     ) -> Tuple[Any, "BaseTargetHandler"]:
-        for suffix, handler in self.discriminant_to_handler.items():
-            if target.endswith(suffix):
-                return (handler.cook(target, previous_fingerprint), handler)
-        else:
-            # In theory we shouldn't reach this point given `target` has been obtained through `get_handler`
-            raise IsengardConsistencyError(
-                f"No handler for target `{target}` (is discriminant suffix valid ?)"
-            )
+        handler = self.get_handler(target)
+        return (handler.cook(target, previous_fingerprint), handler)
 
 
 T = TypeVar("T", bound=CookedTarget)
@@ -116,22 +92,22 @@ class BaseTargetHandler(Generic[T]):
     DISCRIMINANT: TargetDiscriminant
     # Allow target that exists before any rule is run (i.e. basically the source
     # files by opposition of the generated files and virtual targets)
-    ON_DISK_TARGET: bool
+    TARGET_WITHOUT_RULE_ALLOWED: bool
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(discriminant={self.DISCRIMINANT!r}, cooked_type={self.COOKED_TYPE!r})"
 
-    def resolve(
-        self, id: UnresolvedTargetID, config: Dict[str, ConstTypes], workdir: Path
-    ) -> ResolvedTargetID:
+    def configure(
+        self, id: RawTargetID, config: Dict[str, ConstTypes], workdir: Path
+    ) -> ConfiguredTargetID:
         try:
-            return ResolvedTargetID(id.format(**config))
+            return ConfiguredTargetID(id.format(**config))
         except KeyError as exc:
             raise IsengardConsistencyError(
                 f"Missing configuration `{exc.args[0]}` needed in `{id}`"
             )
 
-    def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> T:
+    def cook(self, id: ConfiguredTargetID, previous_fingerprint: Optional[bytes]) -> T:
         raise NotImplementedError
 
     def clean(self, cooked: T) -> None:
@@ -147,7 +123,7 @@ class BaseTargetHandler(Generic[T]):
 class FileTargetHandler(BaseTargetHandler):
     COOKED_TYPE = Path
     DISCRIMINANT = TargetDiscriminant("#")
-    ON_DISK_TARGET = True
+    TARGET_WITHOUT_RULE_ALLOWED = True
 
     def __init__(self, fingerprint_strategy: str = "stat+checksum"):
         """
@@ -177,18 +153,18 @@ class FileTargetHandler(BaseTargetHandler):
         if fingerprint_strategy not in ("stat", "stat+checksum"):
             raise ValueError('`fingerprint_strategy` value must be "stat" or "stat+checksum"')
 
-    def resolve(
-        self, id: UnresolvedTargetID, config: Dict[str, ConstTypes], workdir: Path
-    ) -> ResolvedTargetID:
-        resolved = super().resolve(id, config, workdir)
-        if resolved:
-            # Note `resolved` contains the discriminant suffix, hence `Path(resolved)`
+    def configure(
+        self, id: RawTargetID, config: Dict[str, ConstTypes], workdir: Path
+    ) -> ConfiguredTargetID:
+        configured = super().configure(id, config, workdir)
+        if configured:
+            # Note `configured` contains the discriminant suffix, hence `Path(configured)`
             # doesn't really correspond to the actual cooked path
-            if not Path(resolved).is_absolute():
-                return ResolvedTargetID((workdir / resolved).as_posix())
-        return resolved
+            if not Path(configured).is_absolute():
+                return ConfiguredTargetID((workdir / configured).as_posix())
+        return configured
 
-    def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> Path:
+    def cook(self, id: ConfiguredTargetID, previous_fingerprint: Optional[bytes]) -> Path:
         return Path(id[:-1])
 
     def clean(self, cooked: Path) -> None:
@@ -267,21 +243,21 @@ class FileTargetHandler(BaseTargetHandler):
 class FolderTargetHandler(BaseTargetHandler):
     COOKED_TYPE = Path
     DISCRIMINANT = TargetDiscriminant("/")
-    ON_DISK_TARGET = True
+    TARGET_WITHOUT_RULE_ALLOWED = True
 
-    def resolve(
-        self, id: UnresolvedTargetID, config: Dict[str, ConstTypes], workdir: Path
-    ) -> ResolvedTargetID:
-        resolved = super().resolve(id, config, workdir)
-        if resolved:
-            # Note `resolved` contains the discriminant suffix, hence `Path(resolved)`
+    def configure(
+        self, id: RawTargetID, config: Dict[str, ConstTypes], workdir: Path
+    ) -> ConfiguredTargetID:
+        configured = super().configure(id, config, workdir)
+        if configured:
+            # Note `configured` contains the discriminant suffix, hence `Path(configured)`
             # doesn't really correspond to the actual cooked path
-            if not Path(resolved).is_absolute():
+            if not Path(configured).is_absolute():
                 # Discriminant being a `/` is is removed when converting Path back to str
-                return ResolvedTargetID((workdir / resolved).as_posix() + "/")
-        return resolved
+                return ConfiguredTargetID((workdir / configured).as_posix() + "/")
+        return configured
 
-    def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> Path:
+    def cook(self, id: ConfiguredTargetID, previous_fingerprint: Optional[bytes]) -> Path:
         return Path(id[:-1])
 
     def clean(self, cooked: Path) -> None:
@@ -322,9 +298,9 @@ class VirtualTargetHandler(BaseTargetHandler):
 
     COOKED_TYPE = str
     DISCRIMINANT = TargetDiscriminant("@")
-    ON_DISK_TARGET = False
+    TARGET_WITHOUT_RULE_ALLOWED = False
 
-    def cook(self, id: ResolvedTargetID, previous_fingerprint: Optional[bytes]) -> str:
+    def cook(self, id: ConfiguredTargetID, previous_fingerprint: Optional[bytes]) -> str:
         return id
 
     def clean(self, cooked: str) -> None:
@@ -343,7 +319,7 @@ class DeferredTarget(Generic[T]):
     # (<cooked>, <handler>, <previous_fingerprint>)
     _resolved: Tuple[T, BaseTargetHandler, Optional[bytes]]
 
-    def __init__(self, id: ResolvedTargetID, target_handlers_bundle: TargetHandlersBundle):
+    def __init__(self, id: ConfiguredTargetID, target_handlers_bundle: TargetHandlersBundle):
         self.id = id
         self._target_handlers_bundle = target_handlers_bundle
 
@@ -351,7 +327,14 @@ class DeferredTarget(Generic[T]):
         self,
         resolved: T,
         discriminant: TargetDiscriminant,
-        _previous_fingerprint: Optional[bytes] = None,
+    ) -> None:
+        self._resolve(resolved, discriminant)
+
+    def _resolve(
+        self,
+        resolved: T,
+        discriminant: TargetDiscriminant,
+        previous_fingerprint: Optional[bytes] = None,
     ) -> None:
         try:
             handler = self._target_handlers_bundle.discriminant_to_handler[discriminant]
@@ -365,9 +348,23 @@ class DeferredTarget(Generic[T]):
                 f"Incorrect resolved type, discriminant expects `{handler.COOKED_TYPE}`"
             )
 
-        if hasattr(self, "_resolved"):
-            raise IsengardRunError("Target already resolved !")
-        setattr(self, "_resolved", (resolved, handler, _previous_fingerprint))
+        try:
+            _, _, already_resolved_previous_fingerprint = self._resolved
+        except AttributeError:
+            # Not resolved, this is expected
+            pass
+        else:
+            # If we are already resolved, two possibilities:
+            # 1) resolution was actually done by the rule that have this target as output.
+            #    No additional resolve are allowed so an error must be raised
+            # 2) resolution occured during cooking using the previous fingerprint (i.e.
+            #    the resolved was done during a previous run and got serialized on the db)
+            #    In such case the resolution gets replaced if we detect the rule related
+            #    to this target needs to be run.
+            if already_resolved_previous_fingerprint is None:  # case 1)
+                raise IsengardRunError("Target already resolved !")
+
+        setattr(self, "_resolved", (resolved, handler, previous_fingerprint))
 
     @property
     def resolved(self) -> Optional[Tuple[T, BaseTargetHandler]]:
@@ -377,7 +374,7 @@ class DeferredTarget(Generic[T]):
             return None
 
     @property
-    def resolved_handler(self) -> Optional[BaseTargetHandler]:
+    def _resolved_handler(self) -> Optional[BaseTargetHandler]:
         try:
             return getattr(self, "_resolved")[1]
         except AttributeError:
@@ -402,19 +399,32 @@ class DeferredTargetHandler(BaseTargetHandler):
             output.resolve(logfile, discriminant="#")
     """
 
+    def __init__(self, target_handlers_bundle: TargetHandlersBundle):
+        self.target_handlers_bundle = target_handlers_bundle
+
     COOKED_TYPE = DeferredTarget
     DISCRIMINANT = TargetDiscriminant("?")
-    ON_DISK_TARGET = False
+    TARGET_WITHOUT_RULE_ALLOWED = False
 
     def _load_previous_fingerprint(
         self, previous_fingerprint: bytes
-    ) -> Optional[Tuple[Any, str, bytes]]:
+    ) -> Optional[Tuple[Any, TargetDiscriminant, bytes]]:
         """
         Returns: (<cooked>, <discriminant>, <previous fingerprint>)
         """
         # Resolved target info has been stored in the fingerprint, so cunning !
         try:
-            return pickle.loads(previous_fingerprint)
+            resolved_cooked, resolved_discriminant, resolved_previous_fingerprint = pickle.loads(
+                previous_fingerprint
+            )
+            if not isinstance(resolved_discriminant, TargetDiscriminant) or not isinstance(
+                resolved_previous_fingerprint, (bytes, bytearray)
+            ):
+                # Unexpected data type, discard previous fingerprint
+                return None
+
+            return (resolved_cooked, resolved_discriminant, resolved_previous_fingerprint)
+
         except Exception:
             # Something wrong occured, we consider the previous fingerprint is
             # no longer compatible with the codebase and hence discard it
@@ -422,11 +432,10 @@ class DeferredTargetHandler(BaseTargetHandler):
 
     def cook(
         self,
-        id: ResolvedTargetID,
+        id: ConfiguredTargetID,
         previous_fingerprint: Optional[bytes],
-        target_handlers_bundle: TargetHandlersBundle,
     ) -> DeferredTarget:
-        target = DeferredTarget(id, target_handlers_bundle)
+        target = DeferredTarget(id, self.target_handlers_bundle)
         if previous_fingerprint:
             try:
                 (
@@ -434,16 +443,17 @@ class DeferredTargetHandler(BaseTargetHandler):
                     resolved_discriminant,
                     resolved_previous_fingerprint,
                 ) = self._load_previous_fingerprint(previous_fingerprint)
-            except ValueError:
+            except TypeError:
                 pass
 
-            try:
-                target.resolve(
-                    resolved_cooked, resolved_discriminant, resolved_previous_fingerprint
-                )
-            except IsengardRunError:
-                # The serialized data seems no longer compatible, just ignore them
-                pass
+            else:
+                try:
+                    target._resolve(
+                        resolved_cooked, resolved_discriminant, resolved_previous_fingerprint
+                    )
+                except IsengardRunError:
+                    # The serialized data seems no longer compatible, just ignore them
+                    pass
 
         return target
 
@@ -466,11 +476,20 @@ class DeferredTargetHandler(BaseTargetHandler):
 
     def need_rebuild(self, cooked: DeferredTarget, previous_fingerprint: bytes) -> bool:
         try:
-            resolved_cooked, resolved_handler, resolved_previous_fingerprint = cooked._resolved
+            # If a fingerprint is present in `_resolved`, it has be put there during
+            # `cook`, so this fingerprint is supposed to be the same as the one computed
+            # from `previous_fingerprint`.
+            resolved_cooked, resolved_handler, _ = cooked._resolved
         except AttributeError:
+            # TODO: raise exception if `need_rebuild` is called on unresolved ?
             return True
 
-        if resolved_previous_fingerprint is None:
+        # TODO: use cache in case previous_fingerprint is the same than when cook was called ?
+        try:
+            _, _, resolved_previous_fingerprint = self._load_previous_fingerprint(
+                previous_fingerprint
+            )
+        except TypeError:
             return True
 
         return resolved_handler.need_rebuild(resolved_cooked, resolved_previous_fingerprint)

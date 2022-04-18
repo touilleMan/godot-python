@@ -4,7 +4,7 @@ from pathlib import Path
 from functools import wraps
 
 from ._const import ConstTypes
-from ._target import ResolvedTargetID
+from ._target import ConfiguredTargetID
 
 
 RULE_RESERVED_PARAMS = {"inputs", "input", "outputs", "output"}
@@ -122,10 +122,10 @@ class Rule:
         return f"<{type(self).__name__} id={self.id} fn={self.fn}>"
 
 
-class ResolvedRule(Rule):
+class ConfiguredRule(Rule):
     __slots__ = (
-        "resolved_outputs",
-        "resolved_inputs",
+        "configured_outputs",
+        "configured_inputs",
     )
 
     def __init__(
@@ -136,8 +136,8 @@ class ResolvedRule(Rule):
         params: Set[str],
         outputs: List[str],
         inputs: List[str],
-        resolved_outputs: List[ResolvedTargetID],
-        resolved_inputs: List[ResolvedTargetID],
+        configured_outputs: List[ConfiguredTargetID],
+        configured_inputs: List[ConfiguredTargetID],
     ):
         self.workdir = workdir
         self.id = id
@@ -145,8 +145,8 @@ class ResolvedRule(Rule):
         self.params = params
         self.outputs = outputs
         self.inputs = inputs
-        self.resolved_outputs = resolved_outputs
-        self.resolved_inputs = resolved_inputs
+        self.configured_outputs = configured_outputs
+        self.configured_inputs = configured_inputs
 
     def run(self, outputs: List[Any], inputs: List[Any], config: Dict[str, ConstTypes]) -> None:
         kwargs: Dict[str, Any] = {}

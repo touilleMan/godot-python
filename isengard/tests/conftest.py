@@ -5,10 +5,11 @@ import sqlite3
 from pathlib import Path
 
 from .. import _db
+from .._api import DEFAULT_TARGET_HANDLERS
 from .._const import ConstTypes
 from .._runner import Runner
-from .._target import TargetHandlersBundle, FileTargetHandler, ResolvedTargetID
-from .._rule import ResolvedRule
+from .._target import TargetHandlersBundle, FileTargetHandler, ConfiguredTargetID
+from .._rule import ConfiguredRule
 
 
 @pytest.fixture
@@ -21,12 +22,19 @@ def memory_sqlite3(monkeypatch):
 
 
 @pytest.fixture
+def target_handlers_bundle():
+    return TargetHandlersBundle(
+        target_handlers=DEFAULT_TARGET_HANDLERS,
+    )
+
+
+@pytest.fixture
 def rule_factory(tmp_path: Path):
     def _rule_factory(
-        resolved_outputs: List[ResolvedTargetID],
+        configured_outputs: List[ConfiguredTargetID],
         id: Optional[str] = None,
         fn: Optional[Callable] = None,
-        resolved_inputs: Optional[List[ResolvedTargetID]] = None,
+        configured_inputs: Optional[List[ConfiguredTargetID]] = None,
         workdir: Optional[Path] = None,
     ):
         if not fn:
@@ -39,17 +47,17 @@ def rule_factory(tmp_path: Path):
             signature = inspect.signature(fn)
             params = {s.name for s in signature.parameters.values()}
 
-        assert resolved_outputs
-        resolved_inputs = resolved_inputs or []
-        return ResolvedRule(
+        assert configured_outputs
+        configured_inputs = configured_inputs or []
+        return ConfiguredRule(
             workdir=workdir or tmp_path,
-            id=id or f"rule-{resolved_outputs[0].rsplit('/', 1)[1]}",
+            id=id or f"rule-{configured_outputs[0].rsplit('/', 1)[1]}",
             fn=fn,
             params=params,
-            outputs=resolved_outputs,
-            inputs=resolved_inputs,
-            resolved_outputs=resolved_outputs,
-            resolved_inputs=resolved_inputs,
+            outputs=configured_outputs,
+            inputs=configured_inputs,
+            configured_outputs=configured_outputs,
+            configured_inputs=configured_inputs,
         )
 
     return _rule_factory
@@ -58,7 +66,7 @@ def rule_factory(tmp_path: Path):
 @pytest.fixture
 def runner_factory(tmp_path: Path):
     def _runner_factory(
-        rules: List[ResolvedRule],
+        rules: List[ConfiguredRule],
         config: Optional[Dict[str, ConstTypes]] = None,
         target_handlers: Optional[TargetHandlersBundle] = None,
         db_path: Optional[Path] = None,
@@ -74,5 +82,5 @@ def runner_factory(tmp_path: Path):
     return _runner_factory
 
 
-def resolvify(path: Path, discriminant: str = "#") -> ResolvedTargetID:
-    return ResolvedTargetID(path.resolve().as_posix() + discriminant)
+def configurify(path: Path, discriminant: str = "#") -> ConfiguredTargetID:
+    return ConfiguredTargetID(path.resolve().as_posix() + discriminant)

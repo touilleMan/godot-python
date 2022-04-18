@@ -18,7 +18,7 @@ from ._rule import Rule, RULE_RESERVED_PARAMS, LAZY_RULE_RESERVED_REGISTER_PARAM
 from ._dump import dump_graph
 from ._runner import Runner
 from ._target import (
-    ResolvedTargetID,
+    ConfiguredTargetID,
     TargetHandlersBundle,
     BaseTargetHandler,
     FileTargetHandler,
@@ -42,12 +42,11 @@ RESERVED_CONFIG_IDS = {
 }
 
 
-DEFAULT_DEFAULT_TARGET_HANDLER = FileTargetHandler()
 DEFAULT_TARGET_HANDLERS = [
-    DEFAULT_DEFAULT_TARGET_HANDLER,
+    FileTargetHandler(),
     FolderTargetHandler(),
     VirtualTargetHandler(),
-    DeferredTargetHandler(),
+    # Not `DeferredTargetHandler` is automatically added by the target bundle
 ]
 
 
@@ -71,7 +70,6 @@ class Isengard:
         db: Union[str, Path] = ".isengard.sqlite",
         subdir_default_filename: Optional[str] = None,
         target_handlers: Sequence[BaseTargetHandler] = DEFAULT_TARGET_HANDLERS,
-        default_target_handler: Optional[BaseTargetHandler] = DEFAULT_DEFAULT_TARGET_HANDLER,
     ):
         entrypoint_path = Path(self_file).resolve()
         self._entrypoint_dir = entrypoint_path.parent
@@ -87,7 +85,6 @@ class Isengard:
 
         self._target_handlers_bundle = TargetHandlersBundle(
             target_handlers=target_handlers,
-            default_target_handler=default_target_handler,
         )
         self._collector = Collector(target_handlers=self._target_handlers_bundle)
 
@@ -214,8 +211,8 @@ class Isengard:
         if self._config is None:
             raise IsengardStateError("Must call `configure` before !")
 
-        resolved = self.resolve_target(target)
-        return self._runner.run(target=resolved)
+        configured = self.configure_target(target)
+        return self._runner.run(target=configured)
 
     def clean(self, target: Union[str, Path]) -> None:
         """
@@ -227,44 +224,44 @@ class Isengard:
         if self._config is None:
             raise IsengardStateError("Must call `configure` before !")
 
-        resolved = self.resolve_target(target)
-        self._runner.clean(resolved)
+        configured = self.configure_target(target)
+        self._runner.clean(configured)
 
-    def resolve_target(self, target: Union[str, Path]) -> ResolvedTargetID:
+    def configure_target(self, target: Union[str, Path]) -> ConfiguredTargetID:
         if isinstance(target, Path):
             # Identifying a target by it Path on the FS is convenient for the user,
-            # but not for us given we use the `ResolvedTagetID` instead precisely to
+            # but not for us given we use the `ConfiguredTargetID` instead precisely to
             # unify Virtual and on-disk targets...
             # So we consider only the targets from the default handler can be
             # represented as Path.
             if not target.is_absolute():
                 target = self._workdir / target
-            resolved_without_suffix = target.resolve().as_posix()
-            return ResolvedTargetID(
-                resolved_without_suffix
+            configured_without_suffix = target.resolve().as_posix()
+            return ConfiguredTargetID(
+                configured_without_suffix
                 + self._target_handlers_bundle.default_target_handler.DISCRIMINANT
             )
 
         else:
-            resolved, _ = self._target_handlers_bundle.resolve_target(
+            configured, _ = self._target_handlers_bundle.configure_target(
                 target, self._config, workdir=self._entrypoint_dir
             )
-            return resolved
+            return configured
 
-    def list_targets(self) -> List[Tuple[str, ResolvedTargetID]]:
+    def list_targets(self) -> List[Tuple[str, ConfiguredTargetID]]:
         if self._config is None:
             raise IsengardStateError("Must call `configure` before !")
 
         targets = []
         for rule in self._rules.values():
-            targets += list(zip(rule.outputs, rule.resolved_outputs))
+            targets += list(zip(rule.outputs, rule.configured_outputs))
 
         return targets
 
     def dump_graph(
         self,
         target: Optional[Union[str, Path]] = None,
-        display_resolved: bool = False,
+        display_configured: bool = False,
     ) -> str:
         """
         Graph example:
@@ -290,12 +287,12 @@ class Isengard:
             raise IsengardStateError("Must call `configure` before !")
 
         if target is not None:
-            resolved = self.resolve_target(target)
+            configured = self.configure_target(target)
         else:
-            resolved = None
+            configured = None
 
         return dump_graph(
             rules=list(self._rules.values()),
-            target_filter=resolved,
-            display_resolved=display_resolved,
+            target_filter=configured,
+            display_configured=display_configured,
         )

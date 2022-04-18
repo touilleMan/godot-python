@@ -1,13 +1,13 @@
 from typing import Optional, List, Set, Dict
 
-from ._rule import ResolvedRule
-from ._target import ResolvedTargetID
+from ._rule import ConfiguredRule
+from ._target import ConfiguredTargetID
 
 
 def dump_graph(
-    rules: List[ResolvedRule],
-    target_filter: Optional[ResolvedTargetID] = None,
-    display_resolved: bool = False,
+    rules: List[ConfiguredRule],
+    target_filter: Optional[ConfiguredTargetID] = None,
+    display_configured: bool = False,
 ) -> str:
     """
     Graph example:
@@ -29,9 +29,9 @@ def dump_graph(
             ├─rule:generate_headers
             └─…
     """
-    target_to_rule: Dict[ResolvedTargetID, ResolvedRule] = {}
+    target_to_rule: Dict[ConfiguredTargetID, ConfiguredRule] = {}
     for rule in rules:
-        for output in rule.resolved_outputs:
+        for output in rule.configured_outputs:
             target_to_rule[output] = rule
 
     if target_filter and target_filter not in target_to_rule:
@@ -39,15 +39,15 @@ def dump_graph(
 
     # Order rules by dependencies
     to_order = rules.copy()
-    ordered_rules: List[ResolvedRule] = []
+    ordered_rules: List[ConfiguredRule] = []
     while to_order:
         to_order_rule = to_order.pop()
         if not ordered_rules:
             ordered_rules.append(to_order_rule)
         else:
-            to_order_rule_resolved_outputs = set(to_order_rule.resolved_outputs)
+            to_order_rule_configured_outputs = set(to_order_rule.configured_outputs)
             for i, ordered_rule in enumerate(ordered_rules):
-                if to_order_rule_resolved_outputs & set(ordered_rule.resolved_inputs):
+                if to_order_rule_configured_outputs & set(ordered_rule.configured_inputs):
                     # `to_order_rule` is a dependency of `ordered_rule`, it must be ordered before
                     ordered_rules.insert(i, to_order_rule)
                     break
@@ -64,7 +64,7 @@ def dump_graph(
                 ordered_rules.append(to_order_rule)
 
     graph = ""
-    already_dumped_rules: Set[ResolvedRule] = set()
+    already_dumped_rules: Set[ConfiguredRule] = set()
     already_dumped_targets: Set[str] = set()
 
     def _multilines_paste(depend: str, next_line_suffix: str) -> str:
@@ -76,7 +76,7 @@ def dump_graph(
             dump += "\n"
         return dump
 
-    def _dump_rule(rule: ResolvedRule) -> str:
+    def _dump_rule(rule: ConfiguredRule) -> str:
         depends = [f"─rule:{rule.id}"]
         if rule in already_dumped_rules:
             depends.append("…")
@@ -86,15 +86,15 @@ def dump_graph(
 
             if rule.needed_config:
                 depends.append("─configs:" + ", ".join(sorted(rule.needed_config)))
-            for input, resolved_input in zip(rule.inputs, rule.resolved_inputs):
-                if display_resolved:
-                    depend_target = resolved_input
+            for input, configured_input in zip(rule.inputs, rule.configured_inputs):
+                if display_configured:
+                    depend_target = configured_input
                 else:
                     depend_target = input
 
-                target_rule = target_to_rule.get(resolved_input)
+                target_rule = target_to_rule.get(configured_input)
                 if target_rule:
-                    already_dumped_targets.add(resolved_input)
+                    already_dumped_targets.add(configured_input)
                     depend_target += "\n"
                     depend_target += _dump_rule(target_rule)
                 depends.append(depend_target)
@@ -110,27 +110,27 @@ def dump_graph(
 
     # Special case if we want to dump a single target
     if target_filter:
-        filtered_ordered_rules: List[ResolvedRule] = []
+        filtered_ordered_rules: List[ConfiguredRule] = []
         for rule in reversed(ordered_rules):
-            for target in rule.resolved_outputs:
+            for target in rule.configured_outputs:
                 if target == target_filter:
                     already_dumped_targets |= {
-                        x for x in rule.resolved_outputs if x != target_filter
+                        x for x in rule.configured_outputs if x != target_filter
                     }
                     filtered_ordered_rules.append(rule)
         ordered_rules = filtered_ordered_rules
 
     for rule in reversed(ordered_rules):
         should_dump_rule = False
-        for output, resolved_output in zip(rule.outputs, rule.resolved_outputs):
-            if resolved_output not in already_dumped_targets:
-                if display_resolved:
-                    graph += resolved_output
+        for output, configured_output in zip(rule.outputs, rule.configured_outputs):
+            if configured_output not in already_dumped_targets:
+                if display_configured:
+                    graph += configured_output
                 else:
                     graph += output
                 graph += "\n"
                 should_dump_rule = True
-                already_dumped_targets.add(resolved_output)
+                already_dumped_targets.add(configured_output)
         if should_dump_rule:
             graph += _dump_rule(rule)
 

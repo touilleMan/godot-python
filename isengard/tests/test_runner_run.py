@@ -1,16 +1,14 @@
-import pytest
 from pathlib import Path
 import time
-import sys
 
 from .._runner import Runner
 
-from .conftest import resolvify
+from .conftest import configurify
 
 
 def test_run_single_output(tmp_path: Path, runner_factory, rule_factory):
     target_path = tmp_path / "target.txt"
-    resolved_target = resolvify(target_path)
+    configured_target = configurify(target_path)
 
     def fn(output, used):
         # Remove file before writting it to ensure ctime AND mtime are modified
@@ -23,7 +21,7 @@ def test_run_single_output(tmp_path: Path, runner_factory, rule_factory):
     rules = [
         rule_factory(
             fn=fn,
-            resolved_outputs=[resolved_target],
+            configured_outputs=[configured_target],
         ),
     ]
     config = {"used": 1, "unused": 1}
@@ -74,7 +72,7 @@ def test_run_single_output(tmp_path: Path, runner_factory, rule_factory):
             )
 
     # Run the rule
-    runner.run(resolved_target)
+    runner.run(configured_target)
     assert target_path.exists()
     stats = target_path.stat()
     last_ctime = stats.st_ctime
@@ -82,7 +80,7 @@ def test_run_single_output(tmp_path: Path, runner_factory, rule_factory):
     last_content = target_path.read_text()
 
     # Re-running should be a noop
-    runner.run(resolved_target)
+    runner.run(configured_target)
     assert_has_not_changed()
 
     # If mtime has changed, rule should be rerun
@@ -90,20 +88,20 @@ def test_run_single_output(tmp_path: Path, runner_factory, rule_factory):
     target_path.write_text(last_content)
     assert target_path.stat().st_mtime != last_mtime
     wait_beyond_mtime_resolution_atomicity()
-    runner.run(resolved_target)
+    runner.run(configured_target)
     assert_has_changed()
 
     # If content has changed, of course rule should be rerun !
     wait_beyond_mtime_resolution_atomicity()
     target_path.write_text("whatever")
     wait_beyond_mtime_resolution_atomicity()
-    runner.run(resolved_target)
+    runner.run(configured_target)
     assert_has_changed()
 
     # Using another runner should not change anything
     wait_beyond_mtime_resolution_atomicity()
     other_runner: Runner = runner_factory(rules=rules, config=config)
-    other_runner.run(resolved_target)
+    other_runner.run(configured_target)
     assert_has_not_changed()
 
     # If config has changed, rule should be rerun...
@@ -111,7 +109,7 @@ def test_run_single_output(tmp_path: Path, runner_factory, rule_factory):
     config2 = config.copy()
     config2["used"] += 1
     runner_config_changed: Runner = runner_factory(rules=rules, config=config2)
-    runner_config_changed.run(resolved_target)
+    runner_config_changed.run(configured_target)
     assert_has_changed()
 
     # ...but unused config can be changed without being rerun
@@ -119,5 +117,5 @@ def test_run_single_output(tmp_path: Path, runner_factory, rule_factory):
     config3 = config2.copy()
     config3["unused"] += 1
     runner_config_unused_changed: Runner = runner_factory(rules=rules, config=config3)
-    runner_config_unused_changed.run(resolved_target)
+    runner_config_unused_changed.run(configured_target)
     assert_has_not_changed()
