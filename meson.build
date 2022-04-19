@@ -1,7 +1,7 @@
 project(
   'godot-python',
   'c',
-  version : '0.60.0',
+  version : '0.50.0+dev',
   meson_version: '>=0.60.0',
   default_options : ['warning_level=3']
 )
@@ -56,4 +56,4 @@ elif build_machine.system() == 'windows'
 endif
 
 
-subdir('pythonscript')
+subdir('src')
