@@ -1,0 +1,2 @@
+option('cpython_distrib_version', type: 'string', value: '3.9.7')
+option('godot_headers', type: 'string', value: 'godot_headers')
