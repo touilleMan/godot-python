@@ -10,7 +10,7 @@ on:
 
 # Global Settings
 env:
-  PYTHON_VERSION: "3.7"
+  PYTHON_VERSION: "3.7"  # Python to run the build, no the one shipped !
   GODOT_BINARY_VERSION: "3.2.3"
 
 
@@ -47,7 +47,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CC: clang
-      PLATFORM: 'x11-64'
+      LD: lld
+      PLATFORM: linux-x86_64
     steps:
       - name: 'Checkout'
         uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
@@ -64,33 +65,33 @@ jobs:
           python --version
           pip install -U pip
           pip install -r requirements.txt
-          # Configuration for scons
-          echo 'godot_binary = "${{ env.GODOT_BINARY_VERSION }}"' >> custom.py
-          echo 'platform = "${{ env.PLATFORM }}"' >> custom.py
-          echo 'CC = "${{ env.CC }}"' >> custom.py
+      - name: 'Setup project'
+        run: |
+          set -eux
+          meson setup build/linux-x86_64 -D headless=true
       - name: 'Build project'
         run: |
           set -eux
-          scons build -j2
-      - name: 'Start xvfb'
-        run: |
-          /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-          echo ">>> Started xvfb"
-      - name: 'Run tests'
-        run: |
-          set -eux
-          scons tests headless=true
-        env:
-          DISPLAY: ':99.0'
-      - name: 'Generate artifact archive'
-        run: |
-          set -eux
-          scons release
-      - name: 'Export release artifact'
-        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
-        with:
-          name: ${{ env.PLATFORM }}-release
-          path: 'build/godot-python-*.tar.bz2'
+          meson compile -C build/
+      # - name: 'Start xvfb'
+      #   run: |
+      #     /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+      #     echo ">>> Started xvfb"
+      # - name: 'Run tests'
+      #   run: |
+      #     set -eux
+      #     meson compile -C build/ tests
+      #   env:
+      #     DISPLAY: ':99.0'
+      # - name: 'Generate artifact archive'
+      #   run: |
+      #     set -eux
+      #     meson compile -C build/ release
+      # - name: 'Export release artifact'
+      #   uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
+      #   with:
+      #     name: ${{ env.PLATFORM }}-release
+      #     path: 'build/godot-python-*.tar.bz2'
 
 
 #################################################################################
@@ -102,17 +103,21 @@ jobs:
     strategy:
       matrix:
         include:
-          - PLATFORM: 'windows-64'
+          - PLATFORM: 'windows-x86_64'
             PYTHON_ARCH: 'x64'
-            VS_ARCH: 'amd64'
-          - PLATFORM: 'windows-32'
+            MSVC_ARCH: 'x64'
+          - PLATFORM: 'windows-x86'
             PYTHON_ARCH: 'x86'
-            VS_ARCH: 'x86'
+            MSVC_ARCH: 'x86'
     steps:
       - name: 'Checkout'
         uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
         with:
             submodules: true
+      - name: 'Set up MSVC'
+        uses: microsoft/setup-msbuild@ab534842b4bdf384b8aaf93765dc6f721d9f5fab  # pin@v1.1
+        with:
+          msbuild-architecture: ${{ env.MSVC_ARCH }}
       - name: 'Set up Python'
         uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
         with:
@@ -122,51 +127,51 @@ jobs:
         shell: bash
         run: |
           set -eux
+          cl.exe --version
           python --version
-          python -m pip install --user -U pip
-          python -m pip install --user -r requirements.txt
-          # Configuration for scons
-          echo 'godot_binary = "${{ env.GODOT_BINARY_VERSION }}"' >> custom.py
-          echo 'platform = "${{ matrix.PLATFORM }}"' >> custom.py
-          echo 'MSVC_USE_SCRIPT = True' >> custom.py
-          echo 'TARGET_ARCH = "${{ matrix.VS_ARCH }}"' >> custom.py
-          echo 'CC = "cl.exe"' >> custom.py
+          pip install -U pip
+          pip install -r requirements.txt
+      - name: 'Setup project'
+        shell: bash
+        run: |
+          set -eux
+          meson setup build/ -D headless=true
       - name: 'Build project'
         shell: bash
         run: |
           set -eux
-          scons build -j2
-      - name: 'Install Mesa3D OpenGL'
-        shell: bash
-        run: |
-          set -eux
-          # Azure pipelines doesn't provide a GPU with an OpenGL driver,
-          # hence we use Mesa3D as software OpenGL driver
-          pushd build/${{ matrix.PLATFORM }}/platforms/
-          if [ "${{ matrix.PLATFORM }}" = "windows-64" ]
-          then
-            curl https://downloads.fdossena.com/Projects/Mesa3D/Builds/MesaForWindows-x64-20.0.7.7z -o mesa.7z
-          else
-            curl https://downloads.fdossena.com/Projects/Mesa3D/Builds/MesaForWindows-20.0.7.7z -o mesa.7z
-          fi
-          # opengl32.dll must be extracted in the same directory than Godot binary
-          7z.exe x mesa.7z
-          ls -lh opengl32.dll  # Sanity check
-          popd
-      - name: 'Run tests'
-        shell: bash
-        run: |
-          set -eux
-          scons tests
-      - name: 'Generate artifact archive'
-        shell: bash
-        run: |
-          scons release
-      - name: 'Export release artifact'
-        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
-        with:
-          name: ${{ matrix.PLATFORM }}-release
-          path: 'build/godot-python-*.zip'
+          meson compile -C build/
+      # - name: 'Install Mesa3D OpenGL'
+      #   shell: bash
+      #   run: |
+      #     set -eux
+      #     # Azure pipelines doesn't provide a GPU with an OpenGL driver,
+      #     # hence we use Mesa3D as software OpenGL driver
+      #     pushd build/${{ matrix.PLATFORM }}/platforms/
+      #     if [ "${{ matrix.PLATFORM }}" = "windows-64" ]
+      #     then
+      #       curl https://downloads.fdossena.com/Projects/Mesa3D/Builds/MesaForWindows-x64-20.0.7.7z -o mesa.7z
+      #     else
+      #       curl https://downloads.fdossena.com/Projects/Mesa3D/Builds/MesaForWindows-20.0.7.7z -o mesa.7z
+      #     fi
+      #     # opengl32.dll must be extracted in the same directory than Godot binary
+      #     7z.exe x mesa.7z
+      #     ls -lh opengl32.dll  # Sanity check
+      #     popd
+      # - name: 'Run tests'
+      #   shell: bash
+      #   run: |
+      #     set -eux
+      #     meson compile -C build/ tests
+      # - name: 'Generate artifact archive'
+      #   shell: bash
+      #   run: |
+      #     scons release
+      # - name: 'Export release artifact'
+      #   uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
+      #   with:
+      #     name: ${{ matrix.PLATFORM }}-release
+      #     path: 'build/godot-python-*.zip'
 
 
 #################################################################################
@@ -177,7 +182,8 @@ jobs:
     runs-on: macos-latest
     env:
       CC: clang
-      PLATFORM: 'osx-64'
+      LD: lld
+      PLATFORM: 'osx-x86_64'
     steps:
       - name: 'Checkout'
         uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
@@ -197,27 +203,27 @@ jobs:
           brew install --cask xquartz
           pip install -U pip
           pip install -r requirements.txt
-          # Configuration for scons
-          echo 'godot_binary = "${{ env.GODOT_BINARY_VERSION }}"' >> custom.py
-          echo 'platform = "${{ env.PLATFORM }}"' >> custom.py
-          echo 'CC = "${{ env.CC }}"' >> custom.py
+      - name: 'Setup project'
+        run: |
+          set -eux
+          meson setup build/ -D headless=true
       - name: 'Build project'
         run: |
           set -eux
-          scons build -j2
-      - name: 'Run tests'
-        run: |
-          set -eux
-          scons tests
-      - name: 'Generate artifact archive'
-        run: |
-          set -eux
-          scons release
-      - name: 'Export release artifact'
-        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
-        with:
-          name: ${{ env.PLATFORM }}-release
-          path: 'build/godot-python-*.tar.bz2'
+          meson compile -C build/
+      # - name: 'Run tests'
+      #   run: |
+      #     set -eux
+      #     meson compile -C build/ tests
+      # - name: 'Generate artifact archive'
+      #   run: |
+      #     set -eux
+      #     meson compile -C build/ release
+      # - name: 'Export release artifact'
+      #   uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
+      #   with:
+      #     name: ${{ env.PLATFORM }}-release
+      #     path: 'build/godot-python-*.tar.bz2'
 
 
 #################################################################################
@@ -234,10 +240,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - PLATFORM: x11-64
-          - PLATFORM: windows-64
-          - PLATFORM: windows-32
-          - PLATFORM: osx-64
+          - PLATFORM: linux-x86_64
+          - PLATFORM: windows-x86_64
+          - PLATFORM: windows-x86
+          - PLATFORM: osx-x86_64
     steps:
       - uses: actions/download-artifact@0ede0875b5db9a2824878bbbbe3d758a75eb8268  # pin@v2
         name: ${{ matrix.PLATFORM }}-release
