@@ -3,7 +3,8 @@ project(
   'c',
   version : '0.50.0+dev',
   meson_version: '>=0.60.0',
-  default_options : ['warning_level=3']
+  # warning_level=3 uses -Wpedantic that doesn't play nice with cython-generated code
+  default_options : ['warning_level=2']
 )
 
 python = find_program('python')
@@ -16,7 +17,7 @@ godot_headers_path = join_paths(meson.project_source_root(), get_option('godot_h
 # Download&extract CPython prebuild archive
 # This is done once at configure time
 
-message('Fetching cpython prebuild distrib')
+message('Fetching CPython v@0@ prebuild distrib'.format(get_option('cpython_distrib_version')))
 run_command(
     python,
     'scripts/fetch_python_distrib.py',
@@ -47,7 +48,7 @@ elif build_machine.system() == 'windows'
             # e.g. python39
             'python@0@@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor),
             dirs: [
-                join_paths(meson.current_build_dir() , 'python/install'),
+                # join_paths(meson.current_build_dir() , 'python/install'),
                 join_paths(meson.current_build_dir() , 'python/install/libs'),
             ],
         ),
@@ -57,3 +58,4 @@ endif
 
 
 subdir('src')
+subdir('tests')

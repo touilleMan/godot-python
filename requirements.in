@@ -1,5 +1,8 @@
-pip-tools~=6.0.1
 meson~=0.60
+pip-tools~=6.0.1
+# Coloram is needed only on Windows by pip-tools->click->pip-tools
+# see: https://github.com/pallets/click/blob/030f53cf677ee1de534359c535d465eed0ec1d99/setup.py#L6
+colorama
 ninja~=1.10
 cython~=0.29.21
 jinja2~=2.11.3
