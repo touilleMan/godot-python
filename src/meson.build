@@ -13,7 +13,6 @@ cc = meson.get_compiler('c')
 pyx_pythonscript_c = custom_target('_pythonscript',
     output : ['_pythonscript.c', '_pythonscript_api.h'],
     input : '_pythonscript.pyx',
-    depend_files: [],
     command : [cython, '-3', '--fast-fail', '@INPUT@', '-o', '@OUTPUT0@']
 )
 
@@ -26,10 +25,13 @@ pyx_pythonscript_lib = static_library(
 pyx_pythonscript = declare_dependency(
     link_with: pyx_pythonscript_lib,
     include_directories: pyx_pythonscript_lib.private_dir_include(),  # To expose _pythonscript_api.h
+    sources: [pyx_pythonscript_c],
 )
 
 shared_library(
     'pythonscript',
     'pythonscript.c',
     dependencies: [libgodot, libpython, pyx_pythonscript],
+    install: true,
+    install_dir: 'addons/pythonscript/' + host_platform,
 )

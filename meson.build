@@ -7,6 +7,22 @@ project(
   default_options : ['warning_level=2']
 )
 
+host_platform = '@0@-@1@'.format(host_machine.system(), host_machine.cpu_family())
+if (
+    host_platform != 'linux-x86_64'
+    and host_platform != 'windows-x86'
+    and host_platform != 'windows-x86_64'
+    and host_platform != 'darwin-x86_64'
+)
+    error('Unsupported host platform: @0@'.format(host_platform))
+endif
+
+# We stick with Godot's platform naming
+# Note darwin may refere to ios and osx (because it's sooo clever to designate
+# two totally diferent things with the same name...) but we only support osx
+if host_platform == 'darwin-x86_64'
+    host_platform = 'osx-x86_64'
+endif
 
 python = find_program('python')
 cython = find_program('cython')
@@ -18,21 +34,41 @@ cc = meson.get_compiler('c')
 ##############################################################################
 
 
-# Download&extract CPython prebuild archive
-# (This is done once at configure time)
-message('Fetching CPython v@0@ prebuild distrib'.format(get_option('cpython_distrib_version')))
+cpython_distrib_version_major = get_option('cpython_distrib_version').split('.')[0]
+cpython_distrib_version_minor = get_option('cpython_distrib_version').split('.')[1]
+
+message('Fetching CPython v@0@ prebuild distrib...'.format(get_option('cpython_distrib_version')))
 run_command(
     python,
-    'scripts/fetch_python_distrib.py',
-    '--host-platform', host_machine.system() + '-' + host_machine.cpu_family(),
+    'scripts/python_distrib.py',
+    'fetch_prebuild',
+    '--host-platform', host_platform,
     '--cpython-version', get_option('cpython_distrib_version'),
     '--output-dir', meson.current_build_dir(),
     capture: true,
     check: true,
 )
 
-cpython_distrib_version_major = get_option('cpython_distrib_version').split('.')[0]
-cpython_distrib_version_minor = get_option('cpython_distrib_version').split('.')[1]
+message('Generating CPython custom distrib from the prebuild...')
+run_command(
+    python,
+    'scripts/python_distrib.py',
+    'build_distrib',
+    '--host-platform', host_platform,
+    '--cpython-version', get_option('cpython_distrib_version'),
+    '--output-dir', meson.current_build_dir(),
+    '--compressed-stdlib',
+    capture: true,
+    check: true,
+)
+
+# We link against the prebuild but use the distrib at the runtime
+python_prebuild_name = 'python_prebuild-@0@-@1@'.format(
+    get_option('cpython_distrib_version'),
+    host_platform,
+)
+python_prebuild_path = join_paths(meson.current_build_dir(), python_prebuild_name)
+python_distrib_path = meson.current_build_dir() + 'python_distrib'
 
 # Define the `libpython` dependency
 if build_machine.system() == 'linux'
@@ -40,9 +76,9 @@ if build_machine.system() == 'linux'
         dependencies: cc.find_library(
             # e.g. python3.9
             'python@0@.@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor),
-            dirs: join_paths(meson.current_build_dir() , 'python/install/lib')
+            dirs: join_paths(python_prebuild_path , 'python/install/lib')
         ),
-        include_directories: ['python/install/include/python3.9'],
+        include_directories: [join_paths(python_prebuild_name, 'python/install/include/python3.9')],
     )
 elif build_machine.system() == 'windows'
     libpython = declare_dependency(
@@ -50,13 +86,18 @@ elif build_machine.system() == 'windows'
             # e.g. python39
             'python@0@@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor),
             dirs: [
-                # join_paths(meson.current_build_dir() , 'python/install'),
-                join_paths(meson.current_build_dir() , 'python/install/libs'),
+                # join_paths(python_prebuild_path , 'python/install'),
+                join_paths(python_prebuild_path , 'python/install/libs'),
             ],
         ),
-        include_directories: ['python/install/include'],
+        include_directories: [join_paths(python_prebuild_name, 'python/install/include')],
     )
 endif
+
+# add_install_script(
+#     python,
+#     ['scripts/install_python_distrib.py',]
+# )
 
 
 ##############################################################################
@@ -95,6 +136,27 @@ libgodot = declare_dependency(
         # given it is an absolute path
         '-I' + godot_headers_path,
     ],
+)
+
+
+##############################################################################
+#                         Misc install stuff                                 #
+##############################################################################
+
+
+install_data(
+    'misc/release_README.txt',
+    install_dir: 'addons/pythonscript',
+    rename: 'README.TXT',
+)
+install_data(
+    'misc/release_LICENSE.txt',
+    install_dir: 'addons/pythonscript',
+    rename: 'LICENSE.TXT',
+)
+install_data(
+    'misc/release_pythonscript.gdextension',
+    rename: 'pythonscript.gdextension',
 )
 
 
