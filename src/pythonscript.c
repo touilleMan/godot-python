@@ -8,22 +8,11 @@
  * Python as a new language using Godot's Pluginscript system.
  */
 
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+
 #include "_pythonscript_api.h"
 #include <godot/gdnative_interface.h>
-#include <python.h>
-
-// #define PY_SSIZE_T_CLEAN
-// #ifdef _DEBUG
-//   // On Windows with _DEBUG defined, python.h (pyconfig.h actually) specify it
-//   // should be linked with python39_d.lib, however the we only have python39.lib
-//   #undef _DEBUG
-//   #include <python.h>
-//   // Also include python.h
-//   #include "_pythonscript_api.h"
-//   #define _DEBUG
-// #else
-//   #include <python.h>
-// #endif
 
 #ifdef __GNUC__
 # define GDN_EXPORT __attribute__((visibility("default")))

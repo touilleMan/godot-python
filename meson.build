@@ -1,10 +1,16 @@
 project(
-  'godot-python',
-  'c',
-  version : '0.50.0+dev',
-  meson_version: '>=0.60.0',
-  # warning_level=3 uses -Wpedantic that doesn't play nice with cython-generated code
-  default_options : ['warning_level=2']
+    'godot-python',
+    'c',
+    version : '0.50.0+dev',
+    meson_version: '>=0.61.0',
+    default_options : [
+        # warning_level=3 uses -Wpedantic that doesn't play nice with cython-generated code
+        'warning_level=2',
+        # Overwrite default prefix (e.g. /usr/local on linux), note installing is always
+        # done with a --destdir given we installing this module globally on the system
+        # is meaningless
+        'prefix=/'
+    ]
 )
 
 host_platform = '@0@-@1@'.format(host_machine.system(), host_machine.cpu_family())
@@ -68,7 +74,7 @@ python_prebuild_name = 'python_prebuild-@0@-@1@'.format(
     host_platform,
 )
 python_prebuild_path = join_paths(meson.current_build_dir(), python_prebuild_name)
-python_distrib_path = meson.current_build_dir() + 'python_distrib'
+python_distrib_path = join_paths(meson.current_build_dir(), 'python_distrib')
 
 # Define the `libpython` dependency
 if build_machine.system() == 'linux'
@@ -94,10 +100,61 @@ elif build_machine.system() == 'windows'
     )
 endif
 
-# add_install_script(
-#     python,
-#     ['scripts/install_python_distrib.py',]
-# )
+
+install_subdir(
+    python_distrib_path,
+    install_dir: join_paths('addons/pythonscript', host_platform),
+    strip_directory: true,
+)
+if build_machine.system() == 'linux'
+    # TODO: Bug in meson prevent symlink from being correctly copied, so we do it by hand
+    # see: https://github.com/mesonbuild/meson/issues/9233
+    mm = '@0@.@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor)
+    run_command(
+        python,
+        '-c',
+        'from os import unlink; [unlink("@0@/bin/" + x) for x in ["2to3", "idle3", "pydoc3", "python3", "python3-config"]]'.format(python_distrib_path),
+        capture: true,
+        check: false,  # unlink raises exception if files has already been removed
+    )
+    run_command(
+        python,
+        '-c',
+        'from os import unlink; [unlink("@0@/lib/" + x) for x in ["libpython@1@.so"]]'.format(python_distrib_path, mm),
+        capture: true,
+        check: false,  # unlink raises exception if files has already been removed
+    )
+    install_symlink(
+        '2to3',
+        install_dir: join_paths('addons/pythonscript', host_platform, 'bin'),
+        pointing_to: '2to3-@0@'.format(mm),
+    )
+    install_symlink(
+        'idle3',
+        install_dir: join_paths('addons/pythonscript', host_platform, 'bin'),
+        pointing_to: 'idle@0@'.format(mm),
+    )
+    install_symlink(
+        'pydoc3',
+        install_dir: join_paths('addons/pythonscript', host_platform, 'bin'),
+        pointing_to: 'pydoc@0@'.format(mm),
+    )
+    install_symlink(
+        'python3',
+        install_dir: join_paths('addons/pythonscript', host_platform, 'bin'),
+        pointing_to: 'python@0@'.format(mm),
+    )
+    install_symlink(
+        'python3-config',
+        install_dir: join_paths('addons/pythonscript', host_platform, 'bin'),
+        pointing_to: 'python@0@-config'.format(mm),
+    )
+    install_symlink(
+        'libpython@0@.so'.format(mm),
+        install_dir: join_paths('addons/pythonscript', host_platform, 'lib'),
+        pointing_to: 'libpython@0@.so.1.0'.format(mm),
+    )
+endif
 
 
 ##############################################################################
@@ -145,17 +202,18 @@ libgodot = declare_dependency(
 
 
 install_data(
-    'misc/release_README.txt',
-    install_dir: 'addons/pythonscript',
-    rename: 'README.TXT',
-)
-install_data(
     'misc/release_LICENSE.txt',
     install_dir: 'addons/pythonscript',
     rename: 'LICENSE.TXT',
 )
 install_data(
+    'misc/release_README.txt',
+    install_dir: '.',
+    rename: 'README.txt',
+)
+install_data(
     'misc/release_pythonscript.gdextension',
+    install_dir: '.',
     rename: 'pythonscript.gdextension',
 )
 
