@@ -32,6 +32,7 @@ shared_library(
     'pythonscript',
     'pythonscript.c',
     dependencies: [libgodot, libpython, pyx_pythonscript],
+    install_rpath: '$ORIGIN/lib',
     install: true,
     install_dir: 'addons/pythonscript/' + host_platform,
 )
