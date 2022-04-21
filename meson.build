@@ -202,14 +202,26 @@ libgodot = declare_dependency(
 
 
 install_data(
-    'misc/release_LICENSE.txt',
+    'LICENSE.txt',
     install_dir: 'addons/pythonscript',
-    rename: 'LICENSE.TXT',
 )
-install_data(
-    'misc/release_README.txt',
+# Add date&version info to README before installing it
+custom_target(
+    'release_readme',
+    command: [
+        python,
+        '-c',
+        '''
+from datetime import date
+src = open("@INPUT0@", mode="r", encoding="utf8").read()
+out = src.format(version="@0@", date=str(date.today()))
+open("@OUTPUT0@", mode="w", encoding="utf8").write(out)
+'''.format(meson.project_version())
+    ],
+    output: ['README.txt'],
+    input: ['misc/release_README.txt'],
+    install: true,
     install_dir: '.',
-    rename: 'README.txt',
 )
 install_data(
     'misc/release_pythonscript.gdextension',
