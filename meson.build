@@ -110,50 +110,38 @@ if build_machine.system() == 'linux'
     # TODO: Bug in meson prevent symlink from being correctly copied, so we do it by hand
     # see: https://github.com/mesonbuild/meson/issues/9233
     mm = '@0@.@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor)
-    run_command(
-        python,
-        '-c',
-        'from os import unlink; [unlink("@0@/bin/" + x) for x in ["2to3", "idle3", "pydoc3", "python3", "python3-config"]]'.format(python_distrib_path),
-        capture: true,
-        check: false,  # unlink raises exception if files has already been removed
-    )
-    run_command(
-        python,
-        '-c',
-        'from os import unlink; [unlink("@0@/lib/" + x) for x in ["libpython@1@.so"]]'.format(python_distrib_path, mm),
-        capture: true,
-        check: false,  # unlink raises exception if files has already been removed
-    )
-    install_symlink(
-        '2to3',
-        install_dir: join_paths('addons/pythonscript', host_platform, 'bin'),
-        pointing_to: '2to3-@0@'.format(mm),
-    )
-    install_symlink(
-        'idle3',
-        install_dir: join_paths('addons/pythonscript', host_platform, 'bin'),
-        pointing_to: 'idle@0@'.format(mm),
-    )
-    install_symlink(
-        'pydoc3',
-        install_dir: join_paths('addons/pythonscript', host_platform, 'bin'),
-        pointing_to: 'pydoc@0@'.format(mm),
-    )
-    install_symlink(
-        'python3',
-        install_dir: join_paths('addons/pythonscript', host_platform, 'bin'),
-        pointing_to: 'python@0@'.format(mm),
-    )
-    install_symlink(
-        'python3-config',
-        install_dir: join_paths('addons/pythonscript', host_platform, 'bin'),
-        pointing_to: 'python@0@-config'.format(mm),
-    )
-    install_symlink(
-        'libpython@0@.so'.format(mm),
-        install_dir: join_paths('addons/pythonscript', host_platform, 'lib'),
-        pointing_to: 'libpython@0@.so.1.0'.format(mm),
-    )
+    bad_links = [
+        # (<parent dir>, <symlink name>, <target name>)
+        ['bin', '2to3', '2to3-@0@'.format(mm)],
+        ['bin', 'idle3', 'idle@0@'.format(mm)],
+        ['bin', 'pydoc3', 'pydoc@0@'.format(mm)],
+        ['bin', 'python3', 'python@0@'.format(mm)],
+        ['bin', 'python3-config', 'python@0@-config'.format(mm)],
+        ['lib', 'libpython@0@.so'.format(mm), 'libpython@0@.so.1.0'.format(mm)],
+    ]
+    foreach x: bad_links
+        parent_dir = x[0]
+        symlink_name = x[1]
+        target_name = x[2]
+        run_command(
+            python,
+            '-c',
+            'from os import unlink; unlink("@0@")'.format(
+                join_paths(
+                    python_distrib_path,
+                    parent_dir,
+                    symlink_name,
+                )
+            ),
+            check: false,  # Ignore error raised by unlink if the file doesn't exists
+            capture: true,
+        )
+        install_symlink(
+            symlink_name,
+            install_dir: join_paths('addons/pythonscript', host_platform, parent_dir),
+            pointing_to: target_name,
+        )
+    endforeach
 endif
 
 
