@@ -168,7 +168,7 @@ godot_version_info = run_command(
     check: true,
 ).stdout().strip().split('\n')
 godot_version_fullname = godot_version_info[0]
-message('Godot extension headers version: @0@'.format(godot_version_fullname))
+message('Detected Godot extension version: @0@'.format(godot_version_fullname))
 
 # Define the `libgodot` dependency
 godot_version_major = godot_version_info[1]
@@ -220,3 +220,16 @@ install_data(
 
 subdir('src')
 subdir('tests')
+
+
+##############################################################################
+#                             Config summary                                 #
+##############################################################################
+
+
+summary(
+    {
+        'Godot extension version': godot_version_fullname,
+        'Embedded Python version': get_option('cpython_distrib_version'),
+    }
+)
