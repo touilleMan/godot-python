@@ -11,7 +11,7 @@ on:
 # Global Settings
 env:
   PYTHON_VERSION: "3.7"  # Python to run the build, no the one shipped !
-  GODOT_BINARY_VERSION: "3.2.3"
+  GODOT_BINARY_VERSION: "4.0.0-alpha6"  # Version of Godot to test against
 
 
 jobs:
@@ -68,7 +68,7 @@ jobs:
       - name: 'Setup project'
         run: |
           set -eux
-          meson setup build/linux-x86_64 -D headless=true
+          meson setup build/ -D headless=true
       - name: 'Build project'
         run: |
           set -eux
@@ -80,7 +80,7 @@ jobs:
       # - name: 'Run tests'
       #   run: |
       #     set -eux
-      #     meson compile -C build/ tests
+      #     python tests/run.py --build-dir build/ --godot-binary ${{ GODOT_BINARY_VERSION }}
       #   env:
       #     DISPLAY: ':99.0'
       # - name: 'Generate artifact archive'
@@ -162,7 +162,7 @@ jobs:
       #   shell: bash
       #   run: |
       #     set -eux
-      #     meson compile -C build/ tests
+      #     python tests/run.py --build-dir build/ --godot-binary ${{ GODOT_BINARY_VERSION }}
       # - name: 'Generate artifact archive'
       #   shell: bash
       #   run: |
@@ -214,7 +214,7 @@ jobs:
       # - name: 'Run tests'
       #   run: |
       #     set -eux
-      #     meson compile -C build/ tests
+      #     python tests/run.py --build-dir build/ --godot-binary ${{ GODOT_BINARY_VERSION }}
       # - name: 'Generate artifact archive'
       #   run: |
       #     set -eux

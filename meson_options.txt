@@ -1,3 +1,3 @@
 option('cpython_distrib_version', type: 'string', value: '3.9.7', description: 'Version of CPython to ship')
-option('godot_headers', type: 'string', value: 'godot_headers', description: 'Path to godot extension headers directory')
+option('godot_headers', type: 'string', value: 'godot_headers', description: 'Path to Godot extension headers directory')
 option('headless', type: 'boolean', value: false, description: 'Run test in headless mode')
