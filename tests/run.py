@@ -1,9 +1,10 @@
 #! /usr/bin/env python3
 
 import os
+import sys
 import re
 import platform
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Sequence
 import argparse
 from pathlib import Path
 import shutil
@@ -111,15 +112,17 @@ def symlink(src: Path, dst: Path) -> None:
 
 
 def create_test_workdir(test_dir: Path, distrib_workdir: Path, test_workdir: Path) -> None:
-    print(f"### Building test workdir {test_workdir}")
+    print(f"### Create&populate test workdir in {test_workdir}")
     shutil.copytree(test_dir, test_workdir, dirs_exist_ok=True)
     symlink(distrib_workdir / "addons", test_workdir / "addons")
     shutil.copy(distrib_workdir / "pythonscript.gdextension", test_workdir)
 
 
-def run_test(test_workdir: Path, godot_binary: Path) -> None:
+def run_test(test_workdir: Path, godot_binary: Path, extra_args: Sequence[str]) -> None:
     print(f"### Running test in workdir {test_workdir}")
-    subprocess.check_call([str(godot_binary.resolve()), "--path", str(test_workdir.resolve())])
+    cmd = [str(godot_binary.resolve()), "--path", str(test_workdir.resolve()), *extra_args]
+    print(" ".join(cmd))
+    subprocess.check_call(cmd)
 
 
 if __name__ == "__main__":
@@ -135,10 +138,16 @@ if __name__ == "__main__":
         help="Path to Godot binary to use, or version of Godot to download and use",
     )
 
-    args = parser.parse_args()
+    try:
+        options_separator = sys.argv.index("--")
+    except ValueError:
+        options_separator = len(sys.argv)
+
+    args = parser.parse_args(sys.argv[1:options_separator])
+    godot_extra_args = sys.argv[options_separator:]
 
     if args.tests:
-        tests_dirs = [x for x in collect_tests() if x in args.tests]
+        tests_dirs = [x for x in collect_tests() if x.name in args.tests]
     else:
         tests_dirs = collect_tests()
 
@@ -161,4 +170,4 @@ if __name__ == "__main__":
             create_test_workdir(
                 test_dir=test_dir, distrib_workdir=distrib_workdir, test_workdir=test_workdir
             )
-            run_test(test_workdir, godot_binary_path)
+            run_test(test_workdir, godot_binary_path, godot_extra_args)
