@@ -41,23 +41,31 @@ def fetch_godot_binary(build_dir: Path, version: GodotBinaryVersion) -> Path:
     build_platform = f"{platform.system()}-{platform.machine()}".lower()
     godot_build_platform = {
         "linux-x86_64": "linux.64",
+        "linux-x64": "linux.64",
+        "linux-amd64": "linux.64",
         "linux-x86": "linux.32",
         "windows-x86_64": "win64",
+        "windows-x64": "win64",
+        "windows-amd64": "win64",
         "windows-x86": "win32",
         "osx-x86_64": "osx.universal",
+        "osx-x64": "osx.universal",
+        "osx-amd64": "osx.universal",
     }.get(build_platform)
     if not godot_build_platform:
         raise RuntimeError(
-            f"Don't know how to download a Godot binary for your platform `{platform}`"
+            f"Don't know how to download a Godot binary for your platform `{build_platform}`"
         )
 
     major, minor, patch, extra = version
     strversion = f"{major}.{minor}.{patch}" if patch != "0" else f"{major}.{minor}"
     binary_name = f"Godot_v{strversion}-{extra}_{godot_build_platform}"
+    if build_platform.startswith("windows"):
+        binary_name += ".exe"
     if extra == "stable":
-        url = f"https://downloads.tuxfamily.org/godotengine/{strversion}/Godot_v{strversion}-{extra}_{godot_build_platform}.zip"
+        url = f"https://downloads.tuxfamily.org/godotengine/{strversion}/{binary_name}.zip"
     else:
-        url = f"https://downloads.tuxfamily.org/godotengine/{strversion}/{extra}/Godot_v{strversion}-{extra}_{godot_build_platform}.zip"
+        url = f"https://downloads.tuxfamily.org/godotengine/{strversion}/{extra}/{binary_name}.zip"
 
     if godot_build_platform.startswith("osx"):
         zippath = "Godot.app/Contents/MacOS/Godot"
@@ -102,6 +110,16 @@ def install_distrib(build_dir: Path, distrib_subdir: str) -> Path:
 
 
 def symlink(src: Path, dst: Path) -> None:
+    # Python's `os.symlink` doesn't work on Windows...
+    # Well it kind of work: you must use Python>=3.8 and have administrator privilege
+    # or have "Developer Mode" enabled (wtf is that, I guess you have to do a Konami
+    # code in 3D Pinball Space Cadet to enable it).
+    # The funny thing is Windows also has a concept of "junction point" that are
+    # basically symlink for folder (though not what Python uses in `os.symlink`,
+    # even if this function contains a `target_is_directory` param only for Windows
+    # that could have totally let you think junction point is used...).
+    # But there is more ! Python actually has a junction point creation function,
+    # though it is in a private module so we are not supposed to use it, but yolo ;-)
     if platform.system() == "Windows":
         import _winapi
 
@@ -112,14 +130,16 @@ def symlink(src: Path, dst: Path) -> None:
 
 
 def create_test_workdir(test_dir: Path, distrib_workdir: Path, test_workdir: Path) -> None:
-    print(f"### Create&populate test workdir in {test_workdir}")
+    print(f"### {test_dir.name}: Create&populate test workdir in {test_workdir}")
     shutil.copytree(test_dir, test_workdir, dirs_exist_ok=True)
     symlink(distrib_workdir / "addons", test_workdir / "addons")
     shutil.copy(distrib_workdir / "pythonscript.gdextension", test_workdir)
 
 
-def run_test(test_workdir: Path, godot_binary: Path, extra_args: Sequence[str]) -> None:
-    print(f"### Running test in workdir {test_workdir}")
+def run_test(
+    test_name: str, test_workdir: Path, godot_binary: Path, extra_args: Sequence[str]
+) -> None:
+    print(f"### {test_name}: Running test in workdir {test_workdir}")
     cmd = [str(godot_binary.resolve()), "--path", str(test_workdir.resolve()), *extra_args]
     print(" ".join(cmd))
     subprocess.check_call(cmd)
@@ -133,8 +153,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--godot-binary",
-        required=True,
         type=parse_godot_binary_hint,
+        default="4.0.0-alpha6",
         help="Path to Godot binary to use, or version of Godot to download and use",
     )
 
@@ -170,4 +190,4 @@ if __name__ == "__main__":
             create_test_workdir(
                 test_dir=test_dir, distrib_workdir=distrib_workdir, test_workdir=test_workdir
             )
-            run_test(test_workdir, godot_binary_path, godot_extra_args)
+            run_test(test_dir.name, test_workdir, godot_binary_path, godot_extra_args)
