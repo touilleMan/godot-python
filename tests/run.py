@@ -3,8 +3,10 @@
 import os
 import sys
 import re
+from functools import partial
 import platform
 from typing import List, Tuple, Union, Sequence
+from contextlib import contextmanager
 import argparse
 from pathlib import Path
 import shutil
@@ -157,6 +159,11 @@ if __name__ == "__main__":
         default="4.0.0-alpha6",
         help="Path to Godot binary to use, or version of Godot to download and use",
     )
+    parser.add_argument(
+        "--keep-test-dir",
+        action="store_true",
+        help="Don't remove the temporary directory used for the test",
+    )
 
     try:
         options_separator = sys.argv.index("--")
@@ -181,12 +188,22 @@ if __name__ == "__main__":
     # Install the distrib, it is common to each test and kept between run to save time
     distrib_workdir = install_distrib(build_dir, "common_tests_install_distrib")
 
+    @contextmanager
+    def test_workdir_factory():
+        temp_dir = TemporaryDirectory(prefix="godot-python-test-")
+        try:
+            yield Path(temp_dir.name)
+        finally:
+            if not args.keep_test_dir:
+                temp_dir.cleanup()
+            else:
+                temp_dir._finalizer.detach()  # Avoid cleanup when temp_dir is garbage collected
+
     # On the other hand we use a temporary directory for the test code (given there
     # is not much data, and Godot may write in this directory during the test) with
     # symlinks on the distrib
     for test_dir in tests_dirs:
-        with TemporaryDirectory(prefix="godot-python-test") as raw_test_workdir:
-            test_workdir = Path(raw_test_workdir)
+        with test_workdir_factory() as test_workdir:
             create_test_workdir(
                 test_dir=test_dir, distrib_workdir=distrib_workdir, test_workdir=test_workdir
             )
