@@ -6,9 +6,9 @@ project(
     default_options : [
         # warning_level=3 uses -Wpedantic that doesn't play nice with cython-generated code
         'warning_level=2',
-        # Overwrite default prefix (e.g. /usr/local on linux), note installing is always
-        # done with a --destdir given we installing this module globally on the system
-        # is meaningless
+        # Overwrite default prefix (e.g. /usr/local on linux), note installing is
+        # always done with a --destdir given installing this project globally on
+        # the system is meaningless
         'prefix=/'
     ]
 )

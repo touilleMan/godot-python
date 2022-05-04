@@ -1,7 +1,5 @@
 subdir('godot')
 
-cc = meson.get_compiler('c')
-
 # libpythonscript.so
 # ├─ libpyx_pythonscript.a
 # |   └─ _pythonscript.c
