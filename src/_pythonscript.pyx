@@ -19,9 +19,6 @@
 
 import sys
 
-# # OS and ProjectSettings are singletons exposed as global python objects,
-# # hence there are not available from a cimport
-# from godot.bindings import OS, ProjectSettings
 from godot._version import __version__ as pythonscript_version
 
 
@@ -35,12 +32,16 @@ from godot._version import __version__ as pythonscript_version
 
 
 cdef api void _pythonscript_initialize() with gil:
-    # Finally proudly print banner ;-)
     cooked_sys_version = '.'.join(map(str, sys.version_info))
     print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})")
     print(f"PYTHONPATH: {sys.path}")
 
-    # # Pass argv arguments
+
+    # # OS and ProjectSettings are singletons exposed as global python objects,
+    # # hence there are not available from a cimport
+    # from godot.bindings import OS, ProjectSettings
+
+    # # Provide argv arguments
     # sys.argv = ["godot"] + [str(x) for x in OS.get_cmdline_args()]
 
     # # Update PYTHONPATH according to configuration
@@ -66,8 +67,6 @@ cdef api void _pythonscript_initialize() with gil:
 
     # if get_pythonscript_verbose():
     #     print(f"PYTHONPATH: {sys.path}")
-
-    # return NULL
 
 
 cdef api void _pythonscript_deinitialize() with gil:

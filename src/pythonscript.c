@@ -125,7 +125,9 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
         }
     }
 
-    // TODO: Set argv
+    // argv and sys.path are going to be set by `_pythonscript_initialize`
+    // This is much simpler this way given we will have acces to Godot API
+    // through the nice Python bindings this way
 
     /* Read all configuration at once */
     status = PyConfig_Read(&config);
@@ -160,7 +162,10 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
 //     wcsncpy(new_path, L".:", new_path_len);
 //     wcsncpy(new_path + 2, path, new_path_len - 2);
 //     Py_SetPath(new_path);
+#if 0
+    // Useful for debugging if `import__pythonscript` returns an error
     PyRun_SimpleString("import sys\nprint('PYTHON_PATH:', sys.path)\n");
+#endif
 
     int ret = import__pythonscript();
     if (ret != 0){
