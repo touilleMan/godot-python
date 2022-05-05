@@ -42,6 +42,11 @@ cc = meson.get_compiler('c')
 
 cpython_distrib_version_major = get_option('cpython_distrib_version').split('.')[0]
 cpython_distrib_version_minor = get_option('cpython_distrib_version').split('.')[1]
+# Version Minor.Major
+cython_vmdm = '@0@.@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor)
+# Version MinorMajor
+cython_vmm = '@0@@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor)
+
 
 message('Fetching CPython v@0@ prebuild distrib...'.format(get_option('cpython_distrib_version')))
 run_command(
@@ -75,7 +80,6 @@ python_prebuild_name = 'python_prebuild-@0@-@1@'.format(
 )
 python_prebuild_path = join_paths(meson.current_build_dir(), python_prebuild_name)
 python_distrib_path = join_paths(meson.current_build_dir(), 'python_distrib')
-
 # Define the `libpython` dependency
 if build_machine.system() == 'linux'
     libpython = declare_dependency(
@@ -84,7 +88,13 @@ if build_machine.system() == 'linux'
             'python@0@.@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor),
             dirs: join_paths(python_prebuild_path , 'python/install/lib')
         ),
-        include_directories: [join_paths(python_prebuild_name, 'python/install/include/python3.9')],
+        include_directories: [join_paths(python_prebuild_name, 'python/install/include/python@0@.@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor))],
+    )
+    # e.g. addons/pythonscript/linux-x86_64/lib/python3.9/site-packages
+    python_site_packages_install_path = join_paths(
+        'addons/pythonscript',
+        host_platform,
+        'lib/python@0@.@1@/site-packages'.format(cpython_distrib_version_major, cpython_distrib_version_minor)
     )
 elif build_machine.system() == 'windows'
     libpython = declare_dependency(
@@ -97,6 +107,12 @@ elif build_machine.system() == 'windows'
             ],
         ),
         include_directories: [join_paths(python_prebuild_name, 'python/install/include')],
+    )
+    # e.g. addons/pythonscript/windows-x86_64/lib/python3.9/site-packages
+    python_site_packages_install_path = join_paths(
+        'addons/pythonscript',
+        host_platform,
+        'lib/python@0@@1@/site-packages'.format(cpython_distrib_version_major, cpython_distrib_version_minor)
     )
 endif
 

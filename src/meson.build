@@ -1,10 +1,13 @@
 subdir('godot')
 
 # libpythonscript.so
-# ├─ libpyx_pythonscript.a
-# |   └─ _pythonscript.c
-# |       └─ _pythonscript.pyx
 # └─ pythonscript.c
+# _pythonscript.so
+# └─ _pythonscript.c
+#     └─ _pythonscript.pyx
+#
+# Note we cannot bundle `_pythonscript.so` within `libpythonscript.so` due
+# to how Python loads native modules.
 
 # `_pythonscript_api.h` is used to expose the Python callback used by `pythonscript.c`,
 # hence this header is private and won't be provided in the release
@@ -14,16 +17,30 @@ pyx_pythonscript_c = custom_target('_pythonscript',
     command : [cython, '-3', '--fast-fail', '@INPUT@', '-o', '@OUTPUT0@']
 )
 
-pyx_pythonscript_lib = static_library(
-    'pyx_pythonscript',
+# Python native module must have custom naming:
+# `foo.pyd` on Windows, `foo.so` on linux/macos
+if host_platform.startswith('windows')
+    python_native_module_name_prefix = ''
+    python_native_module_name_suffix = 'pyd'
+else
+    python_native_module_name_prefix = ''
+    python_native_module_name_suffix = 'so'
+endif
+
+pyx_pythonscript_lib = shared_library(
+    '_pythonscript',
     pyx_pythonscript_c,
     dependencies : [libgodot, libpython],
+    install_rpath: '$ORIGIN/lib',
+    name_prefix: python_native_module_name_prefix,
+    name_suffix: python_native_module_name_suffix,
+    install: true,
+    install_dir: python_site_packages_install_path,
 )
 
+
 pyx_pythonscript = declare_dependency(
-    link_with: pyx_pythonscript_lib,
     include_directories: pyx_pythonscript_lib.private_dir_include(),  # To expose _pythonscript_api.h
-    sources: [pyx_pythonscript_c],
 )
 
 shared_library(

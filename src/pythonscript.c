@@ -22,12 +22,17 @@
 # define GDN_EXPORT
 #endif
 
+// TODO: Should be defined according to extension_api.json & target platform
+#define GD_STRING_SIZE 8
+
 // Nobody ain't no time to include stdbool.h !
 #define true 1
 #define false 0
 
+static int python_initialized = false;
 static PyThreadState *gilstate = NULL;
 static const GDNativeInterface *gdapi = NULL;
+static GDNativeExtensionClassLibraryPtr gdextension = NULL;
 
 #define GD_PRINT(msg) { \
     printf("%s\n", msg); \
@@ -46,54 +51,148 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
     if (p_level != GDNATIVE_INITIALIZATION_CORE) {
         return;
     }
+
     // Initialize CPython interpreter
 
+    PyStatus status;
+
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+    python_initialized = true;
+
+    // Set PYTHONHOME from .so path
+    {
+        // 0) Retreive Godot methods
+        GDNativePtrDestructor gdstring_destructor = gdapi->variant_get_ptr_destructor(GDNATIVE_VARIANT_TYPE_STRING);
+        if (gdstring_destructor == NULL) {
+            GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String` destructor)");
+            goto error;
+        }
+        GDNativePtrBuiltInMethod gdstring_get_base_dir = gdapi->variant_get_ptr_builtin_method(GDNATIVE_VARIANT_TYPE_STRING, "get_base_dir", 171192875);
+        if (gdstring_get_base_dir == NULL) {
+            GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String.get_base_dir` method)");
+            goto error;
+        }
+
+        // 1) Retrieve library path
+        char gd_library_path[GD_STRING_SIZE];
+        gdapi->get_library_path(gdextension, gd_library_path);
+
+        GDNativeInt library_path_size = gdapi->string_to_utf8_chars(gd_library_path, NULL, 0);
+        char library_path[library_path_size + 1];
+        gdapi->string_to_utf8_chars(gd_library_path, library_path, library_path_size);
+        library_path[library_path_size] = '\0';
+
+        // 2) Retrieve base dir from library path
+        char gd_basedir_path[GD_STRING_SIZE];
+        gdstring_get_base_dir(gd_library_path, NULL, gd_basedir_path, 0);
+
+        // 3) Convert base dir into regular c string
+        GDNativeInt basedir_path_size = gdapi->string_to_utf8_chars(gd_basedir_path, NULL, 0);
+        char basedir_path[basedir_path_size + 1];
+        gdapi->string_to_utf8_chars(gd_basedir_path, basedir_path, basedir_path_size);
+        basedir_path[basedir_path_size] = '\0';
+
+        // 3) Cleanup temporary gdstrings
+        gdstring_destructor(gd_basedir_path);
+        gdstring_destructor(gd_library_path);
+
+        // 4) Configure pythonhome with base dir
+        status = PyConfig_SetBytesString(
+            &config,
+            &config.home,
+            basedir_path
+        );
+        if (PyStatus_Exception(status)) {
+            GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
+            GD_PRINT_ERROR(status.err_msg);
+            goto error;
+        }
+    }
+
+    // Set program name
+    {
+        status = PyConfig_SetBytesString(
+            &config,
+            &config.program_name,
+            // TODO: retreive real argv[0]
+            "godot"
+        );
+        if (PyStatus_Exception(status)) {
+            GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
+            GD_PRINT_ERROR(status.err_msg);
+            goto error;
+        }
+    }
+
+    // TODO: Set argv
+
+    /* Read all configuration at once */
+    status = PyConfig_Read(&config);
+    if (PyStatus_Exception(status)) {
+        GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
+        GD_PRINT_ERROR(status.err_msg);
+        goto error;
+    }
+
     // TODO
-    // // Retrieve path and set pythonhome
-    // {
-    //     static wchar_t pythonhome[300];
-    //     godot_string _pythonhome = pythonscript_gdapi10->godot_string_get_base_dir(
-    //         options->active_library_path
-    //     );
-    //     wcsncpy(pythonhome, pythonscript_gdapi10->godot_string_wide_str(&_pythonhome), 300);
-    //     pythonscript_gdapi10->godot_string_destroy(&_pythonhome);
-    //     Py_SetPythonHome(pythonhome);
+    // Update sys.path with projet config
+    // status = PyWideStringList_Append(&config.module_search_paths,
+    //                                  L"/path/to/more/modules");
+    // if (PyStatus_Exception(status)) {
+    //     GD_PRINT_ERROR("Pythonscript: Cannot update sys.path");
+    //     goto error;
     // }
 
-    // TODO: site.USER_SITE seems to point to an invalid location in ~/.local
-    // // Add current dir to PYTHONPATH
-    // wchar_t *path = Py_GetPath();
-    // int new_path_len = wcslen(path) + 3;
-    // wchar_t new_path[new_path_len * sizeof(wchar_t)];
-    // wcsncpy(new_path, L".:", new_path_len);
-    // wcsncpy(new_path + 2, path, new_path_len - 2);
-    // Py_SetPath(new_path);
-    // PyRun_SimpleString("import sys\nprint('PYTHON_PATH:', sys.path)\n");
+    status = Py_InitializeFromConfig(&config);
+    if (PyStatus_Exception(status)) {
+        GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
+        GD_PRINT_ERROR(status.err_msg);
+        goto error;
+    }
 
-    // TODO: retreive real argv[0]
-    Py_SetProgramName(L"godot");
-    // Initialize interpreter but skip initialization registration of signal handlers
-    Py_InitializeEx(0);
 
+//     // TODO: site.USER_SITE seems to point to an invalid location in ~/.local
+//     // Add current dir to PYTHONPATH
+//     wchar_t *path = Py_GetPath();
+//     int new_path_len = wcslen(path) + 3;
+//     wchar_t new_path[new_path_len * sizeof(wchar_t)];
+//     wcsncpy(new_path, L".:", new_path_len);
+//     wcsncpy(new_path + 2, path, new_path_len - 2);
+//     Py_SetPath(new_path);
+    PyRun_SimpleString("import sys\nprint('PYTHON_PATH:', sys.path)\n");
 
     int ret = import__pythonscript();
     if (ret != 0){
         GD_PRINT_ERROR("Pythonscript: Cannot load Python module `_pythonscript`");
-        return;
+        goto error;
     }
     _pythonscript_initialize();
 
     // Release the Kraken... er I mean the GIL !
     gilstate = PyEval_SaveThread();
+
+    PyConfig_Clear(&config);
+    return;
+
+error:
+    if (python_initialized) {
+        PyConfig_Clear(&config);
+        int ret = Py_FinalizeEx();
+        python_initialized = false;
+    }
 }
 
 static void _deinitialize(void *userdata, GDNativeInitializationLevel p_level) {
     (void) userdata;  // acknowledge unreferenced parameter
-    printf("=============== _deinitialize %d\n", p_level);
     if (p_level != GDNATIVE_INITIALIZATION_CORE) {
-        printf("=============== _deinitialize skipped %d\n", p_level);
         return;
     }
+
+    if (!python_initialized) {
+        return;
+    }
+
     // Re-acquire the gil in order to finalize properly
     PyEval_RestoreThread(gilstate);
 
@@ -103,7 +202,7 @@ static void _deinitialize(void *userdata, GDNativeInitializationLevel p_level) {
     if (ret != 0) {
         GD_PRINT_ERROR("Pythonscript: Cannot finalize Python interpreter");
     }
-    printf("=============== _deinitialize done %d\n", p_level);
+    python_initialized = false;
 }
 
 GDNativeBool GDN_EXPORT pythonscript_init(
@@ -117,6 +216,7 @@ GDNativeBool GDN_EXPORT pythonscript_init(
         return false;
     }
     gdapi = p_interface;
+    gdextension = p_library;
 
     // Check compatibility between the Godot version that has been used for building
     // (i.e. the bindings has been generated against) and the version currently executed.
