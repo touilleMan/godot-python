@@ -14,6 +14,7 @@ subdir('godot')
 pyx_pythonscript_c = custom_target('_pythonscript',
     output : ['_pythonscript.c', '_pythonscript_api.h'],
     input : '_pythonscript.pyx',
+    depends: [gdnative_interface_pxd],
     command : [cython, '-3', '--fast-fail', '@INPUT@', '-o', '@OUTPUT0@']
 )
 
