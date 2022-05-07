@@ -9,7 +9,8 @@ project(
         # Overwrite default prefix (e.g. /usr/local on linux), note installing is
         # always done with a --destdir given installing this project globally on
         # the system is meaningless
-        'prefix=/'
+        'prefix=/',
+        'c_std=c17',
     ]
 )
 
@@ -102,17 +103,16 @@ elif build_machine.system() == 'windows'
             # e.g. python39
             'python@0@@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor),
             dirs: [
-                # join_paths(python_prebuild_path , 'python/install'),
                 join_paths(python_prebuild_path , 'python/install/libs'),
             ],
         ),
         include_directories: [join_paths(python_prebuild_name, 'python/install/include')],
     )
-    # e.g. addons/pythonscript/windows-x86_64/lib/python3.9/site-packages
+    # e.g. addons/pythonscript/windows-x86_64/Lib/site-packages
     python_site_packages_install_path = join_paths(
         'addons/pythonscript',
         host_platform,
-        'lib/python@0@@1@/site-packages'.format(cpython_distrib_version_major, cpython_distrib_version_minor)
+        'Lib/site-packages'
     )
 endif
 

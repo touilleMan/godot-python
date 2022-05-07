@@ -41,6 +41,7 @@ pyx_pythonscript_lib = shared_library(
 
 pyx_pythonscript = declare_dependency(
     include_directories: pyx_pythonscript_lib.private_dir_include(),  # To expose _pythonscript_api.h
+    link_with: pyx_pythonscript_lib,
 )
 
 shared_library(

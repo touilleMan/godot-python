@@ -63,6 +63,11 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
     // Set PYTHONHOME from .so path
     {
         // 0) Retreive Godot methods
+        GDNativePtrConstructor gdstring_constructor = gdapi->variant_get_ptr_constructor(GDNATIVE_VARIANT_TYPE_STRING, 0);
+        if (gdstring_constructor == NULL) {
+            GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String` constructor)");
+            goto error;
+        }
         GDNativePtrDestructor gdstring_destructor = gdapi->variant_get_ptr_destructor(GDNATIVE_VARIANT_TYPE_STRING);
         if (gdstring_destructor == NULL) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String` destructor)");
@@ -76,26 +81,36 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
 
         // 1) Retrieve library path
         char gd_library_path[GD_STRING_SIZE];
+        gdstring_constructor(gd_library_path, NULL);
         gdapi->get_library_path(gdextension, gd_library_path);
-
-        GDNativeInt library_path_size = gdapi->string_to_utf8_chars(gd_library_path, NULL, 0);
-        char library_path[library_path_size + 1];
-        gdapi->string_to_utf8_chars(gd_library_path, library_path, library_path_size);
-        library_path[library_path_size] = '\0';
 
         // 2) Retrieve base dir from library path
         char gd_basedir_path[GD_STRING_SIZE];
+        gdstring_constructor(gd_basedir_path, NULL);
         gdstring_get_base_dir(gd_library_path, NULL, gd_basedir_path, 0);
+        gdstring_destructor(gd_library_path);
 
         // 3) Convert base dir into regular c string
         GDNativeInt basedir_path_size = gdapi->string_to_utf8_chars(gd_basedir_path, NULL, 0);
-        char basedir_path[basedir_path_size + 1];
+        // Why not using variable length array here ? Glad you asked Timmy !
+        // VLA are part of the C99 standard, but MSVC compiler is still missing it :(
+        // But wait there is more ! Microsoft may have totally butchered C99 support,
+        // but they claimed to totally support C11&C17... kinda.
+        // As a matter of fact VLA has become optional since the C11 standard, I
+        // can't help myself thinking the MSVC team pulled an increadible
+        // "it's not bug, it's feature" comity lobying move to achieve this ;-)
+        // Adding "achtually..." snobbery to total disrespect of interoperability,
+        // Microsoft have the oddacity to explain they choose not to support VLA
+        // for security&performance reasons !
+        // (see https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/#variable-length-arrays)
+        char *basedir_path = gdapi->mem_alloc(basedir_path_size + 1);
+        if (basedir_path == NULL) {
+            GD_PRINT_ERROR("Pythonscript: Initialization error (memory allocation failed)");
+            goto error;
+        }
         gdapi->string_to_utf8_chars(gd_basedir_path, basedir_path, basedir_path_size);
         basedir_path[basedir_path_size] = '\0';
-
-        // 3) Cleanup temporary gdstrings
         gdstring_destructor(gd_basedir_path);
-        gdstring_destructor(gd_library_path);
 
         // 4) Configure pythonhome with base dir
         status = PyConfig_SetBytesString(
@@ -103,6 +118,7 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
             &config.home,
             basedir_path
         );
+        gdapi->mem_free(basedir_path);
         if (PyStatus_Exception(status)) {
             GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
             GD_PRINT_ERROR(status.err_msg);
