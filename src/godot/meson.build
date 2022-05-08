@@ -17,9 +17,9 @@ subdir('_hazmat')
 ##############################################################################
 
 
-# _bindings.so
-# └─ _bindings.c
-#     └─ _bindings.pyx
+# _builtins.so
+# └─ _builtins.c
+#     └─ _builtins.pyx
 #         ├─ gdnative_interface.pxd
 #         │   └─ gdnative_interface.h
 #         └─ extension_api.json
@@ -42,7 +42,7 @@ endif
 
 
 builtins_tgt = custom_target('generate bindings pyx,pxi,pxd',
-    output: ['_bindings.pyx', '_bindings.pxd', '_bindings.pyi'],
+    output: ['_builtins.pyx', '_builtins.pxd', '_builtins.pyi'],
     input: [godot_extension_api_json, generate_builtins_tmplts],
     command: [
         python,
