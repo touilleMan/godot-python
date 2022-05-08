@@ -1,10 +1,11 @@
+#! /usr/bin/env python3
+
 import argparse
 import json
 from pathlib import Path
 from typing import List, Optional
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from dataclasses import dataclass
-from enum import Enum
 
 
 BASEDIR = Path(__file__).parent
