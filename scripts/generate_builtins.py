@@ -3,10 +3,10 @@
 import argparse
 import json
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional, List
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from dataclasses import dataclass
-
+from string import ascii_uppercase
 
 BASEDIR = Path(__file__).parent
 env = Environment(
@@ -138,6 +138,7 @@ class BuiltinMethodSpec:
 @dataclass
 class BuiltinSpec:
     name: str
+    original_name: str
     size: Optional[int]
     indexing_return_type: Optional[str]
     is_keyed: bool
@@ -147,20 +148,42 @@ class BuiltinSpec:
     methods: List[BuiltinMethodSpec]
     members: List[BuiltinMemberSpec]
     constants: List[BuiltinConstantSpec]
+    variant_type_name: str
 
     @classmethod
     def parse(cls, item: dict) -> "BuiltinSpec":
         item.setdefault("size", None)  # Dummy value, will be set later on
+        item.setdefault("variant_type_name", "")  # See above
+        item.setdefault("original_name", "")  # See above
         item.setdefault("indexing_return_type", None)
         item.setdefault("methods", [])
         item.setdefault("members", [])
         item.setdefault("constants", [])
+
         # Ensure the fields are as expected, in theory we should also check typing
         # but it's cumbersome and it's very likely bad typing will lead anyway to a
         # runtime error in this script or a compilation error on the generated code
         assert item.keys() == cls.__dataclass_fields__.keys()
+        assert len(item["constructors"]) >= 1
+
+        # Camel to upper snake case
+        snake = ""
+        # Gotcha with Transform2D&Transform3D
+        for c in item["name"].replace("2D", "2d").replace("3D", "3d"):
+            if c in ascii_uppercase and snake and snake[-1] not in ascii_uppercase:
+                snake += "_"
+            snake += c
+        item["variant_type_name"] = f"GDNATIVE_VARIANT_TYPE_{snake.upper()}"
+
+        # Avoid overwritting default Python types
+        if item["name"] in ("bool", "int", "float", "String"):
+            patched_name = "GD" + item["name"][0].upper() + item["name"][1:]
+        else:
+            patched_name = item["name"]
+
         return cls(
-            name=item["name"],
+            original_name=item["name"],
+            name=patched_name,
             size=item["size"],
             indexing_return_type=item["indexing_return_type"],
             is_keyed=item["is_keyed"],
@@ -170,12 +193,14 @@ class BuiltinSpec:
             methods=[BuiltinMethodSpec.parse(x) for x in item["methods"]],
             members=[BuiltinMemberSpec.parse(x) for x in item["members"]],
             constants=[BuiltinConstantSpec.parse(x) for x in item["constants"]],
+            variant_type_name=item["variant_type_name"],
         )
 
 
 def parse_extension_api_json(path: Path) -> List[BuiltinSpec]:
     api_json = json.loads(path.read_text(encoding="utf8"))
     assert isinstance(api_json, dict)
+
     builtin_class_sizes = next(
         x["sizes"]
         for x in api_json["builtin_class_sizes"]
@@ -188,6 +213,7 @@ def parse_extension_api_json(path: Path) -> List[BuiltinSpec]:
         if x["build_configuration"] == args.build_config
     )
     builtin_class_member_offsets = {x["name"]: x["members"] for x in builtin_class_member_offsets}
+
     # Temporary fix, see https://github.com/godotengine/godot/pull/60884
     for member in builtin_class_member_offsets["Color"]:
         member["member"] = {
@@ -201,9 +227,9 @@ def parse_extension_api_json(path: Path) -> List[BuiltinSpec]:
     for item in api_json["builtin_classes"]:
         spec = BuiltinSpec.parse(item)
         # Special case for size
-        spec.size = builtin_class_sizes.get(spec.name, None)
+        spec.size = builtin_class_sizes.get(spec.original_name, None)
         # Special case for member offsets
-        for member in builtin_class_member_offsets.get(spec.name, []):
+        for member in builtin_class_member_offsets.get(spec.original_name, []):
             member_spec = next(
                 candidate for candidate in spec.members if candidate.name == member["member"]
             )
