@@ -99,6 +99,7 @@ run_command(
     check: true,
 )
 
+
 message('Generating CPython custom distrib from the prebuild...')
 run_command(
     python,
@@ -111,6 +112,7 @@ run_command(
     capture: true,
     check: true,
 )
+
 
 # We link against the prebuild but use the distrib at the runtime
 python_prebuild_name = 'python_prebuild-@0@-@1@'.format(
@@ -207,6 +209,7 @@ endif
 godot_headers_path = join_paths(meson.project_source_root(), get_option('godot_headers'))
 godot_extension_api_json = join_paths(godot_headers_path, 'extension_api.json')
 
+
 # On Windows `/MDd` flag (used by meson when `buildtype=debug`) defines `_DEBUG`,
 # however this makes `python.h` (`pyconfig.h` actually) to consider we should link
 # against `python39_d.lib`, but we only have `python39.lib` available...
@@ -224,6 +227,7 @@ godot_version_info = run_command(
 ).stdout().strip().split('\n')
 godot_version_fullname = godot_version_info[0]
 message('Detected Godot extension version: @0@'.format(godot_version_fullname))
+
 
 # Define the `libgodot` dependency
 godot_version_major = godot_version_info[1]
@@ -248,6 +252,8 @@ install_data(
     'LICENSE.txt',
     install_dir: 'addons/pythonscript',
 )
+
+
 # Add date&version info to README before installing it
 custom_target(
     'release_readme',
@@ -266,11 +272,18 @@ open("@OUTPUT0@", mode="w", encoding="utf8").write(out)
     install: true,
     install_dir: '.',
 )
+
+
 install_data(
     'misc/release_pythonscript.gdextension',
     install_dir: '.',
     rename: 'pythonscript.gdextension',
 )
+
+
+##############################################################################
+#                       Load subdirs (and it config)                         #
+##############################################################################
 
 
 subdir('src')
