@@ -17,11 +17,6 @@
 # from godot._hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_verbose
 # from godot.builtins cimport GDString
 
-import sys
-
-from godot._version import __version__ as pythonscript_version
-
-
 # def _setup_config_entry(name, default_value):
 #     gdname = GDString(name)
 #     if not ProjectSettings.has_setting(gdname):
@@ -32,6 +27,9 @@ from godot._version import __version__ as pythonscript_version
 
 
 cdef api void _pythonscript_initialize() with gil:
+    import sys
+    from godot._version import __version__ as pythonscript_version
+
     cooked_sys_version = '.'.join(map(str, sys.version_info))
     print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})")
     print(f"PYTHONPATH: {sys.path}")

@@ -14,6 +14,7 @@ project(
     ]
 )
 
+
 host_platform = '@0@-@1@'.format(host_machine.system(), host_machine.cpu_family())
 if (
     host_platform != 'linux-x86_64'
@@ -24,6 +25,7 @@ if (
     error('Unsupported host platform: @0@'.format(host_platform))
 endif
 
+
 # We stick with Godot's platform naming
 # Note darwin may refere to ios and osx (because it's sooo clever to designate
 # two totally diferent things with the same name...) but we only support osx
@@ -31,10 +33,45 @@ if host_platform == 'darwin-x86_64'
     host_platform = 'osx-x86_64'
 endif
 
+
+fs = import('fs')
 python = find_program('python')
 cython = find_program('cython')
 autopxd = find_program('autopxd')
 cc = meson.get_compiler('c')
+
+
+scripts_dir = join_paths(meson.current_source_dir(), 'scripts')
+
+
+# Python native module must have custom naming:
+# `foo.pyd` on Windows, `foo.so` on linux/macos
+if host_platform.startswith('windows')
+    python_native_module_name_prefix = ''
+    python_native_module_name_suffix = 'pyd'
+else
+    python_native_module_name_prefix = ''
+    python_native_module_name_suffix = 'so'
+endif
+
+
+# Platform independant cp (yeah, I'm thinking of you cmd.exe)
+copy = generator(
+    python,
+    arguments: [
+        '-c',
+        'open("@OUTPUT@", "wb").write(open("@INPUT@", "wr").read())'
+    ],
+    output: '@PLAINNAME@',
+)
+touch = generator(
+    python,
+    arguments: [
+        '-c',
+        'open("@OUTPUT@", "wb").write()'
+    ],
+    output: '@PLAINNAME@',
+)
 
 
 ##############################################################################
@@ -168,6 +205,7 @@ endif
 
 
 godot_headers_path = join_paths(meson.project_source_root(), get_option('godot_headers'))
+godot_extension_api_json = join_paths(godot_headers_path, 'extension_api.json')
 
 # On Windows `/MDd` flag (used by meson when `buildtype=debug`) defines `_DEBUG`,
 # however this makes `python.h` (`pyconfig.h` actually) to consider we should link
@@ -198,17 +236,6 @@ libgodot = declare_dependency(
         # given it is an absolute path
         '-I' + godot_headers_path,
     ],
-)
-
-# Convert the header file frome C to Cython
-gdnative_interface_pxd = custom_target('gdnative_interface.pxd',
-    output: 'gdnative_interface.pxd',
-    input: join_paths(godot_headers_path, 'godot/gdnative_interface.h'),
-    command: [autopxd, '@INPUT@', '@OUTPUT@'],
-    # We provide this file as part of the distribution so that end user can
-    # write Cython module with low level access to Godot API
-    install: true,
-    install_dir: join_paths(python_site_packages_install_path, 'godot/_hazmat'),
 )
 
 
@@ -256,6 +283,7 @@ subdir('src')
 
 summary(
     {
+        'Godot extension path': godot_headers_path,
         'Godot extension version': godot_version_fullname,
         'Embedded Python version': get_option('cpython_distrib_version'),
     }
