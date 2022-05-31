@@ -53,7 +53,7 @@ vars.Add("release_suffix", "Suffix to add to the release archive", extract_versi
 vars.Add(
     "godot_binary",
     "Path to Godot binary or version of Godot to use",
-    default="3.2.2",
+    default="3.4.4",
     converter=godot_binary_converter,
 )
 vars.Add("godot_headers", "Path to Godot GDnative headers", "")
