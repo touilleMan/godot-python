@@ -1,20 +1,33 @@
-# gdnative_interface.pxd
-#  └─ gdnative_interface.h
+##############################################################################
+#                                  Config                                    #
+##############################################################################
 
 
-# Convert the header file frome C to Cython
-gdnative_interface_pxd = custom_target('generate gdnative_interface.pxd',
+pxds_godot_hazmat = [
+    files(
+       'gdapi.pxd',
+    ),
+    pxd_godot_hazmat_gdnative_interface,  # Generated in `src/meson.build`
+]
+
+
+##############################################################################
+#                           Small fries to install                           #
+##############################################################################
+
+
+foreach src: ['__init__.py', 'gdapi.pxd']
+    install_data(
+        src,
+        install_dir: join_paths(python_site_packages_install_path, 'godot', '_hazmat'),
+    )
+endforeach
+
+
+custom_target(
     output: 'gdnative_interface.pxd',
-    input: [
-        join_paths(scripts_dir, 'generate_gdnative_interface_pxd.py'),
-        join_paths(godot_headers_path, 'godot/gdnative_interface.h')
-    ],
-    command: [python, '@INPUT0@', '--input', '@INPUT1@', '--output', '@OUTPUT@'],
-    # We provide this file as part of the distribution so that end user can
-    # write Cython module with low level access to Godot API
+    input: pxd_godot_hazmat_gdnative_interface,
+    command: copy_command,
     install: true,
-    install_dir: join_paths(python_site_packages_install_path, 'godot/_hazmat'),
+    install_dir: join_paths(python_site_packages_install_path, 'godot', '_hazmat'),
 )
-
-pxd_deps += gdnative_interface_pxd
-pxd_depfiles += files('gdapi.pxd')

@@ -1,15 +1,51 @@
 ##############################################################################
-#                                  Config                                    #
-##############################################################################
-
-
-
-##############################################################################
-#                       Load subdirs (and it config)                         #
+#                     Load subdirs (and their config)                        #
 ##############################################################################
 
 
 subdir('_hazmat')
+
+
+##############################################################################
+#                                  Config                                    #
+##############################################################################
+
+
+pxds_godot = [
+    pxds_godot_hazmat,
+    pxd_godot__builtins,  # Generated in `src/meson.build`
+]
+
+
+##############################################################################
+#                           Small fries to install                           #
+##############################################################################
+
+
+foreach src: ['__init__.py', '_version.py']
+    install_data(
+        src,
+        install_dir: join_paths(python_site_packages_install_path, 'godot'),
+    )
+endforeach
+
+
+custom_target(
+    output: '_builtins.pxd',
+    input: pxd_godot__builtins,
+    command: copy_command,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot'),
+)
+
+
+custom_target(
+    output: '_builtins.pyi',
+    input: generate_builtins_input,
+    command: generate_builtins_command,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot'),
+)
 
 
 ##############################################################################
@@ -19,78 +55,33 @@ subdir('_hazmat')
 
 # _builtins.so
 # └─ _builtins.c
+#     ├─ gdnative_interface.pxd
+#     │  └─ ...
 #     └─ _builtins.pyx
-#         ├─ gdnative_interface.pxd
-#         │   └─ gdnative_interface.h
 #         └─ extension_api.json
 
 
-generate_builtins_tmplts = [
-    join_paths(scripts_dir, 'generate_builtins.py'),  # Must stay first !
-    join_paths(scripts_dir, 'builtins_templates/builtins.tmpl.pyx'),
-    join_paths(scripts_dir, 'builtins_templates/builtin.tmpl.pxi'),
-]
-
-
-if host_machine.cpu_family() == 'x86_64'
-    builtins_build_config = 'double_64'
-elif host_machine.cpu_family() == 'x86'
-    builtins_build_config = 'double_32'
-else
-    error('Unsupported CPU familly' + host_machine.cpu_family())
-endif
-
-
-builtins_tgt = custom_target('generate bindings pyx,pxi,pxd',
-    output: ['_builtins.pyx', '_builtins.pxd', '_builtins.pyi'],
-    input: [godot_extension_api_json, generate_builtins_tmplts],
-    command: [
-        python,
-        '@INPUT1@',
-        '--input',
-        '@INPUT0@',
-        '--build-config',
-        builtins_build_config,
-        '--output',
-        '@OUTPUT0@',
-    ],
-    install: true,
-    # Only install .pxd and .pyi
-    install_dir: [
-        false,
-        join_paths(python_site_packages_install_path, 'godot'),
-        join_paths(python_site_packages_install_path, 'godot'),
-    ]
+pyx_builtins = custom_target(
+    output: '_builtins.pyx',
+    input: generate_builtins_input,
+    command: generate_builtins_command,
 )
 
 
-builtins_c = custom_target('generate _builtins.c',
+c_builtins = custom_target(
     output : '_builtins.c',
-    input : builtins_tgt,
-    command : [
-        cython,
-        '-3',
-        '--fast-fail',
-        '@INPUT0@',
-        '-I',
-        join_paths(meson.current_source_dir(), '..'),
-        '-I',
-        join_paths(meson.current_build_dir(), '..'),
-        '-o',
-        '@OUTPUT0@',
-    ],
-    depend_files: pxd_depfiles,
-    depends: [pxd_deps, copy_py_in_buildir],
+    input : [pyx_builtins, pxds_godot],
+    command : cythonize_command,
 )
 
 
 shared_library(
     '_builtins',
-    builtins_c,
-    dependencies : [libgodot, libpython],
+    c_builtins,
+    dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: '$ORIGIN/lib',
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
     install: true,
-    install_dir: join_paths(python_site_packages_install_path, 'godot', '_hazmat'),
+    install_dir: join_paths(python_site_packages_install_path, 'godot'),
 )

@@ -10,7 +10,7 @@ from string import ascii_uppercase
 
 BASEDIR = Path(__file__).parent
 env = Environment(
-    loader=FileSystemLoader(BASEDIR / "builtins_templates"),
+    loader=FileSystemLoader(BASEDIR / "../src/godot/"),
     trim_blocks=True,
     lstrip_blocks=False,
     extensions=["jinja2.ext.loopcontrols"],
@@ -239,37 +239,25 @@ def parse_extension_api_json(path: Path) -> List[BuiltinSpec]:
     return specs
 
 
-def generate_builtins(output_dir: Path, output_basename: str, specs: List[BuiltinSpec]) -> None:
+def generate_builtins(output: Path, specs: List[BuiltinSpec], build_config: str) -> None:
     context = {
         "specs": specs,
+        "build_config": build_config,
     }
 
-    template = env.get_template("builtins.tmpl.pyx")
-    pyx_output_path = output_dir / f"{output_basename}.pyx"
-    print(f"Generating {pyx_output_path}")
-    pyx_output_path.write_text(template.render(**context))
+    if output.name.endswith(".pyx"):
+        template = env.get_template("_builtins.tmpl.pyx")
+    elif output.name.endswith(".pxd"):
+        template = env.get_template("_builtins.tmpl.pxd")
+    elif output.name.endswith(".pyi"):
+        template = env.get_template("_builtins.tmpl.pyi")
+    else:
+        assert False
 
-    # template = env.get_template("builtins.tmpl.pxd")
-    pxd_output_path = output_dir / f"{output_basename}.pxd"
-    print(f"Generating {pxd_output_path}")
-    # pxd_output_path.write_text(template.render(**context))
-    pxd_output_path.write_text("")
-
-    # template = env.get_template("builtins.tmpl.pyi")
-    pyi_output_path = output_dir / f"{output_basename}.pyi"
-    print(f"Generating {pyi_output_path}")
-    # pyi_output_path.write_text(template.render(**context))
-    pyi_output_path.write_text("")
+    output.write_text(template.render(**context))
 
 
 if __name__ == "__main__":
-
-    def _parse_output(val):
-        suffix = ".pyx"
-        if not val.endswith(suffix):
-            raise argparse.ArgumentTypeError(f"Must have a `{suffix}` suffix")
-        path = Path(val[: -len(suffix)]).resolve()
-        return (path.parent, path.name)
 
     parser = argparse.ArgumentParser(description="Generate Godot builtins bindings files")
     parser.add_argument(
@@ -284,9 +272,8 @@ if __name__ == "__main__":
         "--output",
         "-o",
         required=True,
-        metavar="BUILTINS_PYX",
-        type=_parse_output,
-        help="Path to store the generated builtins.pyx (also used to determine .pxd/.pyi output path)",
+        type=Path,
+        help="builtins.pyx/pxd/pyi to generate",
     )
     parser.add_argument(
         "--build-config",
@@ -295,7 +282,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    output_dir, output_basename = args.output
 
     specs = parse_extension_api_json(args.input)
-    generate_builtins(output_dir, output_basename, specs)
+    generate_builtins(output=args.output, specs=specs, build_config=args.build_config)

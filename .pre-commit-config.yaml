@@ -7,6 +7,7 @@ repos:
       args:
           - "--line-length=100"
       language_version: python3
+      exclude: ^src/.*\.tmpl\.
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.2.3
     hooks:

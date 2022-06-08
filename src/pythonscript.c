@@ -11,15 +11,15 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#include "_pythonscript_api.h"
 #include <godot/gdnative_interface.h>
+#include "_pythonscript_api.h"
 
-#ifdef __GNUC__
-# define GDN_EXPORT __attribute__((visibility("default")))
-#elif defined(_WIN32)
-# define GDN_EXPORT __declspec(dllexport)
+#ifdef _WIN32
+# define DLL_EXPORT __declspec(dllexport)
+# define DLL_IMPORT __declspec(dllimport)
 #else
-# define GDN_EXPORT
+# define DLL_EXPORT
+# define DLL_IMPORT
 #endif
 
 // TODO: Should be defined according to extension_api.json & target platform
@@ -31,19 +31,23 @@
 
 static int python_initialized = false;
 static PyThreadState *gilstate = NULL;
-static const GDNativeInterface *gdapi = NULL;
 static GDNativeExtensionClassLibraryPtr gdextension = NULL;
+// Global reference configured in `pythonscript_init`, then used in all the
+// Cython modules (hence why it must be an exported symbol)
+// GDN_EXPORT const GDNativeInterface *pythonscript_gdapi = NULL;
+DLL_IMPORT extern const GDNativeInterface *pythonscript_gdapi;
+
 
 #define GD_PRINT(msg) { \
     printf("%s\n", msg); \
 }
 
 #define GD_PRINT_ERROR(msg) { \
-    gdapi->print_error(msg, __func__, __FILE__, __LINE__); \
+    pythonscript_gdapi->print_error(msg, __func__, __FILE__, __LINE__); \
 }
 
 #define GD_PRINT_WARNING(msg) { \
-    gdapi->print_warning(msg, __func__, __FILE__, __LINE__); \
+    pythonscript_gdapi->print_warning(msg, __func__, __FILE__, __LINE__); \
 }
 
 static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
@@ -63,17 +67,17 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
     // Set PYTHONHOME from .so path
     {
         // 0) Retreive Godot methods
-        GDNativePtrConstructor gdstring_constructor = gdapi->variant_get_ptr_constructor(GDNATIVE_VARIANT_TYPE_STRING, 0);
+        GDNativePtrConstructor gdstring_constructor = pythonscript_gdapi->variant_get_ptr_constructor(GDNATIVE_VARIANT_TYPE_STRING, 0);
         if (gdstring_constructor == NULL) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String` constructor)");
             goto error;
         }
-        GDNativePtrDestructor gdstring_destructor = gdapi->variant_get_ptr_destructor(GDNATIVE_VARIANT_TYPE_STRING);
+        GDNativePtrDestructor gdstring_destructor = pythonscript_gdapi->variant_get_ptr_destructor(GDNATIVE_VARIANT_TYPE_STRING);
         if (gdstring_destructor == NULL) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String` destructor)");
             goto error;
         }
-        GDNativePtrBuiltInMethod gdstring_get_base_dir = gdapi->variant_get_ptr_builtin_method(GDNATIVE_VARIANT_TYPE_STRING, "get_base_dir", 171192875);
+        GDNativePtrBuiltInMethod gdstring_get_base_dir = pythonscript_gdapi->variant_get_ptr_builtin_method(GDNATIVE_VARIANT_TYPE_STRING, "get_base_dir", 171192875);
         if (gdstring_get_base_dir == NULL) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String.get_base_dir` method)");
             goto error;
@@ -82,7 +86,7 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
         // 1) Retrieve library path
         char gd_library_path[GD_STRING_SIZE];
         gdstring_constructor(gd_library_path, NULL);
-        gdapi->get_library_path(gdextension, gd_library_path);
+        pythonscript_gdapi->get_library_path(gdextension, gd_library_path);
 
         // 2) Retrieve base dir from library path
         char gd_basedir_path[GD_STRING_SIZE];
@@ -91,7 +95,7 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
         gdstring_destructor(gd_library_path);
 
         // 3) Convert base dir into regular c string
-        GDNativeInt basedir_path_size = gdapi->string_to_utf8_chars(gd_basedir_path, NULL, 0);
+        GDNativeInt basedir_path_size = pythonscript_gdapi->string_to_utf8_chars(gd_basedir_path, NULL, 0);
         // Why not using variable length array here ? Glad you asked Timmy !
         // VLA are part of the C99 standard, but MSVC compiler is still missing it :(
         // But wait there is more ! Microsoft may have totally butchered C99 support,
@@ -103,12 +107,12 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
         // Microsoft have the oddacity to explain they choose not to support VLA
         // for security&performance reasons !
         // (see https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/#variable-length-arrays)
-        char *basedir_path = gdapi->mem_alloc(basedir_path_size + 1);
+        char *basedir_path = pythonscript_gdapi->mem_alloc(basedir_path_size + 1);
         if (basedir_path == NULL) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (memory allocation failed)");
             goto error;
         }
-        gdapi->string_to_utf8_chars(gd_basedir_path, basedir_path, basedir_path_size);
+        pythonscript_gdapi->string_to_utf8_chars(gd_basedir_path, basedir_path, basedir_path_size);
         basedir_path[basedir_path_size] = '\0';
         gdstring_destructor(gd_basedir_path);
 
@@ -118,7 +122,7 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
             &config.home,
             basedir_path
         );
-        gdapi->mem_free(basedir_path);
+        pythonscript_gdapi->mem_free(basedir_path);
         if (PyStatus_Exception(status)) {
             GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
             GD_PRINT_ERROR(status.err_msg);
@@ -200,6 +204,9 @@ error:
     if (python_initialized) {
         PyConfig_Clear(&config);
         int ret = Py_FinalizeEx();
+        if (ret != 0) {
+            GD_PRINT_ERROR("Pythonscript: Cannot finalize Python interpreter");
+        }
         python_initialized = false;
     }
 }
@@ -226,7 +233,7 @@ static void _deinitialize(void *userdata, GDNativeInitializationLevel p_level) {
     python_initialized = false;
 }
 
-GDNativeBool GDN_EXPORT pythonscript_init(
+DLL_EXPORT GDNativeBool pythonscript_init(
     const GDNativeInterface *p_interface,
     const GDNativeExtensionClassLibraryPtr p_library,
     GDNativeInitialization *r_initialization
@@ -236,7 +243,7 @@ GDNativeBool GDN_EXPORT pythonscript_init(
         printf("Pythonscript: Invalid init parameters provided by Godot (this should never happen !)\n");
         return false;
     }
-    gdapi = p_interface;
+    pythonscript_gdapi = p_interface;
     gdextension = p_library;
 
     // Check compatibility between the Godot version that has been used for building

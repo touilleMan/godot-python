@@ -1,7 +1,7 @@
 # Start with a sanity check to ensure the loading is done from Godot-Python
 # (and not from a regular Python interpreter which would lead to a segfault).
 # The idea is we should have the following loading order:
-# godot binary -> pythonscript.so -> _pythonscript.so -> godot/__init__.py
+# godot binary -> libpythonscript.so -> _pythonscript.so -> godot/__init__.py
 import sys
 
 if "_pythonscript" not in sys.modules:

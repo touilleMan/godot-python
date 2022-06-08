@@ -25,6 +25,24 @@
 #     # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
 #     return ProjectSettings.get_setting(gdname)
 
+from godot._hazmat.gdnative_interface cimport (
+    GDNativeInterface,
+)
+
+
+cdef extern from * nogil:
+    """
+    #include <godot/gdnative_interface.h>
+    #ifdef _WIN32
+    # define DLL_EXPORT __declspec(dllexport)
+    #else
+    # define DLL_EXPORT
+    #endif
+    DLL_EXPORT const GDNativeInterface *pythonscript_gdapi = NULL;
+    """
+
+    cdef const GDNativeInterface *pythonscript_gdapi
+
 
 cdef api void _pythonscript_initialize() with gil:
     import sys

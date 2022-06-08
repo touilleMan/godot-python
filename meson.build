@@ -1,6 +1,6 @@
 project(
     'godot-python',
-    'c',
+    ['c', 'cython'],
     version : '0.50.0+dev',
     meson_version: '>=0.61.0',
     default_options : [
@@ -10,7 +10,7 @@ project(
         # always done with a --destdir given installing this project globally on
         # the system is meaningless
         'prefix=/',
-        'c_std=c17',
+        'c_std=c11',
     ]
 )
 
@@ -39,9 +39,25 @@ python = find_program('python')
 cython = find_program('cython')
 autopxd = find_program('autopxd')
 cc = meson.get_compiler('c')
-
-
 scripts_dir = join_paths(meson.current_source_dir(), 'scripts')
+
+
+# Platform independant cp (yeah, I'm thinking of you cmd.exe)
+copy_command = [
+    python,
+    join_paths(scripts_dir, 'copyfiles.py'),
+    '@INPUT@',
+    '@OUTPUT@',
+]
+
+
+cythonize_command = [
+    python,
+    join_paths(scripts_dir, 'cythoner.py'),
+    '@OUTPUT0@',
+    '@PRIVATE_DIR@',
+    '@INPUT@',
+]
 
 
 # Python native module must have custom naming:
@@ -53,25 +69,6 @@ else
     python_native_module_name_prefix = ''
     python_native_module_name_suffix = 'so'
 endif
-
-
-# Platform independant cp (yeah, I'm thinking of you cmd.exe)
-copy = generator(
-    python,
-    arguments: [
-        '-c',
-        'open("@OUTPUT@", "wb").write(open("@INPUT@", "wr").read())'
-    ],
-    output: '@PLAINNAME@',
-)
-touch = generator(
-    python,
-    arguments: [
-        '-c',
-        'open("@OUTPUT@", "wb").write()'
-    ],
-    output: '@PLAINNAME@',
-)
 
 
 ##############################################################################
@@ -121,9 +118,9 @@ python_prebuild_name = 'python_prebuild-@0@-@1@'.format(
 )
 python_prebuild_path = join_paths(meson.current_build_dir(), python_prebuild_name)
 python_distrib_path = join_paths(meson.current_build_dir(), 'python_distrib')
-# Define the `libpython` dependency
+# Define the `dep_python` dependency
 if build_machine.system() == 'linux'
-    libpython = declare_dependency(
+    dep_python = declare_dependency(
         dependencies: cc.find_library(
             # e.g. python3.9
             'python@0@.@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor),
@@ -138,7 +135,7 @@ if build_machine.system() == 'linux'
         'lib/python@0@.@1@/site-packages'.format(cpython_distrib_version_major, cpython_distrib_version_minor)
     )
 elif build_machine.system() == 'windows'
-    libpython = declare_dependency(
+    dep_python = declare_dependency(
         dependencies: cc.find_library(
             # e.g. python39
             'python@0@@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor),
@@ -229,10 +226,10 @@ godot_version_fullname = godot_version_info[0]
 message('Detected Godot extension version: @0@'.format(godot_version_fullname))
 
 
-# Define the `libgodot` dependency
+# Define the `dep_godot` dependency
 godot_version_major = godot_version_info[1]
 godot_version_minor = godot_version_info[2]
-libgodot = declare_dependency(
+dep_godot = declare_dependency(
     compile_args: [
         '-DGODOT_VERSION_MAJOR=' + godot_version_major,
         '-DGODOT_VERSION_MINOR=' + godot_version_minor,

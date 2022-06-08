@@ -2,17 +2,17 @@ from godot._hazmat.gdnative_interface cimport GDNativeInterface
 
 
 cdef extern from * nogil:
-    # Global variables defined in pythonscript.c
+    # Global variables defined in _pythonscript.pyx
     # Just easier to inline the definitions instead of use a header file
     # and having to tweak compile flags.
     """
     #include <godot/gdnative_interface.h>
     #ifdef _WIN32
-    # define PYTHONSCRIPT_IMPORT __declspec(dllimport)
+    # define DLL_IMPORT __declspec(dllimport)
     #else
-    # define PYTHONSCRIPT_IMPORT
+    # define DLL_IMPORT
     #endif
-    PYTHONSCRIPT_IMPORT extern const GDNativeInterface *gdapi;
+    DLL_IMPORT extern const GDNativeInterface *pythonscript_gdapi;
     """
 
-    cdef const GDNativeInterface *gdapi
+    cdef const GDNativeInterface *pythonscript_gdapi
