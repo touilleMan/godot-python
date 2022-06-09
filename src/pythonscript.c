@@ -32,9 +32,8 @@
 static int python_initialized = false;
 static PyThreadState *gilstate = NULL;
 static GDNativeExtensionClassLibraryPtr gdextension = NULL;
-// Global reference configured in `pythonscript_init`, then used in all the
-// Cython modules (hence why it must be an exported symbol)
-// GDN_EXPORT const GDNativeInterface *pythonscript_gdapi = NULL;
+// Global reference defined in `_pythonscript.pyx`, configured when
+// `pythonscript_init` is called, and then used in all the Cython modules.
 DLL_IMPORT extern const GDNativeInterface *pythonscript_gdapi;
 
 

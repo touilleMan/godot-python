@@ -50,6 +50,10 @@ for src in import_srcs:
     shutil.copyfile(src, tgt)
 
 
+# TODO: Copying pyx file into the directory containing the import stuff
+# should not be needed, however this doesn't work on Windows...
+shutil.copyfile(pyx_src, private_dir / pyx_src.name)
+pyx_src = private_dir / pyx_src.name
 sys.argv = [
     "cython",
     "-3",

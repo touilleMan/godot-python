@@ -30,6 +30,12 @@ from godot._hazmat.gdnative_interface cimport (
 )
 
 
+# Global reference on the godot api, this is guaranteed to be defined before
+# Python is initialized.
+# This reference is used by all the Cython modules (hence why `_pythonscript`
+# is the very first Python module that gets loaded.
+
+
 cdef extern from * nogil:
     """
     #include <godot/gdnative_interface.h>
