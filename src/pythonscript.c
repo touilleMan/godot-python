@@ -65,7 +65,7 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
 
     // Set PYTHONHOME from .so path
     {
-        // 0) Retreive Godot methods
+        // 0) Retrieve Godot methods
         GDNativePtrConstructor gdstring_constructor = pythonscript_gdapi->variant_get_ptr_constructor(GDNATIVE_VARIANT_TYPE_STRING, 0);
         if (gdstring_constructor == NULL) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String` constructor)");
@@ -100,10 +100,10 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
         // But wait there is more ! Microsoft may have totally butchered C99 support,
         // but they claimed to totally support C11&C17... kinda.
         // As a matter of fact VLA has become optional since the C11 standard, I
-        // can't help myself thinking the MSVC team pulled an increadible
-        // "it's not bug, it's feature" comity lobying move to achieve this ;-)
+        // can't help myself thinking the MSVC team pulled an incredible
+        // "it's not bug, it's feature" comity lobbying move to achieve this ;-)
         // Adding "achtually..." snobbery to total disrespect of interoperability,
-        // Microsoft have the oddacity to explain they choose not to support VLA
+        // Microsoft have the audacity to explain they choose not to support VLA
         // for security&performance reasons !
         // (see https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/#variable-length-arrays)
         char *basedir_path = pythonscript_gdapi->mem_alloc(basedir_path_size + 1);
@@ -134,7 +134,7 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
         status = PyConfig_SetBytesString(
             &config,
             &config.program_name,
-            // TODO: retreive real argv[0]
+            // TODO: retrieve real argv[0]
             "godot"
         );
         if (PyStatus_Exception(status)) {
