@@ -149,14 +149,14 @@ def run_test(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("tests", nargs="*", help="Filter the tests to run")
+    parser.add_argument("tests", nargs="*", help="Filter the tests to run", default=["helloworld"])
     parser.add_argument(
         "--build-dir", type=Path, required=True, help="Build directory as configured in meson"
     )
     parser.add_argument(
         "--godot-binary",
         type=parse_godot_binary_hint,
-        default="4.0.0-alpha6",
+        default="4.0.0-alpha9",
         help="Path to Godot binary to use, or version of Godot to download and use",
     )
     parser.add_argument(

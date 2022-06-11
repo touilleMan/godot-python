@@ -79,7 +79,7 @@ shared_library(
     '_builtins',
     c_builtins,
     dependencies : [dep_godot, dep_python, dep_pythonscript],
-    install_rpath: '$ORIGIN/lib',
+    install_rpath: '$ORIGIN/../../..',  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
     install: true,

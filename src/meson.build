@@ -20,7 +20,7 @@
 # see https://github.com/mesonbuild/meson/issues/2320#issuecomment-1147929155
 
 
-# gdnative_interface.pxd
+# godot/_hazmat/gdnative_interface.pxd
 # └─ gdnative_interface.h
 
 
@@ -35,7 +35,7 @@ pxd_godot_hazmat_gdnative_interface = custom_target(
 )
 
 
-# builtins.pxd
+# godot/builtins.pxd
 # └─ extension_api.json
 
 
@@ -91,14 +91,16 @@ pxd_godot__builtins = custom_target(
 #             └─ ...
 
 
-# `_pythonscript_api.h` is used to expose the Python callback used by `pythonscript.c`,
-# hence this header is private and won't be provided in the release
-c_pythonscript = custom_target('_pythonscript.c & _pythonscript_api.h}',
-    output : ['_pythonscript.c', '_pythonscript_api.h'],
+# `_pythonscript_api.h` is used to expose the Python callbacks used by `pythonscript.c`,
+# `_pythonscript.h` is used to expose the Godot APIs pointer to other Cython modules,
+# hence those headers are private and won't be provided in the release
+c_pythonscript = custom_target('_pythonscript.c & _pythonscript.h & _pythonscript_api.h}',
+    output : ['_pythonscript.c', '_pythonscript.h', '_pythonscript_api.h'],
     input : ['_pythonscript.pyx', pxd_godot__builtins, pxd_godot_hazmat_gdnative_interface],
     command : cythonize_command,
 )
-h_pythonscript = c_pythonscript[1]
+h_pythonscript_api = c_pythonscript[2]  # Header for pythonscript.c
+h_pythonscript = c_pythonscript[1]  # Header for other Cython modules
 c_pythonscript = c_pythonscript[0]
 
 
@@ -106,7 +108,7 @@ lib_pythonscript = shared_library(
     '_pythonscript',
     c_pythonscript,
     dependencies : [dep_godot, dep_python],
-    install_rpath: '$ORIGIN/lib',
+    install_rpath: '$ORIGIN/../..',  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
     install: true,
@@ -115,9 +117,22 @@ lib_pythonscript = shared_library(
 
 dep_pythonscript = declare_dependency(
     # include_directories: lib_pythonscript.private_dir_include(),  # To expose _pythonscript_api.h
-    sources: h_pythonscript,
+    sources: [h_pythonscript, h_pythonscript_api],
     link_with: lib_pythonscript,
 )
+
+lib_pythonscript = shared_library(
+    'pythonscript',
+    ['pythonscript.c'],
+    dependencies: [dep_godot, dep_python, dep_pythonscript],
+    install_rpath: '$ORIGIN/lib',  # To find libpython
+    install: true,
+    install_dir: 'addons/pythonscript/' + host_platform,
+)
+
+# dep_pythonscript = declare_dependency(
+#     link_with: lib_pythonscript,
+# )
 
 
 ##############################################################################
@@ -143,11 +158,12 @@ subdir('godot')
 # to how Python loads native modules.
 
 
-shared_library(
-    'pythonscript',
-    'pythonscript.c',
-    dependencies: [dep_godot, dep_python, dep_pythonscript],
-    install_rpath: '$ORIGIN/lib',
-    install: true,
-    install_dir: 'addons/pythonscript/' + host_platform,
-)
+# shared_library(
+#     'pythonscript',
+#     ['pythonscript.c', c_pythonscript],
+#     dependencies: [dep_godot, dep_python],
+#     # dependencies: [dep_godot, dep_python, dep_pythonscript],
+#     install_rpath: '$ORIGIN/lib',
+#     install: true,
+#     install_dir: 'addons/pythonscript/' + host_platform,
+# )

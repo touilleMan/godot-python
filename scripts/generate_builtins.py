@@ -214,15 +214,6 @@ def parse_extension_api_json(path: Path) -> List[BuiltinSpec]:
     )
     builtin_class_member_offsets = {x["name"]: x["members"] for x in builtin_class_member_offsets}
 
-    # Temporary fix, see https://github.com/godotengine/godot/pull/60884
-    for member in builtin_class_member_offsets["Color"]:
-        member["member"] = {
-            "x": "r",
-            "y": "g",
-            "z": "b",
-            "w": "a",
-        }[member["member"]]
-
     specs = []
     for item in api_json["builtin_classes"]:
         spec = BuiltinSpec.parse(item)

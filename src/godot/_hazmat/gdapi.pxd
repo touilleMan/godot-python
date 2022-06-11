@@ -1,10 +1,11 @@
-from godot._hazmat.gdnative_interface cimport GDNativeInterface
+# from _pythonscript import pythonscript_gdapi
 
+from godot._hazmat.gdnative_interface cimport GDNativeInterface
 
 cdef extern from * nogil:
     # Global variables defined in _pythonscript.pyx
-    # Just easier to inline the definitions instead of use a header file
-    # and having to tweak compile flags.
+    # Given _pythonscript.pyx is always the very first module loaded, we are
+    # guanteed `pythonscript_gdapi` symbol is always resolved
     """
     #include <godot/gdnative_interface.h>
     #ifdef _WIN32
