@@ -25,9 +25,9 @@ Quickstart
 
 By order of simplicity:
 
-- Directly download the project from within Godot with the asset library tab.
+- Directly download the project from within Godot with the asset library tab. Search for PythonScript.
 - Download from the `asset library website <https://godotengine.org/asset-library/asset/179>`_.
-- Finally you can also head to the project `release page <https://github.com/touilleMan/godot-python/releases>`_ if you want to only download one specific platform build
+- Finally, you can also head to the project `release page <https://github.com/touilleMan/godot-python/releases>`_ if you want to only download one specific platform build.
 
 
 .. image:: https://github.com/touilleMan/godot-python/raw/master/misc/showcase.png
@@ -50,14 +50,14 @@ example:
 	@exposed
 	class Player(Node2D):
 		"""
-		This is the file's main class which will be made available to Godot. This
-		class must inherit from `godot.Node` or any of its children (e.g.
-		`godot.KinematicBody`).
+		This is the file's main class which will be made available to Godot.
+		This class must inherit from 'godot.Node' or any of its children (e.g.
+		'godot.KinematicBody').
 
-		Because Godot scripts only accept file paths, you can't have two `exposed` classes in the same file.
+		Because Godot scripts only accept file paths, you can't have two 'exposed' classes in the same file.
 		"""
-		# Exposed class can define some attributes as export(<type>) to achieve
-		# similar goal than GDSscript's `export` keyword
+		# Exposed class can define some attributes as export(<type>) 
+		# This is to achieve a similar goal to GDSscript's 'export' keyword
 		name = export(str)
 
 		# Can export property as well
@@ -90,8 +90,8 @@ example:
 
 	class Helper:
 		"""
-		Other classes are considered helpers and cannot be called from outside
-		Python. However they can be imported from another python module.
+		Other classes are considered helpers and cannot be called from outside Python.
+		However, they can be imported from another python module.
 		"""
 		...
 
@@ -129,10 +129,10 @@ On a fresh Ubuntu install, you will need to install these:
 
 	$ apt install python3 python3-pip python3-venv build-essential
 
-On top of that build the CPython interpreter requires development headers
-of it `extension modules <https://devguide.python.org/setup/#install-dependencies>`_
-(for instance if you lack sqlite dev headers, your Godot-Python build won't
-contain the sqlite3 python module)
+On top of that build, the CPython interpreter requires development headers
+of its `extension modules <https://devguide.python.org/setup/#install-dependencies>`_
+(for instance, if you lack sqlite dev headers, your Godot-Python build won't
+contain the sqlite3 python module.)
 
 The simplest way is to uncomment the main deb-src in `/etc/apt/sources.list`:
 
@@ -181,7 +181,7 @@ Create the virtual env
 
 Godot-Python build system is heavily based on Python (mainly Scons, Cython and Jinja2).
 Hence we have to create a Python virtual env to install all those dependencies
-without clashing with your global Python configuration.
+without clashing with your global Python configuration:
 
 
 .. code-block:: bash
@@ -206,7 +206,7 @@ For Windows:
 	godot-python$ ./venv/bin/activate.bat
 
 
-Finally we can install dependencies:
+Finally, we can install dependencies:
 
 .. code-block:: bash
 
@@ -244,10 +244,11 @@ CPython from source.
 It will then generate ``pythonscript/godot/bindings.pyx`` (Godot api bindings)
 from GDNative's ``api.json`` and compile it.
 This part is long and really memory demanding so be patient ;-)
-When hacking godot-python you can heavily speedup this step by passing
-``sample=true`` to scons in order to build only a small subset of the bindings.
 
-Eventually the rest of the source will be compiled and a zip build archive
+When hacking godot-python you can heavily speedup this step by passing
+'sample=true' to scons in order to build only a small subset of the bindings.
+
+Eventually, the rest of the source will be compiled and a zip build archive
 will be available in the build directory.
 
 
@@ -258,8 +259,8 @@ Testing your build
 
 	godot-python(venv)$ scons platform=<platform> test
 
-This will run pytests defined in `tests/bindings` inside the Godot environment.
-If not present, will download a precompiled Godot binary (defined in SConstruct
+This will run pytests defined in 'tests/bindings' inside the Godot environment.
+If not present, it will download a precompiled Godot binary (defined in SConstruct
 and platform specific SCSub files) to and set the correct library path for
 the GDNative wrapper.
 
@@ -271,8 +272,8 @@ Running the example project
 
 	godot-python(venv)$ scons platform=<platform> example
 
-This will run the converted pong example in `examples/pong` inside the Godot
-environment. If not present, will download a precompiled Godot binary
+This will run the converted pong example in 'examples/pong' inside the Godot
+environment. If not present, it will download a precompiled Godot binary
 (defined in SConstruct) to and set the correct library path for the GDNative
 wrapper.
 
@@ -303,19 +304,19 @@ Currently, godot-python does not support automatic export, which means that the 
 
 First, export the project in .zip format.
 
-Second, extract the .zip in a directory. For sake of example let's say the directory is called :code:`godotpythonproject`.
+Second, extract the .zip in a directory. For sake of example, let's say the directory is called :code:`godotpythonproject`.
 
-Third, copy the correct Python environment into this folder (if it hasn't been automatically included in the export). Inside your project folder, you will need to find :code:`/addons/pythonscript/x11-64`, replacing "x11-64" with the correct target system you are deploying to. Copy the entire folder for your system, placing it at the same relative position, e.g. :code:`godotpythonproject/addons/pythonscript/x11-64` if your unzipped directory was "godotpythonproject". Legally speaking you should also copy LICENSE.txt from the pythonscript folder. (The lazy option at this point is to simply copy the entire addons folder from your project to your unzipped directory.)
+Third, copy the correct Python environment into this folder (if it hasn't been automatically included in the export). Inside your project folder, you will need to find :code:`/addons/pythonscript/x11-64`, replacing "x11-64" with the correct target system you are deploying to. Copy the entire folder for your system, placing it at the same relative position, e.g. :code:`godotpythonproject/addons/pythonscript/x11-64` if your unzipped directory was "godotpythonproject". Legally speaking, you should also copy LICENSE.txt from the pythonscript folder. (The lazy option at this point is to simply copy the entire addons folder from your project to your unzipped directory.)
 
 Fourth, place a godot release into the directory. The Godot export menu has probably downloaded an appropriate release already, or you can go to Editor -> Manage Export Templates inside Godot to download fresh ones. These are stored in a location which depends on your operating system. For example, on Windows they may be found at :code:`%APPDATA%\Godot\templates\ `; in Linux or OSX it is :code:`~/.godot/templates/`. Copy the file matching your export. (It may matter whether you selected "Export With Debug" when creating the .zip file; choose the debug or release version accordingly.)
 
-Running the Godot release should now properly execute your release. However, if you were developing on a different Python environment (say, the one held in the osx-64 folder) than you include with the release (for example the windows-64 folder), and you make any alterations to that environment, such as installing Python packages, these will not carry over; take care to produce a suitable Python environment for the target platform.
+Running the Godot release should now properly execute your release. However, if you were developing on a different Python environment (say, the one held in the osx-64 folder) then you include it with the release (for example the windows-64 folder), and you make any alterations to that environment, such as installing Python packages, these will not carry over; take care to produce a suitable Python environment for the target platform.
 
 See also `this issue <https://github.com/touilleMan/godot-python/issues/146>`_.
 
 **How can I use Python packages in my project?**
 
-In essence, godot-python installs a python interpreter inside your project which can then be distributed as part of the final game. Python packages you want to use need to be installed for that interpreter and of course included in the final release. This can be accomplished by using pip to install packages; however, pip is not provided, so it must be installed too.
+In essence, godot-python installs a python interpreter inside your project which can then be distributed as part of the final game. The Python packages you want to use need to be installed for that interpreter and -of course- included in the final release. This can be accomplished by using pip to install packages; however, pip is not provided, so it must be installed too.
 
 First, locate the correct python interpreter. This will be inside your project at :code:`addons\pythonscript\windows-64\python.exe` for 64-bit Windows, :code:`addons/pythonscript/ox-64/bin/python3` for OSX, etc. Then install pip by running:
 
@@ -329,14 +330,14 @@ First, locate the correct python interpreter. This will be inside your project a
 
 	addons\pythonscript\windows-64\python.exe -m pip install numpy
 
-again, substituting the correct python executable, and replacing numpy with whatever packages you desire. The package can now be imported in your Python code as normal.
+Again, substituting the correct python executable, and replacing numpy with whatever packages you desire. The package can now be imported in your Python code as normal.
 
 Note that this will only install packages onto the target platform (here, windows-64), so when exporting the project to a different platform, care must be taken to provide all the necessary libraries.
 
 **How can I debug my project with PyCharm?**
 
-This can be done using "Attach to Local Process", but first you have to change the Godot binary filename to include :code:`python`, for example :code:`Godot_v3.0.2-stable_win64.exe` to :code:`python_Godot_v3.0.2-stable_win64.exe`.
-For more detailed guide and explanation see this `external blog post <https://medium.com/@prokopst/debugging-godot-python-with-pycharm-b5f9dd2cf769>`_.
+This can be done using 'Attach to Local Process', but first, you have to change the Godot binary filename to include :code:`python`, for example :code:`Godot_v3.0.2-stable_win64.exe` to :code:`python_Godot_v3.0.2-stable_win64.exe`.
+For a more detailed guide and explanation see this `external blog post <https://medium.com/@prokopst/debugging-godot-python-with-pycharm-b5f9dd2cf769>`_.
 
 **How can I autoload a python script without attaching it to a Node?**
 
@@ -388,7 +389,7 @@ manager to lock it::
       for i in range(10000):
           assert ptr[i] == i # so is this
 
-Keep in mind great performances comes with great responsabilities: there is no
-boundary check so you may end up with memory corruption if you don't take care ;-)
+Keep in mind, great performance comes with great responsabilities. There is no
+boundary check, so you may end up with memory corruption if you don't take care ;-)
 
 See the `godot-python issue <https://github.com/touilleMan/godot-python/issues/84>`_.
