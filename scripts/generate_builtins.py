@@ -8,6 +8,7 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from dataclasses import dataclass
 from string import ascii_uppercase
 
+
 BASEDIR = Path(__file__).parent
 env = Environment(
     loader=FileSystemLoader(BASEDIR / "../src/godot/"),
@@ -19,17 +20,81 @@ env = Environment(
 env.filters["merge"] = lambda x, **kwargs: {**x, **kwargs}
 
 
+PYTHON_KEYWORDS = {
+    # Python
+    "False", "await", "else", "import", "pass",
+    "None", "break", "except", "in", "raise",
+    "True", "class", "finally", "is", "return",
+    "and", "continue", "for", "lambda", "try",
+    "as", "def", "from", "nonlocal", "while",
+    "assert", "del", "global", "not", "with",
+    "async", "elif", "if", "or", "yield",
+    # Cython
+    "char",
+}
+def correct_name(name: str) -> str:
+    if name in PYTHON_KEYWORDS:
+        return f"{name}_"
+    else:
+        return name
+
+
 # `extension_api.json` is pretty big, hence it's much easier to have it
 # format reproduced here as typed classes, especially given we want to cook
 # it a bit before using it in the templates
 
+# Empirical list of return values:
+# AABB
+# Array
+# Basis
+# Callable
+# Color
+# Dictionary
+# NodePath
+# Object
+# PackedByteArray
+# PackedColorArray
+# PackedFloat32Array
+# PackedFloat64Array
+# PackedInt32Array
+# PackedInt64Array
+# PackedStringArray
+# PackedVector2Array
+# PackedVector3Array
+# Plane
+# Quaternion
+# RID
+# Rect2
+# Rect2i
+# String
+# StringName
+# Transform2D
+# Transform3D
+# Variant
+# Vector2
+# Vector2i
+# Vector3
+# Vector3i
+# bool
+# float
+# int
+@dataclass
+class BuiltinType:
+    name: str
+    original_name: str
 
-BuiltinType = str
+    @classmethod
+    def parse(cls, name: str) -> "BuiltinType":
+        return cls(
+            name=name,
+            original_name=name,
+        )
 
 
 @dataclass
 class FnArgument:
     name: str
+    original_name: str
     type: BuiltinType
     default_value: Optional[str]
 
@@ -38,8 +103,9 @@ class FnArgument:
         item.setdefault("default_value", None)
         assert item.keys() == cls.__dataclass_fields__.keys()
         return cls(
-            name=item["name"],
-            type=item["type"],
+            name=correct_name(item["name"]),
+            original_name=item["name"],
+            type=BuiltinType.parse(item["type"]),
             default_value=item["default_value"],
         )
 
@@ -71,14 +137,15 @@ class BuiltinOperatorSpec:
         assert item.keys() == cls.__dataclass_fields__.keys()
         return cls(
             name=item["name"],
-            right_type=item["right_type"],
-            return_type=item["return_type"],
+            right_type=BuiltinType.parse(item["right_type"]),
+            return_type=BuiltinType.parse(item["return_type"]),
         )
 
 
 @dataclass
 class BuiltinMemberSpec:
     name: str
+    original_name: str
     offset: int
     type: BuiltinType
 
@@ -87,15 +154,17 @@ class BuiltinMemberSpec:
         item.setdefault("offset", 0)  # Dummy value, will be set later on
         assert item.keys() == cls.__dataclass_fields__.keys()
         return cls(
-            name=item["name"],
+            name=correct_name(item["name"]),
+            original_name=item["name"],
             offset=item["offset"],
-            type=item["type"],
+            type=BuiltinType.parse(item["type"]),
         )
 
 
 @dataclass
 class BuiltinConstantSpec:
     name: str
+    original_name: str
     type: BuiltinType
     value: str
 
@@ -103,8 +172,9 @@ class BuiltinConstantSpec:
     def parse(cls, item: dict) -> "BuiltinConstantSpec":
         assert item.keys() == cls.__dataclass_fields__.keys()
         return cls(
-            name=item["name"],
-            type=item["type"],
+            name=correct_name(item["name"]),
+            original_name=item["name"],
+            type=BuiltinType.parse(item["type"]),
             value=item["value"],
         )
 
@@ -112,6 +182,7 @@ class BuiltinConstantSpec:
 @dataclass
 class BuiltinMethodSpec:
     name: str
+    original_name: str
     return_type: BuiltinType
     is_vararg: bool
     is_const: bool
@@ -125,13 +196,14 @@ class BuiltinMethodSpec:
         item.setdefault("return_type", "Nil")
         assert item.keys() == cls.__dataclass_fields__.keys()
         return cls(
-            name=item["name"],
-            return_type=item["return_type"],
+            name=correct_name(item["name"]),
+            original_name=item["name"],
+            return_type=BuiltinType.parse(item["return_type"]),
             is_vararg=item["is_vararg"],
             is_const=item["is_const"],
             is_static=item["is_static"],
             hash=item["hash"],
-            arguments=item["arguments"],
+            arguments=[FnArgument.parse(x) for x in item["arguments"]],
         )
 
 
