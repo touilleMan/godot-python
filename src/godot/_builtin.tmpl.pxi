@@ -63,31 +63,33 @@ cdef class {{ spec.name }}:
         {{ arg.name }},
 {% endfor %}
     ):
-        cdef GDNativePtrBuiltInMethod ptrmethod = pythonscript_gdapi.variant_get_ptr_builtin_method(
-            {{ spec.variant_type_name }},
-            "{{ m.original_name }}",
-            {{ m.hash }}
-        )
-        if ptrmethod == NULL:
-            raise RuntimeError("Cannot load method from Godot")
+        # TODO
+        # cdef GDNativePtrBuiltInMethod ptrmethod = pythonscript_gdapi.variant_get_ptr_builtin_method(
+        #     {{ spec.variant_type_name }},
+        #     "{{ m.original_name }}",
+        #     {{ m.hash }}
+        # )
+        # if ptrmethod == NULL:
+        #     raise RuntimeError("Cannot load method from Godot")
 
 {% if m.arguments | length == 0 %}
-{%     if m.return_type %}
-        cdef {{ m.return_type }} ret = {{ m.return_type }}.__new__()
-{%         set retval_as_arg = "NULL" %}
-{%     else %}
-{%         set retval_as_arg = "NULL" %}
-{%     endif %}
+# {%     if m.return_type %}
+#         # TODO
+#         # cdef {{ m.return_type.cython_name }} ret = {{ m.return_type.cython_name }}.__new__()
+# {%         set retval_as_arg = "NULL" %}
+# {%     else %}
+# {%         set retval_as_arg = "NULL" %}
+# {%     endif %}
 
-        with nogil:
-            ptrmethod(
-                self._ptr,
-                NULL, # args
-                # return
-                0, # args_count
-            )
+#         with nogil:
+#             ptrmethod(
+#                 self._ptr,
+#                 NULL, # args
+#                 # return
+#                 0, # args_count
+#             )
 
-        return 
+        return
 {% else %}
         raise NotImplemented
 {% endif %}

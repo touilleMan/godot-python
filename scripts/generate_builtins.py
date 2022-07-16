@@ -108,16 +108,34 @@ def correct_name(name: str) -> str:
 # bool
 # float
 # int
+BUILTINS_NAMES = {
+    "Variant": ("GDNativeVariantPtr", "void*"),
+    "StringName": ("GDNativeStringNamePtr", "void*"),
+    "String": ("GDNativeStringPtr", "void*"),
+    "Object": ("GDNativeObjectPtr", "void*"),
+    "Type": ("GDNativeTypePtr", "void*"),
+    "Extension": ("GDNativeExtensionPtr", "void*"),
+    "MethodBind": ("GDNativeMethodBindPtr", "void*"),
+    "int": ("GDNativeInt", "int64_t"),
+    "bool": ("GDNativeBool", "uint8_t"),
+}
+
+
 @dataclass
 class BuiltinType:
     name: str
     original_name: str
+    cython_name: str
+    godot_name: str
 
     @classmethod
     def parse(cls, name: str) -> "BuiltinType":
+        godot_name, cython_name = BUILTINS_NAMES.get(name, (name, name))
         return cls(
             name=name,
             original_name=name,
+            cython_name=cython_name,
+            godot_name=godot_name,
         )
 
 
@@ -260,7 +278,7 @@ class BuiltinSpec:
     def parse(cls, item: dict) -> "BuiltinSpec":
         item.setdefault("size", None)  # Dummy value, will be set later on
         item.setdefault("variant_type_name", "")  # See above
-        item.setdefault("original_name", "")  # See above
+        item.setdefault("original_name", item["name"])
         item.setdefault("indexing_return_type", None)
         item.setdefault("methods", [])
         item.setdefault("members", [])
@@ -288,7 +306,7 @@ class BuiltinSpec:
             patched_name = item["name"]
 
         return cls(
-            original_name=item["name"],
+            original_name=item["original_name"],
             name=patched_name,
             size=item["size"],
             indexing_return_type=item["indexing_return_type"],
