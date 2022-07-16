@@ -66,6 +66,7 @@ jobs:
           python --version
           pip install -U pip
           pip install -r requirements.in
+          pip install git+ssh://github.com/zooba/python-autopxd2.git@msvc
       - name: 'Setup project'
         run: |
           set -eux
