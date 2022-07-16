@@ -128,7 +128,6 @@ jobs:
         shell: bash
         run: |
           set -eux
-#          cl.exe --version
           python --version
           pip install -U pip
           pip install -r requirements.txt
