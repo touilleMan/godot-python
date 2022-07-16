@@ -65,15 +65,7 @@ cdef api _pythonscript_set_gdapi(const GDNativeInterface *gdapi):
 
 
 cdef api void _pythonscript_initialize() with gil:
-    pythonscript_gdapi.print_warning(
-        "foooooooooooooooooooooooooooooooooooooooooo",
-        "_pythonscript_initialize",
-        "_pythonscript.pyx",
-        0,
-    )
-
     import sys
-    print('#######################################', file=sys.stderr)
     from godot._version import __version__ as pythonscript_version
 
     cooked_sys_version = '.'.join(map(str, sys.version_info))
