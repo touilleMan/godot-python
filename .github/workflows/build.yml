@@ -130,7 +130,7 @@ jobs:
           set -eux
           python --version
           pip install -U pip
-          pip install -r requirements.txt
+          pip install -r requirements.in
       - name: 'Setup project'
         shell: bash
         run: |
