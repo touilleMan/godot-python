@@ -94,7 +94,7 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String` destructor)");
             goto error;
         }
-        GDNativePtrBuiltInMethod gdstring_get_base_dir = gdapi->variant_get_ptr_builtin_method(GDNATIVE_VARIANT_TYPE_STRING, "get_base_dir", 171192875);
+        GDNativePtrBuiltInMethod gdstring_get_base_dir = gdapi->variant_get_ptr_builtin_method(GDNATIVE_VARIANT_TYPE_STRING, "get_base_dir", 3942272618);
         if (gdstring_get_base_dir == NULL) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String.get_base_dir` method)");
             goto error;
