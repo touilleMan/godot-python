@@ -3,7 +3,7 @@
 import argparse
 import json
 from pathlib import Path
-from typing import Optional, List
+from typing import Dict, Optional, List
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from dataclasses import dataclass
 from string import ascii_uppercase
@@ -260,6 +260,26 @@ class BuiltinMethodSpec:
 
 
 @dataclass
+class BuiltinEnum:
+    name: str
+    original_name: str
+    is_bitfield: bool
+    values: List[Dict[str, int]]
+
+    @classmethod
+    def parse(cls, item: dict) -> "BuiltinEnum":
+        item.setdefault("original_name", item["name"])
+        item.setdefault("is_bitfield", False)
+        assert item.keys() == cls.__dataclass_fields__.keys()
+        return cls(
+            name=item["name"],
+            original_name=item["original_name"],
+            is_bitfield=item["is_bitfield"],
+            values=[{x["name"]: x["value"]} for x in item["values"]]
+        )
+
+
+@dataclass
 class BuiltinSpec:
     name: str
     original_name: str
@@ -273,6 +293,7 @@ class BuiltinSpec:
     members: List[BuiltinMemberSpec]
     constants: List[BuiltinConstantSpec]
     variant_type_name: str
+    enums: List[BuiltinEnum]
 
     @classmethod
     def parse(cls, item: dict) -> "BuiltinSpec":
@@ -283,6 +304,7 @@ class BuiltinSpec:
         item.setdefault("methods", [])
         item.setdefault("members", [])
         item.setdefault("constants", [])
+        item.setdefault("enums", [])
 
         # Ensure the fields are as expected, in theory we should also check typing
         # but it's cumbersome and it's very likely bad typing will lead anyway to a
@@ -318,6 +340,7 @@ class BuiltinSpec:
             members=[BuiltinMemberSpec.parse(x) for x in item["members"]],
             constants=[BuiltinConstantSpec.parse(x) for x in item["constants"]],
             variant_type_name=item["variant_type_name"],
+            enums=[BuiltinEnum.parse(x) for x in item["enums"]]
         )
 
 
