@@ -35,9 +35,9 @@ jobs:
           set -eux
           python --version
           pip install pre-commit
-      - name: Pre-commit hooks check
-        run: |
-          pre-commit run --all-files --show-diff-on-failure
+#      - name: Pre-commit hooks check
+#        run: |
+#          pre-commit run --all-files --show-diff-on-failure
 
 
 #################################################################################
@@ -65,7 +65,7 @@ jobs:
           ${{ env.CC }} --version
           python --version
           pip install -U pip
-          pip install -r requirements.txt
+          pip install -r requirements.in
       - name: 'Setup project'
         run: |
           set -eux
