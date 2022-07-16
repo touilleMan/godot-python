@@ -319,6 +319,12 @@ def parse_extension_api_json(path: Path) -> List[BuiltinSpec]:
         if x["build_configuration"] == args.build_config
     )
     builtin_class_member_offsets = {x["name"]: x["members"] for x in builtin_class_member_offsets}
+    assert "Color" in builtin_class_member_offsets.keys()
+    for x in builtin_class_member_offsets["Color"]:
+        if x["member"] == "x": x["member"] = "r"
+        if x["member"] == "y": x["member"] = "g"
+        if x["member"] == "z": x["member"] = "b"
+        if x["member"] == "w": x["member"] = "a"
 
     specs = []
     for item in api_json["builtin_classes"]:
