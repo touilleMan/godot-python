@@ -273,6 +273,7 @@ class BuiltinEnum:
         assert item.keys() == cls.__dataclass_fields__.keys()
         return cls(
             name=item["name"],
+            original_name=item["original_name"],
             is_bitfield=item["is_bitfield"],
             values=[{x["name"]: x["value"]} for x in item["values"]]
         )
