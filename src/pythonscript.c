@@ -114,16 +114,10 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
         // 3) Convert base dir into regular c string
         GDNativeInt basedir_path_size = gdapi->string_to_utf8_chars(gd_basedir_path, NULL, 0);
         // Why not using variable length array here ? Glad you asked Timmy !
-        // VLA are part of the C99 standard, but MSVC compiler is still missing it :(
-        // But wait there is more ! Microsoft may have totally butchered C99 support,
-        // but they claimed to totally support C11&C17... kinda.
-        // As a matter of fact VLA has become optional since the C11 standard, I
-        // can't help myself thinking the MSVC team pulled an incredible
-        // "it's not bug, it's feature" comity lobbying move to achieve this ;-)
-        // Adding "achtually..." snobbery to total disrespect of interoperability,
-        // Microsoft have the audacity to explain they choose not to support VLA
-        // for security&performance reasons !
-        // (see https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/#variable-length-arrays)
+        // VLA are part of the C99 standard, but MSVC compiler is missing it :(
+        // Because VLA were removed from the C11 standard, and the standards committee
+        // decided it was no good, probably because you can't handle allocation errors
+        // like we're about to do two lines down.
         char *basedir_path = gdapi->mem_alloc(basedir_path_size + 1);
         if (basedir_path == NULL) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (memory allocation failed)");
