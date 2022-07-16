@@ -22,16 +22,46 @@ env.filters["merge"] = lambda x, **kwargs: {**x, **kwargs}
 
 PYTHON_KEYWORDS = {
     # Python
-    "False", "await", "else", "import", "pass",
-    "None", "break", "except", "in", "raise",
-    "True", "class", "finally", "is", "return",
-    "and", "continue", "for", "lambda", "try",
-    "as", "def", "from", "nonlocal", "while",
-    "assert", "del", "global", "not", "with",
-    "async", "elif", "if", "or", "yield",
+    "False",
+    "await",
+    "else",
+    "import",
+    "pass",
+    "None",
+    "break",
+    "except",
+    "in",
+    "raise",
+    "True",
+    "class",
+    "finally",
+    "is",
+    "return",
+    "and",
+    "continue",
+    "for",
+    "lambda",
+    "try",
+    "as",
+    "def",
+    "from",
+    "nonlocal",
+    "while",
+    "assert",
+    "del",
+    "global",
+    "not",
+    "with",
+    "async",
+    "elif",
+    "if",
+    "or",
+    "yield",
     # Cython
     "char",
 }
+
+
 def correct_name(name: str) -> str:
     if name in PYTHON_KEYWORDS:
         return f"{name}_"
@@ -100,11 +130,12 @@ class FnArgument:
 
     @classmethod
     def parse(cls, item: dict) -> "FnArgument":
+        item.setdefault("original_name", item["name"])
         item.setdefault("default_value", None)
         assert item.keys() == cls.__dataclass_fields__.keys()
         return cls(
             name=correct_name(item["name"]),
-            original_name=item["name"],
+            original_name=item["original_name"],
             type=BuiltinType.parse(item["type"]),
             default_value=item["default_value"],
         )
@@ -151,11 +182,12 @@ class BuiltinMemberSpec:
 
     @classmethod
     def parse(cls, item: dict) -> "BuiltinMemberSpec":
+        item.setdefault("original_name", item["name"])
         item.setdefault("offset", 0)  # Dummy value, will be set later on
         assert item.keys() == cls.__dataclass_fields__.keys()
         return cls(
             name=correct_name(item["name"]),
-            original_name=item["name"],
+            original_name=item["original_name"],
             offset=item["offset"],
             type=BuiltinType.parse(item["type"]),
         )
@@ -170,10 +202,11 @@ class BuiltinConstantSpec:
 
     @classmethod
     def parse(cls, item: dict) -> "BuiltinConstantSpec":
+        item.setdefault("original_name", item["name"])
         assert item.keys() == cls.__dataclass_fields__.keys()
         return cls(
             name=correct_name(item["name"]),
-            original_name=item["name"],
+            original_name=item["original_name"],
             type=BuiltinType.parse(item["type"]),
             value=item["value"],
         )
@@ -192,12 +225,13 @@ class BuiltinMethodSpec:
 
     @classmethod
     def parse(cls, item: dict) -> "BuiltinMethodSpec":
+        item.setdefault("original_name", item["name"])
         item.setdefault("arguments", [])
         item.setdefault("return_type", "Nil")
         assert item.keys() == cls.__dataclass_fields__.keys()
         return cls(
             name=correct_name(item["name"]),
-            original_name=item["name"],
+            original_name=item["original_name"],
             return_type=BuiltinType.parse(item["return_type"]),
             is_vararg=item["is_vararg"],
             is_const=item["is_const"],
