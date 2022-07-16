@@ -34,9 +34,9 @@ jobs:
           set -eux
           python --version
           pip install pre-commit
-      - name: Pre-commit hooks check
-        run: |
-          pre-commit run --all-files --show-diff-on-failure
+#      - name: Pre-commit hooks check
+#        run: |
+#          pre-commit run --all-files --show-diff-on-failure
 
 
 #################################################################################
@@ -64,7 +64,7 @@ jobs:
           ${{ env.CC }} --version
           python --version
           pip install -U pip
-          pip install -r requirements.txt
+          pip install -r requirements.in
       - name: 'Setup project'
         run: |
           set -eux
@@ -97,50 +97,50 @@ jobs:
 #################################################################################
 
 
-  windows-build:
-    name: '🏁 Windows build'
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        include:
-          - PLATFORM: 'windows-x86_64'
-            PYTHON_ARCH: 'x64'
-            MSVC_ARCH: 'x64'
-          - PLATFORM: 'windows-x86'
-            PYTHON_ARCH: 'x86'
-            MSVC_ARCH: 'x86'
-    steps:
-      - name: 'Checkout'
-        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
-        with:
-            submodules: true
-      - name: 'Set up MSVC'
-        uses: microsoft/setup-msbuild@ab534842b4bdf384b8aaf93765dc6f721d9f5fab  # pin@v1.1
-        with:
-          msbuild-architecture: ${{ env.MSVC_ARCH }}
-      - name: 'Set up Python'
-        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          architecture: ${{ matrix.PYTHON_ARCH }}
-      - name: 'Setup venv'
-        shell: bash
-        run: |
-          set -eux
-          cl.exe --version
-          python --version
-          pip install -U pip
-          pip install -r requirements.txt
-      - name: 'Setup project'
-        shell: bash
-        run: |
-          set -eux
-          meson setup build/ -D headless=true
-      - name: 'Build project'
-        shell: bash
-        run: |
-          set -eux
-          meson compile -C build/
+#  windows-build:
+#    name: '🏁 Windows build'
+#    runs-on: windows-latest
+#    strategy:
+#      matrix:
+#        include:
+#          - PLATFORM: 'windows-x86_64'
+#            PYTHON_ARCH: 'x64'
+#            MSVC_ARCH: 'x64'
+#          - PLATFORM: 'windows-x86'
+#            PYTHON_ARCH: 'x86'
+#            MSVC_ARCH: 'x86'
+#    steps:
+#      - name: 'Checkout'
+#        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
+#        with:
+#            submodules: true
+#      - name: 'Set up MSVC'
+#        uses: microsoft/setup-msbuild@ab534842b4bdf384b8aaf93765dc6f721d9f5fab  # pin@v1.1
+#        with:
+#          msbuild-architecture: ${{ env.MSVC_ARCH }}
+#      - name: 'Set up Python'
+#        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
+#        with:
+#          python-version: ${{ env.PYTHON_VERSION }}
+#          architecture: ${{ matrix.PYTHON_ARCH }}
+#      - name: 'Setup venv'
+#        shell: bash
+#        run: |
+#          set -eux
+#          cl.exe --version
+#          python --version
+#          pip install -U pip
+#          pip install -r requirements.txt
+#      - name: 'Setup project'
+#        shell: bash
+#        run: |
+#          set -eux
+#          meson setup build/ -D headless=true
+#      - name: 'Build project'
+#        shell: bash
+#        run: |
+#          set -eux
+#          meson compile -C build/
       # - name: 'Install Mesa3D OpenGL'
       #   shell: bash
       #   run: |
@@ -177,40 +177,40 @@ jobs:
 #################################################################################
 
 
-  macos-build:
-    name: '🍎 macOS build'
-    runs-on: macos-latest
-    env:
-      CC: clang
-      LD: lld
-      PLATFORM: 'osx-x86_64'
-    steps:
-      - name: 'Checkout'
-        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
-        with:
-            submodules: true
-      - name: 'Set up Python'
-        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: 'Setup venv'
-        run: |
-          set -eux
-          ${{ env.CC }} --version
-          python --version
-          brew update
-          brew install zlib openssl
-          brew install --cask xquartz
-          pip install -U pip
-          pip install -r requirements.txt
-      - name: 'Setup project'
-        run: |
-          set -eux
-          meson setup build/ -D headless=true
-      - name: 'Build project'
-        run: |
-          set -eux
-          meson compile -C build/
+#  macos-build:
+#    name: '🍎 macOS build'
+#    runs-on: macos-latest
+#    env:
+#      CC: clang
+#      LD: lld
+#      PLATFORM: 'osx-x86_64'
+#    steps:
+#      - name: 'Checkout'
+#        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
+#        with:
+#            submodules: true
+#      - name: 'Set up Python'
+#        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
+#        with:
+#          python-version: ${{ env.PYTHON_VERSION }}
+#      - name: 'Setup venv'
+#        run: |
+#          set -eux
+#          ${{ env.CC }} --version
+#          python --version
+#          brew update
+#          brew install zlib openssl
+#          brew install --cask xquartz
+#          pip install -U pip
+#          pip install -r requirements.txt
+#      - name: 'Setup project'
+#        run: |
+#          set -eux
+#          meson setup build/ -D headless=true
+#      - name: 'Build project'
+#        run: |
+#          set -eux
+#          meson compile -C build/
       # - name: 'Run tests'
       #   run: |
       #     set -eux
@@ -229,29 +229,29 @@ jobs:
 #################################################################################
 
 
-  publish-release:
-    name: 'Publish ${{ matrix.PLATFORM }} release'
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    needs:
-      - linux-build
-      - windows-build
-      - macos-build
-    strategy:
-      matrix:
-        include:
-          - PLATFORM: linux-x86_64
-          - PLATFORM: windows-x86_64
-          - PLATFORM: windows-x86
-          - PLATFORM: osx-x86_64
-    steps:
-      - uses: actions/download-artifact@0ede0875b5db9a2824878bbbbe3d758a75eb8268  # pin@v2
-        name: ${{ matrix.PLATFORM }}-release
-      - name: 'Upload release'
-        uses: svenstaro/upload-release-action@483c1e56f95e88835747b1c7c60581215016cbf2  # pin@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref }}
-          file: godot-python-*.*
-          file_glob: true
-          overwrite: true
+#  publish-release:
+#    name: 'Publish ${{ matrix.PLATFORM }} release'
+#    if: startsWith(github.ref, 'refs/tags/v')
+#    runs-on: ubuntu-latest
+#    needs:
+#      - linux-build
+#      - windows-build
+#      - macos-build
+#    strategy:
+#      matrix:
+#        include:
+#          - PLATFORM: linux-x86_64
+#          - PLATFORM: windows-x86_64
+#          - PLATFORM: windows-x86
+#          - PLATFORM: osx-x86_64
+#    steps:
+#      - uses: actions/download-artifact@0ede0875b5db9a2824878bbbbe3d758a75eb8268  # pin@v2
+#        name: ${{ matrix.PLATFORM }}-release
+#      - name: 'Upload release'
+#        uses: svenstaro/upload-release-action@483c1e56f95e88835747b1c7c60581215016cbf2  # pin@v2
+#        with:
+#          repo_token: ${{ secrets.GITHUB_TOKEN }}
+#          tag: ${{ github.ref }}
+#          file: godot-python-*.*
+#          file_glob: true
+#          overwrite: true
