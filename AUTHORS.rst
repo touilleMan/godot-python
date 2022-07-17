@@ -15,6 +15,8 @@ Godot Python logo
 Contributors
 ------------
 
+* `@Keiky <https://github.com/Keiky>`_
+* Ondřej Baštař `@basta <https://github.com/basta>`_
 * Răzvan Cosmin Rădulescu `@razvanc-r <https://github.com/razvanc-r>`_
 * Max Hilbrunner `@mhilbrunner <https://github.com/mhilbrunner>`_
 * Chris Ridenour `@cridenour <https://github.com/cridenour>`_
