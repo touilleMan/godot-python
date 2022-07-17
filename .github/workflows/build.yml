@@ -12,8 +12,7 @@ on:
 
 # Global Settings
 env:
-  PYTHON_VERSION: "3.7"  # Python to run the build, no the one shipped !
-  GODOT_BINARY_VERSION: "4.0.0-alpha6"  # Version of Godot to test against
+  PYTHON_VERSION: "3.8"  # Python to run the build, no the one shipped !
 
 
 jobs:
@@ -75,16 +74,16 @@ jobs:
         run: |
           set -eux
           meson compile -C build/
-      # - name: 'Start xvfb'
-      #   run: |
-      #     /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-      #     echo ">>> Started xvfb"
-      # - name: 'Run tests'
-      #   run: |
-      #     set -eux
-      #     python tests/run.py --build-dir build/ --godot-binary ${{ GODOT_BINARY_VERSION }}
-      #   env:
-      #     DISPLAY: ':99.0'
+      - name: 'Start xvfb'
+        run: |
+          /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+          echo ">>> Started xvfb"
+      - name: 'Run tests'
+        run: |
+          set -eux
+          python tests/run.py helloworld --build-dir build/
+        env:
+          DISPLAY: ':99.0'
       # - name: 'Generate artifact archive'
       #   run: |
       #     set -eux
