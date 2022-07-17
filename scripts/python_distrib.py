@@ -66,7 +66,8 @@ def load_config(prebuild_dir: Path) -> dict:
 def install_linux(conf: dict, build_dir: Path, prebuild_dir: Path, compressed_stdlib: bool) -> None:
     print(f"Create clean distribution {build_dir}...")
 
-    assert conf["target_triple"] in ("x86_64-unknown-linux-gnu", "x86-unknown-linux-gnu")
+    if conf["target_triple"] not in ("x86_64-unknown-linux-gnu", "x86-unknown-linux-gnu"):
+        raise RuntimeError(f"Unexpected target_triple `{conf['target_triple']}`")
     major, minor = conf["python_major_minor_version"].split(".")
 
     shutil.copytree(prebuild_dir / "python/install", build_dir, symlinks=True)
@@ -118,7 +119,8 @@ def install_windows(
 ) -> None:
     print(f"Create clean distribution {build_dir}...")
 
-    assert conf["target_triple"] in ("x86_64-pc-windows-msvc", "x86-pc-windows-msvc")
+    if conf["target_triple"] not in ("x86_64-pc-windows-msvc", "i686-pc-windows-msvc"):
+        raise RuntimeError(f"Unexpected target_triple `{conf['target_triple']}`")
     major, minor = conf["python_major_minor_version"].split(".")
 
     shutil.copytree(prebuild_dir / "python/install", build_dir, symlinks=True)

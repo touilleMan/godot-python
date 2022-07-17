@@ -70,7 +70,7 @@ jobs:
       - name: 'Setup project'
         run: |
           set -eux
-          meson setup build/ -D headless=true
+          python .github/scripts/meson_setup_or_dump_log.py build/ -D headless=true
       - name: 'Build project'
         run: |
           set -eux
@@ -134,7 +134,7 @@ jobs:
           pip install -r requirements.in
       - name: 'Setup project'
         run: |
-          meson setup build/ -D headless=true
+          python .github/scripts/meson_setup_or_dump_log.py build/ -D headless=true
       - name: 'Build project'
         run: |
           meson compile -C build/
