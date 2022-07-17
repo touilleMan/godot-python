@@ -264,6 +264,7 @@ DLL_EXPORT GDNativeBool pythonscript_init(
     const GDNativeExtensionClassLibraryPtr p_library,
     GDNativeInitialization *r_initialization
 ) {
+    printf("I am ALIIIIIVE!\n");
     if (state != STALLED) {
         printf("Pythonscript: Invalid internal state (this should never happen !)\n");
         goto error;
