@@ -2,6 +2,9 @@
 # see `generation/generate_builtins.py`
 
 {# TODO: GDString ~ String #}
+class Object:
+    ...
+
 {% for item in specs %}
 
 class {{item.name}}:
