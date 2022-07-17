@@ -396,7 +396,6 @@ def generate_builtins(output: Path, specs: List[BuiltinSpec], build_config: str)
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description="Generate Godot builtins bindings files")
     parser.add_argument(
         "--input",
