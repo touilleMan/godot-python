@@ -3,9 +3,11 @@ on:
   push:
     branches:
     - master
+    - godot4-meson
   pull_request:
     branches:
     - master
+    - godot4-meson
 
 
 # Global Settings
