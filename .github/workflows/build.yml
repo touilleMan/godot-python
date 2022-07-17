@@ -36,9 +36,9 @@ jobs:
           set -eux
           python --version
           pip install pre-commit
-#      - name: Pre-commit hooks check
-#        run: |
-#          pre-commit run --all-files --show-diff-on-failure
+      - name: Pre-commit hooks check
+        run: |
+          SKIP=black pre-commit run --all-files --show-diff-on-failure
 
 
 #################################################################################
