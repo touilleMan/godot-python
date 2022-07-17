@@ -117,9 +117,9 @@ jobs:
         with:
             submodules: true
       - name: 'Set up MSVC'
-        uses: microsoft/setup-msbuild@ab534842b4bdf384b8aaf93765dc6f721d9f5fab  # pin@v1.1
+        uses: egor-tensin/vs-shell@9a932a62d05192eae18ca370155cf877eecc2202  # pin@v2.1
         with:
-          msbuild-architecture: ${{ env.MSVC_ARCH }}
+          arch: ${{ matrix.MSVC_ARCH }}
       - name: 'Set up Python'
         uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
         with:
@@ -133,14 +133,10 @@ jobs:
           pip install -U pip
           pip install -r requirements.in
       - name: 'Setup project'
-        shell: bash
         run: |
-          set -eux
           meson setup build/ -D headless=true
       - name: 'Build project'
-        shell: bash
         run: |
-          set -eux
           meson compile -C build/
       # - name: 'Install Mesa3D OpenGL'
       #   shell: bash
