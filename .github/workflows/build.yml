@@ -116,10 +116,10 @@ jobs:
         uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
         with:
             submodules: true
-#      - name: 'Set up MSVC'
-#        uses: microsoft/setup-msbuild@ab534842b4bdf384b8aaf93765dc6f721d9f5fab  # pin@v1.1
-#        with:
-#          msbuild-architecture: ${{ env.MSVC_ARCH }}
+      - name: 'Set up MSVC'
+        uses: microsoft/setup-msbuild@ab534842b4bdf384b8aaf93765dc6f721d9f5fab  # pin@v1.1
+        with:
+          msbuild-architecture: ${{ env.MSVC_ARCH }}
       - name: 'Set up Python'
         uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
         with:
