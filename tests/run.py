@@ -3,7 +3,6 @@
 import os
 import sys
 import re
-from functools import partial
 import platform
 from typing import List, Tuple, Union, Sequence
 from contextlib import contextmanager
@@ -156,7 +155,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--godot-binary",
         type=parse_godot_binary_hint,
-        default="4.0.0-alpha9",
+        default="4.0.0-alpha12",
         help="Path to Godot binary to use, or version of Godot to download and use",
     )
     parser.add_argument(

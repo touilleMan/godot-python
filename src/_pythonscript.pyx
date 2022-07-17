@@ -30,29 +30,11 @@ from godot._hazmat.gdnative_interface cimport (
 )
 
 
-
-cdef extern from * nogil:
-    # Global variables defined in _pythonscript.pyx
-    # Given _pythonscript.pyx is always the very first module loaded, we are
-    # guanteed `pythonscript_gdapi` symbol is always resolved
-    """
-    #ifdef _WIN32
-    # define DLL_EXPORT __declspec(dllexport)
-    # define DLL_IMPORT __declspec(dllimport)
-    #else
-    # define DLL_EXPORT
-    # define DLL_IMPORT
-    #endif
-
-    #include <godot/gdnative_interface.h>
-    DLL_EXPORT extern const GDNativeInterface *pythonscript_gdapi;
-    """
-
 # Global pointer on Godot API used by all Cython modules
 # This is configured by `pythonscript.c` before any Python code is actually
 # called, hence pythonscript_gdapi is guarantee to be valid from Cython point
 # of view
-cdef public const GDNativeInterface *pythonscript_gdapi = NULL  # Declared as `public` is it symbol is not mangled
+cdef public const GDNativeInterface *pythonscript_gdapi = NULL  # Declared as `public` so it symbol is not mangled
 cdef api _pythonscript_set_gdapi(const GDNativeInterface *gdapi):
     global pythonscript_gdapi
     pythonscript_gdapi = gdapi
@@ -65,15 +47,7 @@ cdef api _pythonscript_set_gdapi(const GDNativeInterface *gdapi):
 
 
 cdef api void _pythonscript_initialize() with gil:
-    pythonscript_gdapi.print_warning(
-        "foooooooooooooooooooooooooooooooooooooooooo",
-        "_pythonscript_initialize",
-        "_pythonscript.pyx",
-        0,
-    )
-
     import sys
-    print('#######################################', file=sys.stderr)
     from godot._version import __version__ as pythonscript_version
 
     cooked_sys_version = '.'.join(map(str, sys.version_info))

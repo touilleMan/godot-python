@@ -1,6 +1,5 @@
-# from _pythonscript import pythonscript_gdapi
-
 from godot._hazmat.gdnative_interface cimport GDNativeInterface
+
 
 cdef extern from * nogil:
     # Global variables defined in _pythonscript.pyx

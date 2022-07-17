@@ -97,50 +97,49 @@ jobs:
 #################################################################################
 
 
-#  windows-build:
-#    name: '🏁 Windows build'
-#    runs-on: windows-latest
-#    strategy:
-#      matrix:
-#        include:
-#          - PLATFORM: 'windows-x86_64'
-#            PYTHON_ARCH: 'x64'
-#            MSVC_ARCH: 'x64'
-#          - PLATFORM: 'windows-x86'
-#            PYTHON_ARCH: 'x86'
-#            MSVC_ARCH: 'x86'
-#    steps:
-#      - name: 'Checkout'
-#        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
-#        with:
-#            submodules: true
+  windows-build:
+    name: '🏁 Windows build'
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - PLATFORM: 'windows-x86_64'
+            PYTHON_ARCH: 'x64'
+            MSVC_ARCH: 'x64'
+          - PLATFORM: 'windows-x86'
+            PYTHON_ARCH: 'x86'
+            MSVC_ARCH: 'x86'
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
+        with:
+            submodules: true
 #      - name: 'Set up MSVC'
 #        uses: microsoft/setup-msbuild@ab534842b4bdf384b8aaf93765dc6f721d9f5fab  # pin@v1.1
 #        with:
 #          msbuild-architecture: ${{ env.MSVC_ARCH }}
-#      - name: 'Set up Python'
-#        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
-#        with:
-#          python-version: ${{ env.PYTHON_VERSION }}
-#          architecture: ${{ matrix.PYTHON_ARCH }}
-#      - name: 'Setup venv'
-#        shell: bash
-#        run: |
-#          set -eux
-#          cl.exe --version
-#          python --version
-#          pip install -U pip
-#          pip install -r requirements.txt
-#      - name: 'Setup project'
-#        shell: bash
-#        run: |
-#          set -eux
-#          meson setup build/ -D headless=true
-#      - name: 'Build project'
-#        shell: bash
-#        run: |
-#          set -eux
-#          meson compile -C build/
+      - name: 'Set up Python'
+        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          architecture: ${{ matrix.PYTHON_ARCH }}
+      - name: 'Setup venv'
+        shell: bash
+        run: |
+          set -eux
+          python --version
+          pip install -U pip
+          pip install -r requirements.in
+      - name: 'Setup project'
+        shell: bash
+        run: |
+          set -eux
+          meson setup build/ -D headless=true
+      - name: 'Build project'
+        shell: bash
+        run: |
+          set -eux
+          meson compile -C build/
       # - name: 'Install Mesa3D OpenGL'
       #   shell: bash
       #   run: |
