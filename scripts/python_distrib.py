@@ -15,7 +15,7 @@ PLATFORM_TO_PREBUILDS = {
         "linux-x86_64": f"{PREBUILDS_BASE_URL}/20211017/cpython-3.9.7-x86_64-unknown-linux-gnu-pgo+lto-20211017T1616.tar.zst",
         "windows-x86": f"{PREBUILDS_BASE_URL}/20211017/cpython-3.9.7-i686-pc-windows-msvc-shared-pgo-20211017T1616.tar.zst",
         "windows-x86_64": f"{PREBUILDS_BASE_URL}/20211017/cpython-3.9.7-x86_64-pc-windows-msvc-shared-pgo-20211017T1616.tar.zst",
-        "osx-x86_64": f"{PREBUILDS_BASE_URL}/20211017/cpython-3.9.7-x86_64-apple-darwin-pgo+lto-20211017T1616.tar.zst",
+        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20211017/cpython-3.9.7-x86_64-apple-darwin-pgo+lto-20211017T1616.tar.zst",
     }
 }
 
@@ -67,6 +67,57 @@ def install_linux(conf: dict, build_dir: Path, prebuild_dir: Path, compressed_st
     print(f"Create clean distribution {build_dir}...")
 
     if conf["target_triple"] not in ("x86_64-unknown-linux-gnu", "x86-unknown-linux-gnu"):
+        raise RuntimeError(f"Unexpected target_triple `{conf['target_triple']}`")
+    major, minor = conf["python_major_minor_version"].split(".")
+
+    shutil.copytree(prebuild_dir / "python/install", build_dir, symlinks=True)
+    shutil.copytree(prebuild_dir / "python/licenses", build_dir / "licenses", symlinks=True)
+
+    shutil.rmtree(build_dir / "share")
+
+    # Remove static library stuff
+    config = conf["python_stdlib_platform_config"]
+    assert config.startswith("install/lib/")
+    config = build_dir / config[len("install/") :]
+    assert config.exists()
+    shutil.rmtree(config)
+    (build_dir / f"lib/libpython{major}.{minor}.a").unlink()  # Remove symlink
+
+    stdlib_path = build_dir / f"lib/python{major}.{minor}"
+
+    # Remove tests lib (pretty big and basically useless)
+    shutil.rmtree(stdlib_path / "test")
+
+    # Also remove __pycache__ & .pyc stuff
+    for pycache in stdlib_path.glob("**/__pycache__"):
+        shutil.rmtree(pycache)
+
+    # Make sure site-packages is empty to avoid including pip (ensurepip should be used instead)
+    shutil.rmtree(stdlib_path / "site-packages")
+
+    # Zip the stdlib to save plenty of space \o/
+    if compressed_stdlib:
+        tmp_stdlib_path = build_dir / f"lib/tmp_python{major}.{minor}"
+        shutil.move(stdlib_path, tmp_stdlib_path)
+        stdlib_path.mkdir()
+        shutil.move(tmp_stdlib_path / "lib-dynload", stdlib_path / "lib-dynload")
+        shutil.make_archive(
+            base_name=str(build_dir / f"lib/python{major}{minor}"),
+            format="zip",
+            root_dir=tmp_stdlib_path,
+        )
+        shutil.rmtree(tmp_stdlib_path)
+        # Oddly enough, os.py must be present (even if empty !) otherwise
+        # Python failed to find it home...
+        (stdlib_path / "os.py").touch()
+
+    (stdlib_path / "site-packages").mkdir()
+
+
+def install_macos(conf: dict, build_dir: Path, prebuild_dir: Path, compressed_stdlib: bool) -> None:
+    print(f"Create clean distribution {build_dir}...")
+
+    if conf["target_triple"] not in ("x86_64-apple-darwin",):
         raise RuntimeError(f"Unexpected target_triple `{conf['target_triple']}`")
     major, minor = conf["python_major_minor_version"].split(".")
 
@@ -178,6 +229,13 @@ def build_distrib(
         )
     elif config["python_platform_tag"].startswith("win"):
         install_windows(
+            conf=config,
+            build_dir=build_dir,
+            prebuild_dir=prebuild_dir,
+            compressed_stdlib=args.compressed_stdlib,
+        )
+    elif config["python_platform_tag"].startswith("macosx"):
+        install_macos(
             conf=config,
             build_dir=build_dir,
             prebuild_dir=prebuild_dir,

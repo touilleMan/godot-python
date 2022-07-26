@@ -27,10 +27,10 @@ endif
 
 
 # We stick with Godot's platform naming
-# Note darwin may refere to ios and osx (because it's sooo clever to designate
-# two totally diferent things with the same name...) but we only support osx
+# Note darwin may refere to iOS and macOS (because it's sooo clever to designate
+# two totally diferent things with the same name...) but we only support macOS
 if host_platform == 'darwin-x86_64'
-    host_platform = 'osx-x86_64'
+    host_platform = 'macos-x86_64'
 endif
 
 
@@ -65,9 +65,14 @@ cythonize_command = [
 if host_platform.startswith('windows')
     python_native_module_name_prefix = ''
     python_native_module_name_suffix = 'pyd'
-else
+elif host_platform.startswith('linux')
     python_native_module_name_prefix = ''
     python_native_module_name_suffix = 'so'
+elif host_platform.startswith('macos')
+    python_native_module_name_prefix = ''
+    python_native_module_name_suffix = 'dynlib'
+else
+    error('Unsupported host_platform', host_platform)
 endif
 
 
@@ -119,7 +124,7 @@ python_prebuild_name = 'python_prebuild-@0@-@1@'.format(
 python_prebuild_path = join_paths(meson.current_build_dir(), python_prebuild_name)
 python_distrib_path = join_paths(meson.current_build_dir(), 'python_distrib')
 # Define the `dep_python` dependency
-if build_machine.system() == 'linux'
+if host_platform.startswith('linux')
     dep_python = declare_dependency(
         dependencies: cc.find_library(
             # e.g. python3.9
@@ -134,7 +139,22 @@ if build_machine.system() == 'linux'
         host_platform,
         'lib/python@0@.@1@/site-packages'.format(cpython_distrib_version_major, cpython_distrib_version_minor)
     )
-elif build_machine.system() == 'windows'
+elif host_platform.startswith('macos')
+    dep_python = declare_dependency(
+        dependencies: cc.find_library(
+            # e.g. python3.9
+            'python@0@.@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor),
+            dirs: join_paths(python_prebuild_path , 'python/install/lib')
+        ),
+        include_directories: [join_paths(python_prebuild_name, 'python/install/include/python@0@.@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor))],
+    )
+    # e.g. addons/pythonscript/linux-x86_64/lib/python3.9/site-packages
+    python_site_packages_install_path = join_paths(
+        'addons/pythonscript',
+        host_platform,
+        'lib/python@0@.@1@/site-packages'.format(cpython_distrib_version_major, cpython_distrib_version_minor)
+    )
+elif host_platform.startswith('windows')
     dep_python = declare_dependency(
         dependencies: cc.find_library(
             # e.g. python39
@@ -151,6 +171,8 @@ elif build_machine.system() == 'windows'
         host_platform,
         'Lib/site-packages'
     )
+else
+    error('Unsupported host_platform', host_platform)
 endif
 
 

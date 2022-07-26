@@ -75,11 +75,20 @@ c_builtins = custom_target(
 )
 
 
+if host_platform.startswith('linux')
+    _builtins_rpath = '$ORIGIN/../../..'
+elif host_platform.startswith('macos')
+    _builtins_rpath = '@loader_path/../../..'
+else
+    _builtins_rpath = ''
+endif
+
+
 shared_library(
     '_builtins',
     c_builtins,
-    dependencies : [dep_godot, dep_python, dep_pythonscript],
-    install_rpath: '$ORIGIN/../../..',  # To find libpython
+    dependencies : [dep_godot, dep_python, dep__pythonscript],
+    install_rpath: _builtins_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
     install: true,
