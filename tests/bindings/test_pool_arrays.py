@@ -23,7 +23,7 @@ from godot import (
 from conftest import generate_global_obj
 
 
-is_windows_32 = (sys.platform == "win32") and (sys.maxsize <= 2 ** 32)
+is_windows_32 = (sys.platform == "win32") and (sys.maxsize <= 2**32)
 
 
 NODE = generate_global_obj(Node)
@@ -53,7 +53,7 @@ class PoolIntArrayBench(BasePoolArrayBench):
     cls = PoolIntArray
 
     def generate_value(self):
-        return self.random.randint(-(2 ** 31), 2 ** 31 - 1)
+        return self.random.randint(-(2**31), 2**31 - 1)
 
 
 class PoolRealArrayBench(BasePoolArrayBench):
