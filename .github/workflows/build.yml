@@ -37,7 +37,7 @@ jobs:
           pip install pre-commit
       - name: Pre-commit hooks check
         run: |
-          SKIP=black pre-commit run --all-files --show-diff-on-failure
+          pre-commit run --all-files --show-diff-on-failure
 
 
 #################################################################################
