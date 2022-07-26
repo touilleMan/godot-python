@@ -69,21 +69,17 @@ jobs:
       - name: 'Setup project'
         run: |
           set -eux
-          python .github/scripts/meson_setup_or_dump_log.py build/ -D headless=true
+          python .github/scripts/meson_setup_or_dump_log.py build/
       - name: 'Build project'
         run: |
           set -eux
           meson compile -C build/
-      - name: 'Start xvfb'
-        run: |
-          /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-          echo ">>> Started xvfb"
       - name: 'Run tests'
         run: |
           set -eux
-          python tests/run.py helloworld --build-dir build/
-        env:
-          DISPLAY: ':99.0'
+          python tests/run.py helloworld \
+            --build-dir build/ \
+            -- --display-driver headless
       # - name: 'Generate artifact archive'
       #   run: |
       #     set -eux
@@ -133,10 +129,16 @@ jobs:
           pip install -r requirements.in
       - name: 'Setup project'
         run: |
-          python .github/scripts/meson_setup_or_dump_log.py build/ -D headless=true
-      - name: 'Build project'
-        run: |
-          meson compile -C build/
+          python .github/scripts/meson_setup_or_dump_log.py build/
+      # TODO: see https://github.com/touilleMan/godot-python/issues/359
+      # - name: 'Build project'
+      #   run: |
+      #     meson compile -C build/
+      # - name: 'Run tests'
+      #   run: |
+      #     python tests/run.py helloworld \
+      #       --build-dir build/ \
+      #       -- --display-driver headless
       # - name: 'Install Mesa3D OpenGL'
       #   shell: bash
       #   run: |
@@ -173,44 +175,44 @@ jobs:
 #################################################################################
 
 
-#  macos-build:
-#    name: '🍎 macOS build'
-#    runs-on: macos-latest
-#    env:
-#      CC: clang
-#      LD: lld
-#      PLATFORM: 'osx-x86_64'
-#    steps:
-#      - name: 'Checkout'
-#        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
-#        with:
-#            submodules: true
-#      - name: 'Set up Python'
-#        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
-#        with:
-#          python-version: ${{ env.PYTHON_VERSION }}
-#      - name: 'Setup venv'
-#        run: |
-#          set -eux
-#          ${{ env.CC }} --version
-#          python --version
-#          brew update
-#          brew install zlib openssl
-#          brew install --cask xquartz
-#          pip install -U pip
-#          pip install -r requirements.txt
-#      - name: 'Setup project'
-#        run: |
-#          set -eux
-#          meson setup build/ -D headless=true
-#      - name: 'Build project'
-#        run: |
-#          set -eux
-#          meson compile -C build/
+  macos-build:
+    name: '🍎 macOS build'
+    runs-on: macos-latest
+    env:
+      CC: clang
+      LD: lld
+      PLATFORM: 'macos-x86_64'
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
+        with:
+            submodules: true
+      - name: 'Set up Python'
+        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: 'Setup venv'
+        run: |
+          set -eux
+          ${{ env.CC }} --version
+          python --version
+          pip install -U pip
+          pip install -r requirements.txt
+      - name: 'Setup project'
+        run: |
+          set -eux
+          python .github/scripts/meson_setup_or_dump_log.py build/
+      - name: 'Build project'
+        run: |
+          set -eux
+          meson compile -C build/
+      # TODO: see https://github.com/touilleMan/godot-python/issues/358
       # - name: 'Run tests'
       #   run: |
       #     set -eux
-      #     python tests/run.py --build-dir build/ --godot-binary ${{ GODOT_BINARY_VERSION }}
+      #     python tests/run.py helloworld \
+      #       --build-dir build/ \
+      #       -- --display-driver headless
       # - name: 'Generate artifact archive'
       #   run: |
       #     set -eux

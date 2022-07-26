@@ -104,35 +104,32 @@ h_pythonscript = c_pythonscript[1]  # Header for other Cython modules
 c_pythonscript = c_pythonscript[0]
 
 
-lib_pythonscript = shared_library(
+if host_platform.startswith('linux')
+    lib__pythonscript_rpath = '$ORIGIN/../..'
+elif host_platform.startswith('macos')
+    lib__pythonscript_rpath = '@loader_path/../..'
+else
+    lib__pythonscript_rpath = ''
+endif
+
+
+lib__pythonscript = shared_library(
     '_pythonscript',
     c_pythonscript,
     dependencies : [dep_godot, dep_python],
-    install_rpath: '$ORIGIN/../..',  # To find libpython
+    install_rpath: lib__pythonscript_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
     install: true,
     install_dir: python_site_packages_install_path,
 )
 
-dep_pythonscript = declare_dependency(
-    # include_directories: lib_pythonscript.private_dir_include(),  # To expose _pythonscript_api.h
+
+dep__pythonscript = declare_dependency(
+    # include_directories: lib__pythonscript.private_dir_include(),  # To expose _pythonscript_api.h
     sources: [h_pythonscript, h_pythonscript_api],
-    link_with: lib_pythonscript,
+    link_with: lib__pythonscript,
 )
-
-lib_pythonscript = shared_library(
-    'pythonscript',
-    ['pythonscript.c'],
-    dependencies: [dep_godot, dep_python, dep_pythonscript],
-    install_rpath: '$ORIGIN/lib',  # To find libpython
-    install: true,
-    install_dir: 'addons/pythonscript/' + host_platform,
-)
-
-# dep_pythonscript = declare_dependency(
-#     link_with: lib_pythonscript,
-# )
 
 
 ##############################################################################
@@ -158,12 +155,20 @@ subdir('godot')
 # to how Python loads native modules.
 
 
-# shared_library(
-#     'pythonscript',
-#     ['pythonscript.c', c_pythonscript],
-#     dependencies: [dep_godot, dep_python],
-#     # dependencies: [dep_godot, dep_python, dep_pythonscript],
-#     install_rpath: '$ORIGIN/lib',
-#     install: true,
-#     install_dir: 'addons/pythonscript/' + host_platform,
-# )
+if host_platform.startswith('linux')
+    lib_pythonscript_rpath = '$ORIGIN/lib'
+elif host_platform.startswith('macos')
+    lib_pythonscript_rpath = '@loader_path/lib'
+else
+    lib_pythonscript_rpath = ''
+endif
+
+
+lib_pythonscript = shared_library(
+    'pythonscript',
+    ['pythonscript.c'],
+    dependencies: [dep_godot, dep_python, dep__pythonscript],
+    install_rpath: lib_pythonscript_rpath,  # To find libpython
+    install: true,
+    install_dir: 'addons/pythonscript/' + host_platform,
+)

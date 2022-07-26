@@ -49,9 +49,9 @@ def fetch_godot_binary(build_dir: Path, version: GodotBinaryVersion) -> Path:
         "windows-x64": "win64",
         "windows-amd64": "win64",
         "windows-x86": "win32",
-        "osx-x86_64": "osx.universal",
-        "osx-x64": "osx.universal",
-        "osx-amd64": "osx.universal",
+        "darwin-x86_64": "osx.universal",
+        "darwin-x64": "osx.universal",
+        "darwin-amd64": "osx.universal",
     }.get(build_platform)
     if not godot_build_platform:
         raise RuntimeError(
