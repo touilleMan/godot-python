@@ -1,11 +1,13 @@
 /*
  * This file gets compiled as a shared library that act as the entry point
  * to the pythonscript plugin.
- * It should be loaded by Godot's GDNative system (see the `pythonscript.gdextension`
- * file in the example/test projects).
- * As part of the loading, Godot will call the `pythonscript_init`
- * function which will in turn initialize the CPython interpreter then register
- * Python as a new language using Godot's Pluginscript system.
+ * It should be loaded by Godot's GDExtension system (see the
+ * `pythonscript.gdextension` file in the example/test projects).
+ * As part of the loading, Godot will call the `pythonscript_init` function
+ * very early, which will in turn register an initialization callback to be
+ * called at the right time during Godot init. Once called, this callback
+ * will initialize CPython interpreter then register Python as a new language
+ * for Godot.
  */
 
 #define PY_SSIZE_T_CLEAN
