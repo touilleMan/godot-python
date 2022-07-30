@@ -24,8 +24,14 @@
 # define DLL_IMPORT
 #endif
 
-// TODO: Should be defined according to extension_api.json & target platform
-#define GD_STRING_SIZE 8
+// Just like any Godot builtin classes, GDString's size is defined in `extension_api.json`
+// and is platform-dependant (e.g. 4 bytes on float_32, 8 on double_64).
+// So in theory we should retreive the value from the json file, convert it into a C
+// header file and include it here.
+// However this is cumbersome and we only need this once before the Python interpreter
+// is initialized (after that we can use the Python binding), so instead we stick with
+// the biggest possible value and accept we will lose a couple of bytes on the stack ;)
+#define GD_STRING_MAX_SIZE 8
 
 // Nobody ain't no time to include stdbool.h !
 #define true 1
@@ -103,12 +109,12 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
         }
 
         // 1) Retrieve library path
-        char gd_library_path[GD_STRING_SIZE];
+        char gd_library_path[GD_STRING_MAX_SIZE];
         gdstring_constructor(gd_library_path, NULL);
         gdapi->get_library_path(gdextension, gd_library_path);
 
         // 2) Retrieve base dir from library path
-        char gd_basedir_path[GD_STRING_SIZE];
+        char gd_basedir_path[GD_STRING_MAX_SIZE];
         gdstring_constructor(gd_basedir_path, NULL);
         gdstring_get_base_dir(gd_library_path, NULL, gd_basedir_path, 0);
         gdstring_destructor(gd_library_path);
