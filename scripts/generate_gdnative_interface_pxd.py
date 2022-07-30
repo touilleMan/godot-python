@@ -2,7 +2,6 @@
 
 import argparse
 from pathlib import Path
-from autopxd import translate
 import re
 from typing import List, Dict
 import argparse
@@ -15,7 +14,7 @@ from autopxd import AutoPxd
 # around them given they are needed for pycparser, but should endup in the pxd
 # as `from libc.stdint cimport uint8_t` instead of being inside the `cdef extern`
 # describing the whole header stuff.
-STDLIB_INCLUDES = {
+STDLIB_INCLUDES: Dict[str, List[str]] = {
     "stdbool.h": ["bool"],
     "stdint.h": [
         "uint8_t",
@@ -345,7 +344,7 @@ if __name__ == "__main__":
 
     # Step 2: C parsing
     parser = CParser()
-    ast = parser.parse(preprocessed)
+    ast = parser.parse(preprocessed)  # type: ignore
 
     # Step 3: .pxd generation
     p = PatchedAutoPxd(hdrname="godot/gdnative_interface.h")
