@@ -22,12 +22,21 @@ pxds_godot = [
 ##############################################################################
 
 
-foreach src: ['__init__.py', '_version.py']
+foreach src: ['__init__.py']
     install_data(
         src,
         install_dir: join_paths(python_site_packages_install_path, 'godot'),
     )
 endforeach
+
+
+configure_file(
+    input : '_version.in.py',
+    output : '_version.py',
+    configuration : {'version': meson.project_version()},
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot'),
+)
 
 
 custom_target(
