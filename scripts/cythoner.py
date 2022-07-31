@@ -8,58 +8,65 @@ import shutil
 
 USAGE = "usage: cythoner OUTPUT.c PRIVATE_DIR INPUT.pyx [INPUT.pxd ...]"
 SRC_DIR = Path(__file__, "../../src/").resolve()
-BUILD_DIR = Path(os.getcwd()).resolve()
+BUILD_SRC_DIR = Path(os.getcwd()).resolve() / "src"
 
 
 if len(sys.argv) < 3:
     raise SystemExit(USAGE)
 
 
-c_output, private_dir, pyx_src, *import_srcs = [Path(x).resolve() for x in sys.argv[1:]]
-if not pyx_src.name.endswith(".pyx") or any(not src.name.endswith(".pxd") for src in import_srcs):
+c_output, private_dir, pyx_src, *pxd_srcs = [Path(x).resolve() for x in sys.argv[1:]]
+if not pyx_src.name.endswith(".pyx") or any(not src.name.endswith(".pxd") for src in pxd_srcs):
     raise SystemError(USAGE)
 
 
+def relative_path(path: Path) -> Path:
+    try:
+        return path.relative_to(SRC_DIR)
+    except ValueError:
+        try:
+            return path.relative_to(BUILD_SRC_DIR)
+        except ValueError:
+            raise SystemExit(f"Input {path} is not relative to src or build dirs")
+
+
 # Generate the import dir from the inputs (except the actual .pyx)
-for src in import_srcs:
-    src = src.resolve()
-    if "#" in src.name:
+for pxd_src in pxd_srcs:
+    pxd_src = pxd_src.resolve()
+    if "#" in pxd_src.name:
         # Source is a generated pxd (see `src/meson.build`), it actual path
         # is encoded in it name
-        *parents, name = src.name.split("#")
-        parent_dir = private_dir / Path(*parents)
-        tgt = parent_dir / name
+        *pxd_parents, pxd_name = pxd_src.name.split("#")
+        pxd_parent_dir = private_dir / Path(*pxd_parents)
+        pxd_tgt = pxd_parent_dir / pxd_name
 
     else:
         # Standard case: source is within src or build dir
-        try:
-            relative_path = src.relative_to(SRC_DIR)
-        except ValueError:
-            try:
-                relative_path = src.relative_to(BUILD_DIR)
-            except ValueError:
-                raise SystemExit(f"Input {src} is not relative to src or build dirs")
+        pxd_src_relative = relative_path(pxd_src)
+        pxd_parent_dir = private_dir / pxd_src_relative.parent
+        pxd_tgt = pxd_parent_dir / pxd_src.name
 
-        parent_dir = private_dir / relative_path.parent
-        tgt = parent_dir / src.name
-
-    parent_dir.mkdir(exist_ok=True, parents=True)
+    pxd_parent_dir.mkdir(exist_ok=True, parents=True)
     # `__init__.py` are required so Cython consider the directory as a package,
     # however it content is never read so an empty file is good enough
-    (parent_dir / "__init__.py").touch()
-    shutil.copyfile(src, tgt)
+    (pxd_parent_dir / "__init__.py").touch()
+    shutil.copyfile(pxd_src, pxd_tgt)
 
 
-# TODO: Copying pyx file into the directory containing the import stuff
-# should not be needed, however this doesn't work on Windows...
-shutil.copyfile(pyx_src, private_dir / pyx_src.name)
-pyx_src = private_dir / pyx_src.name
+# We need to copy the pyx file into the right directory to respect the package
+# it belongs to
+pyx_src_relative = relative_path(pyx_src)
+pyx_parent_dir = private_dir / pyx_src_relative.parent
+pyx_tgt = pyx_parent_dir / pyx_src.name
+shutil.copyfile(pyx_src, pyx_tgt)
+
+
 sys.argv = [
     "cython",
     "-3",
     "--fast-fail",
     f"--include-dir={private_dir}",
-    str(pyx_src),
+    str(pyx_tgt),
     f"--output-file={c_output}",
 ]
 
