@@ -77,7 +77,15 @@ def fetch_godot_binary(build_dir: Path, version: GodotBinaryVersion) -> Path:
     if not binary_path.exists():
         print(f"Downloading {url}...")
         with urlopen(url) as rep:
-            zipfile = ZipFile(BytesIO(rep.read()))
+            length = rep.headers.get("Content-Length")
+            # Poor's man progress bar
+            buff = BytesIO()
+            while True:
+                if buff.write(rep.read(2**20)) == 0:
+                    break
+                print(f"{buff.tell()}/{length}", flush=True, end="\r")
+        print("", flush=True)
+        zipfile = ZipFile(buff)
         if zippath not in zipfile.namelist():
             raise RuntimeError(f"Archive doesn't contain {zippath}")
 
