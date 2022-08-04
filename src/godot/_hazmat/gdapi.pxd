@@ -2,9 +2,10 @@ from godot._hazmat.gdnative_interface cimport GDNativeInterface
 
 
 cdef extern from * nogil:
-    # Global variables defined in _pythonscript.pyx
-    # Given _pythonscript.pyx is always the very first module loaded, we are
-    # guanteed `pythonscript_gdapi` symbol is always resolved
+    # Global variables defined in `pythonscript.c`
+    # Given `libpythonscript.so` is responsible for initializing the Python
+    # interpreter, we are guanteed `pythonscript_gdapi` symbol is always
+    # resolved and set to a non-null value \o/
     """
     #include <godot/gdnative_interface.h>
     #ifdef _WIN32

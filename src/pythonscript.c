@@ -55,19 +55,19 @@ typedef enum {
 static PythonscriptState state = STALLED;
 static PyThreadState *gilstate = NULL;
 static GDNativeExtensionClassLibraryPtr gdextension = NULL;
-static const GDNativeInterface *gdapi;
-
+// Global variable used by Cython modules to access the Godot API
+DLL_EXPORT const GDNativeInterface *pythonscript_gdapi;
 
 #define GD_PRINT(msg) { \
     printf("%s\n", msg); \
 }
 
 #define GD_PRINT_ERROR(msg) { \
-    gdapi->print_error(msg, __func__, __FILE__, __LINE__); \
+    pythonscript_gdapi->print_error(msg, __func__, __FILE__, __LINE__); \
 }
 
 #define GD_PRINT_WARNING(msg) { \
-    gdapi->print_warning(msg, __func__, __FILE__, __LINE__); \
+    pythonscript_gdapi->print_warning(msg, __func__, __FILE__, __LINE__); \
 }
 
 static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
@@ -92,17 +92,17 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
     // Set PYTHONHOME from .so path
     {
         // 0) Retrieve Godot methods
-        GDNativePtrConstructor gdstring_constructor = gdapi->variant_get_ptr_constructor(GDNATIVE_VARIANT_TYPE_STRING, 0);
+        GDNativePtrConstructor gdstring_constructor = pythonscript_gdapi->variant_get_ptr_constructor(GDNATIVE_VARIANT_TYPE_STRING, 0);
         if (gdstring_constructor == NULL) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String` constructor)");
             goto error;
         }
-        GDNativePtrDestructor gdstring_destructor = gdapi->variant_get_ptr_destructor(GDNATIVE_VARIANT_TYPE_STRING);
+        GDNativePtrDestructor gdstring_destructor = pythonscript_gdapi->variant_get_ptr_destructor(GDNATIVE_VARIANT_TYPE_STRING);
         if (gdstring_destructor == NULL) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String` destructor)");
             goto error;
         }
-        GDNativePtrBuiltInMethod gdstring_get_base_dir = gdapi->variant_get_ptr_builtin_method(GDNATIVE_VARIANT_TYPE_STRING, "get_base_dir", 3942272618);
+        GDNativePtrBuiltInMethod gdstring_get_base_dir = pythonscript_gdapi->variant_get_ptr_builtin_method(GDNATIVE_VARIANT_TYPE_STRING, "get_base_dir", 3942272618);
         if (gdstring_get_base_dir == NULL) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String.get_base_dir` method)");
             goto error;
@@ -111,7 +111,7 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
         // 1) Retrieve library path
         char gd_library_path[GD_STRING_MAX_SIZE];
         gdstring_constructor(gd_library_path, NULL);
-        gdapi->get_library_path(gdextension, gd_library_path);
+        pythonscript_gdapi->get_library_path(gdextension, gd_library_path);
 
         // 2) Retrieve base dir from library path
         char gd_basedir_path[GD_STRING_MAX_SIZE];
@@ -120,18 +120,18 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
         gdstring_destructor(gd_library_path);
 
         // 3) Convert base dir into regular c string
-        GDNativeInt basedir_path_size = gdapi->string_to_utf8_chars(gd_basedir_path, NULL, 0);
+        GDNativeInt basedir_path_size = pythonscript_gdapi->string_to_utf8_chars(gd_basedir_path, NULL, 0);
         // Why not using variable length array here ? Glad you asked Timmy !
         // VLA are part of the C99 standard, but MSVC compiler is missing it :(
         // Because VLA were removed from the C11 standard, and the standards committee
         // decided it was no good, probably because you can't handle allocation errors
         // like we're about to do two lines down.
-        char *basedir_path = gdapi->mem_alloc(basedir_path_size + 1);
+        char *basedir_path = pythonscript_gdapi->mem_alloc(basedir_path_size + 1);
         if (basedir_path == NULL) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (memory allocation failed)");
             goto error;
         }
-        gdapi->string_to_utf8_chars(gd_basedir_path, basedir_path, basedir_path_size);
+        pythonscript_gdapi->string_to_utf8_chars(gd_basedir_path, basedir_path, basedir_path_size);
         basedir_path[basedir_path_size] = '\0';
         gdstring_destructor(gd_basedir_path);
 
@@ -141,7 +141,7 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
             &config.home,
             basedir_path
         );
-        gdapi->mem_free(basedir_path);
+        pythonscript_gdapi->mem_free(basedir_path);
         if (PyStatus_Exception(status)) {
             GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
             GD_PRINT_ERROR(status.err_msg);
@@ -207,13 +207,12 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
 
     state = PYTHONSCRIPT_MODULE_INIT;
 
-    // TODO: Dunno why, but print from Python code doesn't do anything (Godot patching stdout ?)
     int ret = import__pythonscript();
     if (ret != 0){
         GD_PRINT_ERROR("Pythonscript: Cannot load Python module `_pythonscript`");
         goto error;
     }
-    _pythonscript_set_gdapi(gdapi);  // Must be right after `import__pythonscript`
+    // _pythonscript_set_gdapi(gdapi);  // Must be right after `import__pythonscript`
     _pythonscript_initialize();
 
     state = READY;
@@ -283,7 +282,9 @@ DLL_EXPORT GDNativeBool pythonscript_init(
         printf("Pythonscript: Invalid init parameters provided by Godot (this should never happen !)\n");
         goto error;
     }
-    gdapi = p_interface;
+    // `pythonscript_gdapi` must be set as early as possible given it is never null-pointer
+    // checked, especially in the Cython modules
+    pythonscript_gdapi = p_interface;
     gdextension = p_library;
 
     // Check compatibility between the Godot version that has been used for building

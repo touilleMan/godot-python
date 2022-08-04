@@ -7,17 +7,6 @@ subdir('_hazmat')
 
 
 ##############################################################################
-#                                  Config                                    #
-##############################################################################
-
-
-pxds_godot = [
-    pxds_godot_hazmat,
-    pxd_godot__builtins,  # Generated in `src/meson.build`
-]
-
-
-##############################################################################
 #                           Small fries to install                           #
 ##############################################################################
 
@@ -64,10 +53,10 @@ custom_target(
 
 # _builtins.so
 # └─ _builtins.c
-#     ├─ gdnative_interface.pxd
-#     │  └─ ...
-#     └─ _builtins.pyx
-#         └─ extension_api.json
+#    ├─ gdnative_interface.pxd
+#    │  └─ ...
+#    └─ _builtins.pyx
+#       └─ extension_api.json
 
 
 pyx_builtins = custom_target(
@@ -96,7 +85,7 @@ endif
 shared_library(
     '_builtins',
     c_builtins,
-    dependencies : [dep_godot, dep_python, dep__pythonscript],
+    dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: _builtins_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,

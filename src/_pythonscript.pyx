@@ -30,16 +30,6 @@ from godot._hazmat.gdnative_interface cimport (
 )
 
 
-# Global pointer on Godot API used by all Cython modules
-# This is configured by `pythonscript.c` before any Python code is actually
-# called, hence pythonscript_gdapi is guarantee to be valid from Cython point
-# of view
-cdef public const GDNativeInterface *pythonscript_gdapi = NULL  # Declared as `public` so it symbol is not mangled
-cdef api _pythonscript_set_gdapi(const GDNativeInterface *gdapi):
-    global pythonscript_gdapi
-    pythonscript_gdapi = gdapi
-
-
 # Global reference on the godot api, this is guaranteed to be defined before
 # Python is initialized.
 # This reference is used by all the Cython modules (hence why `_pythonscript`
