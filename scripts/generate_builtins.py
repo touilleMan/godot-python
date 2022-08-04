@@ -62,11 +62,42 @@ PYTHON_KEYWORDS = {
 }
 
 
+GD_SCALAR_TYPES = {"Nil", "bool", "int", "float"}
+
+
 def correct_name(name: str) -> str:
     if name in PYTHON_KEYWORDS:
         return f"{name}_"
     else:
         return name
+
+
+def correct_type_name(type_name: str) -> str:
+    assert type_name != "Nil"  # Sanity check, Nil should be checked earlier !
+    if type_name in GD_SCALAR_TYPES:
+        # By chance Godot's scalar types have the same name than Python's ones
+        return type_name
+    elif type_name == "Object":
+        # `Object` is too similar than Python's `object`
+        return "GDObject"
+    elif type_name == "String":
+        # `String` is too similar than Python's `str`
+        return "GDString"
+    elif type_name == "Variant":
+        return "GDVariant"
+    else:
+        return type_name
+
+
+def correct_default_value(val: str) -> str:
+    if val == "true":
+        return "True"
+    elif val == "false":
+        return "False"
+    elif val == "null":
+        return "None"
+    else:
+        return val
 
 
 # `extension_api.json` is pretty big, hence it's much easier to have it
@@ -122,20 +153,22 @@ BUILTINS_NAMES = {
 
 
 @dataclass
-class BuiltinType:
+class GDType:
     name: str
     original_name: str
     cython_name: str
     godot_name: str
+    is_builtin: bool
 
     @classmethod
-    def parse(cls, name: str) -> "BuiltinType":
+    def parse(cls, name: str) -> "GDType":
         godot_name, cython_name = BUILTINS_NAMES.get(name, (name, name))
         return cls(
-            name=name,
+            name=correct_type_name(name),
             original_name=name,
             cython_name=cython_name,
             godot_name=godot_name,
+            is_builtin=name not in ("Object", "Variant"),
         )
 
 
@@ -143,7 +176,7 @@ class BuiltinType:
 class FnArgument:
     name: str
     original_name: str
-    type: BuiltinType
+    type: GDType
     default_value: Optional[str]
 
     @classmethod
@@ -154,8 +187,10 @@ class FnArgument:
         return cls(
             name=correct_name(item["name"]),
             original_name=item["original_name"],
-            type=BuiltinType.parse(item["type"]),
-            default_value=item["default_value"],
+            type=GDType.parse(item["type"]),
+            default_value=correct_default_value(item["default_value"])
+            if item["default_value"]
+            else None,
         )
 
 
@@ -177,8 +212,8 @@ class BuiltinConstructorSpec:
 @dataclass
 class BuiltinOperatorSpec:
     name: str
-    right_type: Optional[BuiltinType]
-    return_type: BuiltinType
+    right_type: Optional[GDType]
+    return_type: GDType
 
     @classmethod
     def parse(cls, item: dict) -> "BuiltinOperatorSpec":
@@ -186,8 +221,12 @@ class BuiltinOperatorSpec:
         assert item.keys() == cls.__dataclass_fields__.keys()
         return cls(
             name=item["name"],
-            right_type=BuiltinType.parse(item["right_type"]),
-            return_type=BuiltinType.parse(item["return_type"]),
+            # `right_type` is kind of a special case: most of the time `Nil/None` is
+            # used to represent the absence of a value (typically in a return type),
+            # but here we want to compare a builtin value with the constant representing
+            # emptiness.
+            right_type=GDType.parse(item["right_type"]) if item["right_type"] != "Nil" else None,
+            return_type=GDType.parse(item["return_type"]),
         )
 
 
@@ -196,7 +235,7 @@ class BuiltinMemberSpec:
     name: str
     original_name: str
     offset: int
-    type: BuiltinType
+    type: GDType
 
     @classmethod
     def parse(cls, item: dict) -> "BuiltinMemberSpec":
@@ -207,7 +246,7 @@ class BuiltinMemberSpec:
             name=correct_name(item["name"]),
             original_name=item["original_name"],
             offset=item["offset"],
-            type=BuiltinType.parse(item["type"]),
+            type=GDType.parse(item["type"]),
         )
 
 
@@ -215,7 +254,7 @@ class BuiltinMemberSpec:
 class BuiltinConstantSpec:
     name: str
     original_name: str
-    type: BuiltinType
+    type: GDType
     value: str
 
     @classmethod
@@ -225,7 +264,7 @@ class BuiltinConstantSpec:
         return cls(
             name=correct_name(item["name"]),
             original_name=item["original_name"],
-            type=BuiltinType.parse(item["type"]),
+            type=GDType.parse(item["type"]),
             value=item["value"],
         )
 
@@ -234,7 +273,7 @@ class BuiltinConstantSpec:
 class BuiltinMethodSpec:
     name: str
     original_name: str
-    return_type: BuiltinType
+    return_type: Optional[GDType]
     is_vararg: bool
     is_const: bool
     is_static: bool
@@ -245,12 +284,12 @@ class BuiltinMethodSpec:
     def parse(cls, item: dict) -> "BuiltinMethodSpec":
         item.setdefault("original_name", item["name"])
         item.setdefault("arguments", [])
-        item.setdefault("return_type", "Nil")
+        item.setdefault("return_type", None)
         assert item.keys() == cls.__dataclass_fields__.keys()
         return cls(
             name=correct_name(item["name"]),
             original_name=item["original_name"],
-            return_type=BuiltinType.parse(item["return_type"]),
+            return_type=GDType.parse(item["return_type"]) if item["return_type"] else None,
             is_vararg=item["is_vararg"],
             is_const=item["is_const"],
             is_static=item["is_static"],
@@ -321,15 +360,9 @@ class BuiltinSpec:
             snake += c
         item["variant_type_name"] = f"GDNATIVE_VARIANT_TYPE_{snake.upper()}"
 
-        # Avoid overwritting default Python types
-        if item["name"] in ("bool", "int", "float", "String"):
-            patched_name = "GD" + item["name"][0].upper() + item["name"][1:]
-        else:
-            patched_name = item["name"]
-
         return cls(
             original_name=item["original_name"],
-            name=patched_name,
+            name=correct_type_name(item["name"]),
             size=item["size"],
             indexing_return_type=item["indexing_return_type"],
             is_keyed=item["is_keyed"],
@@ -363,6 +396,13 @@ def parse_extension_api_json(path: Path) -> List[BuiltinSpec]:
 
     specs = []
     for item in api_json["builtin_classes"]:
+        # Ignore `Nil` as it is a special case (only builtin which is an empty struct)
+        # and totally replaced by `None` in our binding
+        # Ignore the scalar types as they are special case and we don't need to expose
+        # them (user will use the regular `None/float/int/bool` from Python instead)
+        if item["name"] in GD_SCALAR_TYPES:
+            continue
+
         spec = BuiltinSpec.parse(item)
         # Special case for size
         spec.size = builtin_class_sizes.get(spec.original_name, None)
@@ -372,6 +412,7 @@ def parse_extension_api_json(path: Path) -> List[BuiltinSpec]:
                 candidate for candidate in spec.members if candidate.name == member["member"]
             )
             member_spec.offset = member["offset"]
+
         specs.append(spec)
 
     return specs
