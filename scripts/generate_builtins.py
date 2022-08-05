@@ -69,6 +69,10 @@ def correct_name(name: str) -> str:
         return name
 
 
+def patch_name(name: str) -> str:
+    return "GD" + name[0].upper() + name[1:]
+
+
 # `extension_api.json` is pretty big, hence it's much easier to have it
 # format reproduced here as typed classes, especially given we want to cook
 # it a bit before using it in the templates
@@ -131,8 +135,13 @@ class BuiltinType:
     @classmethod
     def parse(cls, name: str) -> "BuiltinType":
         godot_name, cython_name = BUILTINS_NAMES.get(name, (name, name))
+        # Avoid overwritting default Python types
+        if name in ("bool", "int", "float", "String"):
+            patched_name = patch_name(name=name)
+        else:
+            patched_name = name
         return cls(
-            name=name,
+            name=patched_name,
             original_name=name,
             cython_name=cython_name,
             godot_name=godot_name,
@@ -323,7 +332,7 @@ class BuiltinSpec:
 
         # Avoid overwritting default Python types
         if item["name"] in ("bool", "int", "float", "String"):
-            patched_name = "GD" + item["name"][0].upper() + item["name"][1:]
+            patched_name = patch_name(name=item["name"])
         else:
             patched_name = item["name"]
 
