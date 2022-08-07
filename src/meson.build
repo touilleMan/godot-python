@@ -1,4 +1,44 @@
 ##############################################################################
+#                       Code generation base config                          #
+##############################################################################
+
+
+# Input missing the template file
+generate_tmpl_base_input = [
+    join_paths(scripts_dir, 'generate_tmpl.py'),  # Must stay first !
+    godot_extension_api_json,  # Must stay second !
+    join_paths(scripts_dir, 'extension_api_parser/api.py'),
+    join_paths(scripts_dir, 'extension_api_parser/builtins.py'),
+    join_paths(scripts_dir, 'extension_api_parser/classes.py'),
+    join_paths(scripts_dir, 'extension_api_parser/__init__.py'),
+    join_paths(scripts_dir, 'extension_api_parser/__main__.py'),
+    join_paths(scripts_dir, 'extension_api_parser/type.py'),
+    join_paths(scripts_dir, 'extension_api_parser/utils.py'),
+]
+
+
+if host_machine.cpu_family() == 'x86_64'
+    generate_tmpl_build_config = 'double_64'
+elif host_machine.cpu_family() == 'x86'
+    generate_tmpl_build_config = 'double_32'
+else
+    error('Unsupported CPU familly' + host_machine.cpu_family())
+endif
+
+
+generate_tmpl_cmd = [
+    python,
+    '@INPUT0@',  # generate_tmpl.py
+    '--input',
+    '@INPUT1@',  # extension_api.json
+    '--build-config',
+    generate_tmpl_build_config,
+    '--output',
+    '@OUTPUT0@',
+]
+
+
+##############################################################################
 #                              .pxd generation                               #
 ##############################################################################
 
@@ -38,60 +78,32 @@ pxd_godot__hazmat_gdnative_interface = custom_target(
 # └─ extension_api.json
 
 
-if host_machine.cpu_family() == 'x86_64'
-    builtins_build_config = 'double_64'
-elif host_machine.cpu_family() == 'x86'
-    builtins_build_config = 'double_32'
-else
-    error('Unsupported CPU familly' + host_machine.cpu_family())
-endif
-
-
-generate_builtins_input = [
-    join_paths(scripts_dir, 'generate_builtins.py'),  # Must stay first !
-    godot_extension_api_json,  # Must stay second !
-    files(
-        'godot/_builtins.tmpl.pyx',
-        'godot/_builtins_pyx/class.tmpl.pxi',
-        'godot/_builtins_pyx/constructor.tmpl.pxi',
-        'godot/_builtins_pyx/gdapi.tmpl.pxi',
-
-        'godot/_builtins.tmpl.pxd',
-
-        'godot/_builtins.tmpl.pyi',
-    ),
-]
-
-
-generate_builtins_command = [
-    python,
-    '@INPUT0@',  # generate_builtins.py
-    '--input',
-    '@INPUT1@',  # extension_api.json
-    '--build-config',
-    builtins_build_config,
-    '--output',
-    '@OUTPUT0@',
-]
+pxd_godot__builtins = custom_target(
+    output: 'godot#_builtins.pxd',
+    input: [
+        generate_tmpl_base_input,
+        files('godot/_builtins.tmpl.pxd'),
+    ],
+    command: generate_tmpl_cmd,
+)
 
 
 # Groups of pxds to simplify includes in pyx compilation
 
 
-pxd_godot__builtins = custom_target(
-    output: 'godot#_builtins.pxd',
-    input: generate_builtins_input,
-    command: generate_builtins_command,
-)
-
-
 pxds_godot__hazmat = [
     pxd_godot__hazmat_gdnative_interface,
-    files('godot/_hazmat/gdapi.pxd')
+    files(
+        'godot/_hazmat/__init__.pxd',
+        'godot/_hazmat/gdapi.pxd',
+    ),
 ]
 
 
 pxds_godot = [
+    files(
+        'godot/__init__.pxd',
+    ),
     pxds_godot__hazmat,
     pxd_godot__builtins,
 ]

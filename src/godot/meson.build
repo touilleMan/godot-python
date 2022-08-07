@@ -11,7 +11,7 @@ subdir('_hazmat')
 ##############################################################################
 
 
-foreach src: ['__init__.py']
+foreach src: ['__init__.py', '__init__.pxd', 'py.typed']
     install_data(
         src,
         install_dir: join_paths(python_site_packages_install_path, 'godot'),
@@ -39,8 +39,11 @@ custom_target(
 
 custom_target(
     output: '_builtins.pyi',
-    input: generate_builtins_input,
-    command: generate_builtins_command,
+    input: [
+        generate_tmpl_base_input,
+        files('_builtins.tmpl.pyi'),
+    ],
+    command: generate_tmpl_cmd,
     install: true,
     install_dir: join_paths(python_site_packages_install_path, 'godot'),
 )
@@ -58,11 +61,18 @@ custom_target(
 #    └─ _builtins.pyx
 #       └─ extension_api.json
 
-
 pyx_builtins = custom_target(
     output: '_builtins.pyx',
-    input: generate_builtins_input,
-    command: generate_builtins_command,
+    input: [
+        generate_tmpl_base_input,
+        files(
+            '_builtins.tmpl.pyx',
+            '_builtins_pyx/class.tmpl.pxi',
+            '_builtins_pyx/constructor.tmpl.pxi',
+            '_builtins_pyx/gdapi.tmpl.pxi',
+        ),
+    ],
+    command: generate_tmpl_cmd,
 )
 
 

@@ -15,7 +15,7 @@
 #     godot_pluginscript_language_data,
 # )
 # from godot._hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_verbose
-# from godot.builtins cimport GDString
+from godot._builtins cimport GDString, Vector2
 
 # def _setup_config_entry(name, default_value):
 #     gdname = GDString(name)
@@ -43,6 +43,10 @@ cdef api void _pythonscript_initialize() with gil:
     cooked_sys_version = '.'.join(map(str, sys.version_info))
     print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})")
     print(f"PYTHONPATH: {sys.path}")
+    v = Vector2(3., 2.)
+    v2 = Vector2(v)
+    print("===========>", v.x, v.y)
+    print("+++++++++++>", v2.x, v2.y)
 
 
     # # OS and ProjectSettings are singletons exposed as global python objects,

@@ -1,25 +1,17 @@
+{%- from '_builtins_pyx/constructor.tmpl.pxi' import render_constructor -%}
+{%- from '_builtins_pyx/gdapi.tmpl.pxi' import render_gdapi -%}
+
 {% macro render_spec(spec) -%}
 
-{% for c in spec.constructors %}
-cdef GDNativePtrConstructor __{{ spec.name }}_constructor_{{ c.index }} = gdapi.variant_get_ptr_constructor(
-    {{ spec.variant_type_name }}, {{ c.index }}
-)
-{% endfor %}
-{% if spec.has_destructor %}
-cdef GDNativePtrDestructor __{{ spec.name }}_destructor = gdapi.variant_get_ptr_destructor(
-    {{ spec.variant_type_name }}
-)
-{% endif %}
+{{ render_gdapi(spec) }}
 
+@cython.freelist(8)
 @cython.final
 cdef class {{ spec.name }}:
 {# TODO: I guess only Nil has no size, so remove it and only use None ? #}
 {% if spec.size %}
-    cdef char _gd_data[{{ spec.size }}]
-
     # Constructors
-    def __init__({{ spec.name }} self):
-        __{{ spec.name }}_constructor_0(self._gd_data, NULL)
+    {{ render_constructor(spec) | indent }}
 
     @staticmethod
     cdef inline {{ spec.name }} new():
@@ -32,7 +24,7 @@ cdef class {{ spec.name }}:
 {% if spec.has_destructor %}
     # Destructor
     def __dealloc__({{ spec.name }} self):
-        # /!\ if `__init__` is skipped, `_gd_data` must be initialized by
+        # /!\ if `__cinit__` is skipped, `_gd_data` must be initialized by
         # hand otherwise we will get a segfault here
         __{{ spec.name }}_destructor(self._gd_data)
 {% else %}
@@ -49,12 +41,41 @@ cdef class {{ spec.name }}:
 
 {% endif %}
 {% for c in spec.constants %}
-    {{ c.name }} = {{ c.value }}
+    # {{ c.name }} = {{ c.value }}
+{% endfor %}
+
+{% if spec.members %}
+    # Members
+{% endif %}
+{% for m in spec.members %}
+    @property
+    def {{ m.name }}(self) -> {{ m.type.py_type }}:
+{%   if m.offset is not none %}
+{%     if m.type.is_scalar %}
+        return (<{{ m.type.c_type }}*>self._gd_data)[{{ m.offset }}]
+{#   TODO: ensure m.type doesn't need a destructor #}
+{%     else %}
+{#      TODO: Find a way to avoid this copy ? #}
+        cdef {{ m.type.py_type }} ret = {{ m.type.py_type }}.__new__()  # Skips __init__()
+        ret._gd_data = self._gd_data
+        return ret
+{%     endif %}
+    @{{ m.name }}.setter
+    def {{ m.name }}(self, {{ m.type.py_type }} value) -> None:
+{%     if m.type.is_scalar %}
+        (<{{ m.type.c_type }}*>self._gd_data)[{{ m.offset }}] = value
+{#   TODO: ensure m.type doesn't need a destructor #}
+{%     else %}
+        self._gd_data = value._gd_data
+{%     endif %}
+{%   else %}
+        # TODO: support properties !
+        raise NotImplementedError
+{%   endif %}
 {% endfor %}
 
 {% if spec.methods %}
     # Methods
-
 {% endif %}
 {% for m in spec.methods %}
     def {{ m.name }}(
@@ -75,7 +96,7 @@ cdef class {{ spec.name }}:
 {% if m.arguments | length == 0 %}
 # {%     if m.return_type %}
 #         # TODO
-#         # cdef {{ m.return_type.cython_name }} ret = {{ m.return_type.cython_name }}.__new__()
+#         # cdef {{ m.return_type.cy_type }} ret = {{ m.return_type.cy_type }}.__new__()
 # {%         set retval_as_arg = "NULL" %}
 # {%     else %}
 # {%         set retval_as_arg = "NULL" %}
