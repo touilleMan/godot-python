@@ -1,5 +1,5 @@
-{%- from '_builtins_pyx/constructor.tmpl.pxi' import render_constructor -%}
-{%- from '_builtins_pyx/gdapi.tmpl.pxi' import render_gdapi -%}
+{%- from '_builtins_pyx/constructor.j2' import render_constructor -%}
+{%- from '_builtins_pyx/gdapi.j2' import render_gdapi -%}
 
 {% macro render_spec(spec) -%}
 

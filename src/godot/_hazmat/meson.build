@@ -39,7 +39,7 @@ pxi_gdapi_ptrs = custom_target(
     input: [
         generate_tmpl_base_input,
         files(
-            'gdapi_ptrs.tmpl.pxi',
+            'gdapi_ptrs.pxi.j2',
         ),
         pxd_godot__hazmat_gdnative_interface,
     ],

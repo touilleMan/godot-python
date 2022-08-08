@@ -82,7 +82,7 @@ pxd_godot__builtins = custom_target(
     output: 'godot#_builtins.pxd',
     input: [
         generate_tmpl_base_input,
-        files('godot/_builtins.tmpl.pxd'),
+        files('godot/_builtins.pxd.j2'),
     ],
     command: generate_tmpl_cmd,
 )

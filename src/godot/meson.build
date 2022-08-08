@@ -41,7 +41,7 @@ custom_target(
     output: '_builtins.pyi',
     input: [
         generate_tmpl_base_input,
-        files('_builtins.tmpl.pyi'),
+        files('_builtins.pyi.j2'),
     ],
     command: generate_tmpl_cmd,
     install: true,
@@ -66,10 +66,10 @@ pyx_builtins = custom_target(
     input: [
         generate_tmpl_base_input,
         files(
-            '_builtins.tmpl.pyx',
-            '_builtins_pyx/class.tmpl.pxi',
-            '_builtins_pyx/constructor.tmpl.pxi',
-            '_builtins_pyx/gdapi.tmpl.pxi',
+            '_builtins.pyx.j2',
+            '_builtins_pyx/class.j2',
+            '_builtins_pyx/constructor.j2',
+            '_builtins_pyx/gdapi.j2',
         ),
     ],
     command: generate_tmpl_cmd,
