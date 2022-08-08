@@ -6,7 +6,7 @@ from pathlib import Path
 import shutil
 
 
-USAGE = "usage: cythoner OUTPUT.c PRIVATE_DIR INPUT.pyx [INPUT.pxd ...]"
+USAGE = "usage: cythoner OUTPUT.c PRIVATE_DIR INPUT.pyx [INPUT.pxd, INPUT.pxi, ...]"
 SRC_DIR = Path(__file__, "../../src/").resolve()
 BUILD_SRC_DIR = Path(os.getcwd()).resolve() / "src"
 
@@ -16,8 +16,11 @@ if len(sys.argv) < 3:
 
 
 c_output, private_dir, pyx_src, *pxd_srcs = [Path(x).resolve() for x in sys.argv[1:]]
-if not pyx_src.name.endswith(".pyx") or any(not src.name.endswith(".pxd") for src in pxd_srcs):
-    raise SystemError(USAGE)
+# `pxd_srcs` can also contains `.pxi` files given we handle them in a similar fashion
+if not pyx_src.name.endswith(".pyx") or any(
+    not src.name.endswith(".pxd") and not src.name.endswith(".pxi") for src in pxd_srcs
+):
+    raise SystemExit(USAGE)
 
 
 def relative_path(path: Path) -> Path:
@@ -47,9 +50,11 @@ for pxd_src in pxd_srcs:
         pxd_tgt = pxd_parent_dir / pxd_src.name
 
     pxd_parent_dir.mkdir(exist_ok=True, parents=True)
-    # `__init__.py` are required so Cython consider the directory as a package,
-    # however it content is never read so an empty file is good enough
-    (pxd_parent_dir / "__init__.py").touch()
+    while pxd_parent_dir != private_dir:
+        # `__init__.py` are required so Cython consider the directory as a package,
+        # however it content is never read so an empty file is good enough
+        (pxd_parent_dir / "__init__.py").touch()
+        pxd_parent_dir = pxd_parent_dir.parent
     shutil.copyfile(pxd_src, pxd_tgt)
 
 
