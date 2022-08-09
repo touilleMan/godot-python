@@ -43,9 +43,10 @@ cdef api void _pythonscript_initialize() with gil:
     cooked_sys_version = '.'.join(map(str, sys.version_info))
     print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})")
     print(f"PYTHONPATH: {sys.path}")
-    v = Vector2(3., 2.)
-    v2 = Vector2(v)
+    v = Vector2(66.8, 77.99)
+    v.x = 42
     print("===========>", v.x, v.y)
+    v2 = Vector2(v)
     print("+++++++++++>", v2.x, v2.y)
 
 

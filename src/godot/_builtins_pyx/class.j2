@@ -1,5 +1,5 @@
-{%- from '_builtins_pyx/constructor.j2' import render_constructor -%}
-{%- from '_builtins_pyx/gdapi.j2' import render_gdapi -%}
+{%- from '_builtins_pyx/constructor.j2' import render_constructor with context -%}
+{%- from '_builtins_pyx/gdapi.j2' import render_gdapi with context -%}
 
 {% macro render_spec(spec) -%}
 
@@ -52,7 +52,7 @@ cdef class {{ spec.name }}:
     def {{ m.name }}(self) -> {{ m.type.py_type }}:
 {%   if m.offset is not none %}
 {%     if m.type.is_scalar %}
-        return (<{{ m.type.c_type }}*>self._gd_data)[{{ m.offset }}]
+        return (<{{ m.type.c_type }}*>(&self._gd_data[{{ m.offset }}]))[0]
 {#   TODO: ensure m.type doesn't need a destructor #}
 {%     else %}
 {#      TODO: Find a way to avoid this copy ? #}
@@ -63,7 +63,7 @@ cdef class {{ spec.name }}:
     @{{ m.name }}.setter
     def {{ m.name }}(self, {{ m.type.py_type }} value) -> None:
 {%     if m.type.is_scalar %}
-        (<{{ m.type.c_type }}*>self._gd_data)[{{ m.offset }}] = value
+        (<{{ m.type.c_type }}*>(&self._gd_data[{{ m.offset }}]))[0] = value
 {#   TODO: ensure m.type doesn't need a destructor #}
 {%     else %}
         self._gd_data = value._gd_data

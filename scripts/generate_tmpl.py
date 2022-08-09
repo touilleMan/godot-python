@@ -74,15 +74,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--build-config",
         required=True,
-        type=BuildConfig,
-        choices=BuildConfig,
-        help=f"choices: {', '.join([x.value for x in BuildConfig])}",
+        choices=[x.value for x in BuildConfig],
         metavar="CONFIG",
     )
 
     args = parser.parse_args()
 
-    api = parse_extension_api_json(path=args.input, build_config=args.build_config)
+    api = parse_extension_api_json(path=args.input, build_config=BuildConfig(args.build_config))
 
     # We use # in the name to simulate folder hierarchy in the meson build
     *_, name = args.output.name.rsplit("#", 1)

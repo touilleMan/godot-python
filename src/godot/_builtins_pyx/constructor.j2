@@ -8,8 +8,8 @@
 
 def __cinit__({{ spec.name }} self, x=None, y=None):
     cdef GDNativeTypePtr args[2]
-    cdef float args_x
-    cdef float args_y
+    cdef {{ api.float_spec.cy_type }} args_x
+    cdef {{ api.float_spec.cy_type }} args_y
     if y is None:
         if x is None:
             __{{ spec.name }}_constructor_0(self._gd_data, NULL)

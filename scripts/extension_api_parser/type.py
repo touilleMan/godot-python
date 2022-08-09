@@ -18,13 +18,13 @@ if TYPE_CHECKING:
 class TypeSpec:
     # Type used within Godot `extension_api.json`
     gdapi_type: str
-    # Type used when calling C api functions
-    c_type: str
     # Type used for PEP 484 Python typing
     py_type: str
+    # Type used when calling C api functions
+    c_type: str
     # Type used in Cython, basically similar to c_type for scalars&enums
     # and to py_type for Godot objects&builtins
-    cy_type: str = None
+    cy_type: str
     # Type is a Godot object (i.e. defined in api.json)
     is_object: bool = False
     # Type is a Godot builtin (e.g. Vector2)
@@ -40,7 +40,6 @@ class TypeSpec:
     variant_type_name: str = "<n/a>"
 
     def __post_init__(self):
-        self.cy_type = self.cy_type or self.py_type
         if self.is_scalar:
             assert not self.is_object
             assert not self.is_builtin
@@ -59,19 +58,14 @@ class TypeSpec:
 
 
 TYPES_DB: Dict[str, TypeSpec] = {
-    "Variant": TypeSpec(gdapi_type="Variant", c_type="CVariant", py_type="GDAny", is_builtin=True),
+    "Variant": TypeSpec(
+        gdapi_type="Variant", c_type="CVariant", cy_type="object", py_type="GDAny", is_builtin=True
+    ),
     # Types marked as `meta` are used in the classes method args/return types
     "meta:int8": TypeSpec(
         gdapi_type="int8",
         c_type="int8_t",
-        py_type="int",
-        variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
-        is_scalar=True,
-        is_stack_only=True,
-    ),
-    "meta:int32": TypeSpec(
-        gdapi_type="int32",
-        c_type="int32_t",
+        cy_type="int8_t",
         py_type="int",
         variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
         is_scalar=True,
@@ -80,6 +74,16 @@ TYPES_DB: Dict[str, TypeSpec] = {
     "meta:int16": TypeSpec(
         gdapi_type="int16",
         c_type="int16_t",
+        cy_type="int16_t",
+        py_type="int",
+        variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
+        is_scalar=True,
+        is_stack_only=True,
+    ),
+    "meta:int32": TypeSpec(
+        gdapi_type="int32",
+        c_type="int32_t",
+        cy_type="int32_t",
         py_type="int",
         variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
         is_scalar=True,
@@ -88,6 +92,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
     "meta:int64": TypeSpec(
         gdapi_type="int64",
         c_type="int64_t",
+        cy_type="int64_t",
         py_type="int",
         variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
         is_scalar=True,
@@ -96,6 +101,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
     "meta:uint8": TypeSpec(
         gdapi_type="uint8",
         c_type="uint8_t",
+        cy_type="uint8_t",
         py_type="int",
         variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
         is_scalar=True,
@@ -104,6 +110,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
     "meta:uint16": TypeSpec(
         gdapi_type="uint16",
         c_type="uint16_t",
+        cy_type="uint16_t",
         py_type="int",
         variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
         is_scalar=True,
@@ -112,6 +119,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
     "meta:uint32": TypeSpec(
         gdapi_type="uint32",
         c_type="uint32_t",
+        cy_type="uint32_t",
         py_type="int",
         variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
         is_scalar=True,
@@ -120,6 +128,17 @@ TYPES_DB: Dict[str, TypeSpec] = {
     "meta:uint64": TypeSpec(
         gdapi_type="uint64",
         c_type="uint64_t",
+        cy_type="uint64_t",
+        py_type="int",
+        variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
+        is_scalar=True,
+        is_stack_only=True,
+    ),
+    # int is always 8bytes long
+    "int": TypeSpec(
+        gdapi_type="int",
+        c_type="uint64_t",
+        cy_type="uint64_t",
         py_type="int",
         variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
         is_scalar=True,
@@ -128,6 +147,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
     "meta:float": TypeSpec(
         gdapi_type="float",
         c_type="float",
+        cy_type="float",
         py_type="float",
         variant_type_name="GDNATIVE_VARIANT_TYPE_FLOAT",
         is_scalar=True,
@@ -136,6 +156,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
     "meta:double": TypeSpec(
         gdapi_type="double",
         c_type="double",
+        cy_type="double",
         py_type="float",
         variant_type_name="GDNATIVE_VARIANT_TYPE_FLOAT",
         is_scalar=True,
@@ -159,6 +180,7 @@ def register_builtins_in_types_db(builtins: Iterable["BuiltinSpec"]) -> None:
                 # Cython provide a `bint` type for boolean, however it is defined in C as
                 # a `int` (so 32bits), so I guess it won't work for Godot's 8bits bool
                 c_type=f"uint{spec.size*8}_t",
+                cy_type=f"uint{spec.size*8}_t",
                 is_stack_only=True,
                 is_scalar=True,
                 variant_type_name=spec.variant_type_name,
@@ -194,6 +216,7 @@ def register_classes_in_types_db(classes: Iterable["ClassSpec"]) -> None:
             gdapi_type=spec.original_name,
             py_type=spec.name,
             c_type="Object",
+            cy_type="Object",
             variant_type_name="GDNATIVE_VARIANT_TYPE_OBJECT",
         )
         TYPES_DB[ts.gdapi_type] = ts
@@ -202,6 +225,7 @@ def register_classes_in_types_db(classes: Iterable["ClassSpec"]) -> None:
                 gdapi_type=f"enum::{spec.original_name}.{e.original_name}",
                 py_type=f"{spec.name}.{e.name}",
                 c_type="int",
+                cy_type=f"{spec.name}.{e.name}",
                 is_scalar=True,
                 is_stack_only=True,
                 is_enum=True,
@@ -216,6 +240,7 @@ def register_global_enums_in_types_db(enums: Iterable["GlobalEnumSpec"]) -> None
             gdapi_type=f"enum::{spec.original_name}",
             py_type=spec.name,
             c_type="int",
+            cy_type=spec.name,
             is_scalar=True,
             is_stack_only=True,
             is_enum=True,
@@ -230,7 +255,6 @@ class TypeInUse:
 
     def __repr__(self) -> str:
         try:
-            raise KeyError
             resolved = self.resolve()
         except KeyError:
             resolved = "<not resolved yet>"
@@ -242,7 +266,6 @@ class TypeInUse:
         try:
             return TYPES_DB[self.type_name]
         except KeyError:
-            breakpoint()
             return
 
     def __getattr__(self, name: str):

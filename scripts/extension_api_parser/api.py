@@ -7,7 +7,9 @@ from enum import Enum
 from .builtins import BuiltinSpec
 from .classes import ClassSpec
 from .type import (
+    TYPES_DB,
     TypeInUse,
+    TypeSpec,
     register_builtins_in_types_db,
     register_classes_in_types_db,
     register_global_enums_in_types_db,
@@ -118,6 +120,8 @@ class ExtensionApi:
     version_build: str  # e.g. "official"
     version_full_name: str  # e.g. "Godot Engine v4.0.alpha13.official"
 
+    variant_size: int
+
     classes: List[ClassSpec]
     builtins: List[BuiltinSpec]
     global_constants: List[GlobalConstantSpec]
@@ -125,6 +129,23 @@ class ExtensionApi:
     utility_functions: List[UtilityFunctionSpec]
     singletons: List[SingletonSpec]
     native_structures: List[NativeStructureSpec]
+
+    # Expose scalars
+
+    @property
+    def bool_spec(self):
+        return TYPES_DB["bool"]
+        # return next(builtin for builtin in self.builtins if builtin.name == "int")
+
+    @property
+    def int_spec(self):
+        return TYPES_DB["int"]
+        # return next(builtin for builtin in self.builtins if builtin.name == "int")
+
+    @property
+    def float_spec(self):
+        return TYPES_DB["float"]
+        # return next(builtin for builtin in self.builtins if builtin.name == "int")
 
 
 def merge_builtins_size_info(api_json: dict, build_config: BuildConfig) -> None:
@@ -153,6 +174,18 @@ def merge_builtins_size_info(api_json: dict, build_config: BuildConfig) -> None:
             for item_member in item["members"]:
                 if item_member["name"] == member["member"]:
                     item_member["offset"] = member["offset"]
+                    # Float builtin in extension_api.json is always 64bits long,
+                    # however builtins made of floating point number can be made of
+                    # 32bits (C float) or 64bits (C double)
+                    if item_member["type"] == "float":
+                        if build_config in (BuildConfig.FLOAT_32, BuildConfig.FLOAT_64):
+                            item_member["type"] = "meta:float"
+                        else:
+                            assert build_config in (BuildConfig.DOUBLE_32, BuildConfig.DOUBLE_64)
+                            item_member["type"] = "meta:double"
+                    elif item_member["type"] == "int":
+                        # Builtins containing int is always made of int32
+                        item_member["type"] = "meta:int32"
                     break
             else:
                 raise RuntimeError(f"Don't member {member} doesn't seem to be part of {name} !")
@@ -166,7 +199,7 @@ def parse_extension_api_json(path: Path, build_config: BuildConfig) -> Extension
     api_json = json.loads(path.read_text(encoding="utf8"))
     assert isinstance(api_json, dict)
 
-    variant_size = merge_builtins_size_info(api_json, build_config)
+    merge_builtins_size_info(api_json, build_config)
 
     api = ExtensionApi(
         version_major=api_json["header"]["version_major"],
@@ -175,6 +208,7 @@ def parse_extension_api_json(path: Path, build_config: BuildConfig) -> Extension
         version_status=api_json["header"]["version_status"],
         version_build=api_json["header"]["version_build"],
         version_full_name=api_json["header"]["version_full_name"],
+        variant_size=api_json["variant_size"],
         classes=[ClassSpec.parse(x) for x in api_json["classes"]],
         builtins=[BuiltinSpec.parse(x) for x in api_json["builtin_classes"]],
         global_constants=[GlobalConstantSpec.parse(x) for x in api_json["global_constants"]],

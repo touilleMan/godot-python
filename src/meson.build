@@ -17,22 +17,13 @@ generate_tmpl_base_input = [
 ]
 
 
-if host_machine.cpu_family() == 'x86_64'
-    generate_tmpl_build_config = 'double_64'
-elif host_machine.cpu_family() == 'x86'
-    generate_tmpl_build_config = 'double_32'
-else
-    error('Unsupported CPU familly' + host_machine.cpu_family())
-endif
-
-
 generate_tmpl_cmd = [
     python,
     '@INPUT0@',  # generate_tmpl.py
     '--input',
     '@INPUT1@',  # extension_api.json
     '--build-config',
-    generate_tmpl_build_config,
+    godot_build_config,
     '--output',
     '@OUTPUT0@',
 ]

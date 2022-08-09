@@ -26,6 +26,23 @@ if (
 endif
 
 
+# Godot can be build in two mode: real number in builtins (e.g. Vector2) as
+# 32bits (float, the default) or 64bits (double).
+# On top of that pointer size is of course different between 32 and 64 bits platforms.
+if get_option('real_is_double')
+    if host_machine.cpu_family() == 'x86_64'
+        godot_build_config = 'double_64'
+    else
+        godot_build_config = 'double_32'
+    endif
+else
+    if host_machine.cpu_family() == 'x86_64'
+        godot_build_config = 'float_64'
+    else
+        godot_build_config = 'float_32'
+    endif
+endif
+
 # We stick with Godot's platform naming
 # Note darwin may refere to iOS and macOS (because it's sooo clever to designate
 # two totally diferent things with the same name...) but we only support macOS
