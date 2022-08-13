@@ -101,7 +101,7 @@ class NativeStructureSpec:
     format: str
 
     @classmethod
-    def parse(cls, item: dict) -> "GlobalEnumSpec":
+    def parse(cls, item: dict) -> "NativeStructureSpec":
         item.setdefault("original_name", item["name"])
         assert_api_consistency(cls, item)
         return cls(

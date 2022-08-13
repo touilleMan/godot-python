@@ -193,7 +193,8 @@ def register_builtins_in_types_db(builtins: Iterable["BuiltinSpec"]) -> None:
             # `BuiltinOperatorSpec.right_type` and in `ValueInUse`.
             # So better skip it and use ad-hoc workaround instead.
             continue
-        elif spec.name == "bool":
+        assert spec.size is not None
+        if spec.name == "bool":
             ts = TypeSpec(
                 size=spec.size,
                 gdapi_type=spec.original_name,
@@ -282,7 +283,7 @@ class TypeInUse:
 
     def __repr__(self) -> str:
         try:
-            resolved = self.resolve()
+            resolved = TYPES_DB[self.type_name]
         except KeyError:
             resolved = "<not resolved yet>"
         return f"{self.__class__.__name__}({self.type_name}, {resolved})"
@@ -293,7 +294,7 @@ class TypeInUse:
         try:
             return TYPES_DB[self.type_name]
         except KeyError:
-            return
+            raise RuntimeError(f"Type {self.type_name} is not resolvable yet !")
 
     def __getattr__(self, name: str):
         try:

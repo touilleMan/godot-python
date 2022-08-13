@@ -154,7 +154,7 @@ class BuiltinOperatorSpec:
             # used to represent the absence of a value (typically in a return type),
             # but here we want to compare a builtin value with the constant representing
             # emptiness.
-            right_type=TypeInUse(item["right_type"]) if item["right_type"] is not None else None,
+            right_type=TypeInUse(item["right_type"]),
             return_type=TypeInUse(item["return_type"]),
         )
 
@@ -253,7 +253,7 @@ class BuiltinSpec:
     c_struct_name: str
     original_name: str
     is_scalar: bool
-    size: Optional[int]
+    size: int
     indexing_return_type: Optional[str]
     is_keyed: bool
     constructors: List[BuiltinConstructorSpec]
@@ -266,7 +266,7 @@ class BuiltinSpec:
     enums: List[BuiltinEnumSpec]
 
     @property
-    def c_struct_members(self) -> List[Tuple[str, TypeInUse]]:
+    def c_struct_members(self) -> List[BuiltinMemberSpec]:
         struct_members = [m for m in self.members if m.offset is not None]
         if struct_members:
             # Sanity check
