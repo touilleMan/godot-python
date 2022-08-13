@@ -9,7 +9,7 @@ from .classes import ClassSpec
 from .type import (
     TYPES_DB,
     TypeInUse,
-    TypeSpec,
+    register_variant_in_types_db,
     register_builtins_in_types_db,
     register_classes_in_types_db,
     register_global_enums_in_types_db,
@@ -221,6 +221,7 @@ def parse_extension_api_json(path: Path, build_config: BuildConfig) -> Extension
     # This is the kind-of ugly part where we register in a global dict the types
     # we've just parsed (so that they could be lazily retreived from all the
     # `TypeInUse` that reference them)
+    register_variant_in_types_db(api.variant_size)
     register_builtins_in_types_db(api.builtins)
     register_classes_in_types_db(api.classes)
     register_global_enums_in_types_db(api.global_enums)

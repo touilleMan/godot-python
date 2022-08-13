@@ -22,6 +22,12 @@ def make_jinja_env(import_dir: Path) -> Environment:
     return env
 
 
+def generate_gdapi_pxd(api: ExtensionApi) -> str:
+    env = make_jinja_env(BASEDIR / "../src/godot/_hazmat")
+    template = env.get_template("gdapi.pxd.j2")
+    return template.render(api=api)
+
+
 def generate_gdapi_ptrs(api: ExtensionApi) -> str:
     env = make_jinja_env(BASEDIR / "../src/godot/_hazmat")
     template = env.get_template("gdapi_ptrs.pxi.j2")
@@ -47,6 +53,7 @@ def generate_builtins_pyi(api: ExtensionApi) -> str:
 
 
 OUTPUT_TO_FN = {
+    "gdapi.pxd": generate_gdapi_pxd,
     "gdapi_ptrs.pxi": generate_gdapi_ptrs,
     "_builtins.pxd": generate_builtins_pxd,
     "_builtins.pyx": generate_builtins_pyx,

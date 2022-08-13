@@ -1,5 +1,5 @@
 import enum
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 from dataclasses import dataclass
 from string import ascii_uppercase
 
@@ -250,6 +250,7 @@ class BuiltinEnumSpec:
 @dataclass
 class BuiltinSpec:
     name: str
+    c_struct_name: str
     original_name: str
     is_scalar: bool
     size: Optional[int]
@@ -264,6 +265,17 @@ class BuiltinSpec:
     variant_type_name: str
     enums: List[BuiltinEnumSpec]
 
+    @property
+    def c_struct_members(self) -> List[Tuple[str, TypeInUse]]:
+        struct_members = [m for m in self.members if m.offset is not None]
+        if struct_members:
+            # Sanity check
+            assert sum(m.type.size for m in struct_members) == self.size
+            return struct_members
+        else:
+            # Opaque structure
+            return []
+
     @classmethod
     def parse(cls, item: dict) -> "BuiltinSpec":
         item["is_scalar"] = item["name"] in ("Nil", "bool", "int", "float")
@@ -276,6 +288,7 @@ class BuiltinSpec:
             snake += c
         item["variant_type_name"] = f"GDNATIVE_VARIANT_TYPE_{snake.upper()}"
         item.setdefault("original_name", item["name"])
+        item.setdefault("c_struct_name", f"C{item['original_name']}")
         item.setdefault("indexing_return_type", None)
         item.setdefault("methods", [])
         item.setdefault("members", [])
@@ -287,6 +300,7 @@ class BuiltinSpec:
         return cls(
             original_name=item["original_name"],
             name=correct_type_name(item["name"]),
+            c_struct_name=item["c_struct_name"],
             is_scalar=item["is_scalar"],
             size=item["size"],
             indexing_return_type=item["indexing_return_type"],

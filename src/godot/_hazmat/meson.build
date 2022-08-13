@@ -3,12 +3,21 @@
 ##############################################################################
 
 
-foreach src: ['__init__.py', 'gdapi.pxd']
+foreach src: ['__init__.py']
     install_data(
         src,
         install_dir: join_paths(python_site_packages_install_path, 'godot', '_hazmat'),
     )
 endforeach
+
+
+custom_target(
+    output: 'gdapi.pxd',
+    input: pxd_godot__hazmat_gdapi,
+    command: copy_command,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot', '_hazmat'),
+)
 
 
 custom_target(
@@ -50,10 +59,7 @@ pxi_gdapi_ptrs = custom_target(
 c_gdapi = custom_target(
     output : 'gdapi.c',
     input : [
-        files(
-            'gdapi.pyx',
-            'gdapi.pxd',
-        ),
+        files('gdapi.pyx'),
         pxi_gdapi_ptrs,
         pxds_godot__hazmat,
     ],

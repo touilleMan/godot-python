@@ -53,7 +53,6 @@ generate_tmpl_cmd = [
 # godot/_hazmat/gdnative_interface.pxd
 # └─ gdnative_interface.h
 
-
 # Convert the header file frome C to Cython
 pxd_godot__hazmat_gdnative_interface = custom_target(
     output: 'godot#_hazmat#gdnative_interface.pxd',
@@ -62,6 +61,19 @@ pxd_godot__hazmat_gdnative_interface = custom_target(
         join_paths(godot_headers_path, 'godot/gdnative_interface.h')
     ],
     command: [python, '@INPUT0@', '--input', '@INPUT1@', '--output', '@OUTPUT@'],
+)
+
+
+# godot/_hazmat/gdapi.pxd
+# └─ extension_api.json
+
+pxd_godot__hazmat_gdapi = custom_target(
+    output: 'godot#_hazmat#gdapi.pxd',
+    input: [
+        generate_tmpl_base_input,
+        files('godot/_hazmat/gdapi.pxd.j2'),
+    ],
+    command: generate_tmpl_cmd,
 )
 
 
@@ -84,10 +96,8 @@ pxd_godot__builtins = custom_target(
 
 pxds_godot__hazmat = [
     pxd_godot__hazmat_gdnative_interface,
-    files(
-        'godot/_hazmat/__init__.pxd',
-        'godot/_hazmat/gdapi.pxd',
-    ),
+    pxd_godot__hazmat_gdapi,
+    files('godot/_hazmat/__init__.pxd'),
 ]
 
 

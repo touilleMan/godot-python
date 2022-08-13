@@ -1,3 +1,4 @@
+from libc.stdint cimport *
 from godot._hazmat.gdnative_interface cimport GDNativeInterface
 
 
@@ -17,3 +18,22 @@ cdef extern from * nogil:
     """
 
     cdef const GDNativeInterface *pythonscript_gdapi
+
+
+cdef struct Variant:
+    char _gd_data[{{ api.variant_size }}]
+
+
+{% for spec in api["builtins"] if not spec.is_scalar %}
+cdef struct {{ spec.c_struct_name }}:
+{%   set c_struct_members = spec.c_struct_members %}
+{%   if c_struct_members %}
+{%     for member in c_struct_members %}
+    {{ member.type.c_type }} {{ member.name }}
+{%     endfor %}
+{%   else %}
+    char _gd_data[{{ spec.size }}]
+{%   endif %}
+
+
+{% endfor %}

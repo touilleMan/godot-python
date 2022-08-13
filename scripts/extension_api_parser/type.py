@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class TypeSpec:
+    size: int
     # Type used within Godot `extension_api.json`
     gdapi_type: str
     # Type used for PEP 484 Python typing
@@ -58,11 +59,9 @@ class TypeSpec:
 
 
 TYPES_DB: Dict[str, TypeSpec] = {
-    "Variant": TypeSpec(
-        gdapi_type="Variant", c_type="CVariant", cy_type="object", py_type="GDAny", is_builtin=True
-    ),
     # Types marked as `meta` are used in the classes method args/return types
     "meta:int8": TypeSpec(
+        size=1,
         gdapi_type="int8",
         c_type="int8_t",
         cy_type="int8_t",
@@ -72,6 +71,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
         is_stack_only=True,
     ),
     "meta:int16": TypeSpec(
+        size=2,
         gdapi_type="int16",
         c_type="int16_t",
         cy_type="int16_t",
@@ -81,6 +81,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
         is_stack_only=True,
     ),
     "meta:int32": TypeSpec(
+        size=4,
         gdapi_type="int32",
         c_type="int32_t",
         cy_type="int32_t",
@@ -90,6 +91,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
         is_stack_only=True,
     ),
     "meta:int64": TypeSpec(
+        size=8,
         gdapi_type="int64",
         c_type="int64_t",
         cy_type="int64_t",
@@ -99,6 +101,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
         is_stack_only=True,
     ),
     "meta:uint8": TypeSpec(
+        size=1,
         gdapi_type="uint8",
         c_type="uint8_t",
         cy_type="uint8_t",
@@ -108,6 +111,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
         is_stack_only=True,
     ),
     "meta:uint16": TypeSpec(
+        size=2,
         gdapi_type="uint16",
         c_type="uint16_t",
         cy_type="uint16_t",
@@ -117,6 +121,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
         is_stack_only=True,
     ),
     "meta:uint32": TypeSpec(
+        size=4,
         gdapi_type="uint32",
         c_type="uint32_t",
         cy_type="uint32_t",
@@ -126,6 +131,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
         is_stack_only=True,
     ),
     "meta:uint64": TypeSpec(
+        size=8,
         gdapi_type="uint64",
         c_type="uint64_t",
         cy_type="uint64_t",
@@ -136,6 +142,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
     ),
     # int is always 8bytes long
     "int": TypeSpec(
+        size=8,
         gdapi_type="int",
         c_type="uint64_t",
         cy_type="uint64_t",
@@ -145,6 +152,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
         is_stack_only=True,
     ),
     "meta:float": TypeSpec(
+        size=4,
         gdapi_type="float",
         c_type="float",
         cy_type="float",
@@ -154,6 +162,7 @@ TYPES_DB: Dict[str, TypeSpec] = {
         is_stack_only=True,
     ),
     "meta:double": TypeSpec(
+        size=8,
         gdapi_type="double",
         c_type="double",
         cy_type="double",
@@ -166,6 +175,17 @@ TYPES_DB: Dict[str, TypeSpec] = {
 }
 
 
+def register_variant_in_types_db(variant_size: int) -> None:
+    TYPES_DB["Variant"] = TypeSpec(
+        size=variant_size,
+        gdapi_type="Variant",
+        c_type="CVariant",
+        cy_type="object",
+        py_type="GDAny",
+        is_builtin=True,
+    )
+
+
 def register_builtins_in_types_db(builtins: Iterable["BuiltinSpec"]) -> None:
     for spec in builtins:
         if spec.name == "Nil":
@@ -175,6 +195,7 @@ def register_builtins_in_types_db(builtins: Iterable["BuiltinSpec"]) -> None:
             continue
         elif spec.name == "bool":
             ts = TypeSpec(
+                size=spec.size,
                 gdapi_type=spec.original_name,
                 py_type="bool",
                 # Cython provide a `bint` type for boolean, however it is defined in C as
@@ -199,6 +220,7 @@ def register_builtins_in_types_db(builtins: Iterable["BuiltinSpec"]) -> None:
                 ts = replace(TYPES_DB[f"meta:double"], gdapi_type=spec.original_name)
         else:
             ts = TypeSpec(
+                size=spec.size,
                 gdapi_type=spec.original_name,
                 py_type=spec.name,
                 c_type=f"C{spec.name}",
@@ -213,15 +235,19 @@ def register_builtins_in_types_db(builtins: Iterable["BuiltinSpec"]) -> None:
 def register_classes_in_types_db(classes: Iterable["ClassSpec"]) -> None:
     for spec in classes:
         ts = TypeSpec(
+            # Class instance is always manipulated as a pointer,
+            # hence `size` field is never supposed to be used here
+            size=0,  # Dummy value
             gdapi_type=spec.original_name,
             py_type=spec.name,
-            c_type="Object",
-            cy_type="Object",
+            c_type="GDNativeObjectPtr",
+            cy_type="GDNativeObjectPtr",
             variant_type_name="GDNATIVE_VARIANT_TYPE_OBJECT",
         )
         TYPES_DB[ts.gdapi_type] = ts
         for e in spec.enums:
             ts = TypeSpec(
+                size=4,
                 gdapi_type=f"enum::{spec.original_name}.{e.original_name}",
                 py_type=f"{spec.name}.{e.name}",
                 c_type="int",
@@ -237,6 +263,7 @@ def register_classes_in_types_db(classes: Iterable["ClassSpec"]) -> None:
 def register_global_enums_in_types_db(enums: Iterable["GlobalEnumSpec"]) -> None:
     for spec in enums:
         ts = TypeSpec(
+            size=4,
             gdapi_type=f"enum::{spec.original_name}",
             py_type=spec.name,
             c_type="int",
@@ -269,7 +296,10 @@ class TypeInUse:
             return
 
     def __getattr__(self, name: str):
-        return getattr(self.resolve(), name)
+        try:
+            return getattr(self.resolve(), name)
+        except AttributeError as exc:
+            raise RuntimeError(f"Error in TypeSpec accessing: {exc}") from exc
 
 
 # ValueInUse is only used to create function argument's default value,
