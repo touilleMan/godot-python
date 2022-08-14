@@ -67,9 +67,9 @@ pyx_builtins = custom_target(
         generate_tmpl_base_input,
         files(
             '_builtins.pyx.j2',
-            '_builtins_pyx/class.j2',
-            '_builtins_pyx/constructor.j2',
-            '_builtins_pyx/gdapi.j2',
+            '_builtins_pyx/class.pxi.j2',
+            '_builtins_pyx/constructor.pxi.j2',
+            '_builtins_pyx/gdapi.pxi.j2',
         ),
     ],
     command: generate_tmpl_cmd,

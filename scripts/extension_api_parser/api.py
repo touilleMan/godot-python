@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from dataclasses import dataclass
 from pathlib import Path
 import json
@@ -57,7 +57,7 @@ class UtilityFunctionSpec:
     category: str
     is_vararg: bool
     hash: int
-    arguments: Dict[str, TypeInUse]
+    arguments: List[Tuple[str, TypeInUse]]
 
     @classmethod
     def parse(cls, item: dict) -> "UtilityFunctionSpec":
@@ -72,7 +72,7 @@ class UtilityFunctionSpec:
             category=item["category"],
             is_vararg=item["is_vararg"],
             hash=item["hash"],
-            arguments={x["name"]: TypeInUse(x["type"]) for x in item["arguments"]},
+            arguments=[(correct_name(x["name"]), TypeInUse(x["type"])) for x in item["arguments"]],
         )
 
 

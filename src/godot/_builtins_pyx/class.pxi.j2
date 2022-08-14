@@ -1,5 +1,5 @@
-{%- from '_builtins_pyx/constructor.j2' import render_constructor with context -%}
-{%- from '_builtins_pyx/gdapi.j2' import render_gdapi with context -%}
+{%- from '_builtins_pyx/constructor.pxi.j2' import render_constructor with context -%}
+{%- from '_builtins_pyx/gdapi.pxi.j2' import render_gdapi with context -%}
 
 {% macro render_spec(spec) -%}
 

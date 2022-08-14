@@ -20,11 +20,46 @@ cdef extern from * nogil:
     cdef const GDNativeInterface *pythonscript_gdapi
 
 
-# Following stuff are all the Godot builtins exposed as:
-# - a C structure (with typed fields if the structure is not opaque)
-# - the function pointer of all the builtin's constructors/destructors/methods/operators
-# - Inlines functions for a nicer way to call the constructors/destructors/methods/operators
+# The following is pretty verbose, here is the tl;dr:
+# - Utility functions exposed as both function pointer and nicer inline function
+# - Builtins as C structure (with typed fields if the structure is not opaque)
+# - Builtins' constructors/destructor/methods/operators exposed as function pointer
+#   and nicer inline function
 
+
+##############################################################################
+#                              Utility functions                             #
+##############################################################################
+{% for spec in api["utility_functions"] %}
+
+# {{ spec.name }}
+cdef GDNativePtrUtilityFunction __utility_{{ spec.name }}
+cdef inline {{ "void" if spec.return_type.is_nil else spec.return_type.c_type }} {{ spec.name }}(
+{%     for arg_name, arg_type in spec.arguments %}
+    {{ arg_type.c_type }}* {{ arg_name }},
+{%     endfor %}
+):
+    cdef GDNativeTypePtr[{{ spec.arguments | length }}] p_args = [{% for arg_name, _ in spec.arguments %}{{ arg_name }},{% endfor %}]
+{%     if not spec.return_type.is_nil %}
+    cdef {{ spec.return_type.c_type }} r_return
+{%     endif %}
+    __utility_{{ spec.name }}(
+        {# GDNativeTypePtr r_return #}
+        {{ "NULL" if spec.return_type.is_nil else "&r_return" }},
+        {# const GDNativeTypePtr *p_arguments #}
+        p_args,
+        {# int p_argument_count #}
+        {{ spec.arguments | length }}
+    )
+{%     if not spec.return_type.is_nil %}
+    return r_return
+{%     endif %}
+{% endfor %}
+
+
+##############################################################################
+#                                  Builtins                                  #
+##############################################################################
 
 cdef struct Variant:
     char _gd_opaque[{{ api.variant_size }}]

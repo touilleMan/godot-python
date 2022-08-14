@@ -4,14 +4,12 @@
 from .gdnative_interface cimport *
 
 
-{% macro render_arg(arg) -%}
-{{arg.name}}: {{ arg.type.py_type if arg.type.py_type != "GDString" else "GDString | str"}}{{ "={}".format(arg.default_value.value) if arg.default_value is not none }}
-{%- endmacro %}
-
 # Builtins
 {% for spec in api["builtins"] if not spec.is_scalar %}
 
-# {{ spec.name }}
+##############################################################################
+#{{ "{:^76}".format(spec.name) }}#
+##############################################################################
 
 {%   for c in spec.constructors %}
 cdef GDNativePtrConstructor __{{ spec.name }}_constructor_{{ c.index }} = pythonscript_gdapi.variant_get_ptr_constructor(
@@ -39,12 +37,18 @@ cdef GDNativePtrOperatorEvaluator __{{ spec.name }}_op_{{ o.name }} = pythonscri
 
 {% endfor %}
 
-# Utility functions
-{% for spec in api["utility_functions"] %}
+##############################################################################
+#                              Utility functions                             #
+##############################################################################
 
+{% for spec in api["utility_functions"] %}
+# {{ spec.name }}
+cdef GDNativePtrUtilityFunction __utility_{{ spec.name }} = pythonscript_gdapi.variant_get_ptr_utility_function("{{ spec.original_name }}", {{ spec.hash }})
 {% endfor %}
 
-# Classes
+##############################################################################
+#                                   Classes                                  #
+##############################################################################
 {# TODO: do lazy function pointer initialization ? #}
 {% for spec in api["classes"] %}
 
