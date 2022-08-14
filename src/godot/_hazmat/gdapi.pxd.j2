@@ -84,7 +84,7 @@ cdef struct {{ spec.c_struct_name }}:
 {%   endif %}
 
 {#
-    Builtins C method call
+    Builtins C method function ptrs
 #}
 {%   for c in spec.constructors %}
 cdef GDNativePtrConstructor __{{ spec.name }}_constructor_{{ c.index }}
@@ -98,13 +98,19 @@ cdef GDNativePtrBuiltInMethod __{{ spec.name }}_meth_{{ m.name }}
 {%   for o in spec.operators %}
 cdef GDNativePtrOperatorEvaluator __{{ spec.name }}_op_{{ o.name }}
 {%   endfor %}
+{%   for m in spec.members %}
+{%     if not m.is_in_struct %}
+cdef GDNativePtrSetter __{{ spec.name }}_get_{{ m.name }}
+cdef GDNativePtrGetter __{{ spec.name }}_set_{{ m.name }}
+{%     endif %}
+{%   endfor %}
 {#
-    Builtins C method call
+    Builtins methods as inline functions
 #}
 {%   for meth in spec.methods if meth.offest is not none %}
 
 cdef inline {{ "void" if meth.return_type.is_nil else meth.return_type.c_type }} {{ spec.name | lower }}_{{ meth.name }}(
-    {{ spec.name }} *self,
+    {{ spec.c_struct_name }} *self,
 {%     for arg in meth.arguments %}
     {{ arg.type.c_type }}* {{ arg.name }},
 {%     endfor %}

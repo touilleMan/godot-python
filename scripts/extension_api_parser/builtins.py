@@ -166,6 +166,10 @@ class BuiltinMemberSpec:
     offset: Optional[int]
     type: TypeInUse
 
+    @property
+    def is_in_struct(self) -> bool:
+        return self.offset is not None
+
     @classmethod
     def parse(cls, item: dict) -> "BuiltinMemberSpec":
         item.setdefault("original_name", item["name"])
@@ -298,7 +302,7 @@ class BuiltinSpec:
         # to make extra clear they are not the same types !
         if item["name"] == "String":
             item["name"] = "GDString"
-        item.setdefault("c_struct_name", item["name"])
+        item.setdefault("c_struct_name", f"C_{item['name']}")
         item.setdefault("indexing_return_type", None)
         item.setdefault("methods", [])
         item.setdefault("members", [])

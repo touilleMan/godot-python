@@ -28,7 +28,7 @@ from godot._builtins cimport GDString, Vector2
 from godot._hazmat.gdnative_interface cimport (
     GDNativeInterface,
 )
-
+from godot._hazmat.gdapi cimport vector2_abs, C_Vector2
 
 # Global reference on the godot api, this is guaranteed to be defined before
 # Python is initialized.
@@ -43,11 +43,14 @@ cdef api void _pythonscript_initialize() with gil:
     cooked_sys_version = '.'.join(map(str, sys.version_info))
     print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})")
     print(f"PYTHONPATH: {sys.path}")
-    v = Vector2(66.8, 77.99)
+    v = Vector2(66.8, -77.99)
     v.x = 42
     print("===========>", v.x, v.y)
-    v2 = Vector2(v)
-    print("+++++++++++>", v2.x, v2.y)
+    # v2 = Vector2(v)
+    # cdef C_Vector2 cv = vector2_abs(<C_Vector2*>&v._gd_data)
+    # v2._gd_data.x = cv.x
+    # v2._gd_data.y = cv.y
+    # print("+++++++++++>", v2.x, v2.y)
 
 
     # # OS and ProjectSettings are singletons exposed as global python objects,

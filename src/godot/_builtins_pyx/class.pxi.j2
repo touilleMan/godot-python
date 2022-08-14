@@ -1,9 +1,6 @@
 {%- from '_builtins_pyx/constructor.pxi.j2' import render_constructor with context -%}
-{%- from '_builtins_pyx/gdapi.pxi.j2' import render_gdapi with context -%}
 
 {% macro render_spec(spec) -%}
-
-{{ render_gdapi(spec) }}
 
 @cython.freelist(8)
 @cython.final
@@ -17,7 +14,7 @@ cdef class {{ spec.name }}:
     cdef inline {{ spec.name }} new():
         # Call to __new__ bypasses __init__ constructor
         cdef {{ spec.name }} ret = {{ spec.name }}.__new__({{ spec.name }})
-        __{{ spec.name }}_constructor_0(ret._gd_data, NULL)
+        __{{ spec.name }}_constructor_0(&ret._gd_data, NULL)
         return ret
 {% endif %}
 
@@ -26,14 +23,14 @@ cdef class {{ spec.name }}:
     def __dealloc__({{ spec.name }} self):
         # /!\ if `__cinit__` is skipped, `_gd_data` must be initialized by
         # hand otherwise we will get a segfault here
-        __{{ spec.name }}_destructor(self._gd_data)
+        __{{ spec.name }}_destructor(&self._gd_data)
 {% else %}
     # Destructor not needed
 {% endif %}
 
     def __repr__(self):
         # TODO: finish me...
-        # gdapi.variant_stringify(&self._gd_data)
+        # pythonscript_gdapi.variant_stringify(&self._gd_data)
         return "<{{ spec.name }}>"
 
 {% if spec.constants %}
@@ -41,36 +38,71 @@ cdef class {{ spec.name }}:
 
 {% endif %}
 {% for c in spec.constants %}
-    # {{ c.name }} = {{ c.value }}
+{%   if c.type.is_scalar %}
+    {{ c.name }}: {{ c.type.py_type }} = {{ c.value }}
+{%   else %}
+    @property
+    def {{ c.name }}(self) -> {{ c.type.py_type }}:
+        return {{ c.value }}
+{%   endif %}
 {% endfor %}
 
 {% if spec.members %}
     # Members
 {% endif %}
 {% for m in spec.members %}
+
+{# Scalar type in the C structure (i.e. `Vector2.x`) #}
+{%   if m.is_in_struct and m.type.is_scalar %}
     @property
     def {{ m.name }}(self) -> {{ m.type.py_type }}:
-{%   if m.offset is not none %}
-{%     if m.type.is_scalar %}
-        return (<{{ m.type.c_type }}*>(&self._gd_data[{{ m.offset }}]))[0]
-{#   TODO: ensure m.type doesn't need a destructor #}
-{%     else %}
-{#      TODO: Find a way to avoid this copy ? #}
-        cdef {{ m.type.py_type }} ret = {{ m.type.py_type }}.__new__()  # Skips __init__()
-        ret._gd_data = self._gd_data
+        return self._gd_data.{{ m.name }}
+    @{{ m.name }}.setter
+    def {{ m.name }}(self, {{ m.type.cy_type }} val):
+        self._gd_data.{{ m.name }} = val
+{# Builtin type in the C structure (i.e. `Rect2.position`) #}
+{%   elif m.is_in_struct and not m.type.is_scalar %}
+    @property
+    def {{ m.name }}(self) -> {{ m.type.py_type }}:
+        # TODO: do we need a proxy class to be able to do `my_rec.position.x = 42` ?
+{%     if m.type.is_stack_only %}
+        # Call to __new__ bypasses __init__ constructor
+        cdef {{ m.type.cy_type }} ret = {{ m.type.cy_type }}.__new__({{ m.type.cy_type }})
+        ret._gd_data = self._gd_data.{{ m.name }}
         return ret
+{%     else %}
+        # TODO: Should use a clone method
+        raise NotImplementedError
 {%     endif %}
     @{{ m.name }}.setter
-    def {{ m.name }}(self, {{ m.type.py_type }} value) -> None:
-{%     if m.type.is_scalar %}
-        (<{{ m.type.c_type }}*>(&self._gd_data[{{ m.offset }}]))[0] = value
-{#   TODO: ensure m.type doesn't need a destructor #}
+    def {{ m.name }}(self, {{ m.type.py_type }} val):
+{%     if m.type.is_stack_only %}
+        self._gd_data.{{ m.name }} = val._gd_data
 {%     else %}
-        self._gd_data = value._gd_data
-{%     endif %}
-{%   else %}
-        # TODO: support properties !
+        # TODO: Should use a clone method
         raise NotImplementedError
+{%     endif %}
+{# Scalar type accessed by property (currently unused) #}
+{%   elif not m.is_in_struct and m.type.is_scalar %}
+    @property
+    def {{ m.name }}(self) -> {{ m.type.py_type }}:
+        cdef {{ m.type.c_type }} r_value
+        __{{ spec.name }}_get_{{ m.name }}(&self._gd_data, &r_value)
+        return r_value
+    @{{ m.name }}.setter
+    def {{ m.name }}(self, {{ m.type.cy_type }} val):
+        __{{ spec.name }}_set_{{ m.name }}(&self._gd_data, &val)
+{# Builtin type in the C structure (i.e. `Rect2i.end`) #}
+{%   elif not m.is_in_struct and not m.type.is_scalar %}
+    @property
+    def {{ m.name }}(self) -> {{ m.type.py_type }}:
+        # Call to __new__ bypasses __init__ constructor
+        cdef {{ m.type.cy_type }} ret = {{ m.type.cy_type }}.__new__({{ m.type.cy_type }})
+        __{{ spec.name }}_get_{{ m.name }}(&self._gd_data, &ret._gd_data)
+        return ret
+    @{{ m.name }}.setter
+    def {{ m.name }}(self, {{ m.type.cy_type }} val):
+        __{{ spec.name }}_set_{{ m.name }}(&self._gd_data, &val._gd_data)
 {%   endif %}
 {% endfor %}
 
@@ -78,11 +110,10 @@ cdef class {{ spec.name }}:
     # Methods
 {% endif %}
 {% for m in spec.methods %}
-    def {{ m.name }}(
-        self,
-{% for arg in m.arguments %}
+    def {{ m.name }}(self,
+{%- for arg in m.arguments -%}
         {{ arg.name }},
-{% endfor %}
+{%- endfor -%}
     ):
         raise NotImplemented
 {% endfor %}

@@ -35,6 +35,12 @@ cdef GDNativePtrOperatorEvaluator __{{ spec.name }}_op_{{ o.name }} = pythonscri
 )
 {%   endfor %}
 
+{%   for m in spec.members %}
+{%     if not m.is_in_struct %}
+cdef GDNativePtrSetter __{{ spec.name }}_get_{{ m.name }} = pythonscript_gdapi.variant_get_ptr_setter({{ spec.variant_type_name }}, "{{ m.name }}")
+cdef GDNativePtrGetter __{{ spec.name }}_set_{{ m.name }} = pythonscript_gdapi.variant_get_ptr_getter({{ spec.variant_type_name }}, "{{ m.name }}")
+{%     endif %}
+{%   endfor %}
 {% endfor %}
 
 ##############################################################################
