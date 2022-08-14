@@ -26,7 +26,7 @@ cdef GDNativePtrDestructor __{{ spec.name }}_destructor = pythonscript_gdapi.var
 {%   endif %}
 
 {%   for m in spec.methods %}
-cdef GDNativeMethodBindPtr __{{ spec.name }}_meth_{{ m.name }} = pythonscript_gdapi.variant_get_ptr_builtin_method(
+cdef GDNativePtrBuiltInMethod __{{ spec.name }}_meth_{{ m.name }} = pythonscript_gdapi.variant_get_ptr_builtin_method(
     {{ spec.variant_type_name }}, "{{ m.original_name }}", {{ m.hash }}
 )
 {%   endfor %}

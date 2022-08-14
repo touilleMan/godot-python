@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, Iterable, Union, Optional
+from typing import TYPE_CHECKING, Dict, Iterable
 from dataclasses import dataclass, replace
 
 
@@ -6,6 +6,10 @@ if TYPE_CHECKING:
     from .api import GlobalEnumSpec
     from .classes import ClassSpec
     from .builtins import BuiltinSpec
+
+
+# Type alias
+TypeDBEntry = str
 
 
 # We devide types into three categories:
@@ -30,11 +34,13 @@ class TypeSpec:
     is_object: bool = False
     # Type is a Godot builtin (e.g. Vector2)
     is_builtin: bool = False
+    # Nil type (aka None, or NULL) is very special ;-)
+    is_nil: bool = False
     # Type is a scalar (e.g. int, float) or void
     is_scalar: bool = False
     # Type doesn't use the heap (hence no need for freeing it)
     is_stack_only: bool = False
-    # # Type is an enum (e.g. godot_error, Camera::KeepAspect)
+    # Type is an enum (e.g. godot_error, Camera::KeepAspect)
     is_enum: bool = False
     # e.g. `GDNATIVE_VARIANT_TYPE_BOOL`
     # Default to an invalid value so that we detect incorrect use during Cython compilation
@@ -54,11 +60,58 @@ class TypeSpec:
             assert not self.is_scalar
 
 
-# TODO: put variant_type_name into TypeSpec
+# `Nil` is a special case, it is only needed for `BuiltinOperatorSpec.right_type`
+# and in `ValueInUse`. But it meaning can differ:
+# - `BuiltinOperatorSpec.right_type`: `Nil` represents the absence of value
+# - `ValueInUse`: `Nil` represents a singleton value (like `None` in Python)
+# So the template code is expected to use the `is_nil` attribute and do ad-hoc
+# code according to it need instead of relying on py/c/cy_type
+
+
+class NilTypeSpec(TypeSpec):
+    def __init__(self):
+        # Cannot use super().__init__() given py/cy/c_type are read-only !
+        self.__dict__ = {
+            # Default values from parent
+            **{f.name: f.default for f in super().__dataclass_fields__.values()},
+            # Our config values
+            **{
+                "size": 0,
+                "gdapi_type": "Nil",
+                "is_scalar": True,
+                "is_stack_only": True,
+                "is_nil": True,
+                "variant_type_name": "GDNATIVE_VARIANT_TYPE_NIL",
+            },
+        }
+
+    def __repr__(self):
+        return f"<NilTypeSpec {id(self)}>"
+
+    @property
+    def py_type(self):
+        raise RuntimeError(
+            "Nil type ! Should handle this by hand with a if condition on `<my_type>.is_nil`"
+        )
+
+    @property
+    def cy_type(self):
+        raise RuntimeError(
+            "Nil type ! Should handle this by hand with a if condition on `<my_type>.is_nil`"
+        )
+
+    @property
+    def c_type(self):
+        raise RuntimeError(
+            "Nil type ! Should handle this by hand with a if condition on `<my_type>.is_nil`"
+        )
+
+
 # TODO: Object type should match GDNATIVE_VARIANT_TYPE_OBJECT
 
 
-TYPES_DB: Dict[str, TypeSpec] = {
+TYPES_DB: Dict[TypeDBEntry, TypeSpec] = {
+    "Nil": NilTypeSpec(),
     # Types marked as `meta` are used in the classes method args/return types
     "meta:int8": TypeSpec(
         size=1,
@@ -179,7 +232,7 @@ def register_variant_in_types_db(variant_size: int) -> None:
     TYPES_DB["Variant"] = TypeSpec(
         size=variant_size,
         gdapi_type="Variant",
-        c_type="CVariant",
+        c_type="Variant",
         cy_type="object",
         py_type="GDAny",
         is_builtin=True,
@@ -189,9 +242,10 @@ def register_variant_in_types_db(variant_size: int) -> None:
 def register_builtins_in_types_db(builtins: Iterable["BuiltinSpec"]) -> None:
     for spec in builtins:
         if spec.name == "Nil":
-            # `Nil` is a special case, it is only needed for
-            # `BuiltinOperatorSpec.right_type` and in `ValueInUse`.
-            # So better skip it and use ad-hoc workaround instead.
+            # `Nil` is already part of `TYPES_DB`
+            nil_spec = TYPES_DB["Nil"]
+            assert nil_spec.gdapi_type == spec.original_name  # Sanity check
+            assert nil_spec.variant_type_name == spec.variant_type_name  # Sanity check
             continue
         assert spec.size is not None
         if spec.name == "bool":
@@ -224,7 +278,7 @@ def register_builtins_in_types_db(builtins: Iterable["BuiltinSpec"]) -> None:
                 size=spec.size,
                 gdapi_type=spec.original_name,
                 py_type=spec.name,
-                c_type=f"C{spec.name}",
+                c_type=spec.c_struct_name,
                 cy_type=spec.name,
                 is_stack_only=not spec.has_destructor,
                 is_builtin=True,
@@ -279,7 +333,7 @@ def register_global_enums_in_types_db(enums: Iterable["GlobalEnumSpec"]) -> None
 
 @dataclass(repr=False)
 class TypeInUse:
-    type_name: str
+    type_name: TypeDBEntry
 
     def __repr__(self) -> str:
         try:

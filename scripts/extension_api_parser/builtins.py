@@ -1,9 +1,9 @@
 import enum
-from typing import Dict, Optional, List, Tuple
+from typing import Dict, Optional, List
 from dataclasses import dataclass
 from string import ascii_uppercase
 
-from .utils import correct_name, correct_type_name, assert_api_consistency
+from .utils import correct_name, assert_api_consistency
 from .type import TypeInUse, ValueInUse
 
 
@@ -213,12 +213,12 @@ class BuiltinMethodSpec:
     def parse(cls, item: dict) -> "BuiltinMethodSpec":
         item.setdefault("original_name", item["name"])
         item.setdefault("arguments", [])
-        item.setdefault("return_type", None)
+        item.setdefault("return_type", "Nil")
         assert_api_consistency(cls, item)
         return cls(
             name=correct_name(item["name"]),
             original_name=item["original_name"],
-            return_type=TypeInUse(item["return_type"]) if item["return_type"] else None,
+            return_type=TypeInUse(item["return_type"]),
             is_vararg=item["is_vararg"],
             is_const=item["is_const"],
             is_static=item["is_static"],
@@ -249,9 +249,12 @@ class BuiltinEnumSpec:
 
 @dataclass
 class BuiltinSpec:
-    name: str
-    c_struct_name: str
+    # Name as it is in `extension_api.json`
     original_name: str
+    # Name used for the binding (e.g. `from godot import Vector2`)
+    name: str
+    # Name used for the C structure binding (e.g. `from godot.hazmat.gdapi cimport Vector2`)
+    c_struct_name: str
     is_scalar: bool
     size: int
     indexing_return_type: Optional[str]
@@ -288,7 +291,14 @@ class BuiltinSpec:
             snake += c
         item["variant_type_name"] = f"GDNATIVE_VARIANT_TYPE_{snake.upper()}"
         item.setdefault("original_name", item["name"])
-        item.setdefault("c_struct_name", f"C{item['original_name']}")
+        # Special case for the String type, this is because `String` is too
+        # broad of a name (it's easy to mix with Python's regular `str`)
+        # On top of that `str` and Godot `String` are two totally separated
+        # string types that require conversions to work together, so it's better
+        # to make extra clear they are not the same types !
+        if item["name"] == "String":
+            item["name"] = "GDString"
+        item.setdefault("c_struct_name", item["name"])
         item.setdefault("indexing_return_type", None)
         item.setdefault("methods", [])
         item.setdefault("members", [])
@@ -299,7 +309,8 @@ class BuiltinSpec:
 
         return cls(
             original_name=item["original_name"],
-            name=correct_type_name(item["name"]),
+            # name=correct_type_name(item["name"]),
+            name=item["name"],
             c_struct_name=item["c_struct_name"],
             is_scalar=item["is_scalar"],
             size=item["size"],

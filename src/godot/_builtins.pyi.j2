@@ -30,7 +30,7 @@ class {{spec.name}}:
     # Methods
 {% endif %}
 {% for m in spec.methods %}
-    def {{m.name}}(self{% for a in m.arguments %}, {{ render_arg(a) }}{% endfor %}) -> {{ m.return_type.py_type if m.return_type is not none else "None" }}: ...
+    def {{m.name}}(self{% for a in m.arguments %}, {{ render_arg(a) }}{% endfor %}) -> {{ "None" if m.return_type.is_nil else m.return_type.py_type }}: ...
 {% endfor %}
 {% if spec.constants %}
     # Constants
