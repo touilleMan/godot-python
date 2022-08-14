@@ -61,7 +61,7 @@ cdef inline {{ "void" if spec.return_type.is_nil else spec.return_type.c_type }}
 #                                  Builtins                                  #
 ##############################################################################
 
-cdef struct Variant:
+cdef struct C_Variant:
     char _gd_opaque[{{ api.variant_size }}]
 
 {% for spec in api["builtins"] if not spec.is_scalar %}

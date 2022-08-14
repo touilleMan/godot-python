@@ -1,5 +1,133 @@
 {%- from '_builtins_pyx/constructor.pxi.j2' import render_constructor with context -%}
 
+{% macro render_constant(spec, c) %}
+{%   if c.type.is_scalar %}
+{{ c.name }}: {{ c.type.py_type }} = {{ c.value }}
+{%   else %}
+@property
+def {{ c.name }}(self) -> {{ c.type.py_type }}:
+    return {{ c.value }}
+{%   endif %}
+{% endmacro %}
+
+
+{% macro render_member(spec, m) %}
+{# Scalar type in the C structure (i.e. `Vector2.x`) #}
+{%   if m.is_in_struct and m.type.is_scalar %}
+@property
+def {{ m.name }}(self) -> {{ m.type.py_type }}:
+    return self._gd_data.{{ m.name }}
+@{{ m.name }}.setter
+def {{ m.name }}(self, {{ m.type.cy_type }} val):
+    self._gd_data.{{ m.name }} = val
+{# Builtin type in the C structure (i.e. `Rect2.position`) #}
+{%   elif m.is_in_struct and not m.type.is_scalar %}
+@property
+def {{ m.name }}(self) -> {{ m.type.py_type }}:
+    # TODO: do we need a proxy class to be able to do `my_rec.position.x = 42` ?
+{%     if m.type.is_stack_only %}
+    # Call to __new__ bypasses __init__ constructor
+    cdef {{ m.type.cy_type }} ret = {{ m.type.cy_type }}.__new__({{ m.type.cy_type }})
+    ret._gd_data = self._gd_data.{{ m.name }}
+    return ret
+{%     else %}
+    # TODO: Should use a clone method
+    raise NotImplementedError
+{%     endif %}
+@{{ m.name }}.setter
+def {{ m.name }}(self, {{ m.type.py_type }} val):
+{%     if m.type.is_stack_only %}
+    self._gd_data.{{ m.name }} = val._gd_data
+{%     else %}
+    # TODO: Should use a clone method
+    raise NotImplementedError
+{%     endif %}
+{# Scalar type accessed by property (currently unused) #}
+{%   elif not m.is_in_struct and m.type.is_scalar %}
+@property
+def {{ m.name }}(self) -> {{ m.type.py_type }}:
+    cdef {{ m.type.c_type }} r_value
+    __{{ spec.name }}_get_{{ m.name }}(&self._gd_data, &r_value)
+    return r_value
+@{{ m.name }}.setter
+def {{ m.name }}(self, {{ m.type.cy_type }} val):
+    __{{ spec.name }}_set_{{ m.name }}(&self._gd_data, &val)
+{# Builtin type in the C structure (i.e. `Rect2i.end`) #}
+{%   elif not m.is_in_struct and not m.type.is_scalar %}
+@property
+def {{ m.name }}(self) -> {{ m.type.py_type }}:
+    # Call to __new__ bypasses __init__ constructor
+    cdef {{ m.type.cy_type }} ret = {{ m.type.cy_type }}.__new__({{ m.type.cy_type }})
+    __{{ spec.name }}_get_{{ m.name }}(&self._gd_data, &ret._gd_data)
+    return ret
+@{{ m.name }}.setter
+def {{ m.name }}(self, {{ m.type.cy_type }} val):
+    __{{ spec.name }}_set_{{ m.name }}(&self._gd_data, &val._gd_data)
+{%   endif %}
+{% endmacro %}
+
+
+{% macro render_return_type_decl(type) %}
+{% if type.is_nil %}
+{% elif type.is_scalar %}
+cdef {{ m.type.cy_type }} ret
+{% elif type.is_builtin %}
+cdef {{ m.type.cy_type }} ret = {{ type.cy_type }}.__new__({{ type.cy_type }})
+{% endif %}
+{% endmacro %}
+
+
+{% macro render_return_type_use(type) %}
+{% if type.is_nil %}NULL{% else %}ret{% endif %}
+{% endmacro %}
+
+
+{% macro render_method(spec, m) %}
+def {{ m.name }}(self, {% for arg in m.arguments %}{{ arg.type.cy_type }} {{ arg.name }}, {% endfor %}):  # -> {{ "None" if m.return_type.is_nil else m.return_type.py_type }}
+{%   if m.contains_unsuported_types %}
+    raise NotImplementedError
+{%   else %}
+{#  Return type #}
+{%   if m.return_type.is_nil %}
+{%   elif m.return_type.is_scalar %}
+    cdef {{ m.return_type.cy_type }} ret = 0
+{%   elif m.return_type.is_builtin %}
+    cdef {{ m.return_type.cy_type }} ret = {{ m.return_type.cy_type }}.__new__({{ m.return_type.cy_type }})
+{%   endif %}
+{#  Arguments #}
+    cdef GDNativeTypePtr[{{ m.arguments | length }}] args = [
+{%   for arg in m.arguments %}
+{%     if arg.type.is_scalar %}
+        &{{ arg.name }},
+{%     else %}
+        &{{ arg.name }}._gd_data,
+{%     endif %}
+{%   endfor %}
+    ]
+{#  Actual call ! #}
+    __{{ spec.name }}_meth_{{ m.name }}(
+{#      GDNativeTypePtr p_base #}
+        &self._gd_data,
+{#      const GDNativeTypePtr *p_args #}
+        args,
+{#      GDNativeTypePtr r_return #}
+{%   if m.return_type.is_nil %}
+        NULL,
+{%   elif m.return_type.is_scalar %}
+        &ret,
+{%   elif m.return_type.is_builtin %}
+        &ret._gd_data,
+{%   endif %}
+{#      int p_argument_count #}
+        {{ m.arguments | length }},
+    )
+{%   if not m.return_type.is_nil %}
+    return ret
+{%   endif %}
+{%   endif %}
+{% endmacro %}
+
+
 {% macro render_spec(spec) -%}
 
 @cython.freelist(8)
@@ -38,84 +166,23 @@ cdef class {{ spec.name }}:
 
 {% endif %}
 {% for c in spec.constants %}
-{%   if c.type.is_scalar %}
-    {{ c.name }}: {{ c.type.py_type }} = {{ c.value }}
-{%   else %}
-    @property
-    def {{ c.name }}(self) -> {{ c.type.py_type }}:
-        return {{ c.value }}
-{%   endif %}
+    {{ render_constant(spec, c) | indent }}
 {% endfor %}
 
 {% if spec.members %}
     # Members
+
 {% endif %}
 {% for m in spec.members %}
-
-{# Scalar type in the C structure (i.e. `Vector2.x`) #}
-{%   if m.is_in_struct and m.type.is_scalar %}
-    @property
-    def {{ m.name }}(self) -> {{ m.type.py_type }}:
-        return self._gd_data.{{ m.name }}
-    @{{ m.name }}.setter
-    def {{ m.name }}(self, {{ m.type.cy_type }} val):
-        self._gd_data.{{ m.name }} = val
-{# Builtin type in the C structure (i.e. `Rect2.position`) #}
-{%   elif m.is_in_struct and not m.type.is_scalar %}
-    @property
-    def {{ m.name }}(self) -> {{ m.type.py_type }}:
-        # TODO: do we need a proxy class to be able to do `my_rec.position.x = 42` ?
-{%     if m.type.is_stack_only %}
-        # Call to __new__ bypasses __init__ constructor
-        cdef {{ m.type.cy_type }} ret = {{ m.type.cy_type }}.__new__({{ m.type.cy_type }})
-        ret._gd_data = self._gd_data.{{ m.name }}
-        return ret
-{%     else %}
-        # TODO: Should use a clone method
-        raise NotImplementedError
-{%     endif %}
-    @{{ m.name }}.setter
-    def {{ m.name }}(self, {{ m.type.py_type }} val):
-{%     if m.type.is_stack_only %}
-        self._gd_data.{{ m.name }} = val._gd_data
-{%     else %}
-        # TODO: Should use a clone method
-        raise NotImplementedError
-{%     endif %}
-{# Scalar type accessed by property (currently unused) #}
-{%   elif not m.is_in_struct and m.type.is_scalar %}
-    @property
-    def {{ m.name }}(self) -> {{ m.type.py_type }}:
-        cdef {{ m.type.c_type }} r_value
-        __{{ spec.name }}_get_{{ m.name }}(&self._gd_data, &r_value)
-        return r_value
-    @{{ m.name }}.setter
-    def {{ m.name }}(self, {{ m.type.cy_type }} val):
-        __{{ spec.name }}_set_{{ m.name }}(&self._gd_data, &val)
-{# Builtin type in the C structure (i.e. `Rect2i.end`) #}
-{%   elif not m.is_in_struct and not m.type.is_scalar %}
-    @property
-    def {{ m.name }}(self) -> {{ m.type.py_type }}:
-        # Call to __new__ bypasses __init__ constructor
-        cdef {{ m.type.cy_type }} ret = {{ m.type.cy_type }}.__new__({{ m.type.cy_type }})
-        __{{ spec.name }}_get_{{ m.name }}(&self._gd_data, &ret._gd_data)
-        return ret
-    @{{ m.name }}.setter
-    def {{ m.name }}(self, {{ m.type.cy_type }} val):
-        __{{ spec.name }}_set_{{ m.name }}(&self._gd_data, &val._gd_data)
-{%   endif %}
+    {{ render_member(spec, m) | indent }}
 {% endfor %}
 
 {% if spec.methods %}
     # Methods
+
 {% endif %}
 {% for m in spec.methods %}
-    def {{ m.name }}(self,
-{%- for arg in m.arguments -%}
-        {{ arg.name }},
-{%- endfor -%}
-    ):
-        raise NotImplemented
+    {{ render_method(spec, m) | indent }}
 {% endfor %}
 
 {%- endmacro %}

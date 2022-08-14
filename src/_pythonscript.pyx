@@ -46,6 +46,10 @@ cdef api void _pythonscript_initialize() with gil:
     v = Vector2(66.8, -77.99)
     v.x = 42
     print("===========>", v.x, v.y)
+    v0 = v.ZERO
+    print("===========> ZERO: ", v0.x, v0.y)
+    print("===========> v.angle(): ", v.angle())
+    print("===========> v.direction_to(v0): ", v.direction_to(v0))
     # v2 = Vector2(v)
     # cdef C_Vector2 cv = vector2_abs(<C_Vector2*>&v._gd_data)
     # v2._gd_data.x = cv.x

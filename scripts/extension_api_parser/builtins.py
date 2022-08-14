@@ -213,6 +213,16 @@ class BuiltinMethodSpec:
     hash: int
     arguments: List[BuiltinMethodArgumentSpec]
 
+    @property
+    def contains_unsuported_types(self) -> bool:
+        # TODO: support Varaint & Object !
+        def _unsuported_type(t):
+            return t.is_variant or t.is_object
+
+        return any(_unsuported_type(a.type) for a in self.arguments) or _unsuported_type(
+            self.return_type
+        )
+
     @classmethod
     def parse(cls, item: dict) -> "BuiltinMethodSpec":
         item.setdefault("original_name", item["name"])
@@ -260,6 +270,7 @@ class BuiltinSpec:
     # Name used for the C structure binding (e.g. `from godot.hazmat.gdapi cimport Vector2`)
     c_struct_name: str
     is_scalar: bool
+    is_nil: bool
     size: int
     indexing_return_type: Optional[str]
     is_keyed: bool
@@ -286,6 +297,7 @@ class BuiltinSpec:
     @classmethod
     def parse(cls, item: dict) -> "BuiltinSpec":
         item["is_scalar"] = item["name"] in ("Nil", "bool", "int", "float")
+        item["is_nil"] = item["name"] == "Nil"
         # Camel to upper snake case
         snake = ""
         # Gotcha with Transform2D&Transform3D
@@ -317,6 +329,7 @@ class BuiltinSpec:
             name=item["name"],
             c_struct_name=item["c_struct_name"],
             is_scalar=item["is_scalar"],
+            is_nil=item["is_nil"],
             size=item["size"],
             indexing_return_type=item["indexing_return_type"],
             is_keyed=item["is_keyed"],

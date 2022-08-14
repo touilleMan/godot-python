@@ -34,8 +34,9 @@ class TypeSpec:
     is_object: bool = False
     # Type is a Godot builtin (e.g. Vector2)
     is_builtin: bool = False
-    # Nil type (aka None, or NULL) is very special ;-)
+    # Nil type (aka None, or NULL) and Variant are very special ;-)
     is_nil: bool = False
+    is_variant: bool = False
     # Type is a scalar (e.g. int, float) or void
     is_scalar: bool = False
     # Type doesn't use the heap (hence no need for freeing it)
@@ -229,13 +230,17 @@ TYPES_DB: Dict[TypeDBEntry, TypeSpec] = {
 
 
 def register_variant_in_types_db(variant_size: int) -> None:
+    # Godot Variant is basically what is PyObject for Python.
+    # Hence there is no need to expose it to Python (we can instead just unwrap
+    # it to return it underlying type)
     TYPES_DB["Variant"] = TypeSpec(
         size=variant_size,
         gdapi_type="Variant",
-        c_type="Variant",
+        c_type="C_Variant",
         cy_type="object",
         py_type="GDAny",
         is_builtin=True,
+        is_variant=True,
     )
 
 
@@ -298,6 +303,7 @@ def register_classes_in_types_db(classes: Iterable["ClassSpec"]) -> None:
             c_type="GDNativeObjectPtr",
             cy_type="GDNativeObjectPtr",
             variant_type_name="GDNATIVE_VARIANT_TYPE_OBJECT",
+            is_object=True,
         )
         TYPES_DB[ts.gdapi_type] = ts
         for e in spec.enums:

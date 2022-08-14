@@ -2,13 +2,20 @@
 # see `scripts/generate_tmpl.py`
 
 
+# TODO: replace by bindings
 class GDObject:
     ...
 
 
-# GDAny represent any type that can be send to / retreive from Godot
+# GDany represent any type that can be send to / retreive from Godot
 # (i.e. it is all the types than can be converted to a Godot Variant)
-GDAny = None | GDObject | {{ api["builtins"] | map(attribute="name") | join(" | ") }}
+GDAny = (
+    None |
+    GDObject |
+{% for spec in api["builtins"] if not spec.is_nil %}
+    {{ spec.name }}{{ "" if loop.last else " |" }}
+{% endfor %}
+)
 
 {% macro render_arg(arg) -%}
 {{arg.name}}: {{ arg.type.py_type if arg.type.py_type != "GDString" else "GDString | str"}}{{ "={}".format(arg.default_value.value) if arg.default_value is not none }}
