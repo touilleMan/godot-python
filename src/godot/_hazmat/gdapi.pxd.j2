@@ -35,9 +35,10 @@ cdef extern from * nogil:
 # {{ spec.name }}
 cdef GDNativePtrUtilityFunction __utility_{{ spec.name }}
 cdef inline {{ "void" if spec.return_type.is_nil else spec.return_type.c_type }} {{ spec.name }}(
-{%     for arg_name, arg_type in spec.arguments %}
-    {{ arg_type.c_type }}* {{ arg_name }},
-{%     endfor %}
+{%-     for arg_name, arg_type in spec.arguments -%}
+    {{ arg_type.c_type }}* {{ arg_name }}
+{%-     if not loop.last -%}, {% endif %}
+{%     endfor -%}
 ):
     cdef GDNativeTypePtr[{{ spec.arguments | length }}] p_args = [{% for arg_name, _ in spec.arguments %}{{ arg_name }},{% endfor %}]
 {%     if not spec.return_type.is_nil %}
