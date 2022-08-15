@@ -1,8 +1,8 @@
-from dataclasses import dataclass
 from typing import List, Dict, Optional
+from dataclasses import dataclass
 
 from .utils import correct_name, assert_api_consistency
-from .type import TypeInUse, ValueInUse, TypeSpec, TYPES_DB
+from .type import TypeInUse, ValueInUse
 
 
 @dataclass
@@ -29,7 +29,7 @@ class ClassMethodArgumentSpec:
     name: str
     original_name: str
     type: TypeInUse
-    default_value: ValueInUse
+    default_value: Optional[ValueInUse]
 
     @classmethod
     def parse(cls, item: dict) -> "ClassMethodArgumentSpec":
@@ -40,13 +40,16 @@ class ClassMethodArgumentSpec:
         if meta:
             item["type"] = f"meta:{meta}"
         assert_api_consistency(cls, item)
+        arg_type = TypeInUse.parse(item["type"])
         return cls(
             name=correct_name(item["name"]),
             original_name=item["original_name"],
-            type=TypeInUse(item["type"]),
-            default_value=ValueInUse(item["default_value"])
-            if item["default_value"] is not None
-            else None,
+            type=arg_type,
+            default_value=(
+                None
+                if item["default_value"] is None
+                else ValueInUse.parse(arg_type, item["default_value"])
+            ),
         )
 
 
@@ -59,13 +62,18 @@ class ClassMethodSpec:
     is_static: bool
     is_virtual: bool
     hash: Optional[int]
-    return_value: TypeInUse
+    return_type: TypeInUse
     arguments: List[ClassMethodArgumentSpec]
 
     @classmethod
     def parse(cls, item: dict) -> "ClassMethodSpec":
         item.setdefault("original_name", item["name"])
-        item.setdefault("return_value", {"type": "Nil"})
+        return_value = item.pop("return_value", {"type": "Nil"})
+        return_type_meta = return_value.get("meta")
+        if return_type_meta:
+            item["return_type"] = TypeInUse(f"meta:{return_type_meta}")
+        else:
+            item["return_type"] = TypeInUse.parse(return_value["type"])
         item.setdefault("arguments", [])
         item.setdefault("hash", None)
         assert_api_consistency(cls, item)
@@ -77,7 +85,7 @@ class ClassMethodSpec:
             is_static=item["is_static"],
             is_virtual=item["is_virtual"],
             hash=item["hash"],
-            return_value=TypeInUse(item["return_value"]),
+            return_type=item["return_type"],
             arguments=[ClassMethodArgumentSpec.parse(x) for x in item["arguments"]],
         )
 
@@ -105,20 +113,24 @@ class ClassPropertySpec:
     original_name: str
     name: str
     type: TypeInUse
-    setter: str
     getter: str
-    index: int
+    setter: Optional[str]
+    index: Optional[int]
 
     @classmethod
     def parse(cls, item: dict) -> "ClassPropertySpec":
         item.setdefault("original_name", item["name"])
+        item.setdefault("getter", None)
+        assert item["getter"] is not None
+        item.setdefault("setter", None)
+        item.setdefault("index", None)
         assert_api_consistency(cls, item)
         return cls(
             name=correct_name(item["name"]),
             original_name=item["original_name"],
-            type=TypeInUse(item["type"]),
-            setter=item["setter"],
+            type=TypeInUse.parse(item["type"]),
             getter=item["getter"],
+            setter=item["setter"],
             index=item["index"],
         )
 
@@ -129,7 +141,7 @@ class ClassSpec:
     name: str
     is_refcounted: bool
     is_instantiable: bool
-    inherits: List[str]
+    inherits: Optional[str]
     api_type: str
     enums: List[ClassEnumSpec]
     methods: List[ClassMethodSpec]
@@ -140,15 +152,40 @@ class ClassSpec:
     @classmethod
     def parse(cls, item: dict) -> "ClassSpec":
         item.setdefault("original_name", item["name"])
-        item.setdefault("inherits", [])
+        # Special case for the Object type, this is because `Object` is too
+        # broad of a name (it's easy to mix with Python's regular `object`)
+        if item["name"] == "Object":
+            item["name"] = "GDObject"
+        item["inherits"] = item.get("inherits") or None
+        if item["inherits"] == "Object":
+            item["inherits"] = "GDObject"
         item.setdefault("enums", [])
         item.setdefault("signals", [])
         item.setdefault("methods", [])
         item.setdefault("properties", [])
         item.setdefault("constants", [])
         assert_api_consistency(cls, item)
+        # TODO: remove me once https://github.com/godotengine/godot/pull/64427 is merged
+        for prop in item["properties"]:
+            if prop.get("getter") == "":
+                prop.pop("getter")
+            if prop.get("setter") == "":
+                prop.pop("setter")
+            if prop.get("index") == -1:
+                prop.pop("index")
+        # TODO: remove me once https://github.com/godotengine/godot/pull/64428 is merged
+        def _filter_bad_property(prop: dict) -> bool:
+            if "/" in prop["name"]:
+                return False
+            # e.g. `Modifications,modifications/`
+            if "/" in prop["type"]:
+                return False
+            if "getter" not in prop:
+                return False
+
+        item["properties"] = [prop for prop in item["properties"] if _filter_bad_property(prop)]
         return cls(
-            name=correct_name(item["name"]),
+            name=item["name"],
             original_name=item["original_name"],
             is_refcounted=item["is_refcounted"],
             is_instantiable=item["is_instantiable"],

@@ -1,4 +1,5 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
+from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 import json
@@ -9,6 +10,7 @@ from .classes import ClassSpec
 from .type import (
     TYPES_DB,
     TypeInUse,
+    ValueInUse,
     register_variant_in_types_db,
     register_builtins_in_types_db,
     register_classes_in_types_db,
@@ -41,11 +43,36 @@ class GlobalEnumSpec:
     @classmethod
     def parse(cls, item: dict) -> "GlobalEnumSpec":
         item.setdefault("original_name", item["name"])
+        # Fix `Variant.Operator` & `Variant.Type`
+        item["name"] = item["name"].replace(".", "")
         assert_api_consistency(cls, item)
         return cls(
             name=correct_name(item["name"]),
             original_name=item["original_name"],
             values={x["name"]: x["value"] for x in item["values"]},
+        )
+
+
+@dataclass
+class UtilityFunctionArgumentSpec:
+    name: str
+    original_name: str
+    type: TypeInUse
+    default_value: Optional[ValueInUse]
+
+    @classmethod
+    def parse(cls, item: dict) -> "UtilityFunctionArgumentSpec":
+        item.setdefault("original_name", item["name"])
+        item.setdefault("default_value", None)
+        assert_api_consistency(cls, item)
+        arg_type = TypeInUse(item["type"])
+        return cls(
+            name=correct_name(item["name"]),
+            original_name=item["original_name"],
+            type=arg_type,
+            default_value=ValueInUse.parse(arg_type, item["default_value"])
+            if item["default_value"]
+            else None,
         )
 
 
@@ -72,7 +99,8 @@ class UtilityFunctionSpec:
             category=item["category"],
             is_vararg=item["is_vararg"],
             hash=item["hash"],
-            arguments=[(correct_name(x["name"]), TypeInUse(x["type"])) for x in item["arguments"]],
+            arguments=[UtilityFunctionArgumentSpec.parse(x) for x in item["arguments"]],
+            # (correct_name(x["name"]), TypeInUse(x["type"])) for x in item["arguments"]],
         )
 
 
@@ -188,11 +216,36 @@ def merge_builtins_size_info(api_json: dict, build_config: BuildConfig) -> None:
                         item_member["type"] = "meta:int32"
                     break
             else:
-                raise RuntimeError(f"Don't member {member} doesn't seem to be part of {name} !")
+                raise RuntimeError(f"Member `{member}` doesn't seem to be part of `{name}` !")
 
     # Variant is not present among the `builtin_classes`, only it size is provided.
     # So we have to create our own custom entry for this value.
     api_json["variant_size"] = builtin_class_sizes["Variant"]
+
+
+def order_classes(classes: List[ClassSpec]) -> List[ClassSpec]:
+    # Order classes by inheritance dependency needs
+    ordered_classes = OrderedDict()  # Makes it explicit we need ordering here !
+    ordered_count = 0
+
+    while len(classes) != len(ordered_classes):
+        for klass in classes:
+            if klass.inherits is None or klass.inherits in ordered_classes:
+                ordered_classes[klass.name] = klass
+
+        # Sanity check to avoid infinite loop in case of error in `extension_api.json`
+        if ordered_count == len(ordered_classes):
+            bad_class = next(
+                klass
+                for klass in classes
+                if klass.inherits is not None and klass.inherits not in ordered_classes
+            )
+            raise RuntimeError(
+                f"Class `{bad_class.name}` inherits of unknown class `{bad_class.inherits}`"
+            )
+        ordered_count = len(ordered_classes)
+
+    return list(ordered_classes.values())
 
 
 def parse_extension_api_json(path: Path, build_config: BuildConfig) -> ExtensionApi:
@@ -209,7 +262,7 @@ def parse_extension_api_json(path: Path, build_config: BuildConfig) -> Extension
         version_build=api_json["header"]["version_build"],
         version_full_name=api_json["header"]["version_full_name"],
         variant_size=api_json["variant_size"],
-        classes=[ClassSpec.parse(x) for x in api_json["classes"]],
+        classes=order_classes([ClassSpec.parse(x) for x in api_json["classes"]]),
         builtins=[BuiltinSpec.parse(x) for x in api_json["builtin_classes"]],
         global_constants=[GlobalConstantSpec.parse(x) for x in api_json["global_constants"]],
         global_enums=[GlobalEnumSpec.parse(x) for x in api_json["global_enums"]],

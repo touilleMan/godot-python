@@ -52,12 +52,33 @@ def generate_builtins_pyi(api: ExtensionApi) -> str:
     return template.render(api=api)
 
 
+def generate_classes_pxd(api: ExtensionApi) -> str:
+    env = make_jinja_env(BASEDIR / "../src/godot")
+    template = env.get_template("_classes.pxd.j2")
+    return template.render(api=api)
+
+
+def generate_classes_pyx(api: ExtensionApi) -> str:
+    env = make_jinja_env(BASEDIR / "../src/godot")
+    template = env.get_template("_classes.pyx.j2")
+    return template.render(api=api)
+
+
+def generate_classes_pyi(api: ExtensionApi) -> str:
+    env = make_jinja_env(BASEDIR / "../src/godot")
+    template = env.get_template("_classes.pyi.j2")
+    return template.render(api=api)
+
+
 OUTPUT_TO_FN = {
     "gdapi.pxd": generate_gdapi_pxd,
     "gdapi_ptrs.pxi": generate_gdapi_ptrs,
     "_builtins.pxd": generate_builtins_pxd,
     "_builtins.pyx": generate_builtins_pyx,
     "_builtins.pyi": generate_builtins_pyi,
+    "_classes.pxd": generate_classes_pxd,
+    "_classes.pyx": generate_classes_pyx,
+    "_classes.pyi": generate_classes_pyi,
 }
 
 

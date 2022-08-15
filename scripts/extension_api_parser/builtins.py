@@ -107,11 +107,14 @@ class BuiltinMethodArgumentSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("default_value", None)
         assert_api_consistency(cls, item)
+        arg_type = TypeInUse.parse(item["type"])
         return cls(
             name=correct_name(item["name"]),
             original_name=item["original_name"],
-            type=TypeInUse(item["type"]),
-            default_value=ValueInUse(item["default_value"]) if item["default_value"] else None,
+            type=arg_type,
+            default_value=ValueInUse.parse(arg_type, item["default_value"])
+            if item["default_value"]
+            else None,
         )
 
 
@@ -154,8 +157,8 @@ class BuiltinOperatorSpec:
             # used to represent the absence of a value (typically in a return type),
             # but here we want to compare a builtin value with the constant representing
             # emptiness.
-            right_type=TypeInUse(item["right_type"]),
-            return_type=TypeInUse(item["return_type"]),
+            right_type=TypeInUse.parse(item["right_type"]),
+            return_type=TypeInUse.parse(item["return_type"]),
         )
 
 
@@ -179,7 +182,7 @@ class BuiltinMemberSpec:
             name=correct_name(item["name"]),
             original_name=item["original_name"],
             offset=item["offset"],
-            type=TypeInUse(item["type"]),
+            type=TypeInUse.parse(item["type"]),
         )
 
 
@@ -197,7 +200,7 @@ class BuiltinConstantSpec:
         return cls(
             name=correct_name(item["name"]),
             original_name=item["original_name"],
-            type=TypeInUse(item["type"]),
+            type=TypeInUse.parse(item["type"]),
             value=item["value"],
         )
 
@@ -232,7 +235,7 @@ class BuiltinMethodSpec:
         return cls(
             name=correct_name(item["name"]),
             original_name=item["original_name"],
-            return_type=TypeInUse(item["return_type"]),
+            return_type=TypeInUse.parse(item["return_type"]),
             is_vararg=item["is_vararg"],
             is_const=item["is_const"],
             is_static=item["is_static"],
@@ -307,13 +310,19 @@ class BuiltinSpec:
             snake += c
         item["variant_type_name"] = f"GDNATIVE_VARIANT_TYPE_{snake.upper()}"
         item.setdefault("original_name", item["name"])
-        # Special case for the String type, this is because `String` is too
-        # broad of a name (it's easy to mix with Python's regular `str`)
+        # Special case for the very commpon types to make them more explicit (e.g. to
+        # avoid mixing Python's regular `str` with Godot `String`)
         # On top of that `str` and Godot `String` are two totally separated
         # string types that require conversions to work together, so it's better
         # to make extra clear they are not the same types !
         if item["name"] == "String":
             item["name"] = "GDString"
+        elif item["name"] == "Array":
+            item["name"] = "GDArray"
+        elif item["name"] == "Dictionary":
+            item["name"] = "GDDictionary"
+        elif item["name"] == "Callable":
+            item["name"] = "GDCallable"
         item.setdefault("c_struct_name", f"C_{item['name']}")
         item.setdefault("indexing_return_type", None)
         item.setdefault("methods", [])

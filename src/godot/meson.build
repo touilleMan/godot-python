@@ -11,7 +11,7 @@ subdir('_hazmat')
 ##############################################################################
 
 
-foreach src: ['__init__.py', '__init__.pxd', 'py.typed']
+foreach src: ['__init__.py', '__init__.pyi', '__init__.pxd', 'py.typed']
     install_data(
         src,
         install_dir: join_paths(python_site_packages_install_path, 'godot'),
@@ -42,6 +42,27 @@ custom_target(
     input: [
         generate_tmpl_base_input,
         files('_builtins.pyi.j2'),
+    ],
+    command: generate_tmpl_cmd,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot'),
+)
+
+
+custom_target(
+    output: '_classes.pxd',
+    input: pxd_godot__classes,
+    command: copy_command,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot'),
+)
+
+
+custom_target(
+    output: '_classes.pyi',
+    input: [
+        generate_tmpl_base_input,
+        files('_classes.pyi.j2'),
     ],
     command: generate_tmpl_cmd,
     install: true,
