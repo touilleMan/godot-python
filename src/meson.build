@@ -121,6 +121,7 @@ pxds_godot = [
     ),
     pxds_godot__hazmat,
     pxd_godot__builtins,
+    pxd_godot__classes,
 ]
 
 

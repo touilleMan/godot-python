@@ -122,3 +122,50 @@ shared_library(
     install: true,
     install_dir: join_paths(python_site_packages_install_path, 'godot'),
 )
+
+
+# _classes.so
+# └─ _classes.c
+#    ├─ gdnative_interface.pxd
+#    │  └─ ...
+#    └─ _classes.pyx
+#       └─ extension_api.json
+
+pyx_classes = custom_target(
+    output: '_classes.pyx',
+    input: [
+        generate_tmpl_base_input,
+        files(
+            '_classes.pyx.j2',
+        ),
+    ],
+    command: generate_tmpl_cmd,
+)
+
+
+c_classes = custom_target(
+    output : '_classes.c',
+    input : [pyx_classes, pxds_godot],
+    command : cythonize_command,
+)
+
+
+if host_platform.startswith('linux')
+    _classes_rpath = '$ORIGIN/../../..'
+elif host_platform.startswith('macos')
+    _classes_rpath = '@loader_path/../../..'
+else
+    _classes_rpath = ''
+endif
+
+
+shared_library(
+    '_classes',
+    c_classes,
+    dependencies : [dep_godot, dep_python, dep_pythonscript],
+    install_rpath: _classes_rpath,  # To find libpython
+    name_prefix: python_native_module_name_prefix,
+    name_suffix: python_native_module_name_suffix,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot'),
+)

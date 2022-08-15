@@ -17,11 +17,11 @@ GDAny = (
 {% endfor %}
 )
 # For convenience, we allow using Python types where Godot ones are needed.
-# This allow for instance to do `my_node.name = "foo"` instead of the infamous
-# `my_node.name = GDString("foo")`.
+# This allows for instance to do `my_node.do("foo")` instead of the infamous
+# `my_node.do(GDString("foo"))`.
 # Of course keep in mind this involves types conversion and is slower than only working
 # with Godot types (for instance to speed up the previous example, `GDString("foo")`
-# should be instantiated once and kept in cache)
+# should be instantiated once and reused between `my_node.do(...)` calls)
 IntoGDAny = GDAny | str | Mapping[IntoGDAny, IntoGDAny] | Sequence[IntoGDAny]
 
 {%- macro render_arg(arg) -%}
