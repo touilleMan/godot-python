@@ -3,12 +3,7 @@
 
 cimport cython
 
-
-from ._hazmat.gdapi cimport (
-{% for spec in api["builtins"] if not spec.is_scalar %}
-    {{ spec.c_struct_name }},
-{% endfor %}
-)
+from ._hazmat.gdapi cimport *
 {% for spec in api["builtins"] if not spec.is_scalar %}
 
 
@@ -18,5 +13,9 @@ cdef class {{ spec.name }}:
     cdef {{ spec.c_struct_name }} _gd_data
 
     @staticmethod
-    cdef inline {{ spec.name }} new()
+    cdef inline {{ spec.name }} new():
+        # Call to __new__ bypasses __init__ constructor
+        cdef {{ spec.name }} ret = {{ spec.name }}.__new__({{ spec.name }})
+        __{{ spec.name }}_constructor_0(&ret._gd_data, NULL)
+        return ret
 {% endfor %}

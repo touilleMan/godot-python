@@ -135,18 +135,8 @@ def {{ m.name }}(self, {% for arg in m.arguments %}{{ arg.type.cy_type }} {{ arg
 @cython.freelist(8)
 @cython.final
 cdef class {{ spec.name }}:
-{# TODO: I guess only Nil has no size, so remove it and only use None ? #}
-{% if spec.size %}
     # Constructors
     {{ render_constructor(spec) | indent }}
-
-    @staticmethod
-    cdef inline {{ spec.name }} new():
-        # Call to __new__ bypasses __init__ constructor
-        cdef {{ spec.name }} ret = {{ spec.name }}.__new__({{ spec.name }})
-        __{{ spec.name }}_constructor_0(&ret._gd_data, NULL)
-        return ret
-{% endif %}
 
 {% if spec.has_destructor %}
     # Destructor
