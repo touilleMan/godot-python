@@ -10,12 +10,12 @@
 # include "_godot_instance.pxi"
 # include "_godot_io.pxi"
 
-# from godot._hazmat.gdnative_api_struct cimport (
+# from godot.hazmat.gdnative_api_struct cimport (
 #     godot_gdnative_init_options,
 #     godot_pluginscript_language_data,
 # )
-# from godot._hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_verbose
-from godot._builtins cimport GDString, Vector2
+# from godot.hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_verbose
+from godot.builtins cimport GDString, Vector2
 
 # def _setup_config_entry(name, default_value):
 #     gdname = GDString(name)
@@ -25,10 +25,10 @@ from godot._builtins cimport GDString, Vector2
 #     # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
 #     return ProjectSettings.get_setting(gdname)
 
-from godot._hazmat.gdnative_interface cimport (
+from godot.hazmat.gdnative_interface cimport (
     GDNativeInterface,
 )
-from godot._hazmat.gdapi cimport vector2_abs, C_Vector2
+from godot.hazmat.gdapi cimport vector2_abs, C_Vector2
 
 # Global reference on the godot api, this is guaranteed to be defined before
 # Python is initialized.

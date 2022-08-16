@@ -23,62 +23,62 @@ def make_jinja_env(import_dir: Path) -> Environment:
 
 
 def generate_gdapi_pxd(api: ExtensionApi) -> str:
-    env = make_jinja_env(BASEDIR / "../src/godot/_hazmat")
+    env = make_jinja_env(BASEDIR / "../src/godot/hazmat")
     template = env.get_template("gdapi.pxd.j2")
     return template.render(api=api)
 
 
 def generate_gdapi_ptrs(api: ExtensionApi) -> str:
-    env = make_jinja_env(BASEDIR / "../src/godot/_hazmat")
+    env = make_jinja_env(BASEDIR / "../src/godot/hazmat")
     template = env.get_template("gdapi_ptrs.pxi.j2")
     return template.render(api=api)
 
 
 def generate_builtins_pxd(api: ExtensionApi) -> str:
     env = make_jinja_env(BASEDIR / "../src/godot")
-    template = env.get_template("_builtins.pxd.j2")
+    template = env.get_template("builtins.pxd.j2")
     return template.render(api=api)
 
 
 def generate_builtins_pyx(api: ExtensionApi) -> str:
     env = make_jinja_env(BASEDIR / "../src/godot")
-    template = env.get_template("_builtins.pyx.j2")
+    template = env.get_template("builtins.pyx.j2")
     return template.render(api=api)
 
 
 def generate_builtins_pyi(api: ExtensionApi) -> str:
     env = make_jinja_env(BASEDIR / "../src/godot")
-    template = env.get_template("_builtins.pyi.j2")
+    template = env.get_template("builtins.pyi.j2")
     return template.render(api=api)
 
 
 def generate_classes_pxd(api: ExtensionApi) -> str:
     env = make_jinja_env(BASEDIR / "../src/godot")
-    template = env.get_template("_classes.pxd.j2")
+    template = env.get_template("classes.pxd.j2")
     return template.render(api=api)
 
 
 def generate_classes_pyx(api: ExtensionApi) -> str:
     env = make_jinja_env(BASEDIR / "../src/godot")
-    template = env.get_template("_classes.pyx.j2")
+    template = env.get_template("classes.pyx.j2")
     return template.render(api=api)
 
 
 def generate_classes_pyi(api: ExtensionApi) -> str:
     env = make_jinja_env(BASEDIR / "../src/godot")
-    template = env.get_template("_classes.pyi.j2")
+    template = env.get_template("classes.pyi.j2")
     return template.render(api=api)
 
 
 OUTPUT_TO_FN = {
     "gdapi.pxd": generate_gdapi_pxd,
     "gdapi_ptrs.pxi": generate_gdapi_ptrs,
-    "_builtins.pxd": generate_builtins_pxd,
-    "_builtins.pyx": generate_builtins_pyx,
-    "_builtins.pyi": generate_builtins_pyi,
-    "_classes.pxd": generate_classes_pxd,
-    "_classes.pyx": generate_classes_pyx,
-    "_classes.pyi": generate_classes_pyi,
+    "builtins.pxd": generate_builtins_pxd,
+    "builtins.pyx": generate_builtins_pyx,
+    "builtins.pyi": generate_builtins_pyi,
+    "classes.pxd": generate_classes_pxd,
+    "classes.pyx": generate_classes_pyx,
+    "classes.pyi": generate_classes_pyi,
 }
 
 

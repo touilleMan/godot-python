@@ -32,6 +32,5 @@ from godot._version import __version__
 #     export,
 #     exposed,
 # )
-from godot._builtins import *
-
-# from godot.bindings import *
+from godot.builtins import *
+from godot.classes import *

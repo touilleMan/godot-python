@@ -50,12 +50,12 @@ generate_tmpl_cmd = [
 # see https://github.com/mesonbuild/meson/issues/2320#issuecomment-1147929155
 
 
-# godot/_hazmat/gdnative_interface.pxd
+# godot/hazmat/gdnative_interface.pxd
 # └─ gdnative_interface.h
 
 # Convert the header file frome C to Cython
-pxd_godot__hazmat_gdnative_interface = custom_target(
-    output: 'godot#_hazmat#gdnative_interface.pxd',
+pxd_godot_hazmat_gdnative_interface = custom_target(
+    output: 'godot#hazmat#gdnative_interface.pxd',
     input: [
         join_paths(scripts_dir, 'generate_gdnative_interface_pxd.py'),
         join_paths(godot_headers_path, 'godot/gdnative_interface.h')
@@ -64,14 +64,14 @@ pxd_godot__hazmat_gdnative_interface = custom_target(
 )
 
 
-# godot/_hazmat/gdapi.pxd
+# godot/hazmat/gdapi.pxd
 # └─ extension_api.json
 
-pxd_godot__hazmat_gdapi = custom_target(
-    output: 'godot#_hazmat#gdapi.pxd',
+pxd_godot_hazmat_gdapi = custom_target(
+    output: 'godot#hazmat#gdapi.pxd',
     input: [
         generate_tmpl_base_input,
-        files('godot/_hazmat/gdapi.pxd.j2'),
+        files('godot/hazmat/gdapi.pxd.j2'),
     ],
     command: generate_tmpl_cmd,
 )
@@ -81,11 +81,11 @@ pxd_godot__hazmat_gdapi = custom_target(
 # └─ extension_api.json
 
 
-pxd_godot__builtins = custom_target(
-    output: 'godot#_builtins.pxd',
+pxd_godot_builtins = custom_target(
+    output: 'godot#builtins.pxd',
     input: [
         generate_tmpl_base_input,
-        files('godot/_builtins.pxd.j2'),
+        files('godot/builtins.pxd.j2'),
     ],
     command: generate_tmpl_cmd,
 )
@@ -95,11 +95,11 @@ pxd_godot__builtins = custom_target(
 # └─ extension_api.json
 
 
-pxd_godot__classes = custom_target(
-    output: 'godot#_classes.pxd',
+pxd_godot_classes = custom_target(
+    output: 'godot#classes.pxd',
     input: [
         generate_tmpl_base_input,
-        files('godot/_classes.pxd.j2'),
+        files('godot/classes.pxd.j2'),
     ],
     command: generate_tmpl_cmd,
 )
@@ -108,10 +108,10 @@ pxd_godot__classes = custom_target(
 # Groups of pxds to simplify includes in pyx compilation
 
 
-pxds_godot__hazmat = [
-    pxd_godot__hazmat_gdnative_interface,
-    pxd_godot__hazmat_gdapi,
-    files('godot/_hazmat/__init__.pxd'),
+pxds_godot_hazmat = [
+    pxd_godot_hazmat_gdnative_interface,
+    pxd_godot_hazmat_gdapi,
+    files('godot/hazmat/__init__.pxd'),
 ]
 
 
@@ -119,9 +119,9 @@ pxds_godot = [
     files(
         'godot/__init__.pxd',
     ),
-    pxds_godot__hazmat,
-    pxd_godot__builtins,
-    pxd_godot__classes,
+    pxds_godot_hazmat,
+    pxd_godot_builtins,
+    pxd_godot_classes,
 ]
 
 
@@ -132,10 +132,10 @@ pxds_godot = [
 # _pythonscript.c
 # _pythonscript_api.h
 # ├─ _pythonscript.pyx
-# ├─ godot/_hazmat/gdapi.pxd
+# ├─ godot/hazmat/gdapi.pxd
 # ├─ godot/builtins.pxd
 # |  └─ ...
-# └─ godot/_hazmat/gdnative_interface.pxd
+# └─ godot/hazmat/gdnative_interface.pxd
 #    └─ ...
 
 
@@ -191,7 +191,7 @@ lib_pythonscript = shared_library(
 
 
 # This dependency is used by all Cython modules to retreive the `pythonscript_gdapi`
-# global variable that is declared as extern in `godot._hazmat.gdapi`
+# global variable that is declared as extern in `godot.hazmat.gdapi`
 # Note we don't need to configure a rpath for Cython modules, this is because
 # `libpythonscript.so` is responsible for initialiazing the Python interpreter
 # and hence we are guaranteed it is already loaded when Cython modules kick in

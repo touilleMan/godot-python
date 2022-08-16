@@ -3,7 +3,7 @@
 
 cimport cython
 
-from ._hazmat.gdapi cimport *
+from .hazmat.gdapi cimport *
 {% for spec in api["builtins"] if not spec.is_scalar %}
 
 

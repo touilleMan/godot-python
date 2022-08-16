@@ -1,4 +1,4 @@
-{%- from '_builtins_pyx/constructor.pxi.j2' import render_constructor with context -%}
+{%- from 'builtins_pyx/constructor.pxi.j2' import render_constructor with context -%}
 
 {% macro render_constant(spec, c) %}
 {%   if c.type.is_scalar %}

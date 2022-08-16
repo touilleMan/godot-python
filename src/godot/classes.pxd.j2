@@ -3,8 +3,8 @@
 
 cimport cython
 
-from ._hazmat.gdapi cimport pythonscript_gdapi
-from ._hazmat.gdnative_interface cimport GDNativeObjectPtr
+from .hazmat.gdapi cimport pythonscript_gdapi
+from .hazmat.gdnative_interface cimport GDNativeObjectPtr
 
 
 cdef inline gdobject_free(GDObject obj):

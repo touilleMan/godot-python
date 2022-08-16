@@ -6,26 +6,26 @@
 foreach src: ['__init__.py']
     install_data(
         src,
-        install_dir: join_paths(python_site_packages_install_path, 'godot', '_hazmat'),
+        install_dir: join_paths(python_site_packages_install_path, 'godot', 'hazmat'),
     )
 endforeach
 
 
 custom_target(
     output: 'gdapi.pxd',
-    input: pxd_godot__hazmat_gdapi,
+    input: pxd_godot_hazmat_gdapi,
     command: copy_command,
     install: true,
-    install_dir: join_paths(python_site_packages_install_path, 'godot', '_hazmat'),
+    install_dir: join_paths(python_site_packages_install_path, 'godot', 'hazmat'),
 )
 
 
 custom_target(
     output: 'gdnative_interface.pxd',
-    input: pxd_godot__hazmat_gdnative_interface,
+    input: pxd_godot_hazmat_gdnative_interface,
     command: copy_command,
     install: true,
-    install_dir: join_paths(python_site_packages_install_path, 'godot', '_hazmat'),
+    install_dir: join_paths(python_site_packages_install_path, 'godot', 'hazmat'),
 )
 
 
@@ -50,7 +50,7 @@ pxi_gdapi_ptrs = custom_target(
         files(
             'gdapi_ptrs.pxi.j2',
         ),
-        pxd_godot__hazmat_gdnative_interface,
+        pxd_godot_hazmat_gdnative_interface,
     ],
     command: generate_tmpl_cmd,
 )
@@ -61,7 +61,7 @@ c_gdapi = custom_target(
     input : [
         files('gdapi.pyx'),
         pxi_gdapi_ptrs,
-        pxds_godot__hazmat,
+        pxds_godot_hazmat,
     ],
     command : cythonize_command,
 )
@@ -84,5 +84,5 @@ shared_library(
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
     install: true,
-    install_dir: join_paths(python_site_packages_install_path, 'godot/_hazmat'),
+    install_dir: join_paths(python_site_packages_install_path, 'godot/hazmat'),
 )

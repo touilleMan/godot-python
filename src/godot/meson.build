@@ -3,7 +3,7 @@
 ##############################################################################
 
 
-subdir('_hazmat')
+subdir('hazmat')
 
 
 ##############################################################################
@@ -29,8 +29,8 @@ configure_file(
 
 
 custom_target(
-    output: '_builtins.pxd',
-    input: pxd_godot__builtins,
+    output: 'builtins.pxd',
+    input: pxd_godot_builtins,
     command: copy_command,
     install: true,
     install_dir: join_paths(python_site_packages_install_path, 'godot'),
@@ -38,10 +38,10 @@ custom_target(
 
 
 custom_target(
-    output: '_builtins.pyi',
+    output: 'builtins.pyi',
     input: [
         generate_tmpl_base_input,
-        files('_builtins.pyi.j2'),
+        files('builtins.pyi.j2'),
     ],
     command: generate_tmpl_cmd,
     install: true,
@@ -50,8 +50,8 @@ custom_target(
 
 
 custom_target(
-    output: '_classes.pxd',
-    input: pxd_godot__classes,
+    output: 'classes.pxd',
+    input: pxd_godot_classes,
     command: copy_command,
     install: true,
     install_dir: join_paths(python_site_packages_install_path, 'godot'),
@@ -59,10 +59,10 @@ custom_target(
 
 
 custom_target(
-    output: '_classes.pyi',
+    output: 'classes.pyi',
     input: [
         generate_tmpl_base_input,
-        files('_classes.pyi.j2'),
+        files('classes.pyi.j2'),
     ],
     command: generate_tmpl_cmd,
     install: true,
@@ -75,48 +75,48 @@ custom_target(
 ##############################################################################
 
 
-# _builtins.so
-# └─ _builtins.c
+# builtins.so
+# └─ builtins.c
 #    ├─ gdnative_interface.pxd
 #    │  └─ ...
-#    └─ _builtins.pyx
+#    └─ builtins.pyx
 #       └─ extension_api.json
 
-pyx_builtins = custom_target(
-    output: '_builtins.pyx',
+pyxbuiltins = custom_target(
+    output: 'builtins.pyx',
     input: [
         generate_tmpl_base_input,
         files(
-            '_builtins.pyx.j2',
-            '_builtins_pyx/class.pxi.j2',
-            '_builtins_pyx/constructor.pxi.j2',
+            'builtins.pyx.j2',
+            'builtins_pyx/class.pxi.j2',
+            'builtins_pyx/constructor.pxi.j2',
         ),
     ],
     command: generate_tmpl_cmd,
 )
 
 
-c_builtins = custom_target(
-    output : '_builtins.c',
-    input : [pyx_builtins, pxds_godot],
+cbuiltins = custom_target(
+    output : 'builtins.c',
+    input : [pyxbuiltins, pxds_godot],
     command : cythonize_command,
 )
 
 
 if host_platform.startswith('linux')
-    _builtins_rpath = '$ORIGIN/../../..'
+    builtins_rpath = '$ORIGIN/../../..'
 elif host_platform.startswith('macos')
-    _builtins_rpath = '@loader_path/../../..'
+    builtins_rpath = '@loader_path/../../..'
 else
-    _builtins_rpath = ''
+    builtins_rpath = ''
 endif
 
 
 shared_library(
-    '_builtins',
-    c_builtins,
+    'builtins',
+    cbuiltins,
     dependencies : [dep_godot, dep_python, dep_pythonscript],
-    install_rpath: _builtins_rpath,  # To find libpython
+    install_rpath: builtins_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
     install: true,
@@ -124,46 +124,46 @@ shared_library(
 )
 
 
-# _classes.so
-# └─ _classes.c
+# classes.so
+# └─ classes.c
 #    ├─ gdnative_interface.pxd
 #    │  └─ ...
-#    └─ _classes.pyx
+#    └─ classes.pyx
 #       └─ extension_api.json
 
-pyx_classes = custom_target(
-    output: '_classes.pyx',
+pyxclasses = custom_target(
+    output: 'classes.pyx',
     input: [
         generate_tmpl_base_input,
         files(
-            '_classes.pyx.j2',
+            'classes.pyx.j2',
         ),
     ],
     command: generate_tmpl_cmd,
 )
 
 
-c_classes = custom_target(
-    output : '_classes.c',
-    input : [pyx_classes, pxds_godot],
+cclasses = custom_target(
+    output : 'classes.c',
+    input : [pyxclasses, pxds_godot],
     command : cythonize_command,
 )
 
 
 if host_platform.startswith('linux')
-    _classes_rpath = '$ORIGIN/../../..'
+    classes_rpath = '$ORIGIN/../../..'
 elif host_platform.startswith('macos')
-    _classes_rpath = '@loader_path/../../..'
+    classes_rpath = '@loader_path/../../..'
 else
-    _classes_rpath = ''
+    classes_rpath = ''
 endif
 
 
 shared_library(
-    '_classes',
-    c_classes,
+    'classes',
+    cclasses,
     dependencies : [dep_godot, dep_python, dep_pythonscript],
-    install_rpath: _classes_rpath,  # To find libpython
+    install_rpath: classes_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
     install: true,
