@@ -36,8 +36,7 @@ jobs:
           python --version
           pip install pre-commit
       - name: Pre-commit hooks check
-        run: |
-          pre-commit run --all-files --show-diff-on-failure
+        run: pre-commit run --all-files --show-diff-on-failure
 
 
 #################################################################################
@@ -67,23 +66,13 @@ jobs:
           pip install -U pip
           pip install -r requirements.in
       - name: 'Setup project'
-        run: |
-          set -eux
-          python .github/scripts/meson_setup_or_dump_log.py build/
+        run: python .github/scripts/meson_setup_or_dump_log.py build/
       - name: 'Build project'
-        run: |
-          set -eux
-          meson compile -C build/
+        run: meson compile -C build/
       - name: 'Run tests'
-        run: |
-          set -eux
-          python tests/run.py helloworld \
-            --build-dir build/ \
-            -- --display-driver headless
+        run: python tests/run.py helloworld --build-dir build/ -- --display-driver headless
       # - name: 'Generate artifact archive'
-      #   run: |
-      #     set -eux
-      #     meson compile -C build/ release
+      #   run: meson compile -C build/ release
       # - name: 'Export release artifact'
       #   uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
       #   with:
@@ -128,16 +117,11 @@ jobs:
           pip install -U pip
           pip install -r requirements.in
       - name: 'Setup project'
-        run: |
-          python .github/scripts/meson_setup_or_dump_log.py build/
+        run: python .github/scripts/meson_setup_or_dump_log.py build/
       - name: 'Build project'
-        run: |
-          meson compile -C build/
+        run: meson compile -C build/
       # - name: 'Run tests'
-      #   run: |
-      #     python tests/run.py helloworld \
-      #       --build-dir build/ \
-      #       -- --display-driver headless
+      #   run: python tests/run.py helloworld --build-dir build/ -- --display-driver headless
       # - name: 'Install Mesa3D OpenGL'
       #   shell: bash
       #   run: |
@@ -156,14 +140,9 @@ jobs:
       #     ls -lh opengl32.dll  # Sanity check
       #     popd
       # - name: 'Run tests'
-      #   shell: bash
-      #   run: |
-      #     set -eux
-      #     python tests/run.py --build-dir build/ --godot-binary ${{ GODOT_BINARY_VERSION }}
+      #   run: python tests/run.py --build-dir build/ --godot-binary ${{ GODOT_BINARY_VERSION }}
       # - name: 'Generate artifact archive'
-      #   shell: bash
-      #   run: |
-      #     scons release
+      #   run: meson compile -C build/ release
       # - name: 'Export release artifact'
       #   uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
       #   with:
@@ -198,24 +177,14 @@ jobs:
           pip install -U pip
           pip install -r requirements.txt
       - name: 'Setup project'
-        run: |
-          set -eux
-          python .github/scripts/meson_setup_or_dump_log.py build/
+        run: python .github/scripts/meson_setup_or_dump_log.py build/
       - name: 'Build project'
-        run: |
-          set -eux
-          meson compile -C build/
+        run: meson compile -C build/
       # TODO: see https://github.com/touilleMan/godot-python/issues/358
       # - name: 'Run tests'
-      #   run: |
-      #     set -eux
-      #     python tests/run.py helloworld \
-      #       --build-dir build/ \
-      #       -- --display-driver headless
+      #   run: python tests/run.py helloworld --build-dir build/ -- --display-driver headless
       # - name: 'Generate artifact archive'
-      #   run: |
-      #     set -eux
-      #     meson compile -C build/ release
+      #   run: meson compile -C build/ release
       # - name: 'Export release artifact'
       #   uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
       #   with:
