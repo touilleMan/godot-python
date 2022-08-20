@@ -195,6 +195,15 @@ def merge_builtins_size_info(api_json: dict, build_config: BuildConfig) -> None:
     )
     builtin_class_member_offsets = {x["name"]: x["members"] for x in builtin_class_member_offsets}
 
+    # TODO: remove me once https://github.com/godotengine/godot/pull/64690 is merged
+    if "Projection" not in builtin_class_member_offsets:
+        builtin_class_member_offsets["Projection"] = [
+            {"member": "x", "offset": 0},
+            {"member": "y", "offset": builtin_class_sizes["Vector4"]},
+            {"member": "z", "offset": 2 * builtin_class_sizes["Vector4"]},
+            {"member": "w", "offset": 3 * builtin_class_sizes["Vector4"]},
+        ]
+
     for item in api_json["builtin_classes"]:
         name = item["name"]
         item["size"] = builtin_class_sizes[name]

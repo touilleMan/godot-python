@@ -37,6 +37,8 @@ PYTHON_KEYWORDS = {
     "yield",
     # Cython
     "char",
+    # Not a keyword, but still annoying
+    "str",
 }
 
 

@@ -1,4 +1,10 @@
-{%- from 'builtins_pyx/constructor.pxi.j2' import render_constructor with context -%}
+{%- from 'builtins_pyx/constructor.pxi.j2' import render_constructors with context -%}
+
+
+{#########################################################################
+ # Render constant
+ #########################################################################}
+
 
 {% macro render_constant(spec, c) %}
 {%   if c.type.is_scalar %}
@@ -11,39 +17,52 @@ def {{ c.name }}(self) -> {{ c.type.py_type }}:
 {% endmacro %}
 
 
+{#########################################################################
+ # Render transparent builtin scalar property
+ #########################################################################}
+
+
+{% macro render_transparent_builtin_scalar_property(m, name_prefix, access_prefix) -%}
+@property
+def {{ name_prefix }}{{ m.name }}(self) -> {{ m.type.py_type }}:
+    return {{ access_prefix }}.{{ m.name }}
+@{{ name_prefix }}{{ m.name }}.setter
+def {{ name_prefix }}{{ m.name }}(self, {{ m.type.cy_type }} val):
+    {{ access_prefix }}.{{ m.name }} = val
+{% endmacro %}
+
+
+{#########################################################################
+ # Render transparent builtin subtype properties
+ #########################################################################}
+
+
+{% macro render_transparent_builtin_subtype_properties(m, name_prefix, access_prefix) -%}
+{% for subm in m.type.builtin_spec.c_struct_members %}
+{%   if subm.is_in_struct %}
+{%     if subm.type.is_scalar %}
+{{ render_transparent_builtin_scalar_property(subm, name_prefix, access_prefix) }}
+{%     else %}
+{{ render_transparent_builtin_subtype_properties(subm, "{}_{}".format(name_prefix, subm.name), "{}.{}".format(access_prefix, subm.name)) }}
+{%     endif %}
+{%   endif %}
+{% endfor %}
+{% endmacro %}
+
+
+{#########################################################################
+ # Render member
+ #########################################################################}
+
+
 {% macro render_member(spec, m) %}
-{# Scalar type in the C structure (i.e. `Vector2.x`) #}
-{%   if m.is_in_struct and m.type.is_scalar %}
-@property
-def {{ m.name }}(self) -> {{ m.type.py_type }}:
-    return self._gd_data.{{ m.name }}
-@{{ m.name }}.setter
-def {{ m.name }}(self, {{ m.type.cy_type }} val):
-    self._gd_data.{{ m.name }} = val
-{# Builtin type in the C structure (i.e. `Rect2.position`) #}
-{%   elif m.is_in_struct and not m.type.is_scalar %}
-@property
-def {{ m.name }}(self) -> {{ m.type.py_type }}:
-    # TODO: do we need a proxy class to be able to do `my_rec.position.x = 42` ?
-{%     if m.type.is_stack_only %}
-    # Call to __new__ bypasses __init__ constructor
-    cdef {{ m.type.cy_type }} ret = {{ m.type.cy_type }}.__new__({{ m.type.cy_type }})
-    ret._gd_data = self._gd_data.{{ m.name }}
-    return ret
-{%     else %}
-    # TODO: Should use a clone method
-    raise NotImplementedError
-{%     endif %}
-@{{ m.name }}.setter
-def {{ m.name }}(self, {{ m.type.py_type }} val):
-{%     if m.type.is_stack_only %}
-    self._gd_data.{{ m.name }} = val._gd_data
-{%     else %}
-    # TODO: Should use a clone method
-    raise NotImplementedError
-{%     endif %}
-{# Scalar type accessed by property (currently unused) #}
-{%   elif not m.is_in_struct and m.type.is_scalar %}
+
+{% if not m.is_in_struct %}
+{# Property unrelated to the builtin internal structure, must use Godot API method to access it #}
+
+{%   if m.type.is_scalar %}
+
+{# Scalar type accessed by property (unused in extension_api.json afaik) #}
 @property
 def {{ m.name }}(self) -> {{ m.type.py_type }}:
     cdef {{ m.type.c_type }} r_value
@@ -52,8 +71,10 @@ def {{ m.name }}(self) -> {{ m.type.py_type }}:
 @{{ m.name }}.setter
 def {{ m.name }}(self, {{ m.type.cy_type }} val):
     __{{ spec.name }}_set_{{ m.name }}(&self._gd_data, &val)
+
+{%   else %}
+
 {# Builtin type in the C structure (i.e. `Rect2i.end`) #}
-{%   elif not m.is_in_struct and not m.type.is_scalar %}
 @property
 def {{ m.name }}(self) -> {{ m.type.py_type }}:
     # Call to __new__ bypasses __init__ constructor
@@ -64,24 +85,45 @@ def {{ m.name }}(self) -> {{ m.type.py_type }}:
 def {{ m.name }}(self, {{ m.type.cy_type }} val):
     __{{ spec.name }}_set_{{ m.name }}(&self._gd_data, &val._gd_data)
 {%   endif %}
-{% endmacro %}
 
+{% else %}
+{# Property that is contains in the builtin C structure #}
 
-{% macro render_return_type_decl(type) %}
-{% if type.is_nil %}
-{% elif type.is_scalar %}
-cdef {{ m.type.cy_type }} ret
-{% elif type.is_builtin %}
-# Call to __new__ bypasses __init__ constructor
-cdef {{ m.type.cy_type }} ret = {{ type.cy_type }}.__new__({{ type.cy_type }})
+{%   if m.type.is_scalar %}
+
+{# Scalar type in the C structure (i.e. `Vector2.x`) #}
+{{ render_transparent_builtin_scalar_property(m, "", "self._gd_data") }}
+
+{%   else %}
+
+{# Builtin type in the C structure (i.e. `Rect2.position` with position being a `Vector2`) #}
+{# In GDScript doing `rect2.position.x = 42` modifies `rect2`, that means `rect2.position` #}
+{# is a proxy object on the content of `rect2`, this is cumbersome to do in Python (and make #}
+{# thing slower) so we replace this by property on the subtype members: `rect2.position_x` #}
+{{ render_transparent_builtin_subtype_properties(m, "{}_".format(m.name), "self._gd_data.{}".format(m.name)) }}
+
+{# Also expose the member, but as a functions so it's clearer this works on copies #}
+{%     for subm in m.type.builtin_spec.c_struct_members %}
+def get_{{ m.name }}(self) -> {{ m.type.py_type }}:
+{# Transparent builtins are guaranteed to have `is_stack_only == True` #}
+    # Call to __new__ bypasses __init__ constructor
+    cdef {{ m.type.cy_type }} ret = {{ m.type.cy_type }}.__new__({{ m.type.cy_type }})
+    ret._gd_data = self._gd_data.{{ m.name }}
+    return ret
+
+def set_{{ m.name }}(self, {{ m.type.cy_type }} val not None):
+{# Transparent builtins are guaranteed to have `is_stack_only == True` #}
+    self._gd_data.{{ m.name }} = val._gd_data
+
+{%     endfor %}
+{%   endif %}
 {% endif %}
 {% endmacro %}
 
 
-{% macro render_return_type_use(type) %}
-{% if type.is_nil %}NULL{% else %}ret{% endif %}
-{% endmacro %}
-
+{#########################################################################
+ # Render method
+ #########################################################################}
 
 {% macro render_method(spec, m) %}
 def {{ m.name }}(self, {% for arg in m.arguments %}{{ arg.type.cy_type }} {{ arg.name }}, {% endfor %}):  # -> {{ "None" if m.return_type.is_nil else m.return_type.py_type }}
@@ -132,13 +174,17 @@ def {{ m.name }}(self, {% for arg in m.arguments %}{{ arg.type.cy_type }} {{ arg
 {% endmacro %}
 
 
+{#########################################################################
+ # Render full class spec
+ #########################################################################}
+
 {% macro render_spec(spec) -%}
 
 @cython.freelist(8)
 @cython.final
 cdef class {{ spec.name }}:
     # Constructors
-    {{ render_constructor(spec) | indent }}
+    {{ render_constructors(spec) | indent }}
 
 {% if spec.has_destructor %}
     # Destructor

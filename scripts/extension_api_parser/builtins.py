@@ -1,5 +1,4 @@
-import enum
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 from dataclasses import dataclass
 from string import ascii_uppercase
 
@@ -264,7 +263,7 @@ class BuiltinEnumSpec:
         )
 
 
-@dataclass
+@dataclass(repr=False)
 class BuiltinSpec:
     # Name as it is in `extension_api.json`
     original_name: str
@@ -286,16 +285,53 @@ class BuiltinSpec:
     variant_type_name: str
     enums: List[BuiltinEnumSpec]
 
+    def __repr__(self):
+        return f"{type(self).__name__}({self.name})"
+
+    @property
+    def is_packed_array(self) -> bool:
+        return self.original_name.startswith("Packed") and self.original_name.endswith("Array")
+
+    def get_constructor_index_from(self, *args_types: str) -> int:
+        # `args_types` is expected to contains py types ! (i.e. `GDString`, `float`)
+        for constructor in self.constructors:
+            if len(args_types) != len(constructor.arguments):
+                continue
+            if all(a == b.type.py_type for a, b in zip(args_types, constructor.arguments)):
+                return constructor.index
+        else:
+            breakpoint()
+            raise RuntimeError("No compatible constructor in extension_api.json !")
+
+    @property
+    def clone_constructor_index(self) -> int:
+        return next(
+            c.index
+            for c in self.constructors
+            if len(c.arguments) == 1 and c.arguments[0].type.type_name == self.original_name
+        )
+
+    @property
+    def empty_constructor_index(self) -> int:
+        return next(c.index for c in self.constructors if len(c.arguments) == 0)
+
+    # Returns true if the builtin structure is entirely composed of it members
+    # (this means we can initialize this structure without calling Godot)
+    @property
+    def is_transparent_c_struct(self) -> bool:
+        # TODO: this detection is fine for now given Godot type are either fully
+        # transparent or fully opaque. However it would break for a semi-opaque
+        # type (e.g. a structure containing a string and a float, so only the float
+        # would have an offset)
+        return bool(self.c_struct_members)
+
     @property
     def c_struct_members(self) -> List[BuiltinMemberSpec]:
-        struct_members = [m for m in self.members if m.offset is not None]
-        if struct_members:
-            # Sanity check
-            assert sum(m.type.size for m in struct_members) == self.size
-            return struct_members
-        else:
-            # Opaque structure
-            return []
+        # Don't try any sanity check, this is because this property is going to
+        # be used by `register_builtins_in_types_db`, and at this point all types
+        # are not resolvable yet.
+        # So we leave the sanity check to `register_builtins_in_types_db`.
+        return [m for m in self.members if m.offset is not None]
 
     @classmethod
     def parse(cls, item: dict) -> "BuiltinSpec":
@@ -331,7 +367,9 @@ class BuiltinSpec:
         item.setdefault("enums", [])
         assert_api_consistency(cls, item)
         assert len(item["constructors"]) >= 1
-
+        # TODO: remove me once https://github.com/godotengine/godot/pull/64692 is merged
+        if item["name"] in ("Transform2D", "AABB", "Basis", "Transform3D"):
+            item["has_destructor"] = False
         return cls(
             original_name=item["original_name"],
             # name=correct_type_name(item["name"]),

@@ -78,9 +78,8 @@ cdef struct C_Variant:
     Builtins C struct
 #}
 cdef struct {{ spec.c_struct_name }}:
-{%   set c_struct_members = spec.c_struct_members %}
-{%   if c_struct_members %}
-{%     for member in c_struct_members %}
+{%   if spec.is_transparent_c_struct %}
+{%     for member in spec.c_struct_members %}
     {{ member.type.c_type }} {{ member.name }}
 {%     endfor %}
 {%   else %}
