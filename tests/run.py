@@ -171,6 +171,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Don't remove the temporary directory used for the test",
     )
+    parser.add_argument(
+        "--only-refresh-common",
+        action="store_true",
+        help="Only update the addons build symlinked into all test projects",
+    )
 
     try:
         options_separator = sys.argv.index("--")
@@ -194,6 +199,8 @@ if __name__ == "__main__":
 
     # Install the distrib, it is common to each test and kept between run to save time
     distrib_workdir = install_distrib(build_dir, "common_tests_install_distrib")
+    if args.only_refresh_common:
+        raise SystemExit(0)
 
     @contextmanager
     def test_workdir_factory():
