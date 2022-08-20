@@ -130,10 +130,9 @@ jobs:
       - name: 'Setup project'
         run: |
           python .github/scripts/meson_setup_or_dump_log.py build/
-      # TODO: see https://github.com/touilleMan/godot-python/issues/359
-      # - name: 'Build project'
-      #   run: |
-      #     meson compile -C build/
+      - name: 'Build project'
+        run: |
+          meson compile -C build/
       # - name: 'Run tests'
       #   run: |
       #     python tests/run.py helloworld \
