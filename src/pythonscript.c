@@ -56,7 +56,7 @@ static PythonscriptState state = STALLED;
 static PyThreadState *gilstate = NULL;
 static GDNativeExtensionClassLibraryPtr gdextension = NULL;
 // Global variable used by Cython modules to access the Godot API
-DLL_EXPORT const GDNativeInterface *pythonscript_gdapi;
+DLL_EXPORT const GDNativeInterface *pythonscript_gdapi = NULL;
 
 #define GD_PRINT(msg) { \
     printf("%s\n", msg); \
@@ -208,11 +208,10 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
     state = PYTHONSCRIPT_MODULE_INIT;
 
     int ret = import__pythonscript();
-    if (ret != 0){
+    if (ret != 0) {
         GD_PRINT_ERROR("Pythonscript: Cannot load Python module `_pythonscript`");
         goto error;
     }
-    // _pythonscript_set_gdapi(gdapi);  // Must be right after `import__pythonscript`
     _pythonscript_initialize();
 
     state = READY;
