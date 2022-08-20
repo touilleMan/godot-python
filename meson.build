@@ -290,6 +290,20 @@ install_data(
 )
 
 
+# .gdignore to prevent Godot editor from scanning our big and messy directory
+custom_target(
+    'release_gdignore',
+    command: [
+        python,
+        '-c',
+        'open("@OUTPUT@", "w")'
+    ],
+    output: ['.gdignore'],
+    install: true,
+    install_dir: 'addons/pythonscript',
+)
+
+
 # Add date&version info to README before installing it
 custom_target(
     'release_readme',
