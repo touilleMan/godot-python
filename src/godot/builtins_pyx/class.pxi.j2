@@ -97,21 +97,23 @@ def {{ m.name }}(self, {% for arg in m.arguments %}{{ arg.type.cy_type }} {{ arg
     cdef {{ m.return_type.cy_type }} ret = {{ m.return_type.cy_type }}.__new__({{ m.return_type.cy_type }})
 {%   endif %}
 {#  Arguments #}
+{%   if (m.arguments | length) != 0 %}
     cdef GDNativeTypePtr[{{ m.arguments | length }}] args = [
-{%   for arg in m.arguments %}
-{%     if arg.type.is_scalar %}
+{%     for arg in m.arguments %}
+{%       if arg.type.is_scalar %}
         &{{ arg.name }},
-{%     else %}
+{%       else %}
         &{{ arg.name }}._gd_data,
-{%     endif %}
-{%   endfor %}
+{%       endif %}
+{%     endfor %}
     ]
+{%   endif %}
 {#  Actual call ! #}
     __{{ spec.name }}_meth_{{ m.name }}(
 {#      GDNativeTypePtr p_base #}
         &self._gd_data,
 {#      const GDNativeTypePtr *p_args #}
-        args,
+        {{ "NULL" if (m.arguments | length) == 0 else "args" }},
 {#      GDNativeTypePtr r_return #}
 {%   if m.return_type.is_nil %}
         NULL,

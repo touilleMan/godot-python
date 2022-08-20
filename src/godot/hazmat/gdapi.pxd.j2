@@ -41,7 +41,9 @@ cdef inline {{ "void" if spec.return_type.is_nil else spec.return_type.c_type }}
 {%-     if not loop.last -%}, {% endif %}
 {%     endfor -%}
 ):
+{%     if (spec.arguments | length) != 0 %}
     cdef GDNativeTypePtr[{{ spec.arguments | length }}] p_args = [{% for arg in spec.arguments %}{{ arg.name }},{% endfor %}]
+{%     endif %}
 {%     if not spec.return_type.is_nil %}
     cdef {{ spec.return_type.c_type }} r_return
 {%     endif %}
@@ -49,7 +51,7 @@ cdef inline {{ "void" if spec.return_type.is_nil else spec.return_type.c_type }}
         {# GDNativeTypePtr r_return #}
         {{ "NULL" if spec.return_type.is_nil else "&r_return" }},
         {# const GDNativeTypePtr *p_arguments #}
-        p_args,
+        {{ "NULL" if (spec.arguments | length) == 0 else "p_args" }},
         {# int p_argument_count #}
         {{ spec.arguments | length }}
     )
@@ -117,7 +119,9 @@ cdef inline {{ "void" if meth.return_type.is_nil else meth.return_type.c_type }}
     {{ arg.type.c_type }}* {{ arg.name }},
 {%     endfor %}
 ):
+{%     if (meth.arguments | length) != 0 %}
     cdef GDNativeTypePtr[{{ meth.arguments | length }}] p_args = [{% for arg in meth.arguments %}{{ arg.name }},{% endfor %}]
+{%     endif %}
 {%     if not meth.return_type.is_nil %}
     cdef {{ meth.return_type.c_type }} r_return
 {%     endif %}
@@ -125,7 +129,7 @@ cdef inline {{ "void" if meth.return_type.is_nil else meth.return_type.c_type }}
         {# GDNativeTypePtr p_base #}
         self,
         {# const GDNativeTypePtr *p_args #}
-        p_args,
+        {{ "NULL" if (meth.arguments | length) == 0 or "p_args" }},
         {# GDNativeTypePtr r_return #}
         {{ "NULL" if meth.return_type.is_nil else "&r_return" }},
         {# int p_argument_count #}
