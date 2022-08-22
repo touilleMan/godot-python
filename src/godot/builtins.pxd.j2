@@ -2,8 +2,30 @@
 # see `scripts/generate_tmpl.py`
 
 cimport cython
+from cpython.ref cimport PyObject
+cdef extern from "Python.h":
+    const char* PyUnicode_AsUTF8AndSize(object, size_t*)
+    object PyUnicode_DecodeUTF32(const char *s, size_t size, const char *errors, int *byteorder)
 
 from .hazmat.gdapi cimport *
+
+
+# Godot internally uses utf32 encoding format
+# CPython is more messy, but lean toward UTF8
+
+
+cdef inline GDString pystr_to_gdstr(object pystr):
+    cdef size_t buffsize
+    cdef const char *buff = PyUnicode_AsUTF8AndSize(pystr, &buffsize)
+    cdef GDString gdstr = GDString.__new__(GDString)
+    pythonscript_gdapi.string_new_with_utf8_chars_and_len(&gdstr._gd_data, buff, buffsize)
+    return gdstr
+
+
+cdef inline object gdstr_to_pystr(GDNativeStringPtr *gdstr):
+    cdef GDNativeInt l = pythonscript_gdapi.string_to_utf32_chars(gdstr, NULL, 0)
+    cdef const char32_t *gdbuff = pythonscript_gdapi.string_operator_index_const(gdstr, 0)
+    return PyUnicode_DecodeUTF32(<char *>gdbuff, l * cython.sizeof(char32_t), NULL, NULL)
 {% for spec in api["builtins"] if not spec.is_scalar %}
 
 

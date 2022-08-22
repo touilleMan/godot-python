@@ -15,7 +15,7 @@
 #     godot_pluginscript_language_data,
 # )
 # from godot.hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_verbose
-from godot.builtins cimport GDString, Vector2
+from godot.builtins cimport GDString, Vector2, pystr_to_gdstr, gdstr_to_pystr
 
 # def _setup_config_entry(name, default_value):
 #     gdname = GDString(name)
@@ -25,10 +25,72 @@ from godot.builtins cimport GDString, Vector2
 #     # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
 #     return ProjectSettings.get_setting(gdname)
 
-from godot.hazmat.gdnative_interface cimport (
-    GDNativeInterface,
-)
-from godot.hazmat.gdapi cimport vector2_abs, C_Vector2
+from godot.hazmat.gdnative_interface cimport *
+from godot.hazmat.gdapi cimport *
+
+
+# include "_pythonscript_script.pxi"
+# include "_pythonscript_instance.pxi"
+
+cdef api GDNativeObjectPtr _pythonscript_create_instance(
+    void *p_userdata
+) with gil:
+    return NULL
+
+
+cdef api void _pythonscript_free_instance(
+    void *p_userdata, GDExtensionClassInstancePtr p_instance
+) with gil:
+    pass
+
+
+cdef api gd_packed_string_array_t _pythonscript_get_reserved_words():
+    cdef gd_packed_string_array_t arr = gd_packed_string_array_new()
+    cdef gd_string_t string
+    cdef (char*)[33] keywords = [
+        "False",
+        "None",
+        "True",
+        "and",
+        "as",
+        "assert",
+        "break",
+        "class",
+        "continue",
+        "def",
+        "del",
+        "elif",
+        "else",
+        "except",
+        "finally",
+        "for",
+        "from",
+        "global",
+        "if",
+        "import",
+        "in",
+        "is",
+        "lambda",
+        "nonlocal",
+        "not",
+        "or",
+        "pass",
+        "raise",
+        "return",
+        "try",
+        "while",
+        "with",
+        "yield",
+    ]
+    for keyword in keywords:
+        pythonscript_gdapi.string_new_with_utf8_chars(
+            &string,
+            keyword
+        )
+        gd_packed_string_array_append(&arr, &string)
+        gd_string_del(&string)
+    return arr
+
 
 # Global reference on the godot api, this is guaranteed to be defined before
 # Python is initialized.
@@ -39,6 +101,11 @@ from godot.hazmat.gdapi cimport vector2_abs, C_Vector2
 cdef api void _pythonscript_initialize() with gil:
     import sys
     from godot._version import __version__ as pythonscript_version
+    r = gdstr_to_pystr(<GDNativeStringPtr*>&pystr_to_gdstr("foo")._gd_data)
+    if r == "foo":
+        pythonscript_gdapi.print_error("ok", "<function>", "<file>", 0)
+    else:
+        pythonscript_gdapi.print_error("ko", "<function>", "<file>", 0)
 
     cooked_sys_version = '.'.join(map(str, sys.version_info))
     print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})")

@@ -54,8 +54,8 @@ typedef enum {
 
 static PythonscriptState state = STALLED;
 static PyThreadState *gilstate = NULL;
-static GDNativeExtensionClassLibraryPtr gdextension = NULL;
-// Global variable used by Cython modules to access the Godot API
+static GDNativeExtensionClassLibraryPtr gd_library = NULL;
+// Global variables used by Cython modules to access the Godot API
 DLL_EXPORT const GDNativeInterface *pythonscript_gdapi = NULL;
 
 #define GD_PRINT(msg) { \
@@ -111,7 +111,7 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
         // 1) Retrieve library path
         char gd_library_path[GD_STRING_MAX_SIZE];
         gdstring_constructor(gd_library_path, NULL);
-        pythonscript_gdapi->get_library_path(gdextension, gd_library_path);
+        pythonscript_gdapi->get_library_path(gd_library, gd_library_path);
 
         // 2) Retrieve base dir from library path
         char gd_basedir_path[GD_STRING_MAX_SIZE];
@@ -214,6 +214,29 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
     }
     _pythonscript_initialize();
 
+    // Now register Python as language into Godot
+    GDNativeExtensionClassCreationInfo info = {
+        .set_func = NULL,  // GDNativeExtensionClassSet
+        .get_func = NULL,  // GDNativeExtensionClassGet
+        .get_property_list_func = NULL,  // GDNativeExtensionClassGetPropertyList
+        .free_property_list_func = NULL,  // GDNativeExtensionClassFreePropertyList
+        .notification_func = NULL,  // GDNativeExtensionClassNotification
+        .to_string_func = NULL,  // GDNativeExtensionClassToString
+        .reference_func = NULL,  // GDNativeExtensionClassReference
+        .unreference_func = NULL,  // GDNativeExtensionClassUnreference
+        .create_instance_func = _pythonscript_create_instance,
+        .free_instance_func = _pythonscript_free_instance,
+        .get_virtual_func = NULL,  // GDNativeExtensionClassGetVirtual
+        .get_rid_func = NULL,  // GDNativeExtensionClassGetRID
+        .class_userdata = NULL,  // void*
+    };
+    pythonscript_gdapi->classdb_register_extension_class(
+        gd_library,
+        "PythonScriptLanguageExtension",
+        "ScriptLanguageExtension",
+        &info
+    );
+
     state = READY;
 
     // Release the Kraken... er I mean the GIL !
@@ -284,7 +307,7 @@ DLL_EXPORT GDNativeBool pythonscript_init(
     // `pythonscript_gdapi` must be set as early as possible given it is never null-pointer
     // checked, especially in the Cython modules
     pythonscript_gdapi = p_interface;
-    gdextension = p_library;
+    gd_library = p_library;
 
     // Check compatibility between the Godot version that has been used for building
     // (i.e. the bindings has been generated against) and the version currently executed.

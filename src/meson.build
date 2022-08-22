@@ -71,7 +71,10 @@ pxd_godot_hazmat_gdapi = custom_target(
     output: 'godot#hazmat#gdapi.pxd',
     input: [
         generate_tmpl_base_input,
-        files('godot/hazmat/gdapi.pxd.j2'),
+        files(
+            'godot/hazmat/gdapi.pxd.j2',
+            'godot/hazmat/gdapi.macros.pxd.j2',
+        ),
     ],
     command: generate_tmpl_cmd,
 )

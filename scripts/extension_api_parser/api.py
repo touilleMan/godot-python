@@ -100,7 +100,6 @@ class UtilityFunctionSpec:
             is_vararg=item["is_vararg"],
             hash=item["hash"],
             arguments=[UtilityFunctionArgumentSpec.parse(x) for x in item["arguments"]],
-            # (correct_name(x["name"]), TypeInUse(x["type"])) for x in item["arguments"]],
         )
 
 

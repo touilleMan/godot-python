@@ -281,7 +281,7 @@ def register_variant_in_types_db(variant_size: int) -> None:
         is_stack_only=False,
         size=variant_size,
         gdapi_type="Variant",
-        c_type="C_Variant",
+        c_type="gd_variant_t",
         cy_type="object",
         py_type="GDAny",
     )

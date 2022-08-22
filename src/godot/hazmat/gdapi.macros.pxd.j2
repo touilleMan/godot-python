@@ -1,0 +1,229 @@
+{#########################################################################
+ # Render arguments body & signature
+ #########################################################################}
+
+
+{% macro render_args_signature(args) -%}
+{%- for arg in args -%}
+{{ arg.type.c_type }}{{ "" if arg.type.is_scalar else "*" }} {{ arg.name }}
+{%- if not loop.last %}, {% endif -%}
+{%- endfor -%}
+{% endmacro %}
+
+
+{% macro render_args(args) -%}
+{%- for arg in args %}
+{{ "&" if arg.type.is_scalar else "" }}{{ arg.name }}
+{%- if not loop.last %}, {% endif -%}
+{%- endfor -%}
+{% endmacro %}
+
+
+{#########################################################################
+ # Utility function
+ #########################################################################}
+
+
+{% macro render_utility_function_signature(spec) -%}
+{{ "void" if spec.return_type.is_nil else spec.return_type.c_type }} utility_{{ spec.name }}(
+    {{- render_args_signature(spec.arguments) -}}
+)
+{%- endmacro %}
+
+
+{% macro render_utility_function(spec) %}
+# {{ spec.name }}
+cdef GDNativePtrUtilityFunction __utility_{{ spec.name }}
+cdef inline {{ render_utility_function_signature(spec) }}:
+{% if (spec.arguments | length) != 0 %}
+    cdef GDNativeTypePtr[{{ spec.arguments | length }}] p_args = [
+        {{- render_args(spec.arguments) -}}
+    ]
+{% endif %}
+{% if not spec.return_type.is_nil %}
+    cdef {{ spec.return_type.c_type }} r_return
+{% endif %}
+    __utility_{{ spec.name }}(
+        {# GDNativeTypePtr r_return #}
+        {{ "NULL" if spec.return_type.is_nil else "&r_return" }},
+        {# const GDNativeTypePtr *p_arguments #}
+        {{ "NULL" if (spec.arguments | length) == 0 else "p_args" }},
+        {# int p_argument_count #}
+        {{ spec.arguments | length }}
+    )
+{% if not spec.return_type.is_nil %}
+    return r_return
+{% endif %}
+{% endmacro %}
+
+
+{#########################################################################
+ # Builtin type
+ #########################################################################}
+
+
+{% macro render_builtin_type_cy_struct(spec) %}
+struct {{ spec.c_struct_name }}:
+{% if spec.is_transparent_c_struct %}
+{%   for member in spec.c_struct_members %}
+    {{ member.type.c_type }} {{ member.name }}
+{%   endfor %}
+{% else %}
+    char _gd_opaque[{{ spec.size }}]
+{%   endif %}
+{% endmacro %}
+
+
+{% macro render_builtin_type_c_extern(spec, include_cy_struct) %}
+cdef extern from * nogil:
+    """
+    typedef struct {{ spec.c_struct_name }} {
+{%   if spec.is_transparent_c_struct %}
+{%     for member in spec.c_struct_members %}
+        {{ member.type.c_type }} {{ member.name }};
+{%     endfor %}
+{%   else %}
+        char _gd_opaque[{{ spec.size }}];
+{%   endif %}
+    } {{ spec.c_struct_name }};
+    """
+{% if include_cy_struct %}
+    {{ render_builtin_type_cy_struct(spec) | indent }}
+{% endif %}
+{% endmacro %}
+
+
+{#########################################################################
+ # Builtin function pointers
+ #########################################################################}
+
+
+{% macro render_builtin_functions_ptrs(spec) %}
+{% for c in spec.constructors %}
+cdef GDNativePtrConstructor __{{ spec.name }}_constructor_{{ c.index }}
+{% endfor %}
+{% if spec.has_destructor %}
+cdef GDNativePtrDestructor __{{ spec.name }}_destructor
+{% endif %}
+{% for m in spec.methods %}
+cdef GDNativePtrBuiltInMethod __{{ spec.name }}_meth_{{ m.name }}
+{% endfor %}
+{% for o in spec.operators %}
+cdef GDNativePtrOperatorEvaluator __{{ spec.name }}_op_{{ o.name }}
+{% endfor %}
+{% for m in spec.members %}
+{%   if not m.is_in_struct %}
+cdef GDNativePtrSetter __{{ spec.name }}_get_{{ m.name }}
+cdef GDNativePtrGetter __{{ spec.name }}_set_{{ m.name }}
+{%   endif %}
+{% endfor %}
+{% endmacro %}
+
+
+{#########################################################################
+ # Builtin constructors/destructor
+ #########################################################################}
+
+{% macro render_builtin_constructor_signature(spec, constructor) -%}
+{{ spec.c_struct_name }} {{ constructor.c_name }}({{ render_args_signature(constructor.arguments) }})
+{%- endmacro %}
+
+
+{% macro render_builtin_constructor(spec, constructor) %}
+cdef inline {{ render_builtin_constructor_signature(spec, constructor) }}:
+    cdef {{ spec.c_struct_name }} obj
+{% if (constructor.arguments | length) != 0 %}
+    cdef GDNativeTypePtr[{{ constructor.arguments | length }}] p_args = [
+        {{- render_args(constructor.arguments) -}}
+    ]
+{% endif %}
+    __{{ spec.name }}_constructor_{{ constructor.index }}(
+        &obj,
+        {{ "NULL" if (constructor.arguments | length) == 0 else "p_args" }}
+    )
+    return obj
+{% endmacro %}
+
+
+{% macro render_builtin_destructor_signature(spec) -%}
+void {{ spec.c_destructor_name }}({{ spec.c_struct_name }}* self)
+{%- endmacro %}
+
+
+{% macro render_builtin_destructor(spec) %}
+cdef inline {{ render_builtin_destructor_signature(spec) }}:
+    __{{ spec.name }}_destructor(self)
+{% endmacro %}
+
+
+{#########################################################################
+ # Builtin methods
+ #########################################################################}
+
+
+{% macro render_builtin_method_signature(spec, meth) -%}
+{{ "void" if meth.return_type.is_nil else meth.return_type.c_type }} {{ meth.c_name }}(
+    {{- spec.c_struct_name }} *self
+{%- if meth.arguments | length %}, {{ render_args_signature(meth.arguments) -}} {% endif -%}
+)
+{%- endmacro %}
+
+
+{% macro render_builtin_method(spec, meth) %}
+cdef inline {{ render_builtin_method_signature(spec, meth) }}:
+{% if (meth.arguments | length) != 0 %}
+    cdef GDNativeTypePtr[{{ meth.arguments | length }}] p_args = [
+        {{- render_args(meth.arguments) -}}
+    ]
+{% endif %}
+{% if not meth.return_type.is_nil %}
+    cdef {{ meth.return_type.c_type }} r_return
+{% endif %}
+    __{{ spec.name }}_meth_{{ meth.name }}(
+        {# GDNativeTypePtr p_base #}
+        self,
+        {# const GDNativeTypePtr *p_args #}
+        {{ "NULL" if (meth.arguments | length) == 0 or "p_args" }},
+        {# GDNativeTypePtr r_return #}
+        {{ "NULL" if meth.return_type.is_nil else "&r_return" }},
+        {# int p_argument_count #}
+        {{ meth.arguments | length }}
+    )
+{% if not meth.return_type.is_nil %}
+    return r_return
+{% endif %}
+{% endmacro %}
+
+
+{% macro render_builtin_all_functions(spec) %}
+{% for c in spec.constructors %}
+{{ render_builtin_constructor(spec, c) }}
+{% endfor %}
+{% if spec.has_destructor %}
+{{ render_builtin_destructor(spec) }}
+{% endif %}
+{% for m in spec.methods %}
+{{ render_builtin_method(spec, m) }}
+{% endfor %}
+{# TODO: operators #}
+{# {% for o in spec.operators %}
+{{ render_builtin_method(spec, o) }}
+{% endfor %} #}
+{% endmacro %}
+
+
+{% macro render_builtin_all_functions_signatures(spec) %}
+{% for c in spec.constructors %}
+# cdef {{ render_builtin_constructor_signature(spec, c) }}
+{% endfor %}
+{% if spec.has_destructor %}
+# cdef {{ render_builtin_destructor_signature(spec) }}
+{% endif %}
+{% for m in spec.methods %}
+# cdef {{ render_builtin_method_signature(spec, m) }}
+{% endfor %}
+{# TODO: operators #}
+{# {% for o in spec.operators %}
+# cdef {{ render_builtin_method_signature(spec, o) }}
+{% endfor %} #}
+{% endmacro %}

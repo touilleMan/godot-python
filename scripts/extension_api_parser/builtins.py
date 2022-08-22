@@ -1,8 +1,7 @@
-from typing import Dict, Optional, List, Tuple
+from typing import Dict, Optional, List
 from dataclasses import dataclass
-from string import ascii_uppercase
 
-from .utils import correct_name, assert_api_consistency
+from .utils import correct_name, assert_api_consistency, camel_to_snake
 from .type import TypeInUse, ValueInUse
 
 
@@ -121,35 +120,46 @@ class BuiltinMethodArgumentSpec:
 class BuiltinConstructorSpec:
     index: int
     arguments: List[BuiltinMethodArgumentSpec]
+    c_name: str
 
     @classmethod
-    def parse(cls, item: dict) -> "BuiltinConstructorSpec":
+    def parse(cls, item: dict, c_name_prefix: str) -> "BuiltinConstructorSpec":
         item.setdefault("arguments", [])
+        args = [BuiltinMethodArgumentSpec.parse(x) for x in item["arguments"]]
+        cooked_args = [arg.type.type_name.lower() for arg in args]
+        if not cooked_args:
+            item["c_name"] = f"{c_name_prefix}_new"
+        else:
+            item["c_name"] = f"{c_name_prefix}_new_from_" + "_".join(cooked_args)
         assert_api_consistency(cls, item)
         return cls(
             index=item["index"],
-            arguments=[BuiltinMethodArgumentSpec.parse(x) for x in item["arguments"]],
+            c_name=item["c_name"],
+            arguments=args,
         )
 
 
 @dataclass
 class BuiltinOperatorSpec:
     name: str
+    c_name: str
     original_name: str
     variant_operator_name: str
     right_type: TypeInUse
     return_type: TypeInUse
 
     @classmethod
-    def parse(cls, item: dict) -> "BuiltinOperatorSpec":
+    def parse(cls, item: dict, c_name_prefix: str) -> "BuiltinOperatorSpec":
         item.setdefault("original_name", item["name"])
         item.setdefault("right_type", "Nil")
         item["name"], item["variant_operator_name"] = VARIANT_OPERATORS[item.pop("name")]
+        item["c_name"] = f"{c_name_prefix}_op_{item['name']}"
         if item["right_type"] != "Nil":
             item["name"] = f"{item['name']}_{item['right_type'].lower()}"
         assert_api_consistency(cls, item)
         return cls(
             name=item["name"],
+            c_name=item["c_name"],
             original_name=item["original_name"],
             variant_operator_name=item["variant_operator_name"],
             # `right_type` is kind of a special case: most of the time `Nil/None` is
@@ -207,6 +217,7 @@ class BuiltinConstantSpec:
 @dataclass
 class BuiltinMethodSpec:
     name: str
+    c_name: str
     original_name: str
     return_type: Optional[TypeInUse]
     is_vararg: bool
@@ -226,13 +237,15 @@ class BuiltinMethodSpec:
         )
 
     @classmethod
-    def parse(cls, item: dict) -> "BuiltinMethodSpec":
+    def parse(cls, item: dict, c_name_prefix: str) -> "BuiltinMethodSpec":
         item.setdefault("original_name", item["name"])
         item.setdefault("arguments", [])
         item.setdefault("return_type", "Nil")
+        item.setdefault("c_name", f"{c_name_prefix}_{item['original_name']}")
         assert_api_consistency(cls, item)
         return cls(
             name=correct_name(item["name"]),
+            c_name=item["c_name"],
             original_name=item["original_name"],
             return_type=TypeInUse.parse(item["return_type"]),
             is_vararg=item["is_vararg"],
@@ -269,8 +282,8 @@ class BuiltinSpec:
     original_name: str
     # Name used for the binding (e.g. `from godot import Vector2`)
     name: str
-    # Name used for the C structure binding (e.g. `from godot.hazmat.gdapi cimport Vector2`)
-    c_struct_name: str
+    # Name used for the C structure binding (e.g. `from godot.hazmat.gdapi cimport gd_vector2_t`)
+    snake_name: str
     is_scalar: bool
     is_nil: bool
     size: int
@@ -289,6 +302,15 @@ class BuiltinSpec:
         return f"{type(self).__name__}({self.name})"
 
     @property
+    def c_destructor_name(self) -> str:
+        assert self.has_destructor
+        return f"gd_{self.snake_name}_del"
+
+    @property
+    def c_struct_name(self) -> str:
+        return f"gd_{self.snake_name}_t"
+
+    @property
     def is_packed_array(self) -> bool:
         return self.original_name.startswith("Packed") and self.original_name.endswith("Array")
 
@@ -300,7 +322,6 @@ class BuiltinSpec:
             if all(a == b.type.py_type for a, b in zip(args_types, constructor.arguments)):
                 return constructor.index
         else:
-            breakpoint()
             raise RuntimeError("No compatible constructor in extension_api.json !")
 
     @property
@@ -337,14 +358,10 @@ class BuiltinSpec:
     def parse(cls, item: dict) -> "BuiltinSpec":
         item["is_scalar"] = item["name"] in ("Nil", "bool", "int", "float")
         item["is_nil"] = item["name"] == "Nil"
-        # Camel to upper snake case
-        snake = ""
         # Gotcha with Transform2D&Transform3D
-        for c in item["name"].replace("2D", "2d").replace("3D", "3d"):
-            if c in ascii_uppercase and snake and snake[-1] not in ascii_uppercase:
-                snake += "_"
-            snake += c
-        item["variant_type_name"] = f"GDNATIVE_VARIANT_TYPE_{snake.upper()}"
+        snake_name = camel_to_snake(item["name"].replace("2D", "2d").replace("3D", "3d"))
+        item["snake_name"] = snake_name
+        item["variant_type_name"] = f"GDNATIVE_VARIANT_TYPE_{snake_name.upper()}"
         item.setdefault("original_name", item["name"])
         # Special case for the very commpon types to make them more explicit (e.g. to
         # avoid mixing Python's regular `str` with Godot `String`)
@@ -359,7 +376,6 @@ class BuiltinSpec:
             item["name"] = "GDDictionary"
         elif item["name"] == "Callable":
             item["name"] = "GDCallable"
-        item.setdefault("c_struct_name", f"C_{item['name']}")
         item.setdefault("indexing_return_type", None)
         item.setdefault("methods", [])
         item.setdefault("members", [])
@@ -370,20 +386,22 @@ class BuiltinSpec:
         # TODO: remove me once https://github.com/godotengine/godot/pull/64692 is merged
         if item["name"] in ("Transform2D", "AABB", "Basis", "Transform3D"):
             item["has_destructor"] = False
+        c_name_prefix = f"gd_{snake_name}"
         return cls(
             original_name=item["original_name"],
-            # name=correct_type_name(item["name"]),
             name=item["name"],
-            c_struct_name=item["c_struct_name"],
+            snake_name=snake_name,
             is_scalar=item["is_scalar"],
             is_nil=item["is_nil"],
             size=item["size"],
             indexing_return_type=item["indexing_return_type"],
             is_keyed=item["is_keyed"],
-            constructors=[BuiltinConstructorSpec.parse(x) for x in item["constructors"]],
+            constructors=[
+                BuiltinConstructorSpec.parse(x, c_name_prefix) for x in item["constructors"]
+            ],
             has_destructor=item["has_destructor"],
-            operators=[BuiltinOperatorSpec.parse(x) for x in item["operators"]],
-            methods=[BuiltinMethodSpec.parse(x) for x in item["methods"]],
+            operators=[BuiltinOperatorSpec.parse(x, c_name_prefix) for x in item["operators"]],
+            methods=[BuiltinMethodSpec.parse(x, c_name_prefix) for x in item["methods"]],
             members=[BuiltinMemberSpec.parse(x) for x in item["members"]],
             constants=[BuiltinConstantSpec.parse(x) for x in item["constants"]],
             variant_type_name=item["variant_type_name"],
