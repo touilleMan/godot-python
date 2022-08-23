@@ -2,7 +2,6 @@
 # see `scripts/generate_tmpl.py`
 
 cimport cython
-from cpython.ref cimport PyObject
 cdef extern from "Python.h":
     const char* PyUnicode_AsUTF8AndSize(object, size_t*)
     object PyUnicode_DecodeUTF32(const char *s, size_t size, const char *errors, int *byteorder)

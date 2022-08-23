@@ -25,7 +25,7 @@
 
 
 {% macro render_utility_function_signature(spec) -%}
-{{ "void" if spec.return_type.is_nil else spec.return_type.c_type }} utility_{{ spec.name }}(
+{{ "void" if spec.return_type.is_nil else spec.return_type.c_type }} gd_{{ spec.name }}(
     {{- render_args_signature(spec.arguments) -}}
 )
 {%- endmacro %}
@@ -208,22 +208,5 @@ cdef inline {{ render_builtin_method_signature(spec, meth) }}:
 {# TODO: operators #}
 {# {% for o in spec.operators %}
 {{ render_builtin_method(spec, o) }}
-{% endfor %} #}
-{% endmacro %}
-
-
-{% macro render_builtin_all_functions_signatures(spec) %}
-{% for c in spec.constructors %}
-# cdef {{ render_builtin_constructor_signature(spec, c) }}
-{% endfor %}
-{% if spec.has_destructor %}
-# cdef {{ render_builtin_destructor_signature(spec) }}
-{% endif %}
-{% for m in spec.methods %}
-# cdef {{ render_builtin_method_signature(spec, m) }}
-{% endfor %}
-{# TODO: operators #}
-{# {% for o in spec.operators %}
-# cdef {{ render_builtin_method_signature(spec, o) }}
 {% endfor %} #}
 {% endmacro %}
