@@ -10,7 +10,7 @@ from .hazmat.gdapi cimport *
 
 
 # Godot internally uses utf32 encoding format
-# CPython is more messy, but lean toward UTF8
+# CPython is more complex (uses different encodings to save space), but leans toward UTF8
 
 
 cdef inline GDString pystr_to_gdstr(object pystr):

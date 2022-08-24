@@ -4,7 +4,7 @@
 # only expose C functions.
 # Beside this module depend on the `godot.hazmat` module so it would be a bad
 # idea to make the `godot` module depend on it...
-# include "_godot_editor.pxi"
+include "_pythonscript_editor.pxi"
 # include "_godot_profiling.pxi"
 # include "_godot_script.pxi"
 # include "_godot_instance.pxi"
@@ -44,51 +44,6 @@ cdef api void _pythonscript_free_instance(
     pass
 
 
-cdef api gd_packed_string_array_t _pythonscript_get_reserved_words():
-    cdef gd_packed_string_array_t arr = gd_packed_string_array_new()
-    cdef gd_string_t string
-    cdef (char*)[33] keywords = [
-        "False",
-        "None",
-        "True",
-        "and",
-        "as",
-        "assert",
-        "break",
-        "class",
-        "continue",
-        "def",
-        "del",
-        "elif",
-        "else",
-        "except",
-        "finally",
-        "for",
-        "from",
-        "global",
-        "if",
-        "import",
-        "in",
-        "is",
-        "lambda",
-        "nonlocal",
-        "not",
-        "or",
-        "pass",
-        "raise",
-        "return",
-        "try",
-        "while",
-        "with",
-        "yield",
-    ]
-    for keyword in keywords:
-        string = gd_string_from_utf8(keyword, keyword.len())
-        gd_packed_string_array_append(&arr, &string)
-        gd_string_del(&string)
-    return arr
-
-
 # Global reference on the godot api, this is guaranteed to be defined before
 # Python is initialized.
 # This reference is used by all the Cython modules (hence why `_pythonscript`
@@ -119,6 +74,47 @@ cdef api void _pythonscript_initialize() with gil:
     # v2._gd_data.x = cv.x
     # v2._gd_data.y = cv.y
     # print("+++++++++++>", v2.x, v2.y)
+
+    # Now register Python as language into Godot
+    cdef GDNativeExtensionClassCreationInfo info
+    info.set_func = NULL  # GDNativeExtensionClassSet
+    info.get_func = NULL  # GDNativeExtensionClassGet
+    info.get_property_list_func = NULL  # GDNativeExtensionClassGetPropertyList
+    info.free_property_list_func = NULL  # GDNativeExtensionClassFreePropertyList
+    info.notification_func = NULL  # GDNativeExtensionClassNotification
+    info.to_string_func = NULL  # GDNativeExtensionClassToString
+    info.reference_func = NULL  # GDNativeExtensionClassReference
+    info.unreference_func = NULL  # GDNativeExtensionClassUnreference
+    info.create_instance_func = &_pythonscript_create_instance
+    info.free_instance_func = &_pythonscript_free_instance
+    info.get_virtual_func = NULL  # GDNativeExtensionClassGetVirtual
+    info.get_rid_func = NULL  # GDNativeExtensionClassGetRID
+    info.class_userdata = NULL  # void*
+    pythonscript_gdapi.classdb_register_extension_class(
+        pythonscript_gdlibrary,
+        "PythonScriptLanguageExtension",
+        "ScriptLanguageExtension",
+        &info,
+    )
+
+    # cdef GDNativeExtensionClassMethodInfo info
+    # info.name = NULL  # char* name
+    # info.method_userdata = NULL  # void* method_userdata
+    # info.call_func = NULL  # GDNativeExtensionClassMethodCall call_func
+    # info.ptrcall_func = NULL  # GDNativeExtensionClassMethodPtrCall ptrcall_func
+    # info.method_flags = NULL  # uint32_t method_flags
+    # info.argument_count = NULL  # uint32_t argument_count
+    # info.has_return_value = NULL  # GDNativeBool has_return_value
+    # info.get_argument_type_func = NULL  # GDNativeExtensionClassMethodGetArgumentType get_argument_type_func
+    # info.get_argument_info_func = NULL  # GDNativeExtensionClassMethodGetArgumentInfo get_argument_info_func
+    # info.get_argument_metadata_func = NULL  # GDNativeExtensionClassMethodGetArgumentMetadata get_argument_metadata_func
+    # info.default_argument_count = NULL  # uint32_t default_argument_count
+    # info.default_arguments = NULL  # GDNativeVariantPtr* default_arguments
+    # pythonscript_gdapi.classdb_register_extension_class_method(
+    #     pythonscript_gdlibrary,
+    #     "PythonScriptLanguageExtension",
+    #     &info,
+    # )
 
 
     # # OS and ProjectSettings are singletons exposed as global python objects,

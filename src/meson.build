@@ -135,6 +135,7 @@ pxds_godot = [
 # _pythonscript.c
 # _pythonscript_api.h
 # ├─ _pythonscript.pyx
+# ├─ _pythonscript_editor.pxi
 # ├─ godot/hazmat/gdapi.pxd
 # ├─ godot/builtins.pxd
 # |  └─ ...
@@ -152,7 +153,11 @@ pxds_godot = [
 # hence this header is private and won't be provided in the release
 c_pythonscript = custom_target('_pythonscript.c & _pythonscript.h & _pythonscript_api.h}',
     output : ['_pythonscript.c', '_pythonscript_api.h'],
-    input : ['_pythonscript.pyx', pxds_godot],
+    input : [
+        '_pythonscript.pyx',
+        '_pythonscript_editor.pxi',
+        pxds_godot
+    ],
     command : cythonize_command,
 )
 h_pythonscript_api = c_pythonscript[1]  # Header for pythonscript.c

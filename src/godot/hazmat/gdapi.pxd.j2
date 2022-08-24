@@ -28,9 +28,11 @@ cdef extern from * nogil:
     # define DLL_IMPORT
     #endif
     DLL_IMPORT extern const GDNativeInterface *pythonscript_gdapi;
+    DLL_IMPORT GDNativeExtensionClassLibraryPtr pythonscript_gdlibrary;
     """
 
     cdef const GDNativeInterface *pythonscript_gdapi
+    cdef const GDNativeExtensionClassLibraryPtr pythonscript_gdlibrary
 
 
 ##############################################################################
