@@ -1,5 +1,20 @@
-{% from 'builtins_pxd/method.pxd.j2' import render_method with context %}
-{% from 'builtins_pxd/member.pxd.j2' import render_member with context %}
+{% from 'builtins_pxd/method.pxd.j2' import render_method, render_method_signature with context %}
+{% from 'builtins_pxd/member.pxd.j2' import
+    render_member,
+    render_member_getter_signature,
+    render_member_setter_signature
+with context %}
+
+{% macro render_class_resume(spec) %}
+# cdef class {{ spec.name }}:
+{% for m in spec.members %}
+#    {{ render_member_getter_signature(spec, m) }}
+#    {{ render_member_setter_signature(spec, m) }}
+{% endfor %}
+{% for m in spec.methods %}
+#    {{ render_method_signature(spec, m) }}
+{% endfor %}
+{% endmacro %}
 
 
 {% macro render_class(spec, m) %}

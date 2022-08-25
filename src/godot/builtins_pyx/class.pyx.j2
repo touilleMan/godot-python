@@ -1,0 +1,55 @@
+{%- from 'builtins_pyx/constructor.pyx.j2' import render_constructors with context -%}
+{%- from 'builtins_pyx/member.pyx.j2' import render_member with context -%}
+
+
+{% macro render_constant(spec, c) %}
+{%   if c.type.is_scalar %}
+{{ c.name }} = {{ c.value }}
+{%   else %}
+@property
+def {{ c.name }}(self):
+    return {{ c.value }}
+{%   endif %}
+{% endmacro %}
+
+
+{% macro render_class(spec) -%}
+
+@cython.freelist(8)
+@cython.final
+cdef class {{ spec.name }}:
+    # Constructors
+    {{ render_constructors(spec) | indent }}
+
+{% if spec.has_destructor %}
+    # Destructor
+    def __dealloc__({{ spec.name }} self):
+        # /!\ if `__cinit__` is skipped, `_gd_data` must be initialized by
+        # hand otherwise we will get a segfault here
+        __{{ spec.name }}_destructor(&self._gd_data)
+{% endif %}
+
+    def __repr__(self):
+        # TODO: finish me...
+        # pythonscript_gdapi.variant_stringify(&self._gd_data)
+        return "<{{ spec.name }}>"
+{% if spec.name == "GDString" %}
+    def __str__(self):
+        self.to_pystr()
+{% endif %}
+{% if spec.constants %}
+    # Constants
+
+{% endif %}
+{% for c in spec.constants %}
+    {{ render_constant(spec, c) | indent }}
+{% endfor %}
+
+{% if spec.members %}
+    # Members
+
+{% endif %}
+{% for m in spec.members %}
+    {{ render_member(spec, m) | indent }}
+{% endfor %}
+{%- endmacro %}

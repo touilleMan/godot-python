@@ -1,4 +1,11 @@
-{% from 'builtins_pxd/class.pxd.j2' import render_class with context %}
+{% from 'builtins_pxd/class.pxd.j2' import render_class, render_class_resume with context %}
+{% for spec in api["builtins"] if not spec.is_scalar %}
+#
+#
+{{ render_class_resume(spec) }}
+{% endfor %}
+
+
 cimport cython
 
 cdef extern from "Python.h":
