@@ -1,9 +1,11 @@
+{% from 'builtins_pxd/constructor.pxd.j2' import render_constructors with context %}
 {% from 'builtins_pxd/method.pxd.j2' import render_method, render_method_signature with context %}
 {% from 'builtins_pxd/member.pxd.j2' import
     render_member,
     render_member_getter_signature,
     render_member_setter_signature
 with context %}
+
 
 {% macro render_class_resume(spec) %}
 # cdef class {{ spec.name }}:
@@ -22,6 +24,8 @@ with context %}
 @cython.final
 cdef class {{ spec.name }}:
     cdef {{ spec.c_struct_name }} _gd_data
+
+    {{ render_constructors(spec) | indent }}
 
     @staticmethod
     cdef inline {{ spec.name }} new():

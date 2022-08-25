@@ -92,6 +92,7 @@ pxd_godot_builtins = custom_target(
         files(
             'godot/builtins.pxd.j2',
             'godot/builtins_pxd/class.pxd.j2',
+            'godot/builtins_pxd/constructor.pxd.j2',
             'godot/builtins_pxd/member.pxd.j2',
             'godot/builtins_pxd/method.pxd.j2',
         ),

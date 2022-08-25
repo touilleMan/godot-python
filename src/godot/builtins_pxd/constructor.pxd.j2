@@ -1,0 +1,25 @@
+{# In Godot you would do `var v2 = Vector2(v1)`, but it's more Pythonic #}
+{# to provide a clone method and do `v2 = v1.clone()` (and it simplifies #}
+{# constructor implementation !) #}
+{% macro render_clone_constructor(spec) -%}
+cpdef inline {{ spec.name }} clone(self):
+    cdef {{ spec.name }} obj = {{ spec.name }}.__new__({{ spec.name }})
+{% if spec.is_transparent_c_struct %}
+    obj._gd_data = self._gd_data
+{% else %}
+{# Opaque builtin, must retrieve and use the clone constructor function #}
+    cdef GDNativeTypePtr[1] args = [&self._gd_data]
+    __{{ spec.name }}_constructor_{{ spec.clone_constructor_index }}(&obj._gd_data, args)
+{% endif %}
+    return obj
+{%- endmacro %}
+
+
+{#########################################################################
+ # Render constructors
+ #########################################################################}
+
+
+{% macro render_constructors(spec) -%}
+{{ render_clone_constructor(spec) }}
+{% endmacro %}
