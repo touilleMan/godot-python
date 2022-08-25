@@ -1,0 +1,140 @@
+from warnings import warn
+
+
+cdef bint is_pytype_compatible_with_gdvariant(object pytype):
+    if (
+{% for spec in api["builtins"] %}
+        pytype == {{ "None" if spec.is_nil else spec.name }}{{ "" if loop.last else " or"}}
+{% endfor %}
+    ):
+        return True
+    elif issubclass(pytype, GDObject):
+        return True
+    else:
+        return False
+
+
+cdef object gdtype_to_pytype(GDNativeVariantType gdtype):
+{% for spec in api["builtins"] %}
+    {{ "if" if loop.first else "elif" }} gdtype == {{ spec.variant_type_name }}:
+{%   if spec.is_nil %}
+        return None
+{%   else %}
+        return {{ spec.name }}
+{%   endif %}
+{% endfor %}
+    elif gdtype == GDNATIVE_VARIANT_TYPE_OBJECT:
+        return GDObject
+    else:
+        warn(f"No Python equivalent for Godot type `{gdtype}`")
+        return None
+
+
+cdef GDNativeVariantType pytype_to_gdtype(object pytype):
+{% for spec in api["builtins"] %}
+    {{ "if" if loop.first else "elif" }} pytype == {{ "None" if spec.is_nil else spec.name }}:
+        return {{ spec.variant_type_name }}
+{% endfor %}
+    elif issubclass(pytype, GDObject):
+        return GDNATIVE_VARIANT_TYPE_OBJECT
+    else:
+        warn(f"No Godot equivalent for Python type `{pytype}`")
+        return GDNATIVE_VARIANT_TYPE_NIL
+
+
+{#########################################################################
+ # Gdoot Variant -> PyObject
+ #########################################################################}
+
+
+cdef object gdvariant_to_pyobj(const gd_variant_t *p_gdvar):
+    # TODO: must do an ugly cast because autopxd2 ignores const qualifiers in the C headers
+    cdef GDNativeVariantType gdtype = pythonscript_gdapi.variant_get_type(<gd_variant_t *>p_gdvar)
+    if gdtype == GDNATIVE_VARIANT_TYPE_OBJECT:
+        raise NotImplementedError  # TODO
+        # # TODO: This conversion relies on godot String and lookup into bindings
+        # # modules, wouldn't it be better to create a `ObjectFromVariant` lazy
+        # # class instead ?
+        # return Object.cast_from_variant(p_gdvar)
+{% for spec in api["builtins"] if not spec.is_nil %}
+    elif gdtype == {{ spec.variant_type_name }}:
+{%   if spec.is_nil %}
+        return None
+{%   else %}
+        return _gdvariant_to_pyobj_{{ spec.name }}(p_gdvar)
+{%   endif %}
+{% endfor %}
+    else:
+        warn(f"Unknown Godot Variant type `{gdtype}` (this should never happen !)")
+        return None
+
+
+{% for spec in api["builtins"] if not spec.is_nil %}
+cdef inline object _gdvariant_to_pyobj_{{ spec.name }}(const gd_variant_t *p_gdvar):
+{%   if spec.name == "bool" %}
+    cdef {{ api.bool_spec.cy_type }} ret
+    __{{ spec.name }}_from_variant(&ret, <gd_variant_t *>p_gdvar)
+    return bool(ret)
+{%   elif spec.name == "int" %}
+    cdef {{ api.int_spec.cy_type }} ret
+    __{{ spec.name }}_from_variant(&ret, <gd_variant_t *>p_gdvar)
+    return ret
+{%   elif spec.name == "float" %}
+    cdef {{ api.float_spec.cy_type }} ret
+    __{{ spec.name }}_from_variant(&ret, <gd_variant_t *>p_gdvar)
+    return ret
+{%   else %}
+    cdef {{ spec.name }} ret = {{ spec.name }}.__new__({{ spec.name }})
+    __{{ spec.name }}_from_variant(&ret._gd_data, <gd_variant_t *>p_gdvar)
+    return ret
+{%   endif %}
+{% endfor %}
+
+
+{#########################################################################
+ # PyObject -> Godot Variant
+ #########################################################################}
+
+
+cdef bint pyobj_to_gdvariant(object pyobj, gd_variant_t *p_gdvar):
+    if pyobj is None:
+        pythonscript_gdapi.variant_new_nil(p_gdvar)
+    elif isinstance(pyobj, GDObject):
+        __GDObject_to_variant(p_gdvar, (<GDObject>pyobj)._gd_ptr)
+    elif isinstance(pyobj, bool):
+        _pyobj_to_gdvariant_bool(pyobj, p_gdvar)
+    elif isinstance(pyobj, int):
+        _pyobj_to_gdvariant_int(pyobj, p_gdvar)
+    elif isinstance(pyobj, float):
+        _pyobj_to_gdvariant_float(pyobj, p_gdvar)
+    elif isinstance(pyobj, str):
+        _pyobj_to_gdvariant_pystr(pyobj, p_gdvar)
+{% for spec in api["builtins"] if not spec.is_scalar %}
+    elif isinstance(pyobj, {{ spec.name }}):
+        __{{ spec.name }}_to_variant(p_gdvar, &(<{{ spec.name }}>pyobj)._gd_data)
+{% endfor %}
+    else:
+        warn(f"Cannot convert `{type(pyobj)}` to Godot's Variant")
+        pythonscript_gdapi.variant_new_nil(p_gdvar)
+        return False
+    return True
+
+
+cdef inline void _pyobj_to_gdvariant_bool({{ api.bool_spec.cy_type }} val, gd_variant_t *p_gdvar):
+    __bool_to_variant(p_gdvar, &val)
+
+
+cdef inline void _pyobj_to_gdvariant_float({{ api.float_spec.cy_type }} val, gd_variant_t *p_gdvar):
+    __float_to_variant(p_gdvar, &val)
+
+
+cdef inline void _pyobj_to_gdvariant_int({{ api.int_spec.cy_type }} val, gd_variant_t *p_gdvar):
+    __int_to_variant(p_gdvar, &val)
+
+
+cdef inline void _pyobj_to_gdvariant_pystr(object pyobj, gd_variant_t *p_gdvar):
+    cdef gd_string_t gdstr = gd_string_from_unchecked_pystr(pyobj)
+    try:
+        __GDString_to_variant(p_gdvar, &gdstr)
+    finally:
+        gd_string_del(&gdstr)

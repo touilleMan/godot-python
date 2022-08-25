@@ -43,14 +43,15 @@ custom_target(
 #       └─ extension_api.json
 
 
-pxi_gdapi_ptrs = custom_target(
-    output: 'gdapi_ptrs.pxi',
+pyx_gdapi = custom_target(
+    output: 'gdapi.pyx',
     input: [
         generate_tmpl_base_input,
         files(
-            'gdapi_ptrs.pxi.j2',
+            'gdapi.pyx.j2',
+            'gdapi.ptrs.pyx.j2',
+            'gdapi.conversion.pyx.j2',
         ),
-        pxd_godot_hazmat_gdnative_interface,
     ],
     command: generate_tmpl_cmd,
 )
@@ -59,9 +60,8 @@ pxi_gdapi_ptrs = custom_target(
 c_gdapi = custom_target(
     output : 'gdapi.c',
     input : [
-        files('gdapi.pyx'),
-        pxi_gdapi_ptrs,
-        pxds_godot_hazmat,
+        pyx_gdapi,
+        pxds_godot,
     ],
     command : cythonize_command,
 )

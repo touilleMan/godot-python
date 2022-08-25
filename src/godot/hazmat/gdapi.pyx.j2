@@ -1,0 +1,9 @@
+from .gdnative_interface cimport *
+from ..builtins cimport *
+from ..classes cimport GDObject
+
+
+{% include 'gdapi.conversion.pyx.j2' %}
+
+
+{% include 'gdapi.ptrs.pyx.j2' %}

@@ -126,7 +126,7 @@ cdef inline gd_string_t gd_string_from_utf8(const char *cstr, size_t cstr_size):
     return gdstr
 
 
-cdef inline gd_string_t gd_string_from_pystr(object pystr):
+cdef inline gd_string_t gd_string_from_unchecked_pystr(object pystr):
     cdef size_t buffsize
     cdef const char *buff = PyUnicode_AsUTF8AndSize(pystr, &buffsize)
     return gd_string_from_utf8(buff, buffsize)
@@ -189,4 +189,15 @@ cdef extern from * nogil:
 
 {% for spec in api["builtins"] if not spec.is_scalar %}
 {{ render_builtin_functions_ptrs(spec) }}
+{% endfor %}
+
+
+##############################################################################
+#              Godot API function pointers on variant conversion             #
+##############################################################################
+
+
+{% for spec in api["builtins"] if not spec.is_scalar %}
+cdef GDNativeTypeFromVariantConstructorFunc __{{ spec.name }}_from_variant
+cdef GDNativeVariantFromTypeConstructorFunc __{{ spec.name }}_to_variant
 {% endfor %}

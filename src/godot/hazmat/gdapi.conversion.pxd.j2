@@ -1,0 +1,29 @@
+cdef object gdvariant_to_pyobj(const gd_variant_t *p_gdvar)
+cdef bint pyobj_to_gdvariant(object pyobj, gd_variant_t *p_var)
+
+
+cdef bint is_pytype_compatible_with_gdvariant(object pytype)
+cdef object gdtype_to_pytype(GDNativeVariantType gdtype)
+cdef GDNativeVariantType pytype_to_gdtype(object pytype)
+
+
+cdef inline GDString ensure_is_gdstring(object gdstring_or_pystr):
+    cdef GDString gdstring_converted
+    try:
+        return <GDString?>gdstring_or_pystr
+    except TypeError:
+        try:
+            return GDString(gdstring_or_pystr)
+        except TypeError:
+            raise TypeError(f"Invalid value {gdstring_or_pystr!r}, must be str or GDString")
+
+
+cdef inline NodePath ensure_is_nodepath(object nodepath_or_pystr):
+    cdef NodePath NodePath_converted
+    try:
+        return <NodePath?>nodepath_or_pystr
+    except TypeError:
+        try:
+            return NodePath(nodepath_or_pystr)
+        except TypeError:
+            raise TypeError(f"Invalid value {nodepath_or_pystr!r}, must be str or NodePath")

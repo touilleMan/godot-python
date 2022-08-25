@@ -43,32 +43,11 @@ PYTHON_KEYWORDS = {
 }
 
 
-GD_SCALAR_TYPES = {"Nil", "bool", "int", "float"}
-
-
 def correct_name(name: str) -> str:
     if name in PYTHON_KEYWORDS:
         return f"{name}_"
     else:
         return name
-
-
-def correct_type_name(type_name: str) -> str:
-    if type_name == "Nil":
-        return "None"
-    if type_name in GD_SCALAR_TYPES:
-        # By chance Godot's scalar types have the same name than Python's ones
-        return type_name
-    elif type_name == "Object":
-        # `Object` is too similar than Python's `object`
-        return "GDObject"
-    elif type_name == "String":
-        # `String` is too similar than Python's `str`
-        return "GDString"
-    elif type_name == "Variant":
-        return "GDVariant"
-    else:
-        return type_name
 
 
 def assert_api_consistency(datacls, api: dict) -> None:
