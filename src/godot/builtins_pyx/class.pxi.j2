@@ -8,10 +8,10 @@
 
 {% macro render_constant(spec, c) %}
 {%   if c.type.is_scalar %}
-{{ c.name }}: {{ c.type.py_type }} = {{ c.value }}
+{{ c.name }} = {{ c.value }}
 {%   else %}
 @property
-def {{ c.name }}(self) -> {{ c.type.py_type }}:
+def {{ c.name }}(self):
     return {{ c.value }}
 {%   endif %}
 {% endmacro %}
@@ -24,7 +24,7 @@ def {{ c.name }}(self) -> {{ c.type.py_type }}:
 
 {% macro render_transparent_builtin_scalar_property(m, name_prefix, access_prefix) -%}
 @property
-def {{ name_prefix }}{{ m.name }}(self) -> {{ m.type.py_type }}:
+def {{ name_prefix }}{{ m.name }}(self):
     return {{ access_prefix }}.{{ m.name }}
 @{{ name_prefix }}{{ m.name }}.setter
 def {{ name_prefix }}{{ m.name }}(self, {{ m.type.cy_type }} val):
