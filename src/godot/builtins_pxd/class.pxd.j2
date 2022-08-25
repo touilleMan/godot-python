@@ -30,7 +30,7 @@ cdef class {{ spec.name }}:
         __{{ spec.name }}_constructor_0(&ret._gd_data, NULL)
         return ret
 {% if spec.name == "GDString" %}
-    cdef inline gd_string_t to_pystr(self):
+    cdef inline object to_pystr(self):
         return gdstring_to_pystr(&self._gd_data)
 {% endif %}
 {% for m in spec.members %}

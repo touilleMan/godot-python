@@ -35,7 +35,7 @@ cdef class {{ spec.name }}:
         return "<{{ spec.name }}>"
 {% if spec.name == "GDString" %}
     def __str__(self):
-        self.to_pystr()
+        return self.to_pystr()
 {% endif %}
 {% if spec.constants %}
     # Constants
