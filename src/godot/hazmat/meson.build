@@ -49,8 +49,8 @@ pyx_gdapi = custom_target(
         generate_tmpl_base_input,
         files(
             'gdapi.pyx.j2',
-            'gdapi.ptrs.pyx.j2',
-            'gdapi.conversion.pyx.j2',
+            'gdapi_pyx/ptrs.pyx.j2',
+            'gdapi_pyx/conversion.pyx.j2',
         ),
     ],
     command: generate_tmpl_cmd,

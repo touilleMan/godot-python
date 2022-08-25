@@ -1,12 +1,4 @@
-##############################################################################
-#                             Builtins                                       #
-##############################################################################
-{% for spec in api["builtins"] if not spec.is_scalar %}
-
-##############################################################################
-#{{ "{:^76}".format(spec.name) }}#
-##############################################################################
-
+{% macro render_builtin_ptrs(spec) %}
 {%   for c in spec.constructors %}
 cdef GDNativePtrConstructor __{{ spec.name }}_constructor_{{ c.index }} = pythonscript_gdapi.variant_get_ptr_constructor(
     {{ spec.variant_type_name }}, {{ c.index }}
@@ -37,33 +29,43 @@ cdef GDNativePtrSetter __{{ spec.name }}_get_{{ m.name }} = pythonscript_gdapi.v
 cdef GDNativePtrGetter __{{ spec.name }}_set_{{ m.name }} = pythonscript_gdapi.variant_get_ptr_getter({{ spec.variant_type_name }}, "{{ m.name }}")
 {%     endif %}
 {%   endfor %}
-{% endfor %}
+{% endmacro %}
 
 
-##############################################################################
-#                             Variant conversion                             #
-##############################################################################
-{% for spec in api["builtins"] %}
+{% macro render_all_builtins_ptrs() %}
+{%   for spec in api["builtins"] if not spec.is_scalar %}
+
+#{{ spec.name }}
+
+{{ render_builtin_ptrs(spec) }}
+{%   endfor %}
+{% endmacro %}
+
+
+{% macro render_variant_conversions_ptrs() %}
+{%   for spec in api["builtins"] %}
 cdef GDNativeTypeFromVariantConstructorFunc __{{ spec.name }}_from_variant = pythonscript_gdapi.get_variant_to_type_constructor({{ spec.variant_type_name }})
 cdef GDNativeVariantFromTypeConstructorFunc __{{ spec.name }}_to_variant = pythonscript_gdapi.get_variant_from_type_constructor({{ spec.variant_type_name }})
-{% endfor %}
+{%   endfor %}
 cdef GDNativeTypeFromVariantConstructorFunc __GDObject_from_variant = pythonscript_gdapi.get_variant_to_type_constructor(GDNATIVE_VARIANT_TYPE_OBJECT)
 cdef GDNativeVariantFromTypeConstructorFunc __GDObject_to_variant = pythonscript_gdapi.get_variant_from_type_constructor(GDNATIVE_VARIANT_TYPE_OBJECT)
+{% endmacro %}
 
 
-##############################################################################
-#                              Utility functions                             #
-##############################################################################
-
-{% for spec in api["utility_functions"] %}
+{% macro render_utility_function_ptrs() %}
+{%   for spec in api["utility_functions"] %}
 # {{ spec.name }}
 cdef GDNativePtrUtilityFunction __utility_{{ spec.name }} = pythonscript_gdapi.variant_get_ptr_utility_function("{{ spec.original_name }}", {{ spec.hash }})
-{% endfor %}
+{%   endfor %}
+{% endmacro %}
 
-##############################################################################
-#                                   Classes                                  #
-##############################################################################
+
+{% macro render_all_ptrs() %}
+{{ render_all_builtins_ptrs() }}
+
+{{ render_variant_conversions_ptrs() }}
+
+{{ render_utility_function_ptrs() }}
+
 {# TODO: do lazy function pointer initialization ? #}
-{% for spec in api["classes"] %}
-
-{% endfor %}
+{% endmacro %}
