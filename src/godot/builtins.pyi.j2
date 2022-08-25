@@ -64,8 +64,8 @@ IntoGDAny
 
 
 class {{ spec.name }}(Enum):
-{%   for a in spec.values.keys() %}
-    {{ a }}: int
+{%   for key in spec.values.keys() %}
+    {{ key }}: int
 {%   endfor %}
 {% endfor %}
 
@@ -89,6 +89,14 @@ def {{ spec.name }}(
 #                                  Builtins                                  #
 ##############################################################################
 {% for spec in api["builtins"] if not spec.is_scalar %}
+{% for e in spec.enums %}
+
+
+class {{ e.name }}(Enum):
+{%   for key in e.values.keys() %}
+    {{ key }}: int
+{%   endfor %}
+{% endfor %}
 
 
 class {{spec.name}}:
@@ -97,6 +105,8 @@ class {{spec.name}}:
     def __init__(self{% for a in c.arguments %}, {{ render_arg(a) }}{% endfor %}): ...
 {%   endfor %}
 {%   if spec.members %}
+
+    def clone(self) -> {{ spec.name }}: ...
 
     # Members
 {%   endif %}

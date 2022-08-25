@@ -1,5 +1,5 @@
-{%- from 'builtins_pyx/constructor.pyx.j2' import render_constructors with context -%}
-{%- from 'builtins_pyx/member.pyx.j2' import render_member with context -%}
+{% from 'builtins_pyx/constructor.pyx.j2' import render_constructors with context %}
+{% from 'builtins_pyx/member.pyx.j2' import render_member with context %}
 
 
 {% macro render_constant(spec, c) %}

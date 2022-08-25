@@ -1,4 +1,4 @@
-{%- from 'gdapi_pxd/macros.pxd.j2' import
+{% from 'gdapi_pxd/macros.pxd.j2' import
     render_utility_function_signature,
     render_utility_function,
     render_builtin_type_cy_struct,
@@ -8,7 +8,7 @@
     render_builtin_method_signature,
     render_builtin_all_functions,
     render_builtin_functions_ptrs
--%}
+%}
 cimport cython
 from libc.stdint cimport *
 
