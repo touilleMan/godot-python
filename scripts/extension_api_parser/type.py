@@ -386,7 +386,7 @@ def register_classes_in_types_db(classes: Iterable["ClassSpec"]) -> None:
             gdapi_type=spec.original_name,
             py_type=spec.name,
             c_type="GDNativeObjectPtr",
-            cy_type="GDNativeObjectPtr",
+            cy_type="object",
             _variant_type_name="GDNATIVE_VARIANT_TYPE_OBJECT",
         )
         TYPES_DB[ts.gdapi_type] = ts
