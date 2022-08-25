@@ -73,8 +73,8 @@ pxd_godot_hazmat_gdapi = custom_target(
         generate_tmpl_base_input,
         files(
             'godot/hazmat/gdapi.pxd.j2',
-            'godot/hazmat/gdapi.macros.pxd.j2',
-            'godot/hazmat/gdapi.conversion.pxd.j2',
+            'godot/hazmat/gdapi_pxd/macros.pxd.j2',
+            'godot/hazmat/gdapi_pxd/conversion.pxd.j2',
         ),
     ],
     command: generate_tmpl_cmd,

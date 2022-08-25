@@ -1,4 +1,4 @@
-{%- from 'gdapi.macros.pxd.j2' import
+{%- from 'gdapi_pxd/macros.pxd.j2' import
     render_utility_function_signature,
     render_utility_function,
     render_builtin_type_cy_struct,
@@ -40,7 +40,7 @@ cdef extern from * nogil:
 ##############################################################################
 
 
-{% include 'gdapi.conversion.pxd.j2' %}
+{% include 'gdapi_pxd/conversion.pxd.j2' %}
 
 
 ##############################################################################
