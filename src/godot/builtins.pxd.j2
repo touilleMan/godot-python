@@ -9,22 +9,26 @@ cdef extern from "Python.h":
 from .hazmat.gdapi cimport *
 
 
-# Godot internally uses utf32 encoding format
-# CPython is more complex (uses different encodings to save space), but leans toward UTF8
+cdef inline GDString ensure_is_gdstring(object gdstring_or_pystr):
+    cdef GDString gdstring_converted
+    try:
+        return <GDString?>gdstring_or_pystr
+    except TypeError:
+        try:
+            return GDString(gdstring_or_pystr)
+        except TypeError:
+            raise TypeError(f"Invalid value {gdstring_or_pystr!r}, must be str or GDString")
 
 
-cdef inline GDString pystr_to_gdstr(object pystr):
-    cdef size_t buffsize
-    cdef const char *buff = PyUnicode_AsUTF8AndSize(pystr, &buffsize)
-    cdef GDString gdstr = GDString.__new__(GDString)
-    pythonscript_gdapi.string_new_with_utf8_chars_and_len(&gdstr._gd_data, buff, buffsize)
-    return gdstr
-
-
-cdef inline object gdstr_to_pystr(GDNativeStringPtr *gdstr):
-    cdef GDNativeInt l = pythonscript_gdapi.string_to_utf32_chars(gdstr, NULL, 0)
-    cdef const char32_t *gdbuff = pythonscript_gdapi.string_operator_index_const(gdstr, 0)
-    return PyUnicode_DecodeUTF32(<char *>gdbuff, l * cython.sizeof(char32_t), NULL, NULL)
+cdef inline NodePath ensure_is_nodepath(object nodepath_or_pystr):
+    cdef NodePath NodePath_converted
+    try:
+        return <NodePath?>nodepath_or_pystr
+    except TypeError:
+        try:
+            return NodePath(nodepath_or_pystr)
+        except TypeError:
+            raise TypeError(f"Invalid value {nodepath_or_pystr!r}, must be str or NodePath")
 {% for spec in api["builtins"] if not spec.is_scalar %}
 
 
@@ -39,4 +43,8 @@ cdef class {{ spec.name }}:
         cdef {{ spec.name }} ret = {{ spec.name }}.__new__({{ spec.name }})
         __{{ spec.name }}_constructor_0(&ret._gd_data, NULL)
         return ret
+{% if spec.name == "GDString" %}
+    cdef inline gd_string_t to_pystr(self):
+        return gdstring_to_pystr(&self._gd_data)
+{% endif %}
 {% endfor %}

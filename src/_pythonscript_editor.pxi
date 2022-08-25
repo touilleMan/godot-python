@@ -40,7 +40,7 @@ cdef api gd_packed_string_array_t _pythonscript_get_reserved_words():
         "yield",
     ]
     for keyword in keywords:
-        string = gd_string_from_utf8(keyword, keyword.len())
+        string = gdstring_from_utf8(keyword, keyword.len())
         gd_packed_string_array_append(&arr, &string)
         gd_string_del(&string)
     return arr

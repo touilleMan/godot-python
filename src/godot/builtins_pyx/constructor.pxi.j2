@@ -67,8 +67,7 @@ def __cinit__(self, s=None):
     if s is None:
         __GDString_constructor_0(&self._gd_data, NULL)
     elif isinstance(s, str):
-        {# pyobj_to_godot_string(s, &self._gd_data)  # TODO: implement me ! #}
-        raise NotImplementedError("Not available yet :'(")
+        self._gd_data = gdstring_from_unchecked_pystr(s)
     else:
         try:
             args[0] = &(<GDString?>s)._gd_data

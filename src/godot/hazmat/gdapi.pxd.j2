@@ -36,6 +36,14 @@ cdef extern from * nogil:
 
 
 ##############################################################################
+#                            Conversion helpers                              #
+##############################################################################
+
+
+{% include 'gdapi.conversion.pxd.j2' %}
+
+
+##############################################################################
 #                                  Builtins                                  #
 ##############################################################################
 
@@ -52,10 +60,6 @@ cdef extern from *:
 {% endfor %}
 
 
-# String conversion helpers defined in the jungle below
-#     gd_string_t gd_string_from_utf8(const char *cstr, size_t cstr_size)
-#     gd_string_t gd_string_from_pystr(object pystr)
-#     object gd_string_to_pystr(gd_string_t *gdstr)
 {% for spec in api["builtins"] if not spec.is_scalar %}
 
 
@@ -108,34 +112,6 @@ cdef extern from *:
 # - Builtins structure definition with both Cython and C in `cdef extern from *`
 # - Builtins' constructors/destructor/methods/operators exposed as function pointer
 #   and nicer inline function
-
-
-##############################################################################
-#                         Inline defs: String conversion helpers             #
-##############################################################################
-
-
-cdef extern from "Python.h":
-    const char* PyUnicode_AsUTF8AndSize(object, size_t*)
-    object PyUnicode_DecodeUTF32(const char *s, size_t size, const char *errors, int *byteorder)
-
-
-cdef inline gd_string_t gd_string_from_utf8(const char *cstr, size_t cstr_size):
-    cdef gd_string_t gdstr
-    pythonscript_gdapi.string_new_with_utf8_chars_and_len(&gdstr, cstr, cstr_size)
-    return gdstr
-
-
-cdef inline gd_string_t gd_string_from_unchecked_pystr(object pystr):
-    cdef size_t buffsize
-    cdef const char *buff = PyUnicode_AsUTF8AndSize(pystr, &buffsize)
-    return gd_string_from_utf8(buff, buffsize)
-
-
-cdef inline object gd_string_to_pystr(gd_string_t *gdstr):
-    cdef GDNativeInt l = pythonscript_gdapi.string_to_utf32_chars(gdstr, NULL, 0)
-    cdef const char32_t *gdbuff = pythonscript_gdapi.string_operator_index_const(gdstr, 0)
-    return PyUnicode_DecodeUTF32(<char *>gdbuff, l * cython.sizeof(char32_t), NULL, NULL)
 
 
 ##############################################################################

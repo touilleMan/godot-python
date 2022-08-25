@@ -15,7 +15,7 @@ include "_pythonscript_editor.pxi"
 #     godot_pluginscript_language_data,
 # )
 # from godot.hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_verbose
-from godot.builtins cimport GDString, Vector2, pystr_to_gdstr, gdstr_to_pystr
+from godot.builtins cimport GDString, Vector2
 
 # def _setup_config_entry(name, default_value):
 #     gdname = GDString(name)
@@ -53,8 +53,8 @@ cdef api void _pythonscript_free_instance(
 cdef api void _pythonscript_initialize() with gil:
     import sys
     from godot._version import __version__ as pythonscript_version
-    r = gdstr_to_pystr(<GDNativeStringPtr*>&pystr_to_gdstr("foo")._gd_data)
-    if r == "foo":
+    cdef GDString r = GDString("foo")
+    if r.to_pystr() == "foo":
         pythonscript_gdapi.print_error("ok", "<function>", "<file>", 0)
     else:
         pythonscript_gdapi.print_error("ko", "<function>", "<file>", 0)

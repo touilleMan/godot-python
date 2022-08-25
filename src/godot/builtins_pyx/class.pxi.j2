@@ -200,7 +200,10 @@ cdef class {{ spec.name }}:
         # TODO: finish me...
         # pythonscript_gdapi.variant_stringify(&self._gd_data)
         return "<{{ spec.name }}>"
-
+{% if spec.name == "GDString" %}
+    def __str__(self):
+        self.to_pystr()
+{% endif %}
 {% if spec.constants %}
     # Constants
 

@@ -133,7 +133,7 @@ cdef inline void _pyobj_to_gdvariant_int({{ api.int_spec.cy_type }} val, gd_vari
 
 
 cdef inline void _pyobj_to_gdvariant_pystr(object pyobj, gd_variant_t *p_gdvar):
-    cdef gd_string_t gdstr = gd_string_from_unchecked_pystr(pyobj)
+    cdef gd_string_t gdstr = gdstring_from_unchecked_pystr(pyobj)
     try:
         __GDString_to_variant(p_gdvar, &gdstr)
     finally:
