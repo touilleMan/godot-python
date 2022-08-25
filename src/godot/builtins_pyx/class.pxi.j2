@@ -56,36 +56,14 @@ def {{ name_prefix }}{{ m.name }}(self, {{ m.type.cy_type }} val):
 
 
 {% macro render_member(spec, m) %}
-
 {% if not m.is_in_struct %}
 {# Property unrelated to the builtin internal structure, must use Godot API method to access it #}
-
-{%   if m.type.is_scalar %}
-
-{# Scalar type accessed by property (unused in extension_api.json afaik) #}
 @property
-def {{ m.name }}(self) -> {{ m.type.py_type }}:
-    cdef {{ m.type.c_type }} r_value
-    __{{ spec.name }}_get_{{ m.name }}(&self._gd_data, &r_value)
-    return r_value
+def {{ m.name }}(self):
+    return {{ spec.name }}.get_{{ m.name }}(self)
 @{{ m.name }}.setter
-def {{ m.name }}(self, {{ m.type.cy_type }} val):
-    __{{ spec.name }}_set_{{ m.name }}(&self._gd_data, &val)
-
-{%   else %}
-
-{# Builtin type in the C structure (i.e. `Rect2i.end`) #}
-@property
-def {{ m.name }}(self) -> {{ m.type.py_type }}:
-    # Call to __new__ bypasses __init__ constructor
-    cdef {{ m.type.cy_type }} ret = {{ m.type.cy_type }}.__new__({{ m.type.cy_type }})
-    __{{ spec.name }}_get_{{ m.name }}(&self._gd_data, &ret._gd_data)
-    return ret
-@{{ m.name }}.setter
-def {{ m.name }}(self, {{ m.type.cy_type }} val):
-    __{{ spec.name }}_set_{{ m.name }}(&self._gd_data, &val._gd_data)
-{%   endif %}
-
+def {{ m.name }}(self, {{ m.type.cy_type }} val{{ "" if m.type.is_scalar else " not None"}}):
+    {{ spec.name }}.set_{{ m.name }}(self, val)
 {% else %}
 {# Property that is contains in the builtin C structure #}
 
@@ -104,7 +82,7 @@ def {{ m.name }}(self, {{ m.type.cy_type }} val):
 
 {# Also expose the member, but as a functions so it's clearer this works on copies #}
 {%     for subm in m.type.builtin_spec.c_struct_members %}
-def get_{{ m.name }}(self) -> {{ m.type.py_type }}:
+def get_{{ m.name }}(self):
 {# Transparent builtins are guaranteed to have `is_stack_only == True` #}
     # Call to __new__ bypasses __init__ constructor
     cdef {{ m.type.cy_type }} ret = {{ m.type.cy_type }}.__new__({{ m.type.cy_type }})

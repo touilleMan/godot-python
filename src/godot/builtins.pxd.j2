@@ -1,4 +1,4 @@
-{%- from 'builtins.macros.pxd.j2' import render_method -%}
+{%- from 'builtins.macros.pxd.j2' import render_method, render_member -%}
 cimport cython
 
 cdef extern from "Python.h":
@@ -46,6 +46,9 @@ cdef class {{ spec.name }}:
     cdef inline gd_string_t to_pystr(self):
         return gdstring_to_pystr(&self._gd_data)
 {% endif %}
+{% for m in spec.members %}
+    {{ render_member(spec, m) | indent }}
+{% endfor %}
 {% for m in spec.methods %}
     {{ render_method(spec, m) | indent }}
 {% endfor %}
