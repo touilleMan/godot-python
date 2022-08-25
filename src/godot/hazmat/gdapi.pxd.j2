@@ -91,6 +91,21 @@ cdef extern from *:
 {% endfor %}
 
 
+##############################################################################
+#                        Global Constants & Enums                            #
+##############################################################################
+
+{% for spec in api["global_constants"] %}
+DEF {{ spec.name }} = {{ spec.value }}
+{% endfor %}
+
+{% for spec in api["global_enums"] %}
+{%   for key, value in spec.values.items() %}
+DEF {{ key }} = {{ value }}
+{%   endfor %}
+{% endfor %}
+
+
 #
 #                               ,;               :      L.                                             ,;
 #           .    .            f#i       ittttttttEf     EW:        ,ft         .Gt            i      f#i
@@ -143,7 +158,25 @@ cdef extern from * nogil:
         char _gd_opaque[{{ api.variant_size }}]
 {% for spec in api["builtins"] if not spec.is_scalar %}
 
+{# Constants #}
+{%   for c in spec.constants %}
+{%     if c.type.is_scalar %}
+DEF {{ spec.c_name_prefix.upper() }}_{{ c.name }} = {{ c.value }}
+{%     else %}
+cdef inline {{ c.type.c_type }} {{ spec.c_name_prefix }}_make_constant_{{ c.name }}():
+    # TODO: Initialize as {{ c.value }}
+    return {{ c.type.builtin_spec.c_name_prefix }}_new()
+{%     endif %}
+{%   endfor %}
 
+{# Enums #}
+{%   for e in spec.enums %}
+{%     for key, value in e.values.items() %}
+DEF {{ spec.c_name_prefix.upper() }}_{{ key }} = {{ value }}
+{%     endfor %}
+{%   endfor %}
+
+{# Struct #}
 {{ render_builtin_type_c_extern(spec, not spec.is_transparent_c_struct) }}
 {% endfor %}
 {% for spec in api["builtins"] if not spec.is_scalar %}

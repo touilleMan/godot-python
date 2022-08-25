@@ -261,7 +261,7 @@ class BuiltinEnumSpec:
     name: str
     original_name: str
     is_bitfield: bool
-    values: List[Dict[str, int]]
+    values: Dict[str, int]
 
     @classmethod
     def parse(cls, item: dict) -> "BuiltinEnumSpec":
@@ -272,7 +272,7 @@ class BuiltinEnumSpec:
             name=item["name"],
             original_name=item["original_name"],
             is_bitfield=item["is_bitfield"],
-            values=[{x["name"]: x["value"]} for x in item["values"]],
+            values={x["name"]: x["value"] for x in item["values"]},
         )
 
 
@@ -300,6 +300,10 @@ class BuiltinSpec:
 
     def __repr__(self):
         return f"{type(self).__name__}({self.name})"
+
+    @property
+    def c_name_prefix(self) -> str:
+        return f"gd_{self.snake_name}"
 
     @property
     def c_destructor_name(self) -> str:
