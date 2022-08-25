@@ -91,7 +91,9 @@ pxd_godot_builtins = custom_target(
         generate_tmpl_base_input,
         files(
             'godot/builtins.pxd.j2',
-            'godot/builtins.macros.pxd.j2',
+            'godot/builtins_pxd/class.pxd.j2',
+            'godot/builtins_pxd/member.pxd.j2',
+            'godot/builtins_pxd/method.pxd.j2',
         ),
     ],
     command: generate_tmpl_cmd,

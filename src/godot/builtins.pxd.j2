@@ -1,4 +1,4 @@
-{%- from 'builtins.macros.pxd.j2' import render_method, render_member -%}
+{% from 'builtins_pxd/class.pxd.j2' import render_class with context %}
 cimport cython
 
 cdef extern from "Python.h":
@@ -30,26 +30,5 @@ cdef inline NodePath ensure_is_nodepath(object nodepath_or_pystr):
             raise TypeError(f"Invalid value {nodepath_or_pystr!r}, must be str or NodePath")
 {% for spec in api["builtins"] if not spec.is_scalar %}
 
-
-@cython.freelist(8)
-@cython.final
-cdef class {{ spec.name }}:
-    cdef {{ spec.c_struct_name }} _gd_data
-
-    @staticmethod
-    cdef inline {{ spec.name }} new():
-        # Call to __new__ bypasses __init__ constructor
-        cdef {{ spec.name }} ret = {{ spec.name }}.__new__({{ spec.name }})
-        __{{ spec.name }}_constructor_0(&ret._gd_data, NULL)
-        return ret
-{% if spec.name == "GDString" %}
-    cdef inline gd_string_t to_pystr(self):
-        return gdstring_to_pystr(&self._gd_data)
-{% endif %}
-{% for m in spec.members %}
-    {{ render_member(spec, m) | indent }}
-{% endfor %}
-{% for m in spec.methods %}
-    {{ render_method(spec, m) | indent }}
-{% endfor %}
+{{ render_class(spec) }}
 {% endfor %}
