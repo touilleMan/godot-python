@@ -158,7 +158,7 @@ pxds_godot = [
 
 # `_pythonscript_api.h` is used to expose the Python callbacks used by `pythonscript.c`,
 # hence this header is private and won't be provided in the release
-c_pythonscript = custom_target('_pythonscript.c & _pythonscript.h & _pythonscript_api.h}',
+c_pythonscript = custom_target('_pythonscript.c & _pythonscript.h & _pythonscript_api.h',
     output : ['_pythonscript.c', '_pythonscript_api.h'],
     input : [
         '_pythonscript.pyx',

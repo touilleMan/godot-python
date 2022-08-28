@@ -8,7 +8,12 @@
 {%   else %}
 @property
 def {{ c.name }}(self):
-    return {{ c.value }}
+    cdef gd_variant_t gdvariant
+    pythonscript_gdapi.variant_get_constant_value({{ spec.variant_type_name }}, "{{ c.original_name }}", &gdvariant)
+    try:
+        return gdvariant_to_pyobject(&gdvariant)
+    finally:
+        gd_variant_del(&gdvariant)
 {%   endif %}
 {% endmacro %}
 
@@ -30,9 +35,12 @@ cdef class {{ spec.name }}:
 {% endif %}
 
     def __repr__(self):
-        # TODO: finish me...
-        # pythonscript_gdapi.variant_stringify(&self._gd_data)
-        return "<{{ spec.name }}>"
+        cdef gd_string_t gdstr
+        try:
+            pythonscript_gdapi.variant_stringify(&self._gd_data, &gdstr)
+            return gdstring_to_pystr(&gdstr)
+        finally:
+            gd_string_del(&gdstr)
 {% if spec.name == "GDString" %}
     def __str__(self):
         return self.to_pystr()

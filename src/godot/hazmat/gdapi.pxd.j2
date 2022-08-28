@@ -3,6 +3,8 @@
     render_utility_function,
     render_builtin_type_cy_struct,
     render_builtin_type_c_extern,
+    render_builtin_into_variant_signature,
+    render_builtin_from_variant_signature,
     render_builtin_constructor_signature,
     render_builtin_destructor_signature,
     render_builtin_method_signature,
@@ -60,10 +62,15 @@ cdef extern from *:
 {% endfor %}
 
 
+# gd_variant_del(gd_variant_t *variant)
+# GDNativeObjectPtr gd_object_from_variant(gd_variant_t *val)
+# gd_variant_t gd_object_into_variant(GDNativeObjectPtr *val)
 {% for spec in api["builtins"] if not spec.is_scalar %}
 
 
 # {{spec.original_name }}: List of inlines functions defined in the jungle below
+# {{ render_builtin_into_variant_signature(spec) }}
+# {{ render_builtin_from_variant_signature(spec) }}
 {% for c in spec.constructors %}
 #     {{ render_builtin_constructor_signature(spec, c) }}
 {% endfor %}
@@ -127,6 +134,10 @@ DEF {{ key }} = {{ value }}
 # - Builtins structure definition with both Cython and C in `cdef extern from *`
 # - Builtins' constructors/destructor/methods/operators exposed as function pointer
 #   and nicer inline function
+
+
+cdef inline gd_variant_del(gd_variant_t *variant):
+    pythonscript_gdapi.variant_destroy(variant)
 
 
 ##############################################################################
@@ -208,5 +219,5 @@ DEF {{ spec.c_name_prefix.upper() }}_{{ key }} = {{ value }}
 
 {% for spec in api["builtins"] if not spec.is_scalar %}
 cdef GDNativeTypeFromVariantConstructorFunc __{{ spec.name }}_from_variant
-cdef GDNativeVariantFromTypeConstructorFunc __{{ spec.name }}_to_variant
+cdef GDNativeVariantFromTypeConstructorFunc __{{ spec.name }}_into_variant
 {% endfor %}

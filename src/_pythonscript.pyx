@@ -27,7 +27,7 @@ from godot.builtins cimport GDString, Vector2
 
 from godot.hazmat.gdnative_interface cimport *
 from godot.hazmat.gdapi cimport *
-
+from godot.classes cimport _load_class
 
 # include "_pythonscript_script.pxi"
 # include "_pythonscript_instance.pxi"
@@ -50,18 +50,32 @@ cdef api void _pythonscript_free_instance(
 # is the very first Python module that gets loaded.
 
 
-cdef api void _pythonscript_initialize() with gil:
+cdef api void _pythonscript_late_init() with gil:
+    pythonscript_gdapi.print_error("pythonscript late init", "<function>", "<file>", 0)
+    OS = _load_class("OS")
+    pythonscript_gdapi.print_error("OS class loaded", "<function>", "<file>", 0)
+
+    # from godot.classes import OS
+    cdef gd_variant_t gdvariant
+    if not pyobject_to_gdvariant(f"singletion is {OS!r}", &gdvariant):
+        pythonscript_gdapi.print_error("pyobject_to_gdvariant !!!!", "<function>", "<file>", 0)
+    gd_print(&gdvariant, 1)
+    pythonscript_gdapi.variant_destroy(&gdvariant)
+    pythonscript_gdapi.print_error("_pythonscript_late_init done", "<function>", "<file>", 0)
+
     import sys
     from godot._version import __version__ as pythonscript_version
-    cdef GDString r = GDString("foo")
-    if r.to_pystr() == "foo":
-        pythonscript_gdapi.print_error("ok", "<function>", "<file>", 0)
-    else:
-        pythonscript_gdapi.print_error("ko", "<function>", "<file>", 0)
 
     cooked_sys_version = '.'.join(map(str, sys.version_info))
     print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})")
     print(f"PYTHONPATH: {sys.path}")
+
+
+cdef api void _pythonscript_early_init() with gil:
+    pythonscript_gdapi.print_error("pythonscript early init", "<function>", "<file>", 0)
+    # pythonscript_gdapi.
+    # Engine get_singleton_list
+
     v = Vector2(66.8, -77.99)
     v.x = 42
     print("===========>", v.x, v.y)

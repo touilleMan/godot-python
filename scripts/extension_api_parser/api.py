@@ -174,6 +174,11 @@ class ExtensionApi:
         return TYPES_DB["float"]
         # return next(builtin for builtin in self.builtins if builtin.name == "int")
 
+    def get_class_meth_hash(self, classname: str, methname: str) -> int:
+        klass = next(c for c in self.classes if c.original_name == classname)
+        meth = next(m for m in klass.methods if m.original_name == methname)
+        return meth.hash
+
 
 def merge_builtins_size_info(api_json: dict, build_config: BuildConfig) -> None:
     # Builtins size depend of the build config, hence it is stored separatly from

@@ -47,7 +47,7 @@ cdef GDNativeVariantType pytype_to_gdtype(object pytype):
  #########################################################################}
 
 
-cdef object gdvariant_to_pyobj(const gd_variant_t *p_gdvar):
+cdef object gdvariant_to_pyobject(const gd_variant_t *p_gdvar):
     # TODO: must do an ugly cast because autopxd2 ignores const qualifiers in the C headers
     cdef GDNativeVariantType gdtype = pythonscript_gdapi.variant_get_type(<gd_variant_t *>p_gdvar)
     if gdtype == GDNATIVE_VARIANT_TYPE_OBJECT:
@@ -56,12 +56,12 @@ cdef object gdvariant_to_pyobj(const gd_variant_t *p_gdvar):
         # # modules, wouldn't it be better to create a `ObjectFromVariant` lazy
         # # class instead ?
         # return Object.cast_from_variant(p_gdvar)
-{% for spec in api["builtins"] if not spec.is_nil %}
+{% for spec in api["builtins"] %}
     elif gdtype == {{ spec.variant_type_name }}:
 {%   if spec.is_nil %}
         return None
 {%   else %}
-        return _gdvariant_to_pyobj_{{ spec.name }}(p_gdvar)
+        return _gdvariant_to_pyobject_{{ spec.name }}(p_gdvar)
 {%   endif %}
 {% endfor %}
     else:
@@ -70,7 +70,7 @@ cdef object gdvariant_to_pyobj(const gd_variant_t *p_gdvar):
 
 
 {% for spec in api["builtins"] if not spec.is_nil %}
-cdef inline object _gdvariant_to_pyobj_{{ spec.name }}(const gd_variant_t *p_gdvar):
+cdef inline object _gdvariant_to_pyobject_{{ spec.name }}(const gd_variant_t *p_gdvar):
 {%   if spec.name == "bool" %}
     cdef {{ api.bool_spec.cy_type }} ret
     __{{ spec.name }}_from_variant(&ret, <gd_variant_t *>p_gdvar)
@@ -96,22 +96,22 @@ cdef inline object _gdvariant_to_pyobj_{{ spec.name }}(const gd_variant_t *p_gdv
  #########################################################################}
 
 
-cdef bint pyobj_to_gdvariant(object pyobj, gd_variant_t *p_gdvar):
+cdef bint pyobject_to_gdvariant(object pyobj, gd_variant_t *p_gdvar):
     if pyobj is None:
         pythonscript_gdapi.variant_new_nil(p_gdvar)
     elif isinstance(pyobj, GDObject):
-        __GDObject_to_variant(p_gdvar, (<GDObject>pyobj)._gd_ptr)
+        __GDObject_into_variant(p_gdvar, (<GDObject>pyobj)._gd_ptr)
     elif isinstance(pyobj, bool):
-        _pyobj_to_gdvariant_bool(pyobj, p_gdvar)
+        _pyobject_to_gdvariant_bool(pyobj, p_gdvar)
     elif isinstance(pyobj, int):
-        _pyobj_to_gdvariant_int(pyobj, p_gdvar)
+        _pyobject_to_gdvariant_int(pyobj, p_gdvar)
     elif isinstance(pyobj, float):
-        _pyobj_to_gdvariant_float(pyobj, p_gdvar)
+        _pyobject_to_gdvariant_float(pyobj, p_gdvar)
     elif isinstance(pyobj, str):
-        _pyobj_to_gdvariant_pystr(pyobj, p_gdvar)
+        _pyobject_to_gdvariant_pystr(pyobj, p_gdvar)
 {% for spec in api["builtins"] if not spec.is_scalar %}
     elif isinstance(pyobj, {{ spec.name }}):
-        __{{ spec.name }}_to_variant(p_gdvar, &(<{{ spec.name }}>pyobj)._gd_data)
+        __{{ spec.name }}_into_variant(p_gdvar, &(<{{ spec.name }}>pyobj)._gd_data)
 {% endfor %}
     else:
         warn(f"Cannot convert `{type(pyobj)}` to Godot's Variant")
@@ -120,21 +120,19 @@ cdef bint pyobj_to_gdvariant(object pyobj, gd_variant_t *p_gdvar):
     return True
 
 
-cdef inline void _pyobj_to_gdvariant_bool({{ api.bool_spec.cy_type }} val, gd_variant_t *p_gdvar):
-    __bool_to_variant(p_gdvar, &val)
+cdef inline void _pyobject_to_gdvariant_bool({{ api.bool_spec.cy_type }} val, gd_variant_t *p_gdvar):
+    __bool_into_variant(p_gdvar, &val)
 
 
-cdef inline void _pyobj_to_gdvariant_float({{ api.float_spec.cy_type }} val, gd_variant_t *p_gdvar):
-    __float_to_variant(p_gdvar, &val)
+cdef inline void _pyobject_to_gdvariant_float({{ api.float_spec.cy_type }} val, gd_variant_t *p_gdvar):
+    __float_into_variant(p_gdvar, &val)
 
 
-cdef inline void _pyobj_to_gdvariant_int({{ api.int_spec.cy_type }} val, gd_variant_t *p_gdvar):
-    __int_to_variant(p_gdvar, &val)
+cdef inline void _pyobject_to_gdvariant_int({{ api.int_spec.cy_type }} val, gd_variant_t *p_gdvar):
+    __int_into_variant(p_gdvar, &val)
 
 
-cdef inline void _pyobj_to_gdvariant_pystr(object pyobj, gd_variant_t *p_gdvar):
+cdef inline void _pyobject_to_gdvariant_pystr(object pyobj, gd_variant_t *p_gdvar):
     cdef gd_string_t gdstr = gdstring_from_unchecked_pystr(pyobj)
-    try:
-        __GDString_to_variant(p_gdvar, &gdstr)
-    finally:
-        gd_string_del(&gdstr)
+    __GDString_into_variant(p_gdvar, &gdstr)
+    # into conversion steals the ownership, so don't need to call `gd_string_del(gdstr)`

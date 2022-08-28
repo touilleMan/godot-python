@@ -3,15 +3,21 @@
 
 cimport cython
 
-from .hazmat.gdapi cimport pythonscript_gdapi
-from .hazmat.gdnative_interface cimport GDNativeObjectPtr
+from .hazmat.gdapi cimport *
+from .builtins cimport *
 {% for spec in api["classes"] %}
 
 
 cdef class {{ spec.name }}({{ spec.inherits or "" }}):
 {%   if spec.inherits is none %}
+
+    {# @staticmethod
+    cpdef inline {{ spec.name}} new():
+        raise NotImplementedError("TODO :'(") #}
+
     def free(self):
-        gdobject_free(self)
+        pythonscript_gdapi.object_destroy(self._gd_ptr)
+        self._gd_ptr = NULL
 
     def __init__(self):
         raise RuntimeError(
@@ -24,3 +30,68 @@ cdef class {{ spec.name }}({{ spec.inherits or "" }}):
     pass
 {% endif %}
 {% endfor %}
+
+
+cdef _load_singleton(name):
+    cdef GDObject gdobj = GDObject.__new__(GDObject)
+    gdobj._gd_ptr = pythonscript_gdapi.global_get_singleton(name)
+{% for spec in api["singletons"] %}
+    cdef {{ spec.type.py_type }} singleton_{{ spec.name }} = {{ spec.type.py_type }}.__new__({{ spec.type.py_type }})
+    singleton_{{ spec.name }}._gd_ptr = pythonscript_gdapi.global_get_singleton("{{ spec.original_name }}")
+    globals()["{{ spec.name }}"] = singleton_{{ spec.name }}
+{% endfor %}
+
+
+cdef object _load_class(str name):
+    # Load our good friend ClassDB
+    cdef GDNativeObjectPtr classdb = pythonscript_gdapi.global_get_singleton("ClassDB")
+    pythonscript_gdapi.print_error("AAAAAAAAAA", "_object_call", "", 0)
+    cdef gd_variant_t meths = _object_call(classdb, "class_get_method_list", [name])
+    pythonscript_gdapi.print_error("BBBB", "_object_call", "", 0)
+    pythonscript_gdapi.print_error("GOOOOOOOOOOOOOOOD", "_object_call", "", 0)
+
+
+cdef object _object_call(GDNativeObjectPtr obj, str meth, args):
+    cdef gd_variant_t ret
+    cdef GDNativeCallError call_error
+
+    cdef GDNativeObjectPtr classdb = pythonscript_gdapi.global_get_singleton("ClassDB")
+    cdef GDNativeMethodBindPtr Object_call = pythonscript_gdapi.classdb_get_method_bind("Object", "call", {{ api.get_class_meth_hash("Object", "call") }})
+
+    cdef GDNativeInt args_with_meth_len = len(args) + 1
+    if args_with_meth_len > 9:
+        # TODO: handle this
+        pythonscript_gdapi.print_error("more than 8 params is not supported !", "_object_call", "", 0)
+        return None
+    cdef gd_variant_t[9] variant_args
+    cdef (gd_variant_t*)[9] variant_args_ptrs
+    for i in range(args_with_meth_len):
+        variant_args_ptrs[i] = &variant_args[i]
+
+    cdef gd_string_t meth_gdstr = gdstring_from_unchecked_pystr(meth)
+    cdef gd_string_name_t meth_gdstrname = gd_string_name_new_from_string(&meth_gdstr)
+    gd_string_del(&meth_gdstr)
+    variant_args[0] = gd_string_name_into_variant(&meth_gdstrname)
+    # Into conversion steals the owneship, so no need to delete meth_gdstrname
+
+    for i, arg in enumerate(args, 1):
+        # TODO: check return value
+        pyobject_to_gdvariant(arg, &variant_args[i])
+
+    pythonscript_gdapi.object_method_bind_call(
+        Object_call,
+        classdb,
+        <GDNativeVariantPtr *>&variant_args_ptrs,
+        args_with_meth_len,
+        &ret,
+        &call_error,  # TODO: check call_error
+    )
+    pythonscript_gdapi.print_error("after call", "<function>", "<file>", 0)
+    for i in range(args_with_meth_len):
+        gd_variant_del(&variant_args[i])
+
+    try:
+        gd_print(&ret, 1)
+        return gdvariant_to_pyobject(&ret)
+    finally:
+        gd_variant_del(&ret)

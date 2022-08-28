@@ -24,35 +24,66 @@
 #########################################################################
 
 
+{# {%- for arg in spec.arguments %}{{ "" if loop.first else ", " }}gd_variant_t *{{arg.name}}{% endfor -%} #}
+{# {{- ", " if spec.arguments | length else "" }}gd_variant_t *args) #}
 {% macro render_utility_function_signature(spec) -%}
+{% if spec.is_vararg %}
+{{ "void" if spec.return_type.is_nil else "gd_variant_t" }} gd_{{ spec.name }}(gd_variant_t *args, GDNativeInt args_count)
+{%- else %}
 {{ "void" if spec.return_type.is_nil else spec.return_type.c_type }} gd_{{ spec.name }}(
     {{- render_args_signature(spec.arguments) -}}
 )
+{%- endif %}
 {%- endmacro %}
+
+
+{% macro render_utility_function_ptrcall(spec) %}
+cdef inline {{ render_utility_function_signature(spec) }}:
+{% if (spec.arguments | length) != 0 %}
+    cdef GDNativeTypePtr[{{ spec.arguments | length }}] __args = [
+        {{- render_args(spec.arguments) -}}
+    ]
+{% endif %}
+{% if not spec.return_type.is_nil %}
+    cdef {{ spec.return_type.c_type }} __ret
+{% endif %}
+    __utility_{{ spec.name }}(
+        {# GDNativeTypePtr ret #}
+        {{ "NULL" if spec.return_type.is_nil else "&__ret" }},
+        {# const GDNativeTypePtr *p_arguments #}
+        {{ "NULL" if (spec.arguments | length) == 0 else "__args" }},
+        {# int p_argument_count #}
+        {{ spec.arguments | length }}
+    )
+{% if not spec.return_type.is_nil %}
+    return __ret
+{% endif %}
+{% endmacro %}
+
+
+{% macro render_utility_function_vararg(spec) %}
+cdef inline {{ render_utility_function_signature(spec) }}:
+{# Godot varargs calling system is a hack: it expects us to provide only #}
+{# a single parameter that itself is an array of variant (hence the `&args` #}
+{# to pass a `gd_variant_t**` as parameter) whose size is passed in the number #}
+{# of parameters fields... Yes this is very confusing stuff, my brain hurts ! #}
+{% if spec.return_type.is_nil %}
+    __utility_{{ spec.name }}(NULL, <GDNativeTypePtr *>&args, args_count)
+{% else %}
+    cdef gd_variant_t __ret  # TODO: improve return type !
+    __utility_{{ spec.name }}(&__ret, <GDNativeTypePtr *>&args, args_count)
+    return __ret
+{% endif %}
+{% endmacro %}
 
 
 {% macro render_utility_function(spec) %}
 # {{ spec.name }}
 cdef GDNativePtrUtilityFunction __utility_{{ spec.name }}
-cdef inline {{ render_utility_function_signature(spec) }}:
-{% if (spec.arguments | length) != 0 %}
-    cdef GDNativeTypePtr[{{ spec.arguments | length }}] p_args = [
-        {{- render_args(spec.arguments) -}}
-    ]
-{% endif %}
-{% if not spec.return_type.is_nil %}
-    cdef {{ spec.return_type.c_type }} r_return
-{% endif %}
-    __utility_{{ spec.name }}(
-        {# GDNativeTypePtr r_return #}
-        {{ "NULL" if spec.return_type.is_nil else "&r_return" }},
-        {# const GDNativeTypePtr *p_arguments #}
-        {{ "NULL" if (spec.arguments | length) == 0 else "p_args" }},
-        {# int p_argument_count #}
-        {{ spec.arguments | length }}
-    )
-{% if not spec.return_type.is_nil %}
-    return r_return
+{% if spec.is_vararg %}
+{{ render_utility_function_vararg(spec) }}
+{% else %}
+{{ render_utility_function_ptrcall(spec) }}
 {% endif %}
 {% endmacro %}
 
@@ -123,6 +154,55 @@ cdef GDNativePtrGetter __{{ spec.name }}_set_{{ m.name }}
 #########################################################################
 # Builtin constructors/destructor
 #########################################################################
+
+
+{% macro render_builtin_from_variant_signature(spec) %}
+{%- if spec.is_scalar %}
+TODO
+{%- else %}
+{{ spec.c_struct_name }} {{ spec.c_name_prefix }}_from_variant(gd_variant_t *val)
+{%- endif %}
+{% endmacro %}
+
+
+{% macro render_builtin_into_variant_signature(spec) %}
+{%- if spec.is_scalar %}
+TODO
+{%- else %}
+gd_variant_t {{ spec.c_name_prefix }}_into_variant({{ spec.c_struct_name }} *val)
+{%- endif %}
+{% endmacro %}
+
+
+{% macro render_builtin_object_variant_conversions(spec) %}
+cdef inline GDNativeObjectPtr gd_object_from_variant(gd_variant_t *val):
+    cdef GDNativeObjectPtr __ret
+    __GDObject_from_variant(&__ret, val)
+    return __ret
+
+cdef inline gd_variant_t gd_object_into_variant(GDNativeObjectPtr *val):
+    cdef gd_variant_t __ret
+    __GDObject_into_variant(&__ret, val)
+    return __ret
+{% endmacro %}
+
+
+{% macro render_builtin_variant_conversions(spec) %}
+{% if spec.is_scalar %}
+# TODO
+{% else %}
+cdef inline {{ render_builtin_from_variant_signature(spec) }}:
+    cdef {{ spec.c_struct_name }} __ret
+    __{{ spec.name }}_from_variant(&__ret, val)
+    return __ret
+
+cdef inline {{ render_builtin_into_variant_signature(spec) }}:
+    cdef gd_variant_t __ret
+    __{{ spec.name }}_into_variant(&__ret, val)
+    return __ret
+{% endif %}
+{% endmacro %}
+
 
 {% macro render_builtin_constructor_signature(spec, constructor) -%}
 {{ spec.c_struct_name }} {{ constructor.c_name }}({{ render_args_signature(constructor.arguments) }})
@@ -196,6 +276,7 @@ cdef inline {{ render_builtin_method_signature(spec, meth) }}:
 
 
 {% macro render_builtin_all_functions(spec) %}
+{{ render_builtin_variant_conversions(spec) }}
 {% for c in spec.constructors %}
 {{ render_builtin_constructor(spec, c) }}
 {% endfor %}

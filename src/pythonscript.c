@@ -41,11 +41,15 @@ typedef enum {
     STALLED,  // Intitial state
     ENTRYPOINT_CALLED,  // pythonscript_init called
     ENTRYPOINT_RETURNED,  // pythonscript_init returns
+
     PYTHON_INTERPRETER_INIT,
     PYTHONSCRIPT_MODULE_INIT,
+    PYTHONSCRIPT_INTERNAL_INIT,
 
+    // All set !
     READY,
 
+    // Teardown
     PYTHONSCRIPT_MODULE_TEARDOWN,
     PYTHON_INTERPRETER_TEARDOWN,
 
@@ -70,12 +74,14 @@ DLL_EXPORT GDNativeExtensionClassLibraryPtr pythonscript_gdlibrary = NULL;
     pythonscript_gdapi->print_warning(msg, __func__, __FILE__, __LINE__); \
 }
 
-static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
-    (void) userdata;  // acknowledge unreferenced parameter
-    if (p_level != GDNATIVE_INITIALIZATION_CORE) {
-        return;
+static void _late_initialize(GDNativeInitializationLevel p_level) {
+    if (state == PYTHONSCRIPT_INTERNAL_INIT) {
+        _pythonscript_late_init();
+        state = READY;
     }
+}
 
+static void _early_initialize(GDNativeInitializationLevel p_level) {
     if (state != ENTRYPOINT_RETURNED) {
         printf("Pythonscript: Invalid internal state (this should never happen !)\n");
         goto error;
@@ -212,14 +218,16 @@ static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
         GD_PRINT_ERROR("Pythonscript: Cannot load Python module `_pythonscript`");
         goto error;
     }
-    _pythonscript_initialize();
 
-    state = READY;
+    state = PYTHONSCRIPT_INTERNAL_INIT;
+
+    _pythonscript_early_init();
+
+    PyConfig_Clear(&config);
 
     // Release the Kraken... er I mean the GIL !
     gilstate = PyEval_SaveThread();
 
-    PyConfig_Clear(&config);
     return;
 
 error:
@@ -241,7 +249,7 @@ error:
 
 static void _deinitialize(void *userdata, GDNativeInitializationLevel p_level) {
     (void) userdata;  // acknowledge unreferenced parameter
-    if (p_level != GDNATIVE_INITIALIZATION_CORE) {
+    if (p_level != GDNATIVE_INITIALIZATION_SERVERS) {
         return;
     }
 
@@ -263,6 +271,19 @@ static void _deinitialize(void *userdata, GDNativeInitializationLevel p_level) {
     }
 
     state = STALLED;
+}
+
+static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
+    (void) userdata;  // acknowledge unreferenced parameter
+
+    // Language registration must be done at `GDNATIVE_INITIALIZATION_SERVERS`
+    // level which is too early to have have everything we need for (e.g. `OS` singleton).
+    // So we have to do another init step at `GDNATIVE_INITIALIZATION_SCENE` level.
+    if (p_level == GDNATIVE_INITIALIZATION_SERVERS) {
+        _early_initialize(p_level);
+    } else if (p_level == GDNATIVE_INITIALIZATION_SCENE) {
+        _late_initialize(p_level);
+    }
 }
 
 DLL_EXPORT GDNativeBool pythonscript_init(
@@ -315,8 +336,7 @@ DLL_EXPORT GDNativeBool pythonscript_init(
         GD_PRINT_WARNING(buff);
     }
 
-    // TODO: Or is it GDNATIVE_INITIALIZATION_SERVERS ?
-    r_initialization->minimum_initialization_level  = GDNATIVE_INITIALIZATION_CORE;
+    r_initialization->minimum_initialization_level  = GDNATIVE_INITIALIZATION_SERVERS;
 	r_initialization->userdata = NULL;
     r_initialization->initialize = _initialize;
     r_initialization->deinitialize = _deinitialize;

@@ -45,10 +45,10 @@ cdef GDNativePtrGetter __{{ spec.name }}_set_{{ m.name }} = pythonscript_gdapi.v
 {% macro render_variant_conversions_ptrs() %}
 {%   for spec in api["builtins"] %}
 cdef GDNativeTypeFromVariantConstructorFunc __{{ spec.name }}_from_variant = pythonscript_gdapi.get_variant_to_type_constructor({{ spec.variant_type_name }})
-cdef GDNativeVariantFromTypeConstructorFunc __{{ spec.name }}_to_variant = pythonscript_gdapi.get_variant_from_type_constructor({{ spec.variant_type_name }})
+cdef GDNativeVariantFromTypeConstructorFunc __{{ spec.name }}_into_variant = pythonscript_gdapi.get_variant_from_type_constructor({{ spec.variant_type_name }})
 {%   endfor %}
 cdef GDNativeTypeFromVariantConstructorFunc __GDObject_from_variant = pythonscript_gdapi.get_variant_to_type_constructor(GDNATIVE_VARIANT_TYPE_OBJECT)
-cdef GDNativeVariantFromTypeConstructorFunc __GDObject_to_variant = pythonscript_gdapi.get_variant_from_type_constructor(GDNATIVE_VARIANT_TYPE_OBJECT)
+cdef GDNativeVariantFromTypeConstructorFunc __GDObject_into_variant = pythonscript_gdapi.get_variant_from_type_constructor(GDNATIVE_VARIANT_TYPE_OBJECT)
 {% endmacro %}
 
 

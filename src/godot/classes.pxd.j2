@@ -39,3 +39,7 @@ cdef class {{spec.name}}({{ spec.inherits or "" }}):
     pass
 {%   endif %}
 {% endfor %}
+
+
+cdef object _load_class(str name)
+cdef object _object_call(GDNativeObjectPtr obj, str meth, args)

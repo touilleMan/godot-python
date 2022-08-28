@@ -33,4 +33,18 @@ from godot._version import __version__
 #     exposed,
 # )
 from godot.builtins import *
-from godot.classes import *
+
+# from godot.classes import _load_singleton, _load_class
+
+
+# def __getattr__(name):
+#     # Look for singleton first given they have the same name than their class
+#     item = _load_singleton(name) or _load_class(name)
+
+#     if not item:
+#         raise AttributeError
+
+#     # Cache entry
+#     setattr(globals(), name, item)
+
+#     return item
