@@ -12,7 +12,8 @@ generate_tmpl_base_input = [
     join_paths(scripts_dir, 'extension_api_parser/classes.py'),
     join_paths(scripts_dir, 'extension_api_parser/__init__.py'),
     join_paths(scripts_dir, 'extension_api_parser/__main__.py'),
-    join_paths(scripts_dir, 'extension_api_parser/type.py'),
+    join_paths(scripts_dir, 'extension_api_parser/in_use.py'),
+    join_paths(scripts_dir, 'extension_api_parser/type_spec.py'),
     join_paths(scripts_dir, 'extension_api_parser/utils.py'),
 ]
 
@@ -64,6 +65,21 @@ pxd_godot_hazmat_gdnative_interface = custom_target(
 )
 
 
+# godot/hazmat/gdnative_ptrs.pxd
+# └─ extension_api.json
+
+pxd_godot_hazmat_gdnative_ptrs = custom_target(
+    output: 'godot#hazmat#gdnative_ptrs.pxd',
+    input: [
+        generate_tmpl_base_input,
+        files(
+            'godot/hazmat/gdnative_ptrs.pxd.j2',
+        ),
+    ],
+    command: generate_tmpl_cmd,
+)
+
+
 # godot/hazmat/gdapi.pxd
 # └─ extension_api.json
 
@@ -73,8 +89,8 @@ pxd_godot_hazmat_gdapi = custom_target(
         generate_tmpl_base_input,
         files(
             'godot/hazmat/gdapi.pxd.j2',
-            'godot/hazmat/gdapi_pxd/macros.pxd.j2',
-            'godot/hazmat/gdapi_pxd/conversion.pxd.j2',
+            'godot/hazmat/gdapi_pxd/struct.pxd.j2',
+            'godot/hazmat/gdapi_pxd/meth.pxd.j2',
         ),
     ],
     command: generate_tmpl_cmd,
@@ -115,11 +131,26 @@ pxd_godot_classes = custom_target(
 )
 
 
+# godot/conversion.pxd
+# └─ extension_api.json
+
+
+pxd_godot_conversion = custom_target(
+    output: 'godot#conversion.pxd',
+    input: [
+        generate_tmpl_base_input,
+        files('godot/conversion.pxd.j2'),
+    ],
+    command: generate_tmpl_cmd,
+)
+
+
 # Groups of pxds to simplify includes in pyx compilation
 
 
 pxds_godot_hazmat = [
     pxd_godot_hazmat_gdnative_interface,
+    pxd_godot_hazmat_gdnative_ptrs,
     pxd_godot_hazmat_gdapi,
     files('godot/hazmat/__init__.pxd'),
 ]
@@ -132,6 +163,7 @@ pxds_godot = [
     pxds_godot_hazmat,
     pxd_godot_builtins,
     pxd_godot_classes,
+    pxd_godot_conversion,
 ]
 
 
@@ -240,6 +272,8 @@ endif
 lib__pythonscript = shared_library(
     '_pythonscript',
     c_pythonscript,
+    # Including builtins.pxd generates a lot of `defined but not used` errors
+    c_args: ['-Wno-unused-function'],
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: lib__pythonscript_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,

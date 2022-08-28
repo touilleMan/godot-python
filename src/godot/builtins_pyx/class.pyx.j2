@@ -2,62 +2,71 @@
 {% from 'builtins_pyx/member.pyx.j2' import render_member with context %}
 
 
-{% macro render_constant(spec, c) %}
+{% macro render_constant(builtin, c) %}
 {%   if c.type.is_scalar %}
 {{ c.name }} = {{ c.value }}
 {%   else %}
 @property
 def {{ c.name }}(self):
     cdef gd_variant_t gdvariant
-    pythonscript_gdapi.variant_get_constant_value({{ spec.variant_type_name }}, "{{ c.original_name }}", &gdvariant)
+    # TODO: cache the constant on first fetch ?
+    pythonscript_gdnative_interface.variant_get_constant_value({{ builtin.variant_type_name }}, "{{ c.original_name }}", &gdvariant)
     try:
-        return gdvariant_to_pyobject(&gdvariant)
+        return gd_variant_to_pyobj(&gdvariant)
     finally:
         gd_variant_del(&gdvariant)
 {%   endif %}
 {% endmacro %}
 
 
-{% macro render_class(spec) -%}
-
+{% macro render_class(builtin) %}
 @cython.freelist(8)
 @cython.final
-cdef class {{ spec.name }}:
+cdef class {{ builtin.cy_type }}:
     # Constructors
-    {{ render_constructors(spec) | indent }}
+    {{ render_constructors(builtin) | indent }}
 
-{% if spec.has_destructor %}
+{% if not builtin.is_stack_only %}
     # Destructor
-    def __dealloc__({{ spec.name }} self):
+    def __dealloc__({{ builtin.cy_type }} self):
         # /!\ if `__cinit__` is skipped, `_gd_data` must be initialized by
         # hand otherwise we will get a segfault here
-        __{{ spec.name }}_destructor(&self._gd_data)
+        {{ builtin.c_name_prefix }}_del(&self._gd_data)
 {% endif %}
 
     def __repr__(self):
+{%   if builtin.is_transparent_builtin %}
+        return f"{{ builtin.cy_type }}({% for member in builtin.c_struct_members %}{{ member.name }}={self.{{ member.name }}}{% if not loop.last %}, {% endif %}{% endfor %})"
+{%   elif builtin.original_name == "String" %}
+        return f"{{ builtin.cy_type}}({self.py_str()!r})"
+{%   else %}
+        # TODO: I'm still not sure if this call steals self._gd_data or copies it...
+        cdef gd_variant_t gdvar = {{ builtin.c_name_prefix }}_into_variant(&self._gd_data)
         cdef gd_string_t gdstr
+        pythonscript_gdnative_interface.variant_stringify(&gdvar, &gdstr)
         try:
-            pythonscript_gdapi.variant_stringify(&self._gd_data, &gdstr)
-            return gdstring_to_pystr(&gdstr)
+            return gd_string_to_pystr(&gdstr)
         finally:
+            gd_variant_del(&gdvar)
             gd_string_del(&gdstr)
-{% if spec.name == "GDString" %}
+{%   endif %}
+{% if builtin.original_name == "String" %}
     def __str__(self):
         return self.to_pystr()
 {% endif %}
-{% if spec.constants %}
+{% if builtin.constants %}
     # Constants
 
 {% endif %}
-{% for c in spec.constants %}
-    {{ render_constant(spec, c) | indent }}
+{% for c in builtin.constants %}
+    {{ render_constant(builtin, c) | indent }}
 {% endfor %}
 
-{% if spec.members %}
+{% if builtin.members %}
     # Members
 
 {% endif %}
-{% for m in spec.members %}
-    {{ render_member(spec, m) | indent }}
+{% for m in builtin.members %}
+    {{ render_member(builtin, m) | indent }}
 {% endfor %}
-{%- endmacro %}
+{% endmacro %}

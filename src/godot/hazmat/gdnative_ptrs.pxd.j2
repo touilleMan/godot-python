@@ -1,0 +1,71 @@
+cimport cython
+from libc.stdint cimport *
+
+from .gdnative_interface cimport *
+
+
+cdef extern from * nogil:
+    # Global variables defined in `pythonscript.c`
+    # Given `libpythonscript.so` is responsible for initializing the Python
+    # interpreter, we are guanteed `pythonscript_gdapi` symbol is always
+    # resolved and set to a non-null value \o/
+    """
+    #include <godot/gdnative_interface.h>
+    #ifdef _WIN32
+    # define DLL_IMPORT __declspec(dllimport)
+    #else
+    # define DLL_IMPORT
+    #endif
+    DLL_IMPORT extern const GDNativeInterface *pythonscript_gdnative_interface;
+    DLL_IMPORT extern GDNativeExtensionClassLibraryPtr pythonscript_gdnative_library;
+    """
+    cdef const GDNativeInterface *pythonscript_gdnative_interface;
+    cdef const GDNativeExtensionClassLibraryPtr pythonscript_gdnative_library;
+
+
+##############################################################################
+# Function pointers on Godot GDNative API                                    #
+##############################################################################
+
+cdef GDNativeTypeFromVariantConstructorFunc gd_object_from_variant_ptr
+cdef GDNativeVariantFromTypeConstructorFunc gd_object_into_variant_ptr
+
+cdef GDNativeTypeFromVariantConstructorFunc gd_bool_from_variant_ptr
+cdef GDNativeVariantFromTypeConstructorFunc gd_bool_into_variant_ptr
+
+cdef GDNativeTypeFromVariantConstructorFunc gd_int_from_variant_ptr
+cdef GDNativeVariantFromTypeConstructorFunc gd_int_into_variant_ptr
+
+cdef GDNativeTypeFromVariantConstructorFunc gd_float_from_variant_ptr
+cdef GDNativeVariantFromTypeConstructorFunc gd_float_into_variant_ptr
+{% for builtin in api.builtins %}
+
+
+# {{ builtin.original_name }}
+{%   for c in builtin.constructors %}
+cdef GDNativePtrConstructor {{ builtin.c_name_prefix }}_constructor_{{ c.index }}_ptr
+{%   endfor %}
+{%   if not builtin.is_stack_only %}
+cdef GDNativePtrDestructor {{ builtin.c_name_prefix }}_destructor_ptr
+{%   endif %}
+{%   for m in builtin.methods %}
+cdef GDNativePtrBuiltInMethod {{ builtin.c_name_prefix }}_meth_{{ m.name }}_ptr
+{%   endfor %}
+{%   for o in builtin.operators %}
+cdef GDNativePtrOperatorEvaluator {{ builtin.c_name_prefix }}_op_{{ o.name }}_ptr
+{%   endfor %}
+{%   for m in builtin.members %}
+{%     if not m.is_in_struct %}
+cdef GDNativePtrSetter {{ builtin.c_name_prefix }}_get_{{ m.name }}_ptr
+cdef GDNativePtrGetter {{ builtin.c_name_prefix }}_set_{{ m.name }}_ptr
+{%     endif %}
+{%   endfor %}
+cdef GDNativeTypeFromVariantConstructorFunc {{ builtin.c_name_prefix }}_from_variant_ptr
+cdef GDNativeVariantFromTypeConstructorFunc {{ builtin.c_name_prefix }}_into_variant_ptr
+{% endfor %}
+
+
+{% for utility in api.utility_functions %}
+# {{ utility.original_name }}
+cdef GDNativePtrUtilityFunction gd_utility_{{ utility.original_name }}_ptr
+{% endfor %}

@@ -1,13 +1,29 @@
 #! /usr/bin/env python3
 
 import argparse
+from typing import List, Dict, Tuple
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
-from extension_api_parser import BuildConfig, parse_extension_api_json, ExtensionApi
+from extension_api_parser import BuildConfig, parse_extension_api_json
 
 
 BASEDIR = Path(__file__).parent
+GODOT_DIR = BASEDIR / "../src/godot"
+HAZMAT_DIR = GODOT_DIR / "hazmat"
+TARGETS: Dict[str, Tuple[bool, Path]] = {
+    "gdnative_ptrs.pxd": (False, HAZMAT_DIR),
+    "gdnative_ptrs.pyx": (False, HAZMAT_DIR),
+    "gdapi.pxd": (False, HAZMAT_DIR),
+    "builtins.pyi": (False, GODOT_DIR),
+    "builtins.pxd": (True, GODOT_DIR),
+    "builtins.pyx": (True, GODOT_DIR),
+    "classes.pyi": (True, GODOT_DIR),
+    "classes.pxd": (True, GODOT_DIR),
+    "classes.pyx": (True, GODOT_DIR),
+    "conversion.pyx": (False, GODOT_DIR),
+    "conversion.pxd": (False, GODOT_DIR),
+}
 
 
 def make_jinja_env(import_dir: Path) -> Environment:
@@ -22,73 +38,6 @@ def make_jinja_env(import_dir: Path) -> Environment:
     return env
 
 
-def generate_gdapi_pxd(api: ExtensionApi) -> str:
-    env = make_jinja_env(BASEDIR / "../src/godot/hazmat")
-    template = env.get_template("gdapi.pxd.j2")
-    return template.render(api=api)
-
-
-def generate_gdapi_pyx(api: ExtensionApi) -> str:
-    env = make_jinja_env(BASEDIR / "../src/godot/hazmat")
-    template = env.get_template("gdapi.pyx.j2")
-    return template.render(api=api)
-
-
-def generate_gdapi_ptrs(api: ExtensionApi) -> str:
-    env = make_jinja_env(BASEDIR / "../src/godot/hazmat")
-    template = env.get_template("gdapi_ptrs.pxi.j2")
-    return template.render(api=api)
-
-
-def generate_builtins_pxd(api: ExtensionApi) -> str:
-    env = make_jinja_env(BASEDIR / "../src/godot")
-    template = env.get_template("builtins.pxd.j2")
-    return template.render(api=api)
-
-
-def generate_builtins_pyx(api: ExtensionApi) -> str:
-    env = make_jinja_env(BASEDIR / "../src/godot")
-    template = env.get_template("builtins.pyx.j2")
-    return template.render(api=api)
-
-
-def generate_builtins_pyi(api: ExtensionApi) -> str:
-    env = make_jinja_env(BASEDIR / "../src/godot")
-    template = env.get_template("builtins.pyi.j2")
-    return template.render(api=api)
-
-
-def generate_classes_pxd(api: ExtensionApi) -> str:
-    env = make_jinja_env(BASEDIR / "../src/godot")
-    template = env.get_template("classes.pxd.j2")
-    return template.render(api=api)
-
-
-def generate_classes_pyx(api: ExtensionApi) -> str:
-    env = make_jinja_env(BASEDIR / "../src/godot")
-    template = env.get_template("classes.pyx.j2")
-    return template.render(api=api)
-
-
-def generate_classes_pyi(api: ExtensionApi) -> str:
-    env = make_jinja_env(BASEDIR / "../src/godot")
-    template = env.get_template("classes.pyi.j2")
-    return template.render(api=api)
-
-
-OUTPUT_TO_FN = {
-    "gdapi.pxd": generate_gdapi_pxd,
-    "gdapi.pyx": generate_gdapi_pyx,
-    "gdapi_ptrs.pxi": generate_gdapi_ptrs,
-    "builtins.pxd": generate_builtins_pxd,
-    "builtins.pyx": generate_builtins_pyx,
-    "builtins.pyi": generate_builtins_pyi,
-    "classes.pxd": generate_classes_pxd,
-    "classes.pyx": generate_classes_pyx,
-    "classes.pyi": generate_classes_pyi,
-}
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate code from templates")
     parser.add_argument(
@@ -100,24 +49,41 @@ if __name__ == "__main__":
         help="Path to Godot extension_api.json file",
     )
     parser.add_argument(
-        "--output",
-        "-o",
-        required=True,
-        type=Path,
-        help=f"pyx/pxd/pyi to generate (choices: {', '.join(OUTPUT_TO_FN.keys())})",
-    )
-    parser.add_argument(
         "--build-config",
         required=True,
         choices=[x.value for x in BuildConfig],
         metavar="CONFIG",
     )
+    parser.add_argument(
+        "--output",
+        "-o",
+        required=True,
+        type=Path,
+        nargs="+",
+        help=f"pyx/pxd/pyi to generate (choices: {', '.join(TARGETS.keys())})",
+    )
 
     args = parser.parse_args()
 
-    api = parse_extension_api_json(path=args.input, build_config=BuildConfig(args.build_config))
+    todo: List[Tuple[Path, str, Path]] = []
+    need_classes = False
+    for output in args.output:
+        # We use # in the name to simulate folder hierarchy in the meson build
+        *_, name = output.name.rsplit("#", 1)
+        try:
+            template_need_classes, template_home = TARGETS[name]
+        except KeyError:
+            raise SystemExit(f"Unknown output, valid values: {', '.join(TARGETS.keys())}")
+        need_classes |= template_need_classes
+        template_name = f"{name}.j2"
+        todo.append((output, template_name, template_home))
 
-    # We use # in the name to simulate folder hierarchy in the meson build
-    *_, name = args.output.name.rsplit("#", 1)
-    code = OUTPUT_TO_FN[name](api)
-    args.output.write_text(code, encoding="utf8")
+    api = parse_extension_api_json(
+        path=args.input, build_config=BuildConfig(args.build_config), skip_classes=not need_classes
+    )
+
+    for todo_output, todo_template_name, todo_template_home in todo:
+        env = make_jinja_env(todo_template_home)
+        template = env.get_template(todo_template_name)
+        code = template.render(api=api)
+        todo_output.write_text(code, encoding="utf8")

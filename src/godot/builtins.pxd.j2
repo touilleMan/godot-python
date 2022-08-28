@@ -1,18 +1,8 @@
 {% from 'builtins_pxd/class.pxd.j2' import render_class, render_class_resume with context %}
-{% for spec in api["builtins"] if not spec.is_scalar %}
-#
-#
-{{ render_class_resume(spec) }}
-{% endfor %}
-
-
 cimport cython
 
-cdef extern from "Python.h":
-    const char* PyUnicode_AsUTF8AndSize(object, size_t*)
-    object PyUnicode_DecodeUTF32(const char *s, size_t size, const char *errors, int *byteorder)
-
 from .hazmat.gdapi cimport *
+from .classes cimport GDObject
 
 
 cdef inline GDString ensure_is_gdstring(object gdstring_or_pystr):
@@ -35,7 +25,8 @@ cdef inline NodePath ensure_is_nodepath(object nodepath_or_pystr):
             return NodePath(nodepath_or_pystr)
         except TypeError:
             raise TypeError(f"Invalid value {nodepath_or_pystr!r}, must be str or NodePath")
-{% for spec in api["builtins"] if not spec.is_scalar %}
+{% for spec in api.builtins %}
+
 
 {{ render_class(spec) }}
 {% endfor %}

@@ -1,4 +1,4 @@
-{% macro render_method_signature(spec, m) -%}
+{% macro render_method_signature(m) -%}
 {{ "void" if m.return_type.is_nil else m.return_type.cy_type }} {{ m.name }}(self
 {%- for arg in m.arguments -%}
 , {{ arg.type.cy_type }} {{ arg.name }}
@@ -6,29 +6,26 @@
 {%- endmacro %}
 
 
-{% macro render_method(spec, m) %}
-cpdef inline {{ render_method_signature(spec, m) }}:
+{% macro render_method(builtin, m) %}
+cpdef inline {{ render_method_signature(m) }}:
 {%   if m.contains_unsuported_types %}
     raise NotImplementedError  # TODO
 {%   else %}
-{#  Return type #}
-{%     if m.return_type.is_nil %}
-{%     elif m.return_type.is_scalar %}
-    cdef {{ m.return_type.cy_type }} ret = 0
+{%     if m.return_type.is_scalar %}
+    cdef {{ m.return_type.cy_type }} ret = {{ m.c_name }}(
 {%     elif m.return_type.is_builtin %}
     # Call to __new__ bypasses __init__ constructor
     cdef {{ m.return_type.cy_type }} ret = {{ m.return_type.cy_type }}.__new__({{ m.return_type.cy_type }})
+    ret._gd_data = {{ m.c_name }}(
 {%     elif m.return_type.is_object or m.return_type.is_variant %}
-    cdef {{  m.return_type.c_type }} ret
+    cdef {{  m.return_type.c_type }} ret = {{ m.c_name }}(
 {%     else %}
-    <crash !!!!>  # {{ m.return_type }} Unsupported type, crash the compilation !
+    {{ m.c_name }}(
 {%     endif %}
-{#  Arguments #}
-{%     if (m.arguments | length) != 0 %}
-    cdef GDNativeTypePtr[{{ m.arguments | length }}] args = [
+        &self._gd_data,
 {%       for arg in m.arguments %}
 {%         if arg.type.is_scalar %}
-        &{{ arg.name }},
+        {{ arg.name }},
 {%         elif arg.type.is_builtin %}
         &{{ arg.name }}._gd_data,
 {%         elif arg.type.is_object %}
@@ -37,24 +34,6 @@ cpdef inline {{ render_method_signature(spec, m) }}:
     <crash !!!!>  # {{ arg.type }} Unsupported type, crash the compilation !
 {%         endif %}
 {%       endfor %}
-    ]
-{%     endif %}
-{#  Actual call ! #}
-    __{{ spec.name }}_meth_{{ m.name }}(
-{#      GDNativeTypePtr p_base #}
-        &self._gd_data,
-{#      const GDNativeTypePtr *p_args #}
-        {{ "NULL" if (m.arguments | length) == 0 else "args" }},
-{#      GDNativeTypePtr r_return #}
-{%     if m.return_type.is_nil %}
-        NULL,
-{%     elif m.return_type.is_scalar %}
-        &ret,
-{%     elif m.return_type.is_builtin %}
-        &ret._gd_data,
-{%     endif %}
-{#      int p_argument_count #}
-        {{ m.arguments | length }},
     )
 {%     if not m.return_type.is_nil %}
 {%       if m.return_type.is_object %}

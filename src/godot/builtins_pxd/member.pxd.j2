@@ -1,33 +1,31 @@
-{% macro render_member_getter_signature(spec, m) -%}
+{% macro render_member_getter_signature(m) -%}
 {{ m.type.cy_type }} get_{{ m.name }}(self)
 {%- endmacro %}
 
 
-{% macro render_member_setter_signature(spec, m) -%}
+{% macro render_member_setter_signature(m) -%}
 void set_{{ m.name }}(self, {{ m.type.cy_type }} val)
 {%- endmacro %}
 
 
-{% macro render_member(spec, m) %}
+{% macro render_member(builtin, m) %}
 {% if not m.is_in_struct %}
 {# Property unrelated to the builtin internal structure, must use Godot API method to access it #}
 {%   if m.type.is_scalar %}
 {# Scalar type accessed by property (unused in extension_api.json afaik) #}
-cdef inline {{ render_member_getter_signature(spec, m) }}:
-    cdef {{ m.type.c_type }} ret
-    __{{ spec.name }}_get_{{ m.name }}(&self._gd_data, &ret)
-    return ret
-cdef inline {{ render_member_setter_signature(spec,m )}}:
-    __{{ spec.name }}_set_{{ m.name }}(&self._gd_data, &val)
+cdef inline {{ render_member_getter_signature(m) }}:
+    return {{ builtin.c_name_prefix }}_get_{{ m.name }}(&self._gd_data)
+cdef inline {{ render_member_setter_signature(m) }}:
+    {{ builtin.c_name_prefix }}_set_{{ m.name }}(&self._gd_data, val)
 {%   else %}
 {# Builtin type in the C structure (i.e. `Rect2i.end`) #}
-cdef inline {{ render_member_getter_signature(spec, m) }}:
+cdef inline {{ render_member_getter_signature(m) }}:
     # Call to __new__ bypasses __init__ constructor
     cdef {{ m.type.cy_type }} ret = {{ m.type.cy_type }}.__new__({{ m.type.cy_type }})
-    __{{ spec.name }}_get_{{ m.name }}(&self._gd_data, &ret._gd_data)
+    ret._gd_data = {{ builtin.c_name_prefix }}_get_{{ m.name }}(&self._gd_data)
     return ret
-cdef inline {{ render_member_setter_signature(spec,m )}}:
-    __{{ spec.name }}_set_{{ m.name }}(&self._gd_data, &val._gd_data)
+cdef inline {{ render_member_setter_signature(m) }}:
+    {{ builtin.c_name_prefix }}_set_{{ m.name }}(&self._gd_data, &val._gd_data)
 {%   endif %}
 {% endif %}
 {% endmacro %}

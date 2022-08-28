@@ -1,0 +1,27 @@
+{% macro render_builtin_type_cy_struct(builtin) %}
+struct {{ builtin.c_type }}:
+{% if builtin.is_transparent_builtin %}
+{%   for member in builtin.c_struct_members %}
+    {{ member.type.c_type }} {{ member.name }}
+{%   endfor %}
+{% else %}
+    char _gd_opaque[{{ builtin.size }}]
+{%   endif %}
+{% endmacro %}
+
+
+{% macro render_builtin_struct(builtin) %}
+cdef extern from * nogil:
+    """
+    typedef struct {{ builtin.c_type }} {
+{%   if builtin.is_transparent_builtin %}
+{%     for member in builtin.c_struct_members %}
+        {{ member.type.c_type }} {{ member.name }};
+{%     endfor %}
+{%   else %}
+        char _gd_opaque[{{ builtin.size }}];
+{%   endif %}
+    } {{ builtin.c_type }};
+    """
+    {{ render_builtin_type_cy_struct(builtin) | indent }}
+{% endmacro %}

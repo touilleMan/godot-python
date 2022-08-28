@@ -1,116 +1,15 @@
-{% from 'gdapi_pxd/macros.pxd.j2' import
-    render_utility_function_signature,
-    render_utility_function,
-    render_builtin_type_cy_struct,
-    render_builtin_type_c_extern,
-    render_builtin_into_variant_signature,
-    render_builtin_from_variant_signature,
-    render_builtin_constructor_signature,
-    render_builtin_destructor_signature,
-    render_builtin_method_signature,
-    render_builtin_all_functions,
-    render_builtin_functions_ptrs
+{% from 'gdapi_pxd/struct.pxd.j2' import render_builtin_struct %}
+{% from 'gdapi_pxd/meth.pxd.j2' import
+    render_builtin_object_variant_conversions,
+    render_builtin_variant_conversions,
+    render_builtin_methods,
+    render_utility_function
 %}
 cimport cython
 from libc.stdint cimport *
 
 from .gdnative_interface cimport *
-
-
-cdef extern from * nogil:
-    # Global variables defined in `pythonscript.c`
-    # Given `libpythonscript.so` is responsible for initializing the Python
-    # interpreter, we are guanteed `pythonscript_gdapi` symbol is always
-    # resolved and set to a non-null value \o/
-    """
-    #include <godot/gdnative_interface.h>
-    #ifdef _WIN32
-    # define DLL_IMPORT __declspec(dllimport)
-    #else
-    # define DLL_IMPORT
-    #endif
-    DLL_IMPORT extern const GDNativeInterface *pythonscript_gdapi;
-    DLL_IMPORT GDNativeExtensionClassLibraryPtr pythonscript_gdlibrary;
-    """
-
-    cdef const GDNativeInterface *pythonscript_gdapi
-    cdef const GDNativeExtensionClassLibraryPtr pythonscript_gdlibrary
-
-
-##############################################################################
-#                            Conversion helpers                              #
-##############################################################################
-
-
-{% include 'gdapi_pxd/conversion.pxd.j2' %}
-
-
-##############################################################################
-#                                  Builtins                                  #
-##############################################################################
-
-
-cdef extern from *:
-    struct gd_variant_t  # Opaque structure (see the jungle below !)
-{% for spec in api["builtins"] if not spec.is_scalar %}
-{# Render transparent builtin in the non inlined part for better documentation #}
-{%   if spec.is_transparent_c_struct %}
-    {{ render_builtin_type_cy_struct(spec) | indent }}
-{%   else %}
-    struct {{ spec.c_struct_name }}  # Opaque structure (see the jungle below !)
-{%   endif %}
-{% endfor %}
-
-
-# gd_variant_del(gd_variant_t *variant)
-# GDNativeObjectPtr gd_object_from_variant(gd_variant_t *val)
-# gd_variant_t gd_object_into_variant(GDNativeObjectPtr *val)
-{% for spec in api["builtins"] if not spec.is_scalar %}
-
-
-# {{spec.original_name }}: List of inlines functions defined in the jungle below
-# {{ render_builtin_into_variant_signature(spec) }}
-# {{ render_builtin_from_variant_signature(spec) }}
-{% for c in spec.constructors %}
-#     {{ render_builtin_constructor_signature(spec, c) }}
-{% endfor %}
-{% if spec.has_destructor %}
-#     {{ render_builtin_destructor_signature(spec) }}
-{% endif %}
-{% for m in spec.methods %}
-#     {{ render_builtin_method_signature(spec, m) }}
-{% endfor %}
-{# TODO: operators #}
-{# {% for o in spec.operators %}
-#     {{ render_builtin_method_signature(spec, o) }}
-{% endfor %} #}
-{% endfor %}
-
-
-##############################################################################
-#                              Utility functions                             #
-##############################################################################
-
-
-# List of inlines functions defined in the jungle below
-{% for spec in api["utility_functions"] %}
-#     {{ render_utility_function_signature(spec) | indent }}
-{% endfor %}
-
-
-##############################################################################
-#                        Global Constants & Enums                            #
-##############################################################################
-
-{% for spec in api["global_constants"] %}
-DEF {{ spec.name }} = {{ spec.value }}
-{% endfor %}
-
-{% for spec in api["global_enums"] %}
-{%   for key, value in spec.values.items() %}
-DEF {{ key }} = {{ value }}
-{%   endfor %}
-{% endfor %}
+from .gdnative_ptrs cimport *
 
 
 #
@@ -136,22 +35,36 @@ DEF {{ key }} = {{ value }}
 #   and nicer inline function
 
 
-cdef inline gd_variant_del(gd_variant_t *variant):
-    pythonscript_gdapi.variant_destroy(variant)
+##############################################################################
+#                         String operation helpers                           #
+##############################################################################
+
+
+cdef extern from "Python.h":
+    const char* PyUnicode_AsUTF8AndSize(object, ssize_t*)
+    object PyUnicode_DecodeUTF32(const char *s, ssize_t size, const char *errors, int *byteorder)
+
+
+cdef inline gd_string_t gd_string_from_utf8(const char *cstr, ssize_t cstr_size):
+    cdef gd_string_t gdstr
+    pythonscript_gdnative_interface.string_new_with_utf8_chars_and_len(&gdstr, cstr, cstr_size)
+    return gdstr
+
+
+cdef inline gd_string_t gd_string_from_unchecked_pystr(object pystr):
+    cdef ssize_t buffsize
+    cdef const char *buff = PyUnicode_AsUTF8AndSize(pystr, &buffsize)
+    return gd_string_from_utf8(buff, buffsize)
+
+
+cdef inline object gd_string_to_pystr(gd_string_t *gdstr):
+    cdef GDNativeInt l = pythonscript_gdnative_interface.string_to_utf32_chars(gdstr, NULL, 0)
+    cdef const char32_t *gdbuff = pythonscript_gdnative_interface.string_operator_index_const(gdstr, 0)
+    return PyUnicode_DecodeUTF32(<char *>gdbuff, l * cython.sizeof(char32_t), NULL, NULL)
 
 
 ##############################################################################
-#                    Inline defs: Utility functions                          #
-##############################################################################
-{% for spec in api["utility_functions"] %}
-
-
-{{ render_utility_function(spec) }}
-{% endfor %}
-
-
-##############################################################################
-#                  Inline defs: Builtins C structures                        #
+#                        Builtins stucts                                     #
 ##############################################################################
 
 
@@ -159,65 +72,89 @@ cdef inline gd_variant_del(gd_variant_t *variant):
 # so that they can be used in exported to C functions (i.e. `cdef api` functions)
 
 
-cdef extern from * nogil:
-    """
-    struct gd_variant_t {
-        char _gd_opaque[{{ api.variant_size }}];
-    } gd_variant_t;
-    """
-    struct gd_variant_t:
-        char _gd_opaque[{{ api.variant_size }}]
-{% for spec in api["builtins"] if not spec.is_scalar %}
+{{ render_builtin_struct(api.variant_type) }}
+
+{% for builtin in api.builtins %}
+
+{{ render_builtin_struct(builtin) }}
+{% endfor %}
+
+
+##############################################################################
+#                        Builtins methods                                    #
+##############################################################################
+
+
+
+cdef inline gd_variant_del(gd_variant_t *variant):
+    pythonscript_gdnative_interface.variant_destroy(variant)
+
+
+{{ render_builtin_object_variant_conversions() }}
+
+
+{{ render_builtin_variant_conversions(api.bool_type) }}
+
+
+{{ render_builtin_variant_conversions(api.int_type) }}
+
+
+{{ render_builtin_variant_conversions(api.float_type) }}
+{% for builtin in api.builtins %}
+
+
+{{ render_builtin_methods(builtin )}}
+{% endfor %}
+
+
+##############################################################################
+#                          Builtin constants & enums                         #
+##############################################################################
+{% for builtin in api.builtins %}
+
 
 {# Constants #}
-{%   for c in spec.constants %}
+# {{ builtin.original_name }}
+{%   for c in builtin.constants %}
 {%     if c.type.is_scalar %}
-DEF {{ spec.c_name_prefix.upper() }}_{{ c.name }} = {{ c.value }}
+DEF {{ builtin.c_name_prefix.upper() }}_{{ c.name }} = {{ c.value }}
 {%     else %}
-cdef inline {{ c.type.c_type }} {{ spec.c_name_prefix }}_make_constant_{{ c.name }}():
+cdef inline {{ c.type.c_type }} {{ builtin.c_name_prefix }}_make_constant_{{ c.name }}():
     # TODO: Initialize as {{ c.value }}
-    return {{ c.type.builtin_spec.c_name_prefix }}_new()
+    return {{ c.type.c_name_prefix }}_new()
 {%     endif %}
 {%   endfor %}
-
 {# Enums #}
-{%   for e in spec.enums %}
+{%   for e in builtin.enums %}
 {%     for key, value in e.values.items() %}
-DEF {{ spec.c_name_prefix.upper() }}_{{ key }} = {{ value }}
+DEF {{ builtin.c_name_prefix.upper() }}_{{ key }} = {{ value }}
 {%     endfor %}
 {%   endfor %}
-
-{# Struct #}
-{{ render_builtin_type_c_extern(spec, not spec.is_transparent_c_struct) }}
-{% endfor %}
-{% for spec in api["builtins"] if not spec.is_scalar %}
-
-
-##############################################################################
-#                  Inline defs: {{ "{:^45}".format(spec.name) }}#
-##############################################################################
-
-
-{{ render_builtin_all_functions(spec) }}
 {% endfor %}
 
 
 ##############################################################################
-#                  Godot API function pointers on builtins                   #
+#                              Utility functions                             #
 ##############################################################################
+{% for utility in api.utility_functions %}
 
 
-{% for spec in api["builtins"] if not spec.is_scalar %}
-{{ render_builtin_functions_ptrs(spec) }}
+{{ render_utility_function(utility) }}
 {% endfor %}
 
 
 ##############################################################################
-#              Godot API function pointers on variant conversion             #
+#                        Global Constants & Enums                            #
 ##############################################################################
 
 
-{% for spec in api["builtins"] if not spec.is_scalar %}
-cdef GDNativeTypeFromVariantConstructorFunc __{{ spec.name }}_from_variant
-cdef GDNativeVariantFromTypeConstructorFunc __{{ spec.name }}_into_variant
+{% for spec in api.global_constants %}
+DEF {{ spec.name }} = {{ spec.value }}
+{% endfor %}
+{% for spec in api.global_enums %}
+
+
+{%   for key, value in spec.values.items() %}
+DEF {{ key }} = {{ value }}
+{%   endfor %}
 {% endfor %}

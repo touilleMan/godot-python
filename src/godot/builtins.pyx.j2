@@ -4,8 +4,9 @@ from libc.math cimport INFINITY as inf  # Needed by some constants
 
 from .hazmat.gdnative_interface cimport *
 from .hazmat.gdapi cimport *
+from .conversion cimport *
+{% for spec in api.builtins %}
 
 
-{% for spec in api["builtins"] if not spec.is_scalar -%}
-{{     render_class(spec) }}
+{{ render_class(spec) }}
 {% endfor %}

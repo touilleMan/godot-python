@@ -12,6 +12,23 @@ endforeach
 
 
 custom_target(
+    output: 'gdnative_interface.pxd',
+    input: pxd_godot_hazmat_gdnative_interface,
+    command: copy_command,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot', 'hazmat'),
+)
+
+custom_target(
+    output: 'gdnative_ptrs.pxd',
+    input: pxd_godot_hazmat_gdnative_ptrs,
+    command: copy_command,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot', 'hazmat'),
+)
+
+
+custom_target(
     output: 'gdapi.pxd',
     input: pxd_godot_hazmat_gdapi,
     command: copy_command,
@@ -20,67 +37,57 @@ custom_target(
 )
 
 
-custom_target(
-    output: 'gdnative_interface.pxd',
-    input: pxd_godot_hazmat_gdnative_interface,
-    command: copy_command,
-    install: true,
-    install_dir: join_paths(python_site_packages_install_path, 'godot', 'hazmat'),
-)
-
 
 ##############################################################################
 #                                Compilation                                 #
 ##############################################################################
 
 
-# gdapi.so
-# └─ gdapi.c
+# gdnative_ptrs.so
+# └─ gdnative_ptrs.c
 #    ├─ gdnative_interface.pxd
 #    │  └─ ...
-#    ├─ gdapi.pyx
-#    └─ gdapi_ptrs.pxi
+#    └─ gdapi_ptrs.pyx
 #       └─ extension_api.json
 
 
-pyx_gdapi = custom_target(
-    output: 'gdapi.pyx',
+pyx_gdnative_ptrs = custom_target(
+    output: 'gdnative_ptrs.pyx',
     input: [
         generate_tmpl_base_input,
         files(
-            'gdapi.pyx.j2',
-            'gdapi_pyx/ptrs.pyx.j2',
-            'gdapi_pyx/conversion.pyx.j2',
+            'gdnative_ptrs.pyx.j2',
         ),
     ],
     command: generate_tmpl_cmd,
 )
 
 
-c_gdapi = custom_target(
-    output : 'gdapi.c',
+c_gdnative_ptrs = custom_target(
+    output : 'gdnative_ptrs.c',
     input : [
-        pyx_gdapi,
-        pxds_godot,
+        pyx_gdnative_ptrs,
+        pxd_godot_hazmat_gdnative_interface,
+        pxd_godot_hazmat_gdnative_ptrs,
     ],
     command : cythonize_command,
 )
 
 
 if host_platform.startswith('linux')
-    gdapi_rpath = '$ORIGIN/../../../..'
+    gdnative_ptrs_rpath = '$ORIGIN/../../../..'
 elif host_platform.startswith('macos')
-    gdapi_rpath = '@loader_path/../../../..'
+    gdnative_ptrs_rpath = '@loader_path/../../../..'
 else
-    gdapi_rpath = ''
+    gdnative_ptrs_rpath = ''
 endif
 
 
 shared_library(
-    'gdapi',
-    c_gdapi,
+    'gdnative_ptrs',
+    c_gdnative_ptrs,
     dependencies : [dep_godot, dep_python, dep_pythonscript],
-    install_rpath: gdapi_rpath,  # To find libpython
+    install_rpath: gdnative_ptrs_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
     install: true,

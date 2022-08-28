@@ -49,7 +49,7 @@ cdef GDNativeVariantType pytype_to_gdtype(object pytype):
 
 cdef object gdvariant_to_pyobject(const gd_variant_t *p_gdvar):
     # TODO: must do an ugly cast because autopxd2 ignores const qualifiers in the C headers
-    cdef GDNativeVariantType gdtype = pythonscript_gdapi.variant_get_type(<gd_variant_t *>p_gdvar)
+    cdef GDNativeVariantType gdtype = pythonscript_gdnative_interface.variant_get_type(<gd_variant_t *>p_gdvar)
     if gdtype == GDNATIVE_VARIANT_TYPE_OBJECT:
         raise NotImplementedError  # TODO
         # # TODO: This conversion relies on godot String and lookup into bindings
@@ -98,7 +98,7 @@ cdef inline object _gdvariant_to_pyobject_{{ spec.name }}(const gd_variant_t *p_
 
 cdef bint pyobject_to_gdvariant(object pyobj, gd_variant_t *p_gdvar):
     if pyobj is None:
-        pythonscript_gdapi.variant_new_nil(p_gdvar)
+        pythonscript_gdnative_interface.variant_new_nil(p_gdvar)
     elif isinstance(pyobj, GDObject):
         __GDObject_into_variant(p_gdvar, (<GDObject>pyobj)._gd_ptr)
     elif isinstance(pyobj, bool):
@@ -115,7 +115,7 @@ cdef bint pyobject_to_gdvariant(object pyobj, gd_variant_t *p_gdvar):
 {% endfor %}
     else:
         warn(f"Cannot convert `{type(pyobj)}` to Godot's Variant")
-        pythonscript_gdapi.variant_new_nil(p_gdvar)
+        pythonscript_gdnative_interface.variant_new_nil(p_gdvar)
         return False
     return True
 

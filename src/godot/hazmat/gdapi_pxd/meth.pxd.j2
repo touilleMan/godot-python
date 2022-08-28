@@ -1,0 +1,247 @@
+#########################################################################
+# Render arguments body & signature
+#########################################################################
+
+
+{% macro render_args_signature(args) -%}
+{%- for arg in args -%}
+{{ arg.type.c_type }}{{ "" if arg.type.is_scalar else "*" }} {{ arg.name }}
+{%- if not loop.last %}, {% endif -%}
+{%- endfor -%}
+{% endmacro %}
+
+
+{% macro render_args(args) -%}
+{%- for arg in args %}
+{{ "&" if arg.type.is_scalar else "" }}{{ arg.name }}
+{%- if not loop.last %}, {% endif -%}
+{%- endfor -%}
+{% endmacro %}
+
+
+#########################################################################
+# Utility function
+#########################################################################
+
+
+{% macro render_utility_function_signature(builtin) -%}
+{% if builtin.is_vararg %}
+{{ "void" if builtin.return_type.is_nil else "gd_variant_t" }} gd_utility_{{ builtin.original_name }}(gd_variant_t *args, GDNativeInt args_count)
+{%- else %}
+{{ "void" if builtin.return_type.is_nil else builtin.return_type.c_type }} gd_utility_{{ builtin.original_name }}(
+    {{- render_args_signature(builtin.arguments) -}}
+)
+{%- endif %}
+{%- endmacro %}
+
+
+{% macro render_utility_function_ptrcall(builtin) %}
+cdef inline {{ render_utility_function_signature(builtin) }}:
+{% if (builtin.arguments | length) != 0 %}
+    cdef GDNativeTypePtr[{{ builtin.arguments | length }}] __args = [
+        {{- render_args(builtin.arguments) -}}
+    ]
+{% endif %}
+{% if not builtin.return_type.is_nil %}
+    cdef {{ builtin.return_type.c_type }} __ret
+{% endif %}
+    gd_utility_{{ builtin.original_name }}_ptr(
+        {# GDNativeTypePtr ret #}
+        {{ "NULL" if builtin.return_type.is_nil else "&__ret" }},
+        {# const GDNativeTypePtr *p_arguments #}
+        {{ "NULL" if (builtin.arguments | length) == 0 else "__args" }},
+        {# int p_argument_count #}
+        {{ builtin.arguments | length }}
+    )
+{% if not builtin.return_type.is_nil %}
+    return __ret
+{% endif %}
+{% endmacro %}
+
+
+{% macro render_utility_function_vararg(builtin) %}
+cdef inline {{ render_utility_function_signature(builtin) }}:
+{# Godot varargs calling system is a hack: it expects us to provide only #}
+{# a single parameter that itself is an array of variant (hence the `&args` #}
+{# to pass a `gd_variant_t**` as parameter) whose size is passed in the number #}
+{# of parameters fields... Yes this is very confusing stuff, my brain hurts ! #}
+{% if builtin.return_type.is_nil %}
+    gd_utility_{{ builtin.original_name }}_ptr(NULL, <GDNativeTypePtr *>&args, args_count)
+{% else %}
+    cdef gd_variant_t __ret  # TODO: improve return type !
+    gd_utility_{{ builtin.original_name }}_ptr(&__ret, <GDNativeTypePtr *>&args, args_count)
+    return __ret
+{% endif %}
+{% endmacro %}
+
+
+{% macro render_utility_function(builtin) %}
+# {{ builtin.original_name }}
+{% if builtin.is_vararg %}
+{{ render_utility_function_vararg(builtin) }}
+{% else %}
+{{ render_utility_function_ptrcall(builtin) }}
+{% endif %}
+{% endmacro %}
+
+
+#########################################################################
+# Builtin constructors/destructor
+#########################################################################
+
+
+{% macro render_builtin_from_variant_signature(builtin) %}
+{{ builtin.c_type }} {{ builtin.c_name_prefix }}_from_variant(gd_variant_t *val)
+{%- endmacro %}
+
+
+{% macro render_builtin_into_variant_signature(builtin) %}
+{%- if builtin.is_scalar %}
+gd_variant_t {{ builtin.c_name_prefix }}_into_variant({{ builtin.c_type }} val)
+{%- else %}
+gd_variant_t {{ builtin.c_name_prefix }}_into_variant({{ builtin.c_type }} *val)
+{%- endif %}
+{% endmacro %}
+
+
+{% macro render_builtin_object_variant_conversions(builtin) %}
+cdef inline GDNativeObjectPtr gd_object_from_variant(gd_variant_t *val):
+    cdef GDNativeObjectPtr ret
+    gd_object_from_variant_ptr(&ret, val)
+    return ret
+
+cdef inline gd_variant_t gd_object_into_variant(GDNativeObjectPtr val):
+    cdef gd_variant_t ret
+    gd_object_into_variant_ptr(&ret, &val)
+    return ret
+{% endmacro %}
+
+
+{% macro render_builtin_variant_conversions(builtin) %}
+cdef inline {{ render_builtin_from_variant_signature(builtin) }}:
+    cdef {{ builtin.c_type }} ret
+    {{ builtin.c_name_prefix }}_from_variant_ptr(&ret, val)
+    return ret
+
+cdef inline {{ render_builtin_into_variant_signature(builtin) }}:
+    cdef gd_variant_t ret
+    {{ builtin.c_name_prefix }}_into_variant_ptr(&ret, {{ "&val" if builtin.is_scalar else "val"}})
+    return ret
+{% endmacro %}
+
+
+{% macro render_builtin_constructor_signature(builtin, constructor) -%}
+{{ builtin.c_type }} {{ constructor.c_name }}({{ render_args_signature(constructor.arguments) }})
+{%- endmacro %}
+
+
+{% macro render_builtin_constructor(builtin, constructor) %}
+cdef inline {{ render_builtin_constructor_signature(builtin, constructor) }}:
+    cdef {{ builtin.c_type }} obj
+{% if (constructor.arguments | length) != 0 %}
+    cdef GDNativeTypePtr[{{ constructor.arguments | length }}] p_args = [
+        {{- render_args(constructor.arguments) -}}
+    ]
+{% endif %}
+    {{ builtin.c_name_prefix }}_constructor_{{ constructor.index }}_ptr(
+        &obj,
+        {{ "NULL" if (constructor.arguments | length) == 0 else "p_args" }}
+    )
+    return obj
+{% endmacro %}
+
+
+{% macro render_builtin_destructor_signature(builtin) -%}
+void {{ builtin.c_destructor_name }}({{ builtin.c_type }}* self)
+{%- endmacro %}
+
+
+{% macro render_builtin_destructor(builtin) %}
+cdef inline {{ render_builtin_destructor_signature(builtin) }}:
+    {{ builtin.c_name_prefix }}_destructor_ptr(self)
+{% endmacro %}
+
+
+#########################################################################
+# Builtin methods
+#########################################################################
+
+
+{% macro render_builtin_method_signature(builtin, meth) -%}
+{{ "void" if meth.return_type.is_nil else meth.return_type.c_type }} {{ meth.c_name }}(
+    {{- builtin.c_type }} *self
+{%- if meth.arguments | length %}, {{ render_args_signature(meth.arguments) -}} {% endif -%}
+)
+{%- endmacro %}
+
+
+{% macro render_builtin_method(builtin, meth) %}
+cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
+    cdef GDNativeTypePtr[{{ meth.arguments | length }}] p_args = [
+        {{- render_args(meth.arguments) -}}
+    ]
+{% if not meth.return_type.is_nil %}
+    cdef {{ meth.return_type.c_type }} r_return
+{% endif %}
+    {{ builtin.c_name_prefix }}_meth_{{ meth.name }}_ptr(
+        {# GDNativeTypePtr p_base #}
+        self,
+        {# const GDNativeTypePtr *p_args #}
+        p_args,
+        {# GDNativeTypePtr r_return #}
+        {{ "NULL" if meth.return_type.is_nil else "&r_return" }},
+        {# int p_argument_count #}
+        {{ meth.arguments | length }}
+    )
+{% if not meth.return_type.is_nil %}
+    return r_return
+{% endif %}
+{% endmacro %}
+
+
+#########################################################################
+# Builtin setter/getter
+#########################################################################
+
+
+{% macro render_member_getter(builtin, m) %}
+cdef inline {{ m.type.c_type }} {{ builtin.c_name_prefix }}_get_{{ m.name }}({{ builtin.c_type }} *self):
+    cdef {{ m.type.c_type }} ret
+    {{ builtin.c_name_prefix }}_get_{{ m.name }}_ptr(self, &ret)
+    return ret
+{% endmacro %}
+
+
+{% macro render_member_setter(builtin, m) %}
+cdef inline void {{ builtin.c_name_prefix }}_set_{{ m.name }}(
+    {{ builtin.c_type }} *self,
+    {{ m.type.c_type }} {{ "" if m.type.is_scalar else "*" }}val
+):
+    {{ builtin.c_name_prefix }}_set_{{ m.name }}_ptr(self, {{ "&val" if m.type.is_scalar else "val" }})
+{% endmacro %}
+
+
+#########################################################################
+# All stuff combined
+#########################################################################
+
+
+{% macro render_builtin_methods(builtin) %}
+{{ render_builtin_variant_conversions(builtin) }}
+{%   for c in builtin.constructors %}
+{{ render_builtin_constructor(builtin, c) }}
+{%   endfor %}
+{%   if not builtin.is_stack_only %}
+{{ render_builtin_destructor(builtin) }}
+{%   endif %}
+{%   for m in builtin.methods %}
+{{ render_builtin_method(builtin, m) }}
+{%   endfor %}
+{# TODO: builtin.operators #}
+{% for m in builtin.members %}
+{%   if not m.is_in_struct %}
+{{ render_member_getter(builtin, m) }}
+{{ render_member_setter(builtin, m) }}
+{%   endif %}
+{% endfor %}
+{% endmacro %}

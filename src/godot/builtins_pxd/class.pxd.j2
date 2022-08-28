@@ -1,46 +1,30 @@
 {% from 'builtins_pxd/constructor.pxd.j2' import render_constructors with context %}
-{% from 'builtins_pxd/method.pxd.j2' import render_method, render_method_signature with context %}
-{% from 'builtins_pxd/member.pxd.j2' import
-    render_member,
-    render_member_getter_signature,
-    render_member_setter_signature
-with context %}
+{% from 'builtins_pxd/method.pxd.j2' import render_method with context %}
+{% from 'builtins_pxd/member.pxd.j2' import render_member with context %}
 
 
-{% macro render_class_resume(spec) %}
-# cdef class {{ spec.name }}:
-{% for m in spec.members %}
-#    {{ render_member_getter_signature(spec, m) }}
-#    {{ render_member_setter_signature(spec, m) }}
-{% endfor %}
-{% for m in spec.methods %}
-#    {{ render_method_signature(spec, m) }}
-{% endfor %}
-{% endmacro %}
-
-
-{% macro render_class(spec, m) %}
+{% macro render_class(builtin, m) %}
 @cython.freelist(8)
 @cython.final
-cdef class {{ spec.name }}:
-    cdef {{ spec.c_struct_name }} _gd_data
+cdef class {{ builtin.cy_type }}:
+    cdef {{ builtin.c_type }} _gd_data
 
-    {{ render_constructors(spec) | indent }}
+    {{ render_constructors(builtin) | indent }}
 
     @staticmethod
-    cdef inline {{ spec.name }} new():
+    cdef inline {{ builtin.py_type }} new():
         # Call to __new__ bypasses __init__ constructor
-        cdef {{ spec.name }} ret = {{ spec.name }}.__new__({{ spec.name }})
-        __{{ spec.name }}_constructor_0(&ret._gd_data, NULL)
+        cdef {{ builtin.cy_type }} ret = {{ builtin.cy_type }}.__new__({{ builtin.cy_type }})
+        ret._gd_data = {{ builtin.get_constructor_from().c_name }}()
         return ret
-{% if spec.name == "GDString" %}
+{% if builtin.original_name == "String" %}
     cdef inline object to_pystr(self):
-        return gdstring_to_pystr(&self._gd_data)
+        return gd_string_to_pystr(&self._gd_data)
 {% endif %}
-{% for m in spec.members %}
-    {{ render_member(spec, m) | indent }}
+{% for m in builtin.members %}
+    {{ render_member(builtin, m) | indent }}
 {% endfor %}
-{% for m in spec.methods %}
-    {{ render_method(spec, m) | indent }}
+{% for m in builtin.methods %}
+    {{ render_method(builtin, m) | indent }}
 {% endfor %}
 {% endmacro %}

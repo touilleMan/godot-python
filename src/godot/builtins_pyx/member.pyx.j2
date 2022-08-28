@@ -9,7 +9,7 @@ def {{ name_prefix }}{{ m.name }}(self, {{ m.type.cy_type }} val):
 
 
 {% macro render_transparent_builtin_subtype_properties(m, name_prefix, access_prefix) -%}
-{% for subm in m.type.builtin_spec.c_struct_members %}
+{% for subm in m.type.c_struct_members %}
 {%   if subm.is_in_struct %}
 {%     if subm.type.is_scalar %}
 {{ render_transparent_builtin_scalar_property(subm, name_prefix, access_prefix) }}
@@ -21,15 +21,15 @@ def {{ name_prefix }}{{ m.name }}(self, {{ m.type.cy_type }} val):
 {% endmacro %}
 
 
-{% macro render_member(spec, m) %}
+{% macro render_member(builtin, m) %}
 {% if not m.is_in_struct %}
 {# Property unrelated to the builtin internal structure, must use Godot API method to access it #}
 @property
 def {{ m.name }}(self):
-    return {{ spec.name }}.get_{{ m.name }}(self)
+    return {{ builtin.cy_type }}.get_{{ m.name }}(self)
 @{{ m.name }}.setter
 def {{ m.name }}(self, {{ m.type.cy_type }} val{{ "" if m.type.is_scalar else " not None"}}):
-    {{ spec.name }}.set_{{ m.name }}(self, val)
+    {{ builtin.cy_type }}.set_{{ m.name }}(self, val)
 {% else %}
 {# Property that is contains in the builtin C structure #}
 
@@ -46,20 +46,9 @@ def {{ m.name }}(self, {{ m.type.cy_type }} val{{ "" if m.type.is_scalar else " 
 {# thing slower) so we replace this by property on the subtype members: `rect2.position_x` #}
 {{ render_transparent_builtin_subtype_properties(m, "{}_".format(m.name), "self._gd_data.{}".format(m.name)) }}
 
-{# Also expose the member, but as a functions so it's clearer this works on copies #}
-{%     for subm in m.type.builtin_spec.c_struct_members %}
-def get_{{ m.name }}(self):
-{# Transparent builtins are guaranteed to have `is_stack_only == True` #}
-    # Call to __new__ bypasses __init__ constructor
-    cdef {{ m.type.cy_type }} ret = {{ m.type.cy_type }}.__new__({{ m.type.cy_type }})
-    ret._gd_data = self._gd_data.{{ m.name }}
-    return ret
+{# Note the member is also exposed as set/get functions (making it clear it works on copies) #}
+{# defined in the .pxd among the others class methods #}
 
-def set_{{ m.name }}(self, {{ m.type.cy_type }} val not None):
-{# Transparent builtins are guaranteed to have `is_stack_only == True` #}
-    self._gd_data.{{ m.name }} = val._gd_data
-
-{%     endfor %}
 {%   endif %}
 {% endif %}
 {% endmacro %}

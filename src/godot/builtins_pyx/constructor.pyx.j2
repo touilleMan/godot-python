@@ -1,12 +1,12 @@
-{% macro render_default_constructor(spec) -%}
-{% if spec.is_transparent_c_struct %}
+{% macro render_default_constructor(builtin) -%}
+{% if builtin.is_transparent_builtin %}
 
 def __cinit__(self,
-{%- for m in spec.c_struct_members -%}
+{%- for m in builtin.c_struct_members -%}
 {{ m.type.cy_type }} {{ m.name }}{{ "" if m.type.is_scalar else " not None" }}={{ "0" if m.type.is_scalar else "{}()".format(m.type.cy_type) }},
 {%- endfor -%}
 ):
-{%   for m in spec.c_struct_members %}
+{%   for m in builtin.c_struct_members %}
     self._gd_data.{{ m.name }} = {{ m.name }}{{ "" if m.type.is_scalar else "._gd_data" }}
 {%   endfor %}
 
@@ -14,242 +14,41 @@ def __cinit__(self,
 
 {# Opaque builtin, initialize with default empty constructor #}
 def __cinit__(self):
-    __{{ spec.name }}_constructor_{{ spec.empty_constructor_index }}(&self._gd_data, NULL)
+    self._gd_data = {{ builtin.c_name_prefix }}_new()
 
 {% endif %}
 {%- endmacro %}
 
 
-{% macro render_constructors(spec) -%}
+{% macro render_constructors(builtin) -%}
 {# Default constructor #}
-{% if spec.name != "GDString" and not spec.is_packed_array %}
-{{ render_default_constructor(spec) }}
+{% if builtin.original_name != "String" and not builtin.is_packed_array %}
+{{ render_default_constructor(builtin) }}
 {% endif %}
 
 {# And now for the custom constructors ! #}
 
-{% if spec.name == "GDString" %}
+{% if builtin.original_name == "String" %}
 
 def __cinit__(self, s=None):
     cdef GDNativeTypePtr[1] args
     if s is None:
-        __GDString_constructor_0(&self._gd_data, NULL)
+        self._gd_data = {{ builtin.c_name_prefix }}_new()
     elif isinstance(s, str):
-        self._gd_data = gdstring_from_unchecked_pystr(s)
+        self._gd_data = gd_string_from_unchecked_pystr(s)
     else:
         try:
-            args[0] = &(<GDString?>s)._gd_data
-            __GDString_constructor_{{ spec.get_constructor_index_from("GDString") }}(&self._gd_data, args)
+            {% set constructor = builtin.get_constructor_from("String") %}
+            self._gd_data = {{ constructor.c_name }}(&(<GDString?>s)._gd_data)
         except TypeError:
             try:
-                args[0] = &(<StringName?>s)._gd_data
-                __GDString_constructor_{{ spec.get_constructor_index_from("StringName") }}(&self._gd_data, args)
+                {% set constructor = builtin.get_constructor_from("StringName") %}
+                self._gd_data = {{ constructor.c_name }}(&(<StringName?>s)._gd_data)
             except TypeError:
-                args[0] = &(<NodePath?>s)._gd_data
-                __GDString_constructor_{{ spec.get_constructor_index_from("NodePath") }}(&self._gd_data, args)
+                {% set constructor = builtin.get_constructor_from("NodePath") %}
+                self._gd_data = {{ constructor.c_name }}(&(<NodePath?>s)._gd_data)
 
-{% elif spec.name in "Vector2" %}
-
-def into_v2i(self):
-    cdef Vector2i obj = Vector2i.__new__(Vector2i)
-    obj._gd_data.x = int(self._gd_data.x)
-    obj._gd_data.y = int(self._gd_data.y)
-    return obj
-
-{% elif spec.name == "Vector2i" %}
-
-def into_v2(self):
-    cdef Vector2 obj = Vector2.__new__(Vector2)
-    obj._gd_data.x = self._gd_data.x
-    obj._gd_data.y = self._gd_data.y
-    return obj
-
-{% elif spec.name in "Vector3" %}
-
-def into_v3i(self):
-    cdef Vector3i obj = Vector3i.__new__(Vector3i)
-    obj._gd_data.x = int(self._gd_data.x)
-    obj._gd_data.y = int(self._gd_data.y)
-    obj._gd_data.z = int(self._gd_data.z)
-    return obj
-
-{% elif spec.name == "Vector3i" %}
-
-def into_v3(self):
-    cdef Vector3 obj = Vector3.__new__(Vector3)
-    obj._gd_data.x = self._gd_data.x
-    obj._gd_data.y = self._gd_data.y
-    obj._gd_data.z = self._gd_data.z
-    return obj
-
-{% elif spec.name in "Vector4" %}
-
-def into_v4i(self):
-    cdef Vector4i obj = Vector4i.__new__(Vector4i)
-    obj._gd_data.x = int(self._gd_data.x)
-    obj._gd_data.y = int(self._gd_data.y)
-    obj._gd_data.z = int(self._gd_data.z)
-    obj._gd_data.w = int(self._gd_data.w)
-    return obj
-
-{% elif spec.name == "Vector4i" %}
-
-def into_v4(self):
-    cdef Vector4 obj = Vector4.__new__(Vector4)
-    obj._gd_data.x = self._gd_data.x
-    obj._gd_data.y = self._gd_data.y
-    obj._gd_data.z = self._gd_data.z
-    obj._gd_data.w = self._gd_data.w
-    return obj
-
-{% elif spec.name == "Rect2" %}
-
-@staticmethod
-def from_xywh({{ api.float_spec.cy_type }} x=0., {{ api.float_spec.cy_type }} y=0., {{ api.float_spec.cy_type }} width=0., {{ api.float_spec.cy_type }} height=0.):
-    cdef Rect2 self = Rect2.__new__(Rect2)
-    self._gd_data.position.x = x
-    self._gd_data.position.y = y
-    self._gd_data.size.x = width
-    self._gd_data.size.y = height
-    return self
-
-def into_r2i(self):
-    cdef Rect2i obj = Rect2i.__new__(Rect2i)
-    obj._gd_data.position.x = int(self._gd_data.position.x)
-    obj._gd_data.position.y = int(self._gd_data.position.y)
-    obj._gd_data.size.x = int(self._gd_data.size.x)
-    obj._gd_data.size.y = int(self._gd_data.size.y)
-    return obj
-{% elif spec.name == "Rect2i" %}
-def from_xywh(self, uint32_t x=0, uint32_t y=0, uint32_t width=0, uint32_t height=0):
-    self._gd_data.position.x = x
-    self._gd_data.position.y = y
-    self._gd_data.size.x = width
-    self._gd_data.size.y = height
-
-def into_r2(self):
-    cdef Rect2 obj = Rect2.__new__(Rect2)
-    obj._gd_data.position.x = float(self._gd_data.position.x)
-    obj._gd_data.position.y = float(self._gd_data.position.y)
-    obj._gd_data.size.x = float(self._gd_data.size.x)
-    obj._gd_data.size.y = float(self._gd_data.size.y)
-    return obj
-
-{% elif spec.name == "Plane" %}
-
-@staticmethod
-def from_normal_point(Vector3 normal not None, Vector3 point not None):
-    cdef Plane self = Plane.__new__(Plane)
-    cdef GDNativeTypePtr[2] args = [&normal._gd_data, &point._gd_data]
-    __Plane_constructor_{{ spec.get_constructor_index_from("Vector3", "Vector3") }}(&self._gd_data, args)
-    return self
-
-@staticmethod
-def from_points(Vector3 point1 not None, Vector3 point2 not None, Vector3 point3 not None):
-    cdef Plane self = Plane.__new__(Plane)
-    cdef GDNativeTypePtr[3] args = [&point1._gd_data, &point2._gd_data, &point3._gd_data]
-    __Plane_constructor_{{ spec.get_constructor_index_from("Vector3", "Vector3", "Vector3") }}(&self._gd_data, args)
-    return self
-
-@staticmethod
-def from_abcd({{ api.float_spec.cy_type }} a=0., {{ api.float_spec.cy_type }} b=0., {{ api.float_spec.cy_type }} c=0., {{ api.float_spec.cy_type }} d=0.):
-    cdef Plane self = Plane.__new__(Plane)
-    cdef GDNativeTypePtr[4] args = [&a, &b, &c, &d]
-    __Plane_constructor_{{ spec.get_constructor_index_from("float", "float", "float", "float") }}(&self._gd_data, args)
-    return self
-
-{% elif spec.name == "Quaternion" %}
-
-@staticmethod
-def from_basis(Basis basis not None):
-    cdef Quaternion self = Quaternion.__new__(Quaternion)
-    cdef GDNativeTypePtr[1] args = [&basis._gd_data]
-    __Plane_constructor_{{ spec.get_constructor_index_from("Basis") }}(&self._gd_data, args)
-    return self
-
-@staticmethod
-def from_axis_angle(Vector3 axis not None, {{ api.float_spec.cy_type }} angle):
-    cdef Quaternion self = Quaternion.__new__(Quaternion)
-    cdef GDNativeTypePtr[2] args = [&axis._gd_data, &angle]
-    __Plane_constructor_{{ spec.get_constructor_index_from("Vector3", "float") }}(&self._gd_data, args)
-    return self
-
-@staticmethod
-def from_arcs(Vector3 arc_from not None, Vector3 arc_to not None):
-    cdef Quaternion self = Quaternion.__new__(Quaternion)
-    cdef GDNativeTypePtr[2] args = [&arc_from._gd_data, &arc_to._gd_data]
-    __Plane_constructor_{{ spec.get_constructor_index_from("Vector3", "Vector3") }}(&self._gd_data, args)
-    return self
-
-@staticmethod
-def from_euler(Vector3 euler_yxz not None):
-    cdef Quaternion self = Quaternion.__new__(Quaternion)
-    cdef GDNativeTypePtr[1] args = [&euler_yxz._gd_data]
-    __Plane_constructor_{{ spec.get_constructor_index_from("Vector3") }}(&self._gd_data, args)
-    return self
-
-{% elif spec.name == "AABB" %}
-
-{# Nothing ! #}
-
-{% elif spec.name == "Basis" %}
-
-@staticmethod
-def from_quaternion(Quaternion quaternion not None):
-    cdef Basis self = Basis.__new__(Basis)
-    cdef GDNativeTypePtr[1] args = [&quaternion._gd_data]
-    __Basis_constructor_{{ spec.get_constructor_index_from("Quaternion") }}(&self._gd_data, args)
-    return self
-
-@staticmethod
-def from_axis_and_angle(Vector3 axis not None, {{ api.float_spec.cy_type }} angle):
-    cdef Basis self = Basis.__new__(Basis)
-    cdef GDNativeTypePtr[2] args = [&axis._gd_data, &angle._gd_data]
-    __Basis_constructor_{{ spec.get_constructor_index_from("Vector3", "float") }}(&self._gd_data, args)
-    return self
-
-{% elif spec.name == "Transform2D" %}
-
-@staticmethod
-def from_rot_pos({{ api.float_spec.cy_type }} rotation, Vector2 position not None):
-    cdef Transform2D self = Transform2D.__new__(Transform2D)
-    cdef GDNativeTypePtr[2] args = [&rotation, &position._gd_data]
-    __Transform2D_constructor_{{ spec.get_constructor_index_from("float", "Vector2") }}(&self._gd_data, args)
-    return self
-
-@staticmethod
-def from_rot_scale({{ api.float_spec.cy_type }} rotation, Vector2 scale not None, {{ api.float_spec.cy_type }} skew, Vector2 position not None):
-    cdef Transform2D self = Transform2D.__new__(Transform2D)
-    cdef GDNativeTypePtr[4] args = [&rotation, &scale._gd_data, &skew, &position._gd_data]
-    __Transform2D_constructor_{{ spec.get_constructor_index_from("float", "Vector2", "float", "Vector2") }}(&self._gd_data, args)
-    return self
-
-{% elif spec.name == "Transform3D" %}
-
-@staticmethod
-def from_basis_origin(Basis basis not None, Vector3 origin not None):
-    cdef Transform3D self = Transform3D.__new__(Transform3D)
-    cdef GDNativeTypePtr[2] args = [&basis._gd_data, &origin._gd_data]
-    __Transform3D_constructor_{{ spec.get_constructor_index_from("Basis", "Vector3") }}(&self._gd_data, args)
-    return self
-
-@staticmethod
-def from_projection(Projection projection not None):
-    cdef Transform3D self = Transform3D.__new__(Transform3D)
-    cdef GDNativeTypePtr[1] args = [&projection._gd_data]
-    __Transform3D_constructor_{{ spec.get_constructor_index_from("Projection") }}(&self._gd_data, args)
-    return self
-
-{% elif spec.name == "Projection" %}
-
-@staticmethod
-def from_transform3d(Transform3D transform3d not None):
-    cdef Projection self = Projection.__new__(Projection)
-    cdef GDNativeTypePtr[1] args = [&transform3d._gd_data]
-    __Projection_constructor_{{ spec.get_constructor_index_from("Transform3D") }}(&self._gd_data, args)
-    return self
-
-{% elif spec.is_packed_array %}
+{% elif builtin.is_packed_array %}
 
 {#
 PackedByteArray
@@ -268,64 +67,13 @@ def __cinit__(self, from_=None):
     if isinstance(from_, (list, tuple)):
         raise NotImplementedError("Not implemented yet :'(")
     if from_ is None:
-        __{{ spec.name }}_constructor_{{ spec.empty_constructor_index }}(&self._gd_data, NULL)
+        self._gd_data = {{ builtin.c_name_prefix }}_new()
     try:
-        args[0] = &(<{{ spec.name }}?>from_)._gd_data
-        __{{ spec.name }}_constructor_{{ spec.get_constructor_index_from(spec.name) }}(&self._gd_data, args)
+        {% set constructor = builtin.get_constructor_from(builtin.original_name) %}
+        self._gd_data = {{ constructor.c_name }}(&(<{{ builtin.cy_type }}?>from_)._gd_data)
     except TypeError:
-        args[0] = &(<GDArray?>from_)._gd_data
-        __{{ spec.name }}_constructor_{{ spec.get_constructor_index_from("GDArray") }}(&self._gd_data, args)
-
-{% elif spec.name == "Color" %}{# TODO: finish me !!! #}
-
-{# __Color_constructor_0 :: () #}
-{# __Color_constructor_1 :: (from_: Color ,) #}
-{# __Color_constructor_2 :: (from_: Color ,alpha: float ,) #}
-{# __Color_constructor_3 :: (r: float ,g: float ,b: float ,) #}
-{# __Color_constructor_4 :: (r: float ,g: float ,b: float ,a: float ,) #}
-{# __Color_constructor_5 :: (code: GDString ,) #}
-{# __Color_constructor_6 :: (code: GDString ,alpha: float ,) #}
-{# __StringName_constructor_0 :: () #}
-{# __StringName_constructor_1 :: (from_: StringName ,) #}
-{# __StringName_constructor_2 :: (from_: GDString ,) #}
-{# __NodePath_constructor_0 :: () #}
-{# __NodePath_constructor_1 :: (from_: NodePath ,) #}
-{# __NodePath_constructor_2 :: (from_: GDString ,) #}
-
-{% elif spec.name == "RID" %}{# TODO: finish me !!! #}
-
-{# Nothing ! #}
-
-{% elif spec.name == "GDCallable" %}{# TODO: finish me !!! #}
-
-{# __GDCallable_constructor_0 :: () #}
-{# __GDCallable_constructor_1 :: (from_: GDCallable ,) #}
-{# __GDCallable_constructor_2 :: (object: GDObject ,method: StringName ,) #}
-
-{% elif spec.name == "Signal" %}{# TODO: finish me !!! #}
-
-{# __Signal_constructor_0 :: () #}
-{# __Signal_constructor_1 :: (from_: Signal ,) #}
-{# __Signal_constructor_2 :: (object: GDObject ,signal: StringName ,) #}
-
-{% elif spec.name == "GDDictionary" %}{# TODO: finish me !!! #}
-
-{# __GDDictionary_constructor_0 :: () #}
-{# __GDDictionary_constructor_1 :: (from_: GDDictionary ,) #}
-
-{% elif spec.name == "GDArray" %}{# TODO: finish me !!! #}
-
-{# __GDArray_constructor_0 :: () #}
-{# __GDArray_constructor_1 :: (from_: GDArray ,) #}
-{# __GDArray_constructor_2 :: (from_: PackedByteArray ,) #}
-{# __GDArray_constructor_3 :: (from_: PackedInt32Array ,) #}
-{# __GDArray_constructor_4 :: (from_: PackedInt64Array ,) #}
-{# __GDArray_constructor_5 :: (from_: PackedFloat32Array ,) #}
-{# __GDArray_constructor_6 :: (from_: PackedFloat64Array ,) #}
-{# __GDArray_constructor_7 :: (from_: PackedStringArray ,) #}
-{# __GDArray_constructor_8 :: (from_: PackedVector2Array ,) #}
-{# __GDArray_constructor_9 :: (from_: PackedVector3Array ,) #}
-{# __GDArray_constructor_10 :: (from_: PackedColorArray ,) #}
+        {% set constructor = builtin.get_constructor_from("Array") %}
+        self._gd_data = {{ constructor.c_name }}(&(<GDArray?>from_)._gd_data)
 
 {% endif %}
 

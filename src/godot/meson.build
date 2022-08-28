@@ -70,6 +70,15 @@ custom_target(
 )
 
 
+custom_target(
+    output: 'conversion.pxd',
+    input: pxd_godot_conversion,
+    command: copy_command,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot'),
+)
+
+
 ##############################################################################
 #                                Compilation                                 #
 ##############################################################################
@@ -163,8 +172,59 @@ endif
 shared_library(
     'classes',
     cclasses,
+    # Including builtins.pxd generates a lot of `defined but not used` errors
+    c_args: ['-Wno-unused-function'],
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: classes_rpath,  # To find libpython
+    name_prefix: python_native_module_name_prefix,
+    name_suffix: python_native_module_name_suffix,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot'),
+)
+
+
+# conversion.so
+# └─ conversion.c
+#    ├─ gdnative_interface.pxd
+#    │  └─ ...
+#    └─ conversion.pyx
+#       └─ extension_api.json
+
+pyxconversion = custom_target(
+    output: 'conversion.pyx',
+    input: [
+        generate_tmpl_base_input,
+        files(
+            'conversion.pyx.j2',
+        ),
+    ],
+    command: generate_tmpl_cmd,
+)
+
+
+cconversion = custom_target(
+    output : 'conversion.c',
+    input : [pyxconversion, pxds_godot],
+    command : cythonize_command,
+)
+
+
+if host_platform.startswith('linux')
+    conversion_rpath = '$ORIGIN/../../..'
+elif host_platform.startswith('macos')
+    conversion_rpath = '@loader_path/../../..'
+else
+    conversion_rpath = ''
+endif
+
+
+shared_library(
+    'conversion',
+    cconversion,
+    # Including builtins.pxd generates a lot of `defined but not used` errors
+    c_args: ['-Wno-unused-function'],
+    dependencies : [dep_godot, dep_python, dep_pythonscript],
+    install_rpath: conversion_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
     install: true,

@@ -1,27 +1,22 @@
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 
-from .utils import correct_name, assert_api_consistency
-from .type import TypeInUse, ValueInUse
+from .utils import *
+from .type_spec import *
+from .builtins import *
+from .in_use import *
 
 
-@dataclass
-class ClassEnumSpec:
-    original_name: str
-    name: str
-    is_bitfield: bool
-    values: Dict[str, int]
-
-    @classmethod
-    def parse(cls, item: dict) -> "ClassEnumSpec":
-        item.setdefault("original_name", item["name"])
-        assert_api_consistency(cls, item)
-        return cls(
-            name=correct_name(item["name"]),
-            original_name=item["original_name"],
-            is_bitfield=item["is_bitfield"],
-            values={x["name"]: x["value"] for x in item["values"]},
-        )
+def parse_class_enum(spec: dict, class_name: str) -> EnumTypeSpec:
+    spec.setdefault("is_bitfield", False)
+    assert spec.keys() == {"name", "is_bitfield", "values"}, spec.keys()
+    return EnumTypeSpec(
+        original_name=spec["name"],
+        py_type=f"{class_name}.{spec['name']}",
+        cy_type=f"{class_name}.{spec['name']}",
+        is_bitfield=spec["is_bitfield"],
+        values={x["name"]: x["value"] for x in spec["values"]},
+    )
 
 
 @dataclass
@@ -135,65 +130,110 @@ class ClassPropertySpec:
         )
 
 
-@dataclass
-class ClassSpec:
-    original_name: str
-    name: str
+class ClassTypeSpec(TypeSpec):
+    """
+    Godot object defined in extension_api.json's `classes` entry (e.g. Node2D, Reference)
+
+    Godot object is always manipulated as a pointer, hence the `size` field here is
+    always the size of a pointer.
+    """
+
+    c_name_prefix: str
     is_refcounted: bool
     is_instantiable: bool
-    inherits: Optional[str]
+    inherits: Optional[TypeInUse]
     api_type: str
-    enums: List[ClassEnumSpec]
+    enums: List[EnumTypeSpec]
     methods: List[ClassMethodSpec]
     signals: List[ClassSignalSpec]
     properties: List[ClassPropertySpec]
     constants: Dict[str, int]
 
-    @classmethod
-    def parse(cls, item: dict) -> "ClassSpec":
-        item.setdefault("original_name", item["name"])
-        # Special case for the Object type, this is because `Object` is too
-        # broad of a name (it's easy to mix with Python's regular `object`)
-        if item["name"] == "Object":
-            item["name"] = "GDObject"
-        item["inherits"] = item.get("inherits") or None
-        if item["inherits"] == "Object":
-            item["inherits"] = "GDObject"
-        item.setdefault("enums", [])
-        item.setdefault("signals", [])
-        item.setdefault("methods", [])
-        item.setdefault("properties", [])
-        item.setdefault("constants", [])
-        assert_api_consistency(cls, item)
-        # TODO: remove me once https://github.com/godotengine/godot/pull/64427 is merged
-        for prop in item["properties"]:
-            if prop.get("getter") == "":
-                prop.pop("getter")
-            if prop.get("setter") == "":
-                prop.pop("setter")
-            if prop.get("index") == -1:
-                prop.pop("index")
-        # TODO: remove me once https://github.com/godotengine/godot/pull/64428 is merged
-        def _filter_bad_property(prop: dict) -> bool:
-            if "/" in prop["name"]:
-                return False
-            # e.g. `Modifications,modifications/`
-            if "/" in prop["type"]:
-                return False
-            if "getter" not in prop:
-                return False
+    @property
+    def is_object(self) -> bool:
+        return True
 
-        item["properties"] = [prop for prop in item["properties"] if _filter_bad_property(prop)]
-        return cls(
-            name=item["name"],
-            original_name=item["original_name"],
-            is_refcounted=item["is_refcounted"],
-            is_instantiable=item["is_instantiable"],
-            inherits=item["inherits"],
-            api_type=item["api_type"],
-            enums=[ClassEnumSpec.parse(x) for x in item["enums"]],
-            methods=[ClassMethodSpec.parse(x) for x in item["methods"]],
-            signals=[ClassSignalSpec.parse(x) for x in item["signals"]],
-            properties=[ClassPropertySpec.parse(x) for x in item["properties"]],
-            constants={x["name"]: x["value"] for x in item["constants"]},
+    def __init__(self, **kwargs):
+        self.c_name_prefix = kwargs.pop("c_name_prefix")
+        self.is_refcounted = kwargs.pop("is_refcounted")
+        self.is_instantiable = kwargs.pop("is_instantiable")
+        self.inherits = kwargs.pop("inherits")
+        self.api_type = kwargs.pop("api_type")
+        self.enums = kwargs.pop("enums")
+        self.methods = kwargs.pop("methods")
+        self.signals = kwargs.pop("signals")
+        self.properties = kwargs.pop("properties")
+        self.constants = kwargs.pop("constants")
+        super().__init__(
+            c_type="GDNativeObjectPtr",
+            # cy_type="object",  # Don't get confused ! This is python's `object` here
+            cy_type=kwargs["py_type"],
+            variant_type_name="GDNATIVE_VARIANT_TYPE_OBJECT",
+            is_stack_only=False,
+            **kwargs,
         )
+
+
+def parse_class(spec: dict, object_size: int) -> List[ClassTypeSpec]:
+    spec.setdefault("enums", [])
+    spec.setdefault("signals", [])
+    spec.setdefault("methods", [])
+    spec.setdefault("properties", [])
+    spec.setdefault("constants", [])
+    spec["inherits"] = spec.get("inherits") or None
+    assert spec.keys() == {
+        "name",
+        "is_refcounted",
+        "is_instantiable",
+        "inherits",
+        "api_type",
+        "enums",
+        "methods",
+        "signals",
+        "properties",
+        "constants",
+    }, spec.keys()
+
+    original_name = spec["name"]
+    snake_name = camel_to_snake(original_name)
+    # Special case for the Object type, this is because `Object` is too
+    # broad of a name (it's easy to mix with Python's regular `object`)
+    if spec["name"] == "Object":
+        spec["name"] = "GDObject"
+
+    # TODO: remove me once https://github.com/godotengine/godot/pull/64427 is merged
+    for prop in spec["properties"]:
+        if prop.get("getter") == "":
+            prop.pop("getter")
+        if prop.get("setter") == "":
+            prop.pop("setter")
+        if prop.get("index") == -1:
+            prop.pop("index")
+
+    # TODO: remove me once https://github.com/godotengine/godot/pull/64428 is merged
+    def _filter_bad_property(prop: dict) -> bool:
+        if "/" in prop["name"]:
+            return False
+        # e.g. `Modifications,modifications/`
+        if "/" in prop["type"]:
+            return False
+        if "getter" not in prop:
+            return False
+
+    spec["properties"] = [prop for prop in spec["properties"] if _filter_bad_property(prop)]
+
+    return ClassTypeSpec(
+        size=object_size,
+        original_name=original_name,
+        c_name_prefix=f"gd_{snake_name}",
+        py_type=spec["name"],
+        is_refcounted=spec["is_refcounted"],
+        is_instantiable=spec["is_instantiable"],
+        inherits=TypeInUse(spec["inherits"]) if spec["inherits"] else None,
+        api_type=spec["api_type"],
+        enums=[parse_class_enum(x, class_name=spec["name"]) for x in spec["enums"]],
+        methods=[ClassMethodSpec.parse(x) for x in spec["methods"]],
+        signals=[ClassSignalSpec.parse(x) for x in spec["signals"]],
+        properties=[ClassPropertySpec.parse(x) for x in spec["properties"]],
+        constants={x["name"]: x["value"] for x in spec["constants"]},
+    )

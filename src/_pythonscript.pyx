@@ -15,7 +15,7 @@ include "_pythonscript_editor.pxi"
 #     godot_pluginscript_language_data,
 # )
 # from godot.hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_verbose
-from godot.builtins cimport GDString, Vector2
+from godot.builtins cimport GDString, Vector2, Color
 
 # def _setup_config_entry(name, default_value):
 #     gdname = GDString(name)
@@ -27,6 +27,7 @@ from godot.builtins cimport GDString, Vector2
 
 from godot.hazmat.gdnative_interface cimport *
 from godot.hazmat.gdapi cimport *
+from godot.conversion cimport *
 from godot.classes cimport _load_class
 
 # include "_pythonscript_script.pxi"
@@ -51,17 +52,17 @@ cdef api void _pythonscript_free_instance(
 
 
 cdef api void _pythonscript_late_init() with gil:
-    pythonscript_gdapi.print_error("pythonscript late init", "<function>", "<file>", 0)
+    pythonscript_gdnative_interface.print_error("pythonscript late init", "<function>", "<file>", 0)
     OS = _load_class("OS")
-    pythonscript_gdapi.print_error("OS class loaded", "<function>", "<file>", 0)
+    pythonscript_gdnative_interface.print_error("OS class loaded", "<function>", "<file>", 0)
 
     # from godot.classes import OS
     cdef gd_variant_t gdvariant
-    if not pyobject_to_gdvariant(f"singletion is {OS!r}", &gdvariant):
-        pythonscript_gdapi.print_error("pyobject_to_gdvariant !!!!", "<function>", "<file>", 0)
-    gd_print(&gdvariant, 1)
-    pythonscript_gdapi.variant_destroy(&gdvariant)
-    pythonscript_gdapi.print_error("_pythonscript_late_init done", "<function>", "<file>", 0)
+    if not gd_variant_from_pyobj(f"singletion is {OS!r}", &gdvariant):
+        pythonscript_gdnative_interface.print_error("pyobject_to_gdvariant !!!!", "<function>", "<file>", 0)
+    gd_utility_print(&gdvariant, 1)
+    pythonscript_gdnative_interface.variant_destroy(&gdvariant)
+    pythonscript_gdnative_interface.print_error("_pythonscript_late_init done", "<function>", "<file>", 0)
 
     import sys
     from godot._version import __version__ as pythonscript_version
@@ -72,22 +73,27 @@ cdef api void _pythonscript_late_init() with gil:
 
 
 cdef api void _pythonscript_early_init() with gil:
-    pythonscript_gdapi.print_error("pythonscript early init", "<function>", "<file>", 0)
-    # pythonscript_gdapi.
+    pythonscript_gdnative_interface.print_error("pythonscript early init", "<function>", "<file>", 0)
+    # pythonscript_gdnative_interface.
     # Engine get_singleton_list
 
-    v = Vector2(66.8, -77.99)
+    v = Vector2i(66, -77)
+    assert v.x == 66
+    assert v.y == -77
+    # Set property
     v.x = 42
-    print("===========>", v.x, v.y)
+    assert v.x == 42
+    # Access property
     v0 = v.ZERO
-    print("===========> ZERO: ", v0.x, v0.y)
-    print("===========> v.angle(): ", v.angle())
-    print("===========> v.direction_to(v0): ", v.direction_to(v0))
-    # v2 = Vector2(v)
-    # cdef C_Vector2 cv = vector2_abs(<C_Vector2*>&v._gd_data)
-    # v2._gd_data.x = cv.x
-    # v2._gd_data.y = cv.y
-    # print("+++++++++++>", v2.x, v2.y)
+    print("===========> ZERO:", v0.x, v0.y)
+    # Access method with no params
+    assert v.angle() ==
+    print("===========> v.angle():", v.angle())
+    # Access method with params
+    print("===========> v.dot(v):", v.dot(v))
+    # Access method with no return value
+    c = Color()
+    print("===========> c.set_r8(0xAABBCCDD):", c.set_r8(0xAABBCCDD))
 
     # Now register Python as language into Godot
     cdef GDNativeExtensionClassCreationInfo info
@@ -104,8 +110,8 @@ cdef api void _pythonscript_early_init() with gil:
     info.get_virtual_func = NULL  # GDNativeExtensionClassGetVirtual
     info.get_rid_func = NULL  # GDNativeExtensionClassGetRID
     info.class_userdata = NULL  # void*
-    pythonscript_gdapi.classdb_register_extension_class(
-        pythonscript_gdlibrary,
+    pythonscript_gdnative_interface.classdb_register_extension_class(
+        pythonscript_gdnative_library,
         "PythonScriptLanguageExtension",
         "ScriptLanguageExtension",
         &info,
@@ -124,8 +130,8 @@ cdef api void _pythonscript_early_init() with gil:
     # info.get_argument_metadata_func = NULL  # GDNativeExtensionClassMethodGetArgumentMetadata get_argument_metadata_func
     # info.default_argument_count = NULL  # uint32_t default_argument_count
     # info.default_arguments = NULL  # GDNativeVariantPtr* default_arguments
-    # pythonscript_gdapi.classdb_register_extension_class_method(
-    #     pythonscript_gdlibrary,
+    # pythonscript_gdnative_interface.classdb_register_extension_class_method(
+    #     pythonscript_gdnative_library,
     #     "PythonScriptLanguageExtension",
     #     &info,
     # )

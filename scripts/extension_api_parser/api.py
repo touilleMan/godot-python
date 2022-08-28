@@ -1,22 +1,14 @@
 from typing import List, Dict, Tuple, Optional
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 import json
 from enum import Enum
 
-from .builtins import BuiltinSpec
-from .classes import ClassSpec
-from .type import (
-    TYPES_DB,
-    TypeInUse,
-    ValueInUse,
-    register_variant_in_types_db,
-    register_builtins_in_types_db,
-    register_classes_in_types_db,
-    register_global_enums_in_types_db,
-)
-from .utils import correct_name, assert_api_consistency
+from .type_spec import *
+from .builtins import *
+from .classes import *
+from .utils import *
 
 
 class BuildConfig(Enum):
@@ -34,23 +26,15 @@ class GlobalConstantSpec:
         raise NotImplementedError
 
 
-@dataclass
-class GlobalEnumSpec:
-    original_name: str
-    name: str
-    values: Dict[str, int]
-
-    @classmethod
-    def parse(cls, item: dict) -> "GlobalEnumSpec":
-        item.setdefault("original_name", item["name"])
-        # Fix `Variant.Operator` & `Variant.Type`
-        item["name"] = item["name"].replace(".", "")
-        assert_api_consistency(cls, item)
-        return cls(
-            name=correct_name(item["name"]),
-            original_name=item["original_name"],
-            values={x["name"]: x["value"] for x in item["values"]},
-        )
+def parse_global_enum(spec: dict) -> EnumTypeSpec:
+    assert spec.keys() == {"name", "values"}, spec.keys()
+    return EnumTypeSpec(
+        original_name=spec["name"],
+        py_type=spec["name"],
+        cy_type=spec["name"],
+        is_bitfield=False,
+        values={x["name"]: x["value"] for x in spec["values"]},
+    )
 
 
 @dataclass
@@ -147,34 +131,37 @@ class ExtensionApi:
     version_build: str  # e.g. "official"
     version_full_name: str  # e.g. "Godot Engine v4.0.alpha13.official"
 
-    variant_size: int
-
-    classes: List[ClassSpec]
-    builtins: List[BuiltinSpec]
+    classes: List[ClassTypeSpec]
+    builtins: List[BuiltinTypeSpec]
     global_constants: List[GlobalConstantSpec]
-    global_enums: List[GlobalEnumSpec]
+    global_enums: List[EnumTypeSpec]
     utility_functions: List[UtilityFunctionSpec]
     singletons: List[SingletonSpec]
     native_structures: List[NativeStructureSpec]
 
-    # Expose scalars
+    # Expose scalars, nil and variant
 
     @property
-    def bool_spec(self):
+    def variant_type(self):
+        return TYPES_DB["Variant"]
+
+    @property
+    def nil_type(self):
+        return TYPES_DB["Nil"]
+
+    @property
+    def bool_type(self):
         return TYPES_DB["bool"]
-        # return next(builtin for builtin in self.builtins if builtin.name == "int")
 
     @property
-    def int_spec(self):
+    def int_type(self):
         return TYPES_DB["int"]
-        # return next(builtin for builtin in self.builtins if builtin.name == "int")
 
     @property
-    def float_spec(self):
+    def float_type(self):
         return TYPES_DB["float"]
-        # return next(builtin for builtin in self.builtins if builtin.name == "int")
 
-    def get_class_meth_hash(self, classname: str, methname: str) -> int:
+    def get_class_meth_hash(self, classname: str, methname: str) -> Optional[int]:
         klass = next(c for c in self.classes if c.original_name == classname)
         meth = next(m for m in klass.methods if m.original_name == methname)
         return meth.hash
@@ -235,41 +222,86 @@ def merge_builtins_size_info(api_json: dict, build_config: BuildConfig) -> None:
             else:
                 raise RuntimeError(f"Member `{member}` doesn't seem to be part of `{name}` !")
 
-    # Variant is not present among the `builtin_classes`, only it size is provided.
-    # So we have to create our own custom entry for this value.
+    # Variant&Object are not present among the `builtin_classes`, only their size is provided.
+    # So we have to create our own custom entry for them.
     api_json["variant_size"] = builtin_class_sizes["Variant"]
+    api_json["object_size"] = builtin_class_sizes["Object"]
 
 
-def order_classes(classes: List[ClassSpec]) -> List[ClassSpec]:
+def order_classes(classes: List[ClassTypeSpec]) -> List[ClassTypeSpec]:
     # Order classes by inheritance dependency needs
     ordered_classes = OrderedDict()  # Makes it explicit we need ordering here !
     ordered_count = 0
 
     while len(classes) != len(ordered_classes):
         for klass in classes:
-            if klass.inherits is None or klass.inherits in ordered_classes:
-                ordered_classes[klass.name] = klass
+            if klass.inherits is None or klass.inherits.type_name in ordered_classes:
+                ordered_classes[klass.original_name] = klass
 
         # Sanity check to avoid infinite loop in case of error in `extension_api.json`
         if ordered_count == len(ordered_classes):
             bad_class = next(
                 klass
                 for klass in classes
-                if klass.inherits is not None and klass.inherits not in ordered_classes
+                if klass.inherits is not None and klass.inherits.type_name not in ordered_classes
             )
             raise RuntimeError(
-                f"Class `{bad_class.name}` inherits of unknown class `{bad_class.inherits}`"
+                f"Class `{bad_class.original_name}` inherits of unknown class `{bad_class.inherits.type_name}`"
             )
         ordered_count = len(ordered_classes)
 
     return list(ordered_classes.values())
 
 
-def parse_extension_api_json(path: Path, build_config: BuildConfig) -> ExtensionApi:
+def parse_extension_api_json(
+    path: Path, build_config: BuildConfig, skip_classes: bool = False
+) -> ExtensionApi:
     api_json = json.loads(path.read_text(encoding="utf8"))
     assert isinstance(api_json, dict)
 
     merge_builtins_size_info(api_json, build_config)
+
+    # Not much info about variant
+    variant_type = VariantTypeSpec(size=api_json["variant_size"])
+    TYPES_DB_REGISTER_TYPE("Variant", variant_type)
+
+    # Unlike int type that is always 8 bytes long, float depends on config
+    if build_config in (BuildConfig.DOUBLE_32, BuildConfig.DOUBLE_64):
+        real_type = replace(TYPES_DB[f"meta:float"], original_name="float")
+    else:
+        real_type = replace(TYPES_DB[f"meta:double"], original_name="float")
+    TYPES_DB_REGISTER_TYPE("float", real_type)
+
+    def _register_enums(enums, parent_id=None):
+        for enum_type in enums:
+            classifier = "bitfield" if enum_type.is_bitfield else "enum"
+            if parent_id:
+                type_id = f"{classifier}::{parent_id}.{enum_type.original_name}"
+            else:
+                type_id = f"{classifier}::{enum_type.original_name}"
+            TYPES_DB_REGISTER_TYPE(type_id, enum_type)
+
+    builtins = parse_builtins_ignore_scalars_and_nil(api_json["builtin_classes"])
+    for builtin_type in builtins:
+        TYPES_DB_REGISTER_TYPE(builtin_type.original_name, builtin_type)
+        _register_enums(builtin_type.enums, parent_id=builtin_type.original_name)
+
+    # Parsing classes takes ~75% of the time while not being needed to render builtins stuff
+    if skip_classes:
+        # Only keep Object root class that is always needed
+        api_json["classes"] = [next(k for k in api_json["classes"] if k["name"] == "Object")]
+
+    classes = order_classes(
+        [parse_class(x, object_size=api_json["object_size"]) for x in api_json["classes"]]
+    )
+    for class_type in classes:
+        TYPES_DB_REGISTER_TYPE(class_type.original_name, class_type)
+        _register_enums(class_type.enums, parent_id=class_type.original_name)
+
+    global_enums = [parse_global_enum(x) for x in api_json["global_enums"]]
+    _register_enums(global_enums)
+
+    ensure_types_db_consistency()
 
     api = ExtensionApi(
         version_major=api_json["header"]["version_major"],
@@ -278,22 +310,13 @@ def parse_extension_api_json(path: Path, build_config: BuildConfig) -> Extension
         version_status=api_json["header"]["version_status"],
         version_build=api_json["header"]["version_build"],
         version_full_name=api_json["header"]["version_full_name"],
-        variant_size=api_json["variant_size"],
-        classes=order_classes([ClassSpec.parse(x) for x in api_json["classes"]]),
-        builtins=[BuiltinSpec.parse(x) for x in api_json["builtin_classes"]],
+        classes=classes,
+        builtins=builtins,
         global_constants=[GlobalConstantSpec.parse(x) for x in api_json["global_constants"]],
-        global_enums=[GlobalEnumSpec.parse(x) for x in api_json["global_enums"]],
+        global_enums=global_enums,
         utility_functions=[UtilityFunctionSpec.parse(x) for x in api_json["utility_functions"]],
         singletons=[SingletonSpec.parse(x) for x in api_json["singletons"]],
         native_structures=[NativeStructureSpec.parse(x) for x in api_json["native_structures"]],
     )
-
-    # This is the kind-of ugly part where we register in a global dict the types
-    # we've just parsed (so that they could be lazily retreived from all the
-    # `TypeInUse` that reference them)
-    register_variant_in_types_db(api.variant_size)
-    register_builtins_in_types_db(api.builtins)
-    register_classes_in_types_db(api.classes)
-    register_global_enums_in_types_db(api.global_enums)
 
     return api
