@@ -65,6 +65,8 @@ jobs:
           python --version
           pip install -U pip
           pip install -r requirements.in
+      - name: 'Sanity check on extension_api_parser'
+        run: python -m scripts.extension_api_parser
       - name: 'Setup project'
         run: python .github/scripts/meson_setup_or_dump_log.py build/
       - name: 'Build project'

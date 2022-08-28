@@ -211,6 +211,7 @@ def merge_builtins_size_info(api_json: dict, build_config: BuildConfig) -> None:
     for item in api_json["builtin_classes"]:
         name = item["name"]
         item["size"] = builtin_class_sizes[name]
+        # TODO: correct me once https://github.com/godotengine/godot/pull/64365 is merged
         for member in builtin_class_member_offsets.get(name, ()):
             for item_member in item["members"]:
                 if item_member["name"] == member["member"]:
@@ -218,7 +219,10 @@ def merge_builtins_size_info(api_json: dict, build_config: BuildConfig) -> None:
                     # Float builtin in extension_api.json is always 64bits long,
                     # however builtins made of floating point number can be made of
                     # 32bits (C float) or 64bits (C double)
-                    if item_member["type"] == "float":
+                    # But Color is a special case: it is always made of 32bits floats !
+                    if name == "Color":
+                        item_member["type"] = "meta:float"
+                    elif item_member["type"] == "float":
                         if build_config in (BuildConfig.FLOAT_32, BuildConfig.FLOAT_64):
                             item_member["type"] = "meta:float"
                         else:
