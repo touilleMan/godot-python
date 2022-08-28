@@ -12,25 +12,33 @@ cpdef inline {{ render_method_signature(spec, m) }}:
     raise NotImplementedError  # TODO
 {%   else %}
 {#  Return type #}
-{%   if m.return_type.is_nil %}
-{%   elif m.return_type.is_scalar %}
+{%     if m.return_type.is_nil %}
+{%     elif m.return_type.is_scalar %}
     cdef {{ m.return_type.cy_type }} ret = 0
-{%   elif m.return_type.is_builtin %}
+{%     elif m.return_type.is_builtin %}
     # Call to __new__ bypasses __init__ constructor
     cdef {{ m.return_type.cy_type }} ret = {{ m.return_type.cy_type }}.__new__({{ m.return_type.cy_type }})
-{%   endif %}
+{%     elif m.return_type.is_object or m.return_type.is_variant %}
+    cdef {{  m.return_type.c_type }} ret
+{%     else %}
+    <crash !!!!>  # {{ m.return_type }} Unsupported type, crash the compilation !
+{%     endif %}
 {#  Arguments #}
-{%   if (m.arguments | length) != 0 %}
+{%     if (m.arguments | length) != 0 %}
     cdef GDNativeTypePtr[{{ m.arguments | length }}] args = [
-{%     for arg in m.arguments %}
-{%       if arg.type.is_scalar %}
+{%       for arg in m.arguments %}
+{%         if arg.type.is_scalar %}
         &{{ arg.name }},
-{%       else %}
+{%         elif arg.type.is_builtin %}
         &{{ arg.name }}._gd_data,
-{%       endif %}
-{%     endfor %}
+{%         elif arg.type.is_object %}
+        &{{ arg.name }}._gd_ptr,
+{%         else %}
+    <crash !!!!>  # {{ arg.type }} Unsupported type, crash the compilation !
+{%         endif %}
+{%       endfor %}
     ]
-{%   endif %}
+{%     endif %}
 {#  Actual call ! #}
     __{{ spec.name }}_meth_{{ m.name }}(
 {#      GDNativeTypePtr p_base #}
@@ -38,18 +46,27 @@ cpdef inline {{ render_method_signature(spec, m) }}:
 {#      const GDNativeTypePtr *p_args #}
         {{ "NULL" if (m.arguments | length) == 0 else "args" }},
 {#      GDNativeTypePtr r_return #}
-{%   if m.return_type.is_nil %}
+{%     if m.return_type.is_nil %}
         NULL,
-{%   elif m.return_type.is_scalar %}
+{%     elif m.return_type.is_scalar %}
         &ret,
-{%   elif m.return_type.is_builtin %}
+{%     elif m.return_type.is_builtin %}
         &ret._gd_data,
-{%   endif %}
+{%     endif %}
 {#      int p_argument_count #}
         {{ m.arguments | length }},
     )
-{%   if not m.return_type.is_nil %}
+{%     if not m.return_type.is_nil %}
+{%       if m.return_type.is_object %}
+    return GDObject.cast_from_variant(ret)
+{%       elif m.return_type.is_variant %}
+    try:
+        return gdvariant_to_pyobject(&ret)
+    finally:
+        gd_variant_del(&ret)
+{%       else %}
     return ret
-{%   endif %}
+{%       endif %}
+{%     endif %}
 {%   endif %}
 {% endmacro %}
