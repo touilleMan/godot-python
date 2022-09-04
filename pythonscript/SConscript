@@ -2,10 +2,10 @@ Import("env")
 
 c_env = env.Clone()
 if env["platform"].startswith("windows"):
-    c_env.AppendUnique(LIBS=["python38"])
+    c_env.AppendUnique(LIBS=["python310"])
 
 elif env["platform"].startswith("osx"):
-    c_env.AppendUnique(LIBS=["python3.8"])
+    c_env.AppendUnique(LIBS=["python3.10"])
     # if we don't give the lib a proper install_name, macos won't be able to find it,
     # and will link the cython modules with a relative path
     c_env.AppendUnique(
@@ -14,7 +14,7 @@ elif env["platform"].startswith("osx"):
     c_env.AppendUnique(CFLAGS=["-Werror-implicit-function-declaration"])
 
 else:  # x11
-    c_env.AppendUnique(LIBS=["python3.8"])
+    c_env.AppendUnique(LIBS=["python3.10"])
     c_env.AppendUnique(LINKFLAGS=["-Wl,-rpath,'$$ORIGIN/lib'"])
     c_env.AppendUnique(CFLAGS=["-Werror-implicit-function-declaration"])
 c_env.Depends("pythonscript.c", env["cpython_build"])
