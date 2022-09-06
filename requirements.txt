@@ -9,7 +9,7 @@ appdirs==1.4.4 \
     --hash=sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128
     # via black
 autopxd2==1.1.0 \
-    --hash=sha256:faa4b7eeb6b1d7217c46d3660640d4a72fb5c86d4559017c1f58a55d34332b2a
+    --hash=sha256:687d77b167020354c0e7d0d47b906494fb9004a74ca3c80a479c83d8cbe6eee1
     # via -r requirements.in
 black==20.8b1 \
     --hash=sha256:1c02557aa099101b9d21496f8a914e9ed2222ef70336404eeeac8edba836fbea
