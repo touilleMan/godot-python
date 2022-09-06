@@ -393,7 +393,9 @@ def _parse_builtin(spec: dict) -> BuiltinTypeSpec:
             cy_type=cy_type,
             is_stack_only=is_stack_only,
             variant_type_name=variant_type_name,
-            indexing_return_type=TypeInUse(spec["indexing_return_type"]),
+            indexing_return_type=TypeInUse(spec["indexing_return_type"])
+            if spec["indexing_return_type"]
+            else None,
             is_keyed=spec["is_keyed"],
             constructors=constructors,
             operators=operators,
@@ -412,7 +414,9 @@ def _parse_builtin(spec: dict) -> BuiltinTypeSpec:
             cy_type=cy_type,
             is_stack_only=is_stack_only,
             variant_type_name=variant_type_name,
-            indexing_return_type=TypeInUse(spec["indexing_return_type"]),
+            indexing_return_type=TypeInUse(spec["indexing_return_type"])
+            if spec["indexing_return_type"]
+            else None,
             is_keyed=spec["is_keyed"],
             constructors=constructors,
             operators=operators,
@@ -432,6 +436,9 @@ def parse_builtins_ignore_scalars_and_nil(builtin_classes: List[dict]) -> List[B
         # TODO: remove me once https://github.com/godotengine/godot/pull/64692 is merged
         if spec["name"] in ("Transform2D", "AABB", "Basis", "Transform3D"):
             spec["has_destructor"] = False
+
+        # TODO: open an issue !!!
+        spec["is_keyed"] = spec["name"] == "Dictionary"
 
         builtins.append(_parse_builtin(spec))
 

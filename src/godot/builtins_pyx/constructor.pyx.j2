@@ -21,13 +21,8 @@ def __cinit__(self):
 
 
 {% macro render_constructors(builtin) -%}
-{# Default constructor #}
-{% if builtin.original_name != "String" and not builtin.is_packed_array %}
-{{ render_default_constructor(builtin) }}
-{% endif %}
 
-{# And now for the custom constructors ! #}
-
+{# Custom constructors first #}
 {% if builtin.original_name == "String" %}
 
 def __cinit__(self, s=None):
@@ -47,6 +42,61 @@ def __cinit__(self, s=None):
             except TypeError:
                 {% set constructor = builtin.get_constructor_from("NodePath") %}
                 self._gd_data = {{ constructor.c_name }}(&(<NodePath?>s)._gd_data)
+
+{% elif builtin.original_name == "Dictionary" %}
+
+def __cinit__(self, mapping=None):
+    if mapping is None:
+        self._gd_data = {{ builtin.c_name_prefix }}_new()
+        return
+    try:
+{%   set constructor = builtin.get_constructor_from("Dictionary") %}
+        self._gd_data = {{ constructor.c_name }}(&(<GDDictionary?>mapping)._gd_data)
+        return
+    except TypeError:
+        pass
+    # Last chance, note we must initialize `self._gd_data` even if we are
+    # going to raise a `TypeError`, otherwise destructor will segfault
+    self._gd_data = {{ builtin.c_name_prefix }}_new()
+    try:
+        if isinstance(mapping, Mapping):
+            for k, v in mapping.items():
+                self._setattr(k, v)
+        else:
+            for k, v in mapping:
+                self._setattr(k, v)
+    except (TypeError, ValueError) as exc:
+        raise TypeError("Expected Dictionary, collections.abc.Mapping or Sequence[Tuple[IntoGDAny, IntoGDAny]]")
+
+{% elif builtin.original_name == "Array" %}
+
+def __cinit__(self, iterable=None):
+    cdef iterable_type = type(iterable)
+    if iterable is None:
+        self._gd_data = {{ builtin.c_name_prefix }}_new()
+        return
+{%   for packedtype in api.packed_array_types %}
+{%     set constructor = builtin.get_constructor_from(packedtype.original_name) %}
+    try:
+        self._gd_data = {{ constructor.c_name }}(&(<{{ packedtype.cy_type }}?>iterable)._gd_data)
+        return
+    except TypeError:
+        pass
+{%   endfor %}
+    try:
+        {% set constructor = builtin.get_constructor_from("Array") %}
+        self._gd_data = {{ constructor.c_name }}(&(<GDArray?>iterable)._gd_data)
+    except TypeError:
+        pass
+    # Last chance, note we must initialize `self._gd_data` even if we are
+    # going to raise a `TypeError`, otherwise destructor will segfault
+    self._gd_data = {{ builtin.c_name_prefix }}_new()
+    if isinstance(iterable, Iterable):
+        {{ builtin.c_name_prefix }}_resize(&self._gd_data, len(iterable))
+        for x in iterable:
+            self.append(x)
+    else:
+        raise TypeError("Expected Array, Packed*Array or collections.abc.Iterable[IntoGDAny]")
 
 {% elif builtin.is_packed_array %}
 
@@ -75,6 +125,9 @@ def __cinit__(self, from_=None):
         {% set constructor = builtin.get_constructor_from("Array") %}
         self._gd_data = {{ constructor.c_name }}(&(<GDArray?>from_)._gd_data)
 
+{% else %}
+{# Default constructor #}
+{{ render_default_constructor(builtin) }}
 {% endif %}
 
 {% endmacro %}

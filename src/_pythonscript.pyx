@@ -15,7 +15,6 @@ include "_pythonscript_editor.pxi"
 #     godot_pluginscript_language_data,
 # )
 # from godot.hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_verbose
-from godot.builtins cimport GDString, Vector2, Color
 
 # def _setup_config_entry(name, default_value):
 #     gdname = GDString(name)
@@ -27,7 +26,7 @@ from godot.builtins cimport GDString, Vector2, Color
 
 from godot.hazmat.gdnative_interface cimport *
 from godot.hazmat.gdapi cimport *
-from godot.conversion cimport *
+from godot.builtins cimport *
 from godot.classes cimport _load_class
 
 # include "_pythonscript_script.pxi"
@@ -87,7 +86,6 @@ cdef api void _pythonscript_early_init() with gil:
     v0 = v.ZERO
     print("===========> ZERO:", v0.x, v0.y)
     # Access method with no params
-    assert v.angle() ==
     print("===========> v.angle():", v.angle())
     # Access method with params
     print("===========> v.dot(v):", v.dot(v))
@@ -96,6 +94,7 @@ cdef api void _pythonscript_early_init() with gil:
     print("===========> c.set_r8(0xAABBCCDD):", c.set_r8(0xAABBCCDD))
 
     # Now register Python as language into Godot
+
     cdef GDNativeExtensionClassCreationInfo info
     info.set_func = NULL  # GDNativeExtensionClassSet
     info.get_func = NULL  # GDNativeExtensionClassGet
@@ -116,6 +115,8 @@ cdef api void _pythonscript_early_init() with gil:
         "ScriptLanguageExtension",
         &info,
     )
+
+    # _register_editor_methods()
 
     # cdef GDNativeExtensionClassMethodInfo info
     # info.name = NULL  # char* name

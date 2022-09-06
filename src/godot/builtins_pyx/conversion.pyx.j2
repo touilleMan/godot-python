@@ -1,8 +1,7 @@
-from warnings import warn
-
-from .hazmat.gdapi cimport *
-from .builtins cimport *
-from .classes cimport GDObject
+{% macro render_all_conversions() %}
+cdef str _ENSURE_IS_GDANY_ERR_MSG = "Invalid value `{}`, expected IntoGDAny"
+cdef str _ENSURE_IS_GDSTRING_ERR_MSG = "Invalid value `{}`, expected str or GDString"
+cdef str _ENSURE_IS_NODEPATH_ERR_MSG = "Invalid value `{}`, expected be str or NodePath"
 
 
 cdef bint gd_variant_supports_py_type(object pytype):
@@ -149,3 +148,4 @@ cdef inline void _gd_variant_from_pyobj_pystr(object pyobj, gd_variant_t *p_gdva
     cdef gd_string_t gdstr = gd_string_from_unchecked_pystr(pyobj)
     p_gdvar[0] = gd_string_into_variant(&gdstr)
     # into conversion steals the ownership, so don't need to call `gd_string_del(gdstr)`
+{% endmacro %}

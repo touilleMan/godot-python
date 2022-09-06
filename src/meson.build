@@ -109,6 +109,7 @@ pxd_godot_builtins = custom_target(
             'godot/builtins.pxd.j2',
             'godot/builtins_pxd/class.pxd.j2',
             'godot/builtins_pxd/constructor.pxd.j2',
+            'godot/builtins_pxd/conversion.pxd.j2',
             'godot/builtins_pxd/member.pxd.j2',
             'godot/builtins_pxd/method.pxd.j2',
         ),
@@ -126,20 +127,6 @@ pxd_godot_classes = custom_target(
     input: [
         generate_tmpl_base_input,
         files('godot/classes.pxd.j2'),
-    ],
-    command: generate_tmpl_cmd,
-)
-
-
-# godot/conversion.pxd
-# └─ extension_api.json
-
-
-pxd_godot_conversion = custom_target(
-    output: 'godot#conversion.pxd',
-    input: [
-        generate_tmpl_base_input,
-        files('godot/conversion.pxd.j2'),
     ],
     command: generate_tmpl_cmd,
 )
@@ -163,7 +150,6 @@ pxds_godot = [
     pxds_godot_hazmat,
     pxd_godot_builtins,
     pxd_godot_classes,
-    pxd_godot_conversion,
 ]
 
 

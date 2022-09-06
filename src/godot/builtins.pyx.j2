@@ -1,10 +1,21 @@
 {%- from 'builtins_pyx/class.pyx.j2' import render_class with context -%}
+{%- from 'builtins_pyx/conversion.pyx.j2' import render_all_conversions with context -%}
 cimport cython
 from libc.math cimport INFINITY as inf  # Needed by some constants
 
+# Forward declarations
+{% for builtin in api.builtins %}
+cdef class {{ builtin.cy_type }}
+{% endfor %}
+
 from .hazmat.gdnative_interface cimport *
 from .hazmat.gdapi cimport *
-from .conversion cimport *
+
+from collections.abc import Iterable, Mapping  # Needed by Array&Dictionary constructors
+from warnings import warn
+
+
+{{ render_all_conversions() }}
 {% for spec in api.builtins %}
 
 

@@ -1,32 +1,20 @@
-{% from 'builtins_pxd/class.pxd.j2' import render_class, render_class_resume with context %}
+{% from 'builtins_pxd/class.pxd.j2' import render_class with context %}
+{% from 'builtins_pxd/conversion.pxd.j2' import render_all_conversions with context %}
 cimport cython
 
+# Forward declarations
+{% for builtin in api.builtins %}
+cdef class {{ builtin.cy_type }}
+{% endfor %}
+
+from .hazmat.gdnative_interface cimport *
 from .hazmat.gdapi cimport *
 from .classes cimport GDObject
 
 
-cdef inline GDString ensure_is_gdstring(object gdstring_or_pystr):
-    cdef GDString gdstring_converted
-    try:
-        return <GDString?>gdstring_or_pystr
-    except TypeError:
-        try:
-            return GDString(gdstring_or_pystr)
-        except TypeError:
-            raise TypeError(f"Invalid value {gdstring_or_pystr!r}, must be str or GDString")
+{{ render_all_conversions() }}
+{% for builtin in api.builtins %}
 
 
-cdef inline NodePath ensure_is_nodepath(object nodepath_or_pystr):
-    cdef NodePath NodePath_converted
-    try:
-        return <NodePath?>nodepath_or_pystr
-    except TypeError:
-        try:
-            return NodePath(nodepath_or_pystr)
-        except TypeError:
-            raise TypeError(f"Invalid value {nodepath_or_pystr!r}, must be str or NodePath")
-{% for spec in api.builtins %}
-
-
-{{ render_class(spec) }}
+{{ render_class(builtin) }}
 {% endfor %}

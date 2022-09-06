@@ -1,7 +1,6 @@
-from warnings import warn
+{# from warnings import warn
 
 from .gdnative_interface cimport *
-from ..builtins cimport *
 from ..classes cimport GDObject
 
 
@@ -155,4 +154,4 @@ cdef inline void _pyobject_to_gdvariant_int({{ api.int_builtin.cy_type }} val, g
 cdef inline void _pyobject_to_gdvariant_pystr(object pyobj, gd_variant_t *p_gdvar):
     cdef gd_string_t gdstr = gd_string_from_unchecked_pystr(pyobj)
     __GDString_into_variant(p_gdvar, &gdstr)
-    # into conversion steals the ownership, so don't need to call `gd_string_del(gdstr)`
+    # into conversion steals the ownership, so don't need to call `gd_string_del(gdstr)` #}

@@ -69,4 +69,13 @@ cdef class {{ builtin.cy_type }}:
 {% for m in builtin.members %}
     {{ render_member(builtin, m) | indent }}
 {% endfor %}
+{% if builtin.indexing_return_type %}
+    # TODO: handle out of range error ?
+
+    def __getitem__(self, index):
+        return self._getitem(index)
+
+    def __setitem__(self, index, value):
+        self._setitem(index, value)
+{% endif %}
 {% endmacro %}

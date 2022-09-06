@@ -204,7 +204,7 @@ cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
 #########################################################################
 
 
-{% macro render_member_getter(builtin, m) %}
+{% macro render_builtin_member_getter(builtin, m) %}
 cdef inline {{ m.type.c_type }} {{ builtin.c_name_prefix }}_get_{{ m.name }}({{ builtin.c_type }} *self):
     cdef {{ m.type.c_type }} ret
     {{ builtin.c_name_prefix }}_get_{{ m.name }}_ptr(self, &ret)
@@ -212,12 +212,58 @@ cdef inline {{ m.type.c_type }} {{ builtin.c_name_prefix }}_get_{{ m.name }}({{ 
 {% endmacro %}
 
 
-{% macro render_member_setter(builtin, m) %}
+{% macro render_builtin_member_setter(builtin, m) %}
 cdef inline void {{ builtin.c_name_prefix }}_set_{{ m.name }}(
     {{ builtin.c_type }} *self,
     {{ m.type.c_type }} {{ "" if m.type.is_scalar else "*" }}val
 ):
     {{ builtin.c_name_prefix }}_set_{{ m.name }}_ptr(self, {{ "&val" if m.type.is_scalar else "val" }})
+{% endmacro %}
+
+
+#########################################################################
+# Builtin indexed setter/getter (e.g. `my_array[42]`)
+#########################################################################
+
+
+{% macro render_builtin_indexed_getter(builtin) %}
+cdef inline {{ builtin.indexing_return_type.c_type }} {{ builtin.c_name_prefix }}_indexed_getter(const {{ builtin.c_type }} *self, GDNativeInt index):
+    cdef {{ builtin.indexing_return_type.c_type }} ret
+    {{ builtin.c_name_prefix }}_indexed_getter_ptr(self, index, &ret)
+    return ret
+{% endmacro %}
+
+
+{% macro render_builtin_indexed_setter(builtin) %}
+cdef inline void {{ builtin.c_name_prefix }}_indexed_setter(
+    {{ builtin.c_type }} *self,
+    GDNativeInt index,
+    {{ builtin.indexing_return_type.c_type }} {{ "" if builtin.indexing_return_type.is_scalar else "*" }}value
+):
+    {{ builtin.c_name_prefix }}_indexed_setter_ptr(self, index, {{ "&" if builtin.indexing_return_type.is_scalar else "" }}value)
+{% endmacro %}
+
+
+#########################################################################
+# Builtin keyed setter/getter (e.g. `my_dict['foo']`)
+#########################################################################
+
+
+{% macro render_builtin_keyed_getter(builtin) %}
+cdef inline {{ builtin.indexing_return_type.c_type }} {{ builtin.c_name_prefix }}_keyed_getter(const {{ builtin.c_type }} *self, const gd_variant_t *key):
+    cdef {{ builtin.indexing_return_type.c_type }} ret
+    {{ builtin.c_name_prefix }}_keyed_getter_ptr(self, &key, &ret)
+    return ret
+{% endmacro %}
+
+
+{% macro render_builtin_keyed_setter(builtin) %}
+cdef inline void {{ builtin.c_name_prefix }}_keyed_setter(
+    {{ builtin.c_type }} *self,
+    const gd_variant_t *key,
+    const {{ builtin.indexing_return_type.c_type }} {{ "" if builtin.indexing_return_type.is_scalar else "*" }}value
+):
+    {{ builtin.c_name_prefix }}_keyed_setter_ptr(self, &key, {{ "&" if builtin.indexing_return_type.is_scalar else "" }}value)
 {% endmacro %}
 
 
@@ -237,11 +283,19 @@ cdef inline void {{ builtin.c_name_prefix }}_set_{{ m.name }}(
 {%   for m in builtin.methods %}
 {{ render_builtin_method(builtin, m) }}
 {%   endfor %}
+{%   if builtin.indexing_return_type is not none and builtin.is_keyed %}
+{{ render_builtin_keyed_getter(builtin) }}
+{{ render_builtin_keyed_setter(builtin) }}
+{%   endif %}
+{%   if builtin.indexing_return_type is not none and not builtin.is_keyed %}
+{{ render_builtin_indexed_getter(builtin) }}
+{{ render_builtin_indexed_setter(builtin) }}
+{%   endif %}
 {# TODO: builtin.operators #}
 {% for m in builtin.members %}
 {%   if not m.is_in_struct %}
-{{ render_member_getter(builtin, m) }}
-{{ render_member_setter(builtin, m) }}
+{{ render_builtin_member_getter(builtin, m) }}
+{{ render_builtin_member_setter(builtin, m) }}
 {%   endif %}
 {% endfor %}
 {% endmacro %}

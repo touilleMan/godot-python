@@ -68,7 +68,7 @@ class UtilityFunctionSpec:
     category: str
     is_vararg: bool
     hash: int
-    arguments: List[Tuple[str, TypeInUse]]
+    arguments: List[UtilityFunctionArgumentSpec]
 
     @classmethod
     def parse(cls, item: dict) -> "UtilityFunctionSpec":
@@ -142,24 +142,30 @@ class ExtensionApi:
     # Expose scalars, nil and variant
 
     @property
-    def variant_type(self):
+    def variant_type(self) -> TypeSpec:
         return TYPES_DB["Variant"]
 
     @property
-    def nil_type(self):
+    def nil_type(self) -> TypeSpec:
         return TYPES_DB["Nil"]
 
     @property
-    def bool_type(self):
+    def bool_type(self) -> TypeSpec:
         return TYPES_DB["bool"]
 
     @property
-    def int_type(self):
+    def int_type(self) -> TypeSpec:
         return TYPES_DB["int"]
 
     @property
-    def float_type(self):
+    def float_type(self) -> TypeSpec:
         return TYPES_DB["float"]
+
+    @property
+    def packed_array_types(self) -> Iterable[BuiltinTypeSpec]:
+        return [
+            t for t in TYPES_DB.values() if isinstance(t, BuiltinTypeSpec) and t.is_packed_array
+        ]
 
     def get_class_meth_hash(self, classname: str, methname: str) -> Optional[int]:
         klass = next(c for c in self.classes if c.original_name == classname)
@@ -230,7 +236,9 @@ def merge_builtins_size_info(api_json: dict, build_config: BuildConfig) -> None:
 
 def order_classes(classes: List[ClassTypeSpec]) -> List[ClassTypeSpec]:
     # Order classes by inheritance dependency needs
-    ordered_classes = OrderedDict()  # Makes it explicit we need ordering here !
+    ordered_classes: OrderedDict[
+        str, ClassTypeSpec
+    ] = OrderedDict()  # Makes it explicit we need ordering here !
     ordered_count = 0
 
     while len(classes) != len(ordered_classes):

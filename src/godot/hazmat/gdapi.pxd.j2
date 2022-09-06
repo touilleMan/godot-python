@@ -115,22 +115,26 @@ cdef inline gd_variant_del(gd_variant_t *variant):
 
 {# Constants #}
 # {{ builtin.original_name }}
-{%   for c in builtin.constants %}
-{%     if c.type.is_scalar %}
-DEF {{ builtin.c_name_prefix.upper() }}_{{ c.name }} = {{ c.value }}
-{%     else %}
+{%   for c in builtin.constants if c.type.is_scalar %}
+{%     if loop.first %}
+cdef extern from *:
+    """
+{%     endif %}
+    #define {{ builtin.c_name_prefix.upper() }}_{{ c.name }} {{ c.value }}
+{%     if loop.last %}
+    """
+{%     endif %}
+{%   endfor %}
+{%   for c in builtin.constants if c.type.is_scalar %}
+    int {{ builtin.c_name_prefix.upper() }}_{{ c.name }}
+{%   endfor %}
+{%   for c in builtin.constants if not c.type.is_scalar %}
 cdef inline {{ c.type.c_type }} {{ builtin.c_name_prefix }}_make_constant_{{ c.name }}():
     # TODO: Initialize as {{ c.value }}
     return {{ c.type.c_name_prefix }}_new()
-{%     endif %}
-{%   endfor %}
-{# Enums #}
-{%   for e in builtin.enums %}
-{%     for key, value in e.values.items() %}
-DEF {{ builtin.c_name_prefix.upper() }}_{{ key }} = {{ value }}
-{%     endfor %}
 {%   endfor %}
 {% endfor %}
+{# Don't expose enums given they are already provided among the constants #}
 
 
 ##############################################################################
@@ -147,14 +151,22 @@ DEF {{ builtin.c_name_prefix.upper() }}_{{ key }} = {{ value }}
 #                        Global Constants & Enums                            #
 ##############################################################################
 
-
+cdef extern from *:
+    """
 {% for spec in api.global_constants %}
-DEF {{ spec.name }} = {{ spec.value }}
+    #define {{ spec.name }} {{ spec.value }}
 {% endfor %}
 {% for spec in api.global_enums %}
-
-
 {%   for key, value in spec.values.items() %}
-DEF {{ key }} = {{ value }}
+    #define {{ key }} {{ value }}
+{%   endfor %}
+{% endfor %}
+    """
+{% for spec in api.global_constants %}
+    int {{ spec.name }}
+{% endfor %}
+{% for spec in api.global_enums %}
+{%   for key, value in spec.values.items() %}
+    int {{ key }}
 {%   endfor %}
 {% endfor %}

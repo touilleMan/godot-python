@@ -1,9 +1,9 @@
 {% from 'builtins_pxd/constructor.pxd.j2' import render_constructors with context %}
 {% from 'builtins_pxd/method.pxd.j2' import render_method with context %}
-{% from 'builtins_pxd/member.pxd.j2' import render_member with context %}
+{% from 'builtins_pxd/member.pxd.j2' import render_member, render_getsetitem_keyed, render_getsetitem_indexed with context %}
 
 
-{% macro render_class(builtin, m) %}
+{% macro render_class(builtin) %}
 @cython.freelist(8)
 @cython.final
 cdef class {{ builtin.cy_type }}:
@@ -27,4 +27,10 @@ cdef class {{ builtin.cy_type }}:
 {% for m in builtin.methods %}
     {{ render_method(builtin, m) | indent }}
 {% endfor %}
+{% if builtin.indexing_return_type and builtin.is_keyed %}
+    {{ render_getsetitem_keyed(builtin ) | indent }}
+{% endif %}
+{% if builtin.indexing_return_type and not builtin.is_keyed %}
+    {{ render_getsetitem_indexed(builtin ) | indent }}
+{% endif %}
 {% endmacro %}

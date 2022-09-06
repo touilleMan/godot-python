@@ -44,6 +44,18 @@ cdef GDNativePtrDestructor {{ builtin.c_name_prefix }}_destructor_ptr = \
 cdef GDNativePtrBuiltInMethod {{ builtin.c_name_prefix }}_meth_{{ m.name }}_ptr = \
     pythonscript_gdnative_interface.variant_get_ptr_builtin_method({{ builtin.variant_type_name }}, "{{ m.original_name }}", {{ m.hash }})
 {%   endfor %}
+{%   if builtin.indexing_return_type is not none and builtin.is_keyed %}
+cdef GDNativePtrKeyedSetter {{ builtin.c_name_prefix }}_keyed_setter_ptr = \
+    pythonscript_gdnative_interface.variant_get_ptr_keyed_setter({{ builtin.variant_type_name }})
+cdef GDNativePtrKeyedGetter {{ builtin.c_name_prefix }}_keyed_getter_ptr = \
+    pythonscript_gdnative_interface.variant_get_ptr_keyed_getter({{ builtin.variant_type_name }})
+{%   endif %}
+{%   if builtin.indexing_return_type is not none and not builtin.is_keyed %}
+cdef GDNativePtrIndexedSetter {{ builtin.c_name_prefix }}_indexed_setter_ptr = \
+    pythonscript_gdnative_interface.variant_get_ptr_indexed_setter({{ builtin.variant_type_name }})
+cdef GDNativePtrIndexedGetter {{ builtin.c_name_prefix }}_indexed_getter_ptr = \
+    pythonscript_gdnative_interface.variant_get_ptr_indexed_getter({{ builtin.variant_type_name }})
+{%   endif %}
 {%   for o in builtin.operators %}
 cdef GDNativePtrOperatorEvaluator {{ builtin.c_name_prefix }}_op_{{ o.name }}_ptr = \
     pythonscript_gdnative_interface.variant_get_ptr_operator_evaluator({{ o.variant_operator_name }}, {{ builtin.variant_type_name }}, {{ o.right_type.variant_type_name }})
