@@ -258,8 +258,6 @@ endif
 lib__pythonscript = shared_library(
     '_pythonscript',
     c_pythonscript,
-    # Including builtins.pxd generates a lot of `defined but not used` errors
-    c_args: ['-Wno-unused-function'],
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: lib__pythonscript_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
