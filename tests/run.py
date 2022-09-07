@@ -41,17 +41,17 @@ def parse_godot_binary_hint(godot_binary_hint: str) -> Union[Path, GodotBinaryVe
 def fetch_godot_binary(build_dir: Path, version: GodotBinaryVersion) -> Path:
     build_platform = f"{platform.system()}-{platform.machine()}".lower()
     godot_build_platform = {
-        "linux-x86_64": "linux.64",
-        "linux-x64": "linux.64",
-        "linux-amd64": "linux.64",
-        "linux-x86": "linux.32",
+        "linux-x86_64": "linux.x86_64",
+        "linux-x64": "linux.x86_64",
+        "linux-amd64": "linux.x86_64",
+        "linux-x86": "linux.x86_32",
         "windows-x86_64": "win64",
         "windows-x64": "win64",
         "windows-amd64": "win64",
         "windows-x86": "win32",
-        "darwin-x86_64": "osx.universal",
-        "darwin-x64": "osx.universal",
-        "darwin-amd64": "osx.universal",
+        "darwin-x86_64": "macos.universal",
+        "darwin-x64": "macos.universal",
+        "darwin-amd64": "macos.universal",
     }.get(build_platform)
     if not godot_build_platform:
         raise RuntimeError(
