@@ -33,15 +33,61 @@ def __cinit__(self, s=None):
         self._gd_data = gd_string_from_unchecked_pystr(s)
     else:
         try:
-            {% set constructor = builtin.get_constructor_from("String") %}
+{%   set constructor = builtin.get_constructor_from("String") %}
             self._gd_data = {{ constructor.c_name }}(&(<GDString?>s)._gd_data)
         except TypeError:
             try:
-                {% set constructor = builtin.get_constructor_from("StringName") %}
+{%   set constructor = builtin.get_constructor_from("StringName") %}
                 self._gd_data = {{ constructor.c_name }}(&(<StringName?>s)._gd_data)
             except TypeError:
-                {% set constructor = builtin.get_constructor_from("NodePath") %}
+{%   set constructor = builtin.get_constructor_from("NodePath") %}
                 self._gd_data = {{ constructor.c_name }}(&(<NodePath?>s)._gd_data)
+
+{% elif builtin.original_name == "StringName" %}
+
+def __cinit__(self, s=None):
+    cdef GDNativeTypePtr[1] args
+    cdef gd_string_t gds
+    if s is None:
+        self._gd_data = {{ builtin.c_name_prefix }}_new()
+    elif isinstance(s, str):
+        gds = gd_string_from_unchecked_pystr(s)
+        try:
+{%   set constructor = builtin.get_constructor_from("String") %}
+            self._gd_data = {{ constructor.c_name }}(&gds)
+            return
+        finally:
+            gd_string_del(&gds)
+    else:
+        try:
+{%   set constructor = builtin.get_constructor_from("String") %}
+            self._gd_data = {{ constructor.c_name }}(&(<GDString?>s)._gd_data)
+        except TypeError:
+{%   set constructor = builtin.get_constructor_from("StringName") %}
+            self._gd_data = {{ constructor.c_name }}(&(<StringName?>s)._gd_data)
+
+{% elif builtin.original_name == "NodePath" %}
+
+def __cinit__(self, s=None):
+    cdef GDNativeTypePtr[1] args
+    cdef gd_string_t gds
+    if s is None:
+        self._gd_data = {{ builtin.c_name_prefix }}_new()
+    elif isinstance(s, str):
+        gds = gd_string_from_unchecked_pystr(s)
+        try:
+{%   set constructor = builtin.get_constructor_from("String") %}
+            self._gd_data = {{ constructor.c_name }}(&gds)
+            return
+        finally:
+            gd_string_del(&gds)
+    else:
+        try:
+{%   set constructor = builtin.get_constructor_from("String") %}
+            self._gd_data = {{ constructor.c_name }}(&(<GDString?>s)._gd_data)
+        except TypeError:
+{%   set constructor = builtin.get_constructor_from("NodePath") %}
+            self._gd_data = {{ constructor.c_name }}(&(<NodePath?>s)._gd_data)
 
 {% elif builtin.original_name == "Dictionary" %}
 
@@ -119,10 +165,10 @@ def __cinit__(self, from_=None):
     if from_ is None:
         self._gd_data = {{ builtin.c_name_prefix }}_new()
     try:
-        {% set constructor = builtin.get_constructor_from(builtin.original_name) %}
+{%   set constructor = builtin.get_constructor_from(builtin.original_name) %}
         self._gd_data = {{ constructor.c_name }}(&(<{{ builtin.cy_type }}?>from_)._gd_data)
     except TypeError:
-        {% set constructor = builtin.get_constructor_from("Array") %}
+{%   set constructor = builtin.get_constructor_from("Array") %}
         self._gd_data = {{ constructor.c_name }}(&(<GDArray?>from_)._gd_data)
 
 {% else %}

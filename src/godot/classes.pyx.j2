@@ -40,22 +40,25 @@ cdef _load_singleton(name):
 
 
 cdef object _load_class(str name):
+    cdef StringName gdname = StringName(name)
+
     # Load our good friend ClassDB
     cdef GDNativeObjectPtr classdb = pythonscript_gdnative_interface.global_get_singleton("ClassDB")
 
-    if not _object_call(classdb, "class_exists", [name]):
+    if not _object_call(classdb, "class_exists", [gdname]):
         raise RuntimeError(f"Class `{name}` doesn't exist in Godot !")
 
-    parent = _object_call(classdb, "get_parent_class", [name])
+    gdparent = _object_call(classdb, "get_parent_class", [gdname])
+    parent = str(gdparent)
     if parent:
         parent_cls = _load_class(parent)
         bases = (parent_cls, )
     else:
         bases = ()
 
-    meths = _object_call(classdb, "class_get_method_list", [name])
-    properties = _object_call(classdb, "class_get_property_list", [name])
-    signals = _object_call(classdb, "class_get_signal_list", [name])
+    meths = _object_call(classdb, "class_get_method_list", [gdname])
+    properties = _object_call(classdb, "class_get_property_list", [gdname])
+    signals = _object_call(classdb, "class_get_signal_list", [gdname])
 
     # TODO
 
