@@ -117,6 +117,9 @@ endif
 shared_library(
     'builtins',
     cbuiltins,
+    # AutoPxd currently strip const qualifier when generating `gdnative_interface.pxd`,
+    # hence -Wno-discarded-qualifiers
+    c_args: ['-Wno-discarded-qualifiers'],
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: builtins_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
@@ -164,6 +167,11 @@ endif
 shared_library(
     'classes',
     cclasses,
+    # Cython's cdef inline methods are turned into static inline C functions that
+    # produced `defined but not used` errors, hence the `-Wno-unused-function`
+    # AutoPxd currently strip const qualifier when generating `gdnative_interface.pxd`,
+    # hence -Wno-discarded-qualifiers
+    c_args: ['-Wno-discarded-qualifiers', '-Wno-unused-function'],
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: classes_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
