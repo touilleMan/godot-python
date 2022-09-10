@@ -51,8 +51,12 @@ cdef api void _pythonscript_free_instance(
 
 
 cdef api void _pythonscript_late_init() with gil:
-    pythonscript_gdnative_interface.print_error("pythonscript late init", "<function>", "<file>", 0)
     OS = _load_class("OS")
+    print('=====>', repr(OS), dir(OS))
+    print('========> OS.low_processor_usage_mode', OS.low_processor_usage_mode)
+    print('========> OS.get_cached_dir()', OS.get_cached_dir())
+    OS.low_processor_usage_mode = True
+    print('========> OS.low_processor_usage_mode == True', OS.low_processor_usage_mode)
     pythonscript_gdnative_interface.print_error("OS class loaded", "<function>", "<file>", 0)
 
     # from godot.classes import OS
@@ -72,7 +76,6 @@ cdef api void _pythonscript_late_init() with gil:
 
 
 cdef api void _pythonscript_early_init() with gil:
-    pythonscript_gdnative_interface.print_error("pythonscript early init", "<function>", "<file>", 0)
     # pythonscript_gdnative_interface.
     # Engine get_singleton_list
 

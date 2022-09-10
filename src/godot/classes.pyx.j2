@@ -39,6 +39,18 @@ cdef _load_singleton(name):
 {% endfor %}
 
 
+cdef object _property_getter(object obj, str name):
+    return _object_call((<GDObject>obj)._gd_ptr, "get", [name])
+
+
+cdef void _property_setter(object obj, str name, object value):
+    _object_call((<GDObject>obj)._gd_ptr, "set", [name, value])
+
+
+cdef object _meth_call(object obj, str name, list args):
+    return _object_call((<GDObject>obj)._gd_ptr, "call", [name, *args])
+
+
 cdef object _load_class(str name):
     cdef StringName gdname = StringName(name)
 
@@ -48,6 +60,7 @@ cdef object _load_class(str name):
     if not _object_call(classdb, "class_exists", [gdname]):
         raise RuntimeError(f"Class `{name}` doesn't exist in Godot !")
 
+    print("loading", name)
     gdparent = _object_call(classdb, "get_parent_class", [gdname])
     parent = str(gdparent)
     if parent:
@@ -56,13 +69,39 @@ cdef object _load_class(str name):
     else:
         bases = ()
 
-    meths = _object_call(classdb, "class_get_method_list", [gdname])
-    properties = _object_call(classdb, "class_get_property_list", [gdname])
-    signals = _object_call(classdb, "class_get_signal_list", [gdname])
+    attrs = {}
 
+    def _generate_method(spec):
+        methname = spec["name"]
+        def _meth(self, *args):
+            print(f"CALL {methname} {args!r}")
+            return _meth_call(self, methname, args)
+
+    meths = _object_call(classdb, "class_get_method_list", [gdname])
+    for meth in meths:
+        attrs[meth["name"]] = _generate_method(meth)
+
+    def _generate_property(spec):
+        propname = spec["name"]
+        @property
+        def _property(self):
+            print(f"GET {propname}")
+            return _property_getter(self, propname)
+        _property.__name__ = spec["name"]
+        @_property.setter
+        def _property(self, value):
+            print(f"GET {propname} {value!r}")
+            _property_setter(self, propname, value)
+        _property.__name__ = spec["name"]
+        return _property
+
+    properties = _object_call(classdb, "class_get_property_list", [gdname])
+    for prop in properties:
+        attrs[prop["name"]] = _generate_property(prop)
+
+    signals = _object_call(classdb, "class_get_signal_list", [gdname])
     # TODO
 
-    attrs = {}
 
     return type(name, bases, attrs)
 
