@@ -2,16 +2,8 @@ cimport cython
 
 from .hazmat.gdapi cimport *
 from .builtins cimport *
-{% for klass in api.classes %}
 
-
-cdef class {{ klass.cy_type }}({{ klass.inherits.cy_type if klass.inherits else "" }}):
-{%   if klass.inherits is none %}
-
-    {# @staticmethod
-    cpdef inline {{ klass.cy_type}} new():
-        raise NotImplementedError("TODO :'(") #}
-
+cdef class BaseGDObject:
     def free(self):
         pythonscript_gdnative_interface.object_destroy(self._gd_ptr)
         self._gd_ptr = NULL
@@ -23,20 +15,53 @@ cdef class {{ klass.cy_type }}({{ klass.inherits.cy_type if klass.inherits else 
 
     def __repr__(self):
         return f"<{type(self).__name__} wrapper on 0x{<size_t>self._gd_ptr:x}>"
-{%   else %}
-    pass
-{% endif %}
-{% endfor %}
+
+    @staticmethod
+    cdef BaseGDObject from_ptr(GDNativeObjectPtr ptr):
+        # Call to __new__ bypasses __init__ constructor
+        cdef BaseGDObject wrapper = BaseGDObject.__new__(BaseGDObject)
+        wrapper._gd_ptr = ptr
+        return wrapper
+
+{# {% for klass in api.classes %} #}
+{#  #}
+{#  #}
+{# cdef class {{ klass.cy_type }}({{ klass.inherits.cy_type if klass.inherits else "" }}): #}
+{# {%   if klass.inherits is none %} #}
+{#  #}
+{#     {# @staticmethod #}
+{#     cpdef inline {{ klass.cy_type}} new(): #}
+{#         raise NotImplementedError("TODO :'(") #} #}
+{#  #}
+{#     def free(self): #}
+{#         pythonscript_gdnative_interface.object_destroy(self._gd_ptr) #}
+{#         self._gd_ptr = NULL #}
+{#  #}
+{#     def __init__(self): #}
+{#         raise RuntimeError( #}
+{#             f"Use `new()` method to instantiate non-refcounted Godot object (and don't forget to free it !)" #}
+{#         ) #}
+{#  #}
+{#     def __repr__(self): #}
+{#         return f"<{type(self).__name__} wrapper on 0x{<size_t>self._gd_ptr:x}>" #}
+{# {%   else %} #}
+{#     pass #}
+{# {% endif %} #}
+{# {% endfor %} #}
 
 
-cdef _load_singleton(name):
-    cdef GDObject gdobj = GDObject.__new__(GDObject)
-    gdobj._gd_ptr = pythonscript_gdnative_interface.global_get_singleton(name)
-{% for singleton in api.singletons %}
+cdef object _load_singleton(str name):
+    cdef object cls = _load_class(name)
+{# cdef GDNativeObjectPtr gdobj = pythonscript_gdnative_interface.global_get_singleton(&(<StringName>cls._gd_name)._gd_data) #}
+    cdef GDNativeObjectPtr gdobj = pythonscript_gdnative_interface.global_get_singleton(name.encode())
+    cdef object obj = BaseGDObject.from_ptr(gdobj)
+    obj.__class__ = cls
+    return obj
+{# {% for singleton in api.singletons %}
     cdef {{ singleton.type.py_type }} singleton_{{ singleton.name }} = {{ singleton.type.py_type }}.__new__({{ singleton.type.py_type }})
     singleton_{{ singleton.name }}._gd_ptr = pythonscript_gdnative_interface.global_get_singleton("{{ singleton.original_name }}")
     globals()["{{ singleton.name }}"] = singleton_{{ singleton.name }}
-{% endfor %}
+{% endfor %} #}
 
 
 cdef object _property_getter(object obj, str name):
@@ -67,9 +92,9 @@ cdef object _load_class(str name):
         parent_cls = _load_class(parent)
         bases = (parent_cls, )
     else:
-        bases = ()
+        bases = (BaseGDObject, )
 
-    attrs = {}
+    attrs = {"_gd_name", gdname}
 
     def _generate_method(spec):
         methname = spec["name"]
@@ -101,7 +126,6 @@ cdef object _load_class(str name):
 
     signals = _object_call(classdb, "class_get_signal_list", [gdname])
     # TODO
-
 
     return type(name, bases, attrs)
 
@@ -147,7 +171,5 @@ cdef object _object_call(GDNativeObjectPtr obj, str meth, args):
     for i in range(args_with_meth_len):
         gd_variant_del(&variant_args[i])
 
-    try:
-        return gd_variant_to_pyobj(&ret)
-    finally:
-        gd_variant_del(&ret)
+    return gd_variant_steal_into_pyobj(&ret)
+    # No need to destroy ret given the conversion has stolen ownership on data !

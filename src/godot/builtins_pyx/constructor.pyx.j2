@@ -117,7 +117,6 @@ def __cinit__(self, mapping=None):
 {% elif builtin.original_name == "Array" %}
 
 def __cinit__(self, iterable=None):
-    cdef iterable_type = type(iterable)
     if iterable is None:
         self._gd_data = {{ builtin.c_name_prefix }}_new()
         return
@@ -146,30 +145,27 @@ def __cinit__(self, iterable=None):
 
 {% elif builtin.is_packed_array %}
 
-{#
-PackedByteArray
-PackedInt32Array
-PackedInt64Array
-PackedFloat32Array
-PackedFloat64Array
-PackedStringArray
-PackedVector2Array
-PackedVector3Array
-PackedColorArray
-#}
-def __cinit__(self, from_=None):
-    cdef GDNativeTypePtr[1] args
-    # TODO: finish me !
-    if isinstance(from_, (list, tuple)):
-        raise NotImplementedError("Not implemented yet :'(")
-    if from_ is None:
+def __cinit__(self, iterable=None):
+    if iterable is None:
         self._gd_data = {{ builtin.c_name_prefix }}_new()
-    try:
+        return
 {%   set constructor = builtin.get_constructor_from(builtin.original_name) %}
-        self._gd_data = {{ constructor.c_name }}(&(<{{ builtin.cy_type }}?>from_)._gd_data)
+    try:
+        self._gd_data = {{ constructor.c_name }}(&(<{{ builtin.cy_type }}?>iterable)._gd_data)
     except TypeError:
-{%   set constructor = builtin.get_constructor_from("Array") %}
-        self._gd_data = {{ constructor.c_name }}(&(<GDArray?>from_)._gd_data)
+        try:
+            {% set constructor = builtin.get_constructor_from("Array") %}
+            self._gd_data = {{ constructor.c_name }}(&(<GDArray?>iterable)._gd_data)
+        except TypeError:
+            # Last chance, note we must initialize `self._gd_data` even if we are
+            # going to raise a `TypeError`, otherwise destructor will segfault
+            self._gd_data = {{ builtin.c_name_prefix }}_new()
+            if isinstance(iterable, Iterable):
+                {{ builtin.c_name_prefix }}_resize(&self._gd_data, len(iterable))
+                for x in iterable:
+                    self.append(x)
+            else:
+                raise TypeError("Expected Array, {{ builtin.cy_type }} or collections.abc.Iterable[{{ builtin.packed_array_item_type.cy_type }}]")
 
 {% else %}
 {# Default constructor #}

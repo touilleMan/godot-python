@@ -27,7 +27,7 @@ include "_pythonscript_editor.pxi"
 from godot.hazmat.gdnative_interface cimport *
 from godot.hazmat.gdapi cimport *
 from godot.builtins cimport *
-from godot.classes cimport _load_class
+from godot.classes cimport _load_class, _load_singleton
 
 # include "_pythonscript_script.pxi"
 # include "_pythonscript_instance.pxi"
@@ -51,21 +51,16 @@ cdef api void _pythonscript_free_instance(
 
 
 cdef api void _pythonscript_late_init() with gil:
-    OS = _load_class("OS")
-    print('=====>', repr(OS), dir(OS))
-    print('========> OS.low_processor_usage_mode', OS.low_processor_usage_mode)
-    print('========> OS.get_cached_dir()', OS.get_cached_dir())
-    OS.low_processor_usage_mode = True
-    print('========> OS.low_processor_usage_mode == True', OS.low_processor_usage_mode)
-    pythonscript_gdnative_interface.print_error("OS class loaded", "<function>", "<file>", 0)
+    OS = _load_singleton("OS")
 
-    # from godot.classes import OS
-    cdef gd_variant_t gdvariant
-    if not gd_variant_from_pyobj(f"singletion is {OS!r}", &gdvariant):
-        pythonscript_gdnative_interface.print_error("pyobject_to_gdvariant !!!!", "<function>", "<file>", 0)
-    gd_utility_print(&gdvariant, 1)
-    pythonscript_gdnative_interface.variant_destroy(&gdvariant)
-    pythonscript_gdnative_interface.print_error("_pythonscript_late_init done", "<function>", "<file>", 0)
+    print(repr(OS), dir(OS))
+    print('OS.low_processor_usage_mode', OS.low_processor_usage_mode)
+    print('OS.can_use_threads()', OS.can_use_threads())
+    print('OS.get_cached_dir()', OS.get_cached_dir())
+    OS.low_processor_usage_mode = True
+    print('OS.low_processor_usage_mode == True', OS.low_processor_usage_mode)
+    print('OS.set_environment("foo", "bar")', OS.set_environment("foo", "bar"))
+    print('OS.get_environment("foo")', OS.get_environment("foo"))
 
     import sys
     from godot._version import __version__ as pythonscript_version

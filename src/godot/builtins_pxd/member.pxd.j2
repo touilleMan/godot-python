@@ -44,10 +44,8 @@ cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, object key
         return {{ builtin.c_name_prefix }}_keyed_getter(&self._gd_data, &gdkey)
 {% elif builtin.indexing_return_type.is_variant %}
         gdret = {{ builtin.c_name_prefix }}_keyed_getter(&self._gd_data, &gdkey)
-        try:
-            return gd_variant_to_pyobj(&gdret)
-        finally:
-            gd_variant_del(&gdret)  # TODO: needed ? or to_pyobj steal the reference ?
+        return gd_variant_steal_into_pyobj(&gdret)
+        # No need to destroy gdret given the conversion has stolen ownership on data !
 {% else %}
         ret = {{ builtin.indexing_return_type.cy_type }}.__new__({{ builtin.indexing_return_type.cy_type }})
         ret._gd_data =  {{ builtin.c_name_prefix }}_keyed_getter(&self._gd_data, &gdkey)
@@ -84,10 +82,8 @@ cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDNativeIn
     return {{ builtin.c_name_prefix }}_indexed_getter(&self._gd_data, index)
 {% elif builtin.indexing_return_type.is_variant %}
     cdef gd_variant_t gdret = {{ builtin.c_name_prefix }}_indexed_getter(&self._gd_data, index)
-    try:
-        return gd_variant_to_pyobj(&gdret)
-    finally:
-        gd_variant_del(&gdret)  # TODO: needed ? or to_pyobj steal the reference ?
+    return gd_variant_steal_into_pyobj(&gdret)
+    # No need to destroy gdret given the conversion has stolen ownership on data !
 {% else %}
     cdef {{ builtin.indexing_return_type.cy_type }} ret = {{ builtin.indexing_return_type.cy_type }}.__new__({{ builtin.indexing_return_type.cy_type }})
     ret._gd_data =  {{ builtin.c_name_prefix }}_indexed_getter(&self._gd_data, index)

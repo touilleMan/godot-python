@@ -66,7 +66,7 @@ cdef GDNativeVariantType py_to_gd_type(object pytype):
 #########################################################################
 
 
-cdef object gd_variant_to_pyobj(const gd_variant_t *p_gdvar):
+cdef object gd_variant_steal_into_pyobj(const gd_variant_t *p_gdvar):
     # TODO: must do an ugly cast because autopxd2 ignores const qualifiers in the C headers
     cdef GDNativeVariantType gdtype = pythonscript_gdnative_interface.variant_get_type(<gd_variant_t *>p_gdvar)
     if gdtype == GDNATIVE_VARIANT_TYPE_OBJECT:
@@ -83,11 +83,7 @@ cdef object gd_variant_to_pyobj(const gd_variant_t *p_gdvar):
         return {{ api.float_type.c_name_prefix }}_from_variant(<gd_variant_t*>p_gdvar)
 {% for builtin in api.builtins %}
     elif gdtype == {{ builtin.variant_type_name }}:
-{%   if builtin.is_nil %}
-        return None
-{%   else %}
-        return _gd_variant_to_pyobj_{{ builtin.cy_type }}(p_gdvar)
-{%   endif %}
+        return _gd_variant_steal_into_pyobj_{{ builtin.cy_type }}(p_gdvar)
 {% endfor %}
     elif gdtype == GDNATIVE_VARIANT_TYPE_NIL:
         return None
@@ -97,21 +93,10 @@ cdef object gd_variant_to_pyobj(const gd_variant_t *p_gdvar):
 
 
 {% for builtin in api.builtins if not builtin.is_nil %}
-cdef inline object _gd_variant_to_pyobj_{{ builtin.cy_type }}(const gd_variant_t *p_gdvar):
-{%   if builtin.cy_type == "bool" %}
-    cdef {{ api.bool_type.cy_type }} ret = {{ builtin.c_name_prefix }}_from_variant(<gd_variant_t *>p_gdvar)
-    return bool(ret)
-{%   elif builtin.cy_type == "int" %}
-    cdef {{ api.int_type.cy_type }} ret = {{ builtin.c_name_prefix }}_from_variant(<gd_variant_t *>p_gdvar)
-    return ret
-{%   elif builtin.cy_type == "float" %}
-    cdef {{ api.float_type.cy_type }} ret = {{ builtin.c_name_prefix }}_from_variant(<gd_variant_t *>p_gdvar)
-    return ret
-{%   else %}
+cdef inline object _gd_variant_steal_into_pyobj_{{ builtin.cy_type }}(const gd_variant_t *p_gdvar):
     cdef {{ builtin.cy_type }} ret = {{ builtin.cy_type }}.__new__({{ builtin.cy_type }})
     ret._gd_data = {{ builtin.c_name_prefix }}_from_variant(<gd_variant_t *>p_gdvar)
     return ret
-{%   endif %}
 {% endfor %}
 
 

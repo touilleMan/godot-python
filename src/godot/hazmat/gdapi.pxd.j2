@@ -85,8 +85,16 @@ cdef inline object gd_string_to_pystr(gd_string_t *gdstr):
 ##############################################################################
 
 
+cdef inline gd_variant_t gd_variant_new():
+    cdef gd_variant_t variant
+    # Zero-init is a fast way to represent a Nil variant
+{% for i in range(api.variant_type.size) %}
+    variant._gd_opaque[{{ i }}] = 0
+{% endfor %}
+    return variant
 
-cdef inline gd_variant_del(gd_variant_t *variant):
+
+cdef inline void gd_variant_del(gd_variant_t *variant):
     pythonscript_gdnative_interface.variant_destroy(variant)
 
 

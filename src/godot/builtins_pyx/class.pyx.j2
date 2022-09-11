@@ -11,10 +11,8 @@ def {{ c.name }}(self):
     cdef gd_variant_t gdvariant
     # TODO: cache the constant on first fetch ?
     pythonscript_gdnative_interface.variant_get_constant_value({{ builtin.variant_type_name }}, "{{ c.original_name }}", &gdvariant)
-    try:
-        return gd_variant_to_pyobj(&gdvariant)
-    finally:
-        gd_variant_del(&gdvariant)
+    return gd_variant_steal_into_pyobj(&gdvariant)
+    # No need to destroy gdvariant given the conversion has stolen ownership on data !
 {%   endif %}
 {% endmacro %}
 

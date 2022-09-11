@@ -262,7 +262,7 @@ lib__pythonscript = shared_library(
     # produced `defined but not used` errors, hence the `-Wno-unused-function`
     # AutoPxd currently strip const qualifier when generating `gdnative_interface.pxd`,
     # hence -Wno-discarded-qualifiers
-    c_args: ['-Wno-discarded-qualifiers', '-Wno-unused-function'],
+    c_args: ['-Wno-discarded-qualifiers', '-Wno-incompatible-pointer-types-discards-qualifiers', '-Wno-unused-function'],
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: lib__pythonscript_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,

@@ -169,12 +169,14 @@ class ClassTypeSpec(TypeSpec):
             # cy_type="object",  # Don't get confused ! This is python's `object` here
             cy_type=kwargs["py_type"],
             variant_type_name="GDNATIVE_VARIANT_TYPE_OBJECT",
-            is_stack_only=False,
+            # Of course the object instance live on the heap, but we are talking
+            # here about the pointer
+            is_stack_only=True,
             **kwargs,
         )
 
 
-def parse_class(spec: dict, object_size: int) -> List[ClassTypeSpec]:
+def parse_class(spec: dict, object_size: int) -> ClassTypeSpec:
     spec.setdefault("enums", [])
     spec.setdefault("signals", [])
     spec.setdefault("methods", [])
@@ -219,6 +221,7 @@ def parse_class(spec: dict, object_size: int) -> List[ClassTypeSpec]:
             return False
         if "getter" not in prop:
             return False
+        return True
 
     spec["properties"] = [prop for prop in spec["properties"] if _filter_bad_property(prop)]
 

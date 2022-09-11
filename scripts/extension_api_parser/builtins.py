@@ -249,6 +249,30 @@ class BuiltinTypeSpec(TypeSpec):
     def is_packed_array(self) -> bool:
         return self.original_name.startswith("Packed") and self.original_name.endswith("Array")
 
+    @property
+    def packed_array_item_type(self) -> TypeSpec:
+        assert self.is_packed_array
+        if self.original_name == "PackedByteArray":
+            return TYPES_DB["meta:uint8"]
+        elif self.original_name == "PackedInt32Array":
+            return TYPES_DB["meta:int32"]
+        elif self.original_name == "PackedInt64Array":
+            return TYPES_DB["meta:int64"]
+        elif self.original_name == "PackedFloat32Array":
+            return TYPES_DB["meta:float"]
+        elif self.original_name == "PackedFloat64Array":
+            return TYPES_DB["meta:double"]
+        elif self.original_name == "PackedStringArray":
+            return TYPES_DB["String"]
+        elif self.original_name == "PackedVector2Array":
+            return TYPES_DB["Vector2"]
+        elif self.original_name == "PackedVector3Array":
+            return TYPES_DB["Vector3"]
+        elif self.original_name == "PackedColorArray":
+            return TYPES_DB["Color"]
+        else:
+            raise RuntimeError("Unknown packed array type :(")
+
     def get_constructor_from(self, *args_types: str) -> BuiltinConstructorSpec:
         # `args_types` is expected to contains original names ! (i.e. `String`, `float`)
         for constructor in self.constructors:

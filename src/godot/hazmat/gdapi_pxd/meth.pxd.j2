@@ -44,6 +44,10 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
 {% endif %}
 {% if not builtin.return_type.is_nil %}
     cdef {{ builtin.return_type.c_type }} __ret
+{%   if not builtin.return_type.is_stack_only %}
+    # TODO: We shouldn't have to intialize this !!! However Godot C++ internals are leaking...
+    gdret = {{ builtin.return_type.c_name_prefix }}_new()
+{%   endif %}
 {% endif %}
     gd_utility_{{ builtin.original_name }}_ptr(
         {# GDNativeTypePtr ret #}
@@ -69,6 +73,8 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
     gd_utility_{{ builtin.original_name }}_ptr(NULL, <GDNativeTypePtr *>&args, args_count)
 {% else %}
     cdef gd_variant_t __ret  # TODO: improve return type !
+    # TODO: We shouldn't have to intialize this !!! However Godot C++ internals are leaking...
+    gdret = gd_variant_new()
     gd_utility_{{ builtin.original_name }}_ptr(&__ret, <GDNativeTypePtr *>&args, args_count)
     return __ret
 {% endif %}
@@ -182,6 +188,10 @@ cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
     ]
 {% if not meth.return_type.is_nil %}
     cdef {{ meth.return_type.c_type }} r_return
+{%   if not meth.return_type.is_stack_only %}
+    # TODO: We shouldn't have to intialize this !!! However Godot C++ internals are leaking...
+    r_return = {{ meth.return_type.c_name_prefix }}_new()
+{%   endif %}
 {% endif %}
     {{ builtin.c_name_prefix }}_meth_{{ meth.name }}_ptr(
         {# GDNativeTypePtr p_base #}
@@ -207,6 +217,10 @@ cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
 {% macro render_builtin_member_getter(builtin, m) %}
 cdef inline {{ m.type.c_type }} {{ builtin.c_name_prefix }}_get_{{ m.name }}({{ builtin.c_type }} *self):
     cdef {{ m.type.c_type }} ret
+{% if not m.type.is_stack_only %}
+    # TODO: We shouldn't have to intialize this !!! However Godot C++ internals are leaking...
+    ret = {{ m.type.c_name_prefix }}_new()
+{% endif %}
     {{ builtin.c_name_prefix }}_get_{{ m.name }}_ptr(self, &ret)
     return ret
 {% endmacro %}
@@ -229,6 +243,10 @@ cdef inline void {{ builtin.c_name_prefix }}_set_{{ m.name }}(
 {% macro render_builtin_indexed_getter(builtin) %}
 cdef inline {{ builtin.indexing_return_type.c_type }} {{ builtin.c_name_prefix }}_indexed_getter(const {{ builtin.c_type }} *self, GDNativeInt index):
     cdef {{ builtin.indexing_return_type.c_type }} ret
+{%   if not builtin.indexing_return_type.is_stack_only %}
+    # TODO: We shouldn't have to intialize this !!! However Godot C++ internals are leaking...
+    ret = {{ builtin.indexing_return_type.c_name_prefix }}_new()
+{%   endif %}
     {{ builtin.c_name_prefix }}_indexed_getter_ptr(self, index, &ret)
     return ret
 {% endmacro %}
@@ -252,6 +270,10 @@ cdef inline void {{ builtin.c_name_prefix }}_indexed_setter(
 {% macro render_builtin_keyed_getter(builtin) %}
 cdef inline {{ builtin.indexing_return_type.c_type }} {{ builtin.c_name_prefix }}_keyed_getter(const {{ builtin.c_type }} *self, const gd_variant_t *key):
     cdef {{ builtin.indexing_return_type.c_type }} ret
+{%   if not builtin.indexing_return_type.is_stack_only %}
+    # TODO: We shouldn't have to intialize this !!! However Godot C++ internals are leaking...
+    ret = {{ builtin.indexing_return_type.c_name_prefix }}_new()
+{%   endif %}
     {{ builtin.c_name_prefix }}_keyed_getter_ptr(self, &key, &ret)
     return ret
 {% endmacro %}
