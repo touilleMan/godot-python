@@ -2,31 +2,27 @@ name: CI build
 on:
   push:
     branches:
-    - master
+      - master
   pull_request:
     branches:
-    - master
-
+      - master
 
 # Global Settings
 env:
   PYTHON_VERSION: "3.7"
   GODOT_BINARY_VERSION: "3.2.3"
 
-
 jobs:
-
-
   static-checks:
-    name: '📊 Static checks'
+    name: "📊 Static checks"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
+        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a # pin@v2
         with:
-            submodules: true
+          submodules: true
       - name: Set up Python
-        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
+        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea # pin@v2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Bootstrap
@@ -38,26 +34,24 @@ jobs:
         run: |
           pre-commit run --all-files --show-diff-on-failure
 
-
-#################################################################################
-
+  #################################################################################
 
   linux-build:
-    name: '🐧 Linux build'
+    name: "🐧 Linux build"
     runs-on: ubuntu-latest
     env:
       CC: clang
-      PLATFORM: 'x11-64'
+      PLATFORM: "x11-64"
     steps:
-      - name: 'Checkout'
-        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
+      - name: "Checkout"
+        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a # pin@v2
         with:
-            submodules: true
-      - name: 'Set up Python'
-        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
+          submodules: true
+      - name: "Set up Python"
+        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea # pin@v2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: 'Setup venv'
+      - name: "Setup venv"
         run: |
           set -eux
           ${{ env.CC }} --version
@@ -68,57 +62,55 @@ jobs:
           echo 'godot_binary = "${{ env.GODOT_BINARY_VERSION }}"' >> custom.py
           echo 'platform = "${{ env.PLATFORM }}"' >> custom.py
           echo 'CC = "${{ env.CC }}"' >> custom.py
-      - name: 'Build project'
+      - name: "Build project"
         run: |
           set -eux
           scons build -j2
-      - name: 'Start xvfb'
+      - name: "Start xvfb"
         run: |
           /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
           echo ">>> Started xvfb"
-      - name: 'Run tests'
+      - name: "Run tests"
         run: |
           set -eux
           scons tests headless=true
         env:
-          DISPLAY: ':99.0'
-      - name: 'Generate artifact archive'
+          DISPLAY: ":99.0"
+      - name: "Generate artifact archive"
         run: |
           set -eux
           scons release
-      - name: 'Export release artifact'
-        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
+      - name: "Export release artifact"
+        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40 # pin@v2
         with:
           name: ${{ env.PLATFORM }}-release
-          path: 'build/godot-python-*.tar.bz2'
+          path: "build/godot-python-*.tar.bz2"
 
-
-#################################################################################
-
+  #################################################################################
 
   windows-build:
-    name: '🏁 Windows build'
+    name: "🏁 Windows build"
     runs-on: windows-latest
     strategy:
       matrix:
         include:
-          - PLATFORM: 'windows-64'
-            PYTHON_ARCH: 'x64'
-            VS_ARCH: 'amd64'
-          - PLATFORM: 'windows-32'
-            PYTHON_ARCH: 'x86'
-            VS_ARCH: 'x86'
+          - PLATFORM: "windows-64"
+            PYTHON_ARCH: "x64"
+            VS_ARCH: "amd64"
+          - PLATFORM: "windows-32"
+            PYTHON_ARCH: "x86"
+            VS_ARCH: "x86"
     steps:
-      - name: 'Checkout'
-        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
+      - name: "Checkout"
+        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a # pin@v2
         with:
-            submodules: true
-      - name: 'Set up Python'
-        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
+          submodules: true
+      - name: "Set up Python"
+        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea # pin@v2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           architecture: ${{ matrix.PYTHON_ARCH }}
-      - name: 'Setup venv'
+      - name: "Setup venv"
         shell: bash
         run: |
           set -eux
@@ -131,12 +123,12 @@ jobs:
           echo 'MSVC_USE_SCRIPT = True' >> custom.py
           echo 'TARGET_ARCH = "${{ matrix.VS_ARCH }}"' >> custom.py
           echo 'CC = "cl.exe"' >> custom.py
-      - name: 'Build project'
+      - name: "Build project"
         shell: bash
         run: |
           set -eux
           scons build -j2
-      - name: 'Install Mesa3D OpenGL'
+      - name: "Install Mesa3D OpenGL"
         shell: bash
         run: |
           set -eux
@@ -153,41 +145,39 @@ jobs:
           7z.exe x mesa.7z
           ls -lh opengl32.dll  # Sanity check
           popd
-      - name: 'Run tests'
+      - name: "Run tests"
         shell: bash
         run: |
           set -eux
           scons tests
-      - name: 'Generate artifact archive'
+      - name: "Generate artifact archive"
         shell: bash
         run: |
           scons release
-      - name: 'Export release artifact'
-        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
+      - name: "Export release artifact"
+        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40 # pin@v2
         with:
           name: ${{ matrix.PLATFORM }}-release
-          path: 'build/godot-python-*.zip'
+          path: "build/godot-python-*.zip"
 
-
-#################################################################################
-
+  #################################################################################
 
   macos-intel-build:
-    name: '🍎 macOS/intel build'
+    name: "🍎 macOS/intel build"
     runs-on: macos-latest
     env:
       CC: clang
-      PLATFORM: 'osx-64'
+      PLATFORM: "osx-64"
     steps:
-      - name: 'Checkout'
-        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
+      - name: "Checkout"
+        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a # pin@v2
         with:
-            submodules: true
-      - name: 'Set up Python'
-        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
+          submodules: true
+      - name: "Set up Python"
+        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea # pin@v2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: 'Setup venv'
+      - name: "Setup venv"
         run: |
           set -eux
           ${{ env.CC }} --version
@@ -201,45 +191,43 @@ jobs:
           echo 'godot_binary = "${{ env.GODOT_BINARY_VERSION }}"' >> custom.py
           echo 'platform = "${{ env.PLATFORM }}"' >> custom.py
           echo 'CC = "${{ env.CC }}"' >> custom.py
-      - name: 'Build project'
+      - name: "Build project"
         run: |
           set -eux
           scons build -j2
-      - name: 'Run tests'
+      - name: "Run tests"
         run: |
           set -eux
           scons tests
-      - name: 'Generate artifact archive'
+      - name: "Generate artifact archive"
         run: |
           set -eux
           scons release
-      - name: 'Export release artifact'
-        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
+      - name: "Export release artifact"
+        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40 # pin@v2
         with:
           name: ${{ env.PLATFORM }}-release
-          path: 'build/godot-python-*.tar.bz2'
+          path: "build/godot-python-*.tar.bz2"
 
-
-#################################################################################
-
+  #################################################################################
 
   macos-m1-build:
-    name: '🍏 macOS/m1 build'
+    name: "🍏 macOS/m1 build"
     runs-on: macos-latest
     env:
       CC: clang
-      PLATFORM: 'osx'
-      ARCH: 'arm64'
+      PLATFORM: "osx-arm"
+      ARCH: "arm64"
     steps:
-      - name: 'Checkout'
-        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
+      - name: "Checkout"
+        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a # pin@v2
         with:
-            submodules: true
-      - name: 'Set up Python'
-        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
+          submodules: true
+      - name: "Set up Python"
+        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea # pin@v2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: 'Setup venv'
+      - name: "Setup venv"
         run: |
           set -eux
           ${{ env.CC }} --version
@@ -254,7 +242,7 @@ jobs:
           echo 'platform = "${{ env.PLATFORM }}"' >> custom.py
           echo 'arch = "${{ env.ARCH }}"' >> custom.py
           echo 'CC = "${{ env.CC }}"' >> custom.py
-      - name: 'Build project'
+      - name: "Build project"
         run: |
           set -eux
           scons build -j2
@@ -262,21 +250,20 @@ jobs:
       #   run: |
       #     set -eux
       #     scons tests
-      - name: 'Generate artifact archive'
+      - name: "Generate artifact archive"
         run: |
           set -eux
           scons release
-      - name: 'Export release artifact'
-        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
+      - name: "Export release artifact"
+        uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40 # pin@v2
         with:
           name: ${{ env.PLATFORM }}-{{ env.ARCH }}-release
-          path: 'build/godot-python-*.tar.bz2'
+          path: "build/godot-python-*.tar.bz2"
 
-#################################################################################
-
+  #################################################################################
 
   publish-release:
-    name: 'Publish ${{ matrix.PLATFORM }} release'
+    name: "Publish ${{ matrix.PLATFORM }} release"
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     needs:
@@ -291,10 +278,10 @@ jobs:
           - PLATFORM: windows-32
           - PLATFORM: osx-64
     steps:
-      - uses: actions/download-artifact@0ede0875b5db9a2824878bbbbe3d758a75eb8268  # pin@v2
+      - uses: actions/download-artifact@0ede0875b5db9a2824878bbbbe3d758a75eb8268 # pin@v2
         name: ${{ matrix.PLATFORM }}-release
-      - name: 'Upload release'
-        uses: svenstaro/upload-release-action@483c1e56f95e88835747b1c7c60581215016cbf2  # pin@v2
+      - name: "Upload release"
+        uses: svenstaro/upload-release-action@483c1e56f95e88835747b1c7c60581215016cbf2 # pin@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}

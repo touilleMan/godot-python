@@ -12,6 +12,7 @@ Server.64="res://addons/pythonscript/x11-64/libpythonscript.so"
 Windows.64="res://addons/pythonscript/windows-64/pythonscript.dll"
 Windows.32="res://addons/pythonscript/windows-32/pythonscript.dll"
 OSX.64="res://addons/pythonscript/osx-64/libpythonscript.dylib"
+OSX.universal="res://addons/pythonscript/osx-arm/libpythonscript.dylib"
 
 [dependencies]
 
@@ -21,3 +22,4 @@ Server.64=[]
 Windows.64=[]
 Windows.32=[]
 OSX.64=[]
+OSX.universal=[]

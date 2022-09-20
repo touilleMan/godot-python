@@ -1,3 +1,4 @@
+import os
 import zstandard
 import tarfile
 import json
@@ -13,27 +14,21 @@ cpython_build = Dir("cpython_build")
 
 
 env["bits"] = "64"
+env["godot_binary_download_version"] = ('3', '3', '1', 'stable')
 env["godot_binary_download_platform"] = "osx.universal"
 env["godot_binary_download_zip_path"] = "Godot.app/Contents/MacOS/Godot"
 env["cpython_build"] = cpython_build
 env["cpython_build_dir"] = cpython_build
 env["DIST_SITE_PACKAGES"] = Dir(f"{env['DIST_PLATFORM']}/lib/python3.9/site-packages")
-env["CC"] = "clang"
-env["CXX"] = "clang++"
 
 ### Build config for pythonscript ###
 
 env.AppendUnique(CFLAGS=["-m64"])
 env.AppendUnique(LINKFLAGS=["-m64"])
 
-if env["arch"] == "arm64":
-    print("Building for macOS 10.15+, platform arm64.")
-    env.Append(CCFLAGS=["-arch", "arm64", "-mmacosx-version-min=10.15"])
-    env.Append(LINKFLAGS=["-arch", "arm64", "-mmacosx-version-min=10.15"])
-else:
-    print("Building for macOS 10.12+, platform x86_64.")
-    env.Append(CCFLAGS=["-arch", "x86_64", "-mmacosx-version-min=10.12"])
-    env.Append(LINKFLAGS=["-arch", "x86_64", "-mmacosx-version-min=10.12"])
+print("Building for macOS 10.15+, platform arm64.")
+env.Append(CCFLAGS=["-arch", "arm64", "-mmacosx-version-min=10.15"])
+env.Append(LINKFLAGS=["-arch", "arm64", "-mmacosx-version-min=10.15"])
 
 try:
     sdk_name = "macosx"
@@ -54,10 +49,8 @@ env.AppendUnique(LINKFLAGS=[f"-L{cpython_build.abspath}/lib"])
 
 
 ### Fetch Python prebuild ###
-
-ARCH = "aarch64" if env["arch"] == "arm64" else "x86_64"
 CPYTHON_DOWNLOADS_URL = "https://github.com/indygreg/python-build-standalone/releases/download"
-CPYTHON_PREBUILD = f"20210506/cpython-3.9.5-{ARCH}-apple-darwin-pgo-20210506T0943.tar.zst"
+CPYTHON_PREBUILD = f"20210506/cpython-3.9.5-aarch64-apple-darwin-pgo-20210506T0943.tar.zst"
 CPYTHON_PREBUILD_URL = f"{CPYTHON_DOWNLOADS_URL}/{CPYTHON_PREBUILD}"
 
 cpython_prebuild_archive = env.Download(
@@ -92,13 +85,13 @@ def generate_cpython_build(target, source, env):
     build = Path(target[0].abspath)
     prebuild = Path(source[0].abspath) / "python"
 
+    # verify correct version
     conf = json.loads((prebuild / "PYTHON.json").read_text())
     assert conf["version"] == "7"
     assert conf["libpython_link_mode"] == "shared"
-    if env["arch"] == "arm64":
-        assert conf["target_triple"] == "aarch64-apple-darwin"
-    else:
-        assert conf["target_triple"] == "x86_64-apple-darwin"
+
+    # verify correct triple-target
+    assert conf["target_triple"] == "aarch64-apple-darwin"
 
     shutil.copytree(str(prebuild / "install"), str(build), symlinks=True)
     shutil.copytree(str(prebuild / "licenses"), str(build / "licenses"), symlinks=True)

@@ -91,7 +91,7 @@ def CythonCompile(env, target, source):
             f"-Wl,-rpath,'{loader_token}/{libpythonscript_path}'",
         ]
         # TODO: use scons `env.LoadableModule` for better macos support ?
-        version = "python3.9" if env["platform"] == 'osx' else "python3.8"
+        version = "python3.9" if env["platform"] == 'osx-arm' else "python3.8"
         ret = env.SharedLibrary(
             target=target,
             source=source,
