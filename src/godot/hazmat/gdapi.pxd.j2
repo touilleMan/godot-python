@@ -5,13 +5,6 @@
     render_builtin_methods,
     render_utility_function
 %}
-cimport cython
-from libc.stdint cimport *
-
-from .gdnative_interface cimport *
-from .gdnative_ptrs cimport *
-
-
 #
 #                               ,;               :      L.                                             ,;
 #           .    .            f#i       ittttttttEf     EW:        ,ft         .Gt            i      f#i
@@ -29,10 +22,17 @@ from .gdnative_ptrs cimport *
 #                                                                    ,
 #
 # The following is pretty verbose, here is the tl;dr:
-# - Utility functions exposed as both function pointer and nicer inline function
+# - Utility functions exposed as nice inline function
 # - Builtins structure definition with both Cython and C in `cdef extern from *`
-# - Builtins' constructors/destructor/methods/operators exposed as function pointer
-#   and nicer inline function
+# - Builtins' constructors/destructor/methods/operators exposed as nice inline function
+# - Builtins&global constants as #define
+
+
+cimport cython
+from libc.stdint cimport *
+
+from .gdnative_interface cimport *
+from .gdnative_ptrs cimport *
 
 
 ##############################################################################
