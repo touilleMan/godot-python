@@ -6,16 +6,25 @@ from pathlib import Path
 import shutil
 
 
-USAGE = "usage: cythoner OUTPUT.c PRIVATE_DIR INPUT.pyx [INPUT.pxd, INPUT.pxi, ...]"
+USAGE = "usage: cythoner OUTPUT.c PRIVATE_DIR INPUT.pyx [INPUT.pxd, INPUT.pxi, ...] [--] [<cythonize args>]"
 SRC_DIR = Path(__file__, "../../src/").resolve()
 BUILD_SRC_DIR = Path(os.getcwd()).resolve() / "src"
 
 
-if len(sys.argv) < 3:
+try:
+    args_separator = sys.argv.index("--")
+    args = sys.argv[1:args_separator]
+    extra_args = sys.argv[args_separator + 1:]
+except ValueError:
+    args = sys.argv[1:]
+    extra_args = []
+
+
+if len(args) < 3:
     raise SystemExit(USAGE)
 
 
-c_output, private_dir, pyx_src, *pxd_srcs = [Path(x).resolve() for x in sys.argv[1:]]
+c_output, private_dir, pyx_src, *pxd_srcs = [Path(x).resolve() for x in args]
 # `pxd_srcs` can also contains `.pxi` files given we handle them in a similar fashion
 if not pyx_src.name.endswith(".pyx") or any(
     not src.name.endswith(".pxd") and not src.name.endswith(".pxi") for src in pxd_srcs
@@ -73,6 +82,7 @@ sys.argv = [
     f"--include-dir={private_dir}",
     str(pyx_tgt),
     f"--output-file={c_output}",
+    *extra_args,
 ]
 
 
