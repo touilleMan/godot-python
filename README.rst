@@ -12,6 +12,15 @@ Godot Python, because you want Python on Godot !
 ================================================
 
 
+🚧🚨 **Heavy refactoring in progress** 🚨🚧
+
+The project is under heavy refactoring to support Godot4 (which is totally incompatible
+with the current codebase).
+
+Development is done on the `godot4-meson branch <https://github.com/touilleMan/godot-python/tree/godot4-meson>`_
+until things start getting usable.
+
+
 .. image:: https://github.com/touilleMan/godot-python/raw/master/misc/godot_python.svg
    :width: 200px
    :align: right
