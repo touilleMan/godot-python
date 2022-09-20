@@ -21,6 +21,21 @@ cdef class BaseGDObject:
         # Call to __new__ bypasses __init__ constructor
         cdef BaseGDObject wrapper = BaseGDObject.__new__(BaseGDObject)
         wrapper._gd_ptr = ptr
+        # Note if the object is a reference, we stole it from the caller given we
+        # don't call `Reference.reference` here
+        return wrapper
+
+    def _set_gd_ptr(self, ptr):
+        # /!\ doing `<GDNativeObjectPtr>ptr` would return the address of
+        # the PyObject instead of casting it value !
+        self._gd_ptr = <GDNativeObjectPtr><size_t>ptr
+        # Note if the object is a reference, we stole it from the caller given we
+        # don't call `Reference.reference` here
+
+    @classmethod
+    def _from_ptr(cls, ptr):
+        cdef object wrapper = cls.__new__(cls)
+        wrapper._set_gd_ptr(ptr)
         return wrapper
 
 {# {% for klass in api.classes %} #}
@@ -54,9 +69,7 @@ cdef object _load_singleton(str name):
     cdef object cls = _load_class(name)
 {# cdef GDNativeObjectPtr gdobj = pythonscript_gdnative_interface.global_get_singleton(&(<StringName>cls._gd_name)._gd_data) #}
     cdef GDNativeObjectPtr gdobj = pythonscript_gdnative_interface.global_get_singleton(name.encode())
-    cdef object obj = BaseGDObject.from_ptr(gdobj)
-    obj.__class__ = cls
-    return obj
+    return cls._from_ptr(<size_t>gdobj)
 {# {% for singleton in api.singletons %}
     cdef {{ singleton.type.py_type }} singleton_{{ singleton.name }} = {{ singleton.type.py_type }}.__new__({{ singleton.type.py_type }})
     singleton_{{ singleton.name }}._gd_ptr = pythonscript_gdnative_interface.global_get_singleton("{{ singleton.original_name }}")
@@ -64,15 +77,15 @@ cdef object _load_singleton(str name):
 {% endfor %} #}
 
 
-cdef object _property_getter(object obj, str name):
+cdef inline object _property_getter(object obj, object name):
     return _object_call((<GDObject>obj)._gd_ptr, "get", [name])
 
 
-cdef void _property_setter(object obj, str name, object value):
+cdef inline void _property_setter(object obj, object name, object value):
     _object_call((<GDObject>obj)._gd_ptr, "set", [name, value])
 
 
-cdef object _meth_call(object obj, str name, list args):
+cdef inline object _meth_call(object obj, object name, object args):
     return _object_call((<GDObject>obj)._gd_ptr, "call", [name, *args])
 
 
@@ -97,17 +110,18 @@ cdef object _load_class(str name):
     attrs = {"_gd_name": gdname}
     ################################ TODO: meth["name"] is GDString, should use str/StringName instead
 
-    def _generate_method(spec):
-        methname = spec["name"]
+    def _generate_method(spec, py_meth_name):
+        gd_meth_name = spec["name"]
         def _meth(self, *args):
-            print(f"CALL {methname} {args!r}")
-            return _meth_call(self, methname, args)
+            print(f"CALL {gd_meth_name!r} {args!r}")
+            return _meth_call(self, gd_meth_name, args)
+        _meth.__name__ = py_meth_name
         return _meth
 
     meths = _object_call(classdb, "class_get_method_list", [gdname])
     for meth in meths:
-        attrs[str(meth["name"])] = _generate_method(meth)
-        print(f"attrs {attrs!r}")
+        meth_name = str(meth["name"])
+        attrs[meth_name] = _generate_method(meth, meth_name)
 
     def _generate_property(spec):
         propname = spec["name"]
@@ -115,17 +129,17 @@ cdef object _load_class(str name):
         def _property(self):
             print(f"GET {propname}")
             return _property_getter(self, propname)
-        _property.__name__ = spec["name"]
         @_property.setter
         def _property(self, value):
             print(f"GET {propname} {value!r}")
             _property_setter(self, propname, value)
-        _property.__name__ = spec["name"]
+        _property.fget.__name__ = str(spec["name"])
+        _property.fset.__name__ = str(spec["name"])
         return _property
 
     properties = _object_call(classdb, "class_get_property_list", [gdname])
     for prop in properties:
-        attrs[prop["name"]] = _generate_property(prop)
+        attrs[str(prop["name"])] = _generate_property(prop)
 
     signals = _object_call(classdb, "class_get_signal_list", [gdname])
     # TODO
@@ -150,6 +164,7 @@ cdef object _object_call(GDNativeObjectPtr obj, str meth, args):
     for i in range(args_with_meth_len):
         variant_args_ptrs[i] = &variant_args[i]
 
+    # TODO: provide a helper for string name from Python str creation
     cdef gd_string_t meth_gdstr = gd_string_from_unchecked_pystr(meth)
     cdef gd_string_name_t meth_gdstrname = gd_string_name_new_from_string(&meth_gdstr)
     gd_string_del(&meth_gdstr)
@@ -157,8 +172,10 @@ cdef object _object_call(GDNativeObjectPtr obj, str meth, args):
     # Into conversion steals the owneship, so no need to delete meth_gdstrname
 
     for i, arg in enumerate(args, 1):
-        # TODO: check return value
-        gd_variant_from_pyobj(arg, &variant_args[i])
+        if not gd_variant_steal_from_pyobj(arg, &variant_args[i]):
+            raise TypeError(f"Parameter `{arg!r}` cannot be converted into a Godot Variant !")
+
+    print(f"About to call {meth} {args!r}")
 
     pythonscript_gdnative_interface.object_method_bind_call(
         Object_call,
@@ -168,11 +185,23 @@ cdef object _object_call(GDNativeObjectPtr obj, str meth, args):
         &ret,
         &call_error,
     )
-    # TODO: improve ret error check
-    if call_error.error != GDNATIVE_CALL_OK:
-        raise RuntimeError(f"Error in call: {call_error.error}")
-    for i in range(args_with_meth_len):
-        gd_variant_del(&variant_args[i])
+    gd_variant_del(&variant_args[0])  # Only param we created without stealing ownership
+    if call_error.error == GDNATIVE_CALL_OK:
+        return gd_variant_steal_into_pyobj(&ret)
+        # No need to destroy ret given the conversion has stolen ownership on data !
 
-    return gd_variant_steal_into_pyobj(&ret)
-    # No need to destroy ret given the conversion has stolen ownership on data !
+    # TODO: improve ret error raised exception type ?
+    elif call_error.error == GDNATIVE_CALL_ERROR_INVALID_METHOD:
+        raise RuntimeError(f"Error in Godot object method call: invalid method")
+
+    elif call_error.error == GDNATIVE_CALL_ERROR_INVALID_ARGUMENT:
+        raise RuntimeError(f"Error in Godot object method call: invalid argument")
+
+    elif call_error.error == GDNATIVE_CALL_ERROR_TOO_MANY_ARGUMENTS  or call_error.error == GDNATIVE_CALL_ERROR_TOO_FEW_ARGUMENTS:
+        raise RuntimeError(f"Error in Godot object method call: expected {call_error.argument} arguments, got {call_error.expected}")
+
+    elif call_error.error == GDNATIVE_CALL_ERROR_INSTANCE_IS_NULL:
+        raise RuntimeError(f"Error in Godot object method call: instance is null")
+
+    else:
+        raise RuntimeError(f"Unknown error in Godot object method call: Godot error code {call_error.error}")

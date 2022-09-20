@@ -38,45 +38,100 @@ cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, object key
 {% elif not builtin.indexing_return_type.is_scalar %}
     cdef {{ builtin.indexing_return_type.cy_type }} ret
 {% endif %}
-    cdef gd_variant_t gdkey = ensure_is_gdany(key)
-    try:
+    cdef gd_variant_t gdkey = ensure_is_gdany_and_borrow_ref(key)
 {% if builtin.indexing_return_type.is_scalar %}
-        return {{ builtin.c_name_prefix }}_keyed_getter(&self._gd_data, &gdkey)
+    return {{ builtin.c_name_prefix }}_keyed_getter(&self._gd_data, &gdkey)
 {% elif builtin.indexing_return_type.is_variant %}
-        gdret = {{ builtin.c_name_prefix }}_keyed_getter(&self._gd_data, &gdkey)
-        return gd_variant_steal_into_pyobj(&gdret)
-        # No need to destroy gdret given the conversion has stolen ownership on data !
+    gdret = {{ builtin.c_name_prefix }}_keyed_getter(&self._gd_data, &gdkey)
+    return gd_variant_steal_into_pyobj(&gdret)
+    # No need to destroy gdret given the conversion has stolen ownership on data !
 {% else %}
-        ret = {{ builtin.indexing_return_type.cy_type }}.__new__({{ builtin.indexing_return_type.cy_type }})
-        ret._gd_data =  {{ builtin.c_name_prefix }}_keyed_getter(&self._gd_data, &gdkey)
-        return ret
+    ret = {{ builtin.indexing_return_type.cy_type }}.__new__({{ builtin.indexing_return_type.cy_type }})
+    ret._gd_data =  {{ builtin.c_name_prefix }}_keyed_getter(&self._gd_data, &gdkey)
+    return ret
 {% endif %}
-    finally:
-        gd_variant_del(&gdkey)
 
 cdef inline void _setitem(self, object key, {{ builtin.indexing_return_type.cy_type }} value):
-    cdef gd_variant_t gdkey = ensure_is_gdany(key)
+    cdef gd_variant_t gdkey = ensure_is_gdany_and_borrow_ref(key)
 {% if builtin.indexing_return_type.is_variant %}
     cdef gd_variant_t gdvalue
 {% endif %}
-    try:
 {% if builtin.indexing_return_type.is_scalar %}
-        {{ builtin.c_name_prefix }}_keyed_setter(&self._gd_data, &gdkey, value)
+    {{ builtin.c_name_prefix }}_keyed_setter(&self._gd_data, &gdkey, value)
 {% elif builtin.indexing_return_type.is_variant %}
-        gdvalue = ensure_is_gdany(value)
-        try:
-            {{ builtin.c_name_prefix }}_keyed_setter(&self._gd_data, &gdkey, &gdvalue)
-        finally:
-            gd_variant_del(&gdvalue)
+    gdvalue = ensure_is_gdany_and_borrow_ref(value)
+    {{ builtin.c_name_prefix }}_keyed_setter(&self._gd_data, &gdkey, &gdvalue)
 {% else %}
-        {{ builtin.c_name_prefix }}_keyed_setter(&self._gd_data, &gdkey, &value._gd_data)
+    {{ builtin.c_name_prefix }}_keyed_setter(&self._gd_data, &gdkey, &value._gd_data)
 {% endif %}
-    finally:
-        gd_variant_del(&gdkey)
 {% endmacro %}
 
 
-{% macro render_getsetitem_indexed(builtin) %}
+{% macro render_getsetitem_indexed_array(builtin) %}
+cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDNativeInt index):
+    cdef gd_variant_t *item = <const gd_variant_t *>pythonscript_gdnative_interface.array_operator_index_const(&self._gd_data, index)
+    if item != NULL:
+        return gd_variant_copy_into_pyobj(item)
+    else:
+        raise IndexError
+
+cdef inline void _setitem(self, GDNativeInt index, {{ builtin.indexing_return_type.cy_type }} value):
+    cdef gd_variant_t *item = <gd_variant_t *>pythonscript_gdnative_interface.array_operator_index(&self._gd_data, index)
+    cdef gd_variant_t gdvalue
+    if item != NULL:
+        gdvalue = ensure_is_gdany_and_borrow_ref(value)
+        pythonscript_gdnative_interface.variant_new_copy(item, &gdvalue)
+    else:
+        raise IndexError
+{% endmacro %}
+
+
+{% macro render_getsetitem_indexed_packed_array(builtin) %}
+cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDNativeInt index):
+    cdef {{ builtin.packed_array_item_type.c_type }} *item = <const gd_variant_t *>pythonscript_gdnative_interface.packed_{{ builtin.packed_array_item_type.original_name | lower }}_array_operator_index_const(&self._gd_data, index)
+    if item != NULL:
+{% if builtin.is_scalar %}
+        return *item
+{% else %}
+        return gd_variant_copy_into_pyobj(item)
+{% endif %}
+    else:
+        raise IndexError
+
+cdef inline void _setitem(self, GDNativeInt index, {{ builtin.indexing_return_type.cy_type }} value):
+    cdef gd_variant_t *item = <gd_variant_t *>pythonscript_gdnative_interface.packed_{{ builtin.packed_array_item_type.original_name | lower }}_array_operator_index(&self._gd_data, index)
+    cdef gd_variant_t gdvalue
+    if item != NULL:
+        gdvalue = ensure_is_gdany_and_borrow_ref(value)
+        pythonscript_gdnative_interface.variant_new_copy(item, &gdvalue)
+    else:
+        raise IndexError
+{% endmacro %}
+
+
+{% macro render_getsetitem_indexed_dictionary(builtin) %}
+cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, key):
+    cdef gd_variant_t gdkey = ensure_is_gdany_and_borrow_ref(key)
+    cdef gd_variant_t *item = <const gd_variant_t *>pythonscript_gdnative_interface.dictionary_operator_index_const(&self._gd_data, &gdkey)
+    if item != NULL:
+        return gd_variant_copy_into_pyobj(item)
+    else:
+        raise IndexError
+
+cdef inline void _setitem(self, key, {{ builtin.indexing_return_type.cy_type }} value):
+    cdef gd_variant_t gdkey = ensure_is_gdany_and_borrow_ref(key)
+    cdef gd_variant_t *item = <gd_variant_t *>pythonscript_gdnative_interface.dictionary_operator_index(&self._gd_data, &index)
+    cdef gd_variant_t gdvalue
+    if item != NULL:
+        gdvalue = ensure_is_gdany_and_borrow_ref(value)
+        pythonscript_gdnative_interface.variant_new_copy(item, &gdvalue)
+    else:
+        raise IndexError
+{% endmacro %}
+
+
+
+{% macro render_getsetitem_indexed_default(builtin) %}
 cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDNativeInt index):
 {% if builtin.indexing_return_type.is_scalar %}
     return {{ builtin.c_name_prefix }}_indexed_getter(&self._gd_data, index)
@@ -94,12 +149,23 @@ cdef inline void _setitem(self, GDNativeInt index, {{ builtin.indexing_return_ty
 {% if builtin.indexing_return_type.is_scalar %}
     {{ builtin.c_name_prefix }}_indexed_setter(&self._gd_data, index, value)
 {% elif builtin.indexing_return_type.is_variant %}
-    cdef gd_variant_t gdvalue = ensure_is_gdany(value)
-    try:
-        {{ builtin.c_name_prefix }}_indexed_setter(&self._gd_data, index, &gdvalue)
-    finally:
-        gd_variant_del(&gdvalue)
+    cdef gd_variant_t gdvalue = ensure_is_gdany_and_borrow_ref(value)
+    {{ builtin.c_name_prefix }}_indexed_setter(&self._gd_data, index, &gdvalue)
 {% else %}
     {{ builtin.c_name_prefix }}_indexed_setter(&self._gd_data, index, &value._gd_data)
+{% endif %}
+{% endmacro %}
+
+
+{% macro render_getsetitem_indexed(builtin) %}
+{% if builtin.original_name == "Array" %}
+{{ render_getsetitem_indexed_array(builtin) }}
+{# TODO #}
+{# {% elif builtin.is_packed_array %} #}
+{# {{ render_getsetitem_indexed_packed_array(builtin) }} #}
+{% elif builtin.original_name == "Dictionary" %}
+{{ render_getsetitem_indexed_array(builtin) }}
+{% else %}
+{{ render_getsetitem_indexed_default(builtin) }}
 {% endif %}
 {% endmacro %}

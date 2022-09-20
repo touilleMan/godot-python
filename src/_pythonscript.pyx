@@ -53,10 +53,10 @@ cdef api void _pythonscript_free_instance(
 cdef api void _pythonscript_late_init() with gil:
     OS = _load_singleton("OS")
 
-    print(repr(OS), dir(OS))
+    # print(repr(OS), dir(OS))
     print('OS.low_processor_usage_mode', OS.low_processor_usage_mode)
-    print('OS.can_use_threads()', OS.can_use_threads())
-    print('OS.get_cached_dir()', OS.get_cached_dir())
+    # print('OS.get_cache_dir()', OS.get_cache_dir())
+    # print('OS.can_use_threads()', OS.can_use_threads())
     OS.low_processor_usage_mode = True
     print('OS.low_processor_usage_mode == True', OS.low_processor_usage_mode)
     print('OS.set_environment("foo", "bar")', OS.set_environment("foo", "bar"))
@@ -71,48 +71,49 @@ cdef api void _pythonscript_late_init() with gil:
 
 
 cdef api void _pythonscript_early_init() with gil:
+    pass
     # pythonscript_gdnative_interface.
     # Engine get_singleton_list
 
-    v = Vector2i(66, -77)
-    assert v.x == 66
-    assert v.y == -77
-    # Set property
-    v.x = 42
-    assert v.x == 42
-    # Access property
-    v0 = v.ZERO
-    print("===========> ZERO:", v0.x, v0.y)
-    # Access method with no params
-    print("===========> v.angle():", v.angle())
-    # Access method with params
-    print("===========> v.dot(v):", v.dot(v))
-    # Access method with no return value
-    c = Color()
-    print("===========> c.set_r8(0xAABBCCDD):", c.set_r8(0xAABBCCDD))
+    # v = Vector2i(66, -77)
+    # assert v.x == 66
+    # assert v.y == -77
+    # # Set property
+    # v.x = 42
+    # assert v.x == 42
+    # # Access property
+    # v0 = v.ZERO
+    # print("===========> ZERO:", v0.x, v0.y)
+    # # Access method with no params
+    # print("===========> v.angle():", v.angle())
+    # # Access method with params
+    # print("===========> v.dot(v):", v.dot(v))
+    # # Access method with no return value
+    # c = Color()
+    # print("===========> c.set_r8(0xAABBCCDD):", c.set_r8(0xAABBCCDD))
 
     # Now register Python as language into Godot
 
-    cdef GDNativeExtensionClassCreationInfo info
-    info.set_func = NULL  # GDNativeExtensionClassSet
-    info.get_func = NULL  # GDNativeExtensionClassGet
-    info.get_property_list_func = NULL  # GDNativeExtensionClassGetPropertyList
-    info.free_property_list_func = NULL  # GDNativeExtensionClassFreePropertyList
-    info.notification_func = NULL  # GDNativeExtensionClassNotification
-    info.to_string_func = NULL  # GDNativeExtensionClassToString
-    info.reference_func = NULL  # GDNativeExtensionClassReference
-    info.unreference_func = NULL  # GDNativeExtensionClassUnreference
-    info.create_instance_func = &_pythonscript_create_instance
-    info.free_instance_func = &_pythonscript_free_instance
-    info.get_virtual_func = NULL  # GDNativeExtensionClassGetVirtual
-    info.get_rid_func = NULL  # GDNativeExtensionClassGetRID
-    info.class_userdata = NULL  # void*
-    pythonscript_gdnative_interface.classdb_register_extension_class(
-        pythonscript_gdnative_library,
-        "PythonScriptLanguageExtension",
-        "ScriptLanguageExtension",
-        &info,
-    )
+    # cdef GDNativeExtensionClassCreationInfo info
+    # info.set_func = NULL  # GDNativeExtensionClassSet
+    # info.get_func = NULL  # GDNativeExtensionClassGet
+    # info.get_property_list_func = NULL  # GDNativeExtensionClassGetPropertyList
+    # info.free_property_list_func = NULL  # GDNativeExtensionClassFreePropertyList
+    # info.notification_func = NULL  # GDNativeExtensionClassNotification
+    # info.to_string_func = NULL  # GDNativeExtensionClassToString
+    # info.reference_func = NULL  # GDNativeExtensionClassReference
+    # info.unreference_func = NULL  # GDNativeExtensionClassUnreference
+    # info.create_instance_func = &_pythonscript_create_instance
+    # info.free_instance_func = &_pythonscript_free_instance
+    # info.get_virtual_func = NULL  # GDNativeExtensionClassGetVirtual
+    # info.get_rid_func = NULL  # GDNativeExtensionClassGetRID
+    # info.class_userdata = NULL  # void*
+    # pythonscript_gdnative_interface.classdb_register_extension_class(
+    #     pythonscript_gdnative_library,
+    #     "PythonScriptLanguageExtension",
+    #     "ScriptLanguageExtension",
+    #     &info,
+    # )
 
     # _register_editor_methods()
 

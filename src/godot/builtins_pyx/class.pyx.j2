@@ -51,6 +51,10 @@ cdef class {{ builtin.cy_type }}:
 {% if builtin.original_name == "String" %}
     def __str__(self):
         return self.to_pystr()
+{% elif builtin.original_name in ("Array", "Dictionary") or builtin.is_packed_array %}
+    def __len__(self):
+        return self.size()
+
 {% endif %}
 {% if builtin.constants %}
     # Constants
@@ -67,7 +71,15 @@ cdef class {{ builtin.cy_type }}:
 {% for m in builtin.members %}
     {{ render_member(builtin, m) | indent }}
 {% endfor %}
-{% if builtin.indexing_return_type %}
+{% if builtin.indexing_return_type and not builtin.is_keyed%}
+    # TODO: handle out of range error ?
+
+    def __getitem__(self, GDNativeInt index):
+        return self._getitem(index)
+
+    def __setitem__(self, GDNativeInt index, value):
+        self._setitem(index, value)
+{% elif builtin.indexing_return_type and builtin.is_keyed%}
     # TODO: handle out of range error ?
 
     def __getitem__(self, index):

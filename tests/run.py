@@ -132,7 +132,7 @@ def symlink(src: Path, dst: Path) -> None:
     if platform.system() == "Windows":
         import _winapi
 
-        _winapi.CreateJunction(str(src.resolve()), str(dst.resolve()))
+        _winapi.CreateJunction(str(src.resolve()), str(dst.resolve()))  # type: ignore[attr-defined]
 
     else:
         os.symlink(str(src.resolve()), str(dst.resolve()))

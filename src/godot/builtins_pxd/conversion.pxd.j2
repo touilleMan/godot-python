@@ -2,8 +2,9 @@
 cdef bint gd_variant_supports_py_type(object pytype)
 cdef object gd_to_py_type(GDNativeVariantType gdtype)
 cdef GDNativeVariantType py_to_gd_type(object pytype)
-cdef object gd_variant_steal_into_pyobj(const gd_variant_t *p_gdvar)
-cdef bint gd_variant_from_pyobj(object pyobj, gd_variant_t *p_gdvar)
+cdef object gd_variant_steal_into_pyobj(const gd_variant_t *gdvar)
+cdef object gd_variant_copy_into_pyobj(const gd_variant_t *gdvar)
+cdef bint gd_variant_steal_from_pyobj(object pyobj, gd_variant_t *gdvar)
 
 
 cdef str _ENSURE_IS_GDANY_ERR_MSG
@@ -11,9 +12,16 @@ cdef str _ENSURE_IS_GDSTRING_ERR_MSG
 cdef str _ENSURE_IS_NODEPATH_ERR_MSG
 
 
-cdef inline gd_variant_t ensure_is_gdany(object pyobj):
+cdef inline gd_variant_t ensure_is_gdany_and_borrow_ref(object pyobj):
+    """
+    /!\ ensure_is_gdany_and_borrow_ref stole the reference from pyobj !
+    Most of the time this is more like sharing: the variant object is only
+    use in the body of the function that called `ensure_is_gdany_and_borrow_ref`,
+    then it is discarded without using it destructor (hence pyobj is not
+    affected by this steal)
+    """
     cdef gd_variant_t ret
-    if not gd_variant_from_pyobj(pyobj, &ret):
+    if not gd_variant_steal_from_pyobj(pyobj, &ret):
         raise TypeError(_ENSURE_IS_GDANY_ERR_MSG.format(repr(pyobj)))
     return ret
 
