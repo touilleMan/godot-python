@@ -63,7 +63,8 @@ sample = env["bindings_generate_sample"]
 # dont strip on debug builds
 if not sample and not env["debug"]:
     if env["CC_IS_GCC"]:
-        bindings_env.AppendUnique(LINKFLAGS=["-Wl,--strip-all"])
+        pass
+        # bindings_env.AppendUnique(LINKFLAGS=["-Wl,--strip-all"])
     elif env["CC_IS_CLANG"]:
         bindings_env.AppendUnique(LINKFLAGS=["-Wl,-s"])
 

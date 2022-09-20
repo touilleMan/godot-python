@@ -5,7 +5,11 @@ if env["platform"].startswith("windows"):
     c_env.AppendUnique(LIBS=["python38"])
 
 elif env["platform"].startswith("osx"):
-    c_env.AppendUnique(LIBS=["python3.8"])
+    if env["platform"] == "osx-arm":
+        c_env.AppendUnique(LIBS=["python3.9"])
+    else:
+        c_env.AppendUnique(LIBS=["python3.8"])
+
     # if we don't give the lib a proper install_name, macos won't be able to find it,
     # and will link the cython modules with a relative path
     c_env.AppendUnique(
