@@ -11,7 +11,7 @@ subdir('hazmat')
 ##############################################################################
 
 
-foreach src: ['__init__.py', '__init__.pyi', '__init__.pxd', 'py.typed']
+foreach src: ['__init__.py', '__init__.pyi', 'py.typed']
     install_data(
         src,
         install_dir: join_paths(python_site_packages_install_path, 'godot'),

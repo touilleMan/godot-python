@@ -139,14 +139,10 @@ pxds_godot_hazmat = [
     pxd_godot_hazmat_gdnative_interface,
     pxd_godot_hazmat_gdnative_ptrs,
     pxd_godot_hazmat_gdapi,
-    files('godot/hazmat/__init__.pxd'),
 ]
 
 
 pxds_godot = [
-    files(
-        'godot/__init__.pxd',
-    ),
     pxds_godot_hazmat,
     pxd_godot_builtins,
     pxd_godot_classes,
