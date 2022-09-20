@@ -94,17 +94,20 @@ cdef object _load_class(str name):
     else:
         bases = (BaseGDObject, )
 
-    attrs = {"_gd_name", gdname}
+    attrs = {"_gd_name": gdname}
+    ################################ TODO: meth["name"] is GDString, should use str/StringName instead
 
     def _generate_method(spec):
         methname = spec["name"]
         def _meth(self, *args):
             print(f"CALL {methname} {args!r}")
             return _meth_call(self, methname, args)
+        return _meth
 
     meths = _object_call(classdb, "class_get_method_list", [gdname])
     for meth in meths:
-        attrs[meth["name"]] = _generate_method(meth)
+        attrs[str(meth["name"])] = _generate_method(meth)
+        print(f"attrs {attrs!r}")
 
     def _generate_property(spec):
         propname = spec["name"]

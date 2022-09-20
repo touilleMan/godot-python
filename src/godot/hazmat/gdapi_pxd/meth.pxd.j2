@@ -274,7 +274,7 @@ cdef inline {{ builtin.indexing_return_type.c_type }} {{ builtin.c_name_prefix }
     # TODO: We shouldn't have to intialize this !!! However Godot C++ internals are leaking...
     ret = {{ builtin.indexing_return_type.c_name_prefix }}_new()
 {%   endif %}
-    {{ builtin.c_name_prefix }}_keyed_getter_ptr(self, &key, &ret)
+    {{ builtin.c_name_prefix }}_keyed_getter_ptr(self, key, &ret)
     return ret
 {% endmacro %}
 
@@ -285,7 +285,7 @@ cdef inline void {{ builtin.c_name_prefix }}_keyed_setter(
     const gd_variant_t *key,
     const {{ builtin.indexing_return_type.c_type }} {{ "" if builtin.indexing_return_type.is_scalar else "*" }}value
 ):
-    {{ builtin.c_name_prefix }}_keyed_setter_ptr(self, &key, {{ "&" if builtin.indexing_return_type.is_scalar else "" }}value)
+    {{ builtin.c_name_prefix }}_keyed_setter_ptr(self, key, {{ "&" if builtin.indexing_return_type.is_scalar else "" }}value)
 {% endmacro %}
 
 

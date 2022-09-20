@@ -36,7 +36,7 @@ cdef class {{ builtin.cy_type }}:
 {%   if builtin.is_transparent_builtin %}
         return f"{{ builtin.cy_type }}({% for member in builtin.c_struct_members %}{{ member.name }}={self.{{ member.name }}}{% if not loop.last %}, {% endif %}{% endfor %})"
 {%   elif builtin.original_name == "String" %}
-        return f"{{ builtin.cy_type}}({self.py_str()!r})"
+        return f"{{ builtin.cy_type}}({self.to_pystr()!r})"
 {%   else %}
         # TODO: I'm still not sure if this call steals self._gd_data or copies it...
         cdef gd_variant_t gdvar = {{ builtin.c_name_prefix }}_into_variant(&self._gd_data)

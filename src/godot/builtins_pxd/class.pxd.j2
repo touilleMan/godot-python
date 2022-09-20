@@ -18,7 +18,7 @@ cdef class {{ builtin.cy_type }}:
         ret._gd_data = {{ builtin.get_constructor_from().c_name }}()
         return ret
 {% if builtin.original_name == "String" %}
-    cdef inline object to_pystr(self):
+    cdef inline str to_pystr(self):
         return gd_string_to_pystr(&self._gd_data)
 {% endif %}
 {% for m in builtin.members %}
