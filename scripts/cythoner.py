@@ -14,7 +14,7 @@ BUILD_SRC_DIR = Path(os.getcwd()).resolve() / "src"
 try:
     args_separator = sys.argv.index("--")
     args = sys.argv[1:args_separator]
-    extra_args = sys.argv[args_separator + 1:]
+    extra_args = sys.argv[args_separator + 1 :]
 except ValueError:
     args = sys.argv[1:]
     extra_args = []
