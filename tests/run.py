@@ -161,6 +161,9 @@ if __name__ == "__main__":
         "--build-dir", type=Path, required=True, help="Build directory as configured in meson"
     )
     parser.add_argument(
+        "--test-dir", type=Path, help="Use an existing test dir instead of creating a temporary one"
+    )
+    parser.add_argument(
         "--godot-binary",
         type=parse_godot_binary_hint,
         default="4.0.0-beta2",
@@ -204,14 +207,17 @@ if __name__ == "__main__":
 
     @contextmanager
     def test_workdir_factory():
-        temp_dir = TemporaryDirectory(prefix="godot-python-test-")
-        try:
-            yield Path(temp_dir.name)
-        finally:
-            if not args.keep_test_dir:
-                temp_dir.cleanup()
-            else:
-                temp_dir._finalizer.detach()  # Avoid cleanup when temp_dir is garbage collected
+        if args.test_dir:
+            yield args.test_dir
+        else:
+            temp_dir = TemporaryDirectory(prefix="godot-python-test-")
+            try:
+                yield Path(temp_dir.name)
+            finally:
+                if not args.keep_test_dir:
+                    temp_dir.cleanup()
+                else:
+                    temp_dir._finalizer.detach()  # Avoid cleanup when temp_dir is garbage collected
 
     # On the other hand we use a temporary directory for the test code (given there
     # is not much data, and Godot may write in this directory during the test) with
