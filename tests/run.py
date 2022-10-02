@@ -163,7 +163,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--godot-binary",
         type=parse_godot_binary_hint,
-        default="4.0.0-alpha16",
+        default="4.0.0-beta2",
         help="Path to Godot binary to use, or version of Godot to download and use",
     )
     parser.add_argument(
@@ -183,7 +183,7 @@ if __name__ == "__main__":
         options_separator = len(sys.argv)
 
     args = parser.parse_args(sys.argv[1:options_separator])
-    godot_extra_args = sys.argv[options_separator:]
+    godot_extra_args = sys.argv[options_separator + 1 :]
 
     if args.tests:
         tests_dirs = [x for x in collect_tests() if x.name in args.tests]

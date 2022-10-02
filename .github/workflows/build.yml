@@ -72,7 +72,7 @@ jobs:
       - name: 'Build project'
         run: meson compile -C build/
       - name: 'Run tests'
-        run: python tests/run.py helloworld --build-dir build/ -- --display-driver headless
+        run: python tests/run.py helloworld --build-dir build/ -- --headless
       # - name: 'Generate artifact archive'
       #   run: meson compile -C build/ release
       # - name: 'Export release artifact'
@@ -123,7 +123,7 @@ jobs:
       - name: 'Build project'
         run: meson compile -C build/
       # - name: 'Run tests'
-      #   run: python tests/run.py helloworld --build-dir build/ -- --display-driver headless
+      #   run: python tests/run.py helloworld --build-dir build/ -- --headless
       # - name: 'Install Mesa3D OpenGL'
       #   shell: bash
       #   run: |
@@ -184,7 +184,7 @@ jobs:
         run: meson compile -C build/
       # TODO: see https://github.com/touilleMan/godot-python/issues/358
       # - name: 'Run tests'
-      #   run: python tests/run.py helloworld --build-dir build/ -- --display-driver headless
+      #   run: python tests/run.py helloworld --build-dir build/ -- --headless
       # - name: 'Generate artifact archive'
       #   run: meson compile -C build/ release
       # - name: 'Export release artifact'
