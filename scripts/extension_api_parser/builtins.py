@@ -55,6 +55,9 @@ class BuiltinMethodArgumentSpec:
 
     @classmethod
     def parse(cls, item: dict) -> "BuiltinMethodArgumentSpec":
+        # TODO: Remove me once is fixed https://github.com/godotengine/godot/pull/66774
+        if item["type"] == "Nil":
+            item["type"] = "Variant"
         item.setdefault("original_name", item["name"])
         item.setdefault("default_value", None)
         assert_api_consistency(cls, item)
@@ -102,16 +105,19 @@ class BuiltinOperatorSpec:
     c_name: str
     original_name: str
     variant_operator_name: str
-    right_type: TypeInUse
+    right_type: Optional[TypeInUse]
     return_type: TypeInUse
 
     @classmethod
     def parse(cls, item: dict, c_name_prefix: str) -> "BuiltinOperatorSpec":
         item.setdefault("original_name", item["name"])
-        item.setdefault("right_type", "Nil")
+        item.setdefault("right_type", None)
+        # TODO: Remove me once is fixed https://github.com/godotengine/godot/pull/66774
+        if item["right_type"] == "Nil":
+            item["right_type"] == "Variant"
         item["name"], item["variant_operator_name"] = VARIANT_OPERATORS[item.pop("name")]
         item["c_name"] = f"{c_name_prefix}_op_{item['name']}"
-        if item["right_type"] != "Nil":
+        if item["right_type"] is not None:
             item["name"] = f"{item['name']}_{item['right_type'].lower()}"
         assert_api_consistency(cls, item)
         return cls(
@@ -123,7 +129,7 @@ class BuiltinOperatorSpec:
             # used to represent the absence of a value (typically in a return type),
             # but here we want to compare a builtin value with the constant representing
             # emptiness.
-            right_type=TypeInUse.parse(item["right_type"]),
+            right_type=None if item["right_type"] is None else TypeInUse.parse(item["right_type"]),
             return_type=TypeInUse.parse(item["return_type"]),
         )
 

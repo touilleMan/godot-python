@@ -57,8 +57,13 @@ cdef GDNativePtrIndexedGetter {{ builtin.c_name_prefix }}_indexed_getter_ptr = \
     pythonscript_gdnative_interface.variant_get_ptr_indexed_getter({{ builtin.variant_type_name }})
 {%   endif %}
 {%   for o in builtin.operators %}
+{%     if o.right_type is none %}
+cdef GDNativePtrOperatorEvaluator {{ builtin.c_name_prefix }}_op_{{ o.name }}_ptr = \
+    pythonscript_gdnative_interface.variant_get_ptr_operator_evaluator({{ o.variant_operator_name }}, {{ builtin.variant_type_name }}, GDNATIVE_VARIANT_TYPE_NIL)
+{%     else %}
 cdef GDNativePtrOperatorEvaluator {{ builtin.c_name_prefix }}_op_{{ o.name }}_ptr = \
     pythonscript_gdnative_interface.variant_get_ptr_operator_evaluator({{ o.variant_operator_name }}, {{ builtin.variant_type_name }}, {{ o.right_type.variant_type_name }})
+{%     endif %}
 {%   endfor %}
 {%   for m in builtin.members %}
 {%     if not m.is_in_struct %}

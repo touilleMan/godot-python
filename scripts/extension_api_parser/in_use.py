@@ -13,12 +13,18 @@ class TypeInUse:
         return f"{self.__class__.__name__}({self.type_name})"
 
     def resolve(self) -> TypeSpec:
+        # From a runtime point of view, `typedarray::XXX` is just a regular Array with a
+        # "trust me bro" promise on what the variants it contains are, so just ignore it
+        if self.type_name.startswith("typedarray::"):
+            type_name = "Array"
+        else:
+            type_name = self.type_name
         # Must be called after parsing is done, otherwise it's possible our
         # type is defined in a spec we haven't parsed yet
         try:
-            return TYPES_DB[self.type_name]
+            return TYPES_DB[type_name]
         except KeyError:
-            raise RuntimeError(f"Type {self.type_name} is not resolvable yet !")
+            raise RuntimeError(f"Type {type_name} is not resolvable yet !")
 
     def __getattr__(self, name: str):
         try:
