@@ -139,6 +139,9 @@ pxds_godot_hazmat = [
     pxd_godot_hazmat_gdnative_interface,
     pxd_godot_hazmat_gdnative_ptrs,
     pxd_godot_hazmat_gdapi,
+    files(
+        'godot/hazmat/extension_class.pxd',
+    )
 ]
 
 
@@ -157,6 +160,7 @@ pxds_godot = [
 # _pythonscript_api.h
 # ├─ _pythonscript.pyx
 # ├─ _pythonscript_editor.pxi
+# ├─ _pythonscript_registration.pxi
 # ├─ godot/hazmat/gdapi.pxd
 # ├─ godot/builtins.pxd
 # |  └─ ...
@@ -177,6 +181,8 @@ c_pythonscript = custom_target('_pythonscript.c & _pythonscript.h & _pythonscrip
     input : [
         '_pythonscript.pyx',
         '_pythonscript_editor.pxi',
+        '_pythonscript_extension_class_language.pxi',
+        '_pythonscript_extension_class_script.pxi',
         pxds_godot
     ],
     command : cythonize_command,

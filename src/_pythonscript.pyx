@@ -4,7 +4,18 @@
 # only expose C functions.
 # Beside this module depend on the `godot.hazmat` module so it would be a bad
 # idea to make the `godot` module depend on it...
+
+cimport cython
+from cpython.ref cimport Py_INCREF, Py_DECREF, PyObject  # Needed for @godot_extension_class decorator
+from godot.hazmat.gdnative_interface cimport *
+from godot.hazmat.gdapi cimport *
+from godot.hazmat.extension_class cimport *
+from godot.builtins cimport *
+from godot.classes cimport _load_class, _load_singleton
+
 include "_pythonscript_editor.pxi"
+include "_pythonscript_extension_class_language.pxi"
+include "_pythonscript_extension_class_script.pxi"
 # include "_godot_profiling.pxi"
 # include "_godot_script.pxi"
 # include "_godot_instance.pxi"
@@ -23,11 +34,6 @@ include "_pythonscript_editor.pxi"
 #     ProjectSettings.set_initial_value(gdname, default_value)
 #     # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
 #     return ProjectSettings.get_setting(gdname)
-
-from godot.hazmat.gdnative_interface cimport *
-from godot.hazmat.gdapi cimport *
-from godot.builtins cimport *
-from godot.classes cimport _load_class, _load_singleton
 
 # include "_pythonscript_script.pxi"
 # include "_pythonscript_instance.pxi"
@@ -50,7 +56,30 @@ cdef api void _pythonscript_free_instance(
 # is the very first Python module that gets loaded.
 
 
-cdef api void _pythonscript_late_init() with gil:
+cdef _testbench():
+    # Test builtins
+    v = Vector2i(66, -77)
+    assert v.x == 66
+    assert v.y == -77
+    # Set property
+    v.x = 42
+    assert v.x == 42
+    # Access property
+    v0 = v.ZERO
+    assert v0.x == 0
+    assert v0.y == 0
+    assert v0 == v.ZERO
+    v0.x = 1
+    assert v0 != v.ZERO
+    # Access method with no params
+    assert isinstance(v.angle(), int)
+    # Access method with params
+    assert isinstance(v.dot(v), int)
+    # Access method with no return value
+    c = Color()
+    assert c.set_r8(0xAABBCCDD) is None
+
+    # Test classes
     OS = _load_singleton("OS")
 
     # print(repr(OS), dir(OS))
@@ -59,8 +88,19 @@ cdef api void _pythonscript_late_init() with gil:
     # print('OS.can_use_threads()', OS.can_use_threads())
     OS.low_processor_usage_mode = True
     print('OS.low_processor_usage_mode == True', OS.low_processor_usage_mode)
-    print('OS.set_environment("foo", "bar")', OS.set_environment("foo", "bar"))
-    print('OS.get_environment("foo")', OS.get_environment("foo"))
+    # print('OS.set_environment("foo", "bar")', OS.set_environment("foo", "bar"))
+    # print('OS.get_environment("foo")', OS.get_environment("foo"))
+
+
+cdef api void _pythonscript_late_init() with gil:
+    # _testbench()
+
+    # # 2) Create an instance of `PythonLanguage` class
+    # cdef object language = _load_class("PythonLanguage")()
+
+    # # 3) Actually register Python into Godot \o/
+    # cdef object engine = _load_singleton("Engine")
+    # engine.register_script_language(language)
 
     import sys
     from godot._version import __version__ as pythonscript_version
@@ -71,70 +111,26 @@ cdef api void _pythonscript_late_init() with gil:
 
 
 cdef api void _pythonscript_early_init() with gil:
-    pass
-    # pythonscript_gdnative_interface.
-    # Engine get_singleton_list
+    # Here is how we register Python into Godot:
+    #
+    # GDExtension API allows us to register "extension classes", those will be seen from
+    # Godot as a regular class (i.e. you could hack into Godot code, remove the KinematicBody
+    # class, create an extension that implement KinematicBody, and you platformer project would
+    # run just fine).
+    #
+    # To implement a language in Godot you must create a class inheriting `LanguageExtension` and
+    # register into the `LanguageServer`. This is typically done within Godot to implement GDScript.
+    #
+    # So we register a `PythonLanguage` extension class than inherits `ScriptLanguageExtension`
+    # (the latter being just a proxy to `LanguageExtension`) and call `Engine.register_script_language`
+    # (which is a simple wrapper given `LanguageServer` is private within Godot) by passing it
+    # an instance of our brand new `PythonLanguage`.
+    #
+    # see: https://docs.godotengine.org/en/latest/classes/class_scriptlanguageextension.html
 
-    # v = Vector2i(66, -77)
-    # assert v.x == 66
-    # assert v.y == -77
-    # # Set property
-    # v.x = 42
-    # assert v.x == 42
-    # # Access property
-    # v0 = v.ZERO
-    # print("===========> ZERO:", v0.x, v0.y)
-    # # Access method with no params
-    # print("===========> v.angle():", v.angle())
-    # # Access method with params
-    # print("===========> v.dot(v):", v.dot(v))
-    # # Access method with no return value
-    # c = Color()
-    # print("===========> c.set_r8(0xAABBCCDD):", c.set_r8(0xAABBCCDD))
-
-    # Now register Python as language into Godot
-
-    # cdef GDNativeExtensionClassCreationInfo info
-    # info.set_func = NULL  # GDNativeExtensionClassSet
-    # info.get_func = NULL  # GDNativeExtensionClassGet
-    # info.get_property_list_func = NULL  # GDNativeExtensionClassGetPropertyList
-    # info.free_property_list_func = NULL  # GDNativeExtensionClassFreePropertyList
-    # info.notification_func = NULL  # GDNativeExtensionClassNotification
-    # info.to_string_func = NULL  # GDNativeExtensionClassToString
-    # info.reference_func = NULL  # GDNativeExtensionClassReference
-    # info.unreference_func = NULL  # GDNativeExtensionClassUnreference
-    # info.create_instance_func = &_pythonscript_create_instance
-    # info.free_instance_func = &_pythonscript_free_instance
-    # info.get_virtual_func = NULL  # GDNativeExtensionClassGetVirtual
-    # info.get_rid_func = NULL  # GDNativeExtensionClassGetRID
-    # info.class_userdata = NULL  # void*
-    # pythonscript_gdnative_interface.classdb_register_extension_class(
-    #     pythonscript_gdnative_library,
-    #     "PythonScriptLanguageExtension",
-    #     "ScriptLanguageExtension",
-    #     &info,
-    # )
-
-    # _register_editor_methods()
-
-    # cdef GDNativeExtensionClassMethodInfo info
-    # info.name = NULL  # char* name
-    # info.method_userdata = NULL  # void* method_userdata
-    # info.call_func = NULL  # GDNativeExtensionClassMethodCall call_func
-    # info.ptrcall_func = NULL  # GDNativeExtensionClassMethodPtrCall ptrcall_func
-    # info.method_flags = NULL  # uint32_t method_flags
-    # info.argument_count = NULL  # uint32_t argument_count
-    # info.has_return_value = NULL  # GDNativeBool has_return_value
-    # info.get_argument_type_func = NULL  # GDNativeExtensionClassMethodGetArgumentType get_argument_type_func
-    # info.get_argument_info_func = NULL  # GDNativeExtensionClassMethodGetArgumentInfo get_argument_info_func
-    # info.get_argument_metadata_func = NULL  # GDNativeExtensionClassMethodGetArgumentMetadata get_argument_metadata_func
-    # info.default_argument_count = NULL  # uint32_t default_argument_count
-    # info.default_arguments = NULL  # GDNativeVariantPtr* default_arguments
-    # pythonscript_gdnative_interface.classdb_register_extension_class_method(
-    #     pythonscript_gdnative_library,
-    #     "PythonScriptLanguageExtension",
-    #     &info,
-    # )
+    # 1) Register `PythonScript` class into Godot
+    PythonScriptLanguage.__godot_extension_register_class()
+    PythonScript.__godot_extension_register_class()
 
 
     # # OS and ProjectSettings are singletons exposed as global python objects,
@@ -174,4 +170,6 @@ cdef api void _pythonscript_deinitialize() with gil:
     # and might be running user-created threads doing concurrent stuff.
     # That will continue until `godot_gdnative_terminate` is called (which is
     # responsible for the actual teardown of the interpreter).
-    pass
+
+    PythonScript.__godot_extension_unregister_class()
+    PythonScriptLanguage.__godot_extension_unregister_class()

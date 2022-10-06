@@ -42,6 +42,23 @@ def relative_path(path: Path) -> Path:
             raise SystemExit(f"Input {path} is not relative to src or build dirs")
 
 
+# Symlink is much better during development when hacking into compiled file
+# is often needed, but it is not available on Windows
+if sys.platform == "win32":
+
+    def copy(src, tgt):
+        shutil.copyfile(src, tgt)
+
+else:
+
+    def copy(src, tgt):
+        try:
+            os.unlink(tgt)
+        except FileNotFoundError:
+            pass
+        os.symlink(src, tgt)
+
+
 # Generate the import dir from the inputs (except the actual .pyx)
 for pxd_src in pxd_srcs:
     pxd_src = pxd_src.resolve()
@@ -64,7 +81,7 @@ for pxd_src in pxd_srcs:
         # however it content is never read so an empty file is good enough
         (pxd_parent_dir / "__init__.py").touch()
         pxd_parent_dir = pxd_parent_dir.parent
-    shutil.copyfile(pxd_src, pxd_tgt)
+    copy(pxd_src, pxd_tgt)
 
 
 # We need to copy the pyx file into the right directory to respect the package
@@ -72,7 +89,7 @@ for pxd_src in pxd_srcs:
 pyx_src_relative = relative_path(pyx_src)
 pyx_parent_dir = private_dir / pyx_src_relative.parent
 pyx_tgt = pyx_parent_dir / pyx_src.name
-shutil.copyfile(pyx_src, pyx_tgt)
+copy(pyx_src, pyx_tgt)
 
 
 sys.argv = [
@@ -85,6 +102,10 @@ sys.argv = [
     *extra_args,
 ]
 
+
+from cython_godot_extension_class_preprocessor import patch_cython_pipeline
+
+patch_cython_pipeline()
 
 # Starts Cython CLI
 from Cython.Compiler.Main import setuptools_main

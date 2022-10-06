@@ -165,8 +165,7 @@ class ClassTypeSpec(TypeSpec):
         self.properties = kwargs.pop("properties")
         self.constants = kwargs.pop("constants")
         super().__init__(
-            c_type="GDNativeObjectPtr",
-            # cy_type="object",  # Don't get confused ! This is python's `object` here
+            c_type="gd_object_t",
             cy_type=kwargs["py_type"],
             variant_type_name="GDNATIVE_VARIANT_TYPE_OBJECT",
             # Of course the object instance live on the heap, but we are talking

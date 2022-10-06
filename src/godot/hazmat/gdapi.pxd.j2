@@ -68,6 +68,13 @@ cdef inline object gd_string_to_pystr(gd_string_t *gdstr):
 ##############################################################################
 
 
+# Renames to stay consistent with other builtins naming convention we use
+ctypedef GDNativeBool gd_bool_t
+ctypedef {{ api.int_type.c_type }} gd_int_t
+ctypedef {{ api.float_type.c_type }} gd_float_t
+# Note we don't really care this is a pointer as we always treat it as an opaque structure
+ctypedef GDNativeObjectPtr gd_object_t
+
 # Declare builtins structures in `cdef extern` to also provide a C struct definition
 # so that they can be used in exported to C functions (i.e. `cdef api` functions)
 
@@ -158,23 +165,23 @@ cdef inline {{ c.type.c_type }} {{ builtin.c_name_prefix }}_make_constant_{{ c.n
 ##############################################################################
 #                        Global Constants & Enums                            #
 ##############################################################################
-
-cdef extern from *:
-    """
-{% for spec in api.global_constants %}
-    #define {{ spec.name }} {{ spec.value }}
-{% endfor %}
 {% for spec in api.global_enums %}
+
+
+cdef enum {{ spec.cy_type }}:
 {%   for key, value in spec.values.items() %}
-    #define {{ key }} {{ value }}
+    {{ key }} = {{ value }}
 {%   endfor %}
 {% endfor %}
-    """
-{% for spec in api.global_constants %}
-    int {{ spec.name }}
-{% endfor %}
-{% for spec in api.global_enums %}
-{%   for key, value in spec.values.items() %}
-    int {{ key }}
+
+
+##############################################################################
+#                              Native structures                             #
+##############################################################################
+
+{% for spec in api.native_structures %}
+cdef struct {{ spec.c_type }}:
+{%   for name, type in spec.fields.items() %}
+    {{ type.c_type }} {{ name }}
 {%   endfor %}
 {% endfor %}

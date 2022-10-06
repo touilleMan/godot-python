@@ -1,6 +1,6 @@
 from typing import List, Dict, Tuple, Optional
 from collections import OrderedDict
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 import json
 from enum import Enum
@@ -28,10 +28,11 @@ class GlobalConstantSpec:
 
 def parse_global_enum(spec: dict) -> EnumTypeSpec:
     assert spec.keys() == {"name", "values"}, spec.keys()
+    cooked_name = "".join(spec["name"].split("."))
     return EnumTypeSpec(
         original_name=spec["name"],
-        py_type=spec["name"],
-        cy_type=spec["name"],
+        py_type=cooked_name,
+        cy_type=cooked_name,
         is_bitfield=False,
         values={x["name"]: x["value"] for x in spec["values"]},
     )
@@ -104,21 +105,53 @@ class SingletonSpec:
         )
 
 
-@dataclass
-class NativeStructureSpec:
+@dataclass(frozen=True, repr=False)
+class NativeStructureSpec(TypeSpec):
     original_name: str
-    name: str
     # Format is basically a dump of the C struct content, so don't try to be clever by parsing it
-    format: str
+    fields: Dict[str, TypeInUse]
+
+    def __getattribute__(self, name: str):
+        if name in ("variant_type_name", "py_type", "cy_type"):
+            raise RuntimeError(
+                "NativeStructureSpec type ! Should handle this by hand with a if condition on `<my_type>.is_native_structure`"
+            )
+        elif name == "size":
+            return sum(x.size for x in self.fields.values())
+        return super().__getattribute__(name)
 
     @classmethod
     def parse(cls, item: dict) -> "NativeStructureSpec":
-        item.setdefault("original_name", item["name"])
-        assert_api_consistency(cls, item)
+        assert item.keys() == {"name", "format"}
+        name = item["name"]
+        # Format field is typically something like `int start = -1;uint8_t count;Rect2 caret;TextServer::Direction direction`
+        fields = {}
+        for raw_field in item["format"].split(";"):
+            if not raw_field:
+                continue
+            raw_field, *_ = raw_field.split("=", 1)  # Ignore default value
+            field_type, field_name = raw_field.split()
+            # Handle Enum
+            if "::" in field_type:
+                field_type = "int"
+            elif field_type.endswith("_t"):
+                field_type = f"meta:{field_type[:-2]}"
+            if field_name[0] == "*":
+                field_name = field_name[1:]
+                field_type = field_type + "*"
+                if field_type != "Object*":
+                    raise RuntimeError(f"Unsupported pointer type `{field_type}` in `{name}`")
+                field_type = "Object"
+            fields[field_name] = TypeInUse(field_type)
         return cls(
-            name=correct_name(item["name"]),
-            original_name=item["original_name"],
-            format=item["format"],
+            size=0,  # Never accessed dummy value
+            original_name=name,
+            fields=fields,
+            py_type="",  # Never accessed dummy value
+            cy_type="",  # Never accessed dummy value
+            c_type=f"gd_{camel_to_snake(name)}",
+            is_stack_only=True,
+            variant_type_name="",  # Never accessed dummy value
         )
 
 
@@ -279,6 +312,7 @@ def parse_extension_api_json(
     else:
         real_type = replace(TYPES_DB[f"meta:double"], original_name="float")
     TYPES_DB_REGISTER_TYPE("float", real_type)
+    TYPES_DB_REGISTER_TYPE("meta:real", real_type)
 
     def _register_enums(enums, parent_id=None):
         for enum_type in enums:
@@ -309,6 +343,10 @@ def parse_extension_api_json(
     global_enums = [parse_global_enum(x) for x in api_json["global_enums"]]
     _register_enums(global_enums)
 
+    native_structures = [NativeStructureSpec.parse(x) for x in api_json["native_structures"]]
+    for native_structure_type in native_structures:
+        TYPES_DB_REGISTER_TYPE(native_structure_type.original_name, native_structure_type)
+
     ensure_types_db_consistency()
 
     api = ExtensionApi(
@@ -324,7 +362,7 @@ def parse_extension_api_json(
         global_enums=global_enums,
         utility_functions=[UtilityFunctionSpec.parse(x) for x in api_json["utility_functions"]],
         singletons=[SingletonSpec.parse(x) for x in api_json["singletons"]],
-        native_structures=[NativeStructureSpec.parse(x) for x in api_json["native_structures"]],
+        native_structures=native_structures,
     )
 
     return api

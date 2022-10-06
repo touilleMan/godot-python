@@ -3,7 +3,7 @@
 ##############################################################################
 
 
-foreach src: ['__init__.py']
+foreach src: ['__init__.py', 'extension_class.pxd']
     install_data(
         src,
         install_dir: join_paths(python_site_packages_install_path, 'godot', 'hazmat'),
@@ -88,6 +88,43 @@ shared_library(
     c_gdnative_ptrs,
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: gdnative_ptrs_rpath,  # To find libpython
+    name_prefix: python_native_module_name_prefix,
+    name_suffix: python_native_module_name_suffix,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot/hazmat'),
+)
+
+
+
+##############################################################################
+#                                Compilation                                 #
+##############################################################################
+
+
+c_extension_class = custom_target(
+    output : 'extension_class.c',
+    input : [
+        files('extension_class.pyx'),
+        pxds_godot_hazmat,
+    ],
+    command : cythonize_command,
+)
+
+
+if host_platform.startswith('linux')
+    extension_class_rpath = '$ORIGIN/../../../..'
+elif host_platform.startswith('macos')
+    extension_class_rpath = '@loader_path/../../../..'
+else
+    extension_class_rpath = ''
+endif
+
+
+shared_library(
+    'extension_class',
+    c_extension_class,
+    dependencies : [dep_godot, dep_python, dep_pythonscript],
+    install_rpath: extension_class_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
     install: true,
