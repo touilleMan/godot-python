@@ -156,6 +156,22 @@ pxds_godot = [
 #              _pythonscript.c & _pythonscript_api.h generation              #
 ##############################################################################
 
+
+preprocessed_pxis = []
+foreach pxi: [
+    '_pythonscript_extension_class_language.pxi',
+    '_pythonscript_extension_class_script.pxi',
+]
+    preprocessed_pxis += custom_target(
+        output: pxi,
+        input: [
+            join_paths(scripts_dir, 'godot_extension_class_cython_preprocessor.py'),
+            pxi,
+        ],
+        command: [python, '@INPUT0@', '--input', '@INPUT1@', '--output', '@OUTPUT@'],
+    )
+endforeach
+
 # _pythonscript.c
 # _pythonscript_api.h
 # ├─ _pythonscript.pyx
@@ -181,8 +197,7 @@ c_pythonscript = custom_target('_pythonscript.c & _pythonscript.h & _pythonscrip
     input : [
         '_pythonscript.pyx',
         '_pythonscript_editor.pxi',
-        '_pythonscript_extension_class_language.pxi',
-        '_pythonscript_extension_class_script.pxi',
+        preprocessed_pxis,
         pxds_godot
     ],
     command : cythonize_command,

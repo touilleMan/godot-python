@@ -102,10 +102,9 @@ sys.argv = [
     *extra_args,
 ]
 
-
-from cython_godot_extension_class_preprocessor import patch_cython_pipeline
-
-patch_cython_pipeline()
+# We use `scripts/godot_extension_class_cython_preprocessor.py` instead
+# from cython_godot_extension_class_preprocessor import patch_cython_pipeline
+# patch_cython_pipeline()
 
 # Starts Cython CLI
 from Cython.Compiler.Main import setuptools_main

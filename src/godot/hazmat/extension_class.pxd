@@ -28,11 +28,6 @@ cdef inline list _get_extension_gc_protector():
 
 
 cdef inline void unregister_extension_class(bytes class_name):
-    # TODO: Don't know why, but class_name&parent_class_name are both str instead of bytes...
-    # (this is worst than that: the type is str, but cannot calling encode on it raise a
-    # `type object 'bytes' has no attribute 'encode'` error...)
-    class_name = str(class_name).encode("utf8")
-
     pythonscript_gdnative_interface.classdb_unregister_extension_class(
         pythonscript_gdnative_library,
         class_name,
@@ -53,12 +48,6 @@ cdef inline void register_extension_class_creation(
     GDNativeExtensionClassCreateInstance create_instance_func,
     GDNativeExtensionClassFreeInstance free_instance_func,
 ):
-    # TODO: Don't know why, but class_name&parent_class_name are both str instead of bytes...
-    # (this is worst than that: the type is str, but cannot calling encode on it raise a
-    # `type object 'bytes' has no attribute 'encode'` error...)
-    class_name = str(class_name).encode("utf8")
-    parent_class_name = str(parent_class_name).encode("utf8")
-
     cdef ExtensionClassSpec spec = ExtensionClassSpec(
         class_name=class_name,
         parent_class_name=parent_class_name,
@@ -278,12 +267,6 @@ cdef inline void register_extension_class_method(
     # list default_arguments,
     # uint32_t argument_count,
 ):
-    # TODO: Don't know why, but class_name&parent_class_name are both str instead of bytes...
-    # (this is worst than that: the type is str, but cannot calling encode on it raise a
-    # `type object 'bytes' has no attribute 'encode'` error...)
-    class_name = str(class_name).encode("utf8")
-    method_name = str(method_name).encode("utf8")
-
     cdef ExtensionClassMethodSpec method_spec = ExtensionClassMethodSpec(
         class_name=class_name,
         method_name=method_name,

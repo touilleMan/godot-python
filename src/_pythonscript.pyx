@@ -38,6 +38,10 @@ include "_pythonscript_extension_class_script.pxi"
 # include "_pythonscript_script.pxi"
 # include "_pythonscript_instance.pxi"
 
+
+cdef _pythons_script_language = None  # Optional[PythonScriptLanguage]
+
+
 cdef api GDNativeObjectPtr _pythonscript_create_instance(
     void *p_userdata
 ) with gil:
@@ -93,14 +97,16 @@ cdef _testbench():
 
 
 cdef api void _pythonscript_late_init() with gil:
+    global _pythons_script_language
     # _testbench()
 
-    # # 2) Create an instance of `PythonLanguage` class
-    # cdef object language = _load_class("PythonLanguage")()
+    # 2) Create an instance of `PythonScriptLanguage` class
+    if _pythons_script_language is None:
+        _pythons_script_language = _load_class("PythonScriptLanguage").new()
 
-    # # 3) Actually register Python into Godot \o/
-    # cdef object engine = _load_singleton("Engine")
-    # engine.register_script_language(language)
+        # 3) Actually register Python into Godot \o/
+        engine = _load_singleton("Engine")
+        engine.register_script_language(<PythonScriptLanguage>_pythons_script_language)
 
     import sys
     from godot._version import __version__ as pythonscript_version
@@ -166,6 +172,13 @@ cdef api void _pythonscript_early_init() with gil:
 
 
 cdef api void _pythonscript_deinitialize() with gil:
+    # TODO: unregister the language once https://github.com/godotengine/godot/pull/67155 is merged
+
+    if _pythons_script_language is not None:
+        # Cannot unregister the class given it is in use, and cannot stop using
+        # the instance given...
+        return
+
     # /!\ When this function is called, the Python interpreter is fully operational
     # and might be running user-created threads doing concurrent stuff.
     # That will continue until `godot_gdnative_terminate` is called (which is
