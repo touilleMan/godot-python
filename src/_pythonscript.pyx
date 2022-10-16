@@ -39,7 +39,7 @@ include "_pythonscript_extension_class_script.pxi"
 # include "_pythonscript_instance.pxi"
 
 
-cdef _pythons_script_language = None  # Optional[PythonScriptLanguage]
+cdef PythonScriptLanguage _pythons_script_language = None
 
 
 cdef api GDNativeObjectPtr _pythonscript_create_instance(
@@ -98,15 +98,30 @@ cdef _testbench():
 
 cdef api void _pythonscript_late_init() with gil:
     global _pythons_script_language
+    cdef GDNativeObjectPtr singleton
+    cdef GDNativeMethodBindPtr bind
+    cdef GDNativeTypePtr[1] args
     # _testbench()
 
     # 2) Create an instance of `PythonScriptLanguage` class
     if _pythons_script_language is None:
-        _pythons_script_language = _load_class("PythonScriptLanguage").new()
+
+        _pythons_script_language = PythonScriptLanguage.__new__(PythonScriptLanguage)
 
         # 3) Actually register Python into Godot \o/
-        engine = _load_singleton("Engine")
-        engine.register_script_language(<PythonScriptLanguage>_pythons_script_language)
+        singleton = pythonscript_gdnative_interface.global_get_singleton("Engine")
+        bind = pythonscript_gdnative_interface.classdb_get_method_bind(
+            "Engine",
+            "register_script_language",
+            1327703655,
+        )
+        args = [_pythons_script_language._gd_ptr]
+        pythonscript_gdnative_interface.object_method_bind_ptrcall(
+            bind,
+            singleton,
+            args,
+            NULL,
+        )
 
     import sys
     from godot._version import __version__ as pythonscript_version

@@ -1,6 +1,11 @@
 # godot_extension_class: class(parent="ScriptExtension")
 @cython.final
 cdef class PythonScript:
+    cdef gd_object_t _gd_ptr
+
+    def __cinit__(self):
+        self._gd_ptr = pythonscript_gdnative_interface.classdb_construct_object("ScriptExtension")
+        pythonscript_gdnative_interface.object_set_instance(self._gd_ptr, "PythonScript", <PyObject*>self)
 
     # godot_extension_class: generate_code()
 
