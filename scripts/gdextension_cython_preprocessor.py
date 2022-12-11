@@ -6,7 +6,7 @@ from typing import Optional, List, Dict
 from dataclasses import dataclass
 
 
-PRAGMA_RE = re.compile(r"^(?P<indentation>\s*)# godot_extension_class:(?P<pragma>.*)$")
+PRAGMA_RE = re.compile(r"^(?P<indentation>\s*)# godot_extension:\s+(?P<pragma>.*)$")
 CLASS_RE = re.compile(r"^cdef class (?P<class_name>\w+)")
 METHOD_RE = re.compile(
     r"^cdef\s+(inline\s+)?(?P<return_type>\w+)\s+(?P<method_name>\w+)\((?P<param>.*)\):"
@@ -322,15 +322,12 @@ if __name__ == "__main__":
         description="Generate Godot extension class boilerplate for Cython code"
     )
     parser.add_argument(
-        "--input",
-        "-i",
-        required=True,
+        "input",
         type=Path,
     )
     parser.add_argument(
         "--output",
         "-o",
-        required=True,
         type=Path,
     )
     parser.add_argument(
@@ -349,4 +346,7 @@ if __name__ == "__main__":
             raise
         else:
             raise SystemExit(str(exc)) from exc
-    args.output.write_text(output_code, encoding="utf8")
+    if args.output:
+        args.output.write_text(output_code, encoding="utf8")
+    else:
+        args.input.write_text(output_code, encoding="utf8")
