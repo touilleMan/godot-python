@@ -135,12 +135,12 @@ cdef api void _pythonscript_early_init() with gil:
     # Here is how we register Python into Godot:
     #
     # GDExtension API allows us to register "extension classes", those will be seen from
-    # Godot as a regular class (i.e. you could hack into Godot code, remove the KinematicBody
+    # Godot as a regular class (e.g. you could hack into Godot code, remove the KinematicBody
     # class, create an extension that implement KinematicBody, and you platformer project would
     # run just fine).
     #
     # To implement a language in Godot you must create a class inheriting `LanguageExtension` and
-    # register into the `LanguageServer`. This is typically done within Godot to implement GDScript.
+    # register into the `LanguageServer`. This is what is done within Godot to implement GDScript.
     #
     # So we register a `PythonLanguage` extension class than inherits `ScriptLanguageExtension`
     # (the latter being just a proxy to `LanguageExtension`) and call `Engine.register_script_language`

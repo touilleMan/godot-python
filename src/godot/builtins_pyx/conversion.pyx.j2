@@ -1,8 +1,8 @@
 {% macro render_all_conversions() %}
 cdef str _ENSURE_IS_GDANY_ERR_MSG = "Invalid value `{}`, expected IntoGDAny"
 cdef str _ENSURE_IS_GDSTRING_ERR_MSG = "Invalid value `{}`, expected str or GDString"
+cdef str _ENSURE_IS_STRINGNAME_ERR_MSG = "Invalid value `{}`, expected str or StringName"
 cdef str _ENSURE_IS_NODEPATH_ERR_MSG = "Invalid value `{}`, expected be str or NodePath"
-
 
 cdef bint gd_variant_supports_py_type(object pytype):
     if issubclass(pytype, GDObject):

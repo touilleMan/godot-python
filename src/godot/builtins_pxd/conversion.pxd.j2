@@ -9,6 +9,7 @@ cdef bint gd_variant_steal_from_pyobj(object pyobj, gd_variant_t *gdvar)
 
 cdef str _ENSURE_IS_GDANY_ERR_MSG
 cdef str _ENSURE_IS_GDSTRING_ERR_MSG
+cdef str _ENSURE_IS_STRINGNAME_ERR_MSG
 cdef str _ENSURE_IS_NODEPATH_ERR_MSG
 
 
@@ -35,6 +36,17 @@ cdef inline GDString ensure_is_gdstring(object gdstring_or_pystr):
             return GDString(gdstring_or_pystr)
         except TypeError:
             raise TypeError(_ENSURE_IS_GDSTRING_ERR_MSG.format(repr(gdstring_or_pystr)))
+
+
+cdef inline StringName ensure_is_stringname(object stringname_or_pystr):
+    cdef StringName stringname_converted
+    try:
+        return <StringName?>stringname_or_pystr
+    except TypeError:
+        try:
+            return StringName(stringname_or_pystr)
+        except TypeError:
+            raise TypeError(_ENSURE_IS_STRINGNAME_ERR_MSG.format(repr(stringname_or_pystr)))
 
 
 cdef inline NodePath ensure_is_nodepath(object nodepath_or_pystr):
