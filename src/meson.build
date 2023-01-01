@@ -51,7 +51,7 @@ generate_tmpl_cmd = [
 # see https://github.com/mesonbuild/meson/issues/2320#issuecomment-1147929155
 
 
-# godot/hazmat/gdextension.pxd
+# godot/hazmat/gdextension_interface.pxd
 # └─ gdextension.h
 
 # Convert the header file frome C to Cython
@@ -180,7 +180,7 @@ endforeach
 # ├─ godot/hazmat/gdapi.pxd
 # ├─ godot/builtins.pxd
 # |  └─ ...
-# └─ godot/hazmat/gdextension.pxd
+# └─ godot/hazmat/gdextension_interface.pxd
 #    └─ ...
 
 
@@ -274,7 +274,7 @@ endif
 
 # Cython's cdef inline methods are turned into static inline C functions that
 # produced `defined but not used` errors, hence the `-Wno-unused-function`
-# AutoPxd currently strip const qualifier when generating `gdextension.pxd`,
+# AutoPxd currently strip const qualifier when generating `gdextension_interface.pxd`,
 # hence -Wno-discarded-qualifiers
 if host_platform.startswith('windows')
     lib__pythonscript_c_args = []

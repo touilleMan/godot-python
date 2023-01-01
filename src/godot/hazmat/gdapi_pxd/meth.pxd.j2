@@ -26,7 +26,7 @@
 
 {% macro render_utility_function_signature(builtin) -%}
 {% if builtin.is_vararg %}
-{{ "void" if builtin.return_type.is_nil else "gd_variant_t" }} gd_utility_{{ builtin.original_name }}(gd_variant_t *args, GDExtensionInt args_count)
+{{ "void" if builtin.return_type.is_nil else "gd_variant_t" }} gd_utility_{{ builtin.original_name }}(gd_variant_t *args, int args_count)
 {%- else %}
 {{ "void" if builtin.return_type.is_nil else builtin.return_type.c_type }} gd_utility_{{ builtin.original_name }}(
     {{- render_args_signature(builtin.arguments) -}}

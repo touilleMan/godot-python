@@ -45,7 +45,7 @@ custom_target(
 
 # gdnative_ptrs.so
 # └─ gdnative_ptrs.c
-#    ├─ gdextension.pxd
+#    ├─ gdextension_interface.pxd
 #    │  └─ ...
 #    └─ gdapi_ptrs.pyx
 #       └─ extension_api.json

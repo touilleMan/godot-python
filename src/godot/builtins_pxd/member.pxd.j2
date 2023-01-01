@@ -69,7 +69,7 @@ cdef inline void _setitem(self, object key, {{ builtin.indexing_return_type.cy_t
 
 {% macro render_getsetitem_indexed_array(builtin) %}
 cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDExtensionInt index):
-    cdef gd_variant_t *item = <const gd_variant_t *>pythonscript_gdextension.array_operator_index_const(&self._gd_data, index)
+    cdef const gd_variant_t *item = <const gd_variant_t *>pythonscript_gdextension.array_operator_index_const(&self._gd_data, index)
     if item != NULL:
         return gd_variant_copy_into_pyobj(item)
     else:

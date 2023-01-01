@@ -253,7 +253,7 @@ cdef inline GDExtensionClassMethodArgumentMetadata _extension_class_method_get_a
 cdef inline void _method_call_func(
     void* p_method_userdata,
     GDExtensionClassInstancePtr p_instance,
-    GDExtensionVariantPtr* p_args,
+    const GDExtensionConstVariantPtr* p_args,
     GDExtensionInt p_argument_count,
     GDExtensionVariantPtr r_return,
     GDExtensionCallError* r_error
@@ -307,7 +307,7 @@ cdef inline void register_extension_class_method(
         info.return_value_info = &return_value_info
         info.return_value_metadata = _extension_class_method_get_argument_metadata(info.method_userdata, -1)  # GDExtensionClassMethodArgumentMetadata
 
-    info.argument_count = len(arguments_type)  # uint32_t
+    info.argument_count = <uint32_t>len(arguments_type)  # uint32_t
 
     # TODO: I'm too lazy to use malloc here for the moment
     assert info.argument_count < 16
