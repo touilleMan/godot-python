@@ -7,7 +7,7 @@
 
 cimport cython
 from cpython.ref cimport Py_INCREF, Py_DECREF, PyObject  # Needed for @godot_extension_class decorator
-from godot.hazmat.gdnative_interface cimport *
+from godot.hazmat.gdextension_interface cimport *
 from godot.hazmat.gdapi cimport *
 from godot.hazmat.extension_class cimport *
 from godot.builtins cimport *
@@ -42,7 +42,7 @@ include "_pythonscript_extension_class_script.pxi"
 cdef PythonScriptLanguage _pythons_script_language = None
 
 
-cdef api GDNativeObjectPtr _pythonscript_create_instance(
+cdef api GDExtensionObjectPtr _pythonscript_create_instance(
     void *p_userdata
 ) with gil:
     return NULL
@@ -98,9 +98,11 @@ cdef _testbench():
 
 cdef api void _pythonscript_late_init() with gil:
     global _pythons_script_language
-    cdef GDNativeObjectPtr singleton
-    cdef GDNativeMethodBindPtr bind
-    cdef GDNativeTypePtr[1] args
+    cdef GDExtensionObjectPtr singleton
+    cdef GDExtensionMethodBindPtr bind
+    cdef GDExtensionTypePtr[1] args
+    cdef StringName gdname_engine
+    cdef StringName gdname_register_script_language
     # _testbench()
 
     # 2) Create an instance of `PythonScriptLanguage` class
@@ -109,14 +111,16 @@ cdef api void _pythonscript_late_init() with gil:
         _pythons_script_language = PythonScriptLanguage.__new__(PythonScriptLanguage)
 
         # 3) Actually register Python into Godot \o/
-        singleton = pythonscript_gdnative_interface.global_get_singleton("Engine")
-        bind = pythonscript_gdnative_interface.classdb_get_method_bind(
-            "Engine",
-            "register_script_language",
+        gdname_engine = StringName("Engine")
+        gdname_register_script_language = StringName("register_script_language")
+        singleton = pythonscript_gdextension.global_get_singleton(&gdname_engine._gd_data)
+        bind = pythonscript_gdextension.classdb_get_method_bind(
+            &gdname_engine._gd_data,
+            &gdname_register_script_language._gd_data,
             1327703655,
         )
         args = [_pythons_script_language._gd_ptr]
-        pythonscript_gdnative_interface.object_method_bind_ptrcall(
+        pythonscript_gdextension.object_method_bind_ptrcall(
             bind,
             singleton,
             args,

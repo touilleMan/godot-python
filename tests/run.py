@@ -166,7 +166,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--godot-binary",
         type=parse_godot_binary_hint,
-        default="4.0.0-beta8",
+        default="4.0.0-beta10",
         help="Path to Godot binary to use, or version of Godot to download and use",
     )
     parser.add_argument(

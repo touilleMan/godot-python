@@ -26,7 +26,7 @@ def __cinit__(self):
 {% if builtin.original_name == "String" %}
 
 def __cinit__(self, s=None):
-    cdef GDNativeTypePtr[1] args
+    cdef GDExtensionTypePtr[1] args
     if s is None:
         self._gd_data = {{ builtin.c_name_prefix }}_new()
     elif isinstance(s, str):
@@ -46,7 +46,7 @@ def __cinit__(self, s=None):
 {% elif builtin.original_name == "StringName" %}
 
 def __cinit__(self, s=None):
-    cdef GDNativeTypePtr[1] args
+    cdef GDExtensionTypePtr[1] args
     cdef gd_string_t gds
     if s is None:
         self._gd_data = {{ builtin.c_name_prefix }}_new()
@@ -69,7 +69,7 @@ def __cinit__(self, s=None):
 {% elif builtin.original_name == "NodePath" %}
 
 def __cinit__(self, s=None):
-    cdef GDNativeTypePtr[1] args
+    cdef GDExtensionTypePtr[1] args
     cdef gd_string_t gds
     if s is None:
         self._gd_data = {{ builtin.c_name_prefix }}_new()

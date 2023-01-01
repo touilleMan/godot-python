@@ -31,7 +31,7 @@
 cimport cython
 from libc.stdint cimport *
 
-from .gdnative_interface cimport *
+from .gdextension_interface cimport *
 from .gdnative_ptrs cimport *
 
 
@@ -47,7 +47,7 @@ cdef extern from "Python.h":
 
 cdef inline gd_string_t gd_string_from_utf8(const char *cstr, ssize_t cstr_size):
     cdef gd_string_t gdstr
-    pythonscript_gdnative_interface.string_new_with_utf8_chars_and_len(&gdstr, cstr, cstr_size)
+    pythonscript_gdextension.string_new_with_utf8_chars_and_len(&gdstr, cstr, cstr_size)
     return gdstr
 
 
@@ -58,8 +58,8 @@ cdef inline gd_string_t gd_string_from_unchecked_pystr(object pystr):
 
 
 cdef inline object gd_string_to_pystr(gd_string_t *gdstr):
-    cdef GDNativeInt l = pythonscript_gdnative_interface.string_to_utf32_chars(gdstr, NULL, 0)
-    cdef const char32_t *gdbuff = pythonscript_gdnative_interface.string_operator_index_const(gdstr, 0)
+    cdef GDExtensionInt l = pythonscript_gdextension.string_to_utf32_chars(gdstr, NULL, 0)
+    cdef const char32_t *gdbuff = pythonscript_gdextension.string_operator_index_const(gdstr, 0)
     return PyUnicode_DecodeUTF32(<char *>gdbuff, l * cython.sizeof(char32_t), NULL, NULL)
 
 
@@ -69,11 +69,11 @@ cdef inline object gd_string_to_pystr(gd_string_t *gdstr):
 
 
 # Renames to stay consistent with other builtins naming convention we use
-ctypedef GDNativeBool gd_bool_t
+ctypedef GDExtensionBool gd_bool_t
 ctypedef {{ api.int_type.c_type }} gd_int_t
 ctypedef {{ api.float_type.c_type }} gd_float_t
 # Note we don't really care this is a pointer as we always treat it as an opaque structure
-ctypedef GDNativeObjectPtr gd_object_t
+ctypedef GDExtensionObjectPtr gd_object_t
 
 # Declare builtins structures in `cdef extern` to also provide a C struct definition
 # so that they can be used in exported to C functions (i.e. `cdef api` functions)
@@ -102,7 +102,7 @@ cdef inline gd_variant_t gd_variant_new():
 
 
 cdef inline void gd_variant_del(gd_variant_t *variant):
-    pythonscript_gdnative_interface.variant_destroy(variant)
+    pythonscript_gdextension.variant_destroy(variant)
 
 
 {{ render_builtin_object_variant_conversions() }}

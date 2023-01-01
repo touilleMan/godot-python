@@ -22,7 +22,7 @@ class TypeSpec:
     cy_type: str
     # Type doesn't use the heap (hence no need for freeing it)
     is_stack_only: bool
-    # e.g. `GDNATIVE_VARIANT_TYPE_BOOL`
+    # e.g. `GDEXTENSION_VARIANT_TYPE_BOOL`
     variant_type_name: str
 
     def __repr__(self):
@@ -93,7 +93,7 @@ class EnumTypeSpec(ScalarTypeSpec):
             is_stack_only=True,
             size=4,
             c_type="int",
-            variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
+            variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
             **kwargs,
         )
 
@@ -113,7 +113,7 @@ class NilTypeSpec(TypeSpec):
             size=0,
             original_name="Nil",
             is_stack_only=True,
-            variant_type_name="GDNATIVE_VARIANT_TYPE_NIL",
+            variant_type_name="GDEXTENSION_VARIANT_TYPE_NIL",
             py_type="",  # Never accessed dummy value
             c_type="",  # Never accessed dummy value
             cy_type="",  # Never accessed dummy value
@@ -169,7 +169,7 @@ TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
         c_type="uint8_t",
         cy_type="uint8_t",
         py_type="bool",
-        variant_type_name="GDNATIVE_VARIANT_TYPE_BOOL",
+        variant_type_name="GDEXTENSION_VARIANT_TYPE_BOOL",
     ),
     # int is always 8bytes long
     "int": ScalarTypeSpec(
@@ -178,7 +178,7 @@ TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
         c_type="uint64_t",
         cy_type="uint64_t",
         py_type="int",
-        variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
+        variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
     ),
     # Types marked as `meta` are used in the classes method args/return types
     "meta:int8": ScalarTypeSpec(
@@ -187,7 +187,7 @@ TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
         c_type="int8_t",
         cy_type="int8_t",
         py_type="int",
-        variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
+        variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
     ),
     "meta:int16": ScalarTypeSpec(
         size=2,
@@ -195,7 +195,7 @@ TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
         c_type="int16_t",
         cy_type="int16_t",
         py_type="int",
-        variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
+        variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
     ),
     "meta:int32": ScalarTypeSpec(
         size=4,
@@ -203,7 +203,7 @@ TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
         c_type="int32_t",
         cy_type="int32_t",
         py_type="int",
-        variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
+        variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
     ),
     "meta:int64": ScalarTypeSpec(
         size=8,
@@ -211,7 +211,7 @@ TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
         c_type="int64_t",
         cy_type="int64_t",
         py_type="int",
-        variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
+        variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
     ),
     "meta:uint8": ScalarTypeSpec(
         size=1,
@@ -219,7 +219,7 @@ TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
         c_type="uint8_t",
         cy_type="uint8_t",
         py_type="int",
-        variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
+        variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
     ),
     "meta:uint16": ScalarTypeSpec(
         size=2,
@@ -227,7 +227,7 @@ TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
         c_type="uint16_t",
         cy_type="uint16_t",
         py_type="int",
-        variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
+        variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
     ),
     "meta:uint32": ScalarTypeSpec(
         size=4,
@@ -235,7 +235,7 @@ TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
         c_type="uint32_t",
         cy_type="uint32_t",
         py_type="int",
-        variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
+        variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
     ),
     "meta:uint64": ScalarTypeSpec(
         size=8,
@@ -243,7 +243,7 @@ TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
         c_type="uint64_t",
         cy_type="uint64_t",
         py_type="int",
-        variant_type_name="GDNATIVE_VARIANT_TYPE_INT",
+        variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
     ),
     "meta:float": ScalarTypeSpec(
         size=4,
@@ -251,7 +251,7 @@ TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
         c_type="float",
         cy_type="float",
         py_type="float",
-        variant_type_name="GDNATIVE_VARIANT_TYPE_FLOAT",
+        variant_type_name="GDEXTENSION_VARIANT_TYPE_FLOAT",
     ),
     "meta:double": ScalarTypeSpec(
         size=8,
@@ -259,7 +259,7 @@ TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
         c_type="double",
         cy_type="double",
         py_type="float",
-        variant_type_name="GDNATIVE_VARIANT_TYPE_FLOAT",
+        variant_type_name="GDEXTENSION_VARIANT_TYPE_FLOAT",
     ),
     # The rest of the types will be added during parsing of builtins&classes
 }

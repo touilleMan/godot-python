@@ -1,7 +1,7 @@
 {% macro render_all_conversions(builtin) -%}
 cdef bint gd_variant_supports_py_type(object pytype)
-cdef object gd_to_py_type(GDNativeVariantType gdtype)
-cdef GDNativeVariantType py_to_gd_type(object pytype)
+cdef object gd_to_py_type(GDExtensionVariantType gdtype)
+cdef GDExtensionVariantType py_to_gd_type(object pytype)
 cdef object gd_variant_steal_into_pyobj(const gd_variant_t *gdvar)
 cdef object gd_variant_copy_into_pyobj(const gd_variant_t *gdvar)
 cdef bint gd_variant_steal_from_pyobj(object pyobj, gd_variant_t *gdvar)

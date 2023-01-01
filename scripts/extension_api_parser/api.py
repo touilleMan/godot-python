@@ -130,6 +130,10 @@ class NativeStructureSpec(TypeSpec):
             if not raw_field:
                 continue
             raw_field, *_ = raw_field.split("=", 1)  # Ignore default value
+            # Handle function pointer (yeah detection is pretty fragile, but it is good enough for now)
+            if "(*" in raw_field:
+                # TODO: better typping support for function pointer ?
+                raw_field = "void *foo"
             field_type, field_name = raw_field.split()
             # Handle Enum
             if "::" in field_type:
@@ -139,6 +143,9 @@ class NativeStructureSpec(TypeSpec):
             if field_name[0] == "*":
                 field_name = field_name[1:]
                 field_type = field_type + "*"
+                # TODO: better support of void* ?
+                if field_type == "void*":
+                    field_type = "Object*"
                 if field_type != "Object*":
                     raise RuntimeError(f"Unsupported pointer type `{field_type}` in `{name}`")
                 field_type = "Object"
@@ -224,15 +231,6 @@ def merge_builtins_size_info(api_json: dict, build_config: BuildConfig) -> None:
         if x["build_configuration"] == build_config.value
     )
     builtin_class_member_offsets = {x["name"]: x["members"] for x in builtin_class_member_offsets}
-
-    # TODO: remove me once https://github.com/godotengine/godot/pull/64690 is merged
-    if "Projection" not in builtin_class_member_offsets:
-        builtin_class_member_offsets["Projection"] = [
-            {"member": "x", "offset": 0},
-            {"member": "y", "offset": builtin_class_sizes["Vector4"]},
-            {"member": "z", "offset": 2 * builtin_class_sizes["Vector4"]},
-            {"member": "w", "offset": 3 * builtin_class_sizes["Vector4"]},
-        ]
 
     for item in api_json["builtin_classes"]:
         name = item["name"]

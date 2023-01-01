@@ -68,27 +68,27 @@ cdef inline void _setitem(self, object key, {{ builtin.indexing_return_type.cy_t
 
 
 {% macro render_getsetitem_indexed_array(builtin) %}
-cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDNativeInt index):
-    cdef gd_variant_t *item = <const gd_variant_t *>pythonscript_gdnative_interface.array_operator_index_const(&self._gd_data, index)
+cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDExtensionInt index):
+    cdef gd_variant_t *item = <const gd_variant_t *>pythonscript_gdextension.array_operator_index_const(&self._gd_data, index)
     if item != NULL:
         return gd_variant_copy_into_pyobj(item)
     else:
         raise IndexError
 
-cdef inline void _setitem(self, GDNativeInt index, {{ builtin.indexing_return_type.cy_type }} value):
-    cdef gd_variant_t *item = <gd_variant_t *>pythonscript_gdnative_interface.array_operator_index(&self._gd_data, index)
+cdef inline void _setitem(self, GDExtensionInt index, {{ builtin.indexing_return_type.cy_type }} value):
+    cdef gd_variant_t *item = <gd_variant_t *>pythonscript_gdextension.array_operator_index(&self._gd_data, index)
     cdef gd_variant_t gdvalue
     if item != NULL:
         gdvalue = ensure_is_gdany_and_borrow_ref(value)
-        pythonscript_gdnative_interface.variant_new_copy(item, &gdvalue)
+        pythonscript_gdextension.variant_new_copy(item, &gdvalue)
     else:
         raise IndexError
 {% endmacro %}
 
 
 {% macro render_getsetitem_indexed_packed_array(builtin) %}
-cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDNativeInt index):
-    cdef {{ builtin.packed_array_item_type.c_type }} *item = <const gd_variant_t *>pythonscript_gdnative_interface.packed_{{ builtin.packed_array_item_type.original_name | lower }}_array_operator_index_const(&self._gd_data, index)
+cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDExtensionInt index):
+    cdef {{ builtin.packed_array_item_type.c_type }} *item = <const gd_variant_t *>pythonscript_gdextension.packed_{{ builtin.packed_array_item_type.original_name | lower }}_array_operator_index_const(&self._gd_data, index)
     if item != NULL:
 {% if builtin.is_scalar %}
         return *item
@@ -98,12 +98,12 @@ cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDNativeIn
     else:
         raise IndexError
 
-cdef inline void _setitem(self, GDNativeInt index, {{ builtin.indexing_return_type.cy_type }} value):
-    cdef gd_variant_t *item = <gd_variant_t *>pythonscript_gdnative_interface.packed_{{ builtin.packed_array_item_type.original_name | lower }}_array_operator_index(&self._gd_data, index)
+cdef inline void _setitem(self, GDExtensionInt index, {{ builtin.indexing_return_type.cy_type }} value):
+    cdef gd_variant_t *item = <gd_variant_t *>pythonscript_gdextension.packed_{{ builtin.packed_array_item_type.original_name | lower }}_array_operator_index(&self._gd_data, index)
     cdef gd_variant_t gdvalue
     if item != NULL:
         gdvalue = ensure_is_gdany_and_borrow_ref(value)
-        pythonscript_gdnative_interface.variant_new_copy(item, &gdvalue)
+        pythonscript_gdextension.variant_new_copy(item, &gdvalue)
     else:
         raise IndexError
 {% endmacro %}
@@ -112,7 +112,7 @@ cdef inline void _setitem(self, GDNativeInt index, {{ builtin.indexing_return_ty
 {% macro render_getsetitem_indexed_dictionary(builtin) %}
 cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, key):
     cdef gd_variant_t gdkey = ensure_is_gdany_and_borrow_ref(key)
-    cdef gd_variant_t *item = <const gd_variant_t *>pythonscript_gdnative_interface.dictionary_operator_index_const(&self._gd_data, &gdkey)
+    cdef gd_variant_t *item = <const gd_variant_t *>pythonscript_gdextension.dictionary_operator_index_const(&self._gd_data, &gdkey)
     if item != NULL:
         return gd_variant_copy_into_pyobj(item)
     else:
@@ -120,11 +120,11 @@ cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, key):
 
 cdef inline void _setitem(self, key, {{ builtin.indexing_return_type.cy_type }} value):
     cdef gd_variant_t gdkey = ensure_is_gdany_and_borrow_ref(key)
-    cdef gd_variant_t *item = <gd_variant_t *>pythonscript_gdnative_interface.dictionary_operator_index(&self._gd_data, &index)
+    cdef gd_variant_t *item = <gd_variant_t *>pythonscript_gdextension.dictionary_operator_index(&self._gd_data, &index)
     cdef gd_variant_t gdvalue
     if item != NULL:
         gdvalue = ensure_is_gdany_and_borrow_ref(value)
-        pythonscript_gdnative_interface.variant_new_copy(item, &gdvalue)
+        pythonscript_gdextension.variant_new_copy(item, &gdvalue)
     else:
         raise IndexError
 {% endmacro %}
@@ -132,7 +132,7 @@ cdef inline void _setitem(self, key, {{ builtin.indexing_return_type.cy_type }} 
 
 
 {% macro render_getsetitem_indexed_default(builtin) %}
-cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDNativeInt index):
+cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDExtensionInt index):
 {% if builtin.indexing_return_type.is_scalar %}
     return {{ builtin.c_name_prefix }}_indexed_getter(&self._gd_data, index)
 {% elif builtin.indexing_return_type.is_variant %}
@@ -145,7 +145,7 @@ cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDNativeIn
     return ret
 {% endif %}
 
-cdef inline void _setitem(self, GDNativeInt index, {{ builtin.indexing_return_type.cy_type }} value):
+cdef inline void _setitem(self, GDExtensionInt index, {{ builtin.indexing_return_type.cy_type }} value):
 {% if builtin.indexing_return_type.is_scalar %}
     {{ builtin.c_name_prefix }}_indexed_setter(&self._gd_data, index, value)
 {% elif builtin.indexing_return_type.is_variant %}

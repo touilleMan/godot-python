@@ -26,7 +26,7 @@
 
 {% macro render_utility_function_signature(builtin) -%}
 {% if builtin.is_vararg %}
-{{ "void" if builtin.return_type.is_nil else "gd_variant_t" }} gd_utility_{{ builtin.original_name }}(gd_variant_t *args, GDNativeInt args_count)
+{{ "void" if builtin.return_type.is_nil else "gd_variant_t" }} gd_utility_{{ builtin.original_name }}(gd_variant_t *args, GDExtensionInt args_count)
 {%- else %}
 {{ "void" if builtin.return_type.is_nil else builtin.return_type.c_type }} gd_utility_{{ builtin.original_name }}(
     {{- render_args_signature(builtin.arguments) -}}
@@ -38,7 +38,7 @@
 {% macro render_utility_function_ptrcall(builtin) %}
 cdef inline {{ render_utility_function_signature(builtin) }}:
 {% if (builtin.arguments | length) != 0 %}
-    cdef GDNativeTypePtr[{{ builtin.arguments | length }}] __args = [
+    cdef GDExtensionTypePtr[{{ builtin.arguments | length }}] __args = [
         {{- render_args(builtin.arguments) -}}
     ]
 {% endif %}
@@ -50,9 +50,9 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
 {%   endif %}
 {% endif %}
     gd_utility_{{ builtin.original_name }}_ptr(
-        {# GDNativeTypePtr ret #}
+        {# GDExtensionTypePtr ret #}
         {{ "NULL" if builtin.return_type.is_nil else "&__ret" }},
-        {# const GDNativeTypePtr *p_arguments #}
+        {# const GDExtensionTypePtr *p_arguments #}
         {{ "NULL" if (builtin.arguments | length) == 0 else "__args" }},
         {# int p_argument_count #}
         {{ builtin.arguments | length }}
@@ -70,12 +70,12 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
 {# to pass a `gd_variant_t**` as parameter) whose size is passed in the number #}
 {# of parameters fields... Yes this is very confusing stuff, my brain hurts ! #}
 {% if builtin.return_type.is_nil %}
-    gd_utility_{{ builtin.original_name }}_ptr(NULL, <GDNativeTypePtr *>&args, args_count)
+    gd_utility_{{ builtin.original_name }}_ptr(NULL, <GDExtensionTypePtr *>&args, args_count)
 {% else %}
     cdef gd_variant_t __ret  # TODO: improve return type !
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
     __ret = gd_variant_new()
-    gd_utility_{{ builtin.original_name }}_ptr(&__ret, <GDNativeTypePtr *>&args, args_count)
+    gd_utility_{{ builtin.original_name }}_ptr(&__ret, <GDExtensionTypePtr *>&args, args_count)
     return __ret
 {% endif %}
 {% endmacro %}
@@ -111,12 +111,12 @@ gd_variant_t {{ builtin.c_name_prefix }}_into_variant({{ builtin.c_type }} *val)
 
 
 {% macro render_builtin_object_variant_conversions(builtin) %}
-cdef inline GDNativeObjectPtr gd_object_from_variant(gd_variant_t *val):
-    cdef GDNativeObjectPtr ret
+cdef inline GDExtensionObjectPtr gd_object_from_variant(gd_variant_t *val):
+    cdef GDExtensionObjectPtr ret
     gd_object_from_variant_ptr(&ret, val)
     return ret
 
-cdef inline gd_variant_t gd_object_into_variant(GDNativeObjectPtr val):
+cdef inline gd_variant_t gd_object_into_variant(GDExtensionObjectPtr val):
     cdef gd_variant_t ret
     gd_object_into_variant_ptr(&ret, &val)
     return ret
@@ -145,7 +145,7 @@ cdef inline {{ render_builtin_into_variant_signature(builtin) }}:
 cdef inline {{ render_builtin_constructor_signature(builtin, constructor) }}:
     cdef {{ builtin.c_type }} obj
 {% if (constructor.arguments | length) != 0 %}
-    cdef GDNativeTypePtr[{{ constructor.arguments | length }}] p_args = [
+    cdef GDExtensionTypePtr[{{ constructor.arguments | length }}] p_args = [
         {{- render_args(constructor.arguments) -}}
     ]
 {% endif %}
@@ -183,9 +183,13 @@ cdef inline {{ render_builtin_destructor_signature(builtin) }}:
 
 {% macro render_builtin_method(builtin, meth) %}
 cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
-    cdef GDNativeTypePtr[{{ meth.arguments | length }}] __args = [
+{% if meth.arguments | length %}
+    cdef GDExtensionTypePtr[{{ meth.arguments | length }}] __args = [
         {{- render_args(meth.arguments) -}}
     ]
+{% else %}
+    cdef GDExtensionTypePtr* __args = NULL
+{% endif %}
 {% if not meth.return_type.is_nil %}
     cdef {{ meth.return_type.c_type }} __ret
 {%   if not meth.return_type.is_stack_only %}
@@ -194,11 +198,11 @@ cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
 {%   endif %}
 {% endif %}
     {{ builtin.c_name_prefix }}_meth_{{ meth.name }}_ptr(
-        {# GDNativeTypePtr p_base #}
+        {# GDExtensionTypePtr p_base #}
         self,
-        {# const GDNativeTypePtr *__args #}
+        {# const GDExtensionTypePtr *__args #}
         __args,
-        {# GDNativeTypePtr __ret #}
+        {# GDExtensionTypePtr __ret #}
         {{ "NULL" if meth.return_type.is_nil else "&__ret" }},
         {# int p_argument_count #}
         {{ meth.arguments | length }}
@@ -241,7 +245,7 @@ cdef inline void {{ builtin.c_name_prefix }}_set_{{ m.name }}(
 
 
 {% macro render_builtin_indexed_getter(builtin) %}
-cdef inline {{ builtin.indexing_return_type.c_type }} {{ builtin.c_name_prefix }}_indexed_getter(const {{ builtin.c_type }} *self, GDNativeInt index):
+cdef inline {{ builtin.indexing_return_type.c_type }} {{ builtin.c_name_prefix }}_indexed_getter(const {{ builtin.c_type }} *self, GDExtensionInt index):
     cdef {{ builtin.indexing_return_type.c_type }} __ret
 {%   if not builtin.indexing_return_type.is_stack_only %}
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
@@ -255,7 +259,7 @@ cdef inline {{ builtin.indexing_return_type.c_type }} {{ builtin.c_name_prefix }
 {% macro render_builtin_indexed_setter(builtin) %}
 cdef inline void {{ builtin.c_name_prefix }}_indexed_setter(
     {{ builtin.c_type }} *self,
-    GDNativeInt index,
+    GDExtensionInt index,
     {{ builtin.indexing_return_type.c_type }} {{ "" if builtin.indexing_return_type.is_scalar else "*" }}value
 ):
     {{ builtin.c_name_prefix }}_indexed_setter_ptr(self, index, {{ "&" if builtin.indexing_return_type.is_scalar else "" }}value)

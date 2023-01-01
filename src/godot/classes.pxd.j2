@@ -1,25 +1,25 @@
 cimport cython
 
-from .hazmat.gdapi cimport pythonscript_gdnative_interface
-from .hazmat.gdnative_interface cimport GDNativeObjectPtr
+from .hazmat.gdapi cimport pythonscript_gdextension
+from .hazmat.gdextension_interface cimport GDExtensionObjectPtr
 
 
 cdef class BaseGDObject:
-    cdef GDNativeObjectPtr _gd_ptr
+    cdef GDExtensionObjectPtr _gd_ptr
 
     @staticmethod
-    cdef BaseGDObject from_ptr(GDNativeObjectPtr ptr)
+    cdef BaseGDObject from_ptr(GDExtensionObjectPtr ptr)
 
 
 cdef inline gdobject_free(BaseGDObject obj):
-    pythonscript_gdnative_interface.object_destroy(obj._gd_ptr)
+    pythonscript_gdextension.object_destroy(obj._gd_ptr)
 
 
 {# {% for klass in api.classes %} #}
 
 {# {# Cannot put this from_ptr as static method given cdef inline requires a final #} #}
 {# {# method (i.e. it cannot be overwritten by child class) #} #}
-{# cdef inline {{ klass.cy_type | lower }}_from_ptr(GDNativeObjectPtr ptr): #}
+{# cdef inline {{ klass.cy_type | lower }}_from_ptr(GDExtensionObjectPtr ptr): #}
 {#     # Call to __new__ bypasses __init__ constructor #}
 {#     cdef {{ klass.cy_type }} wrapper = {{ klass.cy_type }}.__new__({{ klass.cy_type }}) #}
 {#     wrapper._gd_ptr = ptr #}
@@ -32,13 +32,13 @@ cdef inline gdobject_free(BaseGDObject obj):
 {#  #}
 {# cdef class {{ klass.cy_type }}({{ klass.inherits.cy_type if klass.inherits is not none else "" }}): #}
 {# {%   if klass.inherits is none %} #}
-{#     cdef GDNativeObjectPtr _gd_ptr #}
+{#     cdef GDExtensionObjectPtr _gd_ptr #}
 {#  #}
 {#     {# @staticmethod #}
 {#     cdef inline GDObject cast_from_variant(const godot_variant *p_gdvar) #}
 {#  #}
 {#     @staticmethod #}
-{#     cdef inline GDObject cast_from_ptr(GDNativeObjectPtr *ptr): #}
+{#     cdef inline GDObject cast_from_ptr(GDExtensionObjectPtr *ptr): #}
 {#         self._gd_ptr = ptr #} #}
 {# {%   else %} #}
 {#     pass #}
@@ -48,4 +48,4 @@ cdef inline gdobject_free(BaseGDObject obj):
 
 cdef object _load_class(str name)
 cdef object _load_singleton(str name)
-cdef object _object_call(GDNativeObjectPtr obj, str meth, args)
+cdef object _object_call(GDExtensionObjectPtr obj, str meth, args)

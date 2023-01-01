@@ -8,7 +8,7 @@ from libc.math cimport INFINITY as inf  # Needed by some constants
 cdef class {{ builtin.cy_type }}
 {% endfor %}
 
-from .hazmat.gdnative_interface cimport *
+from .hazmat.gdextension_interface cimport *
 from .hazmat.gdapi cimport *
 
 from collections.abc import Iterable, Mapping  # Needed by Array&Dictionary constructors

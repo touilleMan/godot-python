@@ -1,11 +1,14 @@
+cdef StringName gdname_scriptlanguageextension = StringName("ScriptLanguageExtension")
+cdef StringName gdname_pythonscriptlanguage = StringName("PythonScriptLanguage")
+
 # godot_extension_class: class(parent="ScriptLanguageExtension")
 @cython.final
 cdef class PythonScriptLanguage:
     cdef gd_object_t _gd_ptr
 
     def __cinit__(self):
-        self._gd_ptr = pythonscript_gdnative_interface.classdb_construct_object("ScriptLanguageExtension")
-        pythonscript_gdnative_interface.object_set_instance(self._gd_ptr, "PythonScriptLanguage", <PyObject*>self)
+        self._gd_ptr = pythonscript_gdextension.classdb_construct_object(&gdname_scriptlanguageextension._gd_data)
+        pythonscript_gdextension.object_set_instance(self._gd_ptr, &gdname_pythonscriptlanguage._gd_data, <PyObject*>self)
 
     # godot_extension_class: generate_code()
 

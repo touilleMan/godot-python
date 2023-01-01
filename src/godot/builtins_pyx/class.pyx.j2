@@ -10,7 +10,10 @@
 def {{ c.name }}(self):
     cdef gd_variant_t gdvariant
     # TODO: cache the constant on first fetch ?
-    pythonscript_gdnative_interface.variant_get_constant_value({{ builtin.variant_type_name }}, "{{ c.original_name }}", &gdvariant)
+    cdef gd_string_name_t gdname
+    pythonscript_gdstringname_new(&gdname, "{{ c.original_name }}")
+    pythonscript_gdextension.variant_get_constant_value({{ builtin.variant_type_name }}, &gdname, &gdvariant)
+    pythonscript_gdstringname_delete(&gdname)
     return gd_variant_steal_into_pyobj(&gdvariant)
     # No need to destroy gdvariant given the conversion has stolen ownership on data !
 {%   endif %}
@@ -41,7 +44,7 @@ cdef class {{ builtin.cy_type }}:
         # TODO: I'm still not sure if this call steals self._gd_data or copies it...
         cdef gd_variant_t gdvar = {{ builtin.c_name_prefix }}_into_variant(&self._gd_data)
         cdef gd_string_t gdstr
-        pythonscript_gdnative_interface.variant_stringify(&gdvar, &gdstr)
+        pythonscript_gdextension.variant_stringify(&gdvar, &gdstr)
         try:
             return gd_string_to_pystr(&gdstr)
         finally:
@@ -74,10 +77,10 @@ cdef class {{ builtin.cy_type }}:
 {% if builtin.indexing_return_type and not builtin.is_keyed%}
     # TODO: handle out of range error ?
 
-    def __getitem__(self, GDNativeInt index):
+    def __getitem__(self, GDExtensionInt index):
         return self._getitem(index)
 
-    def __setitem__(self, GDNativeInt index, value):
+    def __setitem__(self, GDExtensionInt index, value):
         self._setitem(index, value)
 {% elif builtin.indexing_return_type and builtin.is_keyed%}
     # TODO: handle out of range error ?

@@ -12,8 +12,8 @@ endforeach
 
 
 custom_target(
-    output: 'gdnative_interface.pxd',
-    input: pxd_godot_hazmat_gdnative_interface,
+    output: 'gdextension_interface.pxd',
+    input: pxd_godot_hazmat_gdextension,
     command: copy_command,
     install: true,
     install_dir: join_paths(python_site_packages_install_path, 'godot', 'hazmat'),
@@ -21,7 +21,7 @@ custom_target(
 
 custom_target(
     output: 'gdnative_ptrs.pxd',
-    input: pxd_godot_hazmat_gdnative_ptrs,
+    input: [pxd_godot_hazmat_gdnative_ptrs],
     command: copy_command,
     install: true,
     install_dir: join_paths(python_site_packages_install_path, 'godot', 'hazmat'),
@@ -45,7 +45,7 @@ custom_target(
 
 # gdnative_ptrs.so
 # └─ gdnative_ptrs.c
-#    ├─ gdnative_interface.pxd
+#    ├─ gdextension.pxd
 #    │  └─ ...
 #    └─ gdapi_ptrs.pyx
 #       └─ extension_api.json
@@ -67,7 +67,8 @@ c_gdnative_ptrs = custom_target(
     output : 'gdnative_ptrs.c',
     input : [
         pyx_gdnative_ptrs,
-        pxd_godot_hazmat_gdnative_interface,
+        pxd_godot_hazmat_gdapi,
+        pxd_godot_hazmat_gdextension,
         pxd_godot_hazmat_gdnative_ptrs,
     ],
     command : cythonize_command,

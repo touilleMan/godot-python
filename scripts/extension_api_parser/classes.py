@@ -56,6 +56,7 @@ class ClassMethodSpec:
     is_vararg: bool
     is_static: bool
     is_virtual: bool
+    is_property_accessor: bool
     hash: Optional[int]
     return_type: TypeInUse
     arguments: List[ClassMethodArgumentSpec]
@@ -79,6 +80,7 @@ class ClassMethodSpec:
             is_vararg=item["is_vararg"],
             is_static=item["is_static"],
             is_virtual=item["is_virtual"],
+            is_property_accessor=item["is_property_accessor"],
             hash=item["hash"],
             return_type=item["return_type"],
             arguments=[ClassMethodArgumentSpec.parse(x) for x in item["arguments"]],
@@ -167,7 +169,7 @@ class ClassTypeSpec(TypeSpec):
         super().__init__(
             c_type="gd_object_t",
             cy_type=kwargs["py_type"],
-            variant_type_name="GDNATIVE_VARIANT_TYPE_OBJECT",
+            variant_type_name="GDEXTENSION_VARIANT_TYPE_OBJECT",
             # Of course the object instance live on the heap, but we are talking
             # here about the pointer
             is_stack_only=True,
@@ -201,28 +203,6 @@ def parse_class(spec: dict, object_size: int) -> ClassTypeSpec:
     # broad of a name (it's easy to mix with Python's regular `object`)
     if spec["name"] == "Object":
         spec["name"] = "GDObject"
-
-    # TODO: remove me once https://github.com/godotengine/godot/pull/64427 is merged
-    for prop in spec["properties"]:
-        if prop.get("getter") == "":
-            prop.pop("getter")
-        if prop.get("setter") == "":
-            prop.pop("setter")
-        if prop.get("index") == -1:
-            prop.pop("index")
-
-    # TODO: remove me once https://github.com/godotengine/godot/pull/64428 is merged
-    def _filter_bad_property(prop: dict) -> bool:
-        if "/" in prop["name"]:
-            return False
-        # e.g. `Modifications,modifications/`
-        if "/" in prop["type"]:
-            return False
-        if "getter" not in prop:
-            return False
-        return True
-
-    spec["properties"] = [prop for prop in spec["properties"] if _filter_bad_property(prop)]
 
     return ClassTypeSpec(
         size=object_size,

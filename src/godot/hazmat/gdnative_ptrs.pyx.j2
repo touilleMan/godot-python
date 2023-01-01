@@ -1,7 +1,12 @@
 cimport cython
 from libc.stdint cimport *
 
-from .gdnative_interface cimport *
+from .gdapi cimport *
+from .gdextension_interface cimport *
+
+
+# Temporary variable used to call GDExtension
+cdef gd_string_name_t _gdname
 
 
 ##############################################################################
@@ -9,74 +14,78 @@ from .gdnative_interface cimport *
 ##############################################################################
 
 
-cdef GDNativeTypeFromVariantConstructorFunc gd_object_from_variant_ptr = \
-    pythonscript_gdnative_interface.get_variant_to_type_constructor(GDNATIVE_VARIANT_TYPE_OBJECT)
-cdef GDNativeVariantFromTypeConstructorFunc gd_object_into_variant_ptr = \
-    pythonscript_gdnative_interface.get_variant_from_type_constructor(GDNATIVE_VARIANT_TYPE_OBJECT)
+cdef GDExtensionTypeFromVariantConstructorFunc gd_object_from_variant_ptr = \
+    pythonscript_gdextension.get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_OBJECT)
+cdef GDExtensionVariantFromTypeConstructorFunc gd_object_into_variant_ptr = \
+    pythonscript_gdextension.get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_OBJECT)
 
-cdef GDNativeTypeFromVariantConstructorFunc gd_bool_from_variant_ptr = \
-    pythonscript_gdnative_interface.get_variant_to_type_constructor(GDNATIVE_VARIANT_TYPE_BOOL)
-cdef GDNativeVariantFromTypeConstructorFunc gd_bool_into_variant_ptr = \
-    pythonscript_gdnative_interface.get_variant_from_type_constructor(GDNATIVE_VARIANT_TYPE_BOOL)
+cdef GDExtensionTypeFromVariantConstructorFunc gd_bool_from_variant_ptr = \
+    pythonscript_gdextension.get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_BOOL)
+cdef GDExtensionVariantFromTypeConstructorFunc gd_bool_into_variant_ptr = \
+    pythonscript_gdextension.get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_BOOL)
 
-cdef GDNativeTypeFromVariantConstructorFunc gd_int_from_variant_ptr = \
-    pythonscript_gdnative_interface.get_variant_to_type_constructor(GDNATIVE_VARIANT_TYPE_INT)
-cdef GDNativeVariantFromTypeConstructorFunc gd_int_into_variant_ptr = \
-    pythonscript_gdnative_interface.get_variant_from_type_constructor(GDNATIVE_VARIANT_TYPE_INT)
+cdef GDExtensionTypeFromVariantConstructorFunc gd_int_from_variant_ptr = \
+    pythonscript_gdextension.get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_INT)
+cdef GDExtensionVariantFromTypeConstructorFunc gd_int_into_variant_ptr = \
+    pythonscript_gdextension.get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_INT)
 
-cdef GDNativeTypeFromVariantConstructorFunc gd_float_from_variant_ptr = \
-    pythonscript_gdnative_interface.get_variant_to_type_constructor(GDNATIVE_VARIANT_TYPE_FLOAT)
-cdef GDNativeVariantFromTypeConstructorFunc gd_float_into_variant_ptr = \
-    pythonscript_gdnative_interface.get_variant_from_type_constructor(GDNATIVE_VARIANT_TYPE_FLOAT)
+cdef GDExtensionTypeFromVariantConstructorFunc gd_float_from_variant_ptr = \
+    pythonscript_gdextension.get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_FLOAT)
+cdef GDExtensionVariantFromTypeConstructorFunc gd_float_into_variant_ptr = \
+    pythonscript_gdextension.get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_FLOAT)
+
 {% for builtin in api.builtins %}
-
 
 # {{ builtin.original_name }}
 {%   for c in builtin.constructors %}
-cdef GDNativePtrConstructor {{ builtin.c_name_prefix }}_constructor_{{ c.index }}_ptr = \
-    pythonscript_gdnative_interface.variant_get_ptr_constructor({{ builtin.variant_type_name }}, {{ c.index }})
+cdef GDExtensionPtrConstructor {{ builtin.c_name_prefix }}_constructor_{{ c.index }}_ptr = \
+    pythonscript_gdextension.variant_get_ptr_constructor({{ builtin.variant_type_name }}, {{ c.index }})
 {%   endfor %}
 {%   if not builtin.is_stack_only %}
-cdef GDNativePtrDestructor {{ builtin.c_name_prefix }}_destructor_ptr = \
-    pythonscript_gdnative_interface.variant_get_ptr_destructor({{ builtin.variant_type_name }})
+cdef GDExtensionPtrDestructor {{ builtin.c_name_prefix }}_destructor_ptr = \
+    pythonscript_gdextension.variant_get_ptr_destructor({{ builtin.variant_type_name }})
 {%   endif %}
 {%   for m in builtin.methods %}
-cdef GDNativePtrBuiltInMethod {{ builtin.c_name_prefix }}_meth_{{ m.name }}_ptr = \
-    pythonscript_gdnative_interface.variant_get_ptr_builtin_method({{ builtin.variant_type_name }}, "{{ m.original_name }}", {{ m.hash }})
+pythonscript_gdstringname_new(&_gdname, "{{ m.original_name }}")
+cdef GDExtensionPtrBuiltInMethod {{ builtin.c_name_prefix }}_meth_{{ m.name }}_ptr = \
+    pythonscript_gdextension.variant_get_ptr_builtin_method({{ builtin.variant_type_name }}, &_gdname, {{ m.hash }})
+pythonscript_gdstringname_delete(&_gdname)
 {%   endfor %}
 {%   if builtin.indexing_return_type is not none and builtin.is_keyed %}
-cdef GDNativePtrKeyedSetter {{ builtin.c_name_prefix }}_keyed_setter_ptr = \
-    pythonscript_gdnative_interface.variant_get_ptr_keyed_setter({{ builtin.variant_type_name }})
-cdef GDNativePtrKeyedGetter {{ builtin.c_name_prefix }}_keyed_getter_ptr = \
-    pythonscript_gdnative_interface.variant_get_ptr_keyed_getter({{ builtin.variant_type_name }})
+cdef GDExtensionPtrKeyedSetter {{ builtin.c_name_prefix }}_keyed_setter_ptr = \
+    pythonscript_gdextension.variant_get_ptr_keyed_setter({{ builtin.variant_type_name }})
+cdef GDExtensionPtrKeyedGetter {{ builtin.c_name_prefix }}_keyed_getter_ptr = \
+    pythonscript_gdextension.variant_get_ptr_keyed_getter({{ builtin.variant_type_name }})
 {%   endif %}
 {%   if builtin.indexing_return_type is not none and not builtin.is_keyed %}
-cdef GDNativePtrIndexedSetter {{ builtin.c_name_prefix }}_indexed_setter_ptr = \
-    pythonscript_gdnative_interface.variant_get_ptr_indexed_setter({{ builtin.variant_type_name }})
-cdef GDNativePtrIndexedGetter {{ builtin.c_name_prefix }}_indexed_getter_ptr = \
-    pythonscript_gdnative_interface.variant_get_ptr_indexed_getter({{ builtin.variant_type_name }})
+cdef GDExtensionPtrIndexedSetter {{ builtin.c_name_prefix }}_indexed_setter_ptr = \
+    pythonscript_gdextension.variant_get_ptr_indexed_setter({{ builtin.variant_type_name }})
+cdef GDExtensionPtrIndexedGetter {{ builtin.c_name_prefix }}_indexed_getter_ptr = \
+    pythonscript_gdextension.variant_get_ptr_indexed_getter({{ builtin.variant_type_name }})
 {%   endif %}
 {%   for o in builtin.operators %}
 {%     if o.right_type is none %}
-cdef GDNativePtrOperatorEvaluator {{ builtin.c_name_prefix }}_op_{{ o.name }}_ptr = \
-    pythonscript_gdnative_interface.variant_get_ptr_operator_evaluator({{ o.variant_operator_name }}, {{ builtin.variant_type_name }}, GDNATIVE_VARIANT_TYPE_NIL)
+cdef GDExtensionPtrOperatorEvaluator {{ builtin.c_name_prefix }}_op_{{ o.name }}_ptr = \
+    pythonscript_gdextension.variant_get_ptr_operator_evaluator({{ o.variant_operator_name }}, {{ builtin.variant_type_name }}, GDEXTENSION_VARIANT_TYPE_NIL)
 {%     else %}
-cdef GDNativePtrOperatorEvaluator {{ builtin.c_name_prefix }}_op_{{ o.name }}_ptr = \
-    pythonscript_gdnative_interface.variant_get_ptr_operator_evaluator({{ o.variant_operator_name }}, {{ builtin.variant_type_name }}, {{ o.right_type.variant_type_name }})
+cdef GDExtensionPtrOperatorEvaluator {{ builtin.c_name_prefix }}_op_{{ o.name }}_ptr = \
+    pythonscript_gdextension.variant_get_ptr_operator_evaluator({{ o.variant_operator_name }}, {{ builtin.variant_type_name }}, {{ o.right_type.variant_type_name }})
 {%     endif %}
 {%   endfor %}
 {%   for m in builtin.members %}
 {%     if not m.is_in_struct %}
-cdef GDNativePtrSetter {{ builtin.c_name_prefix }}_get_{{ m.name }}_ptr = \
-    pythonscript_gdnative_interface.variant_get_ptr_setter({{ builtin.variant_type_name }}, "{{ m.name }}")
-cdef GDNativePtrGetter {{ builtin.c_name_prefix }}_set_{{ m.name }}_ptr = \
-    pythonscript_gdnative_interface.variant_get_ptr_getter({{ builtin.variant_type_name }}, "{{ m.name }}")
+pythonscript_gdstringname_new(&_gdname, "{{ m.name }}")
+cdef GDExtensionPtrSetter {{ builtin.c_name_prefix }}_get_{{ m.name }}_ptr = \
+    pythonscript_gdextension.variant_get_ptr_setter({{ builtin.variant_type_name }}, &_gdname)
+cdef GDExtensionPtrGetter {{ builtin.c_name_prefix }}_set_{{ m.name }}_ptr = \
+    pythonscript_gdextension.variant_get_ptr_getter({{ builtin.variant_type_name }}, &_gdname)
+pythonscript_gdstringname_delete(&_gdname)
 {%     endif %}
 {%   endfor %}
-cdef GDNativeTypeFromVariantConstructorFunc {{ builtin.c_name_prefix }}_from_variant_ptr = \
-    pythonscript_gdnative_interface.get_variant_to_type_constructor({{ builtin.variant_type_name }})
-cdef GDNativeVariantFromTypeConstructorFunc {{ builtin.c_name_prefix }}_into_variant_ptr = \
-    pythonscript_gdnative_interface.get_variant_from_type_constructor({{ builtin.variant_type_name }})
+cdef GDExtensionTypeFromVariantConstructorFunc {{ builtin.c_name_prefix }}_from_variant_ptr = \
+    pythonscript_gdextension.get_variant_to_type_constructor({{ builtin.variant_type_name }})
+cdef GDExtensionVariantFromTypeConstructorFunc {{ builtin.c_name_prefix }}_into_variant_ptr = \
+    pythonscript_gdextension.get_variant_from_type_constructor({{ builtin.variant_type_name }})
 {% endfor %}
 
 
@@ -87,6 +96,8 @@ cdef GDNativeVariantFromTypeConstructorFunc {{ builtin.c_name_prefix }}_into_var
 
 {%   for utility in api.utility_functions %}
 # {{ utility.original_name }}
-cdef GDNativePtrUtilityFunction gd_utility_{{ utility.original_name }}_ptr = \
-    pythonscript_gdnative_interface.variant_get_ptr_utility_function("{{ utility.original_name }}", {{ utility.hash }})
+pythonscript_gdstringname_new(&_gdname, "{{ utility.original_name }}")
+cdef GDExtensionPtrUtilityFunction gd_utility_{{ utility.original_name }}_ptr = \
+    pythonscript_gdextension.variant_get_ptr_utility_function(&_gdname, {{ utility.hash }})
+pythonscript_gdstringname_delete(&_gdname)
 {%   endfor %}

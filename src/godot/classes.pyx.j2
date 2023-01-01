@@ -5,7 +5,7 @@ from .builtins cimport *
 
 cdef class BaseGDObject:
     def free(self):
-        pythonscript_gdnative_interface.object_destroy(self._gd_ptr)
+        pythonscript_gdextension.object_destroy(self._gd_ptr)
         self._gd_ptr = NULL
 
     def __init__(self):
@@ -17,7 +17,7 @@ cdef class BaseGDObject:
         return f"<{type(self).__name__} wrapper on 0x{<size_t>self._gd_ptr:x}>"
 
     @staticmethod
-    cdef BaseGDObject from_ptr(GDNativeObjectPtr ptr):
+    cdef BaseGDObject from_ptr(GDExtensionObjectPtr ptr):
         # Call to __new__ bypasses __init__ constructor
         cdef BaseGDObject wrapper = BaseGDObject.__new__(BaseGDObject)
         wrapper._gd_ptr = ptr
@@ -26,9 +26,9 @@ cdef class BaseGDObject:
         return wrapper
 
     def _set_gd_ptr(self, ptr):
-        # /!\ doing `<GDNativeObjectPtr>ptr` would return the address of
+        # /!\ doing `<GDExtensionObjectPtr>ptr` would return the address of
         # the PyObject instead of casting it value !
-        self._gd_ptr = <GDNativeObjectPtr><size_t>ptr
+        self._gd_ptr = <GDExtensionObjectPtr><size_t>ptr
         # Note if the object is a reference, we stole it from the caller given we
         # don't call `Reference.reference` here
 
@@ -49,7 +49,7 @@ cdef class BaseGDObject:
 {#         raise NotImplementedError("TODO :'(") #} #}
 {#  #}
 {#     def free(self): #}
-{#         pythonscript_gdnative_interface.object_destroy(self._gd_ptr) #}
+{#         pythonscript_gdextension.object_destroy(self._gd_ptr) #}
 {#         self._gd_ptr = NULL #}
 {#  #}
 {#     def __init__(self): #}
@@ -67,12 +67,15 @@ cdef class BaseGDObject:
 
 cdef object _load_singleton(str name):
     cdef object cls = _load_class(name)
-{# cdef GDNativeObjectPtr gdobj = pythonscript_gdnative_interface.global_get_singleton(&(<StringName>cls._gd_name)._gd_data) #}
-    cdef GDNativeObjectPtr gdobj = pythonscript_gdnative_interface.global_get_singleton(name.encode())
+{# cdef GDExtensionObjectPtr gdobj = pythonscript_gdextension.global_get_singleton(&(<StringName>cls._gd_name)._gd_data) #}
+    cdef gd_string_name_t gdname
+    pythonscript_gdstringname_new(&gdname, name.encode())
+    cdef GDExtensionObjectPtr gdobj = pythonscript_gdextension.global_get_singleton(&gdname)
+    pythonscript_gdstringname_delete(&gdname)
     return cls._from_ptr(<size_t>gdobj)
 {# {% for singleton in api.singletons %}
     cdef {{ singleton.type.py_type }} singleton_{{ singleton.name }} = {{ singleton.type.py_type }}.__new__({{ singleton.type.py_type }})
-    singleton_{{ singleton.name }}._gd_ptr = pythonscript_gdnative_interface.global_get_singleton("{{ singleton.original_name }}")
+    singleton_{{ singleton.name }}._gd_ptr = pythonscript_gdextension.global_get_singleton("{{ singleton.original_name }}")
     globals()["{{ singleton.name }}"] = singleton_{{ singleton.name }}
 {% endfor %} #}
 
@@ -93,7 +96,8 @@ cdef object _load_class(str name):
     cdef StringName gdname = StringName(name)
 
     # Load our good friend ClassDB
-    cdef GDNativeObjectPtr classdb = pythonscript_gdnative_interface.global_get_singleton("ClassDB")
+    cdef StringName gdname_classdb = StringName("ClassDB")
+    cdef GDExtensionObjectPtr classdb = pythonscript_gdextension.global_get_singleton(&gdname_classdb._gd_data)
 
     if not _object_call(classdb, "class_exists", [gdname]):
         raise RuntimeError(f"Class `{name}` doesn't exist in Godot !")
@@ -147,17 +151,22 @@ cdef object _load_class(str name):
     return type(name, bases, attrs)
 
 
-cdef object _object_call(GDNativeObjectPtr obj, str meth, args):
+cdef object _object_call(GDExtensionObjectPtr obj, str meth, args):
     cdef gd_variant_t ret
-    cdef GDNativeCallError call_error
+    cdef GDExtensionCallError call_error
 
-    cdef GDNativeObjectPtr classdb = pythonscript_gdnative_interface.global_get_singleton("ClassDB")
-    cdef GDNativeMethodBindPtr Object_call = pythonscript_gdnative_interface.classdb_get_method_bind("Object", "call", {{ api.get_class_meth_hash("Object", "call") }})
+    # TODO: really inefficient to re-create StringName
+    cdef StringName gdname_classdb = StringName("ClassDB")
+    cdef GDExtensionObjectPtr classdb = pythonscript_gdextension.global_get_singleton(&gdname_classdb._gd_data)
 
-    cdef GDNativeInt args_with_meth_len = len(args) + 1
+    cdef StringName gdname_object = StringName("Object")
+    cdef StringName gdname_call = StringName("call")
+    cdef GDExtensionMethodBindPtr Object_call = pythonscript_gdextension.classdb_get_method_bind(&gdname_object._gd_data, &gdname_call._gd_data, {{ api.get_class_meth_hash("Object", "call") }})
+
+    cdef GDExtensionInt args_with_meth_len = len(args) + 1
     if args_with_meth_len > 9:
         # TODO: handle this
-        pythonscript_gdnative_interface.print_error("more than 8 params is not supported !", "_object_call", "", 0)
+        pythonscript_gdextension.print_error("more than 8 params is not supported !", "_object_call", "", 0)
         return None
     cdef gd_variant_t[9] variant_args
     cdef (gd_variant_t*)[9] variant_args_ptrs
@@ -177,30 +186,30 @@ cdef object _object_call(GDNativeObjectPtr obj, str meth, args):
 
     print(f"About to call {meth} {args!r}")
 
-    pythonscript_gdnative_interface.object_method_bind_call(
+    pythonscript_gdextension.object_method_bind_call(
         Object_call,
         classdb,
-        <GDNativeVariantPtr *>&variant_args_ptrs,
+        <GDExtensionVariantPtr *>&variant_args_ptrs,
         args_with_meth_len,
         &ret,
         &call_error,
     )
     gd_variant_del(&variant_args[0])  # Only param we created without stealing ownership
-    if call_error.error == GDNATIVE_CALL_OK:
+    if call_error.error == GDEXTENSION_CALL_OK:
         return gd_variant_steal_into_pyobj(&ret)
         # No need to destroy ret given the conversion has stolen ownership on data !
 
     # TODO: improve ret error raised exception type ?
-    elif call_error.error == GDNATIVE_CALL_ERROR_INVALID_METHOD:
+    elif call_error.error == GDEXTENSION_CALL_ERROR_INVALID_METHOD:
         raise RuntimeError(f"Error in Godot object method call: invalid method")
 
-    elif call_error.error == GDNATIVE_CALL_ERROR_INVALID_ARGUMENT:
+    elif call_error.error == GDEXTENSION_CALL_ERROR_INVALID_ARGUMENT:
         raise RuntimeError(f"Error in Godot object method call: invalid argument")
 
-    elif call_error.error == GDNATIVE_CALL_ERROR_TOO_MANY_ARGUMENTS  or call_error.error == GDNATIVE_CALL_ERROR_TOO_FEW_ARGUMENTS:
+    elif call_error.error == GDEXTENSION_CALL_ERROR_TOO_MANY_ARGUMENTS  or call_error.error == GDEXTENSION_CALL_ERROR_TOO_FEW_ARGUMENTS:
         raise RuntimeError(f"Error in Godot object method call: expected {call_error.argument} arguments, got {call_error.expected}")
 
-    elif call_error.error == GDNATIVE_CALL_ERROR_INSTANCE_IS_NULL:
+    elif call_error.error == GDEXTENSION_CALL_ERROR_INSTANCE_IS_NULL:
         raise RuntimeError(f"Error in Godot object method call: instance is null")
 
     else:

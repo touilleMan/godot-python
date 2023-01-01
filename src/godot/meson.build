@@ -77,7 +77,7 @@ custom_target(
 
 # builtins.so
 # └─ builtins.c
-#    ├─ gdnative_interface.pxd
+#    ├─ gdextension.pxd
 #    │  └─ ...
 #    └─ builtins.pyx
 #       └─ extension_api.json
@@ -114,12 +114,19 @@ else
 endif
 
 
+# AutoPxd currently strip const qualifier when generating `gdextension.pxd`,
+# hence -Wno-discarded-qualifiers
+if host_platform.startswith('windows')
+    builtins_c_args = []
+else
+    builtins_c_args = ['-Wno-discarded-qualifiers', '-Wno-incompatible-pointer-types-discards-qualifiers']
+endif
+
+
 shared_library(
     'builtins',
     cbuiltins,
-    # AutoPxd currently strip const qualifier when generating `gdnative_interface.pxd`,
-    # hence -Wno-discarded-qualifiers
-    c_args: ['-Wno-discarded-qualifiers', '-Wno-incompatible-pointer-types-discards-qualifiers'],
+    c_args: builtins_c_args,
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: builtins_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
@@ -131,7 +138,7 @@ shared_library(
 
 # classes.so
 # └─ classes.c
-#    ├─ gdnative_interface.pxd
+#    ├─ gdextension.pxd
 #    │  └─ ...
 #    └─ classes.pyx
 #       └─ extension_api.json
@@ -164,14 +171,21 @@ else
 endif
 
 
+# Cython's cdef inline methods are turned into static inline C functions that
+# produced `defined but not used` errors, hence the `-Wno-unused-function`
+# AutoPxd currently strip const qualifier when generating `gdextension.pxd`,
+# hence -Wno-discarded-qualifiers
+if host_platform.startswith('windows')
+    classes_c_args = []
+else
+    classes_c_args = ['-Wno-discarded-qualifiers', '-Wno-incompatible-pointer-types-discards-qualifiers', '-Wno-unused-function']
+endif
+
+
 shared_library(
     'classes',
     cclasses,
-    # Cython's cdef inline methods are turned into static inline C functions that
-    # produced `defined but not used` errors, hence the `-Wno-unused-function`
-    # AutoPxd currently strip const qualifier when generating `gdnative_interface.pxd`,
-    # hence -Wno-discarded-qualifiers
-    c_args: ['-Wno-discarded-qualifiers', '-Wno-incompatible-pointer-types-discards-qualifiers', '-Wno-unused-function'],
+    c_args: classes_c_args,
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: classes_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,

@@ -51,15 +51,15 @@ generate_tmpl_cmd = [
 # see https://github.com/mesonbuild/meson/issues/2320#issuecomment-1147929155
 
 
-# godot/hazmat/gdnative_interface.pxd
-# └─ gdnative_interface.h
+# godot/hazmat/gdextension.pxd
+# └─ gdextension.h
 
 # Convert the header file frome C to Cython
-pxd_godot_hazmat_gdnative_interface = custom_target(
-    output: 'godot#hazmat#gdnative_interface.pxd',
+pxd_godot_hazmat_gdextension = custom_target(
+    output: 'godot#hazmat#gdextension_interface.pxd',
     input: [
-        join_paths(scripts_dir, 'generate_gdnative_interface_pxd.py'),
-        join_paths(godot_headers_path, 'godot/gdnative_interface.h')
+        join_paths(scripts_dir, 'generate_gdextension_interface_pxd.py'),
+        join_paths(godot_headers_path, 'godot/gdextension_interface.h')
     ],
     command: [python, '@INPUT0@', '--input', '@INPUT1@', '--output', '@OUTPUT@'],
 )
@@ -136,7 +136,7 @@ pxd_godot_classes = custom_target(
 
 
 pxds_godot_hazmat = [
-    pxd_godot_hazmat_gdnative_interface,
+    pxd_godot_hazmat_gdextension,
     pxd_godot_hazmat_gdnative_ptrs,
     pxd_godot_hazmat_gdapi,
     files(
@@ -165,10 +165,10 @@ foreach pxi: [
     preprocessed_pxis += custom_target(
         output: pxi,
         input: [
-            join_paths(scripts_dir, 'godot_extension_class_cython_preprocessor.py'),
+            join_paths(scripts_dir, 'gdextension_cython_preprocessor.py'),
             pxi,
         ],
-        command: [python, '@INPUT0@', '--input', '@INPUT1@', '--output', '@OUTPUT@'],
+        command: [python, '@INPUT0@', '@INPUT1@', '--output', '@OUTPUT@'],
     )
 endforeach
 
@@ -180,7 +180,7 @@ endforeach
 # ├─ godot/hazmat/gdapi.pxd
 # ├─ godot/builtins.pxd
 # |  └─ ...
-# └─ godot/hazmat/gdnative_interface.pxd
+# └─ godot/hazmat/gdextension.pxd
 #    └─ ...
 
 
@@ -272,14 +272,21 @@ else
 endif
 
 
+# Cython's cdef inline methods are turned into static inline C functions that
+# produced `defined but not used` errors, hence the `-Wno-unused-function`
+# AutoPxd currently strip const qualifier when generating `gdextension.pxd`,
+# hence -Wno-discarded-qualifiers
+if host_platform.startswith('windows')
+    lib__pythonscript_c_args = []
+else
+    lib__pythonscript_c_args = ['-Wno-discarded-qualifiers', '-Wno-incompatible-pointer-types-discards-qualifiers', '-Wno-unused-function']
+endif
+
+
 lib__pythonscript = shared_library(
     '_pythonscript',
     c_pythonscript,
-    # Cython's cdef inline methods are turned into static inline C functions that
-    # produced `defined but not used` errors, hence the `-Wno-unused-function`
-    # AutoPxd currently strip const qualifier when generating `gdnative_interface.pxd`,
-    # hence -Wno-discarded-qualifiers
-    c_args: ['-Wno-discarded-qualifiers', '-Wno-incompatible-pointer-types-discards-qualifiers', '-Wno-unused-function'],
+    c_args: lib__pythonscript_c_args,
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: lib__pythonscript_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,

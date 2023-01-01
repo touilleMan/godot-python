@@ -14,35 +14,35 @@ class BuiltinVariantOperatorValue:
 
 VARIANT_OPERATORS = {
     # comparison
-    "==": ("equal", "GDNATIVE_VARIANT_OP_EQUAL"),
-    "!=": ("not_equal", "GDNATIVE_VARIANT_OP_NOT_EQUAL"),
-    "<": ("less", "GDNATIVE_VARIANT_OP_LESS"),
-    "<=": ("less_equal", "GDNATIVE_VARIANT_OP_LESS_EQUAL"),
-    ">": ("greater", "GDNATIVE_VARIANT_OP_GREATER"),
-    ">=": ("greater_equal", "GDNATIVE_VARIANT_OP_GREATER_EQUAL"),
+    "==": ("equal", "GDEXTENSION_VARIANT_OP_EQUAL"),
+    "!=": ("not_equal", "GDEXTENSION_VARIANT_OP_NOT_EQUAL"),
+    "<": ("less", "GDEXTENSION_VARIANT_OP_LESS"),
+    "<=": ("less_equal", "GDEXTENSION_VARIANT_OP_LESS_EQUAL"),
+    ">": ("greater", "GDEXTENSION_VARIANT_OP_GREATER"),
+    ">=": ("greater_equal", "GDEXTENSION_VARIANT_OP_GREATER_EQUAL"),
     # mathematic
-    "+": ("add", "GDNATIVE_VARIANT_OP_ADD"),
-    "-": ("subtract", "GDNATIVE_VARIANT_OP_SUBTRACT"),
-    "*": ("multiply", "GDNATIVE_VARIANT_OP_MULTIPLY"),
-    "/": ("divide", "GDNATIVE_VARIANT_OP_DIVIDE"),
-    "unary-": ("negate", "GDNATIVE_VARIANT_OP_NEGATE"),
-    "unary+": ("positive", "GDNATIVE_VARIANT_OP_POSITIVE"),
-    "%": ("module", "GDNATIVE_VARIANT_OP_MODULE"),
-    "**": ("power", "GDNATIVE_VARIANT_OP_POWER"),
+    "+": ("add", "GDEXTENSION_VARIANT_OP_ADD"),
+    "-": ("subtract", "GDEXTENSION_VARIANT_OP_SUBTRACT"),
+    "*": ("multiply", "GDEXTENSION_VARIANT_OP_MULTIPLY"),
+    "/": ("divide", "GDEXTENSION_VARIANT_OP_DIVIDE"),
+    "unary-": ("negate", "GDEXTENSION_VARIANT_OP_NEGATE"),
+    "unary+": ("positive", "GDEXTENSION_VARIANT_OP_POSITIVE"),
+    "%": ("module", "GDEXTENSION_VARIANT_OP_MODULE"),
+    "**": ("power", "GDEXTENSION_VARIANT_OP_POWER"),
     # bitwise
-    "<<": ("shift_left", "GDNATIVE_VARIANT_OP_SHIFT_LEFT"),
-    ">>": ("shift_right", "GDNATIVE_VARIANT_OP_SHIFT_RIGHT"),
-    "&": ("bit_and", "GDNATIVE_VARIANT_OP_BIT_AND"),
-    "|": ("bit_or", "GDNATIVE_VARIANT_OP_BIT_OR"),
-    "^": ("bit_xor", "GDNATIVE_VARIANT_OP_BIT_XOR"),
-    "~": ("bit_negate", "GDNATIVE_VARIANT_OP_BIT_NEGATE"),
+    "<<": ("shift_left", "GDEXTENSION_VARIANT_OP_SHIFT_LEFT"),
+    ">>": ("shift_right", "GDEXTENSION_VARIANT_OP_SHIFT_RIGHT"),
+    "&": ("bit_and", "GDEXTENSION_VARIANT_OP_BIT_AND"),
+    "|": ("bit_or", "GDEXTENSION_VARIANT_OP_BIT_OR"),
+    "^": ("bit_xor", "GDEXTENSION_VARIANT_OP_BIT_XOR"),
+    "~": ("bit_negate", "GDEXTENSION_VARIANT_OP_BIT_NEGATE"),
     # logic
-    "and": ("and", "GDNATIVE_VARIANT_OP_AND"),
-    "or": ("or", "GDNATIVE_VARIANT_OP_OR"),
-    "xor": ("xor", "GDNATIVE_VARIANT_OP_XOR"),
-    "not": ("not", "GDNATIVE_VARIANT_OP_NOT"),
+    "and": ("and", "GDEXTENSION_VARIANT_OP_AND"),
+    "or": ("or", "GDEXTENSION_VARIANT_OP_OR"),
+    "xor": ("xor", "GDEXTENSION_VARIANT_OP_XOR"),
+    "not": ("not", "GDEXTENSION_VARIANT_OP_NOT"),
     # containment
-    "in": ("in", "GDNATIVE_VARIANT_OP_IN"),
+    "in": ("in", "GDEXTENSION_VARIANT_OP_IN"),
 }
 
 
@@ -395,7 +395,7 @@ def _parse_builtin(spec: dict) -> BuiltinTypeSpec:
 
     py_type = cy_type
 
-    variant_type_name = f"GDNATIVE_VARIANT_TYPE_{snake_name.upper()}"
+    variant_type_name = f"GDEXTENSION_VARIANT_TYPE_{snake_name.upper()}"
     constructors = [BuiltinConstructorSpec.parse(x, c_name_prefix) for x in spec["constructors"]]
     operators = [BuiltinOperatorSpec.parse(x, c_name_prefix) for x in spec["operators"]]
     methods = [BuiltinMethodSpec.parse(x, c_name_prefix) for x in spec["methods"]]

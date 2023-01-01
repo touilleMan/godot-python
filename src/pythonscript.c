@@ -13,7 +13,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#include <godot/gdnative_interface.h>
+#include <godot/gdextension_interface.h>
 #include "_pythonscript_api.h"
 
 #ifdef _WIN32
@@ -26,7 +26,7 @@
 
 // Just like any Godot builtin classes, GDString's size is defined in `extension_api.json`
 // and is platform-dependant (e.g. 4 bytes on float_32, 8 on double_64).
-// So in theory we should retreive the value from the json file, convert it into a C
+// So in theory we should retrieve the value from the json file, convert it into a C
 // header file and include it here.
 // However this is cumbersome and we only need this once before the Python interpreter
 // is initialized (after that we can use the Python binding), so instead we stick with
@@ -34,6 +34,7 @@
 #define GD_STRING_MAX_SIZE 8
 
 // Nobody ain't no time to include stdbool.h !
+#define bool unsigned int;
 #define true 1
 #define false 0
 
@@ -58,20 +59,42 @@ typedef enum {
 
 static PythonscriptState state = STALLED;
 static PyThreadState *gilstate = NULL;
+
 // Global variables used by Cython modules to access the Godot API
-DLL_EXPORT const GDNativeInterface *pythonscript_gdnative_interface = NULL;
-DLL_EXPORT GDNativeExtensionClassLibraryPtr pythonscript_gdnative_library = NULL;
+DLL_EXPORT const GDExtensionInterface *pythonscript_gdextension = NULL;
+DLL_EXPORT GDExtensionClassLibraryPtr pythonscript_gdextension_library = NULL;
+
+
+// GDExtension interface uses GDStringName everywhere a name should be passed,
+// however it is very cumbersome to create it !
+
+static GDExtensionPtrConstructor gdstring_constructor = NULL;
+static GDExtensionPtrDestructor gdstring_destructor = NULL;
+static GDExtensionPtrConstructor gdstringname_constructor = NULL;
+static GDExtensionPtrDestructor gdstringname_destructor = NULL;
+
+DLL_EXPORT void pythonscript_gdstringname_new(GDExtensionStringNamePtr ptr, const char *cstr) {
+    // Method name must be passed as a StringName object... which itself has
+    // to be built from a String object :(
+    GDExtensionStringPtr as_gdstring;
+    pythonscript_gdextension->string_new_with_utf8_chars(&as_gdstring, cstr);
+    gdstringname_constructor(ptr, &as_gdstring);
+    gdstring_destructor(&as_gdstring);
+}
+DLL_EXPORT void pythonscript_gdstringname_delete(GDExtensionStringNamePtr ptr) {
+    gdstringname_destructor(ptr);
+}
 
 #define GD_PRINT(msg) { \
     printf("%s\n", msg); \
 }
 
 #define GD_PRINT_ERROR(msg) { \
-    pythonscript_gdnative_interface->print_error(msg, __func__, __FILE__, __LINE__); \
+    pythonscript_gdextension->print_error(msg, __func__, __FILE__, __LINE__); \
 }
 
 #define GD_PRINT_WARNING(msg) { \
-    pythonscript_gdnative_interface->print_warning(msg, __func__, __FILE__, __LINE__); \
+    pythonscript_gdextension->print_warning(msg, __func__, __FILE__, __LINE__); \
 }
 
 static void _late_initialize() {
@@ -98,26 +121,19 @@ static void _early_initialize() {
     // Set PYTHONHOME from .so path
     {
         // 0) Retrieve Godot methods
-        GDNativePtrConstructor gdstring_constructor = pythonscript_gdnative_interface->variant_get_ptr_constructor(GDNATIVE_VARIANT_TYPE_STRING, 0);
-        if (gdstring_constructor == NULL) {
-            GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String` constructor)");
-            goto error;
-        }
-        GDNativePtrDestructor gdstring_destructor = pythonscript_gdnative_interface->variant_get_ptr_destructor(GDNATIVE_VARIANT_TYPE_STRING);
-        if (gdstring_destructor == NULL) {
-            GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String` destructor)");
-            goto error;
-        }
-        GDNativePtrBuiltInMethod gdstring_get_base_dir = pythonscript_gdnative_interface->variant_get_ptr_builtin_method(GDNATIVE_VARIANT_TYPE_STRING, "get_base_dir", 3942272618);
+        GDExtensionStringNamePtr method_name_as_gdstringname;
+        pythonscript_gdstringname_new(&method_name_as_gdstringname, "get_base_dir");
+        GDExtensionPtrBuiltInMethod gdstring_get_base_dir = pythonscript_gdextension->variant_get_ptr_builtin_method(GDEXTENSION_VARIANT_TYPE_STRING, &method_name_as_gdstringname, 3942272618);
+        pythonscript_gdstringname_delete(&method_name_as_gdstringname);
         if (gdstring_get_base_dir == NULL) {
-            GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retreive `String.get_base_dir` method)");
+            GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `String.get_base_dir` method)");
             goto error;
         }
 
         // 1) Retrieve library path
         char gd_library_path[GD_STRING_MAX_SIZE];
         gdstring_constructor(gd_library_path, NULL);
-        pythonscript_gdnative_interface->get_library_path(pythonscript_gdnative_library, gd_library_path);
+        pythonscript_gdextension->get_library_path(pythonscript_gdextension_library, gd_library_path);
 
         // 2) Retrieve base dir from library path
         char gd_basedir_path[GD_STRING_MAX_SIZE];
@@ -126,18 +142,18 @@ static void _early_initialize() {
         gdstring_destructor(gd_library_path);
 
         // 3) Convert base dir into regular c string
-        GDNativeInt basedir_path_size = pythonscript_gdnative_interface->string_to_utf8_chars(gd_basedir_path, NULL, 0);
+        GDExtensionInt basedir_path_size = pythonscript_gdextension->string_to_utf8_chars(gd_basedir_path, NULL, 0);
         // Why not using variable length array here ? Glad you asked Timmy !
         // VLA are part of the C99 standard, but MSVC compiler is missing it :(
         // Because VLA were removed from the C11 standard, and the standards committee
         // decided it was no good, probably because you can't handle allocation errors
         // like we're about to do two lines down.
-        char *basedir_path = pythonscript_gdnative_interface->mem_alloc(basedir_path_size + 1);
+        char *basedir_path = pythonscript_gdextension->mem_alloc(basedir_path_size + 1);
         if (basedir_path == NULL) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (memory allocation failed)");
             goto error;
         }
-        pythonscript_gdnative_interface->string_to_utf8_chars(gd_basedir_path, basedir_path, basedir_path_size);
+        pythonscript_gdextension->string_to_utf8_chars(gd_basedir_path, basedir_path, basedir_path_size);
         basedir_path[basedir_path_size] = '\0';
         gdstring_destructor(gd_basedir_path);
 
@@ -147,7 +163,7 @@ static void _early_initialize() {
             &config.home,
             basedir_path
         );
-        pythonscript_gdnative_interface->mem_free(basedir_path);
+        pythonscript_gdextension->mem_free(basedir_path);
         if (PyStatus_Exception(status)) {
             GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
             GD_PRINT_ERROR(status.err_msg);
@@ -247,9 +263,9 @@ error:
     state = CRASHED;
 }
 
-static void _deinitialize(void *userdata, GDNativeInitializationLevel p_level) {
+static void _deinitialize(void *userdata, GDExtensionInitializationLevel p_level) {
     (void) userdata;  // acknowledge unreferenced parameter
-    if (p_level != GDNATIVE_INITIALIZATION_SERVERS) {
+    if (p_level != GDEXTENSION_INITIALIZATION_SERVERS) {
         return;
     }
 
@@ -273,23 +289,23 @@ static void _deinitialize(void *userdata, GDNativeInitializationLevel p_level) {
     state = STALLED;
 }
 
-static void _initialize(void *userdata, GDNativeInitializationLevel p_level) {
+static void _initialize(void *userdata, GDExtensionInitializationLevel p_level) {
     (void) userdata;  // acknowledge unreferenced parameter
 
-    // Language registration must be done at `GDNATIVE_INITIALIZATION_SERVERS`
+    // Language registration must be done at `GDEXTENSION_INITIALIZATION_SERVERS`
     // level which is too early to have have everything we need for (e.g. `OS` singleton).
-    // So we have to do another init step at `GDNATIVE_INITIALIZATION_SCENE` level.
-    if (p_level == GDNATIVE_INITIALIZATION_SERVERS) {
+    // So we have to do another init step at `GDEXTENSION_INITIALIZATION_SCENE` level.
+    if (p_level == GDEXTENSION_INITIALIZATION_SERVERS) {
         _early_initialize();
-    } else if (p_level == GDNATIVE_INITIALIZATION_SCENE) {
+    } else if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
         _late_initialize();
     }
 }
 
-DLL_EXPORT GDNativeBool pythonscript_init(
-    const GDNativeInterface *p_interface,
-    const GDNativeExtensionClassLibraryPtr p_library,
-    GDNativeInitialization *r_initialization
+DLL_EXPORT GDExtensionBool pythonscript_init(
+    const GDExtensionInterface *p_interface,
+    const GDExtensionClassLibraryPtr p_library,
+    GDExtensionInitialization *r_initialization
 ) {
     if (state != STALLED) {
         printf("Pythonscript: Invalid internal state (this should never happen !)\n");
@@ -302,10 +318,32 @@ DLL_EXPORT GDNativeBool pythonscript_init(
         printf("Pythonscript: Invalid init parameters provided by Godot (this should never happen !)\n");
         goto error;
     }
-    // `pythonscript_gdnative_interface` must be set as early as possible given it is never null-pointer
+    // `pythonscript_gdextension` must be set as early as possible given it is never null-pointer
     // checked, especially in the Cython modules
-    pythonscript_gdnative_interface = p_interface;
-    pythonscript_gdnative_library = p_library;
+    pythonscript_gdextension = p_interface;
+    pythonscript_gdextension_library = p_library;
+
+    // Load GDString/GDStringName contructor/destructor needed for pythonscript_gdstringname_new/delete helpers
+    gdstring_constructor = pythonscript_gdextension->variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 0);
+    if (gdstring_constructor == NULL) {
+        GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `String` constructor)");
+        goto error;
+    }
+    gdstring_destructor = pythonscript_gdextension->variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING);
+    if (gdstring_destructor == NULL) {
+        GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `String` destructor)");
+        goto error;
+    }
+    gdstringname_constructor = pythonscript_gdextension->variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 1);
+    if (gdstringname_constructor == NULL) {
+        GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `StringName` constructor)");
+        goto error;
+    }
+    gdstringname_destructor = pythonscript_gdextension->variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME);
+    if (gdstringname_destructor == NULL) {
+        GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `StringName` destructor)");
+        goto error;
+    }
 
     // Check compatibility between the Godot version that has been used for building
     // (i.e. the bindings has been generated against) and the version currently executed.
@@ -336,7 +374,7 @@ DLL_EXPORT GDNativeBool pythonscript_init(
         GD_PRINT_WARNING(buff);
     }
 
-    r_initialization->minimum_initialization_level  = GDNATIVE_INITIALIZATION_SERVERS;
+    r_initialization->minimum_initialization_level  = GDEXTENSION_INITIALIZATION_SERVERS;
 	r_initialization->userdata = NULL;
     r_initialization->initialize = _initialize;
     r_initialization->deinitialize = _deinitialize;
