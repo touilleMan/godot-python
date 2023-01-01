@@ -1,0 +1,11 @@
+[configuration]
+
+entry_symbol = "my_init"
+
+[libraries]
+
+linux.64="res://my.so"
+linux.32="res://my.so"
+windows.64="res://my.pyd"
+windows.32="res://my.pyd"
+macos.64="res://my.dylib"
