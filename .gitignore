@@ -14,3 +14,9 @@ __pycache__
 
 # Build directory
 /build/
+
+# Godot import stuff
+.godot/imported/
+.godot/editor/
+.godot/shader_cache/
+.godot/uid_cache.bin
