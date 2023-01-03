@@ -134,6 +134,9 @@ def install_distrib(build_dir: Path, distrib_subdir: str) -> Path:
         ).returncode
         != 0
     ):
+        cmd = [str(python_path), "-m", "ensurepip"]
+        print(" ".join(cmd))
+        subprocess.check_call(cmd)
         cmd = [str(python_path), "-m", "pip", "install", "cython"]
         print(" ".join(cmd))
         subprocess.check_call(cmd)
