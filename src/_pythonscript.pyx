@@ -123,7 +123,9 @@ cdef api void _pythonscript_late_init() with gil:
         pythonscript_gdextension.object_method_bind_ptrcall(
             bind,
             singleton,
-            args,
+            # Cast on args is required given autopxd2 incorrectly removes the const
+            # attributes when converting gdextension_interface.c to .pxd
+            <const void * const*>args,
             NULL,
         )
 

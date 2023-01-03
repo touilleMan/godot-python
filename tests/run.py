@@ -77,13 +77,13 @@ def fetch_godot_binary(build_dir: Path, version: GodotBinaryVersion) -> Path:
     if not binary_path.exists():
         print(f"Downloading {url}...")
         with urlopen(url) as rep:
-            length = rep.headers.get("Content-Length")
+            length = int(rep.headers.get("Content-Length"))
             # Poor's man progress bar
             buff = BytesIO()
             while True:
                 if buff.write(rep.read(2**20)) == 0:
                     break
-                print(f"{buff.tell()}/{length}", flush=True, end="\r")
+                print(f"{buff.tell()//2**20}Mo/{length//2**20}Mo", flush=True, end="\r")
         print("", flush=True)
         zipfile = ZipFile(buff)
         if zippath not in zipfile.namelist():
@@ -115,6 +115,29 @@ def install_distrib(build_dir: Path, distrib_subdir: str) -> Path:
     ]
     print(" ".join(cmd))
     subprocess.check_call(cmd)
+
+    for platform_dir in (distrib_workdir / "addons/pythonscript").iterdir():
+        if "windows" in platform_dir.name.lower():
+            python_path = platform_dir / "python.exe"
+            break
+        elif "linux" in platform_dir.name.lower():
+            python_path = platform_dir / "bin/python3"
+            break
+        elif "macos" in platform_dir.name.lower():
+            python_path = platform_dir / "bin/python3"
+            break
+
+    # We also have to install Cython to compile the projects
+    if (
+        subprocess.run(
+            [str(python_path), "-m", "cython", "--version"], capture_output=True
+        ).returncode
+        != 0
+    ):
+        cmd = [str(python_path), "-m", "pip", "install", "cython"]
+        print(" ".join(cmd))
+        subprocess.check_call(cmd)
+
     return distrib_workdir
 
 
@@ -199,6 +222,10 @@ if __name__ == "__main__":
 
     if args.tests:
         tests_dirs = [x for x in collect_tests() if x.name in args.tests]
+        if not tests_dirs:
+            raise SystemExit(
+                f"No test selected, available tests: {[x.name for x in collect_tests()]}"
+            )
     else:
         tests_dirs = collect_tests()
 

@@ -19,8 +19,8 @@ cdef extern GDExtensionBool _my_init(
     # print("==> _my_init")
     r_initialization.minimum_initialization_level  = GDEXTENSION_INITIALIZATION_SERVERS
     r_initialization.userdata = NULL
-    r_initialization.initialize = _my_initialize
-    r_initialization.deinitialize = _my_deinitialize
+    #  r_initialization.initialize = _my_initialize
+    #  r_initialization.deinitialize = _my_deinitialize
     return True
 
 

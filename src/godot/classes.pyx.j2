@@ -189,7 +189,9 @@ cdef object _object_call(GDExtensionObjectPtr obj, str meth, args):
     pythonscript_gdextension.object_method_bind_call(
         Object_call,
         classdb,
-        <GDExtensionVariantPtr *>&variant_args_ptrs,
+        # Cast is required given autopxd2 incorrectly removes the const attributes
+        # when converting gdextension_interface.c to .pxd
+        <const void * const*>&variant_args_ptrs,
         args_with_meth_len,
         &ret,
         &call_error,

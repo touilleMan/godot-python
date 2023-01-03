@@ -77,10 +77,12 @@ DLL_EXPORT void pythonscript_gdstringname_new(GDExtensionStringNamePtr ptr, cons
     // Method name must be passed as a StringName object... which itself has
     // to be built from a String object :(
     GDExtensionStringPtr as_gdstring;
+    const GDExtensionConstTypePtr args[1] = {&as_gdstring};
     pythonscript_gdextension->string_new_with_utf8_chars(&as_gdstring, cstr);
-    gdstringname_constructor(ptr, &as_gdstring);
+    gdstringname_constructor(ptr, args);
     gdstring_destructor(&as_gdstring);
 }
+
 DLL_EXPORT void pythonscript_gdstringname_delete(GDExtensionStringNamePtr ptr) {
     gdstringname_destructor(ptr);
 }

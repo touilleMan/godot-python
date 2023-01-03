@@ -10,7 +10,7 @@ project(
         # always done with a --destdir given installing this project globally on
         # the system is meaningless
         'prefix=/',
-        'c_std=c11',
+        'c_std=c17',
     ]
 )
 

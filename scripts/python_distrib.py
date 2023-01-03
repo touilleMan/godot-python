@@ -6,16 +6,17 @@ from urllib.request import urlopen
 import shutil
 import tarfile
 import json
-from zstandard import ZstdDecompressor
+import gzip
+import zstandard
 
 
 PREBUILDS_BASE_URL = "https://github.com/indygreg/python-build-standalone/releases/download"
 PLATFORM_TO_PREBUILDS = {
-    "3.9.7": {
-        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20211017/cpython-3.9.7-x86_64-unknown-linux-gnu-pgo+lto-20211017T1616.tar.zst",
-        "windows-x86": f"{PREBUILDS_BASE_URL}/20211017/cpython-3.9.7-i686-pc-windows-msvc-shared-pgo-20211017T1616.tar.zst",
-        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20211017/cpython-3.9.7-x86_64-pc-windows-msvc-shared-pgo-20211017T1616.tar.zst",
-        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20211017/cpython-3.9.7-x86_64-apple-darwin-pgo+lto-20211017T1616.tar.zst",
+    "3.10.8": {
+        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20221106/cpython-3.10.8+20221106-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
+        "windows-x86": f"{PREBUILDS_BASE_URL}/20221106/cpython-3.10.8+20221106-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20221106/cpython-3.10.8+20221106-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20221106/cpython-3.10.8+20221106-x86_64-apple-darwin-pgo+lto-full.tar.zst",
     }
 }
 
@@ -39,9 +40,15 @@ def fetch_prebuild(
     if not archive_path.exists() or force:
         print(f"Downloading {archive_url}...")
         tmp_archive_path = archive_path.parent / f"{archive_path.name}.tmp"
-        with urlopen(archive_url) as infd:
+        with urlopen(archive_url) as rep:
             with open(tmp_archive_path, "bw") as outfd:
-                outfd.write(infd.read())
+                length = int(rep.headers.get("Content-Length"))
+                # Poor's man progress bar
+                while True:
+                    if outfd.write(rep.read(2**20)) == 0:
+                        break
+                    print(f"{outfd.tell()//2**20}Mo/{length//2**20}Mo", flush=True, end="\r")
+
         shutil.move(tmp_archive_path, archive_path)
 
     if force and prebuild_dir.exists():
@@ -49,11 +56,20 @@ def fetch_prebuild(
 
     if not prebuild_dir.exists():
         print(f"Extracting {archive_path}...")
-        with open(archive_path, "rb") as fh:
-            dctx = ZstdDecompressor()
-            with dctx.stream_reader(fh) as reader:
-                with tarfile.open(mode="r|", fileobj=reader) as tf:
-                    tf.extractall(prebuild_dir)
+
+        def _tar_extract(reader):
+            with tarfile.open(mode="r|", fileobj=reader) as tf:
+                tf.extractall(prebuild_dir)
+
+        if archive_path.suffix == ".gz":
+            with gzip.open(archive_path, mode="rb") as reader:
+                _tar_extract(reader)
+        else:
+            assert archive_path.suffix == ".zst"
+            with open(archive_path, mode="rb") as fh:
+                dctx = zstandard.ZstdDecompressor()
+                with dctx.stream_reader(fh) as reader:
+                    _tar_extract(reader)
 
 
 def load_config(prebuild_dir: Path) -> dict:

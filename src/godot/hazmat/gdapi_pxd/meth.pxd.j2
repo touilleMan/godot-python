@@ -47,13 +47,20 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
 {%   if not builtin.return_type.is_stack_only %}
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
     __ret = {{ builtin.return_type.c_name_prefix }}_new()
+{%   else %}
+    # C compiler doesn't like passing to a function a pointer on uninitialized
+    # data (see `-Wmaybe-uninitialized`).
+    # Should be optimized out in the end given the called function end up inlined.
+    memset(&__ret, 0, sizeof(__ret))
 {%   endif %}
 {% endif %}
     gd_utility_{{ builtin.original_name }}_ptr(
         {# GDExtensionTypePtr ret #}
         {{ "NULL" if builtin.return_type.is_nil else "&__ret" }},
         {# const GDExtensionTypePtr *p_arguments #}
-        {{ "NULL" if (builtin.arguments | length) == 0 else "__args" }},
+        # Cast on args is required given autopxd2 incorrectly removes the const
+        # attributes when converting gdextension_interface.c to .pxd
+        <const void *const*>{{ "NULL" if (builtin.arguments | length) == 0 else "__args" }},
         {# int p_argument_count #}
         {{ builtin.arguments | length }}
     )
@@ -70,12 +77,16 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
 {# to pass a `gd_variant_t**` as parameter) whose size is passed in the number #}
 {# of parameters fields... Yes this is very confusing stuff, my brain hurts ! #}
 {% if builtin.return_type.is_nil %}
-    gd_utility_{{ builtin.original_name }}_ptr(NULL, <GDExtensionTypePtr *>&args, args_count)
+    # Cast on args is required given autopxd2 incorrectly removes the const
+    # attributes when converting gdextension_interface.c to .pxd
+    gd_utility_{{ builtin.original_name }}_ptr(NULL, <const void *const*>&args, args_count)
 {% else %}
     cdef gd_variant_t __ret  # TODO: improve return type !
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
     __ret = gd_variant_new()
-    gd_utility_{{ builtin.original_name }}_ptr(&__ret, <GDExtensionTypePtr *>&args, args_count)
+    # Cast on args is required given autopxd2 incorrectly removes the const
+    # attributes when converting gdextension_interface.c to .pxd
+    gd_utility_{{ builtin.original_name }}_ptr(&__ret, <const void *const*>&args, args_count)
     return __ret
 {% endif %}
 {% endmacro %}
@@ -151,7 +162,9 @@ cdef inline {{ render_builtin_constructor_signature(builtin, constructor) }}:
 {% endif %}
     {{ builtin.c_name_prefix }}_constructor_{{ constructor.index }}_ptr(
         &obj,
-        {{ "NULL" if (constructor.arguments | length) == 0 else "p_args" }}
+        # Cast is required given autopxd2 incorrectly removes the const attributes
+        # when converting gdextension_interface.c to .pxd
+        <const void * const*>{{ "NULL" if (constructor.arguments | length) == 0 else "p_args" }}
     )
     return obj
 {% endmacro %}
@@ -195,13 +208,20 @@ cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
 {%   if not meth.return_type.is_stack_only %}
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
     __ret = {{ meth.return_type.c_name_prefix }}_new()
+{%   else %}
+    # C compiler doesn't like passing to a function a pointer on uninitialized
+    # data (see `-Wmaybe-uninitialized`).
+    # Should be optimized out in the end given the called function end up inlined.
+    memset(&__ret, 0, sizeof(__ret))
 {%   endif %}
 {% endif %}
     {{ builtin.c_name_prefix }}_meth_{{ meth.name }}_ptr(
         {# GDExtensionTypePtr p_base #}
         self,
         {# const GDExtensionTypePtr *__args #}
-        __args,
+        # Cast is required given autopxd2 incorrectly removes the const attributes
+        # when converting gdextension_interface.c to .pxd
+        <const void * const*>__args,
         {# GDExtensionTypePtr __ret #}
         {{ "NULL" if meth.return_type.is_nil else "&__ret" }},
         {# int p_argument_count #}
@@ -224,6 +244,11 @@ cdef inline {{ m.type.c_type }} {{ builtin.c_name_prefix }}_get_{{ m.name }}({{ 
 {% if not m.type.is_stack_only %}1
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
     __ret = {{ m.type.c_name_prefix }}_new()
+{% else %}
+    # C compiler doesn't like passing to a function a pointer on uninitialized
+    # data (see `-Wmaybe-uninitialized`).
+    # Should be optimized out in the end given the called function end up inlined.
+    memset(&__ret, 0, sizeof(__ret))
 {% endif %}
     {{ builtin.c_name_prefix }}_get_{{ m.name }}_ptr(self, &__ret)
     return __ret
@@ -250,6 +275,11 @@ cdef inline {{ builtin.indexing_return_type.c_type }} {{ builtin.c_name_prefix }
 {%   if not builtin.indexing_return_type.is_stack_only %}
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
     __ret = {{ builtin.indexing_return_type.c_name_prefix }}_new()
+{%   else %}
+    # C compiler doesn't like passing to a function a pointer on uninitialized
+    # data (see `-Wmaybe-uninitialized`).
+    # Should be optimized out in the end given the called function end up inlined.
+    memset(&__ret, 0, sizeof(__ret))
 {%   endif %}
     {{ builtin.c_name_prefix }}_indexed_getter_ptr(self, index, &__ret)
     return __ret
@@ -277,6 +307,11 @@ cdef inline {{ builtin.indexing_return_type.c_type }} {{ builtin.c_name_prefix }
 {%   if not builtin.indexing_return_type.is_stack_only %}
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
     __ret = {{ builtin.indexing_return_type.c_name_prefix }}_new()
+{%   else %}
+    # C compiler doesn't like passing to a function a pointer on uninitialized
+    # data (see `-Wmaybe-uninitialized`).
+    # Should be optimized out in the end given the called function end up inlined.
+    memset(&__ret, 0, sizeof(__ret))
 {%   endif %}
     {{ builtin.c_name_prefix }}_keyed_getter_ptr(self, key, &__ret)
     return __ret
