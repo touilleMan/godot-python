@@ -32,6 +32,7 @@
 // is initialized (after that we can use the Python binding), so instead we stick with
 // the biggest possible value and accept we will lose a couple of bytes on the stack ;)
 #define GD_STRING_MAX_SIZE 8
+#define GD_STRING_NAME_MAX_SIZE 8
 
 // Nobody ain't no time to include stdbool.h !
 #define bool unsigned int;
@@ -70,16 +71,16 @@ DLL_EXPORT GDExtensionClassLibraryPtr pythonscript_gdextension_library = NULL;
 
 static GDExtensionPtrConstructor gdstring_constructor = NULL;
 static GDExtensionPtrDestructor gdstring_destructor = NULL;
-static GDExtensionPtrConstructor gdstringname_constructor = NULL;
+static GDExtensionPtrConstructor gdstringname_from_gdstring_constructor = NULL;
 static GDExtensionPtrDestructor gdstringname_destructor = NULL;
 
 DLL_EXPORT void pythonscript_gdstringname_new(GDExtensionStringNamePtr ptr, const char *cstr) {
     // Method name must be passed as a StringName object... which itself has
     // to be built from a String object :(
-    GDExtensionStringPtr as_gdstring;
+    char as_gdstring[GD_STRING_MAX_SIZE];
     const GDExtensionConstTypePtr args[1] = {&as_gdstring};
     pythonscript_gdextension->string_new_with_utf8_chars(&as_gdstring, cstr);
-    gdstringname_constructor(ptr, args);
+    gdstringname_from_gdstring_constructor(ptr, args);
     gdstring_destructor(&as_gdstring);
 }
 
@@ -123,9 +124,13 @@ static void _early_initialize() {
     // Set PYTHONHOME from .so path
     {
         // 0) Retrieve Godot methods
-        GDExtensionStringNamePtr method_name_as_gdstringname;
+        char method_name_as_gdstringname[GD_STRING_NAME_MAX_SIZE];
         pythonscript_gdstringname_new(&method_name_as_gdstringname, "get_base_dir");
-        GDExtensionPtrBuiltInMethod gdstring_get_base_dir = pythonscript_gdextension->variant_get_ptr_builtin_method(GDEXTENSION_VARIANT_TYPE_STRING, &method_name_as_gdstringname, 3942272618);
+        GDExtensionPtrBuiltInMethod gdstring_get_base_dir = pythonscript_gdextension->variant_get_ptr_builtin_method(
+            GDEXTENSION_VARIANT_TYPE_STRING,
+            &method_name_as_gdstringname,
+            3942272618
+        );
         pythonscript_gdstringname_delete(&method_name_as_gdstringname);
         if (gdstring_get_base_dir == NULL) {
             GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `String.get_base_dir` method)");
@@ -336,8 +341,8 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
         GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `String` destructor)");
         goto error;
     }
-    gdstringname_constructor = pythonscript_gdextension->variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 1);
-    if (gdstringname_constructor == NULL) {
+    gdstringname_from_gdstring_constructor = pythonscript_gdextension->variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 2);
+    if (gdstringname_from_gdstring_constructor == NULL) {
         GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `StringName` constructor)");
         goto error;
     }
