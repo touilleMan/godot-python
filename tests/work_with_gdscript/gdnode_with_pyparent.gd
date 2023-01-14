@@ -1,1 +1,0 @@
-extends "res://pynode.py"
