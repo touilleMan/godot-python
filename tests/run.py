@@ -17,6 +17,10 @@ from urllib.request import urlopen
 
 
 BASEDIR = Path(__file__).resolve().parent
+RED = "\033[0;31m"
+GREEN = "\033[0;32m"
+YELLOW = "\033[0;33m"
+NO_COLOR = "\033[0m"
 
 
 GodotBinaryVersion = Tuple[str, str, str, str]
@@ -103,7 +107,7 @@ def collect_tests() -> List[Path]:
 
 def install_distrib(build_dir: Path, distrib_subdir: str) -> Path:
     distrib_workdir = build_dir / distrib_subdir
-    print(f"### Generate distrib for tests {distrib_workdir}")
+    print(f"{YELLOW}Generate distrib for tests {distrib_workdir}{NO_COLOR}")
     cmd = [
         "meson",
         "install",
@@ -165,7 +169,7 @@ def symlink(src: Path, dst: Path) -> None:
 
 
 def create_test_workdir(test_dir: Path, distrib_workdir: Path, test_workdir: Path) -> None:
-    print(f"### {test_dir.name}: Create&populate test workdir in {test_workdir}")
+    print(f"{YELLOW}{test_dir.name}: Create&populate test workdir in {test_workdir}{NO_COLOR}")
     shutil.copytree(test_dir, test_workdir, dirs_exist_ok=True)
     symlink(distrib_workdir / "addons", test_workdir / "addons")
     shutil.copy(distrib_workdir / "pythonscript.gdextension", test_workdir)
@@ -174,7 +178,7 @@ def create_test_workdir(test_dir: Path, distrib_workdir: Path, test_workdir: Pat
 
     build_script = test_workdir / "build.py"
     if build_script.exists():
-        print(f"### {test_dir.name}: Running build script {build_script}")
+        print(f"{YELLOW}{test_dir.name}: Running build script {build_script}{NO_COLOR}")
         cmd = [sys.executable, str(build_script)]
         print(" ".join(cmd))
         subprocess.check_call(cmd)
@@ -183,10 +187,33 @@ def create_test_workdir(test_dir: Path, distrib_workdir: Path, test_workdir: Pat
 def run_test(
     test_name: str, test_workdir: Path, godot_binary: Path, extra_args: Sequence[str]
 ) -> None:
-    print(f"### {test_name}: Running test in workdir {test_workdir}")
+    print(f"{YELLOW}{test_name}: Running test in workdir {test_workdir}{NO_COLOR}")
     cmd = [str(godot_binary.resolve()), "--path", str(test_workdir.resolve()), *extra_args]
     print(" ".join(cmd))
-    subprocess.check_call(cmd)
+    res = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    total_output = b""
+    while True:
+        buff: bytes = res.stdout.read1()
+        total_output += buff
+        os.write(sys.stdout.fileno(), buff)
+        try:
+            res.wait(timeout=0.1)
+            break
+        except subprocess.TimeoutExpired:
+            # Subprocess is still running
+            pass
+    if res.returncode != 0:
+        raise SystemExit(f"{RED}{test_name}: Non-zero return code: {res.returncode}{NO_COLOR}")
+    for line in total_output.splitlines():
+        # See https://github.com/godotengine/godot/issues/66722
+        if b"Message Id Number: 0 | Message Id Name: Loader Message" in line:
+            continue
+        lower_line = line.lower()
+        if b"error" in lower_line or b"warning" in lower_line:
+            raise SystemExit(
+                f"{RED}{test_name}: stdout/stderr contains logs with error and/or warning ({line}){NO_COLOR}"
+            )
+    print(f"{GREEN}{test_name}: All good \\o/{NO_COLOR}")
 
 
 if __name__ == "__main__":
