@@ -64,7 +64,8 @@ cdef GDExtensionPtrIndexedGetter {{ builtin.c_name_prefix }}_indexed_getter_ptr 
     pythonscript_gdextension.variant_get_ptr_indexed_getter({{ builtin.variant_type_name }})
 {%   endif %}
 {%   for o in builtin.operators %}
-{%     if o.right_type is none %}
+{# TODO: make sure GDEXTENSION_VARIANT_TYPE_NIL also represents variant type #}
+{%     if o.right_type is none or o.right_type.is_variant %}
 cdef GDExtensionPtrOperatorEvaluator {{ builtin.c_name_prefix }}_op_{{ o.name }}_ptr = \
     pythonscript_gdextension.variant_get_ptr_operator_evaluator({{ o.variant_operator_name }}, {{ builtin.variant_type_name }}, GDEXTENSION_VARIANT_TYPE_NIL)
 {%     else %}

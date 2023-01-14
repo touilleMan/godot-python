@@ -29,11 +29,16 @@ class GlobalConstantSpec:
 def parse_global_enum(spec: dict) -> EnumTypeSpec:
     assert spec.keys() == {"name", "values"}, spec.keys()
     cooked_name = "".join(spec["name"].split("."))
+    # TODO: see https://github.com/godotengine/godot/issues/71397
+    if spec["name"] == "MouseButtonMask":
+        is_bitfield = True
+    else:
+        is_bitfield = False
     return EnumTypeSpec(
         original_name=spec["name"],
         py_type=cooked_name,
         cy_type=cooked_name,
-        is_bitfield=False,
+        is_bitfield=is_bitfield,
         values={x["name"]: x["value"] for x in spec["values"]},
     )
 

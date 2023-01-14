@@ -72,6 +72,7 @@ class ClassMethodSpec:
             item["return_type"] = TypeInUse.parse(return_value["type"])
         item.setdefault("arguments", [])
         item.setdefault("hash", None)
+        item.setdefault("is_property_accessor", False)
         assert_api_consistency(cls, item)
         return cls(
             name=correct_name(item["name"]),
