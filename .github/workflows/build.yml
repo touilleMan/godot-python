@@ -76,6 +76,7 @@ jobs:
           set -eux
           python tests/run.py 0-gdscript --build-dir build/ -- --headless
           python tests/run.py 1-gdextension --build-dir build/ -- --headless
+          python tests/run.py 2-pythonscript-init --build-dir build/ -- --headless
       # - name: 'Generate artifact archive'
       #   run: meson compile -C build/ release
       # - name: 'Export release artifact'
@@ -133,6 +134,7 @@ jobs:
           set -eux
           python tests/run.py 0-gdscript --build-dir build/ --godot-binary=${{ matrix.GODOT_BINARY_HINT }} -- --headless
           python tests/run.py 1-gdextension --build-dir build/ --godot-binary=${{ matrix.GODOT_BINARY_HINT }} -- --headless
+          python tests/run.py 2-pythonscript-init --build-dir build/ --godot-binary=${{ matrix.GODOT_BINARY_HINT }} -- --headless
       # - name: 'Install Mesa3D OpenGL'
       #   shell: bash
       #   run: |

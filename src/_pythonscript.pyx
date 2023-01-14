@@ -97,37 +97,37 @@ cdef _testbench():
 
 
 cdef api void _pythonscript_late_init() with gil:
-    global _pythons_script_language
-    cdef GDExtensionObjectPtr singleton
-    cdef GDExtensionMethodBindPtr bind
-    cdef GDExtensionTypePtr[1] args
-    cdef StringName gdname_engine
-    cdef StringName gdname_register_script_language
-    # _testbench()
+    # global _pythons_script_language
+    # cdef GDExtensionObjectPtr singleton
+    # cdef GDExtensionMethodBindPtr bind
+    # cdef GDExtensionTypePtr[1] args
+    # cdef StringName gdname_engine
+    # cdef StringName gdname_register_script_language
+    # # _testbench()
 
-    # 2) Create an instance of `PythonScriptLanguage` class
-    if _pythons_script_language is None:
+    # # 2) Create an instance of `PythonScriptLanguage` class
+    # if _pythons_script_language is None:
 
-        _pythons_script_language = PythonScriptLanguage.__new__(PythonScriptLanguage)
+    #     _pythons_script_language = PythonScriptLanguage.__new__(PythonScriptLanguage)
 
-        # 3) Actually register Python into Godot \o/
-        gdname_engine = StringName("Engine")
-        gdname_register_script_language = StringName("register_script_language")
-        singleton = pythonscript_gdextension.global_get_singleton(&gdname_engine._gd_data)
-        bind = pythonscript_gdextension.classdb_get_method_bind(
-            &gdname_engine._gd_data,
-            &gdname_register_script_language._gd_data,
-            1327703655,
-        )
-        args = [_pythons_script_language._gd_ptr]
-        pythonscript_gdextension.object_method_bind_ptrcall(
-            bind,
-            singleton,
-            # Cast on args is required given autopxd2 incorrectly removes the const
-            # attributes when converting gdextension_interface.c to .pxd
-            <const void * const*>args,
-            NULL,
-        )
+    #     # 3) Actually register Python into Godot \o/
+    #     gdname_engine = StringName("Engine")
+    #     gdname_register_script_language = StringName("register_script_language")
+    #     singleton = pythonscript_gdextension.global_get_singleton(&gdname_engine._gd_data)
+    #     bind = pythonscript_gdextension.classdb_get_method_bind(
+    #         &gdname_engine._gd_data,
+    #         &gdname_register_script_language._gd_data,
+    #         1327703655,
+    #     )
+    #     args = [_pythons_script_language._gd_ptr]
+    #     pythonscript_gdextension.object_method_bind_ptrcall(
+    #         bind,
+    #         singleton,
+    #         # Cast on args is required given autopxd2 incorrectly removes the const
+    #         # attributes when converting gdextension_interface.c to .pxd
+    #         <const void * const*>args,
+    #         NULL,
+    #     )
 
     import sys
     from godot._version import __version__ as pythonscript_version
@@ -155,9 +155,10 @@ cdef api void _pythonscript_early_init() with gil:
     #
     # see: https://docs.godotengine.org/en/latest/classes/class_scriptlanguageextension.html
 
-    # 1) Register `PythonScript` class into Godot
-    PythonScriptLanguage.__godot_extension_register_class()
-    PythonScript.__godot_extension_register_class()
+    pass
+    # # 1) Register `PythonScript` class into Godot
+    # PythonScriptLanguage.__godot_extension_register_class()
+    # PythonScript.__godot_extension_register_class()
 
 
     # # OS and ProjectSettings are singletons exposed as global python objects,
@@ -205,5 +206,5 @@ cdef api void _pythonscript_deinitialize() with gil:
     # That will continue until `godot_gdnative_terminate` is called (which is
     # responsible for the actual teardown of the interpreter).
 
-    PythonScript.__godot_extension_unregister_class()
-    PythonScriptLanguage.__godot_extension_unregister_class()
+    # PythonScript.__godot_extension_unregister_class()
+    # PythonScriptLanguage.__godot_extension_unregister_class()
