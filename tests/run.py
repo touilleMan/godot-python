@@ -16,6 +16,9 @@ from zipfile import ZipFile
 from urllib.request import urlopen
 
 
+DEFAULT_GODOT_BINARY_VERSION = "4.0.0-beta10"
+
+
 BASEDIR = Path(__file__).resolve().parent
 RED = "\033[0;31m"
 GREEN = "\033[0;32m"
@@ -24,26 +27,28 @@ NO_COLOR = "\033[0m"
 
 
 GodotBinaryVersion = Tuple[str, str, str, str]
+GodotBinaryPlatform = str
 
 
-def parse_godot_binary_hint(godot_binary_hint: str) -> Union[Path, GodotBinaryVersion]:
-    godot_binary_path = Path(godot_binary_hint).resolve()
-    if godot_binary_path.exists():
-        return godot_binary_path
+def parse_godot_binary_hint(
+    godot_binary_hint: str,
+) -> Union[Path, Tuple[GodotBinaryPlatform, GodotBinaryVersion]]:
+    try:
+        godot_binary_path = Path(godot_binary_hint).resolve()
+        if godot_binary_path.is_file():
+            return godot_binary_path
+    except OSError:
+        pass
 
-    # Provided value is version information with format <major>.<minor>.<patch>[-<extra>]
-    match = re.match(r"^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-(\w+))?$", godot_binary_hint)
-    if match:
-        major, minor, patch, extra = match.groups()
-    else:
-        raise ValueError(
-            f"`{godot_binary_hint}` is neither an existing file nor a valid <major>.<minor>.<patch>[-<extra>] Godot version format"
-        )
-    return (major, minor, patch, extra or "stable")
+    try:
+        build_machine, raw_version = godot_binary_hint.split(":")
+    except ValueError:
+        build_machine = ""
+        raw_version = godot_binary_hint
+    raw_version = raw_version or DEFAULT_GODOT_BINARY_VERSION
+    build_machine = build_machine or platform.machine()
 
-
-def fetch_godot_binary(build_dir: Path, version: GodotBinaryVersion) -> Path:
-    build_platform = f"{platform.system()}-{platform.machine()}".lower()
+    build_platform = f"{platform.system()}-{build_machine}".lower()
     godot_build_platform = {
         "linux-x86_64": "linux.x86_64",
         "linux-x64": "linux.x86_64",
@@ -62,38 +67,59 @@ def fetch_godot_binary(build_dir: Path, version: GodotBinaryVersion) -> Path:
             f"Don't know how to download a Godot binary for your platform `{build_platform}`"
         )
 
+    # Provided value is version information with format <major>.<minor>.<patch>[-<extra>]
+    match = re.match(r"^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-(\w+))?$", raw_version)
+    if match:
+        major, minor, patch, extra = match.groups()
+    else:
+        raise ValueError(
+            f"`{raw_version}` is neither an existing file nor a valid <major>.<minor>.<patch>[-<extra>] Godot version format"
+        )
+    return godot_build_platform, (major, minor, patch, extra or "stable")
+
+
+def fetch_godot_binary(
+    build_dir: Path, godot_platform: GodotBinaryPlatform, version: GodotBinaryVersion
+) -> Path:
     major, minor, patch, extra = version
     strversion = f"{major}.{minor}.{patch}" if patch != "0" else f"{major}.{minor}"
-    binary_name = f"Godot_v{strversion}-{extra}_{godot_build_platform}"
-    if build_platform.startswith("windows"):
+    binary_name = f"Godot_v{strversion}-{extra}_{godot_platform}"
+    if godot_platform.startswith("win"):
         binary_name += ".exe"
     if extra == "stable":
         url = f"https://downloads.tuxfamily.org/godotengine/{strversion}/{binary_name}.zip"
     else:
         url = f"https://downloads.tuxfamily.org/godotengine/{strversion}/{extra}/{binary_name}.zip"
 
-    if godot_build_platform.startswith("osx"):
+    if godot_platform.startswith("osx"):
         zippath = "Godot.app/Contents/MacOS/Godot"
     else:
         zippath = binary_name
     binary_path = build_dir / binary_name
 
     if not binary_path.exists():
-        print(f"Downloading {url}...")
+        print(f"Downloading {url}...", flush=True)
+        buff = BytesIO()
         with urlopen(url) as rep:
-            length = int(rep.headers.get("Content-Length"))
-            # Poor's man progress bar
-            buff = BytesIO()
-            while True:
-                if buff.write(rep.read(2**20)) == 0:
-                    break
-                print(f"{buff.tell()//2**20}Mo/{length//2**20}Mo", flush=True, end="\r")
-        print("", flush=True)
+            if not os.isatty(sys.stdout.fileno()):
+                buff.write(rep.read())
+            else:
+                length = int(rep.headers.get("Content-Length"))
+                # Poor's man progress bar
+                while True:
+                    if buff.write(rep.read(2**20)) == 0:
+                        break
+                    print(
+                        f"{buff.tell()//2**20}Mo/{length//2**20}Mo",
+                        flush=True,
+                        end="\r",
+                    )
+                print("", flush=True)
         zipfile = ZipFile(buff)
         if zippath not in zipfile.namelist():
             raise RuntimeError(f"Archive doesn't contain {zippath}")
 
-        print(f"Decompressing {binary_path}...")
+        print(f"Decompressing {binary_path}...", flush=True)
         binary_path.write_bytes(zipfile.open(zippath).read())
         if platform.system() != "Windows":
             os.chmod(binary_path, 0o755)
@@ -107,7 +133,7 @@ def collect_tests() -> List[Path]:
 
 def install_distrib(build_dir: Path, distrib_subdir: str) -> Path:
     distrib_workdir = build_dir / distrib_subdir
-    print(f"{YELLOW}Generate distrib for tests {distrib_workdir}{NO_COLOR}")
+    print(f"{YELLOW}Generate distrib for tests {distrib_workdir}{NO_COLOR}", flush=True)
     cmd = [
         "meson",
         "install",
@@ -117,7 +143,7 @@ def install_distrib(build_dir: Path, distrib_subdir: str) -> Path:
         "--destdir",
         distrib_subdir,
     ]
-    print(" ".join(cmd))
+    print(" ".join(cmd), flush=True)
     subprocess.check_call(cmd)
 
     for platform_dir in (distrib_workdir / "addons/pythonscript").iterdir():
@@ -139,10 +165,10 @@ def install_distrib(build_dir: Path, distrib_subdir: str) -> Path:
         != 0
     ):
         cmd = [str(python_path), "-m", "ensurepip"]
-        print(" ".join(cmd))
+        print(" ".join(cmd), flush=True)
         subprocess.check_call(cmd)
         cmd = [str(python_path), "-m", "pip", "install", "cython"]
-        print(" ".join(cmd))
+        print(" ".join(cmd), flush=True)
         subprocess.check_call(cmd)
 
     return distrib_workdir
@@ -169,7 +195,10 @@ def symlink(src: Path, dst: Path) -> None:
 
 
 def create_test_workdir(test_dir: Path, distrib_workdir: Path, test_workdir: Path) -> None:
-    print(f"{YELLOW}{test_dir.name}: Create&populate test workdir in {test_workdir}{NO_COLOR}")
+    print(
+        f"{YELLOW}{test_dir.name}: Create&populate test workdir in {test_workdir}{NO_COLOR}",
+        flush=True,
+    )
     shutil.copytree(test_dir, test_workdir, dirs_exist_ok=True)
     symlink(distrib_workdir / "addons", test_workdir / "addons")
     shutil.copy(distrib_workdir / "pythonscript.gdextension", test_workdir)
@@ -178,18 +207,29 @@ def create_test_workdir(test_dir: Path, distrib_workdir: Path, test_workdir: Pat
 
     build_script = test_workdir / "build.py"
     if build_script.exists():
-        print(f"{YELLOW}{test_dir.name}: Running build script {build_script}{NO_COLOR}")
+        print(
+            f"{YELLOW}{test_dir.name}: Running build script {build_script}{NO_COLOR}",
+            flush=True,
+        )
         cmd = [sys.executable, str(build_script)]
-        print(" ".join(cmd))
+        print(" ".join(cmd), flush=True)
         subprocess.check_call(cmd)
 
 
 def run_test(
     test_name: str, test_workdir: Path, godot_binary: Path, extra_args: Sequence[str]
 ) -> None:
-    print(f"{YELLOW}{test_name}: Running test in workdir {test_workdir}{NO_COLOR}")
-    cmd = [str(godot_binary.resolve()), "--path", str(test_workdir.resolve()), *extra_args]
-    print(" ".join(cmd))
+    print(
+        f"{YELLOW}{test_name}: Running test in workdir {test_workdir}{NO_COLOR}",
+        flush=True,
+    )
+    cmd = [
+        str(godot_binary.resolve()),
+        "--path",
+        str(test_workdir.resolve()),
+        *extra_args,
+    ]
+    print(" ".join(cmd), flush=True)
     res = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     total_output = b""
     while True:
@@ -208,27 +248,34 @@ def run_test(
         # See https://github.com/godotengine/godot/issues/66722
         if b"Message Id Number: 0 | Message Id Name: Loader Message" in line:
             continue
+        if b"lavapipe is not a conformant vulkan implementation, testing use only." in line:
+            continue
         lower_line = line.lower()
         if b"error" in lower_line or b"warning" in lower_line:
             raise SystemExit(
                 f"{RED}{test_name}: stdout/stderr contains logs with error and/or warning ({line}){NO_COLOR}"
             )
-    print(f"{GREEN}{test_name}: All good \\o/{NO_COLOR}")
+    print(f"{GREEN}{test_name}: All good \\o/{NO_COLOR}", flush=True)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("tests", nargs="*", help="Filter the tests to run", default=["helloworld"])
     parser.add_argument(
-        "--build-dir", type=Path, required=True, help="Build directory as configured in meson"
+        "--build-dir",
+        type=Path,
+        required=True,
+        help="Build directory as configured in meson",
     )
     parser.add_argument(
-        "--test-dir", type=Path, help="Use an existing test dir instead of creating a temporary one"
+        "--test-dir",
+        type=Path,
+        help="Use an existing test dir instead of creating a temporary one",
     )
     parser.add_argument(
         "--godot-binary",
         type=parse_godot_binary_hint,
-        default="4.0.0-beta10",
+        default=DEFAULT_GODOT_BINARY_VERSION,
         help="Path to Godot binary to use, or version of Godot to download and use",
     )
     parser.add_argument(
@@ -264,7 +311,7 @@ if __name__ == "__main__":
     if isinstance(args.godot_binary, Path):
         godot_binary_path = args.godot_binary
     else:
-        godot_binary_path = fetch_godot_binary(build_dir, args.godot_binary)
+        godot_binary_path = fetch_godot_binary(build_dir, *args.godot_binary)
 
     # Install the distrib, it is common to each test and kept between run to save time
     distrib_workdir = install_distrib(build_dir, "common_tests_install_distrib")
@@ -291,6 +338,8 @@ if __name__ == "__main__":
     for test_dir in tests_dirs:
         with test_workdir_factory() as test_workdir:
             create_test_workdir(
-                test_dir=test_dir, distrib_workdir=distrib_workdir, test_workdir=test_workdir
+                test_dir=test_dir,
+                distrib_workdir=distrib_workdir,
+                test_workdir=test_workdir,
             )
             run_test(test_dir.name, test_workdir, godot_binary_path, godot_extra_args)

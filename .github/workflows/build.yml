@@ -23,11 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c  # pin@v3.3.0
         with:
             submodules: true
       - name: Set up Python
-        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
+        uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435  # pin@v4.5.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Bootstrap
@@ -51,11 +51,11 @@ jobs:
       PLATFORM: linux-x86_64
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c  # pin@v3.3.0
         with:
             submodules: true
       - name: 'Set up Python'
-        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
+        uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435  # pin@v4.5.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: 'Setup venv'
@@ -72,7 +72,10 @@ jobs:
       - name: 'Build project'
         run: meson compile -C build/
       - name: 'Run tests'
-        run: python tests/run.py 0-gdscript 1-gdextension --build-dir build/ -- --headless
+        run: |
+          set -eux
+          python tests/run.py 0-gdscript --build-dir build/ -- --headless
+          python tests/run.py 1-gdextension --build-dir build/ -- --headless
       # - name: 'Generate artifact archive'
       #   run: meson compile -C build/ release
       # - name: 'Export release artifact'
@@ -94,12 +97,14 @@ jobs:
           - PLATFORM: 'windows-x86_64'
             PYTHON_ARCH: 'x64'
             MSVC_ARCH: 'x64'
+            GODOT_BINARY_HINT: ''
           - PLATFORM: 'windows-x86'
             PYTHON_ARCH: 'x86'
             MSVC_ARCH: 'x86'
+            GODOT_BINARY_HINT: 'x86:'
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c  # pin@v3.3.0
         with:
             submodules: true
       - name: 'Set up MSVC'
@@ -107,7 +112,7 @@ jobs:
         with:
           arch: ${{ matrix.MSVC_ARCH }}
       - name: 'Set up Python'
-        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
+        uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435  # pin@v4.5.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           architecture: ${{ matrix.PYTHON_ARCH }}
@@ -123,7 +128,11 @@ jobs:
       - name: 'Build project'
         run: meson compile -C build/
       - name: 'Run tests'
-        run: python tests/run.py 0-gdscript 1-gdextension --build-dir build/ -- --headless
+        shell: bash
+        run: |
+          set -eux
+          python tests/run.py 0-gdscript --build-dir build/ --godot-binary=${{ matrix.GODOT_BINARY_HINT }} -- --headless
+          python tests/run.py 1-gdextension --build-dir build/ --godot-binary=${{ matrix.GODOT_BINARY_HINT }} -- --headless
       # - name: 'Install Mesa3D OpenGL'
       #   shell: bash
       #   run: |
@@ -164,11 +173,11 @@ jobs:
       PLATFORM: 'macos-x86_64'
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@f1d3225b5376a0791fdee5a0e8eac5289355e43a  # pin@v2
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c  # pin@v3.3.0
         with:
             submodules: true
       - name: 'Set up Python'
-        uses: actions/setup-python@0291cefc54fa79cd1986aee8fa5ecb89ad4defea  # pin@v2
+        uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435  # pin@v4.5.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: 'Setup venv'
