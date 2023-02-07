@@ -45,7 +45,7 @@ endif
 
 # We stick with Godot's platform naming
 # Note darwin may refere to iOS and macOS (because it's sooo clever to designate
-# two totally diferent things with the same name...) but we only support macOS
+# two totally different things with the same name...) but we only support macOS
 if host_platform == 'darwin-x86_64'
     host_platform = 'macos-x86_64'
 endif
