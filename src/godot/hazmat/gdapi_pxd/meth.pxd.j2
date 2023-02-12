@@ -136,7 +136,12 @@ cdef inline gd_variant_t gd_object_into_variant(GDExtensionObjectPtr val):
 
 {% macro render_builtin_variant_conversions(builtin) %}
 cdef inline {{ render_builtin_from_variant_signature(builtin) }}:
+{% if builtin.is_scalar %}
     cdef {{ builtin.c_type }} ret
+{% else %}
+    # TODO: no longer needed once https://github.com/godotengine/godot/pull/35813 is merged
+    cdef {{ builtin.c_type }} ret = {{ builtin.c_name_prefix }}_new()
+{% endif %}
     {{ builtin.c_name_prefix }}_from_variant_ptr(&ret, val)
     return ret
 
