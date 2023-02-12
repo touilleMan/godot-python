@@ -67,8 +67,7 @@ cdef GDExtensionVariantType py_to_gd_type(object pytype):
 
 
 cdef object gd_variant_steal_into_pyobj(const gd_variant_t *gdvar):
-    # TODO: must do an ugly cast because autopxd2 ignores const qualifiers in the C headers
-    cdef GDExtensionVariantType gdtype = pythonscript_gdextension.variant_get_type(<gd_variant_t *>gdvar)
+    cdef GDExtensionVariantType gdtype = pythonscript_gdextension.variant_get_type(gdvar)
     if gdtype == GDEXTENSION_VARIANT_TYPE_OBJECT:
         raise NotImplementedError  # TODO
         # # TODO: This conversion relies on godot String and lookup into bindings
