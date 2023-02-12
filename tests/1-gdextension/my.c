@@ -8,12 +8,6 @@
 # define DLL_IMPORT
 #endif
 
-// Nobody ain't no time to include stdbool.h !
-#define bool unsigned int;
-#define true 1
-#define false 0
-
-
 static void _initialize(void *userdata, GDExtensionInitializationLevel p_level) {
     if (p_level != GDEXTENSION_INITIALIZATION_SERVERS) {
         return;
@@ -40,5 +34,5 @@ DLL_EXPORT GDExtensionBool my_init(
     r_initialization->initialize = _initialize;
     r_initialization->deinitialize = _deinitialize;
 
-    return true;
+    return 1;
 }
