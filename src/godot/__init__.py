@@ -8,8 +8,8 @@ if "_pythonscript" not in sys.modules:
     raise ImportError(
         "Cannot initialize godot module given Godot GDExtension API not available.\n"
         "This is most likely because you are running code from a regular Python interpreter"
-        " (i.e. doing something like `python my_script.py`) while godot module is only available"
-        " to Python code loaded from Godot through Godot-Python plugin."
+        " (i.e. using a REPL or doing something like `python my_script.py`) while godot module"
+        " is only available to Python code loaded from Godot through Godot-Python plugin."
     )
 del sys
 
