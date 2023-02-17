@@ -1,5 +1,6 @@
 from typing import Optional, Tuple
 from dataclasses import dataclass
+import re
 
 from .type_spec import *
 
@@ -131,7 +132,7 @@ class ValueInUse:
             cy_value = f"StringName({value})"
 
         elif value_py_type == "GDArray":
-            assert value == "[]"  # Only support default value !
+            assert re.match(r"\[\]|(Array\[\w+\]\(\[\]\))", value)  # Only support default value !
             py_value = value
             cy_value = "GDArray()"
 

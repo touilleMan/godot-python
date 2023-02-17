@@ -16,7 +16,7 @@ from zipfile import ZipFile
 from urllib.request import urlopen
 
 
-DEFAULT_GODOT_BINARY_VERSION = "4.0.0-beta12"
+DEFAULT_GODOT_BINARY_VERSION = "4.0.0-rc2"
 
 
 BASEDIR = Path(__file__).resolve().parent

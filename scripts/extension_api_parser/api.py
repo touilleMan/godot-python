@@ -1,6 +1,6 @@
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Optional, Set, Union
 from collections import OrderedDict
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 import json
 from enum import Enum
@@ -27,18 +27,13 @@ class GlobalConstantSpec:
 
 
 def parse_global_enum(spec: dict) -> EnumTypeSpec:
-    assert spec.keys() == {"name", "values"}, spec.keys()
+    assert spec.keys() == {"name", "is_bitfield", "values"}, spec.keys()
     cooked_name = "".join(spec["name"].split("."))
-    # TODO: see https://github.com/godotengine/godot/issues/71397
-    if spec["name"] == "MouseButtonMask":
-        is_bitfield = True
-    else:
-        is_bitfield = False
     return EnumTypeSpec(
         original_name=spec["name"],
         py_type=cooked_name,
         cy_type=cooked_name,
-        is_bitfield=is_bitfield,
+        is_bitfield=spec["is_bitfield"],
         values={x["name"]: x["value"] for x in spec["values"]},
     )
 

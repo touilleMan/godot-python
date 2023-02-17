@@ -166,7 +166,7 @@ cdef object _object_call(GDExtensionObjectPtr obj, str meth, args):
     cdef GDExtensionInt args_with_meth_len = len(args) + 1
     if args_with_meth_len > 9:
         # TODO: handle this
-        pythonscript_gdextension.print_error("more than 8 params is not supported !", "_object_call", "", 0)
+        pythonscript_gdextension.print_error("more than 8 params is not supported !", "_object_call", "", 0, False)
         return None
     cdef gd_variant_t[9] variant_args
     cdef (gd_variant_t*)[9] variant_args_ptrs

@@ -93,11 +93,11 @@ DLL_EXPORT void pythonscript_gdstringname_delete(GDExtensionStringNamePtr ptr) {
 }
 
 #define GD_PRINT_ERROR(msg) { \
-    pythonscript_gdextension->print_error(msg, __func__, __FILE__, __LINE__); \
+    pythonscript_gdextension->print_error(msg, __func__, __FILE__, __LINE__, false); \
 }
 
 #define GD_PRINT_WARNING(msg) { \
-    pythonscript_gdextension->print_warning(msg, __func__, __FILE__, __LINE__); \
+    pythonscript_gdextension->print_warning(msg, __func__, __FILE__, __LINE__, false); \
 }
 
 static void _late_initialize() {
