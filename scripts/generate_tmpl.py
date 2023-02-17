@@ -26,6 +26,80 @@ TARGETS: Dict[str, Tuple[bool, Path]] = {
 }
 
 
+# Subset of tlasses to use when generating the project for test&debug purpose,
+# this makes compilation much faster !
+GODOT_CLASSES_SAMPLE = {
+    "ArrayMesh",
+    "CallbackTweener",
+    "Camera2D",
+    "Camera3D",
+    "CameraAttributes",
+    "CanvasItem",
+    "ClassDB",
+    "ConcavePolygonShape3D",
+    "Control",
+    "ConvexPolygonShape3D",
+    "Engine",
+    "Environment",
+    "Font",
+    "Image",
+    "InputEvent",
+    "IntervalTweener",
+    "MainLoop",
+    "Material",
+    "Mesh",
+    "MethodTweener",
+    "MultiMesh",
+    "MultiplayerAPI",
+    "MultiplayerPeer",
+    "Node",
+    "Node2D",
+    "Node3D",
+    "Node3DGizmo",
+    "OS",
+    "Object",
+    "PackedScene",
+    "PacketPeer",
+    "PhysicsDirectSpaceState2D",
+    "PhysicsDirectSpaceState3D",
+    "PhysicsPointQueryParameters2D",
+    "PhysicsPointQueryParameters3D",
+    "PhysicsRayQueryParameters2D",
+    "PhysicsRayQueryParameters3D",
+    "PhysicsShapeQueryParameters2D",
+    "PhysicsShapeQueryParameters3D",
+    "ProjectSettings",
+    "PropertyTweener",
+    "RefCounted",
+    "Resource",
+    "ResourceFormatLoader",
+    "ResourceFormatSaver",
+    "ResourceImporter",
+    "SceneState",
+    "SceneTree",
+    "SceneTreeTimer",
+    "Script",
+    "ScriptExtension",
+    "ScriptLanguage",
+    "Shape2D",
+    "Shape3D",
+    "Sky",
+    "StyleBox",
+    "TextServer",
+    "Texture",
+    "Texture2D",
+    "Theme",
+    "TriangleMesh",
+    "Tween",
+    "Tweener",
+    "Viewport",
+    "ViewportTexture",
+    "Window",
+    "World2D",
+    "World3D",
+}
+
+
 def make_jinja_env(import_dir: Path) -> Environment:
     env = Environment(
         loader=FileSystemLoader(import_dir),
@@ -47,6 +121,10 @@ if __name__ == "__main__":
         metavar="EXTENSION_API_PATH",
         type=Path,
         help="Path to Godot extension_api.json file",
+    )
+    parser.add_argument(
+        "--classes-sample",
+        action="store_true",
     )
     parser.add_argument(
         "--build-config",
@@ -78,8 +156,16 @@ if __name__ == "__main__":
         template_name = f"{name}.j2"
         todo.append((output, template_name, template_home))
 
+    if need_classes:
+        if args.classes_sample:
+            filter_classes = GODOT_CLASSES_SAMPLE
+        else:
+            filter_classes = False  # keep all classes
+    else:
+        filter_classes = True
+
     api = parse_extension_api_json(
-        path=args.input, build_config=BuildConfig(args.build_config), skip_classes=not need_classes
+        path=args.input, build_config=BuildConfig(args.build_config), filter_classes=filter_classes
     )
 
     for todo_output, todo_template_name, todo_template_home in todo:

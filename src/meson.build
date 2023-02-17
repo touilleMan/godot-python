@@ -28,6 +28,9 @@ generate_tmpl_cmd = [
     '--output',
     '@OUTPUT0@',
 ]
+if get_option('classes_sample')
+    generate_tmpl_cmd += '--classes-sample'
+endif
 
 
 ##############################################################################

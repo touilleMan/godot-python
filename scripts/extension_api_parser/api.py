@@ -293,7 +293,7 @@ def order_classes(classes: List[ClassTypeSpec]) -> List[ClassTypeSpec]:
 
 
 def parse_extension_api_json(
-    path: Path, build_config: BuildConfig, skip_classes: bool = False
+    path: Path, build_config: BuildConfig, filter_classes: Union[bool, Set[str]]
 ) -> ExtensionApi:
     api_json = json.loads(path.read_text(encoding="utf8"))
     assert isinstance(api_json, dict)
@@ -327,9 +327,14 @@ def parse_extension_api_json(
         _register_enums(builtin_type.enums, parent_id=builtin_type.original_name)
 
     # Parsing classes takes ~75% of the time while not being needed to render builtins stuff
-    if skip_classes:
+    if filter_classes is True:
         # Only keep Object root class that is always needed
-        api_json["classes"] = [next(k for k in api_json["classes"] if k["name"] == "Object")]
+        filter_classes = {"Object"}
+    if filter_classes:
+        api_json["classes"] = [
+            k for k in api_json["classes"]
+            if k["name"] in filter_classes
+        ]
 
     classes = order_classes(
         [parse_class(x, object_size=api_json["object_size"]) for x in api_json["classes"]]
