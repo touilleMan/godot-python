@@ -2,21 +2,18 @@
 
 import os
 import sys
-import re
 import platform
-from typing import List, Tuple, Union, Sequence
+import importlib.util
+from typing import List, Sequence
 from contextlib import contextmanager
 import argparse
 from pathlib import Path
 import shutil
 import subprocess
 from tempfile import TemporaryDirectory
-from io import BytesIO
-from zipfile import ZipFile
-from urllib.request import urlopen
 
 
-DEFAULT_GODOT_BINARY_VERSION = "4.0.0-rc2"
+DEFAULT_GODOT_BINARY_VERSION = "4.0.1"
 
 
 BASEDIR = Path(__file__).resolve().parent
@@ -26,105 +23,29 @@ YELLOW = "\033[0;33m"
 NO_COLOR = "\033[0m"
 
 
-GodotBinaryVersion = Tuple[str, str, str, str]
-GodotBinaryPlatform = str
-
-
-def parse_godot_binary_hint(
-    godot_binary_hint: str,
-) -> Union[Path, Tuple[GodotBinaryPlatform, GodotBinaryVersion]]:
+def fetch_godot_binary_if_needed(build_dir: Path, godot_version_hint: str) -> Path:
+    # Is the hint a valid path ?
     try:
-        godot_binary_path = Path(godot_binary_hint).resolve()
+        godot_binary_path = Path(godot_version_hint).resolve()
         if godot_binary_path.is_file():
             return godot_binary_path
     except OSError:
         pass
 
-    try:
-        build_machine, raw_version = godot_binary_hint.split(":")
-    except ValueError:
-        build_machine = ""
-        raw_version = godot_binary_hint
-    raw_version = raw_version or DEFAULT_GODOT_BINARY_VERSION
-    build_machine = build_machine or platform.machine()
+    # Alternative path: must use `fetch_godot.py` script to fetch Godot
 
-    build_platform = f"{platform.system()}-{build_machine}".lower()
-    godot_build_platform = {
-        "linux-x86_64": "linux.x86_64",
-        "linux-x64": "linux.x86_64",
-        "linux-amd64": "linux.x86_64",
-        "linux-x86": "linux.x86_32",
-        "windows-x86_64": "win64",
-        "windows-x64": "win64",
-        "windows-amd64": "win64",
-        "windows-x86": "win32",
-        "darwin-x86_64": "macos.universal",
-        "darwin-x64": "macos.universal",
-        "darwin-amd64": "macos.universal",
-    }.get(build_platform)
-    if not godot_build_platform:
-        raise RuntimeError(
-            f"Don't know how to download a Godot binary for your platform `{build_platform}`"
-        )
+    # 1) Import `fetch_godot.py` as a module
+    spec = importlib.util.spec_from_file_location(
+        "download_python", BASEDIR / "../scripts/fetch_godot.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
 
-    # Provided value is version information with format <major>.<minor>.<patch>[-<extra>]
-    match = re.match(r"^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-(\w+))?$", raw_version)
-    if match:
-        major, minor, patch, extra = match.groups()
-    else:
-        raise ValueError(
-            f"`{raw_version}` is neither an existing file nor a valid <major>.<minor>.<patch>[-<extra>] Godot version format"
-        )
-    return godot_build_platform, (major, minor, patch, extra or "stable")
+    # 2) Actually fetch Godot
+    godot_build_platform, godot_version = module.parse_godot_binary_hint(godot_version_hint)
+    godot_binary_path = module.fetch_godot_binary(build_dir, godot_build_platform, godot_version)
 
-
-def fetch_godot_binary(
-    build_dir: Path, godot_platform: GodotBinaryPlatform, version: GodotBinaryVersion
-) -> Path:
-    major, minor, patch, extra = version
-    strversion = f"{major}.{minor}.{patch}" if patch != "0" else f"{major}.{minor}"
-    binary_name = f"Godot_v{strversion}-{extra}_{godot_platform}"
-    if godot_platform.startswith("win"):
-        binary_name += ".exe"
-    if extra == "stable":
-        url = f"https://downloads.tuxfamily.org/godotengine/{strversion}/{binary_name}.zip"
-    else:
-        url = f"https://downloads.tuxfamily.org/godotengine/{strversion}/{extra}/{binary_name}.zip"
-
-    if godot_platform.startswith("osx"):
-        zippath = "Godot.app/Contents/MacOS/Godot"
-    else:
-        zippath = binary_name
-    binary_path = build_dir / binary_name
-
-    if not binary_path.exists():
-        print(f"Downloading {url}...", flush=True)
-        buff = BytesIO()
-        with urlopen(url) as rep:
-            if not os.isatty(sys.stdout.fileno()):
-                buff.write(rep.read())
-            else:
-                length = int(rep.headers.get("Content-Length"))
-                # Poor's man progress bar
-                while True:
-                    if buff.write(rep.read(2**20)) == 0:
-                        break
-                    print(
-                        f"{buff.tell()//2**20}Mo/{length//2**20}Mo",
-                        flush=True,
-                        end="\r",
-                    )
-                print("", flush=True)
-        zipfile = ZipFile(buff)
-        if zippath not in zipfile.namelist():
-            raise RuntimeError(f"Archive doesn't contain {zippath}")
-
-        print(f"Decompressing {binary_path}...", flush=True)
-        binary_path.write_bytes(zipfile.open(zippath).read())
-        if platform.system() != "Windows":
-            os.chmod(binary_path, 0o755)
-
-    return binary_path
+    return godot_binary_path
 
 
 def collect_tests() -> List[Path]:
@@ -274,7 +195,6 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--godot-binary",
-        type=parse_godot_binary_hint,
         default=DEFAULT_GODOT_BINARY_VERSION,
         help="Path to Godot binary to use, or version of Godot to download and use",
     )
@@ -308,10 +228,7 @@ if __name__ == "__main__":
 
     build_dir = args.build_dir.resolve()
 
-    if isinstance(args.godot_binary, Path):
-        godot_binary_path = args.godot_binary
-    else:
-        godot_binary_path = fetch_godot_binary(build_dir, *args.godot_binary)
+    godot_binary_path = fetch_godot_binary_if_needed(build_dir, args.godot_binary)
 
     # Install the distrib, it is common to each test and kept between run to save time
     distrib_workdir = install_distrib(build_dir, "common_tests_install_distrib")

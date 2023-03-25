@@ -241,9 +241,27 @@ endif
 #                         Godot extension headers                            #
 ##############################################################################
 
+# Locate the GDExtension API
+# (This is done once at configure time)
+if get_option('gdextension_path') != ''
+    # GDExtension already exists
+    gdextension_path = join_paths(meson.project_source_root(), get_option('gdextension_path'))
+else
+    # Download Godot and generate it GDextension API
+    run_command(
+        python,
+        'scripts/fetch_godot.py',
+        '--generate-gdextension',
+        '--build-dir', meson.project_build_root(),
+        get_option('godot_version'),
+        capture: true,
+        check: true,
+    ).stdout().strip().split('\n')
+    gdextension_path = join_paths(meson.project_build_root(), 'gdextension_api')
+endif
 
-godot_headers_path = join_paths(meson.project_source_root(), get_option('godot_headers'))
-godot_extension_api_json = join_paths(godot_headers_path, 'extension_api.json')
+
+godot_extension_api_json = join_paths(gdextension_path, 'extension_api.json')
 
 
 # On Windows `/MDd` flag (used by meson when `buildtype=debug`) defines `_DEBUG`,
@@ -257,7 +275,7 @@ add_global_arguments('-U_DEBUG', language : 'c')
 godot_version_info = run_command(
     python,
     'scripts/extract_godot_version.py',
-    '--godot-headers', godot_headers_path,
+    '--godot-headers', gdextension_path,
     capture: true,
     check: true,
 ).stdout().strip().split('\n')
@@ -272,9 +290,9 @@ dep_godot = declare_dependency(
     compile_args: [
         '-DGODOT_VERSION_MAJOR=' + godot_version_major,
         '-DGODOT_VERSION_MINOR=' + godot_version_minor,
-        # Don't use `include_directories` param to pass `godot_header_path`
+        # Don't use `include_directories` param to pass `gdextension_path`
         # given it is an absolute path
-        '-I' + godot_headers_path,
+        '-I' + gdextension_path,
     ],
 )
 
@@ -346,7 +364,7 @@ subdir('src')
 
 summary(
     {
-        'Godot extension path': godot_headers_path,
+        'Godot extension path': gdextension_path,
         'Godot extension version': godot_version_fullname,
         'Embedded Python version': get_option('cpython_distrib_version'),
     }

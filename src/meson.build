@@ -62,7 +62,7 @@ pxd_godot_hazmat_gdextension = custom_target(
     output: 'godot#hazmat#gdextension_interface.pxd',
     input: [
         join_paths(scripts_dir, 'generate_gdextension_interface_pxd.py'),
-        join_paths(godot_headers_path, 'godot/gdextension_interface.h')
+        join_paths(gdextension_path, 'godot/gdextension_interface.h')
     ],
     command: [python, '@INPUT0@', '--input', '@INPUT1@', '--output', '@OUTPUT@'],
 )
