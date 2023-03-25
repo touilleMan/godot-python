@@ -331,10 +331,7 @@ def parse_extension_api_json(
         # Only keep Object root class that is always needed
         filter_classes = {"Object"}
     if filter_classes:
-        api_json["classes"] = [
-            k for k in api_json["classes"]
-            if k["name"] in filter_classes
-        ]
+        api_json["classes"] = [k for k in api_json["classes"] if k["name"] in filter_classes]
 
     classes = order_classes(
         [parse_class(x, object_size=api_json["object_size"]) for x in api_json["classes"]]
