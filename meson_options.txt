@@ -1,4 +1,4 @@
-option('cpython_distrib_version', type: 'string', value: '3.10.8', description: 'Version of CPython to ship')
+option('cpython_distrib_version', type: 'string', value: '3.11.1', description: 'Version of CPython to ship')
 option('godot_headers', type: 'string', value: 'godot_headers', description: 'Path to Godot extension headers directory')
 option('real_is_double', type: 'boolean', value: false, description: 'Built for Godot with 64bits floating point numbers (i.e. double) in builtins instead of 32bits (i.e. float)')
 option('classes_sample', type: 'boolean', value: false, description: 'Only bind a subset of Godot classes (useful for tests&debug for faster build time)')
