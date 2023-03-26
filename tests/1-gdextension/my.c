@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <godot/gdextension_interface.h>
 
 #ifdef _WIN32
