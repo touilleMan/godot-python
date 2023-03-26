@@ -13,11 +13,7 @@ from .type_spec import TYPES_DB
 try:
     extension_api_path = Path(sys.argv[1])
 except IndexError:
-    extension_api_path = (
-        (Path(__file__).parent / "../../godot_headers/extension_api.json")
-        .resolve()
-        .relative_to(os.getcwd())
-    )
+    raise SystemExit("Usage: python -m extension_api_parser <path/to/extension_api.json>")
 
 
 try:
@@ -29,6 +25,6 @@ except IndexError:
 for build_config in build_configs:
     initial_types_db = TYPES_DB.copy()
     print(f"Checking {extension_api_path} with config {build_config.value}")
-    parse_extension_api_json(extension_api_path, build_config, skip_classes=False)
+    parse_extension_api_json(extension_api_path, build_config, filter_classes=False)
     TYPES_DB.clear()
     TYPES_DB.update(initial_types_db)

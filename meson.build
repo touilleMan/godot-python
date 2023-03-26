@@ -248,20 +248,29 @@ if get_option('gdextension_path') != ''
     gdextension_path = join_paths(meson.project_source_root(), get_option('gdextension_path'))
 else
     # Download Godot and generate it GDextension API
+    message('Fetching Godot v@0@ binary and generating GDExtension...'.format(get_option('godot_version')))
     run_command(
         python,
         'scripts/fetch_godot.py',
         '--generate-gdextension',
         '--build-dir', meson.project_build_root(),
         get_option('godot_version'),
-        capture: true,
         check: true,
-    ).stdout().strip().split('\n')
+    )
     gdextension_path = join_paths(meson.project_build_root(), 'gdextension_api')
 endif
 
 
 godot_extension_api_json = join_paths(gdextension_path, 'extension_api.json')
+# Sanity check on extension_api_parser
+message('Checking GDExtension\'s extension_api.json is supported...'.format(get_option('godot_version')))
+run_command(
+    python,
+    '-m',
+    'scripts.extension_api_parser',
+    godot_extension_api_json,
+    check: true,
+)
 
 
 # On Windows `/MDd` flag (used by meson when `buildtype=debug`) defines `_DEBUG`,

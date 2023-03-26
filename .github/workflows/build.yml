@@ -65,8 +65,6 @@ jobs:
           python --version
           pip install -U pip
           pip install -r requirements.in
-      - name: 'Sanity check on extension_api_parser'
-        run: python -m scripts.extension_api_parser
       - name: 'Setup project'
         run: python .github/scripts/meson_setup_or_dump_log.py build/
       - name: 'Build project'
@@ -98,11 +96,9 @@ jobs:
           - PLATFORM: 'windows-x86_64'
             PYTHON_ARCH: 'x64'
             MSVC_ARCH: 'x64'
-            GODOT_BINARY_HINT: ''
           - PLATFORM: 'windows-x86'
             PYTHON_ARCH: 'x86'
             MSVC_ARCH: 'x86'
-            GODOT_BINARY_HINT: 'x86:'
     steps:
       - name: 'Checkout'
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c  # pin@v3.3.0
@@ -132,9 +128,9 @@ jobs:
         shell: bash
         run: |
           set -eux
-          python tests/run.py 0-gdscript --build-dir build/ --godot-binary=${{ matrix.GODOT_BINARY_HINT }} -- --headless
-          python tests/run.py 1-gdextension --build-dir build/ --godot-binary=${{ matrix.GODOT_BINARY_HINT }} -- --headless
-          python tests/run.py 2-pythonscript-init --build-dir build/ --godot-binary=${{ matrix.GODOT_BINARY_HINT }} -- --headless
+          python tests/run.py 0-gdscript --build-dir build/ -- --headless
+          python tests/run.py 1-gdextension --build-dir build/ -- --headless
+          python tests/run.py 2-pythonscript-init --build-dir build/ -- --headless
       # - name: 'Install Mesa3D OpenGL'
       #   shell: bash
       #   run: |
@@ -166,33 +162,34 @@ jobs:
 #################################################################################
 
 
-  macos-build:
-    name: '🍎 macOS build'
-    runs-on: macos-latest
-    env:
-      CC: clang
-      LD: lld
-      PLATFORM: 'macos-x86_64'
-    steps:
-      - name: 'Checkout'
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c  # pin@v3.3.0
-        with:
-            submodules: true
-      - name: 'Set up Python'
-        uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435  # pin@v4.5.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: 'Setup venv'
-        run: |
-          set -eux
-          ${{ env.CC }} --version
-          python --version
-          pip install -U pip
-          pip install -r requirements.txt
-      - name: 'Setup project'
-        run: python .github/scripts/meson_setup_or_dump_log.py build/
-      - name: 'Build project'
-        run: meson compile -C build/
+# TODO
+  # macos-build:
+  #   name: '🍎 macOS build'
+  #   runs-on: macos-latest
+  #   env:
+  #     CC: clang
+  #     LD: lld
+  #     PLATFORM: 'macos-x86_64'
+  #   steps:
+  #     - name: 'Checkout'
+  #       uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c  # pin@v3.3.0
+  #       with:
+  #           submodules: true
+  #     - name: 'Set up Python'
+  #       uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435  # pin@v4.5.0
+  #       with:
+  #         python-version: ${{ env.PYTHON_VERSION }}
+  #     - name: 'Setup venv'
+  #       run: |
+  #         set -eux
+  #         ${{ env.CC }} --version
+  #         python --version
+  #         pip install -U pip
+  #         pip install -r requirements.txt
+  #     - name: 'Setup project'
+  #       run: python .github/scripts/meson_setup_or_dump_log.py build/
+  #     - name: 'Build project'
+  #       run: meson compile -C build/
       # TODO: see https://github.com/touilleMan/godot-python/issues/358
       # - name: 'Run tests'
       #   run: python tests/run.py 0-pythonscript-init --build-dir build/ -- --headless
