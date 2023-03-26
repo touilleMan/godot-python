@@ -4,11 +4,11 @@ import subprocess
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
-GODOT_HEADERS_DIR = PROJECT_DIR / "godot_headers"
+GDEXTENSION_DIR = PROJECT_DIR / "gdextension_api"
 
 
 if platform.system() == "Windows":
-    cmd = ["cl.exe", "/DEBUG", "/LD", "my.c", "/I", str(GODOT_HEADERS_DIR)]
+    cmd = ["cl.exe", "/DEBUG", "/LD", "my.c", "/I", str(GDEXTENSION_DIR)]
     print(f"cd {PROJECT_DIR} && " + " ".join(cmd))
     subprocess.check_call(cmd, cwd=PROJECT_DIR)
 
@@ -24,7 +24,7 @@ else:
         "-o",
         "my.o",
         "-I",
-        str(GODOT_HEADERS_DIR),
+        str(GDEXTENSION_DIR),
     ]
     print(f"cd {PROJECT_DIR} && " + " ".join(cmd))
     subprocess.check_call(cmd, cwd=PROJECT_DIR)

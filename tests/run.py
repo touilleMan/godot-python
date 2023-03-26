@@ -123,8 +123,8 @@ def create_test_workdir(test_dir: Path, distrib_workdir: Path, test_workdir: Pat
     shutil.copytree(test_dir, test_workdir, dirs_exist_ok=True)
     symlink(distrib_workdir / "addons", test_workdir / "addons")
     shutil.copy(distrib_workdir / "pythonscript.gdextension", test_workdir)
-    # Godot headers are needed to compile Cython modules
-    symlink(test_dir / "../../godot_headers", test_workdir / "godot_headers")
+    # GDExtension headers are needed to compile Cython modules
+    symlink(build_dir / "gdextension_api", test_workdir / "gdextension_api")
 
     build_script = test_workdir / "build.py"
     if build_script.exists():
