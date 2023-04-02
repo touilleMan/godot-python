@@ -128,9 +128,9 @@ jobs:
         shell: bash
         run: |
           set -eux
-          python tests/run.py 0-gdscript --build-dir build/ -- --headless
-          python tests/run.py 1-gdextension --build-dir build/ -- --headless
-          python tests/run.py 2-pythonscript-init --build-dir build/ -- --headless
+          python tests/run.py 0-gdscript --build-dir build/ --godot-binary "${{ matrix.PLATFORM }}:" -- --headless
+          python tests/run.py 1-gdextension --build-dir build/ --godot-binary "${{ matrix.PLATFORM }}:" -- --headless
+          python tests/run.py 2-pythonscript-init --build-dir build/ --godot-binary "${{ matrix.PLATFORM }}:" -- --headless
       # - name: 'Install Mesa3D OpenGL'
       #   shell: bash
       #   run: |

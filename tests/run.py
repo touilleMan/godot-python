@@ -13,9 +13,6 @@ import subprocess
 from tempfile import TemporaryDirectory
 
 
-DEFAULT_GODOT_BINARY_VERSION = "4.0.1"
-
-
 BASEDIR = Path(__file__).resolve().parent
 RED = "\033[0;31m"
 GREEN = "\033[0;32m"
@@ -195,7 +192,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--godot-binary",
-        default=DEFAULT_GODOT_BINARY_VERSION,
+        default="",
         help="Path to Godot binary to use, or version of Godot to download and use",
     )
     parser.add_argument(
