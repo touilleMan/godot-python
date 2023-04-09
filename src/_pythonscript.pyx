@@ -193,7 +193,18 @@ cdef api void _pythonscript_early_init() with gil:
     #     print(f"PYTHONPATH: {sys.path}")
 
 
-cdef api void _pythonscript_deinitialize() with gil:
+cdef api void _pythonscript_initialize(int p_level) with gil:
+    if p_level == GDEXTENSION_INITIALIZATION_SERVERS:
+        pass
+
+    # Language registration must be done at `GDEXTENSION_INITIALIZATION_SERVERS`
+    # level which is too early to have have everything we need for (e.g. `OS` singleton).
+    # So we have to do another init step at `GDEXTENSION_INITIALIZATION_SCENE` level.
+    if p_level == GDEXTENSION_INITIALIZATION_SCENE:
+        pass
+
+
+cdef api void _pythonscript_deinitialize(int p_level) with gil:
     # TODO: unregister the language once https://github.com/godotengine/godot/pull/67155 is merged
 
     if _pythons_script_language is not None:

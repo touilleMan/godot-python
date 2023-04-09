@@ -41,19 +41,11 @@
 
 typedef enum {
     STALLED,  // Intitial state
+
     ENTRYPOINT_CALLED,  // pythonscript_init called
     ENTRYPOINT_RETURNED,  // pythonscript_init returns
 
-    PYTHON_INTERPRETER_INIT,
-    PYTHONSCRIPT_MODULE_INIT,
-    PYTHONSCRIPT_INTERNAL_INIT,
-
-    // All set !
-    READY,
-
-    // Teardown
-    PYTHONSCRIPT_MODULE_TEARDOWN,
-    PYTHON_INTERPRETER_TEARDOWN,
+    PYTHON_INTERPRETER_READY,
 
     CRASHED,  // Something went wrong :'(
 } PythonscriptState;
@@ -100,23 +92,15 @@ DLL_EXPORT void pythonscript_gdstringname_delete(GDExtensionStringNamePtr ptr) {
     pythonscript_gdextension->print_warning(msg, __func__, __FILE__, __LINE__, false); \
 }
 
-static void _late_initialize() {
-    if (state == PYTHONSCRIPT_INTERNAL_INIT) {
-        _pythonscript_late_init();
-        state = READY;
-    }
-}
-
-static void _early_initialize() {
+// Initialize Python interpreter & godot
+static void _initialize_python() {
     if (state != ENTRYPOINT_RETURNED) {
         printf("Pythonscript: Invalid internal state (this should never happen !)\n");
         goto error;
     }
 
     // Initialize CPython interpreter
-    state = PYTHON_INTERPRETER_INIT;
 
-    PyStatus status;
     PyConfig config;
     PyConfig_InitIsolatedConfig(&config);
     config.configure_c_stdio = 1;
@@ -165,22 +149,24 @@ static void _early_initialize() {
         gdstring_destructor(gd_basedir_path);
 
         // 4) Configure pythonhome with base dir
-        status = PyConfig_SetBytesString(
-            &config,
-            &config.home,
-            basedir_path
-        );
-        pythonscript_gdextension->mem_free(basedir_path);
-        if (PyStatus_Exception(status)) {
-            GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
-            GD_PRINT_ERROR(status.err_msg);
-            goto error;
+        {
+            PyStatus status = PyConfig_SetBytesString(
+                &config,
+                &config.home,
+                basedir_path
+            );
+            pythonscript_gdextension->mem_free(basedir_path);
+            if (PyStatus_Exception(status)) {
+                GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
+                GD_PRINT_ERROR(status.err_msg);
+                goto error;
+            }
         }
     }
 
     // Set program name
     {
-        status = PyConfig_SetBytesString(
+        PyStatus status = PyConfig_SetBytesString(
             &config,
             &config.program_name,
             // TODO: retrieve real argv[0]
@@ -197,12 +183,14 @@ static void _early_initialize() {
     // This is much simpler this way given we will have acces to Godot API
     // through the nice Python bindings this way
 
-    /* Read all configuration at once */
-    status = PyConfig_Read(&config);
-    if (PyStatus_Exception(status)) {
-        GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
-        GD_PRINT_ERROR(status.err_msg);
-        goto error;
+    // Read all configuration at once
+    {
+        PyStatus status = PyConfig_Read(&config);
+        if (PyStatus_Exception(status)) {
+            GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
+            GD_PRINT_ERROR(status.err_msg);
+            goto error;
+        }
     }
 
     // TODO
@@ -214,11 +202,13 @@ static void _early_initialize() {
     //     goto error;
     // }
 
-    status = Py_InitializeFromConfig(&config);
-    if (PyStatus_Exception(status)) {
-        GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
-        GD_PRINT_ERROR(status.err_msg);
-        goto error;
+    {
+        PyStatus status = Py_InitializeFromConfig(&config);
+        if (PyStatus_Exception(status)) {
+            GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
+            GD_PRINT_ERROR(status.err_msg);
+            goto error;
+        }
     }
 
 //     // TODO: site.USER_SITE seems to point to an invalid location in ~/.local
@@ -234,78 +224,75 @@ static void _early_initialize() {
     PyRun_SimpleString("import sys\nprint('PYTHON_PATH:', sys.path)\n");
 #endif
 
-    state = PYTHONSCRIPT_MODULE_INIT;
 
-    int ret = import__pythonscript();
-    if (ret != 0) {
-        GD_PRINT_ERROR("Pythonscript: Cannot load Python module `_pythonscript`");
-        goto error;
+    {
+        int ret = import__pythonscript();
+        if (ret != 0) {
+            GD_PRINT_ERROR("Pythonscript: Cannot load Python module `_pythonscript`");
+            goto post_init_error;
+        }
     }
 
-    state = PYTHONSCRIPT_INTERNAL_INIT;
-
-    _pythonscript_early_init();
 
     PyConfig_Clear(&config);
 
     // Release the Kraken... er I mean the GIL !
     gilstate = PyEval_SaveThread();
 
+    state = PYTHON_INTERPRETER_READY;
     return;
 
-error:
-
-    if (state > PYTHONSCRIPT_MODULE_INIT && state < PYTHONSCRIPT_MODULE_TEARDOWN) {
-        _pythonscript_deinitialize();
-    }
-
-    if (state > PYTHON_INTERPRETER_INIT && state < PYTHON_INTERPRETER_TEARDOWN) {
-        PyConfig_Clear(&config);
+post_init_error:
+    PyConfig_Clear(&config);
+    {
         int ret = Py_FinalizeEx();
         if (ret != 0) {
             GD_PRINT_ERROR("Pythonscript: Cannot finalize Python interpreter");
         }
     }
 
+error:
     state = CRASHED;
 }
 
-static void _deinitialize(void *userdata, GDExtensionInitializationLevel p_level) {
-    (void) userdata;  // acknowledge unreferenced parameter
-    if (p_level != GDEXTENSION_INITIALIZATION_SERVERS) {
-        return;
+static void _deinitialize_python() {
+    if (state != PYTHON_INTERPRETER_READY) {
+        printf("Pythonscript: Invalid internal state (this should never happen !)\n");
+        goto error;
     }
 
-    if (state > PYTHON_INTERPRETER_INIT && state < PYTHON_INTERPRETER_TEARDOWN) {
+    // Re-acquire the gil in order to finalize properly
+    PyEval_RestoreThread(gilstate);
 
-        // Re-acquire the gil in order to finalize properly
-        PyEval_RestoreThread(gilstate);
-
-        if (state > PYTHONSCRIPT_MODULE_INIT && state < PYTHONSCRIPT_MODULE_TEARDOWN) {
-            _pythonscript_deinitialize();
-        }
-
-        int ret = Py_FinalizeEx();
-        if (ret != 0) {
-            GD_PRINT_ERROR("Pythonscript: Cannot finalize Python interpreter");
-            state = CRASHED;
-            return;
-        }
+    int ret = Py_FinalizeEx();
+    if (ret != 0) {
+        GD_PRINT_ERROR("Pythonscript: Cannot finalize Python interpreter");
     }
 
     state = STALLED;
+    return;
+
+error:
+    state = CRASHED;
 }
 
 static void _initialize(void *userdata, GDExtensionInitializationLevel p_level) {
     (void) userdata;  // acknowledge unreferenced parameter
+    if (state == ENTRYPOINT_RETURNED && p_level == GDEXTENSION_INITIALIZATION_CORE) {
+        _initialize_python();
+    }
+    if (state != CRASHED) {
+        _pythonscript_initialize(p_level);
+    }
+}
 
-    // Language registration must be done at `GDEXTENSION_INITIALIZATION_SERVERS`
-    // level which is too early to have have everything we need for (e.g. `OS` singleton).
-    // So we have to do another init step at `GDEXTENSION_INITIALIZATION_SCENE` level.
-    if (p_level == GDEXTENSION_INITIALIZATION_SERVERS) {
-        _early_initialize();
-    } else if (p_level == GDEXTENSION_INITIALIZATION_SCENE) {
-        _late_initialize();
+static void _deinitialize(void *userdata, GDExtensionInitializationLevel p_level) {
+    (void) userdata;  // acknowledge unreferenced parameter
+    if (state != CRASHED) {
+        _pythonscript_deinitialize(p_level);
+    }
+    if (state == PYTHON_INTERPRETER_READY && p_level == GDEXTENSION_INITIALIZATION_CORE) {
+        _deinitialize_python();
     }
 }
 
@@ -381,7 +368,9 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
         GD_PRINT_WARNING(buff);
     }
 
-    r_initialization->minimum_initialization_level  = GDEXTENSION_INITIALIZATION_SERVERS;
+    // Initialize as early as possible, this way we can have 3rd party plugins written
+    // in Python/Cython that can do things at this level
+    r_initialization->minimum_initialization_level  = GDEXTENSION_INITIALIZATION_CORE;
 	r_initialization->userdata = NULL;
     r_initialization->initialize = _initialize;
     r_initialization->deinitialize = _deinitialize;
