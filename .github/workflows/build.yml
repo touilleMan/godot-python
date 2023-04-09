@@ -91,15 +91,8 @@ jobs:
   windows-build:
     name: '🏁 Windows build'
     runs-on: windows-latest
-    strategy:
-      matrix:
-        include:
-          - PLATFORM: 'windows-x86_64'
-            PYTHON_ARCH: 'x64'
-            MSVC_ARCH: 'x64'
-          - PLATFORM: 'windows-x86'
-            PYTHON_ARCH: 'x86'
-            MSVC_ARCH: 'x86'
+    env:
+      PLATFORM: 'windows-x86_64'
     steps:
       - name: 'Checkout'
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c  # pin@v3.3.0
@@ -107,13 +100,10 @@ jobs:
             submodules: true
       - name: 'Set up MSVC'
         uses: egor-tensin/vs-shell@9a932a62d05192eae18ca370155cf877eecc2202  # pin@v2.1
-        with:
-          arch: ${{ matrix.MSVC_ARCH }}
       - name: 'Set up Python'
         uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435  # pin@v4.5.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          architecture: ${{ matrix.PYTHON_ARCH }}
       - name: 'Setup venv'
         shell: bash
         run: |
@@ -129,10 +119,10 @@ jobs:
         shell: bash
         run: |
           set -eux
-          python tests/run.py 0-gdscript --build-dir build/ --godot-binary "${{ matrix.PLATFORM }}:" -- --headless
-          python tests/run.py 1-gdextension --build-dir build/ --godot-binary "${{ matrix.PLATFORM }}:" -- --headless
-          python tests/run.py 2-pythonscript-init --build-dir build/ --godot-binary "${{ matrix.PLATFORM }}:" -- --headless
-          python tests/run.py 3-pythonscript-cython-only --build-dir build/ --godot-binary "${{ matrix.PLATFORM }}:" -- --headless
+          python tests/run.py 0-gdscript --build-dir build/ -- --headless
+          python tests/run.py 1-gdextension --build-dir build/ -- --headless
+          python tests/run.py 2-pythonscript-init --build-dir build/ -- --headless
+          python tests/run.py 3-pythonscript-cython-only --build-dir build/ -- --headless
       # - name: 'Install Mesa3D OpenGL'
       #   shell: bash
       #   run: |
