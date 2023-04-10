@@ -149,6 +149,8 @@ pyxclasses = custom_target(
         generate_tmpl_base_input,
         files(
             'classes.pyx.j2',
+            'classes_pyx/class.pyx.j2',
+            'classes_pyx/method.pyx.j2',
         ),
     ],
     command: generate_tmpl_cmd,

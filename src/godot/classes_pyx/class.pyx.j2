@@ -1,0 +1,138 @@
+{% macro render_class(cls) %}
+
+{% if cls.inherits is none %}
+from cpython.object cimport PyObject_GenericGetAttr, PyObject_GenericSetAttr
+{% endif %}
+
+cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }}):
+{%   if cls.inherits is none %}
+
+    {# @staticmethod
+    cpdef inline {{ cls.cy_type}} new():
+        raise NotImplementedError("TODO :'(") #}
+
+    def free(self):
+        pythonscript_gdextension.object_destroy(self._gd_ptr)
+        self._gd_ptr = NULL
+
+    def __init__(self):
+        raise RuntimeError(
+            f"Use `new()` method to instantiate non-refcounted Godot object (and don't forget to free it !)"
+        )
+
+    def __repr__(self):
+        return f"<{type(self).__name__} wrapper on 0x{<size_t>self._gd_ptr:x}>"
+
+    def _set_gd_ptr(self, ptr):
+        # /!\ doing `<GDExtensionObjectPtr>ptr` would return the address of
+        # the PyObject instead of casting it value !
+        self._gd_ptr = <GDExtensionObjectPtr><size_t>ptr
+        # Note if the object is a reference, we stole it from the caller given we
+        # don't call `Reference.reference` here
+
+    @classmethod
+    def _from_ptr(cls, ptr):
+        cdef object wrapper = cls.__new__(cls)
+        wrapper._set_gd_ptr(ptr)
+        return wrapper
+
+{#
+    @staticmethod
+    cdef inline Object cast_from_variant(const godot_variant *p_gdvar):
+        cdef godot_object *ptr = gdapi10.godot_variant_as_object(p_gdvar)
+        # Retreive class
+        cdef GDString classname = GDString.__new__(GDString)
+        with nogil:
+            gdapi10.godot_method_bind_ptrcall(
+                __methbind__Object__get_class,
+                ptr,
+                NULL,
+                &classname._gd_data
+            )
+        return globals()[str(classname)]._from_ptr(<size_t>ptr)
+
+    @staticmethod
+    cdef inline Object cast_from_ptr(godot_object *ptr):
+        # Retreive class
+        cdef GDString classname = GDString.__new__(GDString)
+        with nogil:
+            gdapi10.godot_method_bind_ptrcall(
+                __methbind__Object__get_class,
+                ptr,
+                NULL,
+                &classname._gd_data
+            )
+        return globals()[str(classname)]._from_ptr(<size_t>ptr)
+#}
+
+    def __eq__(self, other):
+        try:
+            return self._gd_ptr == (<{{ cls.cy_type }}>other)._gd_ptr
+        except TypeError:
+            return False
+
+    def __ne__(self, other):
+        try:
+            return self._gd_ptr != (<{{ cls.cy_type }}>other)._gd_ptr
+        except TypeError:
+            return True
+
+    def __getattr__(self, name):
+        cdef GDString gdname = GDString(name)
+        cdef GDString gdnamefield = GDString("name")
+
+        # If a script is attached to the object, we expose here it methods
+        if not hasattr(type(self), '__exposed_python_class'):
+            if self.has_method(name):
+
+                def _call(*args):
+                    return {{ cls.cy_type }}.callv(self, gdname, GDArray(args))
+
+                return _call
+                # from functools import partial
+                # return partial(self.call, gdname)
+
+            elif any(x for x in self.get_property_list() if x[gdnamefield] == gdname):
+                # TODO: Godot currently lacks a `has_property` method
+                return self.get(gdname)
+
+        raise AttributeError(
+            f"`{type(self).__name__}` object has no attribute `{name}`"
+        )
+
+    def __setattr__(self, name, value):
+        cdef GDString gdname = GDString(name)
+        cdef GDString gdnamefield = GDString("name")
+
+        if hasattr(type(self), '__exposed_python_class'):
+            PyObject_GenericSetAttr(self, name, value)
+            return
+
+        # Could retrieve the item inside the Godot class, try to look into
+        # the attached script if it has one
+        else:
+            if any(x for x in self.get_property_list() if x[gdnamefield] == gdname):
+                # TODO: Godot currently lacks a `has_property` method
+                self.set(name, value)
+                return
+
+        raise AttributeError(
+            f"`{type(self).__name__}` object has no attribute `{name}`"
+        )
+
+    def call(self, name, *args):
+        return self.callv(name, GDArray(args))
+{%   else %}
+    pass
+{% endif %}
+
+    @staticmethod
+    cdef {{ cls.cy_type }} from_ptr(gd_object_t ptr):
+        # Call to __new__ bypasses __init__ constructor
+        cdef {{ cls.cy_type }} wrapper = {{ cls.cy_type }}.__new__({{ cls.cy_type }})
+        wrapper._gd_ptr = ptr
+        # Note if the object is a reference, we stole it from the caller given we
+        # don't call `Reference.reference` here
+        return wrapper
+
+{% endmacro %}

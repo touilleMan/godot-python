@@ -1,3 +1,4 @@
+{%- from 'classes_pyx/class.pyx.j2' import render_class with context -%}
 cimport cython
 
 from .hazmat.gdapi cimport *
@@ -37,6 +38,24 @@ cdef class BaseGDObject:
         cdef object wrapper = cls.__new__(cls)
         wrapper._set_gd_ptr(ptr)
         return wrapper
+
+
+# Classes
+
+
+# Forward declarations
+{% for cls in api.classes %}
+cdef class {{ cls.cy_type }}
+{% endfor %}
+{% for cls in api.classes %}
+
+
+{{ render_class(cls) }}
+{% endfor %}
+
+
+# Singletons
+
 
 {# {% for klass in api.classes %} #}
 {#  #}

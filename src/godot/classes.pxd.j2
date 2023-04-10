@@ -1,25 +1,40 @@
 cimport cython
 
-from .hazmat.gdapi cimport pythonscript_gdextension
-from .hazmat.gdextension_interface cimport GDExtensionObjectPtr
+from .hazmat.gdapi cimport pythonscript_gdextension, gd_object_t
 
 
 cdef class BaseGDObject:
-    cdef GDExtensionObjectPtr _gd_ptr
+    cdef gd_object_t _gd_ptr
 
     @staticmethod
-    cdef BaseGDObject from_ptr(GDExtensionObjectPtr ptr)
+    cdef BaseGDObject from_ptr(gd_object_t ptr)
 
 
 cdef inline gdobject_free(BaseGDObject obj):
     pythonscript_gdextension.object_destroy(obj._gd_ptr)
 
 
+{% for cls in api.classes %}
+cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }}):
+{%   if cls.inherits is none %}
+    cdef gd_object_t _gd_ptr
+{#
+
+    @staticmethod
+    cdef inline Object cast_from_variant(const godot_variant_t *p_gdvar)
+
+    @staticmethod
+    cdef inline Object cast_from_ptr(godot_object_t *ptr)
+#}
+{% endif %}
+    @staticmethod
+    cdef {{ cls.cy_type }} from_ptr(gd_object_t *_ptr)
+{% endfor %}
 {# {% for klass in api.classes %} #}
 
 {# {# Cannot put this from_ptr as static method given cdef inline requires a final #} #}
 {# {# method (i.e. it cannot be overwritten by child class) #} #}
-{# cdef inline {{ klass.cy_type | lower }}_from_ptr(GDExtensionObjectPtr ptr): #}
+{# cdef inline {{ klass.cy_type | lower }}_from_ptr(gd_object_t ptr): #}
 {#     # Call to __new__ bypasses __init__ constructor #}
 {#     cdef {{ klass.cy_type }} wrapper = {{ klass.cy_type }}.__new__({{ klass.cy_type }}) #}
 {#     wrapper._gd_ptr = ptr #}
@@ -32,13 +47,13 @@ cdef inline gdobject_free(BaseGDObject obj):
 {#  #}
 {# cdef class {{ klass.cy_type }}({{ klass.inherits.cy_type if klass.inherits is not none else "" }}): #}
 {# {%   if klass.inherits is none %} #}
-{#     cdef GDExtensionObjectPtr _gd_ptr #}
+{#     cdef gd_object_t _gd_ptr #}
 {#  #}
 {#     {# @staticmethod #}
 {#     cdef inline GDObject cast_from_variant(const godot_variant *p_gdvar) #}
 {#  #}
 {#     @staticmethod #}
-{#     cdef inline GDObject cast_from_ptr(GDExtensionObjectPtr *ptr): #}
+{#     cdef inline GDObject cast_from_ptr(gd_object_t *ptr): #}
 {#         self._gd_ptr = ptr #} #}
 {# {%   else %} #}
 {#     pass #}
@@ -48,4 +63,4 @@ cdef inline gdobject_free(BaseGDObject obj):
 
 cdef object _load_class(str name)
 cdef object _load_singleton(str name)
-cdef object _object_call(GDExtensionObjectPtr obj, str meth, args)
+cdef object _object_call(gd_object_t obj, str meth, args)
