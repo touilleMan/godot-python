@@ -58,9 +58,7 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
         {# GDExtensionTypePtr ret #}
         {{ "NULL" if builtin.return_type.is_nil else "&__ret" }},
         {# const GDExtensionTypePtr *p_arguments #}
-        # Cast on args is required given autopxd2 incorrectly removes the const
-        # attributes when converting gdextension_interface.c to .pxd
-        <const void *const*>{{ "NULL" if (builtin.arguments | length) == 0 else "__args" }},
+        <const void **>{{ "NULL" if (builtin.arguments | length) == 0 else "__args" }},
         {# int p_argument_count #}
         {{ builtin.arguments | length }}
     )
@@ -77,16 +75,12 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
 {# to pass a `gd_variant_t**` as parameter) whose size is passed in the number #}
 {# of parameters fields... Yes this is very confusing stuff, my brain hurts ! #}
 {% if builtin.return_type.is_nil %}
-    # Cast on args is required given autopxd2 incorrectly removes the const
-    # attributes when converting gdextension_interface.c to .pxd
-    gd_utility_{{ builtin.original_name }}_ptr(NULL, <const void *const*>&args, args_count)
+    gd_utility_{{ builtin.original_name }}_ptr(NULL, <const void **>&args, args_count)
 {% else %}
     cdef gd_variant_t __ret  # TODO: improve return type !
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
     __ret = gd_variant_new()
-    # Cast on args is required given autopxd2 incorrectly removes the const
-    # attributes when converting gdextension_interface.c to .pxd
-    gd_utility_{{ builtin.original_name }}_ptr(&__ret, <const void *const*>&args, args_count)
+    gd_utility_{{ builtin.original_name }}_ptr(&__ret, <const void **>&args, args_count)
     return __ret
 {% endif %}
 {% endmacro %}
@@ -167,9 +161,7 @@ cdef inline {{ render_builtin_constructor_signature(builtin, constructor) }}:
 {% endif %}
     {{ builtin.c_name_prefix }}_constructor_{{ constructor.index }}_ptr(
         &obj,
-        # Cast is required given autopxd2 incorrectly removes the const attributes
-        # when converting gdextension_interface.c to .pxd
-        <const void * const*>{{ "NULL" if (constructor.arguments | length) == 0 else "p_args" }}
+        <const void **>{{ "NULL" if (constructor.arguments | length) == 0 else "p_args" }}
     )
     return obj
 {% endmacro %}
@@ -224,9 +216,7 @@ cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
         {# GDExtensionTypePtr p_base #}
         self,
         {# const GDExtensionTypePtr *__args #}
-        # Cast is required given autopxd2 incorrectly removes the const attributes
-        # when converting gdextension_interface.c to .pxd
-        <const void * const*>__args,
+        <const void **>__args,
         {# GDExtensionTypePtr __ret #}
         {{ "NULL" if meth.return_type.is_nil else "&__ret" }},
         {# int p_argument_count #}
