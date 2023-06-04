@@ -58,6 +58,7 @@ class ClassMethodSpec:
     is_virtual: bool
     is_property_accessor: bool
     hash: Optional[int]
+    hash_compatibility: Optional[int]
     return_type: TypeInUse
     arguments: List[ClassMethodArgumentSpec]
 
@@ -72,6 +73,7 @@ class ClassMethodSpec:
             item["return_type"] = TypeInUse.parse(return_value["type"])
         item.setdefault("arguments", [])
         item.setdefault("hash", None)
+        item.setdefault("hash_compatibility", None)
         item.setdefault("is_property_accessor", False)
         assert_api_consistency(cls, item)
         return cls(
@@ -83,6 +85,7 @@ class ClassMethodSpec:
             is_virtual=item["is_virtual"],
             is_property_accessor=item["is_property_accessor"],
             hash=item["hash"],
+            hash_compatibility=item["hash_compatibility"],
             return_type=item["return_type"],
             arguments=[ClassMethodArgumentSpec.parse(x) for x in item["arguments"]],
         )

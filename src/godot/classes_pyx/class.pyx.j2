@@ -5,7 +5,7 @@ from cpython.object cimport PyObject_GenericGetAttr, PyObject_GenericSetAttr
 {% endif %}
 
 cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }}):
-{%   if cls.inherits is none %}
+{% if cls.inherits is none %}
 
     {# @staticmethod
     cpdef inline {{ cls.cy_type}} new():
@@ -122,9 +122,7 @@ cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }})
 
     def call(self, name, *args):
         return self.callv(name, GDArray(args))
-{%   else %}
-    pass
-{% endif %}
+{% endif %}  # if cls.inherits is none
 
     @staticmethod
     cdef {{ cls.cy_type }} from_ptr(gd_object_t ptr):
@@ -134,5 +132,60 @@ cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }})
         # Note if the object is a reference, we stole it from the caller given we
         # don't call `Reference.reference` here
         return wrapper
+{#
+{% if cls.is_instantiable %}
+
+{% if cls.is_refcounted %}
+    def __init__(self):
+        if __{{ cls.name }}_constructor == NULL:
+            raise NotImplementedError(__ERR_MSG_BINDING_NOT_AVAILABLE)
+        cdef godot_bool __ret
+        with nogil:
+            self._gd_ptr = __{{ cls["name"] }}_constructor()
+
+            if self._gd_ptr is NULL:
+                raise MemoryError
+
+            gdapi10.godot_method_bind_ptrcall(
+                __methbind__Reference__init_ref,
+                self._gd_ptr,
+                NULL,
+                &__ret
+            )
+{% else %}  # if cls.is_refcounted
+    @staticmethod
+    def new():
+        if __{{ cls.name }}_constructor == NULL:
+            raise NotImplementedError(__ERR_MSG_BINDING_NOT_AVAILABLE)
+        # Call to __new__ bypasses __init__ constructor
+        cdef {{ cls.name }} wrapper = {{ cls.name }}.__new__({{ cls.name }})
+        with nogil:
+            wrapper._gd_ptr = __{{ cls.name }}_constructor()
+        if wrapper._gd_ptr is NULL:
+            raise MemoryError
+        return wrapper
+{% endif %}  # if cls.is_refcounted
+
+{% if cls.name == "RefCounted" %}
+    @classmethod
+    def new(cls):
+        raise RuntimeError(f"Refcounted Godot object must be created with `{ cls.__name__ }()`")
+
+    def __dealloc__(self):
+        cdef godot_bool __ret
+        if self._gd_ptr == NULL:
+            return
+        with nogil:
+            gdapi10.godot_method_bind_ptrcall(
+                __methbind__Reference__unreference,
+                self._gd_ptr,
+                NULL,
+                &__ret
+            )
+            if __ret:
+                gdapi10.godot_object_destroy(self._gd_ptr)
+{% endif %}
+
+{% endif %}  # if cls.is_instantiable #}
 
 {% endmacro %}

@@ -246,6 +246,13 @@ endif
 if get_option('gdextension_path') != ''
     # GDExtension already exists
     gdextension_path = join_paths(meson.project_source_root(), get_option('gdextension_path'))
+    run_command(
+        python,
+        'scripts/symlink.py',
+        gdextension_path,
+        join_paths(meson.project_build_root(), 'gdextension_api'),
+        check: true,
+    )
 else
     # Download Godot and generate it GDextension API
     message('Fetching Godot v@0@ binary and generating GDExtension...'.format(get_option('godot_version')))

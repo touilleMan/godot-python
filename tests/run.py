@@ -171,7 +171,7 @@ def run_test(
         lower_line = line.lower()
         if b"error" in lower_line or b"warning" in lower_line:
             raise SystemExit(
-                f"{RED}{test_name}: stdout/stderr contains logs with error and/or warning ({line}){NO_COLOR}"
+                f"{RED}{test_name}: stdout/stderr contains logs with error and/or warning ({line!r}){NO_COLOR}"
             )
     print(f"{GREEN}{test_name}: All good \\o/{NO_COLOR}", flush=True)
 
@@ -215,7 +215,7 @@ if __name__ == "__main__":
     godot_extra_args = sys.argv[options_separator + 1 :]
 
     if args.tests:
-        tests_dirs = [x for x in collect_tests() if x.name in args.tests]
+        tests_dirs = [x for x in collect_tests() if any((x.name.startswith(t) for t in args.tests))]
         if not tests_dirs:
             raise SystemExit(
                 f"No test selected, available tests: {[x.name for x in collect_tests()]}"

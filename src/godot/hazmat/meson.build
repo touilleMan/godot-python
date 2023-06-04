@@ -87,6 +87,10 @@ endif
 shared_library(
     'gdnative_ptrs',
     c_gdnative_ptrs,
+    # LoadedGDExtensionInterface's initialization code uses
+    # `pythonscript_gdextension_get_proc_address` which provide opaque function pointers,
+    # which we must then cast to the correct type before using them.
+    c_args: ['-Wno-cast-function-type'],
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: gdnative_ptrs_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,

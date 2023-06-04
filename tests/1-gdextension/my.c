@@ -24,7 +24,7 @@ static void _deinitialize(void *userdata, GDExtensionInitializationLevel p_level
 }
 
 DLL_EXPORT GDExtensionBool my_init(
-    const GDExtensionInterface *p_interface,
+    const GDExtensionInterfaceGetProcAddress p_get_proc_address,
     const GDExtensionClassLibraryPtr p_library,
     GDExtensionInitialization *r_initialization
 ) {

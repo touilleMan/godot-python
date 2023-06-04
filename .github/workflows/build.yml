@@ -10,9 +10,16 @@ on:
     - godot4-meson
 
 
+# Cancel run if another commit is pushed on the branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+
 # Global Settings
 env:
   PYTHON_VERSION: "3.8"  # Python to run the build, no the one shipped !
+  BLEEDING_EDGE_GODOT: true
 
 
 jobs:
@@ -50,14 +57,17 @@ jobs:
       LD: lld
       PLATFORM: linux-x86_64
     steps:
+
       - name: 'Checkout'
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c  # pin@v3.3.0
         with:
             submodules: true
+
       - name: 'Set up Python'
         uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435  # pin@v4.5.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+
       - name: 'Setup venv'
         run: |
           set -eux
@@ -65,19 +75,61 @@ jobs:
           python --version
           pip install -U pip
           pip install -r requirements.in
+
+      - name: Download bleeding edge Godot 🏗️
+        uses: dsnopek/action-download-artifact@1322f74e2dac9feed2ee76a32d9ae1ca3b4cf4e9
+        if: ${{ env.BLEEDING_EDGE_GODOT }}
+        with:
+          repo: godotengine/godot
+          branch: master
+          event: push
+          workflow: linux_builds.yml
+          workflow_conclusion: success
+          name: linux-editor-mono
+          search_artifacts: true
+          check_artifacts: true
+          ensure_latest: true
+          path: godot-artifacts
+
+      - name: 'Setup bleeding edge Godot 🏗️'
+        id: setup-godot
+        if: ${{ env.BLEEDING_EDGE_GODOT }}
+        run: |
+          set -eux
+
+          GODOT_BIN=./godot-artifacts/godot.linuxbsd.editor.x86_64.mono
+          GDEXTENSION_DIR=./gdextension_api
+          ls godot-artifacts
+
+          chmod +x $GODOT_BIN
+          $GODOT_BIN --headless --version
+
+          mkdir $GDEXTENSION_DIR && pushd $GDEXTENSION_DIR
+          $GODOT_BIN --headless --dump-extension-api
+          mkdir godot && pushd godot
+          $GODOT_BIN --headless --dump-gdextension-interface
+          popd && popd
+
+          echo "EXTRA_MESON_SETUP_ARGS='-D gdextension_path=$GDEXTENSION_DIR'" >> $GITHUB_OUTPUT
+          echo "EXTRA_RUN_TESTS_ARGS='--godot-binary=$GODOT_BIN'" >> $GITHUB_OUTPUT
+
       - name: 'Setup project'
-        run: python .github/scripts/meson_setup_or_dump_log.py build/
+        run: python .github/scripts/meson_setup_or_dump_log.py build/ ${{ steps.setup-godot.outputs.EXTRA_MESON_SETUP_ARGS }}
+
       - name: 'Build project'
         run: meson compile -C build/
       - name: 'Run tests'
         run: |
           set -eux
-          python tests/run.py 0-gdscript --build-dir build/ -- --headless
-          python tests/run.py 1-gdextension --build-dir build/ -- --headless
-          python tests/run.py 2-pythonscript-init --build-dir build/ -- --headless
-          python tests/run.py 3-pythonscript-cython-only --build-dir build/ -- --headless
+          ARGS=--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} -- --headless
+          python tests/run.py 0-gdscript $ARGS
+          python tests/run.py 1-gdextension $ARGS
+          python tests/run.py 2-pythonscript-init $ARGS
+          python tests/run.py 3-pythonscript-cython-only $ARGS
+
       # - name: 'Generate artifact archive'
       #   run: meson compile -C build/ release
+
       # - name: 'Export release artifact'
       #   uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
       #   with:
@@ -94,16 +146,20 @@ jobs:
     env:
       PLATFORM: 'windows-x86_64'
     steps:
+
       - name: 'Checkout'
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c  # pin@v3.3.0
         with:
             submodules: true
+
       - name: 'Set up MSVC'
         uses: egor-tensin/vs-shell@9a932a62d05192eae18ca370155cf877eecc2202  # pin@v2.1
+
       - name: 'Set up Python'
         uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435  # pin@v4.5.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+
       - name: 'Setup venv'
         shell: bash
         run: |
@@ -111,18 +167,60 @@ jobs:
           python --version
           pip install -U pip
           pip install -r requirements.in
+
+      - name: Download bleeding edge Godot 🏗️
+        uses: dsnopek/action-download-artifact@1322f74e2dac9feed2ee76a32d9ae1ca3b4cf4e9
+        if: ${{ env.BLEEDING_EDGE_GODOT }}
+        with:
+          repo: godotengine/godot
+          branch: master
+          event: push
+          workflow: windows_builds.yml
+          workflow_conclusion: success
+          name: windows-editor
+          search_artifacts: true
+          check_artifacts: true
+          ensure_latest: true
+          path: godot-artifacts
+
+      - name: 'Setup bleeding edge Godot 🏗️'
+        id: setup-godot
+        if: ${{ env.BLEEDING_EDGE_GODOT }}
+        run: |
+          set -eux
+
+          GODOT_BIN=./godot-artifacts/godot.windows.editor.x86_64.mono
+          GDEXTENSION_DIR=./gdextension_api
+          ls godot-artifacts
+
+          chmod +x $GODOT_BIN
+          $GODOT_BIN --headless --version
+
+          mkdir $GDEXTENSION_DIR && pushd $GDEXTENSION_DIR
+          $GODOT_BIN --headless --dump-extension-api
+          mkdir godot && pushd godot
+          $GODOT_BIN --headless --dump-gdextension-interface
+          popd && popd
+
+          echo "EXTRA_MESON_SETUP_ARGS='-D gdextension_path=$GDEXTENSION_DIR'" >> $GITHUB_OUTPUT
+          echo "EXTRA_RUN_TESTS_ARGS='--godot-binary=$GODOT_BIN'" >> $GITHUB_OUTPUT
+
       - name: 'Setup project'
-        run: python .github/scripts/meson_setup_or_dump_log.py build/
+        run: python .github/scripts/meson_setup_or_dump_log.py build/ ${{ steps.setup-godot.outputs.EXTRA_MESON_SETUP_ARGS }}
+
       - name: 'Build project'
         run: meson compile -C build/
+
       - name: 'Run tests'
         shell: bash
         run: |
           set -eux
-          python tests/run.py 0-gdscript --build-dir build/ -- --headless
-          python tests/run.py 1-gdextension --build-dir build/ -- --headless
-          python tests/run.py 2-pythonscript-init --build-dir build/ -- --headless
-          python tests/run.py 3-pythonscript-cython-only --build-dir build/ -- --headless
+          ARGS=--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} -- --headless
+          python tests/run.py 0-gdscript $ARGS
+          python tests/run.py 1-gdextension $ARGS
+          python tests/run.py 2-pythonscript-init $ARGS
+          python tests/run.py 3-pythonscript-cython-only $ARGS
+
       # - name: 'Install Mesa3D OpenGL'
       #   shell: bash
       #   run: |
@@ -140,10 +238,13 @@ jobs:
       #     7z.exe x mesa.7z
       #     ls -lh opengl32.dll  # Sanity check
       #     popd
+
       # - name: 'Run tests'
       #   run: python tests/run.py --build-dir build/ --godot-binary ${{ GODOT_BINARY_VERSION }}
+
       # - name: 'Generate artifact archive'
       #   run: meson compile -C build/ release
+
       # - name: 'Export release artifact'
       #   uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
       #   with:
