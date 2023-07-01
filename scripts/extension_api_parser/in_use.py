@@ -141,11 +141,9 @@ class ValueInUse:
             py_value = value
             cy_value = "GDDictionary()"
 
-        # TODO: Those type are not serialized correctly
-        # see https://github.com/godotengine/godot/issues/64442)
         elif value_py_type in ("RID", "GDCallable", "GDSignal"):
-            assert value == ""  # Only support default value !
-            py_value = cy_value = f"{value_py_type}()"
+            assert value == f"{self.type.type_name}()"  # Only support default value !
+            py_value = cy_value = value
 
         elif self.type.is_enum:
             assert _is_number(value, int)

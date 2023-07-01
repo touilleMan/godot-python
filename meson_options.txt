@@ -1,5 +1,5 @@
-option('cpython_distrib_version', type: 'string', value: '3.11.1', description: 'Version of CPython to ship')
+option('cpython_distrib_version', type: 'string', value: '3.11.3', description: 'Version of CPython to ship')
 option('gdextension_path', type: 'string', value: '', description: 'Use GDExtension API at this location instead of generating it from Godot binary')
-option('godot_version', type: 'string', value: '4.0.1', description: 'Version of Godot to generate GDExtension API from')
+option('godot_version', type: 'string', value: '4.1.0-rc1', description: 'Version of Godot to generate GDExtension API from')
 option('real_is_double', type: 'boolean', value: false, description: 'Built for Godot with 64bits floating point numbers (i.e. double) in builtins instead of 32bits (i.e. float)')
 option('classes_sample', type: 'boolean', value: false, description: 'Only bind a subset of Godot classes (useful for tests&debug for faster build time)')
