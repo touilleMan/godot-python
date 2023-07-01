@@ -1,3 +1,4 @@
+import os
 import platform
 from setuptools import setup
 from Cython.Build import cythonize
@@ -20,6 +21,8 @@ elif platform.system() == "Windows":
     python_include_dir = next(Path(".").parent.glob("addons/pythonscript/*-*/include"))
 else:
     raise RuntimeError(f"Unsupported platform `{platform.system()}`")
+# Same idea: `sysconfig` defines CC=clang, but who knows if the current machine has it !
+os.environ.setdefault("CC", "cc")
 
 
 # Work around cythonize's `include_path` parameter not configuring the C compiler
