@@ -110,8 +110,8 @@ jobs:
           $GODOT_BIN --headless --dump-gdextension-interface
           popd && popd
 
-          echo "EXTRA_MESON_SETUP_ARGS='-D gdextension_path=$GDEXTENSION_DIR'" >> $GITHUB_OUTPUT
-          echo "EXTRA_RUN_TESTS_ARGS='--godot-binary=$GODOT_BIN'" >> $GITHUB_OUTPUT
+          echo "EXTRA_MESON_SETUP_ARGS=-D gdextension_path=$GDEXTENSION_DIR" >> $GITHUB_OUTPUT
+          echo "EXTRA_RUN_TESTS_ARGS=--godot-binary=$GODOT_BIN" >> $GITHUB_OUTPUT
 
       - name: 'Setup project'
         run: python .github/scripts/meson_setup_or_dump_log.py build/ ${{ steps.setup-godot.outputs.EXTRA_MESON_SETUP_ARGS }}
@@ -121,7 +121,7 @@ jobs:
       - name: 'Run tests'
         run: |
           set -eux
-          ARGS=--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} -- --headless
+          ARGS="--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} -- --headless"
           python tests/run.py 0-gdscript $ARGS
           python tests/run.py 1-gdextension $ARGS
           python tests/run.py 2-pythonscript-init $ARGS
@@ -190,21 +190,23 @@ jobs:
         run: |
           set -eux
 
-          GODOT_BIN=`pwd`/godot-artifacts/godot.windows.editor.x86_64.mono
-          GDEXTENSION_DIR=`pwd`/gdextension_api
+          # Absolute path should be used here, but Windows's path shenanigans
+          # prevent me from doing this :'(
+          GODOT_BIN=./godot-artifacts/godot.windows.editor.x86_64.exe
+          GDEXTENSION_DIR=./gdextension_api
           ls godot-artifacts
 
           chmod +x $GODOT_BIN
           $GODOT_BIN --headless --version
 
           mkdir $GDEXTENSION_DIR && pushd $GDEXTENSION_DIR
-          $GODOT_BIN --headless --dump-extension-api
+          ../$GODOT_BIN --headless --dump-extension-api
           mkdir godot && pushd godot
-          $GODOT_BIN --headless --dump-gdextension-interface
+          ../../$GODOT_BIN --headless --dump-gdextension-interface
           popd && popd
 
-          echo "EXTRA_MESON_SETUP_ARGS='-D gdextension_path=$GDEXTENSION_DIR'" >> $GITHUB_OUTPUT
-          echo "EXTRA_RUN_TESTS_ARGS='--godot-binary=$GODOT_BIN'" >> $GITHUB_OUTPUT
+          echo "EXTRA_MESON_SETUP_ARGS=-D gdextension_path=$GDEXTENSION_DIR" >> $GITHUB_OUTPUT
+          echo "EXTRA_RUN_TESTS_ARGS=--godot-binary=$GODOT_BIN" >> $GITHUB_OUTPUT
 
       - name: 'Setup project'
         run: python .github/scripts/meson_setup_or_dump_log.py build/ ${{ steps.setup-godot.outputs.EXTRA_MESON_SETUP_ARGS }}
@@ -216,7 +218,7 @@ jobs:
         shell: bash
         run: |
           set -eux
-          ARGS=--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} -- --headless
+          ARGS="--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} -- --headless"
           python tests/run.py 0-gdscript $ARGS
           python tests/run.py 1-gdextension $ARGS
           python tests/run.py 2-pythonscript-init $ARGS
