@@ -97,8 +97,8 @@ jobs:
         run: |
           set -eux
 
-          GODOT_BIN=./godot-artifacts/godot.linuxbsd.editor.x86_64.mono
-          GDEXTENSION_DIR=./gdextension_api
+          GODOT_BIN=`pwd`/godot-artifacts/godot.linuxbsd.editor.x86_64.mono
+          GDEXTENSION_DIR=`pwd`/gdextension_api
           ls godot-artifacts
 
           chmod +x $GODOT_BIN
@@ -186,11 +186,12 @@ jobs:
       - name: 'Setup bleeding edge Godot 🏗️'
         id: setup-godot
         if: ${{ env.BLEEDING_EDGE_GODOT }}
+        shell: bash
         run: |
           set -eux
 
-          GODOT_BIN=./godot-artifacts/godot.windows.editor.x86_64.mono
-          GDEXTENSION_DIR=./gdextension_api
+          GODOT_BIN=`pwd`/godot-artifacts/godot.windows.editor.x86_64.mono
+          GDEXTENSION_DIR=`pwd`/gdextension_api
           ls godot-artifacts
 
           chmod +x $GODOT_BIN
