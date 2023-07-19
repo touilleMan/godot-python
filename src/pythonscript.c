@@ -81,12 +81,31 @@ DLL_EXPORT void pythonscript_gdstringname_delete(GDExtensionStringNamePtr ptr) {
     gdstringname_destructor(ptr);
 }
 
+#if __GNUC__  // GCC & Clang
+
+#define PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES \
+    _Pragma("GCC diagnostic ignored \"-Wincompatible-pointer-types\"");
+
+#define PRAGMA_POP \
+    _Pragma("GCC diagnostic pop");
+
+#else // MSVC
+
+#define PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES \
+    _Pragma("warning( push )"); \
+    _Pragma("warning( disable : 4047 )");
+
+#define PRAGMA_POP \
+    _Pragma("warning( pop )");
+
+#endif
+
 #define GD_PRINT_ERROR(msg) { \
     { \
-        _Pragma("GCC diagnostic ignored \"-Wincompatible-pointer-types\"") \
+        PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES; \
         void (*fn)(const char *, const char *, const char *, int32_t, GDExtensionBool); \
         fn = pythonscript_gdextension_get_proc_address("print_error"); \
-        _Pragma("GCC diagnostic pop") \
+        PRAGMA_POP; \
         if (fn) { \
             fn(msg, __func__, __FILE__, __LINE__, false); \
         } else { \
@@ -97,10 +116,10 @@ DLL_EXPORT void pythonscript_gdstringname_delete(GDExtensionStringNamePtr ptr) {
 
 #define GD_PRINT_WARNING(msg) { \
     { \
-        _Pragma("GCC diagnostic ignored \"-Wincompatible-pointer-types\"") \
+        PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES; \
         void (*fn)(const char *, const char *, const char *, int32_t, GDExtensionBool); \
         fn = pythonscript_gdextension_get_proc_address("print_warning"); \
-        _Pragma("GCC diagnostic pop") \
+        PRAGMA_POP; \
         if (fn) { \
             fn(msg, __func__, __FILE__, __LINE__, false); \
         } else { \
@@ -129,10 +148,10 @@ static void _initialize_python() {
         pythonscript_gdstringname_new(&method_name_as_gdstringname, "get_base_dir");
         GDExtensionPtrBuiltInMethod gdstring_get_base_dir;
         {
-            #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+            PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES;
             GDExtensionPtrBuiltInMethod (*fn)(GDExtensionVariantType, GDExtensionConstStringNamePtr, GDExtensionInt);
             fn = pythonscript_gdextension_get_proc_address("variant_get_ptr_builtin_method");
-            #pragma GCC diagnostic pop
+            PRAGMA_POP;
             gdstring_get_base_dir = fn(
                 GDEXTENSION_VARIANT_TYPE_STRING,
                 &method_name_as_gdstringname,
@@ -148,10 +167,10 @@ static void _initialize_python() {
         // 1) Retrieve library path
         char gd_library_path[GD_STRING_MAX_SIZE];
         {
-            #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+            PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES;
             void (*fn)(GDExtensionClassLibraryPtr, GDExtensionUninitializedStringPtr);
             fn = pythonscript_gdextension_get_proc_address("get_library_path");
-            #pragma GCC diagnostic pop
+            PRAGMA_POP;
             fn(pythonscript_gdextension_library, gd_library_path);
         }
 
@@ -164,10 +183,10 @@ static void _initialize_python() {
         // 3) Convert base dir into regular c string
         GDExtensionInt basedir_path_size;
         {
-            #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+            PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES;
             GDExtensionInt (*fn)(GDExtensionConstStringPtr, char *, GDExtensionInt);
             fn = pythonscript_gdextension_get_proc_address("string_to_utf8_chars");
-            #pragma GCC diagnostic pop
+            PRAGMA_POP;
             basedir_path_size = fn(gd_basedir_path, NULL, 0);
         }
         // Why not using variable length array here ? Glad you asked Timmy !
@@ -177,10 +196,10 @@ static void _initialize_python() {
         // like we're about to do two lines down.
         char *basedir_path;
         {
-            #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+            PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES;
             void *(*fn)(size_t);
             fn = pythonscript_gdextension_get_proc_address("mem_alloc");
-            #pragma GCC diagnostic pop
+            PRAGMA_POP;
             basedir_path = fn(basedir_path_size + 1);
         }
         if (basedir_path == NULL) {
@@ -188,10 +207,10 @@ static void _initialize_python() {
             goto error;
         }
         {
-            #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+            PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES;
             GDExtensionInt (*fn)(GDExtensionConstStringPtr, char *, GDExtensionInt);
             fn = pythonscript_gdextension_get_proc_address("string_to_utf8_chars");
-            #pragma GCC diagnostic pop
+            PRAGMA_POP;
             fn(gd_basedir_path, basedir_path, basedir_path_size);
         }
         basedir_path[basedir_path_size] = '\0';
@@ -206,10 +225,10 @@ static void _initialize_python() {
                 basedir_path
             );
             {
-                #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+                PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES;
                 void (*fn)(void*);
                 fn = pythonscript_gdextension_get_proc_address("mem_free");
-                #pragma GCC diagnostic pop
+                PRAGMA_POP;
                 fn(basedir_path);
             }
             if (PyStatus_Exception(status)) {
@@ -376,10 +395,10 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
     // Load GDString/GDStringName contructor/destructor needed for pythonscript_gdstringname_new/delete helpers
 
     {
-        #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+        PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES;
         GDExtensionPtrConstructor (*fn)(GDExtensionVariantType, int32_t);
         fn = pythonscript_gdextension_get_proc_address("variant_get_ptr_constructor");
-        #pragma GCC diagnostic pop
+        PRAGMA_POP;
         gdstring_constructor = fn(GDEXTENSION_VARIANT_TYPE_STRING, 0);
     }
     if (gdstring_constructor == NULL) {
@@ -388,10 +407,10 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
     }
 
     {
-        #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+        PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES;
         GDExtensionPtrDestructor (*fn)(GDExtensionVariantType);
         fn = pythonscript_gdextension_get_proc_address("variant_get_ptr_destructor");
-        #pragma GCC diagnostic pop
+        PRAGMA_POP;
         gdstring_destructor = fn(GDEXTENSION_VARIANT_TYPE_STRING);
     }
     if (gdstring_destructor == NULL) {
@@ -400,10 +419,10 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
     }
 
     {
-        #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+        PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES;
         GDExtensionPtrConstructor (*fn)(GDExtensionVariantType, int32_t);
         fn = pythonscript_gdextension_get_proc_address("variant_get_ptr_constructor");
-        #pragma GCC diagnostic pop
+        PRAGMA_POP;
         gdstringname_from_gdstring_constructor = fn(GDEXTENSION_VARIANT_TYPE_STRING_NAME, 2);
     }
     if (gdstringname_from_gdstring_constructor == NULL) {
@@ -412,10 +431,10 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
     }
 
     {
-        #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+        PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES;
         GDExtensionPtrDestructor (*fn)(GDExtensionVariantType);
         fn = pythonscript_gdextension_get_proc_address("variant_get_ptr_destructor");
-        #pragma GCC diagnostic pop
+        PRAGMA_POP;
         gdstringname_destructor = fn(GDEXTENSION_VARIANT_TYPE_STRING_NAME);
     }
     if (gdstringname_destructor == NULL) {
@@ -424,9 +443,10 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
     }
 
     {
-        #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+        PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES;
         gdstring_new_with_utf8_chars = pythonscript_gdextension_get_proc_address("string_new_with_utf8_chars");
         #pragma GCC diagnostic pop
+        PRAGMA_POP;
     }
     if (gdstring_new_with_utf8_chars == NULL) {
         GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `string_new_with_utf8_chars` destructor)");
@@ -437,10 +457,10 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
     // (i.e. the bindings has been generated against) and the version currently executed.
     GDExtensionGodotVersion godot_version;
     {
-        #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+        PRAGMA_PUSH_ALLOW_INCOMPATIBLE_POINTER_TYPES;
         void (*fn)(GDExtensionGodotVersion *);
         fn = pythonscript_gdextension_get_proc_address("get_godot_version");
-        #pragma GCC diagnostic pop
+        PRAGMA_POP;
         fn(&godot_version);
     }
     if (godot_version.major != GODOT_VERSION_MAJOR) {
