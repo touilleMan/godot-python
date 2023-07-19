@@ -23,7 +23,7 @@ PLATFORM_TO_PREBUILDS = {
         "windows-x86": f"{PREBUILDS_BASE_URL}/20230507/cpython-3.11.3+20230507-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
         "windows-x86_64": f"{PREBUILDS_BASE_URL}/20230507/cpython-3.11.3+20230507-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
         "macos-x86_64": f"{PREBUILDS_BASE_URL}/20230507/cpython-3.11.3+20230507-x86_64-apple-darwin-pgo+lto-full.tar.zst",
-    }
+    },
 }
 
 
