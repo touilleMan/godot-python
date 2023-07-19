@@ -73,8 +73,8 @@ jobs:
           set -eux
           ${{ env.CC }} --version
           python --version
-          pip install -U pip
-          pip install -r requirements.in
+          python -m pip --version
+          python -m pip install -r requirements.txt
 
       - name: Download bleeding edge Godot 🏗️
         uses: dsnopek/action-download-artifact@1322f74e2dac9feed2ee76a32d9ae1ca3b4cf4e9
@@ -165,8 +165,8 @@ jobs:
         run: |
           set -eux
           python --version
-          pip install -U pip
-          pip install -r requirements.in
+          python -m pip --version
+          python -m pip install -r requirements.txt
 
       - name: Download bleeding edge Godot 🏗️
         uses: dsnopek/action-download-artifact@1322f74e2dac9feed2ee76a32d9ae1ca3b4cf4e9
