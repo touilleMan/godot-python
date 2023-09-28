@@ -12,17 +12,23 @@ import zstandard
 
 PREBUILDS_BASE_URL = "https://github.com/indygreg/python-build-standalone/releases/download"
 PLATFORM_TO_PREBUILDS = {
-    "3.11.1": {
-        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20230116/cpython-3.11.1+20230116-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
-        "windows-x86": f"{PREBUILDS_BASE_URL}/20230116/cpython-3.11.1+20230116-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20230116/cpython-3.11.1+20230116-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20230116/cpython-3.11.1+20230116-x86_64-apple-darwin-pgo+lto-full.tar.zst",
+    "3.11.5": {
+        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20230826/cpython-3.11.5+20230826-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
+        "windows-x86": f"{PREBUILDS_BASE_URL}/20230826/cpython-3.11.5+20230826-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20230826/cpython-3.11.5+20230826-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20230826/cpython-3.11.5+20230826-x86_64-apple-darwin-pgo+lto-full.tar.zst",
     },
     "3.11.3": {
         "linux-x86_64": f"{PREBUILDS_BASE_URL}/20230507/cpython-3.11.3+20230507-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
         "windows-x86": f"{PREBUILDS_BASE_URL}/20230507/cpython-3.11.3+20230507-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
         "windows-x86_64": f"{PREBUILDS_BASE_URL}/20230507/cpython-3.11.3+20230507-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
         "macos-x86_64": f"{PREBUILDS_BASE_URL}/20230507/cpython-3.11.3+20230507-x86_64-apple-darwin-pgo+lto-full.tar.zst",
+    },
+    "3.11.1": {
+        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20230116/cpython-3.11.1+20230116-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
+        "windows-x86": f"{PREBUILDS_BASE_URL}/20230116/cpython-3.11.1+20230116-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20230116/cpython-3.11.1+20230116-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20230116/cpython-3.11.1+20230116-x86_64-apple-darwin-pgo+lto-full.tar.zst",
     },
 }
 
