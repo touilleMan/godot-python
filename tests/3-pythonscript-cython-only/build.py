@@ -29,5 +29,5 @@ lib_candidates = list(PROJECT_DIR.glob(lib_pattern))
 assert len(lib_candidates) == 1, lib_candidates
 lib = lib_candidates[0]
 lib_new_name = f"my{lib.suffix}"
-print(f"rename {lib.name} -> {lib_new_name}")
+print(f"renaming {lib.name} -> {lib_new_name}")
 shutil.move(lib, lib.parent / lib_new_name)
