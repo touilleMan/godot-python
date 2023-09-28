@@ -178,7 +178,7 @@ def run_test(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("tests", nargs="*", help="Filter the tests to run", default=["helloworld"])
+    parser.add_argument("tests", nargs="*", help="Filter the tests to run")
     parser.add_argument(
         "--build-dir",
         type=Path,
