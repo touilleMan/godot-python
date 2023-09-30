@@ -156,6 +156,9 @@ def run_test(
         os.write(sys.stdout.fileno(), buff)
         try:
             res.wait(timeout=0.1)
+            buff: bytes = res.stdout.read1()
+            total_output += buff
+            os.write(sys.stdout.fileno(), buff)
             break
         except subprocess.TimeoutExpired:
             # Subprocess is still running
