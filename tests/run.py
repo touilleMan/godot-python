@@ -166,11 +166,6 @@ def run_test(
     if res.returncode != 0:
         raise SystemExit(f"{RED}{test_name}: Non-zero return code: {res.returncode}{NO_COLOR}")
     for line in total_output.splitlines():
-        # See https://github.com/godotengine/godot/issues/66722
-        if b"Message Id Number: 0 | Message Id Name: Loader Message" in line:
-            continue
-        if b"lavapipe is not a conformant vulkan implementation, testing use only." in line:
-            continue
         lower_line = line.lower()
         if b"error" in lower_line or b"warning" in lower_line:
             raise SystemExit(
