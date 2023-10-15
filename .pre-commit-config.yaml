@@ -14,7 +14,7 @@ repos:
     - id: mixed-line-ending
       exclude: (^tests/_lib_vendors|^(tests|examples)/lib)  # Ignore 3rd party stuff
     - id: trailing-whitespace
-      exclude: (^tests/_lib_vendors|^(tests|examples)/lib)  # Ignore 3rd party stuff
+      exclude: (expected.output|^tests/_lib_vendors|^(tests|examples)/lib)  # Ignore 3rd party stuff
 -   repo: local
     hooks:
     - id: git_actions_pin

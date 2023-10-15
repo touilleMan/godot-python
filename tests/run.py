@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import os
+import re
 import sys
 import platform
 import importlib.util
@@ -150,27 +151,71 @@ def run_test(
     print(" ".join(cmd), flush=True)
     res = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     total_output = b""
+    subprocess_done = False
     while True:
         buff: bytes = res.stdout.read1()
         total_output += buff
         os.write(sys.stdout.fileno(), buff)
+        if subprocess_done:
+            break
         try:
             res.wait(timeout=0.1)
-            buff: bytes = res.stdout.read1()
-            total_output += buff
-            os.write(sys.stdout.fileno(), buff)
-            break
+            # Subprocess is done, but we still have one more stdin/stderr pump to do
+            subprocess_done = True
         except subprocess.TimeoutExpired:
             # Subprocess is still running
             pass
     if res.returncode != 0:
         raise SystemExit(f"{RED}{test_name}: Non-zero return code: {res.returncode}{NO_COLOR}")
-    for line in total_output.splitlines():
-        lower_line = line.lower()
-        if b"error" in lower_line or b"warning" in lower_line:
+
+    try:
+        expected_output = (test_workdir / "expected.output").read_text()
+
+    except FileNotFoundError:
+        for line in total_output.splitlines():
+            lower_line = line.lower()
+            if b"error" in lower_line or b"warning" in lower_line:
+                raise SystemExit(
+                    f"{RED}{test_name}: stdout/stderr contains logs with error and/or warning ({line!r}){NO_COLOR}"
+                )
+
+    else:
+        expected_lines = expected_output.splitlines()
+        actual_lines = total_output.splitlines()
+        msg = []
+        mismatch = False
+        for i in range(0, max(len(expected_lines), len(actual_lines))):
+            try:
+                expected_line = expected_lines[i]
+            except IndexError:
+                expected_line = None
+            try:
+                actual_line = actual_lines[i].decode()
+            except IndexError:
+                actual_line = None
+
+            assert expected_line is not None or actual_line is not None
+            if expected_line is not None and actual_line is None:
+                msg.append(f"{RED}- {expected_line}{NO_COLOR}")
+                mismatch = True
+            elif expected_line is None and actual_line is not None:
+                msg.append(f"{GREEN}+ {actual_line}{NO_COLOR}")
+                mismatch = True
+            else:
+                assert expected_line is not None
+                assert actual_line is not None
+                if not re.match(f"^{expected_line}$", actual_line):
+                    msg.append(f"{RED}- {expected_line}{NO_COLOR}")
+                    msg.append(f"{GREEN}+ {actual_line}{NO_COLOR}")
+                    mismatch = True
+                else:
+                    msg.append(f"~ {actual_line}")
+
+        if mismatch:
             raise SystemExit(
-                f"{RED}{test_name}: stdout/stderr contains logs with error and/or warning ({line!r}){NO_COLOR}"
+                f"{RED}{test_name}: unexpected stdout/stderr:{NO_COLOR}\n\n  " + "\n  ".join(msg)
             )
+
     print(f"{GREEN}{test_name}: All good \\o/{NO_COLOR}", flush=True)
 
 
