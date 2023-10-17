@@ -339,13 +339,12 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
     }
     state = ENTRYPOINT_CALLED;
 
-    (void) p_library;  // acknowledge unreferenced parameter
-    if (p_get_proc_address == NULL || r_initialization == NULL) {
+    if (p_get_proc_address == NULL || p_library == NULL || r_initialization == NULL) {
         printf("Pythonscript: Invalid init parameters provided by Godot (this should never happen !)\n");
         goto error;
     }
-    // `pythonscript_gdextension` must be set as early as possible given it is never null-pointer
-    // checked, especially in the Cython modules
+    // `pythonscript_gdextension_*` must be set as early as possible given it is never
+    // null-pointer checked, especially in the Cython modules
     pythonscript_gdextension_get_proc_address = p_get_proc_address;
     pythonscript_gdextension_library = p_library;
 
@@ -391,27 +390,18 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
         GDExtensionInterfaceGetGodotVersion get_godot_version = (GDExtensionInterfaceGetGodotVersion)p_get_proc_address("get_godot_version");
         get_godot_version(&godot_version);
     }
-    if (godot_version.major != GODOT_VERSION_MAJOR) {
-        // Don't use GD_PRINT_ERROR here given we don't even know if it is available !
-        printf(
+    if (godot_version.major != GODOT_VERSION_MAJOR || godot_version.minor < GODOT_VERSION_MINOR) {
+        char buff[256];
+        snprintf(
+            buff,
+            sizeof(buff),
             "Pythonscript: Incompatible Godot version (expected ~%d.%d, got %s)\n",
             GODOT_VERSION_MAJOR,
             GODOT_VERSION_MINOR,
             godot_version.string
         );
+        GD_PRINT_ERROR(buff);
         goto error;
-    }
-    if (godot_version.minor != GODOT_VERSION_MINOR) {
-        char buff[256];
-        snprintf(
-            buff,
-            sizeof(buff),
-            "Pythonscript: extension is built for Godot ~%d.%d, but your are running %s. This may cause issues !\n",
-            GODOT_VERSION_MAJOR,
-            GODOT_VERSION_MINOR,
-            godot_version.string
-        );
-        GD_PRINT_WARNING(buff);
     }
 
     // Initialize as early as possible, this way we can have 3rd party plugins written
