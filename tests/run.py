@@ -12,6 +12,7 @@ from pathlib import Path
 import shutil
 import subprocess
 from tempfile import TemporaryDirectory
+from difflib import SequenceMatcher
 
 
 BASEDIR = Path(__file__).resolve().parent
@@ -180,17 +181,17 @@ def run_test(
                 )
 
     else:
-        expected_lines = expected_output.splitlines()
-        actual_lines = total_output.splitlines()
+        expected_lines = list(reversed(expected_output.splitlines()))
+        actual_lines = list(reversed([l.decode() for l in total_output.splitlines()]))
         msg = []
         mismatch = False
-        for i in range(0, max(len(expected_lines), len(actual_lines))):
+        while expected_lines or actual_lines:
             try:
-                expected_line = expected_lines[i]
+                expected_line = expected_lines.pop()
             except IndexError:
                 expected_line = None
             try:
-                actual_line = actual_lines[i].decode()
+                actual_line = actual_lines.pop()
             except IndexError:
                 actual_line = None
 
@@ -205,8 +206,21 @@ def run_test(
                 assert expected_line is not None
                 assert actual_line is not None
                 if not re.match(f"^{expected_line}$", actual_line):
-                    msg.append(f"{RED}- {expected_line}{NO_COLOR}")
-                    msg.append(f"{GREEN}+ {actual_line}{NO_COLOR}")
+                    # Try to detect if the mismatch is due to an additional/missing line,
+                    # or because of a small change in the expected line
+                    if (
+                        len(expected_lines) != len(actual_lines)
+                        and SequenceMatcher(None, expected_line, actual_line).ratio() < 0.7
+                    ):
+                        if len(expected_lines) > len(actual_lines):
+                            msg.append(f"{RED}- {expected_line}{NO_COLOR}")
+                            actual_lines.append(actual_line)
+                        else:
+                            msg.append(f"{GREEN}+ {actual_line}{NO_COLOR}")
+                            expected_lines.append(expected_line)
+                    else:
+                        msg.append(f"{RED}- {expected_line}{NO_COLOR}")
+                        msg.append(f"{GREEN}+ {actual_line}{NO_COLOR}")
                     mismatch = True
                 else:
                     msg.append(f"~ {actual_line}")
