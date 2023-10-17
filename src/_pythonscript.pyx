@@ -195,6 +195,11 @@ cdef api void _pythonscript_early_init() with gil:
 
 cdef api void _pythonscript_initialize(int p_level) with gil:
     if p_level == GDEXTENSION_INITIALIZATION_SERVERS:
+        import sys
+        from godot._version import __version__ as pythonscript_version
+
+        cooked_sys_version = '.'.join(map(str, sys.version_info))
+        print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})", flush=True)
         pass
 
     # Language registration must be done at `GDEXTENSION_INITIALIZATION_SERVERS`
