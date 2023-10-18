@@ -37,6 +37,7 @@ def fetch_godot_binary_if_needed(build_dir: Path, godot_version_hint: str) -> Pa
     spec = importlib.util.spec_from_file_location(
         "download_python", BASEDIR / "../scripts/fetch_godot.py"
     )
+    assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
@@ -162,7 +163,7 @@ def run_test(
     total_output = b""
     subprocess_done = False
     while True:
-        buff: bytes = res.stdout.read1()
+        buff: bytes = res.stdout.read1()  # type: ignore
         total_output += buff
         os.write(sys.stdout.fileno(), buff)
         if subprocess_done:
