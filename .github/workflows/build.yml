@@ -219,7 +219,7 @@ jobs:
         shell: bash
         run: |
           set -eux
-          ARGS="--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} -- --headless"
+          ARGS="--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} --custom-gdextension-api=./gdextension_api -- --headless"
           python tests/run.py 0-gdscript $ARGS
           python tests/run.py 1-gdextension $ARGS
           python tests/run.py 2-pythonscript-init $ARGS
