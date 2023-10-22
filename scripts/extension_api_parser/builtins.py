@@ -463,13 +463,6 @@ def parse_builtins_ignore_scalars_and_nil(builtin_classes: List[dict]) -> List[B
         if spec["name"] in ("Nil", "bool", "int", "float"):
             continue
 
-        # TODO: remove me once https://github.com/godotengine/godot/pull/64692 is merged
-        if spec["name"] in ("Transform2D", "AABB", "Basis", "Transform3D"):
-            spec["has_destructor"] = False
-
-        # TODO: remove me once https://github.com/godotengine/godot/pull/66181 is merged
-        spec["is_keyed"] = spec["name"] == "Dictionary"
-
         builtins.append(_parse_builtin(spec))
 
     return builtins
