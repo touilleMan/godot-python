@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+from __future__ import annotations
 import argparse
 from typing import List, Dict, Tuple
 from pathlib import Path
@@ -156,6 +157,7 @@ if __name__ == "__main__":
         template_name = f"{name}.j2"
         items.append((output, template_name, template_home))
 
+    filter_classes: bool | set[str]
     if need_classes:
         if args.classes_sample:
             filter_classes = GODOT_CLASSES_SAMPLE
