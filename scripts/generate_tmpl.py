@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    todo: List[Tuple[Path, str, Path]] = []
+    items: List[Tuple[Path, str, Path]] = []
     need_classes = False
     for output in args.output:
         # We use # in the name to simulate folder hierarchy in the meson build
@@ -154,7 +154,7 @@ if __name__ == "__main__":
             raise SystemExit(f"Unknown output, valid values: {', '.join(TARGETS.keys())}")
         need_classes |= template_need_classes
         template_name = f"{name}.j2"
-        todo.append((output, template_name, template_home))
+        items.append((output, template_name, template_home))
 
     if need_classes:
         if args.classes_sample:
@@ -168,8 +168,8 @@ if __name__ == "__main__":
         path=args.input, build_config=BuildConfig(args.build_config), filter_classes=filter_classes
     )
 
-    for todo_output, todo_template_name, todo_template_home in todo:
-        env = make_jinja_env(todo_template_home)
-        template = env.get_template(todo_template_name)
+    for item_output, item_template_name, item_template_home in items:
+        env = make_jinja_env(item_template_home)
+        template = env.get_template(item_template_name)
         code = template.render(api=api)
-        todo_output.write_text(code, encoding="utf8")
+        item_output.write_text(code, encoding="utf8")
