@@ -9,18 +9,24 @@
 # define DLL_IMPORT
 #endif
 
+// Flush before and after print to avoid out-of-order output from previous prints
+#define flush_print(msg) \
+    fflush(NULL); \
+    printf(msg); \
+    fflush(NULL)
+
 static void _initialize(void *userdata, GDExtensionInitializationLevel p_level) {
     if (p_level != GDEXTENSION_INITIALIZATION_SERVERS) {
         return;
     }
-    printf("My GDExtension initialize\n");
+    flush_print("My GDExtension initialize\n");
 }
 
 static void _deinitialize(void *userdata, GDExtensionInitializationLevel p_level) {
     if (p_level != GDEXTENSION_INITIALIZATION_SERVERS) {
         return;
     }
-    printf("My GDExtension deinitialize\n");
+    flush_print("My GDExtension deinitialize\n");
 }
 
 DLL_EXPORT GDExtensionBool my_init(
@@ -28,7 +34,7 @@ DLL_EXPORT GDExtensionBool my_init(
     const GDExtensionClassLibraryPtr p_library,
     GDExtensionInitialization *r_initialization
 ) {
-    printf("My GDExtension entry point call\n");
+    flush_print("My GDExtension entry point call\n");
 
     r_initialization->minimum_initialization_level  = GDEXTENSION_INITIALIZATION_SERVERS;
 	r_initialization->userdata = NULL;

@@ -11,6 +11,8 @@ config_version=5
 [application]
 
 run/main_scene="res://main.tscn"
+; Force flush avoid out-of-order output from previous prints
+run/flush_stdout_on_print = true
 config/features=PackedStringArray("4.0")
 name="TestProject"
 main_scene="res://main.tscn"
