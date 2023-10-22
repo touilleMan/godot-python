@@ -235,29 +235,29 @@ def merge_builtins_size_info(api_json: dict, build_config: BuildConfig) -> None:
     for item in api_json["builtin_classes"]:
         name = item["name"]
         item["size"] = builtin_class_sizes[name]
-        # TODO: correct me once https://github.com/godotengine/godot/pull/64365 is merged
-        for member in builtin_class_member_offsets.get(name, ()):
-            for item_member in item["members"]:
-                if item_member["name"] == member["member"]:
-                    item_member["offset"] = member["offset"]
-                    # Float builtin in extension_api.json is always 64bits long,
-                    # however builtins made of floating point number can be made of
-                    # 32bits (C float) or 64bits (C double)
-                    # But Color is a special case: it is always made of 32bits floats !
-                    if name == "Color":
-                        item_member["type"] = "meta:float"
-                    elif item_member["type"] == "float":
-                        if build_config in (BuildConfig.FLOAT_32, BuildConfig.FLOAT_64):
-                            item_member["type"] = "meta:float"
-                        else:
-                            assert build_config in (BuildConfig.DOUBLE_32, BuildConfig.DOUBLE_64)
-                            item_member["type"] = "meta:double"
-                    elif item_member["type"] == "int":
-                        # Builtins containing int is always made of int32
-                        item_member["type"] = "meta:int32"
+        for member_offset in builtin_class_member_offsets.get(name, ()):
+            for item_member in item.get("members", ()):
+                if item_member["name"] == member_offset["member"]:
+                    # Add the offset field
+                    item_member["offset"] = member_offset["offset"]
+
+                    # Overwrite the type (typically `int` -> `meta:uint32`)
+                    # This is needed given the actual size of the type depends on
+                    # the structure (e.g. `Color` is always composed of 32bits floats)
+                    # and the build config (`float` in a structure can reference either
+                    # 32 or 64bits... while the float builtin is always 64bits !)
+                    if item_member["type"] in ("float", "int"):
+                        item_member["type"] = f"meta:{member_offset['meta']}"
+
+                    # Note it's possible to have more members than offets, the remaining
+                    # members being properties (e.g. `Rec2` has `start` and `size`, then
+                    # an additional `end` which is computed from the first two)
+
                     break
             else:
-                raise RuntimeError(f"Member `{member}` doesn't seem to be part of `{name}` !")
+                raise RuntimeError(
+                    f"Member `{member_offset}` doesn't seem to be part of `{name}` !"
+                )
 
     # Variant&Object are not present among the `builtin_classes`, only their size is provided.
     # So we have to create our own custom entry for them.
