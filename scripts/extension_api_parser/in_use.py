@@ -172,5 +172,5 @@ class ValueInUse:
     # TODO: useful ? I'm not even sure GDScript handles this correctly...
     @property
     def reusable(self) -> bool:
-        # TODO: see https://github.com/godotengine/godot/issues/64442
-        return self.type.type_name not in ("RID", "Callable", "Signal")
+        # This is for RID, Callable and Signal (e.g. `RID()`)
+        self.type.type_name.endswith("()")

@@ -185,7 +185,7 @@ class BuiltinMethodSpec:
 
     @property
     def contains_unsuported_types(self) -> bool:
-        # TODO: support Varaint & Object !
+        # TODO: support Variant & Object !
         def _unsuported_type(t):
             return t.is_variant or t.is_object
 
