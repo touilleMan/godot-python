@@ -1,10 +1,6 @@
-"""
-Helper to debug the parser
-"""
-
-import os
 import sys
 from pathlib import Path
+from typing import Iterable
 
 from . import parse_extension_api_json, BuildConfig
 from .type_spec import TYPES_DB
@@ -13,9 +9,11 @@ from .type_spec import TYPES_DB
 try:
     extension_api_path = Path(sys.argv[1])
 except IndexError:
-    raise SystemExit("Usage: python -m extension_api_parser <path/to/extension_api.json>")
+    raise SystemExit(
+        "Usage: python -m extension_api_parser <path/to/extension_api.json> [float_32|double_32|float_64|double_64]"
+    )
 
-
+build_configs: Iterable[BuildConfig]
 try:
     build_configs = [BuildConfig(sys.argv[2])]
 except IndexError:
