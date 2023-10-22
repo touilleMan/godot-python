@@ -55,9 +55,6 @@ class BuiltinMethodArgumentSpec:
 
     @classmethod
     def parse(cls, item: dict) -> "BuiltinMethodArgumentSpec":
-        # TODO: Remove me once is fixed https://github.com/godotengine/godot/pull/66774
-        if item["type"] == "Nil":
-            item["type"] = "Variant"
         item.setdefault("original_name", item["name"])
         item.setdefault("default_value", None)
         assert_api_consistency(cls, item)
@@ -112,9 +109,6 @@ class BuiltinOperatorSpec:
     def parse(cls, item: dict, c_name_prefix: str) -> "BuiltinOperatorSpec":
         item.setdefault("original_name", item["name"])
         item.setdefault("right_type", None)
-        # TODO: Remove me once is fixed https://github.com/godotengine/godot/pull/66774
-        if item["right_type"] == "Nil":
-            item["right_type"] == "Variant"
         item["name"], item["variant_operator_name"] = VARIANT_OPERATORS[item.pop("name")]
         item["c_name"] = f"{c_name_prefix}_op_{item['name']}"
         if item["right_type"] is not None:
