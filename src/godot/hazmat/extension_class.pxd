@@ -22,12 +22,12 @@ cdef class ExtensionClassMethodSpec:
     cdef list arguments_type  # List[Tuple[bytes, bytes]]
 
 
-cdef inline list _get_extension_gc_protector():
+cdef inline list _get_extension_gc_protector() noexcept:
     import godot.hazmat
     return godot.hazmat.__dict__.setdefault("__extension_gc_protector", [])
 
 
-cdef inline void unregister_extension_class(bytes class_name):
+cdef inline void unregister_extension_class(bytes class_name) noexcept:
     cdef gd_string_name_t gdname
     pythonscript_gdstringname_new(&gdname, class_name)
     pythonscript_gdextension.classdb_unregister_extension_class(
@@ -39,7 +39,7 @@ cdef inline void unregister_extension_class(bytes class_name):
     # Note we cannot free the spec given we don't know if the unregister operation has succeeded
     # TODO: correct me once https://github.com/godotengine/godot/pull/67121 is merged
 
-cdef inline void _extension_class_to_string(GDExtensionClassInstancePtr p_instance, GDExtensionBool *r_is_valid, GDExtensionStringPtr p_out) with gil:
+cdef inline void _extension_class_to_string(GDExtensionClassInstancePtr p_instance, GDExtensionBool *r_is_valid, GDExtensionStringPtr p_out) noexcept with gil:
     cdef ExtensionClassSpec spec = <ExtensionClassSpec>p_instance
     pythonscript_gdextension.string_new_with_utf8_chars(p_out, spec.class_name)
     r_is_valid[0] = True
@@ -50,7 +50,7 @@ cdef inline void register_extension_class_creation(
     bytes parent_class_name,
     GDExtensionClassCreateInstance create_instance_func,
     GDExtensionClassFreeInstance free_instance_func,
-):
+) noexcept:
     cdef ExtensionClassSpec spec = ExtensionClassSpec(
         class_name=class_name,
         parent_class_name=parent_class_name,
@@ -92,7 +92,7 @@ cdef inline void register_extension_class_creation(
     pythonscript_gdstringname_delete(&gdname_parent)
 
 
-cdef inline GDExtensionVariantType _extension_class_method_get_argument_type(void* p_method_userdata, int32_t p_argument) with gil:
+cdef inline GDExtensionVariantType _extension_class_method_get_argument_type(void* p_method_userdata, int32_t p_argument) noexcept with gil:
     cdef ExtensionClassMethodSpec spec = <ExtensionClassMethodSpec>p_method_userdata
 
     if p_argument == -1:
@@ -101,7 +101,7 @@ cdef inline GDExtensionVariantType _extension_class_method_get_argument_type(voi
         return _type_name_to_gdnative_variant_type(spec.arguments_type[p_argument][1])
 
 
-cdef inline void _extension_class_method_get_argument_info(void* p_method_userdata, int32_t p_argument, GDExtensionPropertyInfo* r_info) with gil:
+cdef inline void _extension_class_method_get_argument_info(void* p_method_userdata, int32_t p_argument, GDExtensionPropertyInfo* r_info) noexcept with gil:
     cdef ExtensionClassMethodSpec spec = <ExtensionClassMethodSpec>p_method_userdata
     cdef bytes arg_name
     cdef bytes type_name
@@ -123,7 +123,7 @@ cdef inline void _extension_class_method_get_argument_info(void* p_method_userda
     r_info.usage = PROPERTY_USAGE_DEFAULT
 
 
-cdef inline GDExtensionVariantType _type_name_to_gdnative_variant_type(bytes type_name):
+cdef inline GDExtensionVariantType _type_name_to_gdnative_variant_type(bytes type_name) noexcept:
     if type_name is None:
         return GDEXTENSION_VARIANT_TYPE_NIL
     elif type_name in (b"void", b"gd_variant_t", b"gd_object_t"):
@@ -218,7 +218,7 @@ cdef inline GDExtensionVariantType _type_name_to_gdnative_variant_type(bytes typ
         return GDEXTENSION_VARIANT_TYPE_NIL
 
 
-cdef inline GDExtensionClassMethodArgumentMetadata _extension_class_method_get_argument_metadata(void* p_method_userdata, int32_t p_argument) with gil:
+cdef inline GDExtensionClassMethodArgumentMetadata _extension_class_method_get_argument_metadata(void* p_method_userdata, int32_t p_argument) noexcept with gil:
     cdef ExtensionClassMethodSpec spec = <ExtensionClassMethodSpec>p_method_userdata
     cdef bytes type_name
     if p_argument == -1:
@@ -257,7 +257,7 @@ cdef inline void _method_call_func(
     GDExtensionInt p_argument_count,
     GDExtensionVariantPtr r_return,
     GDExtensionCallError* r_error
-) with gil:
+) noexcept with gil:
     cdef ExtensionClassMethodSpec spec = <ExtensionClassMethodSpec>p_method_userdata
     # TODO: finish me !
     print(f"Pythonscript: `{spec.class_name.decode()}::{spec.method_name.decode()}` method call without ptrcall is not yet supported !!!")
@@ -275,7 +275,7 @@ cdef inline void register_extension_class_method(
     list arguments_type
     # list default_arguments,
     # uint32_t argument_count,
-):
+) noexcept:
     cdef ExtensionClassMethodSpec method_spec = ExtensionClassMethodSpec(
         class_name=class_name,
         method_name=method_name,

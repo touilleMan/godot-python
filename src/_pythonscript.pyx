@@ -44,13 +44,13 @@ cdef PythonScriptLanguage _pythons_script_language = None
 
 cdef api GDExtensionObjectPtr _pythonscript_create_instance(
     void *p_userdata
-) with gil:
+) noexcept with gil:
     return NULL
 
 
 cdef api void _pythonscript_free_instance(
     void *p_userdata, GDExtensionClassInstancePtr p_instance
-) with gil:
+) noexcept with gil:
     pass
 
 
@@ -96,7 +96,7 @@ cdef _testbench():
     # print('OS.get_environment("foo")', OS.get_environment("foo"))
 
 
-cdef api void _pythonscript_late_init() with gil:
+cdef api void _pythonscript_late_init() noexcept with gil:
     # global _pythons_script_language
     # cdef GDExtensionObjectPtr singleton
     # cdef GDExtensionMethodBindPtr bind
@@ -137,7 +137,7 @@ cdef api void _pythonscript_late_init() with gil:
     print(f"PYTHONPATH: {sys.path}")
 
 
-cdef api void _pythonscript_early_init() with gil:
+cdef api void _pythonscript_early_init() noexcept with gil:
     # Here is how we register Python into Godot:
     #
     # GDExtension API allows us to register "extension classes", those will be seen from
@@ -193,7 +193,7 @@ cdef api void _pythonscript_early_init() with gil:
     #     print(f"PYTHONPATH: {sys.path}")
 
 
-cdef api void _pythonscript_initialize(int p_level) with gil:
+cdef api void _pythonscript_initialize(int p_level) noexcept with gil:
     if p_level == GDEXTENSION_INITIALIZATION_SERVERS:
         import sys
         from godot._version import __version__ as pythonscript_version
@@ -209,7 +209,7 @@ cdef api void _pythonscript_initialize(int p_level) with gil:
         pass
 
 
-cdef api void _pythonscript_deinitialize(int p_level) with gil:
+cdef api void _pythonscript_deinitialize(int p_level) noexcept with gil:
     # TODO: unregister the language once https://github.com/godotengine/godot/pull/67155 is merged
 
     if _pythons_script_language is not None:

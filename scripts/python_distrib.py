@@ -12,6 +12,18 @@ import zstandard
 
 PREBUILDS_BASE_URL = "https://github.com/indygreg/python-build-standalone/releases/download"
 PLATFORM_TO_PREBUILDS = {
+    "3.12.0": {
+        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.12.0+20231002-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
+        "windows-x86": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.12.0+20231002-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.12.0+20231002-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.12.0+20231002-x86_64-apple-darwin-pgo+lto-full.tar.zst",
+    },
+    "3.11.6": {
+        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.11.6+20231002-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
+        "windows-x86": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.11.6+20231002-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.11.6+20231002-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.11.6+20231002-x86_64-apple-darwin-pgo+lto-full.tar.zst",
+    },
     "3.11.5": {
         "linux-x86_64": f"{PREBUILDS_BASE_URL}/20230826/cpython-3.11.5+20230826-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
         "windows-x86": f"{PREBUILDS_BASE_URL}/20230826/cpython-3.11.5+20230826-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
@@ -50,12 +62,13 @@ def fetch_prebuild(
     archive_name = archive_url.rsplit("/", 1)[1]
     archive_path = workdir / archive_name
     if not archive_path.exists() or force:
-        print(f"Downloading {archive_url}...")
+        print(f"Downloading {archive_url} ...")
         tmp_archive_path = archive_path.parent / f"{archive_path.name}.tmp"
         with urlopen(archive_url) as rep:
             with open(tmp_archive_path, "bw") as outfd:
                 length = int(rep.headers.get("Content-Length"))
                 # Poor's man progress bar
+                print(f"0Mo/{length//2**20}Mo", flush=True, end="\r")
                 while True:
                     if outfd.write(rep.read(2**20)) == 0:
                         break

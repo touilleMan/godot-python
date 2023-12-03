@@ -4,7 +4,7 @@ pip-tools~=6.12
 # see: https://github.com/pallets/click/blob/030f53cf677ee1de534359c535d465eed0ec1d99/setup.py#L6
 colorama~=0.4
 ninja~=1.11
-cython~=0.29
+cython~=3.0
 jinja2~=3.1
 zstandard~=0.19
 autopxd2~=2.3
