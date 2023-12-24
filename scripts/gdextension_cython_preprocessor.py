@@ -41,9 +41,9 @@ def generate_injected_code_method(spec: MethodDef, class_spec: ClassDef) -> str:
 cdef void __godot_extension_class_meth_{spec.method_name}(
     void *method_userdata,
     GDExtensionClassInstancePtr p_instance,
-    const GDNativeTypePtr *p_args,
-    GDNativeTypePtr r_ret,
-) with gil:
+    const GDExtensionConstTypePtr *p_args,
+    GDExtensionTypePtr r_ret,
+) noexcept with gil:
 """
 
     if spec.return_type == "void":
@@ -69,13 +69,13 @@ def __godot_extension_unregister_class():
     unregister_extension_class(b"{spec.class_name}")
 
 @staticmethod
-cdef GDExtensionClassInstancePtr __godot_extension_new(void* p_userdata) with gil:
+cdef GDExtensionClassInstancePtr __godot_extension_new(void* p_userdata) noexcept with gil:
     cdef {spec.class_name} obj = {spec.class_name}()
     Py_INCREF(obj)
     return <PyObject*>obj
 
 @staticmethod
-cdef void __godot_extension_free(void* p_userdata, GDExtensionClassInstancePtr p_instance) with gil:
+cdef void __godot_extension_free(void* p_userdata, GDExtensionClassInstancePtr p_instance) noexcept with gil:
     Py_DECREF(<{spec.class_name}>p_instance)
 
 @staticmethod

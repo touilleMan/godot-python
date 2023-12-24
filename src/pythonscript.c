@@ -328,6 +328,7 @@ static void _deinitialize(void *userdata, GDExtensionInitializationLevel p_level
     }
 }
 
+// Entry point called by Godot
 DLL_EXPORT GDExtensionBool pythonscript_init(
     const GDExtensionInterfaceGetProcAddress p_get_proc_address,
     const GDExtensionClassLibraryPtr p_library,
@@ -347,6 +348,27 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
     // null-pointer checked, especially in the Cython modules
     pythonscript_gdextension_get_proc_address = p_get_proc_address;
     pythonscript_gdextension_library = p_library;
+
+    // Check compatibility between the Godot version that has been used for building
+    // (i.e. the bindings has been generated against) and the version currently executed.
+    GDExtensionGodotVersion godot_version;
+    {
+        GDExtensionInterfaceGetGodotVersion get_godot_version = (GDExtensionInterfaceGetGodotVersion)p_get_proc_address("get_godot_version");
+        get_godot_version(&godot_version);
+    }
+    if (godot_version.major != GODOT_VERSION_MAJOR || godot_version.minor < GODOT_VERSION_MINOR) {
+        char buff[256];
+        snprintf(
+            buff,
+            sizeof(buff),
+            "Pythonscript: Incompatible Godot version (expected ~%d.%d, got %s)\n",
+            GODOT_VERSION_MAJOR,
+            GODOT_VERSION_MINOR,
+            godot_version.string
+        );
+        GD_PRINT_ERROR(buff);
+        goto error;
+    }
 
     // Load GDString/GDStringName contructor/destructor needed for pythonscript_gdstringname_new/delete helpers
 
@@ -380,27 +402,6 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
     gdstring_new_with_utf8_chars = (GDExtensionInterfaceStringNewWithUtf8Chars)p_get_proc_address("string_new_with_utf8_chars");
     if (gdstring_new_with_utf8_chars == NULL) {
         GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `string_new_with_utf8_chars` destructor)");
-        goto error;
-    }
-
-    // Check compatibility between the Godot version that has been used for building
-    // (i.e. the bindings has been generated against) and the version currently executed.
-    GDExtensionGodotVersion godot_version;
-    {
-        GDExtensionInterfaceGetGodotVersion get_godot_version = (GDExtensionInterfaceGetGodotVersion)p_get_proc_address("get_godot_version");
-        get_godot_version(&godot_version);
-    }
-    if (godot_version.major != GODOT_VERSION_MAJOR || godot_version.minor < GODOT_VERSION_MINOR) {
-        char buff[256];
-        snprintf(
-            buff,
-            sizeof(buff),
-            "Pythonscript: Incompatible Godot version (expected ~%d.%d, got %s)\n",
-            GODOT_VERSION_MAJOR,
-            GODOT_VERSION_MINOR,
-            godot_version.string
-        );
-        GD_PRINT_ERROR(buff);
         goto error;
     }
 

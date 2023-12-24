@@ -29,7 +29,7 @@ cdef inline list _get_extension_gc_protector() noexcept:
 
 cdef inline void unregister_extension_class(bytes class_name) noexcept:
     cdef gd_string_name_t gdname
-    pythonscript_gdstringname_new(&gdname, class_name)
+    pythonscript_gdstringname_new(&gdname, <char*>class_name)
     pythonscript_gdextension.classdb_unregister_extension_class(
         pythonscript_gdextension_library,
         &gdname,
@@ -79,8 +79,8 @@ cdef inline void register_extension_class_creation(
 
     cdef gd_string_name_t gdname
     cdef gd_string_name_t gdname_parent
-    pythonscript_gdstringname_new(&gdname, class_name)
-    pythonscript_gdstringname_new(&gdname_parent, parent_class_name)
+    pythonscript_gdstringname_new(&gdname, <char*>class_name)
+    pythonscript_gdstringname_new(&gdname_parent, <char*>parent_class_name)
     # TODO: correct me once https://github.com/godotengine/godot/pull/67121 is merged
     pythonscript_gdextension.classdb_register_extension_class(
         pythonscript_gdextension_library,
@@ -112,10 +112,10 @@ cdef inline void _extension_class_method_get_argument_info(void* p_method_userda
     else:
         arg_name, type_name = spec.arguments_type[p_argument]
         r_info.type = _type_name_to_gdnative_variant_type(type_name)
-        pythonscript_gdstringname_new(&r_info.name, arg_name)
+        pythonscript_gdstringname_new(&r_info.name, <char*>arg_name)
 
     # TODO: handle class name !
-    pythonscript_gdstringname_new(&r_info.class_name, b"")
+    pythonscript_gdstringname_new(&r_info.class_name, <char*>b"")
 
     # TODO: finish that !
     r_info.hint = PROPERTY_HINT_NONE
@@ -287,7 +287,9 @@ cdef inline void register_extension_class_method(
     specs_list.append(method_spec)
 
     cdef GDExtensionClassMethodInfo info
-    pythonscript_gdstringname_new(&info.name, method_name)
+    cdef gd_string_name_t gd_method_name
+    pythonscript_gdstringname_new(&gd_method_name, <char*>method_name)
+    info.name = &gd_method_name
     info.method_userdata = <void*>method_spec  # void*
     info.call_func = _method_call_func  # GDExtensionClassMethodCall
     info.ptrcall_func = ptrcall_func  # GDExtensionClassMethodPtrCall
@@ -325,7 +327,7 @@ cdef inline void register_extension_class_method(
     info.default_arguments = NULL  # GDExtensionVariantPtr*
 
     cdef gd_string_name_t gd_class_name
-    pythonscript_gdstringname_new(&gd_class_name, class_name)
+    pythonscript_gdstringname_new(&gd_class_name, <char*>class_name)
     pythonscript_gdextension.classdb_register_extension_class_method(
         pythonscript_gdextension_library,
         &gd_class_name,

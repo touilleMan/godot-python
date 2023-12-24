@@ -157,8 +157,11 @@ cdef api void _pythonscript_early_init() noexcept with gil:
 
     pass
     # # 1) Register `PythonScript` class into Godot
-    # PythonScriptLanguage.__godot_extension_register_class()
-    # PythonScript.__godot_extension_register_class()
+    # See `scripts/gdextension_cython_preprocessor.py` for the detail of
+    # `__godot_extension_register_class`'s implementation.
+
+    PythonScriptLanguage._PythonScriptLanguage__godot_extension_register_class()
+    PythonScript._PythonScript__godot_extension_register_class()
 
 
     # # OS and ProjectSettings are singletons exposed as global python objects,
@@ -195,6 +198,8 @@ cdef api void _pythonscript_early_init() noexcept with gil:
 
 cdef api void _pythonscript_initialize(int p_level) noexcept with gil:
     if p_level == GDEXTENSION_INITIALIZATION_SERVERS:
+        _pythonscript_early_init()
+
         import sys
         from godot._version import __version__ as pythonscript_version
 
@@ -222,5 +227,6 @@ cdef api void _pythonscript_deinitialize(int p_level) noexcept with gil:
     # That will continue until `godot_gdnative_terminate` is called (which is
     # responsible for the actual teardown of the interpreter).
 
-    # PythonScript.__godot_extension_unregister_class()
-    # PythonScriptLanguage.__godot_extension_unregister_class()
+    if p_level == GDEXTENSION_INITIALIZATION_SERVERS:
+        PythonScript._PythonScript__godot_extension_unregister_class()
+        PythonScriptLanguage._PythonScriptLanguage__godot_extension_unregister_class()
