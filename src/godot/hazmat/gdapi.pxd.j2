@@ -64,6 +64,19 @@ cdef inline object gd_string_to_pystr(gd_string_t *gdstr):
     return PyUnicode_DecodeUTF32(<char *>gdbuff, l * cython.sizeof(char32_t), NULL, NULL)
 
 
+cdef inline gd_string_t gd_string_from_pybytes(bytes cstr):
+    cdef gd_string_t gdstr
+    pythonscript_gdextension.string_new_with_utf8_chars_and_len(&gdstr, <char*>cstr, len(cstr))
+    return gdstr
+
+
+cdef inline gd_string_name_t gd_string_name_from_pybytes(bytes cstr):
+    cdef gd_string_t gdstr = gd_string_from_pybytes(cstr)
+    cdef gd_string_name_t gdstrname = gd_string_name_new_from_string(&gdstr)
+    gd_string_del(&gdstr)
+    return gdstrname
+
+
 ##############################################################################
 #                        Builtins stucts                                     #
 ##############################################################################
