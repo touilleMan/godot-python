@@ -1,6 +1,7 @@
 cimport cython
 from cpython.ref cimport Py_INCREF, Py_DECREF
 from libc.string cimport strcmp
+from libc.stdlib cimport malloc, free
 
 from godot.hazmat.gdextension_interface cimport *
 from godot.hazmat.gdapi cimport *
@@ -16,10 +17,10 @@ cdef class ExtensionClassSpec:
 @cython.final
 cdef class ExtensionClassMethodSpec:
     cdef bytes class_name
-    cdef bytes meth_name
+    cdef bytes method_name
     cdef bint is_staticmethod
     cdef bytes return_type
-    cdef list arguments_type  # List[Tuple[bytes, bytes]]
+    cdef list arguments_type  # list of (<name>, <type>)
 
 
 cdef inline list _get_extension_gc_protector() noexcept:
@@ -28,20 +29,20 @@ cdef inline list _get_extension_gc_protector() noexcept:
 
 
 cdef inline void unregister_extension_class(bytes class_name) noexcept:
-    cdef gd_string_name_t gdname
-    pythonscript_gdstringname_new(&gdname, <char*>class_name)
+    cdef gd_string_name_t gd_class_name
+    pythonscript_gdstringname_new(&gd_class_name, <char*>class_name)
     pythonscript_gdextension.classdb_unregister_extension_class(
         pythonscript_gdextension_library,
-        &gdname,
+        &gd_class_name,
     )
-    pythonscript_gdstringname_delete(&gdname)
+    gd_string_name_del(&gd_class_name)
 
     # Note we cannot free the spec given we don't know if the unregister operation has succeeded
     # TODO: correct me once https://github.com/godotengine/godot/pull/67121 is merged
 
 cdef inline void _extension_class_to_string(GDExtensionClassInstancePtr p_instance, GDExtensionBool *r_is_valid, GDExtensionStringPtr p_out) noexcept with gil:
     cdef ExtensionClassSpec spec = <ExtensionClassSpec>p_instance
-    pythonscript_gdextension.string_new_with_utf8_chars(p_out, spec.class_name)
+    (<gd_string_t*>p_out)[0] = gd_string_from_pybytes(spec.class_name)
     r_is_valid[0] = True
 
 
@@ -51,11 +52,11 @@ cdef inline void register_extension_class_creation(
     GDExtensionClassCreateInstance create_instance_func,
     GDExtensionClassFreeInstance free_instance_func,
 ) noexcept:
-    cdef ExtensionClassSpec spec = ExtensionClassSpec(
-        class_name=class_name,
-        parent_class_name=parent_class_name,
-        methods=[],
-    )
+    cdef ExtensionClassSpec spec = ExtensionClassSpec()
+    spec.class_name = class_name
+    spec.parent_class_name = parent_class_name
+    spec.specs_protected_from_gc = []
+
     cdef list specs_list = _get_extension_gc_protector()
     specs_list.append(spec)
 
@@ -88,8 +89,8 @@ cdef inline void register_extension_class_creation(
         &gdname_parent,
         &info,
     )
-    pythonscript_gdstringname_delete(&gdname)
-    pythonscript_gdstringname_delete(&gdname_parent)
+    gd_string_name_del(&gdname)
+    gd_string_name_del(&gdname_parent)
 
 
 cdef inline GDExtensionVariantType _extension_class_method_get_argument_type(void* p_method_userdata, int32_t p_argument) noexcept with gil:
@@ -108,25 +109,41 @@ cdef inline void _extension_class_method_get_argument_info(void* p_method_userda
 
     if p_argument == -1:
         r_info.type = _type_name_to_gdnative_variant_type(spec.return_type)
-        r_info.name = NULL
+        r_info.name = malloc(sizeof(gd_string_name_t))
+        (<gd_string_name_t*>r_info.name)[0] = gd_string_name_from_pybytes(b"")
     else:
         arg_name, type_name = spec.arguments_type[p_argument]
         r_info.type = _type_name_to_gdnative_variant_type(type_name)
-        pythonscript_gdstringname_new(&r_info.name, <char*>arg_name)
+        r_info.name = malloc(sizeof(gd_string_name_t))
+        (<gd_string_name_t*>r_info.name)[0] = gd_string_name_from_pybytes(arg_name)
 
-    # TODO: handle class name !
-    pythonscript_gdstringname_new(&r_info.class_name, <char*>b"")
+    r_info.class_name = malloc(sizeof(gd_string_name_t))
+    (<gd_string_name_t*>r_info.class_name)[0] = gd_string_name_from_pybytes(spec.class_name)
 
     # TODO: finish that !
     r_info.hint = PROPERTY_HINT_NONE
-    pythonscript_gdextension.string_new_with_utf8_chars(&r_info.hint_string, b"")
+    r_info.hint_string = malloc(sizeof(gd_string_t))
+    (<gd_string_t*>r_info.hint_string)[0] = gd_string_from_pybytes(b"")
+    r_info.usage = PROPERTY_USAGE_DEFAULT
+
+
+cdef inline void _extension_class_method_empty_argument_info(GDExtensionPropertyInfo* r_info) noexcept with gil:
+    r_info.type = GDEXTENSION_VARIANT_TYPE_NIL
+    r_info.name = malloc(sizeof(gd_string_name_t))
+    (<gd_string_name_t*>r_info.name)[0] = gd_string_name_from_pybytes(b"")
+    r_info.class_name = malloc(sizeof(gd_string_name_t))
+    (<gd_string_name_t*>r_info.class_name)[0] = gd_string_name_from_pybytes(b"")
+    r_info.hint = PROPERTY_HINT_NONE
+    r_info.hint_string = malloc(sizeof(gd_string_t))
+    (<gd_string_t*>r_info.hint_string)[0] = gd_string_from_pybytes(b"")
     r_info.usage = PROPERTY_USAGE_DEFAULT
 
 
 cdef inline GDExtensionVariantType _type_name_to_gdnative_variant_type(bytes type_name) noexcept:
     if type_name is None:
         return GDEXTENSION_VARIANT_TYPE_NIL
-    elif type_name in (b"void", b"gd_variant_t", b"gd_object_t"):
+    elif type_name in (b"void", b"gd_variant_t", b"gd_object_t") or type_name.endswith(b"*"):
+        # Nil variant type both means "no type" and "type is a pointer"
         return GDEXTENSION_VARIANT_TYPE_NIL
     elif type_name == b"gd_bool_t":
         return GDEXTENSION_VARIANT_TYPE_BOOL
@@ -276,19 +293,22 @@ cdef inline void register_extension_class_method(
     # list default_arguments,
     # uint32_t argument_count,
 ) noexcept:
-    cdef ExtensionClassMethodSpec method_spec = ExtensionClassMethodSpec(
-        class_name=class_name,
-        method_name=method_name,
-        is_staticmethod=is_staticmethod,
-        return_type=return_type,
-        arguments_type=arguments_type,
-    )
+    # 1) Build & register spec
+
+    cdef ExtensionClassMethodSpec method_spec = ExtensionClassMethodSpec()
+    method_spec.class_name = class_name
+    method_spec.method_name = method_name
+    method_spec.is_staticmethod = is_staticmethod
+    method_spec.return_type = return_type
+    method_spec.arguments_type = arguments_type
+
     cdef list specs_list = _get_extension_gc_protector()
     specs_list.append(method_spec)
 
+    # 2) Build the info struct (passed to Godot when registering the method)
+
     cdef GDExtensionClassMethodInfo info
-    cdef gd_string_name_t gd_method_name
-    pythonscript_gdstringname_new(&gd_method_name, <char*>method_name)
+    cdef gd_string_name_t gd_method_name = gd_string_name_from_pybytes(method_name)
     info.name = &gd_method_name
     info.method_userdata = <void*>method_spec  # void*
     info.call_func = _method_call_func  # GDExtensionClassMethodCall
@@ -299,41 +319,73 @@ cdef inline void register_extension_class_method(
     else:
         info.method_flags = GDEXTENSION_METHOD_FLAG_NORMAL
 
-    cdef GDExtensionPropertyInfo return_value_info
+    info.return_value_info = <GDExtensionPropertyInfo*>malloc(sizeof(GDExtensionPropertyInfo))
     if return_type == b"void":
         info.has_return_value = False  # gd_bool_t
+        info.return_value_metadata = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE  # Dummy default
+        _extension_class_method_empty_argument_info(info.return_value_info)  # Dummy default
     else:
         info.has_return_value = True  # gd_bool_t
         # TODO: refactor this hack based on the old GDExtension API
-        _extension_class_method_get_argument_info(info.method_userdata, -1, &return_value_info)  # GDExtensionPropertyInfo *
-        info.return_value_info = &return_value_info
+        _extension_class_method_get_argument_info(info.method_userdata, -1, info.return_value_info)  # GDExtensionPropertyInfo *
         info.return_value_metadata = _extension_class_method_get_argument_metadata(info.method_userdata, -1)  # GDExtensionClassMethodArgumentMetadata
 
     info.argument_count = <uint32_t>len(arguments_type)  # uint32_t
 
-    # TODO: I'm too lazy to use malloc here for the moment
-    assert info.argument_count < 16
-    cdef GDExtensionPropertyInfo arguments_info[16]
-    cdef GDExtensionClassMethodArgumentMetadata arguments_metadata[16]
-    info.arguments_info = arguments_info  # GDExtensionPropertyInfo *
-    info.arguments_metadata = arguments_metadata  # GDExtensionClassMethodArgumentMetadata *
-    for i in enumerate(arguments_type):
+    if info.argument_count > 0:
+        info.arguments_info = <GDExtensionPropertyInfo*>malloc(sizeof(GDExtensionPropertyInfo) * info.argument_count)
+        info.arguments_metadata = <GDExtensionClassMethodArgumentMetadata*>malloc(sizeof(GDExtensionClassMethodArgumentMetadata) * info.argument_count)
+    else:
+        info.arguments_info = NULL  # GDExtensionPropertyInfo *
+        info.arguments_metadata = NULL  # GDExtensionClassMethodArgumentMetadata *
+
+    for i, _ in enumerate(arguments_type):
         # TODO: refactor this hack based on the old GDExtension API
-        _extension_class_method_get_argument_info(info.method_userdata, i, &arguments_info[i])
+        _extension_class_method_get_argument_info(info.method_userdata, i, &info.arguments_info[i])
         info.arguments_metadata[i] = _extension_class_method_get_argument_metadata(info.method_userdata, i)
 
     # TODO: support default arguments
     info.default_argument_count = 0  # uint32_t
     info.default_arguments = NULL  # GDExtensionVariantPtr*
 
-    cdef gd_string_name_t gd_class_name
-    pythonscript_gdstringname_new(&gd_class_name, <char*>class_name)
+    # 3) Actually register the method
+
+    cdef gd_string_name_t gd_class_name = gd_string_name_from_pybytes(class_name)
     pythonscript_gdextension.classdb_register_extension_class_method(
         pythonscript_gdextension_library,
         &gd_class_name,
         &info,
     )
-    pythonscript_gdstringname_delete(&gd_class_name)
-    # TODO: correct me once https://github.com/godotengine/godot/pull/67121 is merged
+    gd_string_name_del(&gd_class_name)
 
-    # TODO: cleanup info.return_value_info & info.arguments_info
+    # 3) Free up the info struct
+
+    gd_string_name_del(&gd_method_name)
+
+    gd_string_name_del(<gd_string_name_t*>info.return_value_info.name)
+    free(info.return_value_info.name)
+
+    gd_string_name_del(<gd_string_name_t*>info.return_value_info.class_name)
+    free(info.return_value_info.class_name)
+
+    gd_string_del(<gd_string_t*>info.return_value_info.hint_string)
+    free(info.return_value_info.hint_string)
+
+    free(info.return_value_info)
+
+    for i, _ in enumerate(arguments_type):
+        gd_string_name_del(<gd_string_name_t*>info.arguments_info[i].name)
+        free(info.arguments_info[i].name)
+
+        gd_string_name_del(<gd_string_name_t*>info.arguments_info[i].class_name)
+        free(info.arguments_info[i].class_name)
+
+        gd_string_del(<gd_string_t*>info.arguments_info[i].hint_string)
+        free(info.arguments_info[i].hint_string)
+
+    if info.arguments_info != NULL:
+        free(info.arguments_info)
+
+    # TODO: free `info.default_arguments`
+
+    # TODO: correct me once https://github.com/godotengine/godot/pull/67121 is merged

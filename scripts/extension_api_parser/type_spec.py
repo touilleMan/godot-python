@@ -60,6 +60,10 @@ class TypeSpec:
     def is_opaque_builtin(self) -> bool:
         return False
 
+    @property
+    def is_native_structure(self) -> bool:
+        return False
+
 
 class ScalarTypeSpec(TypeSpec):
     """

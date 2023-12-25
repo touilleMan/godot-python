@@ -9,7 +9,7 @@ from dataclasses import dataclass
 PRAGMA_RE = re.compile(r"^(?P<indentation>\s*)# godot_extension:\s+(?P<pragma>.*)$")
 CLASS_RE = re.compile(r"^cdef class (?P<class_name>\w+)")
 METHOD_RE = re.compile(
-    r"^cdef\s+(inline\s+)?(?P<return_type>\w+)\s+(?P<method_name>\w+)\((?P<param>.*)\):"
+    r"^cdef\s+(inline\s+)?(?P<return_type>\w+\s*\*?)\s+(?P<method_name>\w+)\((?P<param>.*)\):"
 )
 
 INJECT_CODE_PRAGMA = "generate_code()"
@@ -55,8 +55,8 @@ cdef void __godot_extension_class_meth_{spec.method_name}(
     else:
         code += f"(<{class_spec.class_name}>p_instance).{spec.method_name}(\n"
 
-    for _, param_type in spec.parameters.items():
-        code += f"        (<{param_type}>p_args[0])[0],\n"
+    for i, (_, param_type) in enumerate(spec.parameters.items()):
+        code += f"        (<{param_type}*>p_args[{i}])[0],\n"
     code += "    )\n"
 
     return code
@@ -91,7 +91,7 @@ def __godot_extension_register_class():
         cooked_params = "["
         for param_name, param_type in method.parameters.items():
             cooked_params += "("
-            cooked_params += f'b"{param_type}", b"{param_name}"'
+            cooked_params += f'b"{param_name}", b"{param_type}"'
             cooked_params += "), "
         cooked_params += "]"
 
@@ -123,6 +123,18 @@ def generate_injected_code(spec: ClassDef) -> str:
     code += textwrap.indent(register_code, prefix="    ")
 
     return code
+
+
+def handle_pointer_type(raw_type: str) -> str:
+    # Type is not a real Godot object, but we still use `gd_object_t`
+    # to represent the fact it is a pointer
+    # if raw_type.endswith("*"):
+    #     return "gd_object_t"
+    try:
+        pointed_type, _ = raw_type.split()
+        return f"{pointed_type}*"
+    except ValueError:
+        return raw_type.strip()
 
 
 def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
@@ -181,7 +193,7 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                     meth_signature = line[: line.index("(") + 1].strip()
                 except ValueError:
                     raise RuntimeError(
-                        f"expected method signature `cdef [inline] gd_xxx_t foo({'' if is_staticmethod else 'self, '}, gd_yyy_t bar, ...)"
+                        f"expected method signature `cdef [inline] gd_xxx_t foo({'' if is_staticmethod else 'self, '}gd_yyy_t bar, ...)"
                     )
                 open_parenthesises = 1
                 while open_parenthesises > 0:
@@ -200,7 +212,7 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                 match = METHOD_RE.match(meth_signature)
                 if not match:
                     raise RuntimeError(
-                        f"expected method signature `cdef [inline] gd_xxx_t foo({'' if is_staticmethod else 'self, '}, gd_yyy_t bar, ...)"
+                        f"expected method signature `cdef [inline] gd_xxx_t foo({'' if is_staticmethod else 'self, '}gd_yyy_t bar, ...)"
                     )
 
                 params = {}
@@ -216,14 +228,14 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                         param_type, param_name = raw_param.split()
                     except ValueError:
                         raise RuntimeError(f"bad parameter {raw_param!r}")
-                    params[param_name] = param_type
+                    params[param_name] = handle_pointer_type(param_type)
 
                 current_class.methods.append(
                     MethodDef(
                         method_name=match.group("method_name"),
                         is_staticmethod=is_staticmethod,
                         is_const=is_const,
-                        return_type=match.group("return_type"),
+                        return_type=handle_pointer_type(match.group("return_type")),
                         parameters=params,
                     )
                 )

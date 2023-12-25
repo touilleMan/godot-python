@@ -111,6 +111,10 @@ class NativeStructureSpec(TypeSpec):
     # Format is basically a dump of the C struct content, so don't try to be clever by parsing it
     fields: Dict[str, TypeInUse]
 
+    @property
+    def is_native_structure(self) -> bool:
+        return True
+
     def __getattribute__(self, name: str):
         if name in ("variant_type_name", "py_type", "cy_type"):
             raise RuntimeError(
@@ -156,7 +160,8 @@ class NativeStructureSpec(TypeSpec):
             fields=fields,
             py_type="",  # Never accessed dummy value
             cy_type="",  # Never accessed dummy value
-            c_type=f"gd_{camel_to_snake(name)}",
+            # c_type=f"gd_{camel_to_snake(name)}_t",
+            c_type=name,
             is_stack_only=True,
             variant_type_name="",  # Never accessed dummy value
         )

@@ -1,6 +1,6 @@
 cimport cython
 
-from .hazmat.gdapi cimport pythonscript_gdextension, gd_object_t
+from .hazmat.gdapi cimport *
 
 
 cdef class BaseGDObject:
@@ -13,6 +13,26 @@ cdef class BaseGDObject:
 cdef inline gdobject_free(BaseGDObject obj):
     pythonscript_gdextension.object_destroy(obj._gd_ptr)
 
+{% for native_structure in api.native_structures %}
+cdef extern from * nogil:
+    """
+    typedef struct {{ native_structure.original_name }} {
+{%   for field_name, field_type in native_structure.fields.items() %}
+    {{ field_type.c_type }} {{ field_name }};
+{%   endfor %}
+    } {{ native_structure.original_name }};
+    """
+    struct {{ native_structure.original_name }}:
+{%   for field_name, field_type in native_structure.fields.items() %}
+{%     if field_type.is_native_structure %}
+        {{ field_type.c_type }} {{ field_name }}
+{%     else %}
+        {{ field_type.c_type }} {{ field_name }}
+{%     endif %}
+{%   endfor %}
+
+
+{% endfor %}
 
 {% for cls in api.classes %}
 cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }}):
