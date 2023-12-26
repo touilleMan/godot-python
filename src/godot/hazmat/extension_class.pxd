@@ -60,6 +60,7 @@ cdef inline void register_extension_class_creation(
     cdef list specs_list = _get_extension_gc_protector()
     specs_list.append(spec)
 
+    # TODO: replace by `GDExtensionClassCreationInfo2`
     cdef GDExtensionClassCreationInfo info
     info.set_func = NULL  # GDExtensionClassSet
     info.get_func = NULL  # GDExtensionClassGet
@@ -73,7 +74,7 @@ cdef inline void register_extension_class_creation(
     info.unreference_func = NULL  # GDExtensionClassUnreference
     info.create_instance_func = create_instance_func
     info.free_instance_func = free_instance_func
-    info.get_virtual_func = NULL  # GDExtensionClassGetVirtual
+    info.get_virtual_func = NULL  # GDExtensionClassGetVirtual    # TODO Implement this !!!!!
     info.get_rid_func = NULL  # GDExtensionClassGetRID
     # Don't increment refcount given we rely on gc protector
     info.class_userdata = <void*>spec  # void*
