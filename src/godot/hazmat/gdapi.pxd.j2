@@ -88,6 +88,11 @@ ctypedef {{ api.int_type.c_type }} gd_int_t
 ctypedef {{ api.float_type.c_type }} gd_float_t
 # Note we don't really care this is a pointer as we always treat it as an opaque structure
 ctypedef GDExtensionObjectPtr gd_object_t
+cdef extern from * nogil:
+    # Needed to have `gd_object_t` also exposed in .h/.c files
+    """
+    typedef GDExtensionObjectPtr gd_object_t;
+    """
 
 # Declare builtins structures in `cdef extern` to also provide a C struct definition
 # so that they can be used in exported to C functions (i.e. `cdef api` functions)

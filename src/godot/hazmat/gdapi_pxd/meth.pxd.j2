@@ -324,6 +324,33 @@ cdef inline void {{ builtin.c_name_prefix }}_keyed_setter(
 
 
 #########################################################################
+# Builtin operators
+#########################################################################
+
+
+{% macro render_builtin_operators(builtin) %}
+{% for o in builtin.operators %}
+{%   if o.right_type is none %}
+cdef inline {{ o.return_type.c_type }} {{ builtin.c_name_prefix }}_op_{{ o.name }}(
+    const {{ builtin.c_type }} *self
+):
+    cdef {{ o.return_type.c_type }} result
+    {{ builtin.c_name_prefix }}_op_{{ o.name }}_ptr(self, NULL, &result)
+    return result
+{%   else %}
+cdef inline {{ o.return_type.c_type }} {{ builtin.c_name_prefix }}_op_{{ o.name }}(
+    const {{ builtin.c_type }} *self,
+    const {{ o.right_type.c_type }} *other
+):
+    cdef {{ o.return_type.c_type }} result
+    {{ builtin.c_name_prefix }}_op_{{ o.name }}_ptr(self, other, &result)
+    return result
+{%   endif %}
+{% endfor %}
+{% endmacro %}
+
+
+#########################################################################
 # All stuff combined
 #########################################################################
 
@@ -347,7 +374,7 @@ cdef inline void {{ builtin.c_name_prefix }}_keyed_setter(
 {{ render_builtin_indexed_getter(builtin) }}
 {{ render_builtin_indexed_setter(builtin) }}
 {%   endif %}
-{# TODO: builtin.operators #}
+{{ render_builtin_operators(builtin) }}
 {% for m in builtin.members %}
 {%   if not m.is_in_struct %}
 {{ render_builtin_member_getter(builtin, m) }}

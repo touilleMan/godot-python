@@ -22,6 +22,7 @@ class MethodDef:
     method_name: str
     is_staticmethod: bool
     is_const: bool
+    is_virtual: bool
     return_type: str
     parameters: Dict[str, str]
 
@@ -35,11 +36,11 @@ class ClassDef:
     inject_code_at_line: int
 
 
-def generate_injected_code_method(spec: MethodDef, class_spec: ClassDef) -> str:
+def generate_injected_code_method(spec: MethodDef, class_spec: ClassDef, virtual_flavor: bool = False) -> str:
     code = f"""
 @staticmethod
-cdef void __godot_extension_class_meth_{spec.method_name}(
-    void *method_userdata,
+cdef void __godot_extension_class_{'virtual_' if virtual_flavor else ''}meth_{spec.method_name}(
+    {'void *method_userdata,' if not virtual_flavor else ''}
     GDExtensionClassInstancePtr p_instance,
     const GDExtensionConstTypePtr *p_args,
     GDExtensionTypePtr r_ret,
@@ -59,6 +60,10 @@ cdef void __godot_extension_class_meth_{spec.method_name}(
         code += f"        (<{param_type}*>p_args[{i}])[0],\n"
     code += "    )\n"
 
+    if spec.is_virtual and not virtual_flavor:
+        code += "\n"
+        code += generate_injected_code_method(spec, class_spec, virtual_flavor=True)
+
     return code
 
 
@@ -69,13 +74,13 @@ def __godot_extension_unregister_class():
     unregister_extension_class(b"{spec.class_name}")
 
 @staticmethod
-cdef GDExtensionClassInstancePtr __godot_extension_new(void* p_userdata) noexcept with gil:
+cdef GDExtensionClassInstancePtr __godot_extension_create_instance(void* p_userdata) noexcept with gil:
     cdef {spec.class_name} obj = {spec.class_name}()
     Py_INCREF(obj)
     return <PyObject*>obj
 
 @staticmethod
-cdef void __godot_extension_free(void* p_userdata, GDExtensionClassInstancePtr p_instance) noexcept with gil:
+cdef void __godot_extension_free_instance(void* p_userdata, GDExtensionClassInstancePtr p_instance) noexcept with gil:
     Py_DECREF(<{spec.class_name}>p_instance)
 
 @staticmethod
@@ -83,8 +88,9 @@ def __godot_extension_register_class():
     register_extension_class_creation(
         b"{spec.class_name}",
         b"{spec.parent_class_name}",
-        &{spec.class_name}.__godot_extension_new,
-        &{spec.class_name}.__godot_extension_free,
+        &{spec.class_name}.__godot_extension_create_instance,
+        &{spec.class_name}.__godot_extension_free_instance,
+        &{spec.class_name}.__godot_extension_get_virtual,
     )
 """
     for method in spec.methods:
@@ -108,6 +114,28 @@ register_extension_class_method(
 """,
             prefix="    ",
         )
+
+    # TODO: cache virtual methods name to avoid pystr to gd_string_name_t conversions
+    code += """
+@staticmethod
+cdef GDExtensionClassCallVirtual __godot_extension_get_virtual(void *p_class_userdata, GDExtensionConstStringNamePtr p_name) noexcept with gil:
+    cdef gd_string_t gd_candidate_name
+"""
+
+    for method in spec.methods:
+        if not method.is_virtual:
+            continue
+        code += f"""
+    gd_candidate_name = gd_string_from_pybytes(b"{method.method_name}")
+    if gd_string_name_op_equal_string(<const gd_string_name_t *>p_name, &gd_candidate_name):
+        gd_string_del(&gd_candidate_name)
+        return &{spec.class_name}.__godot_extension_class_virtual_meth_{method.method_name}
+    gd_string_del(&gd_candidate_name)
+"""
+
+    code += """
+    return NULL
+"""
 
     return code
 
@@ -166,7 +194,7 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
 
         else:
 
-            def _method(const: bool = False) -> MethodDef:
+            def _method(const: bool = False, virtual: bool = False) -> MethodDef:
                 if current_class is None:
                     raise RuntimeError(
                         f"`# godot_extension: method(...)` must be within a `# godot_extension: class(...)` pragma"
@@ -174,8 +202,12 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
 
                 if not isinstance(const, bool):
                     raise RuntimeError("`const` parameter must be a boolean")
-
                 is_const = const
+
+                if not isinstance(virtual, bool):
+                    raise RuntimeError("`virtual` parameter must be a boolean")
+                is_virtual = virtual
+
                 try:
                     _, line = next(code_lines)
                     is_staticmethod = line.strip() == "@staticmethod"
@@ -235,6 +267,7 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                         method_name=match.group("method_name"),
                         is_staticmethod=is_staticmethod,
                         is_const=is_const,
+                        is_virtual=is_virtual,
                         return_type=handle_pointer_type(match.group("return_type")),
                         parameters=params,
                     )

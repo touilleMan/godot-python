@@ -263,7 +263,7 @@ cdef api void _pythonscript_deinitialize(int p_level) noexcept with gil:
             &ret,
         )
         if ret != 0:  # TODO: use `Error.Ok` here
-            print("Failed to unregister Python from Godot: `Engine::unregister_script_language` returned error {ret}", flush=True)
+            print(f"Failed to unregister Python from Godot: `Engine::unregister_script_language` returned error {ret}", flush=True)
             return
 
         _pythons_script_language = None
