@@ -255,7 +255,7 @@ cdef api void _pythonscript_deinitialize(int p_level) noexcept with gil:
             print("Failed to unregister Python from Godot: failed to retreive `Engine::unregister_script_language`", flush=True)
             return
 
-        args = [_pythons_script_language._gd_ptr]
+        args = [&_pythons_script_language._gd_ptr]
         pythonscript_gdextension.object_method_bind_ptrcall(
             bind,
             singleton,
