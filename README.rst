@@ -221,19 +221,19 @@ For Linux:
 
 .. code-block:: bash
 
-	godot-python(venv)$ scons platform=x11-64 release
+	godot-python(venv)$ mason build
 
 For Windows:
 
 .. code-block:: bash
 
-	godot-python(venv)$ scons platform=windows-64 release
+	godot-python(venv)$ mason build
 
 For MacOS:
 
 .. code-block:: bash
 
-	godot-python(venv)$ scons platform=osx-64 CC=clang release
+	godot-python(venv)$ mason build
 
 Valid platforms are `x11-64`, `x11-32`, `windows-64`, `windows-32` and `osx-64`.
 Check Travis or Appveyor links above to see the current status of your platform.
