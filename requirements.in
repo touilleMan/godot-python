@@ -4,5 +4,5 @@ scons~=3.1
 cython~=0.29.21
 autopxd2~=1.1.0
 pycparser~=2.20
-jinja2~=2.11.3
+jinja2~=3.1.3
 zstandard~=0.15.2
