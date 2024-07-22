@@ -12,6 +12,12 @@ import zstandard
 
 PREBUILDS_BASE_URL = "https://github.com/indygreg/python-build-standalone/releases/download"
 PLATFORM_TO_PREBUILDS = {
+    "3.12.4": {
+        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20240713/cpython-3.12.4+20240713-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
+        "windows-x86": f"{PREBUILDS_BASE_URL}/20240713/cpython-3.12.4+20240713-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20240713/cpython-3.12.4+20240713-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20240713/cpython-3.12.4+20240713-x86_64-apple-darwin-pgo+lto-full.tar.zst",
+    },
     "3.12.0": {
         "linux-x86_64": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.12.0+20231002-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
         "windows-x86": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.12.0+20231002-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
