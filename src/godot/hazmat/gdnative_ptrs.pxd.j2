@@ -140,7 +140,7 @@ cdef struct LoadedGDExtensionInterface:
     void (*placeholder_script_instance_update)(GDExtensionScriptInstancePtr p_placeholder, GDExtensionConstTypePtr p_properties, GDExtensionConstTypePtr p_values)
     GDExtensionScriptInstanceDataPtr (*object_get_script_instance)(GDExtensionConstObjectPtr p_object, GDExtensionObjectPtr p_language)
     void (*callable_custom_create)(GDExtensionUninitializedTypePtr r_callable, GDExtensionCallableCustomInfo *p_callable_custom_info)
-    void *(*callable_custom_get_user_data)(GDExtensionConstTypePtr p_callable, void *p_token)
+    void *(*callable_custom_get_userdata)(GDExtensionConstTypePtr p_callable, void *p_token)
     GDExtensionObjectPtr (*classdb_construct_object)(GDExtensionConstStringNamePtr p_classname)
     GDExtensionMethodBindPtr (*classdb_get_method_bind)(GDExtensionConstStringNamePtr p_classname, GDExtensionConstStringNamePtr p_methodname, GDExtensionInt p_hash)
     void *(*classdb_get_class_tag)(GDExtensionConstStringNamePtr p_classname)
