@@ -100,7 +100,7 @@ cdef api void _pythonscript_late_init() noexcept with gil:
     global _pythons_script_language
     cdef GDExtensionObjectPtr singleton
     cdef GDExtensionMethodBindPtr bind
-    cdef GDExtensionTypePtr[1] args
+    cdef GDExtensionConstTypePtr[1] args
     cdef StringName gdname_engine
     cdef StringName gdname_register_script_language
     cdef gd_int_t ret
@@ -230,7 +230,7 @@ cdef api void _pythonscript_deinitialize(int p_level) noexcept with gil:
 
     cdef GDExtensionObjectPtr singleton
     cdef GDExtensionMethodBindPtr bind
-    cdef GDExtensionTypePtr[1] args
+    cdef GDExtensionConstTypePtr[1] args
     cdef StringName gdname_engine
     cdef StringName gdname_register_script_language
     cdef gd_int_t ret
