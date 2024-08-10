@@ -28,7 +28,8 @@ def get_default_godot_version_from_meson(build_dir: Path) -> str:
     meson_build_options = build_dir / "meson-info/intro-buildoptions.json"
     version = (
         meson_build_options.read_text()
-        .split('"name": "godot_version", "value": "', 1)[-1]
+        .split('"name": "godot_version",', 1)[-1]
+        .split('"value": "', 1)[-1]
         .split('"', 1)[0]
     )
     assert version
