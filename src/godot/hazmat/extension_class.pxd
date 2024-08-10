@@ -23,7 +23,7 @@ cdef class ExtensionClassMethodSpec:
     cdef list arguments_type  # list of (<name>, <type>)
 
 
-cdef inline list _get_extension_gc_protector() noexcept:
+cdef inline list _get_extension_gc_protector():  # No `noexcept` since it is ignored when returning a PyObject
     import godot.hazmat
     return godot.hazmat.__dict__.setdefault("__extension_gc_protector", [])
 
