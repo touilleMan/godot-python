@@ -12,11 +12,12 @@ __pycache__
 # mac os thumbs files
 .DS_Store
 
-# Build directory
-/build/
-
 # Godot import stuff
 **/.godot/imported/
 **/.godot/editor/
 **/.godot/shader_cache/
 **/.godot/uid_cache.bin
+
+# Note meson build directory (generated when doing `meson setup <my_build_dir>`)
+# automatically includes a `.gitignore` that mark it entire content as ignored,
+# so we don't have anything to do about it here ;-)
