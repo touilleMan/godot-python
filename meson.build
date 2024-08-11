@@ -314,6 +314,41 @@ dep_godot = declare_dependency(
 
 
 ##############################################################################
+#                   `.ignore` in build dir for dev                           #
+##############################################################################
+
+
+run_command(
+    python,
+    '-c',
+    '''
+open("@0@/.ignore", "w").write("""
+# `.ignore` takes precedence over `.gitignore` in dev tools (vscode, ripgrep etc.)
+# Here we overwrite `.gitignore` rule to allow search in `gdextension_api` & `src`
+# folders.
+
+# Disable the pattern in `.gitignore`
+!*
+
+# Manually list everything except `gdextension_api` & `src`
+build.ninja
+common_tests_install_distrib
+compile_commands.json
+cpython-*
+Godot_*
+meson-info
+meson-logs
+meson-private
+python_distrib
+python_prebuild-*
+README.txt
+""")
+'''.format(meson.current_build_dir()),
+    check: true,
+)
+
+
+##############################################################################
 #                         Misc install stuff                                 #
 ##############################################################################
 
