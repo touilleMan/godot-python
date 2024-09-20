@@ -1,3 +1,4 @@
+import sys
 import platform
 from pathlib import Path
 import subprocess
@@ -18,7 +19,8 @@ else:
     python_path = PROJECT_DIR / "addons/pythonscript/linux-x86_64/bin/python3"
     lib_pattern = "my.*.so"
 
-cmd = [str(python_path), "setup.py", "build_ext", "--build-lib", str(PROJECT_DIR)]
+# cmd = [str(python_path), "setup.py", "build_ext", "--build-lib", str(PROJECT_DIR)]
+cmd = [sys.executable, "setup.py", "build_ext", "--build-lib", str(PROJECT_DIR)]
 print(" ".join(cmd))
 subprocess.check_call(cmd, cwd=PROJECT_DIR)
 

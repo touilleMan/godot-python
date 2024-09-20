@@ -27,13 +27,18 @@ include "_pythonscript_extension_class_script.pxi"
 # )
 # from godot.hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_verbose
 
-# def _setup_config_entry(name, default_value):
-#     gdname = GDString(name)
-#     if not ProjectSettings.has_setting(gdname):
-#         ProjectSettings.set_setting(gdname, default_value)
-#     ProjectSettings.set_initial_value(gdname, default_value)
-#     # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
-#     return ProjectSettings.get_setting(gdname)
+cdef object ProjectSettings = None
+def _setup_config_entry(name, default_value):
+    global ProjectSettings
+    if ProjectSettings is None:
+        ProjectSettings = _load_class("ProjectSettings")
+
+    gdname = GDString(name)
+    if not ProjectSettings.has_setting(gdname):
+        ProjectSettings.set_setting(gdname, default_value)
+    ProjectSettings.set_initial_value(gdname, default_value)
+    # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
+    return ProjectSettings.get_setting(gdname)
 
 # include "_pythonscript_script.pxi"
 # include "_pythonscript_instance.pxi"
@@ -105,6 +110,7 @@ cdef api void _pythonscript_late_init() noexcept with gil:
     cdef StringName gdname_register_script_language
     cdef gd_int_t ret
     # # _testbench()
+    print("~~~~~~~~~~~~~~~~~", _setup_config_entry("python_script.initialize_callback", None))
 
     if _pythons_script_language is None:
 
@@ -210,6 +216,7 @@ cdef api void _pythonscript_early_init() noexcept with gil:
 
 
 cdef api void _pythonscript_initialize(int p_level) noexcept with gil:
+    print(f"_pythonscript_initialize {p_level}")
     if p_level == GDEXTENSION_INITIALIZATION_SERVERS:
         _pythonscript_early_init()
 
