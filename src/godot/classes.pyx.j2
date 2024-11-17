@@ -120,7 +120,7 @@ cdef object _load_class(str name):
     if not _object_call(classdb, "class_exists", [gdname]):
         raise RuntimeError(f"Class `{name}` doesn't exist in Godot !")
 
-    print("loading", name)
+    print("loading", name, flush=True)
     gdparent = _object_call(classdb, "get_parent_class", [gdname])
     parent = str(gdparent)
     if parent:
@@ -135,7 +135,7 @@ cdef object _load_class(str name):
     def _generate_method(spec, py_meth_name):
         gd_meth_name = spec["name"]
         def _meth(self, *args):
-            print(f"CALL {gd_meth_name!r} {args!r}")
+            print(f"CALL {gd_meth_name!r} {args!r}", flush=True)
             return _meth_call(self, gd_meth_name, args)
         _meth.__name__ = py_meth_name
         return _meth
@@ -149,11 +149,11 @@ cdef object _load_class(str name):
         propname = spec["name"]
         @property
         def _property(self):
-            print(f"GET {propname}")
+            print(f"GET {propname}", flush=True)
             return _property_getter(self, propname)
         @_property.setter
         def _property(self, value):
-            print(f"GET {propname} {value!r}")
+            print(f"GET {propname} {value!r}", flush=True)
             _property_setter(self, propname, value)
         _property.fget.__name__ = str(spec["name"])
         _property.fset.__name__ = str(spec["name"])
@@ -172,10 +172,6 @@ cdef object _load_class(str name):
 cdef object _object_call(GDExtensionObjectPtr obj, str meth, args):
     cdef gd_variant_t ret
     cdef GDExtensionCallError call_error
-
-    # TODO: really inefficient to re-create StringName
-    cdef StringName gdname_classdb = StringName("ClassDB")
-    cdef GDExtensionObjectPtr classdb = pythonscript_gdextension.global_get_singleton(&gdname_classdb._gd_data)
 
     cdef StringName gdname_object = StringName("Object")
     cdef StringName gdname_call = StringName("call")
@@ -200,11 +196,11 @@ cdef object _object_call(GDExtensionObjectPtr obj, str meth, args):
         if not gd_variant_steal_from_pyobj(arg, &variant_args[i]):
             raise TypeError(f"Parameter `{arg!r}` cannot be converted into a Godot Variant !")
 
-    print(f"About to call {meth} {args!r}")
+    print(f"About to call {meth} {args!r}", flush=True)
 
     pythonscript_gdextension.object_method_bind_call(
         Object_call,
-        classdb,
+        obj,
         # Cast is required given autopxd2 incorrectly removes the const attributes
         # when converting gdextension_interface.c to .pxd
         <const void * const*>&variant_args_ptrs,
