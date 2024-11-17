@@ -17,7 +17,7 @@ config/features=PackedStringArray("4.0")
 name="TestProject"
 main_scene="res://main.tscn"
 
-[python_script]
+[python]
 
 io_streams_capture=false
 verbose=true
