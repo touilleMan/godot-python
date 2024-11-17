@@ -125,12 +125,12 @@ def create_test_workdir(
         f"{YELLOW}{test_dir.name}: Create&populate test workdir in {test_workdir}{NO_COLOR}",
         flush=True,
     )
-    shutil.copytree(test_dir, test_workdir, dirs_exist_ok=True)
+    shutil.copytree(test_dir, test_workdir, dirs_exist_ok=True, symlinks=True)
     symlink(distrib_workdir / "addons", test_workdir / "addons")
     shutil.copy(distrib_workdir / "pythonscript.gdextension", test_workdir)
     # GDExtension headers are needed to compile Cython modules
     if custom_gdextension_api:
-        shutil.copytree(custom_gdextension_api, test_workdir / "gdextension_api")
+        shutil.copytree(custom_gdextension_api, test_workdir / "gdextension_api", symlinks=True)
     else:
         symlink(build_dir / "gdextension_api", test_workdir / "gdextension_api")
 

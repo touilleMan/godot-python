@@ -1,3 +1,4 @@
+import sys
 import platform
 from pathlib import Path
 import subprocess
@@ -5,6 +6,19 @@ import shutil
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
+
+
+# Here we run the build with the Python from the host development environment
+# (i.e. not the embedded Python that will run the extension).
+#
+# The reason for this is the embedded Python has issues building native extensions
+# since it has been compiled in a totally different environment that the one
+# it runs on, leading to incorrect flags passed during extension compilation
+# (see https://github.com/indygreg/python-build-standalone/issues/152).
+#
+# So instead we have to rely on the Python from the development environment, which
+# of course means its version (and platform !) must be the same to preserve ABI
+# compatibility.
 
 
 if platform.system() == "Windows":
@@ -18,7 +32,21 @@ else:
     python_path = PROJECT_DIR / "addons/pythonscript/linux-x86_64/bin/python3"
     lib_pattern = "my.*.so"
 
-cmd = [str(python_path), "setup.py", "build_ext", "--build-lib", str(PROJECT_DIR)]
+
+embedded_version = subprocess.check_output([str(python_path), "--version"]).strip()
+host_version = subprocess.check_output([sys.executable, "--version"]).strip()
+if embedded_version != host_version:
+    BOLD_RED = "\x1b[1;31m"
+    NO_COLOR = "\x1b[0;0m"
+    print(
+        f"{BOLD_RED}"
+        "WARNING: Python extension loading may fail: host and embedded versions differ"
+        f" (host: {host_version.decode().strip()}, embedded: {embedded_version.decode().strip()})"
+        f"{NO_COLOR}"
+    )
+
+
+cmd = [sys.executable, "setup.py", "build_ext", "--build-lib", str(PROJECT_DIR)]
 print(" ".join(cmd))
 subprocess.check_call(cmd, cwd=PROJECT_DIR)
 
