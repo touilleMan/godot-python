@@ -1,3 +1,4 @@
+import os
 import sys
 import platform
 from pathlib import Path
@@ -6,6 +7,10 @@ import shutil
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
+SKIP_EXTENSION_BUILD = "SKIP_EXTENSION_BUILD" in os.environ
+if SKIP_EXTENSION_BUILD:
+    print("`SKIP_EXTENSION_BUILD` is set, skipping `my.pyx` extension build")
+    raise SystemExit(0)
 
 
 # Here we run the build with the Python from the host development environment

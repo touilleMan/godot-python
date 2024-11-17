@@ -121,18 +121,24 @@ def create_test_workdir(
     test_workdir: Path,
     custom_gdextension_api: Optional[Path],
 ) -> None:
-    print(
-        f"{YELLOW}{test_dir.name}: Create&populate test workdir in {test_workdir}{NO_COLOR}",
-        flush=True,
-    )
-    shutil.copytree(test_dir, test_workdir, dirs_exist_ok=True, symlinks=True)
-    symlink(distrib_workdir / "addons", test_workdir / "addons")
-    shutil.copy(distrib_workdir / "pythonscript.gdextension", test_workdir)
-    # GDExtension headers are needed to compile Cython modules
-    if custom_gdextension_api:
-        shutil.copytree(custom_gdextension_api, test_workdir / "gdextension_api", symlinks=True)
+    if test_workdir.exists():
+        print(
+            f"{YELLOW}{test_dir.name}: workdir {test_workdir} already populated, leaving it as is{NO_COLOR}",
+            flush=True,
+        )
     else:
-        symlink(build_dir / "gdextension_api", test_workdir / "gdextension_api")
+        print(
+            f"{YELLOW}{test_dir.name}: Create&populate test workdir in {test_workdir}{NO_COLOR}",
+            flush=True,
+        )
+        shutil.copytree(test_dir, test_workdir, dirs_exist_ok=True, symlinks=True)
+        symlink(distrib_workdir / "addons", test_workdir / "addons")
+        shutil.copy(distrib_workdir / "pythonscript.gdextension", test_workdir)
+        # GDExtension headers are needed to compile Cython modules
+        if custom_gdextension_api:
+            shutil.copytree(custom_gdextension_api, test_workdir / "gdextension_api", symlinks=True)
+        else:
+            symlink(build_dir / "gdextension_api", test_workdir / "gdextension_api")
 
     build_script = test_workdir / "build.py"
     if build_script.exists():
