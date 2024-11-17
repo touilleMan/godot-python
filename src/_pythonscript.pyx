@@ -27,13 +27,18 @@ include "_pythonscript_extension_class_script.pxi"
 # )
 # from godot.hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_verbose
 
-# def _setup_config_entry(name, default_value):
-#     gdname = GDString(name)
-#     if not ProjectSettings.has_setting(gdname):
-#         ProjectSettings.set_setting(gdname, default_value)
-#     ProjectSettings.set_initial_value(gdname, default_value)
-#     # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
-#     return ProjectSettings.get_setting(gdname)
+cdef object ProjectSettings = None
+def _setup_config_entry(name, default_value):
+    global ProjectSettings
+    if ProjectSettings is None:
+        ProjectSettings = _load_singleton("ProjectSettings")
+
+    gdname = GDString(name)
+    if not ProjectSettings.has_setting(gdname):
+        ProjectSettings.set_setting(gdname, default_value)
+    ProjectSettings.set_initial_value(gdname, default_value)
+    # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
+    return ProjectSettings.get_setting(gdname)
 
 # include "_pythonscript_script.pxi"
 # include "_pythonscript_instance.pxi"
@@ -96,6 +101,66 @@ cdef _testbench():
     # print('OS.get_environment("foo")', OS.get_environment("foo"))
 
 
+# Early init: register `PythonScriptLanguage` & `PythonScript` classes in Godot
+cdef api void _pythonscript_early_init() noexcept with gil:
+    # Here is how we register Python into Godot:
+    #
+    # GDExtension API allows us to register "extension classes", those will be seen from
+    # Godot as a regular class (e.g. you could hack into Godot code, remove the KinematicBody
+    # class, create an extension that implement `KinematicBody`, and your platformer project would
+    # run just fine).
+    #
+    # To implement a language in Godot you must create a class inheriting `LanguageExtension` and
+    # register into the `LanguageServer`. This is what is done within Godot to implement `GDScript`.
+    #
+    # So we register a `PythonLanguage` extension class than inherits `ScriptLanguageExtension`
+    # (the latter being just a proxy to `LanguageExtension`) and call `Engine.register_script_language`
+    # (which is a simple wrapper given `LanguageServer` is private within Godot) with an instance
+    # of our brand new `PythonLanguage` as parameter.
+    #
+    # see: https://docs.godotengine.org/en/latest/classes/class_scriptlanguageextension.html
+
+    # # 1) Register `PythonScript` class into Godot
+    # See `scripts/gdextension_cython_preprocessor.py` for the detail of
+    # `__godot_extension_register_class`'s implementation.
+
+    PythonScriptLanguage._PythonScriptLanguage__godot_extension_register_class()
+    PythonScript._PythonScript__godot_extension_register_class()
+
+    # # OS and ProjectSettings are singletons exposed as global python objects,
+    # # hence there are not available from a cimport
+    # from godot.bindings import OS, ProjectSettings
+
+    # # Provide argv arguments
+    # sys.argv = ["godot"] + [str(x) for x in OS.get_cmdline_args()]
+
+    # # Redirect stdout/stderr to have it in the Godot editor console
+    # if _setup_config_entry("python/io_streams_capture", True):
+    #     # Note we don't have to remove the stream capture in `pythonscript_finish` given
+    #     # Godot print API is available until after the Python interpreter is teardown
+    #     install_io_streams_capture()
+
+    # # Enable verbose output from pythonscript framework
+    # if _setup_config_entry("python/verbose", False):
+    #     set_pythonscript_verbose(True)
+
+    # # Finally proudly print banner ;-)
+    # if _setup_config_entry("python/print_startup_info", True):
+    #     cooked_sys_version = '.'.join(map(str, sys.version_info))
+    #     print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})")
+
+    # if get_pythonscript_verbose():
+    #     print(f"PYTHONPATH: {sys.path}")
+
+    import sys
+    from godot._version import __version__ as pythonscript_version
+
+    cooked_sys_version = '.'.join(map(str, sys.version_info))
+    print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})", flush=True)
+    print(f"PYTHONPATH: {sys.path}", flush=True)
+
+
+# Late init: instantiate `PythonScriptLanguage`
 cdef api void _pythonscript_late_init() noexcept with gil:
     global _pythons_script_language
     cdef GDExtensionObjectPtr singleton
@@ -104,7 +169,44 @@ cdef api void _pythonscript_late_init() noexcept with gil:
     cdef StringName gdname_engine
     cdef StringName gdname_register_script_language
     cdef gd_int_t ret
+
+    TODOOOOOOOOOOOOOOOOOOOOOO !!!
+    # TODO: configure sys.path from the Godot config
+
+    # Update PYTHONPATH according to configuration
+    pythonpath = str(_setup_config_entry("python/path", "res://;res://lib"))
+    import sys
+    for p in pythonpath.split(";"):
+        p = ProjectSettings.globalize_path(GDString(p))
+        sys.path.insert(0, str(p))
+
     # # _testbench()
+    print("------------ ZOI -------------", flush=True)
+    initialize_callback = _setup_config_entry("python/initialize_callback", None)
+    if initialize_callback is not None:
+        if not isinstance(initialize_callback, GDString):
+            raise ValueError("Invalid value for config `python/initialize_callback`: expected a string in format `<module>:<function>`")
+        try:
+            module, function = str(initialize_callback).split(":")
+        except ValueError:
+            raise ValueError("Invalid value for config `python/initialize_callback`: expected a string in format `<module>:<function>`")
+
+        import importlib
+        try:
+            module = importlib.import_module(module)
+        except ModuleNotFoundError:
+            raise ValueError(f"Invalid value for config `python/initialize_callback`: cannot load module `{module}`")
+        try:
+            function = getattr(module, function)
+        except AttributeError:
+            raise ValueError(f"Invalid value for config `python/initialize_callback`: module `{module}` has no attribute `{function}`")
+
+        try:
+            function()
+        except Exception as exc:
+            raise ValueError(f"Invalid value for config `python/initialize_callback`: callback `{module}:{function}` call has failed") from exc
+
+    print("------------ END ZOI -------------", flush=True)
 
     if _pythons_script_language is None:
 
@@ -144,79 +246,17 @@ cdef api void _pythonscript_late_init() noexcept with gil:
             return
 
 
-cdef api void _pythonscript_early_init() noexcept with gil:
-    # Here is how we register Python into Godot:
-    #
-    # GDExtension API allows us to register "extension classes", those will be seen from
-    # Godot as a regular class (e.g. you could hack into Godot code, remove the KinematicBody
-    # class, create an extension that implement KinematicBody, and you platformer project would
-    # run just fine).
-    #
-    # To implement a language in Godot you must create a class inheriting `LanguageExtension` and
-    # register into the `LanguageServer`. This is what is done within Godot to implement GDScript.
-    #
-    # So we register a `PythonLanguage` extension class than inherits `ScriptLanguageExtension`
-    # (the latter being just a proxy to `LanguageExtension`) and call `Engine.register_script_language`
-    # (which is a simple wrapper given `LanguageServer` is private within Godot) by passing it
-    # an instance of our brand new `PythonLanguage`.
-    #
-    # see: https://docs.godotengine.org/en/latest/classes/class_scriptlanguageextension.html
-
-    # # 1) Register `PythonScript` class into Godot
-    # See `scripts/gdextension_cython_preprocessor.py` for the detail of
-    # `__godot_extension_register_class`'s implementation.
-
-    PythonScriptLanguage._PythonScriptLanguage__godot_extension_register_class()
-    PythonScript._PythonScript__godot_extension_register_class()
-
-
-    # # OS and ProjectSettings are singletons exposed as global python objects,
-    # # hence there are not available from a cimport
-    # from godot.bindings import OS, ProjectSettings
-
-    # # Provide argv arguments
-    # sys.argv = ["godot"] + [str(x) for x in OS.get_cmdline_args()]
-
-    # # Update PYTHONPATH according to configuration
-    # pythonpath = str(_setup_config_entry("python_script/path", "res://;res://lib"))
-    # for p in pythonpath.split(";"):
-    #     p = ProjectSettings.globalize_path(GDString(p))
-    #     sys.path.insert(0, str(p))
-
-    # # Redirect stdout/stderr to have it in the Godot editor console
-    # if _setup_config_entry("python_script/io_streams_capture", True):
-    #     # Note we don't have to remove the stream capture in `pythonscript_finish` given
-    #     # Godot print API is available until after the Python interpreter is teardown
-    #     install_io_streams_capture()
-
-    # # Enable verbose output from pythonscript framework
-    # if _setup_config_entry("python_script/verbose", False):
-    #     set_pythonscript_verbose(True)
-
-    # # Finally proudly print banner ;-)
-    # if _setup_config_entry("python_script/print_startup_info", True):
-    #     cooked_sys_version = '.'.join(map(str, sys.version_info))
-    #     print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})")
-
-    # if get_pythonscript_verbose():
-    #     print(f"PYTHONPATH: {sys.path}")
-
-    import sys
-    from godot._version import __version__ as pythonscript_version
-
-    cooked_sys_version = '.'.join(map(str, sys.version_info))
-    print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})", flush=True)
-    print(f"PYTHONPATH: {sys.path}", flush=True)
-
-
 cdef api void _pythonscript_initialize(int p_level) noexcept with gil:
+    print(f"_pythonscript_initialize {p_level}")
     if p_level == GDEXTENSION_INITIALIZATION_SERVERS:
+        print("!!!! early init", flush=True)
         _pythonscript_early_init()
 
-    # Language registration must be done at `GDEXTENSION_INITIALIZATION_SERVERS`
-    # level which is too early to have have everything we need for (e.g. `OS` singleton).
+    # Language registration must be done at `GDEXTENSION_INITIALIZATION_SERVERS` level which
+    # is too early to have have everything we need for (e.g. `ClassDB` & `OS` singletons).
     # So we have to do another init step at `GDEXTENSION_INITIALIZATION_SCENE` level.
     if p_level == GDEXTENSION_INITIALIZATION_SCENE:
+        print("!!!! late init", flush=True)
         _pythonscript_late_init()
 
 
