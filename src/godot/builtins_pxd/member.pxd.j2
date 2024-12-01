@@ -9,8 +9,9 @@ void set_{{ m.name }}(self, {{ m.type.cy_type }} val)
 
 
 {% macro render_member(builtin, m) %}
-{% if not m.is_in_struct %}
-{# Property unrelated to the builtin internal structure, must use Godot API method to access it #}
+{% if m.is_in_struct %}
+# Ignore `{{ m.name }}` property as it is unrelated to the builtin internal structure (must use Godot API method to access it)
+{% else %}
 {%   if m.type.is_scalar %}
 {# Scalar type accessed by property (unused in extension_api.json afaik) #}
 cdef inline {{ render_member_getter_signature(m) }}:
@@ -47,7 +48,7 @@ cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, object key
     # No need to destroy gdret given the conversion has stolen ownership on data !
 {% else %}
     ret = {{ builtin.indexing_return_type.cy_type }}.__new__({{ builtin.indexing_return_type.cy_type }})
-    ret._gd_data =  {{ builtin.c_name_prefix }}_keyed_getter(&self._gd_data, &gdkey)
+    ret._gd_data = {{ builtin.c_name_prefix }}_keyed_getter(&self._gd_data, &gdkey)
     return ret
 {% endif %}
 
@@ -141,7 +142,7 @@ cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDExtensio
     # No need to destroy gdret given the conversion has stolen ownership on data !
 {% else %}
     cdef {{ builtin.indexing_return_type.cy_type }} ret = {{ builtin.indexing_return_type.cy_type }}.__new__({{ builtin.indexing_return_type.cy_type }})
-    ret._gd_data =  {{ builtin.c_name_prefix }}_indexed_getter(&self._gd_data, index)
+    ret._gd_data = {{ builtin.c_name_prefix }}_indexed_getter(&self._gd_data, index)
     return ret
 {% endif %}
 

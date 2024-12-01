@@ -66,8 +66,8 @@ cdef inline void register_extension_class_creation(
     info.get_func = NULL  # GDExtensionClassGet
     info.get_property_list_func = NULL  # GDExtensionClassGetPropertyList
     info.free_property_list_func = NULL  # GDExtensionClassFreePropertyList
-    info.property_can_revert_func = NULL # GDExtensionClassPropertyCanRevert
-    info.property_get_revert_func = NULL # GDExtensionClassPropertyGetRevert
+    info.property_can_revert_func = NULL  # GDExtensionClassPropertyCanRevert
+    info.property_get_revert_func = NULL  # GDExtensionClassPropertyGetRevert
     info.notification_func = NULL  # GDExtensionClassNotification
     info.to_string_func = &_extension_class_to_string  # GDExtensionClassToString
     info.reference_func = NULL  # GDExtensionClassReference
