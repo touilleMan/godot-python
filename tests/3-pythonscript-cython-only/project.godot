@@ -20,6 +20,6 @@ main_scene="res://main.tscn"
 [python]
 
 io_streams_capture=false
-verbose=true
+verbose=false
 initialize_callback="my:initialize"
 deinitialize_callback="my:deinitialize"

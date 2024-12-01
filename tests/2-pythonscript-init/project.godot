@@ -20,4 +20,4 @@ main_scene="res://main.tscn"
 [python]
 
 io_streams_capture=false
-verbose=true
+verbose=false

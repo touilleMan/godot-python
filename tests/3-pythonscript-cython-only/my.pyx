@@ -1,11 +1,9 @@
 # cython: language_level=3
 
-from godot.hazmat.gdapi cimport *
-
 
 def initialize(level):
-    print("MY initialize", level)
+    print("MY initialize", level, flush=True)
 
 
 def deinitialize(level):
-    print("MY deinitialize", level)
+    print("MY deinitialize", level, flush=True)

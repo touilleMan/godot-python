@@ -27,17 +27,21 @@ include "_pythonscript_extension_class_script.pxi"
 # )
 # from godot.hazmat.internal cimport set_pythonscript_verbose, get_pythonscript_verbose
 
-cdef object ProjectSettings = None
-def _setup_config_entry(name, default_value):
-    global ProjectSettings
-    if ProjectSettings is None:
-        ProjectSettings = _load_singleton("ProjectSettings")
+def _setup_config_entry(name: str, default_value: object):
+    # Cannot use `None` as config value since it is used in Godot to erase
+    # custom project settings.
+    # see https://docs.godotengine.org/en/stable/classes/class_projectsettings.html#class-projectsettings-method-set-setting
+    assert default_value is not None
 
+    ProjectSettings = _load_singleton("ProjectSettings")
     gdname = GDString(name)
+
     if not ProjectSettings.has_setting(gdname):
         ProjectSettings.set_setting(gdname, default_value)
+
     ProjectSettings.set_initial_value(gdname, default_value)
-    # TODO: `set_builtin_order` is not exposed by gdnative... but is it useful ?
+    ProjectSettings.set_restart_if_changed(gdname, True)
+
     return ProjectSettings.get_setting(gdname)
 
 # include "_pythonscript_script.pxi"
@@ -102,7 +106,7 @@ cdef _testbench():
 
 
 # Early init: register `PythonScriptLanguage` & `PythonScript` classes in Godot
-cdef api void _pythonscript_early_init() noexcept with gil:
+cdef void _register_pythonscript_classes():
     # Here is how we register Python into Godot:
     #
     # GDExtension API allows us to register "extension classes", those will be seen from
@@ -120,19 +124,25 @@ cdef api void _pythonscript_early_init() noexcept with gil:
     #
     # see: https://docs.godotengine.org/en/latest/classes/class_scriptlanguageextension.html
 
-    # # 1) Register `PythonScript` class into Godot
     # See `scripts/gdextension_cython_preprocessor.py` for the detail of
     # `__godot_extension_register_class`'s implementation.
 
     PythonScriptLanguage._PythonScriptLanguage__godot_extension_register_class()
     PythonScript._PythonScript__godot_extension_register_class()
 
-    # # OS and ProjectSettings are singletons exposed as global python objects,
-    # # hence there are not available from a cimport
-    # from godot.bindings import OS, ProjectSettings
 
-    # # Provide argv arguments
-    # sys.argv = ["godot"] + [str(x) for x in OS.get_cmdline_args()]
+cdef void _customize_config():
+    import sys
+    ProjectSettings = _load_singleton("ProjectSettings")
+    OS = _load_singleton("OS")
+
+    # Provide argv arguments
+
+    args = OS.get_cmdline_args()
+    sys.argv = ["godot"]
+    # TODO: iteration on `PackedStringArray` not supported yet !
+    for i in range(args.size()):
+        sys.argv.append(str(args[i]))
 
     # # Redirect stdout/stderr to have it in the Godot editor console
     # if _setup_config_entry("python/io_streams_capture", True):
@@ -144,24 +154,85 @@ cdef api void _pythonscript_early_init() noexcept with gil:
     # if _setup_config_entry("python/verbose", False):
     #     set_pythonscript_verbose(True)
 
-    # # Finally proudly print banner ;-)
-    # if _setup_config_entry("python/print_startup_info", True):
-    #     cooked_sys_version = '.'.join(map(str, sys.version_info))
-    #     print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})")
+    # Update PYTHONPATH according to configuration
+    pythonpath = str(_setup_config_entry("python/path", "res://;res://lib"))
+    for p in pythonpath.split(";"):
+        p = ProjectSettings.globalize_path(GDString(p))
+        sys.path.insert(0, str(p))
 
-    # if get_pythonscript_verbose():
-    #     print(f"PYTHONPATH: {sys.path}")
 
-    import sys
-    from godot._version import __version__ as pythonscript_version
+cdef object _initialize_callback = None
+cdef object _initialize_callback_hook(int p_level):
+    global _initialize_callback
 
-    cooked_sys_version = '.'.join(map(str, sys.version_info))
-    print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})", flush=True)
-    print(f"PYTHONPATH: {sys.path}", flush=True)
+    if _initialize_callback is None:
+        config = _setup_config_entry("python/initialize_callback", "")
+
+        if not isinstance(config, GDString):
+            raise ValueError("Invalid value for config `python/initialize_callback`: expected a string in format `<module>:<function>`")
+
+        if config.is_empty():
+            _initialize_callback = lambda _level: None  # Dummy callback
+
+        else:
+            try:
+                module, function = str(config).split(":")
+            except ValueError:
+                raise ValueError("Invalid value for config `python/initialize_callback`: expected a string in format `<module>:<function>`") from None
+
+            import importlib
+            try:
+                module = importlib.import_module(module)
+            except ModuleNotFoundError:
+                raise ValueError(f"Invalid value for config `python/initialize_callback`: cannot load module `{module}`")
+            try:
+                _initialize_callback = getattr(module, function)
+            except AttributeError:
+                raise ValueError(f"Invalid value for config `python/initialize_callback`: module `{module}` has no attribute `{function}`")
+
+    try:
+        _initialize_callback(p_level)
+    except Exception as exc:
+        raise ValueError(f"Invalid value for config `python/initialize_callback`: callback `{module}:{function}` call has failed") from exc
+
+
+cdef object _deinitialize_callback = None
+cdef object _deinitialize_callback_hook(int p_level):
+    global _deinitialize_callback
+
+    if _deinitialize_callback is None:
+        config = _setup_config_entry("python/deinitialize_callback", "")
+
+        if not isinstance(config, GDString):
+            raise ValueError("Invalid value for config `python/deinitialize_callback`: expected a string in format `<module>:<function>`")
+
+        if config.is_empty():
+            _deinitialize_callback = lambda _level: None  # Dummy callback
+
+        else:
+            try:
+                module, function = str(config).split(":")
+            except ValueError:
+                raise ValueError("Invalid value for config `python/deinitialize_callback`: expected a string in format `<module>:<function>`")
+
+            import importlib
+            try:
+                module = importlib.import_module(module)
+            except ModuleNotFoundError:
+                raise ValueError(f"Invalid value for config `python/deinitialize_callback`: cannot load module `{module}`")
+            try:
+                _deinitialize_callback = getattr(module, function)
+            except AttributeError:
+                raise ValueError(f"Invalid value for config `python/deinitialize_callback`: module `{module}` has no attribute `{function}`")
+
+    try:
+        _deinitialize_callback(p_level)
+    except Exception as exc:
+        raise ValueError(f"Invalid value for config `python/deinitialize_callback`: callback `{module}:{function}` call has failed") from exc
 
 
 # Late init: instantiate `PythonScriptLanguage`
-cdef api void _pythonscript_late_init() noexcept with gil:
+cdef void _register_pythonscript_language():
     global _pythons_script_language
     cdef GDExtensionObjectPtr singleton
     cdef GDExtensionMethodBindPtr bind
@@ -169,44 +240,6 @@ cdef api void _pythonscript_late_init() noexcept with gil:
     cdef StringName gdname_engine
     cdef StringName gdname_register_script_language
     cdef gd_int_t ret
-
-    TODOOOOOOOOOOOOOOOOOOOOOO !!!
-    # TODO: configure sys.path from the Godot config
-
-    # Update PYTHONPATH according to configuration
-    pythonpath = str(_setup_config_entry("python/path", "res://;res://lib"))
-    import sys
-    for p in pythonpath.split(";"):
-        p = ProjectSettings.globalize_path(GDString(p))
-        sys.path.insert(0, str(p))
-
-    # # _testbench()
-    print("------------ ZOI -------------", flush=True)
-    initialize_callback = _setup_config_entry("python/initialize_callback", None)
-    if initialize_callback is not None:
-        if not isinstance(initialize_callback, GDString):
-            raise ValueError("Invalid value for config `python/initialize_callback`: expected a string in format `<module>:<function>`")
-        try:
-            module, function = str(initialize_callback).split(":")
-        except ValueError:
-            raise ValueError("Invalid value for config `python/initialize_callback`: expected a string in format `<module>:<function>`")
-
-        import importlib
-        try:
-            module = importlib.import_module(module)
-        except ModuleNotFoundError:
-            raise ValueError(f"Invalid value for config `python/initialize_callback`: cannot load module `{module}`")
-        try:
-            function = getattr(module, function)
-        except AttributeError:
-            raise ValueError(f"Invalid value for config `python/initialize_callback`: module `{module}` has no attribute `{function}`")
-
-        try:
-            function()
-        except Exception as exc:
-            raise ValueError(f"Invalid value for config `python/initialize_callback`: callback `{module}:{function}` call has failed") from exc
-
-    print("------------ END ZOI -------------", flush=True)
 
     if _pythons_script_language is None:
 
@@ -246,18 +279,34 @@ cdef api void _pythonscript_late_init() noexcept with gil:
             return
 
 
+cdef void _print_banner():
+    import sys
+    ProjectSettings = _load_singleton("ProjectSettings")
+
+    if _setup_config_entry("python/print_startup_info", True):
+        from godot._version import __version__ as pythonscript_version
+        cooked_sys_version = '.'.join(map(str, sys.version_info))
+        print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})", flush=True)
+
+    if _setup_config_entry("python/verbose", True):
+        print(f"PYTHONPATH: {sys.path}", flush=True)
+
+
 cdef api void _pythonscript_initialize(int p_level) noexcept with gil:
-    print(f"_pythonscript_initialize {p_level}")
     if p_level == GDEXTENSION_INITIALIZATION_SERVERS:
-        print("!!!! early init", flush=True)
-        _pythonscript_early_init()
+        _register_pythonscript_classes()
 
     # Language registration must be done at `GDEXTENSION_INITIALIZATION_SERVERS` level which
     # is too early to have have everything we need for (e.g. `ClassDB` & `OS` singletons).
     # So we have to do another init step at `GDEXTENSION_INITIALIZATION_SCENE` level.
     if p_level == GDEXTENSION_INITIALIZATION_SCENE:
-        print("!!!! late init", flush=True)
-        _pythonscript_late_init()
+        _customize_config()
+        _register_pythonscript_language()
+        # Finally proudly print banner ;-)
+        _print_banner()
+
+    if p_level >= GDEXTENSION_INITIALIZATION_SCENE:
+        _initialize_callback_hook(p_level)
 
 
 cdef api void _pythonscript_deinitialize(int p_level) noexcept with gil:
@@ -274,6 +323,9 @@ cdef api void _pythonscript_deinitialize(int p_level) noexcept with gil:
     cdef StringName gdname_engine
     cdef StringName gdname_register_script_language
     cdef gd_int_t ret
+
+    if p_level >= GDEXTENSION_INITIALIZATION_SCENE:
+        _deinitialize_callback_hook(p_level)
 
     if p_level == GDEXTENSION_INITIALIZATION_SCENE and _pythons_script_language is not None:
 

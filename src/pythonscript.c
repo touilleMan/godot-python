@@ -24,6 +24,10 @@
 # define DLL_IMPORT
 #endif
 
+#ifdef __linux__
+#include <dlfcn.h>
+#endif
+
 // Just like any Godot builtin classes, GDString's size is defined in `extension_api.json`
 // and is platform-dependant (e.g. 4 bytes on float_32, 8 on double_64).
 // So in theory we should retrieve the value from the json file, convert it into a C
@@ -238,6 +242,23 @@ static void _initialize_python() {
     //     GD_PRINT_ERROR("Pythonscript: Cannot update sys.path");
     //     goto error;
     // }
+
+    // When embedding Python, the symbols from `libpython3.so` are not made available.
+    //
+    // This is an issue when loading native modules (typically error message
+    // `undefined symbol: PyExc_SystemError`) since they use those symbols while
+    // not explicitly being linked to `libpython3.so`.
+    //
+    // So the solution is to force those symbols with an explicit RTLD_GLOBAL dlopen.
+    //
+    // See: https://stackoverflow.com/a/50489814
+    #ifdef __linux__
+    void*const libpython_handle = dlopen("libpython3.so", RTLD_LAZY | RTLD_GLOBAL);
+    if (!libpython_handle) {
+        GD_PRINT_ERROR("Pythonscript: Cannot dlopen libpython3.so");
+        goto error;
+    }
+    #endif
 
     {
         PyStatus status = Py_InitializeFromConfig(&config);
