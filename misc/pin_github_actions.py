@@ -9,7 +9,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from functools import lru_cache
+from functools import cache
 from urllib.request import urlopen
 
 
@@ -31,7 +31,7 @@ def get_files(pathes):
             yield path
 
 
-@lru_cache(maxsize=None)
+@cache
 def resolve_tag(repo, tag):
     url = f"https://api.github.com/repos/{repo}/git/ref/tags/{tag}"
     with urlopen(url) as f:
