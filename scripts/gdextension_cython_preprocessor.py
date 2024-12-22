@@ -36,7 +36,9 @@ class ClassDef:
     inject_code_at_line: int
 
 
-def generate_injected_code_method(spec: MethodDef, class_spec: ClassDef, virtual_flavor: bool = False) -> str:
+def generate_injected_code_method(
+    spec: MethodDef, class_spec: ClassDef, virtual_flavor: bool = False
+) -> str:
     code = f"""
 @staticmethod
 cdef void __godot_extension_class_{'virtual_' if virtual_flavor else ''}meth_{spec.method_name}(
