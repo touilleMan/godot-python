@@ -14,6 +14,9 @@ from zipfile import ZipFile
 from urllib.request import urlopen
 
 
+BASE_RELEASE_URL = "https://github.com/godotengine/godot-builds/releases/download"
+
+
 GodotBinaryVersion = Tuple[str, str, str, str]
 GodotBinaryPlatform = str
 
@@ -37,35 +40,47 @@ def get_default_godot_version_from_meson(build_dir: Path) -> str:
 
 
 def parse_raw_version(raw_version: str) -> GodotBinaryVersion:
-    # Provided value is version information with format <major>.<minor>.<patch>[-<extra>]
-    match = re.match(r"^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-(\w+))?$", raw_version)
+    """
+    `raw_version` format is <major>.<minor>[.<patch>][-<extra>]
+
+    e.g. `4.0-stable`, `4.0.4`, `4.1.2-rc1`
+    """
+
+    match = re.match(r"^([0-9]+)\.([0-9]+)(?:\.([0-9]+))?(?:-(\w+))?$", raw_version)
     if match:
         major, minor, patch, extra = match.groups()
     else:
         raise ValueError(
-            f"`{raw_version}` is neither an existing file nor a valid <major>.<minor>.<patch>[-<extra>] Godot version format"
+            f"`{raw_version}` is neither an existing file nor a valid <major>.<minor>[.<patch>][-<extra>] Godot version format"
         )
-    return (major, minor, patch, extra or "stable")
+    return (major, minor, patch or "0", extra or "stable")
 
 
 def parse_godot_binary_hint(
     godot_binary_hint: str,
 ) -> Tuple[GodotBinaryPlatform, Optional[GodotBinaryVersion]]:
+    """
+    `godot_binary_hint` format is:
+    - version only, e.g. `4.0.1`
+    - machine arch + version, e.g. `x86:4.0.1`
+    - OS + machine arch + version, e.g. `linux-x86:4.0.1`
+
+    If OS or machine arch are not provided, they will be guessed from the current platform.
+    """
+
     try:
-        build_machine, raw_version = godot_binary_hint.split(":")
+        raw_build_platform, raw_version = godot_binary_hint.split(":")
     except ValueError:
-        build_machine = ""
+        raw_build_platform = ""
         raw_version = godot_binary_hint
 
-    # e.g. `build_machine == "x86"`
-    build_machine = (build_machine or platform.machine()).lower()
-    # e.g. `build_platform_prefix == "windows-"`
-    build_platform_prefix = f"{platform.system()}-".lower()
-    if build_machine.startswith(build_platform_prefix):
-        build_platform = build_machine
-    else:
-        build_platform = build_platform_prefix + build_machine
-    # e.g. `build_platform == "windows-x86"`
+    try:
+        raw_build_platform_prefix, raw_build_machine = raw_build_platform.split("-")
+    except ValueError:
+        raw_build_platform_prefix = platform.system()
+        raw_build_machine = raw_build_platform or platform.machine()
+
+    build_platform = f"{raw_build_platform_prefix.lower()}-{raw_build_machine.lower()}"
 
     godot_build_platform = {
         "linux-x86_64": "linux.x86_64",
@@ -96,16 +111,13 @@ def fetch_godot_binary(
     if not version:
         version = parse_raw_version(get_default_godot_version_from_meson(build_dir))
     major, minor, patch, extra = version
-    strversion = f"{major}.{minor}.{patch}" if patch != "0" else f"{major}.{minor}"
-    binary_name = f"Godot_v{strversion}-{extra}_{godot_platform}"
+    strversion = f"{major}.{minor}.{patch}-{extra}" if patch != "0" else f"{major}.{minor}-{extra}"
+    binary_name = f"Godot_v{strversion}_{godot_platform}"
     if godot_platform.startswith("win"):
         binary_name += ".exe"
-    if extra == "stable":
-        url = f"https://downloads.tuxfamily.org/godotengine/{strversion}/{binary_name}.zip"
-    else:
-        url = f"https://downloads.tuxfamily.org/godotengine/{strversion}/{extra}/{binary_name}.zip"
+    url = f"{BASE_RELEASE_URL}/{strversion}/{binary_name}.zip"
 
-    if godot_platform.startswith("osx"):
+    if godot_platform.startswith("macos"):
         zippath = "Godot.app/Contents/MacOS/Godot"
     else:
         zippath = binary_name
