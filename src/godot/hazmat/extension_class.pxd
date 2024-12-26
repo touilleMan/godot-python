@@ -29,7 +29,7 @@ cdef inline list _get_extension_gc_protector():  # No `noexcept` since it is ign
 
 
 cdef inline void unregister_extension_class(bytes class_name) noexcept:
-    cdef gd_string_name_t gd_class_name = gd_string_name_from_utf8(<char*>class_name)
+    cdef gd_string_name_t gd_class_name = gd_string_name_from_utf8_and_len(<char*>class_name, class_name.len())
     pythonscript_gdextension.classdb_unregister_extension_class(
         pythonscript_gdextension_library,
         &gd_class_name,
@@ -79,8 +79,8 @@ cdef inline void register_extension_class_creation(
     # Don't increment refcount given we rely on gc protector
     info.class_userdata = <void*>spec  # void*
 
-    cdef gd_string_name_t gdname = gd_string_name_from_utf8(<char*>class_name)
-    cdef gd_string_name_t gdname_parent = gd_string_name_from_utf8(<char*>parent_class_name)
+    cdef gd_string_name_t gdname = gd_string_name_from_utf8_and_len(<char*>class_name, class_name.len())
+    cdef gd_string_name_t gdname_parent = gd_string_name_from_utf8_and_len(<char*>parent_class_name, parent_class_name.len())
     # TODO: correct me once https://github.com/godotengine/godot/pull/67121 is merged
     pythonscript_gdextension.classdb_register_extension_class(
         pythonscript_gdextension_library,
