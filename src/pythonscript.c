@@ -14,7 +14,7 @@
 #include <Python.h>
 
 #include <godot/gdextension_interface.h>
-#include "_pythonscript_api.h"
+#include "_pythonscript.h"
 
 #ifdef _WIN32
 # define DLL_EXPORT __declspec(dllexport)
@@ -234,6 +234,12 @@ static void _initialize_python() {
         }
     }
 
+    if (PyImport_AppendInittab("_pythonscript", PyInit__pythonscript) == -1) {
+            GD_PRINT_ERROR("Pythonscript: Cannot extend in-built modules table");
+            goto error;
+
+    }
+
     // TODO
     // Update sys.path with projet config
     // status = PyWideStringList_Append(&config.module_search_paths,
@@ -282,15 +288,14 @@ static void _initialize_python() {
     PyRun_SimpleString("import sys\nprint('PYTHON_PATH:', sys.path)\n");
 #endif
 
-
     {
-        int ret = import__pythonscript();
-        if (ret != 0) {
+        PyObject *pmodule = PyImport_ImportModule("_pythonscript");
+        if (!pmodule) {
             GD_PRINT_ERROR("Pythonscript: Cannot load Python module `_pythonscript`");
             goto post_init_error;
         }
+        Py_DecRef(pmodule);
     }
-
 
     PyConfig_Clear(&config);
 

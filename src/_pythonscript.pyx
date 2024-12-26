@@ -51,13 +51,13 @@ def _setup_config_entry(name: str, default_value: object):
 cdef PythonScriptLanguage _pythons_script_language = None
 
 
-cdef api GDExtensionObjectPtr _pythonscript_create_instance(
+cdef public GDExtensionObjectPtr _pythonscript_create_instance(
     void *p_userdata
 ) noexcept with gil:
     return NULL
 
 
-cdef api void _pythonscript_free_instance(
+cdef public void _pythonscript_free_instance(
     void *p_userdata, GDExtensionClassInstancePtr p_instance
 ) noexcept with gil:
     pass
@@ -292,7 +292,7 @@ cdef void _print_banner():
         print(f"PYTHONPATH: {sys.path}", flush=True)
 
 
-cdef api void _pythonscript_initialize(int p_level) noexcept with gil:
+cdef public void _pythonscript_initialize(int p_level) noexcept with gil:
     if p_level == GDEXTENSION_INITIALIZATION_SERVERS:
         _register_pythonscript_classes()
 
@@ -309,7 +309,7 @@ cdef api void _pythonscript_initialize(int p_level) noexcept with gil:
         _initialize_callback_hook(p_level)
 
 
-cdef api void _pythonscript_deinitialize(int p_level) noexcept with gil:
+cdef public void _pythonscript_deinitialize(int p_level) noexcept with gil:
     global _pythons_script_language
 
     # /!\ When this function is called, the Python interpreter is fully operational

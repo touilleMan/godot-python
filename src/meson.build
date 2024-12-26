@@ -3,7 +3,8 @@
 ##############################################################################
 
 
-# Input missing the template file
+# List everything `generate_tmpl.py` needs to work, except the template file
+# itself, as it is the only thing that changes between the different targets.
 generate_tmpl_base_input = [
     join_paths(scripts_dir, 'generate_tmpl.py'),  # Must stay first !
     godot_extension_api_json,  # Must stay second !
@@ -156,7 +157,7 @@ pxds_godot = [
 
 
 ##############################################################################
-#              _pythonscript.c & _pythonscript_api.h generation              #
+#              _pythonscript.c & _pythonscript.h generation                  #
 ##############################################################################
 
 
@@ -176,27 +177,25 @@ foreach pxi: [
 endforeach
 
 # _pythonscript.c
-# _pythonscript_api.h
+# _pythonscript.h
 # ├─ _pythonscript.pyx
 # ├─ _pythonscript_editor.pxi
-# ├─ _pythonscript_registration.pxi
-# ├─ godot/hazmat/gdapi.pxd
+# ├─ _pythonscript_extension_class_language.pxi
+# ├─ _pythonscript_extension_class_script.pxi
 # ├─ godot/builtins.pxd
 # |  └─ ...
-# └─ godot/hazmat/gdextension_interface.pxd
+# ├─ godot/classes.pxd
+# |  └─ ...
+# ├─ godot/hazmat/*.pxd
 #    └─ ...
 
 
-# `_pythonscript_api.h` is needed to compile `libpythonscript.so` (see below)
-# Note we don't need to link `libpythonscript.so` against `_pythonscript.so`
-# given `_pythonscript_api.h` contains a static inline functions that uses
-# Python's import system to dynamically load `_pythonscript.so`
+# `_pythonscript.c` & `_pythonscript.h` are needed to compile `libpythonscript.so` (see below)
 
-
-# `_pythonscript_api.h` is used to expose the Python callbacks used by `pythonscript.c`,
+# `_pythonscript.h` is used to expose the Python callbacks used by `pythonscript.c`,
 # hence this header is private and won't be provided in the release
-c_pythonscript = custom_target('_pythonscript.c & _pythonscript.h & _pythonscript_api.h',
-    output : ['_pythonscript.c', '_pythonscript_api.h'],
+c_pythonscript = custom_target('_pythonscript.c & _pythonscript.h',
+    output : ['_pythonscript.c', '_pythonscript.h'],
     input : [
         '_pythonscript.pyx',
         '_pythonscript_editor.pxi',
@@ -205,8 +204,8 @@ c_pythonscript = custom_target('_pythonscript.c & _pythonscript.h & _pythonscrip
     ],
     command : cythonize_command,
 )
-h_pythonscript_api = c_pythonscript[1]  # Header for pythonscript.c
-c_pythonscript = c_pythonscript[0]
+# h_pythonscript_api = c_pythonscript[1]  # Header for pythonscript.c
+# c_pythonscript = c_pythonscript[0]
 
 
 ##############################################################################
@@ -216,7 +215,8 @@ c_pythonscript = c_pythonscript[0]
 
 # libpythonscript.so
 # ├─ pythonscript.c
-# └─ _pythonscript_api.h
+# └─ _pythonscript.c
+# └─ _pythonscript.h
 #    └─ ...
 
 
@@ -232,10 +232,21 @@ else
     lib_pythonscript_rpath = ''
 endif
 
+# Cython's cdef inline methods are turned into static inline C functions that
+# produced `defined but not used` errors, hence the `-Wno-unused-function`
+# AutoPxd currently strip const qualifier when generating `gdextension_interface.pxd`,
+# hence -Wno-discarded-qualifiers
+if host_platform.startswith('windows')
+    lib__pythonscript_c_args = []
+else
+    lib__pythonscript_c_args = ['-Wno-discarded-qualifiers', '-Wno-incompatible-pointer-types-discards-qualifiers', '-Wno-unused-function']
+endif
+
 
 lib_pythonscript = shared_library(
     'pythonscript',
-    ['pythonscript.c', h_pythonscript_api],
+    ['pythonscript.c', c_pythonscript],
+    c_args: lib__pythonscript_c_args,
     dependencies: [dep_godot, dep_python],
     install_rpath: lib_pythonscript_rpath,  # To find libpython
     install: true,
@@ -250,52 +261,6 @@ lib_pythonscript = shared_library(
 # and hence we are guaranteed it is already loaded when Cython modules kick in
 dep_pythonscript = declare_dependency(
     link_with: lib_pythonscript,
-)
-
-
-##############################################################################
-#          _pythonscript.pyx compilation (required by other .pyx)            #
-##############################################################################
-
-
-# _pythonscript.so
-# ├─ libpythonscript.so
-# |  └─ ...
-# └─ _pythonscript.c
-#    └─ _pythonscript.pyx
-#       └─ ...
-
-
-if host_platform.startswith('linux')
-    lib__pythonscript_rpath = '$ORIGIN/../..'
-elif host_platform.startswith('macos')
-    lib__pythonscript_rpath = '@loader_path/../..'
-else
-    lib__pythonscript_rpath = ''
-endif
-
-
-# Cython's cdef inline methods are turned into static inline C functions that
-# produced `defined but not used` errors, hence the `-Wno-unused-function`
-# AutoPxd currently strip const qualifier when generating `gdextension_interface.pxd`,
-# hence -Wno-discarded-qualifiers
-if host_platform.startswith('windows')
-    lib__pythonscript_c_args = []
-else
-    lib__pythonscript_c_args = ['-Wno-discarded-qualifiers', '-Wno-incompatible-pointer-types-discards-qualifiers', '-Wno-unused-function']
-endif
-
-
-lib__pythonscript = shared_library(
-    '_pythonscript',
-    c_pythonscript,
-    c_args: lib__pythonscript_c_args,
-    dependencies : [dep_godot, dep_python, dep_pythonscript],
-    install_rpath: lib__pythonscript_rpath,  # To find libpython
-    name_prefix: python_native_module_name_prefix,
-    name_suffix: python_native_module_name_suffix,
-    install: true,
-    install_dir: python_site_packages_install_path,
 )
 
 
