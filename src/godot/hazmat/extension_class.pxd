@@ -29,7 +29,7 @@ cdef inline list _get_extension_gc_protector():  # No `noexcept` since it is ign
 
 
 cdef inline void unregister_extension_class(bytes class_name) noexcept:
-    cdef gd_string_name_t gd_class_name = gd_string_name_from_utf8_and_len(<char*>class_name, class_name.len())
+    cdef gd_string_name_t gd_class_name = gd_string_name_from_utf8_and_len(<char*>class_name, len(class_name))
     pythonscript_gdextension.classdb_unregister_extension_class(
         pythonscript_gdextension_library,
         &gd_class_name,
