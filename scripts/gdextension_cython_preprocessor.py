@@ -34,6 +34,8 @@ class ClassDef:
     parent_class_name: str
     methods: List[MethodDef]
     inject_code_at_line: int
+    register_class_hook: str | None
+    unregister_class_hook: str | None
 
 
 def generate_injected_code_method(
@@ -74,6 +76,7 @@ def generate_injected_code_register(spec: ClassDef) -> str:
 @staticmethod
 def __godot_extension_unregister_class():
     unregister_extension_class(b"{spec.class_name}")
+    { spec.class_name + "." + spec.unregister_class_hook + "()" if spec.unregister_class_hook is not None else "" }
 
 @staticmethod
 cdef GDExtensionClassInstancePtr __godot_extension_create_instance(void* p_userdata) noexcept with gil:
@@ -87,6 +90,7 @@ cdef void __godot_extension_free_instance(void* p_userdata, GDExtensionClassInst
 
 @staticmethod
 def __godot_extension_register_class():
+    { spec.class_name + "." + spec.register_class_hook + "()" if spec.register_class_hook is not None else "" }
     register_extension_class_creation(
         b"{spec.class_name}",
         b"{spec.parent_class_name}",
@@ -196,20 +200,7 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
 
         else:
 
-            def _method(const: bool = False, virtual: bool = False) -> MethodDef:
-                if current_class is None:
-                    raise RuntimeError(
-                        f"`# godot_extension: method(...)` must be within a `# godot_extension: class(...)` pragma"
-                    )
-
-                if not isinstance(const, bool):
-                    raise RuntimeError("`const` parameter must be a boolean")
-                is_const = const
-
-                if not isinstance(virtual, bool):
-                    raise RuntimeError("`virtual` parameter must be a boolean")
-                is_virtual = virtual
-
+            def _collect_method_signature():
                 try:
                     _, line = next(code_lines)
                     is_staticmethod = line.strip() == "@staticmethod"
@@ -227,7 +218,7 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                     meth_signature = line[: line.index("(") + 1].strip()
                 except ValueError:
                     raise RuntimeError(
-                        f"expected method signature `cdef [inline] gd_xxx_t foo({'' if is_staticmethod else 'self, '}gd_yyy_t bar, ...)"
+                        f"expected method signature `cdef [inline] (gd_xxx_t|void) foo({'' if is_staticmethod else 'self, '}gd_yyy_t bar, ...)`"
                     )
                 open_parenthesises = 1
                 while open_parenthesises > 0:
@@ -246,8 +237,72 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                 match = METHOD_RE.match(meth_signature)
                 if not match:
                     raise RuntimeError(
-                        f"expected method signature `cdef [inline] gd_xxx_t foo({'' if is_staticmethod else 'self, '}gd_yyy_t bar, ...)"
+                        f"expected method signature `cdef [inline] (gd_xxx_t|void) foo({'' if is_staticmethod else 'self, '}gd_yyy_t bar, ...)`"
                     )
+
+                return match, is_staticmethod
+
+            def _register_class_hook():
+                if current_class is None:
+                    raise RuntimeError(
+                        f"`# godot_extension: register_class_hook` must be within a `# godot_extension: class(...)` pragma"
+                    )
+
+                if current_class.register_class_hook is not None:
+                    raise RuntimeError(
+                        f"`# godot_extension: register_class_hook` can only be set once per `# godot_extension: class(...)` pragma"
+                    )
+
+                match, is_staticmethod = _collect_method_signature()
+                if not is_staticmethod:
+                    raise RuntimeError(
+                        f"`# godot_extension: register_class_hook` only allow accepts static method"
+                    )
+                if match.group("param") or match.group("return_type") != "void":
+                    raise RuntimeError(
+                        f"`# godot_extension: register_class_hook` method must have no parameter and return void"
+                    )
+
+                current_class.register_class_hook = match.group("method_name")
+
+            def _unregister_class_hook():
+                if current_class is None:
+                    raise RuntimeError(
+                        f"`# godot_extension: unregister_class_hook` must be within a `# godot_extension: class(...)` pragma"
+                    )
+
+                if current_class.unregister_class_hook is not None:
+                    raise RuntimeError(
+                        f"`# godot_extension: unregister_class_hook` can only be set once per `# godot_extension: class(...)` pragma"
+                    )
+
+                match, is_staticmethod = _collect_method_signature()
+                if not is_staticmethod:
+                    raise RuntimeError(
+                        f"`# godot_extension: unregister_class_hook` only allow accepts static method"
+                    )
+                if match.group("param") or match.group("return_type") != "void":
+                    raise RuntimeError(
+                        f"`# godot_extension: unregister_class_hook` method must have no parameter and return void"
+                    )
+
+                current_class.unregister_class_hook = match.group("method_name")
+
+            def _method(const: bool = False, virtual: bool = False) -> MethodDef:
+                if current_class is None:
+                    raise RuntimeError(
+                        f"`# godot_extension: method(...)` must be within a `# godot_extension: class(...)` pragma"
+                    )
+
+                if not isinstance(const, bool):
+                    raise RuntimeError("`const` parameter must be a boolean")
+                is_const = const
+
+                if not isinstance(virtual, bool):
+                    raise RuntimeError("`virtual` parameter must be a boolean")
+                is_virtual = virtual
+
+                match, is_staticmethod = _collect_method_signature()
 
                 params = {}
                 for i, raw_param in enumerate(match.group("param").split(",")):
@@ -299,11 +354,21 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                     parent_class_name=parent,
                     methods=[],
                     inject_code_at_line=-1,
+                    register_class_hook=None,
+                    unregister_class_hook=None,
                 )
                 classes.append(current_class)
 
             try:
-                eval("_" + pragma, {"_method": _method, "_class": _class})
+                eval(
+                    "_" + pragma,
+                    {
+                        "_register_class_hook": _register_class_hook,
+                        "_unregister_class_hook": _unregister_class_hook,
+                        "_method": _method,
+                        "_class": _class,
+                    },
+                )
             except NameError as exc:
                 raise RuntimeError(f"Line {i + 1}: Unknown pragma `{line.strip()}`") from exc
             except Exception as exc:
