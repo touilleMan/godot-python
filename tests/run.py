@@ -171,21 +171,24 @@ def run_test(
     ]
     print(" ".join(cmd), flush=True)
     res = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
     total_output = b""
-    subprocess_done = False
     while True:
-        buff: bytes = res.stdout.read1()  # type: ignore
-        total_output += buff
-        os.write(sys.stdout.fileno(), buff)
-        if subprocess_done:
-            break
         try:
             res.wait(timeout=0.1)
             # Subprocess is done, but we still have one more stdin/stderr pump to do
-            subprocess_done = True
+            buff = res.stdout.read()
+
         except subprocess.TimeoutExpired:
             # Subprocess is still running
-            pass
+            # Use `read1` to avoid blocking on the read
+            buff: bytes = res.stdout.read1()  # type: ignore
+
+        total_output += buff
+        os.write(sys.stdout.fileno(), buff)
+        if res.returncode is not None:
+            break
+
     if res.returncode != 0:
         raise SystemExit(f"{RED}{test_name}: Non-zero return code: {res.returncode}{NO_COLOR}")
 
