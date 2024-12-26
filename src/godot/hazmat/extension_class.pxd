@@ -79,8 +79,8 @@ cdef inline void register_extension_class_creation(
     # Don't increment refcount given we rely on gc protector
     info.class_userdata = <void*>spec  # void*
 
-    cdef gd_string_name_t gdname = gd_string_name_from_utf8_and_len(<char*>class_name, class_name.len())
-    cdef gd_string_name_t gdname_parent = gd_string_name_from_utf8_and_len(<char*>parent_class_name, parent_class_name.len())
+    cdef gd_string_name_t gdname = gd_string_name_from_utf8_and_len(<char*>class_name, len(class_name))
+    cdef gd_string_name_t gdname_parent = gd_string_name_from_utf8_and_len(<char*>parent_class_name, len(parent_class_name))
     # TODO: correct me once https://github.com/godotengine/godot/pull/67121 is merged
     pythonscript_gdextension.classdb_register_extension_class(
         pythonscript_gdextension_library,
