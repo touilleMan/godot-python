@@ -1,8 +1,8 @@
 from godot.classes cimport ScriptLanguageExtensionProfilingInfo
 
 
-cdef StringName gdname_scriptlanguageextension = StringName("ScriptLanguageExtension")
-cdef StringName gdname_pythonscriptlanguage = StringName("PythonScriptLanguage")
+cdef gd_string_name_t gdname_scriptlanguageextension
+cdef gd_string_name_t gdname_pythonscriptlanguage
 
 
 debug_spy = False
@@ -17,8 +17,22 @@ cdef class PythonScriptLanguage:
     cdef gd_object_t _gd_ptr
 
     def __cinit__(self):
-        self._gd_ptr = pythonscript_gdextension.classdb_construct_object(&gdname_scriptlanguageextension._gd_data)
-        pythonscript_gdextension.object_set_instance(self._gd_ptr, &gdname_pythonscriptlanguage._gd_data, <PyObject*>self)
+        self._gd_ptr = pythonscript_gdextension.classdb_construct_object(&gdname_scriptlanguageextension)
+        pythonscript_gdextension.object_set_instance(self._gd_ptr, &gdname_pythonscriptlanguage, <PyObject*>self)
+
+    # godot_extension: register_class_hook()
+    @staticmethod
+    cdef inline void _register_class_hook():
+        global gdname_scriptlanguageextension, gdname_pythonscriptlanguage
+        gdname_scriptlanguageextension = gd_string_name_from_unchecked_pystr("ScriptLanguageExtension")
+        gdname_pythonscriptlanguage = gd_string_name_from_unchecked_pystr("PythonScriptLanguage")
+
+    # godot_extension: unregister_class_hook()
+    @staticmethod
+    cdef inline void _unregister_class_hook():
+        global gdname_scriptlanguageextension, gdname_pythonscriptlanguage
+        gd_string_name_del(&gdname_scriptlanguageextension)
+        gd_string_name_del(&gdname_pythonscriptlanguage)
 
     # godot_extension: generate_code()
 

@@ -1,5 +1,5 @@
-cdef StringName gdname_scriptextension = StringName("ScriptExtension")
-cdef StringName gdname_pythonscript = StringName("PythonScript")
+cdef gd_string_name_t gdname_scriptextension
+cdef gd_string_name_t gdname_pythonscript
 
 # godot_extension: class(parent="ScriptExtension")
 @cython.final
@@ -7,8 +7,22 @@ cdef class PythonScript:
     cdef gd_object_t _gd_ptr
 
     def __cinit__(self):
-        self._gd_ptr = pythonscript_gdextension.classdb_construct_object(&gdname_scriptextension._gd_data)
-        pythonscript_gdextension.object_set_instance(self._gd_ptr, &gdname_pythonscript._gd_data, <PyObject*>self)
+        self._gd_ptr = pythonscript_gdextension.classdb_construct_object(&gdname_scriptextension)
+        pythonscript_gdextension.object_set_instance(self._gd_ptr, &gdname_pythonscript, <PyObject*>self)
+
+    # godot_extension: register_class_hook()
+    @staticmethod
+    cdef inline void _register_class_hook():
+        global gdname_scriptextension, gdname_pythonscript
+        gdname_scriptextension = gd_string_name_from_unchecked_pystr("ScriptExtension")
+        gdname_pythonscript = gd_string_name_from_unchecked_pystr("PythonScript")
+
+    # godot_extension: unregister_class_hook()
+    @staticmethod
+    cdef inline void _unregister_class_hook():
+        global gdname_scriptextension, gdname_pythonscript
+        gd_string_name_del(&gdname_scriptextension)
+        gd_string_name_del(&gdname_pythonscript)
 
     # godot_extension: generate_code()
 
