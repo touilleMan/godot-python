@@ -46,7 +46,7 @@ cdef public void _pythonscript_get_reserved_words(
         "yield",
     ]
     for keyword in keywords:
-        string = gd_string_from_utf8_and_len(keyword, keyword.len())
+        string = gd_string_from_utf8_and_len(keyword, len(keyword))
         gd_packed_string_array_append(&arr, &string)
         gd_string_del(&string)
 
@@ -66,7 +66,7 @@ cdef public void _pythonscript_get_recognized_extensions(
         "py",
     ]
     for keyword in keywords:
-        string = gd_string_from_utf8_and_len(keyword, keyword.len())
+        string = gd_string_from_utf8_and_len(keyword, len(keyword))
         gd_packed_string_array_append(&arr, &string)
         gd_string_del(&string)
 
@@ -86,7 +86,7 @@ cdef public void _pythonscript_get_string_delimiters(
 	    "\"\"\" \"\"\"",
     ]
     for keyword in keywords:
-        string = gd_string_from_utf8_and_len(keyword, keyword.len())
+        string = gd_string_from_utf8_and_len(keyword, len(keyword))
         gd_packed_string_array_append(&arr, &string)
         gd_string_del(&string)
 
