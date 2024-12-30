@@ -9,7 +9,7 @@ from dataclasses import dataclass
 PRAGMA_RE = re.compile(r"^(?P<indentation>\s*)# godot_extension:\s+(?P<pragma>.*)$")
 CLASS_RE = re.compile(r"^cdef class (?P<class_name>\w+)")
 METHOD_RE = re.compile(
-    r"^cdef\s+(inline\s+)?(?P<return_type>\w+\s*\*?)\s+(?P<method_name>\w+)\((?P<param>.*)\):"
+    r"^cdef\s+(inline\s+)?(?P<return_type>\w+((\s*\*\s*)|(\s+)))(?P<method_name>\w+)\((?P<parameters>.*)\):"
 )
 
 INJECT_CODE_PRAGMA = "generate_code()"
@@ -32,6 +32,9 @@ class ClassDef:
     class_def_at_line: int
     class_name: str
     parent_class_name: str
+    is_virtual: bool
+    is_abstract: bool
+    is_exposed: bool
     methods: List[MethodDef]
     inject_code_at_line: int
     register_class_hook: str | None
@@ -97,6 +100,9 @@ def __godot_extension_register_class():
         &{spec.class_name}.__godot_extension_create_instance,
         &{spec.class_name}.__godot_extension_free_instance,
         &{spec.class_name}.__godot_extension_get_virtual,
+        {"True" if spec.is_virtual else "False"},
+        {"True" if spec.is_abstract else "False"},
+        {"True" if spec.is_exposed else "False"},
     )
 """
     for method in spec.methods:
@@ -162,10 +168,10 @@ def generate_injected_code(spec: ClassDef) -> str:
 def handle_pointer_type(raw_type: str) -> str:
     # Type is not a real Godot object, but we still use `gd_object_t`
     # to represent the fact it is a pointer
-    # if raw_type.endswith("*"):
-    #     return "gd_object_t"
     try:
-        pointed_type, _ = raw_type.split()
+        pointed_type, expect_star = raw_type.split()
+        if not expect_star != "*":
+            raise RuntimeError(f"bad type `{raw_type}`, expected `<type>` or `<type> *`")
         return f"{pointed_type}*"
     except ValueError:
         return raw_type.strip()
@@ -200,7 +206,7 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
 
         else:
 
-            def _collect_method_signature():
+            def _collect_method_signature() -> MethodDef:
                 try:
                     _, line = next(code_lines)
                     is_staticmethod = line.strip() == "@staticmethod"
@@ -240,7 +246,32 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                         f"expected method signature `cdef [inline] (gd_xxx_t|void) foo({'' if is_staticmethod else 'self, '}gd_yyy_t bar, ...)`"
                     )
 
-                return match, is_staticmethod
+                return_type = handle_pointer_type(match.group("return_type"))
+
+                params = {}
+                if match.group("parameters").strip():
+                    for i, raw_param in enumerate(match.group("parameters").split(",")):
+                        if i == 0 and not is_staticmethod:
+                            if raw_param != "self":
+                                raise RuntimeError(
+                                    "expected first paramater for non static method to be `self`"
+                                )
+                            continue
+
+                        try:
+                            param_type, param_name = raw_param.split()
+                        except ValueError:
+                            raise RuntimeError(f"bad parameter {raw_param!r}")
+                        params[param_name] = handle_pointer_type(param_type)
+
+                return MethodDef(
+                    is_staticmethod=is_staticmethod,
+                    method_name=match.group("method_name"),
+                    return_type=return_type,
+                    parameters=params,
+                    is_const=False,
+                    is_virtual=False,
+                )
 
             def _register_class_hook():
                 if current_class is None:
@@ -253,17 +284,17 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                         f"`# godot_extension: register_class_hook` can only be set once per `# godot_extension: class(...)` pragma"
                     )
 
-                match, is_staticmethod = _collect_method_signature()
-                if not is_staticmethod:
+                signature = _collect_method_signature()
+                if not signature.is_staticmethod:
                     raise RuntimeError(
                         f"`# godot_extension: register_class_hook` only allow accepts static method"
                     )
-                if match.group("param") or match.group("return_type") != "void":
+                if signature.parameters or signature.return_type != "void":
                     raise RuntimeError(
                         f"`# godot_extension: register_class_hook` method must have no parameter and return void"
                     )
 
-                current_class.register_class_hook = match.group("method_name")
+                current_class.register_class_hook = signature.method_name
 
             def _unregister_class_hook():
                 if current_class is None:
@@ -276,17 +307,17 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                         f"`# godot_extension: unregister_class_hook` can only be set once per `# godot_extension: class(...)` pragma"
                     )
 
-                match, is_staticmethod = _collect_method_signature()
-                if not is_staticmethod:
+                signature = _collect_method_signature()
+                if not signature.is_staticmethod:
                     raise RuntimeError(
                         f"`# godot_extension: unregister_class_hook` only allow accepts static method"
                     )
-                if match.group("param") or match.group("return_type") != "void":
+                if signature.parameters or signature.return_type != "void":
                     raise RuntimeError(
                         f"`# godot_extension: unregister_class_hook` method must have no parameter and return void"
                     )
 
-                current_class.unregister_class_hook = match.group("method_name")
+                current_class.unregister_class_hook = signature.method_name
 
             def _method(const: bool = False, virtual: bool = False) -> MethodDef:
                 if current_class is None:
@@ -302,35 +333,18 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                     raise RuntimeError("`virtual` parameter must be a boolean")
                 is_virtual = virtual
 
-                match, is_staticmethod = _collect_method_signature()
+                signature = _collect_method_signature()
+                signature.is_const = is_const
+                signature.is_virtual = is_virtual
 
-                params = {}
-                for i, raw_param in enumerate(match.group("param").split(",")):
-                    if i == 0 and not is_staticmethod:
-                        if raw_param != "self":
-                            raise RuntimeError(
-                                "expected first paramater for non static method to be `self`"
-                            )
-                        continue
+                current_class.methods.append(signature)
 
-                    try:
-                        param_type, param_name = raw_param.split()
-                    except ValueError:
-                        raise RuntimeError(f"bad parameter {raw_param!r}")
-                    params[param_name] = handle_pointer_type(param_type)
-
-                current_class.methods.append(
-                    MethodDef(
-                        method_name=match.group("method_name"),
-                        is_staticmethod=is_staticmethod,
-                        is_const=is_const,
-                        is_virtual=is_virtual,
-                        return_type=handle_pointer_type(match.group("return_type")),
-                        parameters=params,
-                    )
-                )
-
-            def _class(parent: str) -> ClassDef:
+            def _class(
+                parent: str,
+                is_virtual: bool = False,
+                is_abstract: bool = False,
+                is_exposed: bool = True,
+            ) -> ClassDef:
                 nonlocal current_class
                 nonlocal classes
 
@@ -352,6 +366,9 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                     class_def_at_line=class_def_at_line,
                     class_name=match.group("class_name"),
                     parent_class_name=parent,
+                    is_virtual=is_virtual,
+                    is_abstract=is_abstract,
+                    is_exposed=is_exposed,
                     methods=[],
                     inject_code_at_line=-1,
                     register_class_hook=None,
