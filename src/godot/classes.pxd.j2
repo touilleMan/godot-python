@@ -83,4 +83,5 @@ cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }})
 
 cdef object _load_class(str name)
 cdef object _load_singleton(str name)
+cdef void _cleanup_loaded_classes_and_singletons()
 cdef object _object_call(gd_object_t obj, str meth, args)
