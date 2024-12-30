@@ -11,7 +11,7 @@ from godot.hazmat.gdextension_interface cimport *
 from godot.hazmat.gdapi cimport *
 from godot.hazmat.extension_class cimport *
 from godot.builtins cimport *
-from godot.classes cimport _load_class, _load_singleton
+from godot.classes cimport _load_class, _load_singleton, _cleanup_loaded_classes_and_singletons
 
 include "_pythonscript_editor.pxi"
 include "_pythonscript_extension_class_language.pxi"
@@ -131,6 +131,11 @@ cdef void _register_pythonscript_classes():
     PythonScript._PythonScript__godot_extension_register_class()
 
 
+cdef void _unregister_pythonscript_classes():
+    PythonScript._PythonScript__godot_extension_unregister_class()
+    PythonScriptLanguage._PythonScriptLanguage__godot_extension_unregister_class()
+
+
 cdef void _customize_config():
     import sys
     ProjectSettings = _load_singleton("ProjectSettings")
@@ -241,47 +246,104 @@ cdef void _register_pythonscript_language():
     cdef StringName gdname_register_script_language
     cdef gd_int_t ret
 
+    if _pythons_script_language is not None:
+        return
+
+    # Create the instance of `PythonScriptLanguage` class...
+
+    _pythons_script_language = PythonScriptLanguage.__new__(PythonScriptLanguage)
+
+    # ... and actually register Python into Godot \o/
+
+    gdname_engine = StringName("Engine")
+    gdname_register_script_language = StringName("register_script_language")
+    engine = pythonscript_gdextension.global_get_singleton(&gdname_engine._gd_data)
+    if engine == NULL:
+        print("Failed to register Python into Godot: failed to retreive `Engine` singleton", flush=True)
+        return
+
+    bind = pythonscript_gdextension.classdb_get_method_bind(
+        &gdname_engine._gd_data,
+        &gdname_register_script_language._gd_data,
+        1850254898,
+    )
+    if bind == NULL:
+        _pythons_script_language = None
+        print("Failed to register Python into Godot: failed to retreive `Engine::register_script_language`", flush=True)
+        return
+
+    args = [&_pythons_script_language._gd_ptr]
+    pythonscript_gdextension.object_method_bind_ptrcall(
+        bind,
+        engine,
+        args,
+        &ret,
+    )
+    if ret != Error.OK:
+        _pythons_script_language = None
+        print("Failed to register Python into Godot: `Engine::register_script_language` returned error {ret}", flush=True)
+        return
+
+
+cdef void _unregister_pythonscript_language():
+    global _pythons_script_language
+    cdef StringName gdname_engine
+    cdef StringName gdname_unregister_script_language
+    cdef GDExtensionObjectPtr engine
+    cdef GDExtensionMethodBindPtr bind
+    cdef GDExtensionConstTypePtr[1] args
+    cdef gd_int_t ret
+
     if _pythons_script_language is None:
+        return
 
-        # 2) Create the instance of `PythonScriptLanguage` class...
+    # 1) Unregister the languagee
 
-        _pythons_script_language = PythonScriptLanguage.__new__(PythonScriptLanguage)
+    gdname_engine = StringName("Engine")
+    gdname_unregister_script_language = StringName("unregister_script_language")
+    engine = pythonscript_gdextension.global_get_singleton(&gdname_engine._gd_data)
+    if engine == NULL:
+        print("Failed to unregister Python from Godot: failed to retreive `Engine` singleton", flush=True)
+        return
 
-        # 3) ... and actually register Python into Godot \o/
+    bind = pythonscript_gdextension.classdb_get_method_bind(
+        &gdname_engine._gd_data,
+        &gdname_unregister_script_language._gd_data,
+        1850254898,
+    )
+    if bind == NULL:
+        print("Failed to unregister Python from Godot: failed to retreive `Engine::unregister_script_language`", flush=True)
+        return
 
-        gdname_engine = StringName("Engine")
-        gdname_register_script_language = StringName("register_script_language")
-        singleton = pythonscript_gdextension.global_get_singleton(&gdname_engine._gd_data)
-        if singleton == NULL:
-            print("Failed to register Python into Godot: failed to retreive `Engine` singleton", flush=True)
-            return
+    args = [&_pythons_script_language._gd_ptr]
+    pythonscript_gdextension.object_method_bind_ptrcall(
+        bind,
+        engine,
+        args,
+        &ret,
+    )
+    if ret != Error.OK:
+        print(f"Failed to unregister Python from Godot: `Engine::unregister_script_language` returned error {ret}", flush=True)
+        return
 
-        bind = pythonscript_gdextension.classdb_get_method_bind(
-            &gdname_engine._gd_data,
-            &gdname_register_script_language._gd_data,
-            1850254898,
-        )
-        if bind == NULL:
-            _pythons_script_language = None
-            print("Failed to register Python into Godot: failed to retreive `Engine::register_script_language`", flush=True)
-            return
+    # 2) Free the language instance
 
-        args = [&_pythons_script_language._gd_ptr]
-        pythonscript_gdextension.object_method_bind_ptrcall(
-            bind,
-            singleton,
-            args,
-            &ret,
-        )
-        if ret != 0:  # TODO: use `Error.Ok` here
-            _pythons_script_language = None
-            print("Failed to register Python into Godot: `Engine::register_script_language` returned error {ret}", flush=True)
-            return
+    pythonscript_gdextension.object_destroy(
+        _pythons_script_language._gd_ptr,
+    )
+
+    # At this point `_pythons_script_language._gd_ptr` is no longer a valid pointer
+    # however this is fine since we are clearing the reference to it right now (so
+    # nobody is going to use it anymore) and `_gd_ptr` field is simply ignored during
+    # garbage collection.
+
+    # 3) Finally clear reference on the language instance Python bindings
+
+    _pythons_script_language = None
 
 
 cdef void _print_banner():
     import sys
-    ProjectSettings = _load_singleton("ProjectSettings")
 
     if _setup_config_entry("python/print_startup_info", True):
         from godot._version import __version__ as pythonscript_version
@@ -317,52 +379,20 @@ cdef public void _pythonscript_deinitialize(int p_level) noexcept with gil:
     # That will continue until `godot_gdnative_terminate` is called (which is
     # responsible for the actual teardown of the interpreter).
 
-    cdef GDExtensionObjectPtr singleton
-    cdef GDExtensionMethodBindPtr bind
-    cdef GDExtensionConstTypePtr[1] args
-    cdef StringName gdname_engine
-    cdef StringName gdname_register_script_language
-    cdef gd_int_t ret
-
     if p_level >= GDEXTENSION_INITIALIZATION_SCENE:
         _deinitialize_callback_hook(p_level)
 
     if p_level == GDEXTENSION_INITIALIZATION_SCENE and _pythons_script_language is not None:
-
-        # Unregister Python from Godot
-
-        gdname_engine = StringName("Engine")
-        gdname_unregister_script_language = StringName("unregister_script_language")
-        singleton = pythonscript_gdextension.global_get_singleton(&gdname_engine._gd_data)
-        if singleton == NULL:
-            print("Failed to unregister Python from Godot: failed to retreive `Engine` singleton", flush=True)
-            return
-
-        bind = pythonscript_gdextension.classdb_get_method_bind(
-            &gdname_engine._gd_data,
-            &gdname_unregister_script_language._gd_data,
-            1850254898,
-        )
-        if bind == NULL:
-            print("Failed to unregister Python from Godot: failed to retreive `Engine::unregister_script_language`", flush=True)
-            return
-
-        args = [&_pythons_script_language._gd_ptr]
-        pythonscript_gdextension.object_method_bind_ptrcall(
-            bind,
-            singleton,
-            args,
-            &ret,
-        )
-        if ret != 0:  # TODO: use `Error.Ok` here
-            print(f"Failed to unregister Python from Godot: `Engine::unregister_script_language` returned error {ret}", flush=True)
-            return
-
-        _pythons_script_language = None
+        _unregister_pythonscript_language()
 
     if p_level == GDEXTENSION_INITIALIZATION_SERVERS:
 
         # Unregister Python classes from Godot's classDB
 
-        PythonScript._PythonScript__godot_extension_unregister_class()
-        PythonScriptLanguage._PythonScriptLanguage__godot_extension_unregister_class()
+        _unregister_pythonscript_classes()
+        _cleanup_loaded_classes_and_singletons()
+
+        # TODO: needed ?
+        # gc_protector = _get_extension_gc_protector()
+        # print('!!!!!!!! gc_protector', repr(gc_protector))
+        # gc_protector.clear()
