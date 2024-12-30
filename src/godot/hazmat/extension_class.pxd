@@ -39,6 +39,7 @@ cdef inline void unregister_extension_class(bytes class_name) noexcept:
     # Note we cannot free the spec given we don't know if the unregister operation has succeeded
     # TODO: correct me once https://github.com/godotengine/godot/pull/67121 is merged
 
+
 cdef inline void _extension_class_to_string(GDExtensionClassInstancePtr p_instance, GDExtensionBool *r_is_valid, GDExtensionStringPtr p_out) noexcept with gil:
     cdef ExtensionClassSpec spec = <ExtensionClassSpec>p_instance
     (<gd_string_t*>p_out)[0] = gd_string_from_pybytes(spec.class_name)
@@ -51,6 +52,9 @@ cdef inline void register_extension_class_creation(
     GDExtensionClassCreateInstance create_instance_func,
     GDExtensionClassFreeInstance free_instance_func,
     GDExtensionClassGetVirtual get_virtual_func,
+    bint is_virtual,
+    bint is_abstract,
+    bint is_exposed,
 ) noexcept:
     cdef ExtensionClassSpec spec = ExtensionClassSpec()
     spec.class_name = class_name
@@ -60,21 +64,35 @@ cdef inline void register_extension_class_creation(
     cdef list specs_list = _get_extension_gc_protector()
     specs_list.append(spec)
 
-    # TODO: replace by `GDExtensionClassCreationInfo2`
-    cdef GDExtensionClassCreationInfo info
+    cdef GDExtensionClassCreationInfo2 info
+    info.is_virtual = is_virtual
+    info.is_abstract = is_abstract
+    info.is_exposed = is_exposed
     info.set_func = NULL  # GDExtensionClassSet
     info.get_func = NULL  # GDExtensionClassGet
     info.get_property_list_func = NULL  # GDExtensionClassGetPropertyList
     info.free_property_list_func = NULL  # GDExtensionClassFreePropertyList
     info.property_can_revert_func = NULL  # GDExtensionClassPropertyCanRevert
     info.property_get_revert_func = NULL  # GDExtensionClassPropertyGetRevert
-    info.notification_func = NULL  # GDExtensionClassNotification
+    info.validate_property_func = NULL  # GDExtensionClassValidateProperty
+    info.notification_func = NULL  # GDExtensionClassNotification2
     info.to_string_func = &_extension_class_to_string  # GDExtensionClassToString
     info.reference_func = NULL  # GDExtensionClassReference
     info.unreference_func = NULL  # GDExtensionClassUnreference
     info.create_instance_func = create_instance_func
     info.free_instance_func = free_instance_func
+    info.recreate_instance_func = NULL  # GDExtensionClassRecreateInstance
+    # Queries a virtual function by name and returns a callback to invoke the requested virtual function.
     info.get_virtual_func = get_virtual_func
+    # Paired with `call_virtual_with_data_func`, this is an alternative to `get_virtual_func` for extensions that
+    # need or benefit from extra data when calling virtual functions.
+    # Returns user data that will be passed to `call_virtual_with_data_func`.
+    # Returning `NULL` from this function signals to Godot that the virtual function is not overridden.
+    # Data returned from this function should be managed by the extension and must be valid until the extension is deinitialized.
+    # You should supply either `get_virtual_func`, or `get_virtual_call_data_func` with `call_virtual_with_data_func`.
+    info.get_virtual_call_data_func = NULL  # GDExtensionClassGetVirtualCallData
+    # Used to call virtual functions when `get_virtual_call_data_func` is not null.
+    info.call_virtual_with_data_func = NULL  # GDExtensionClassCallVirtualWithData
     info.get_rid_func = NULL  # GDExtensionClassGetRID
     # Don't increment refcount given we rely on gc protector
     info.class_userdata = <void*>spec  # void*
@@ -82,7 +100,7 @@ cdef inline void register_extension_class_creation(
     cdef gd_string_name_t gdname = gd_string_name_from_utf8_and_len(<char*>class_name, len(class_name))
     cdef gd_string_name_t gdname_parent = gd_string_name_from_utf8_and_len(<char*>parent_class_name, len(parent_class_name))
     # TODO: correct me once https://github.com/godotengine/godot/pull/67121 is merged
-    pythonscript_gdextension.classdb_register_extension_class(
+    pythonscript_gdextension.classdb_register_extension_class2(
         pythonscript_gdextension_library,
         &gdname,
         &gdname_parent,
@@ -384,6 +402,9 @@ cdef inline void register_extension_class_method(
 
     if info.arguments_info != NULL:
         free(info.arguments_info)
+
+    if info.arguments_metadata != NULL:
+        free(info.arguments_metadata)
 
     # TODO: free `info.default_arguments`
 
