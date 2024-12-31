@@ -82,13 +82,13 @@ def __godot_extension_unregister_class():
     { spec.class_name + "." + spec.unregister_class_hook + "()" if spec.unregister_class_hook is not None else "" }
 
 @staticmethod
-cdef GDExtensionClassInstancePtr __godot_extension_create_instance(void* p_userdata) noexcept with gil:
+cdef GDExtensionObjectPtr __godot_extension_create_instance(void* p_class_userdata) noexcept with gil:
     cdef {spec.class_name} obj = {spec.class_name}()
     Py_INCREF(obj)
-    return <PyObject*>obj
+    return obj._gd_ptr
 
 @staticmethod
-cdef void __godot_extension_free_instance(void* p_userdata, GDExtensionClassInstancePtr p_instance) noexcept with gil:
+cdef void __godot_extension_free_instance(void* p_class_userdata, GDExtensionClassInstancePtr p_instance) noexcept with gil:
     Py_DECREF(<{spec.class_name}>p_instance)
 
 @staticmethod

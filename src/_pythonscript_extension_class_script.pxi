@@ -1,6 +1,7 @@
 cdef gd_string_name_t gdname_scriptextension
 cdef gd_string_name_t gdname_pythonscript
 
+
 # godot_extension: class(parent="ScriptExtension")
 @cython.final
 cdef class PythonScript:
