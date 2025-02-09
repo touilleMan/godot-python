@@ -6,10 +6,17 @@ project(
     default_options : [
         # warning_level=3 uses -Wpedantic that doesn't play nice with cython-generated code
         'warning_level=2',
-        # Overwrite default prefix (e.g. /usr/local on linux), note installing is
-        # always done with a --destdir given installing this project globally on
-        # the system is meaningless
-        'prefix=/',
+        # We always install with a `--destdir` parameter given installing this
+        # project globally on the system is meaningless.
+        #
+        # However the prefix (e.g. `/usr/local` by default on linux) is always appended
+        # to the `--destdir` parameter, hence why we need to overwrite it.
+        #
+        # Aaaand of course Windows requires special care :'(
+        # see: https://github.com/conan-io/conan/pull/17206
+        'prefix=@0@'.format(
+            host_machine.system() == 'windows' ? 'C:/' : '/'
+        ),
         'c_std=c17',
     ]
 )
