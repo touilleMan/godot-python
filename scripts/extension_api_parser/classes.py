@@ -56,6 +56,8 @@ class ClassMethodSpec:
     is_vararg: bool
     is_static: bool
     is_virtual: bool
+    is_required: bool
+
     is_property_accessor: bool
     hash: Optional[int]
     hash_compatibility: Optional[int]
@@ -75,6 +77,8 @@ class ClassMethodSpec:
         item.setdefault("hash", None)
         item.setdefault("hash_compatibility", None)
         item.setdefault("is_property_accessor", False)
+        # Added in Godot 4.4 (see https://github.com/godotengine/godot/pull/93311)
+        item.setdefault("is_required", False)
         assert_api_consistency(cls, item)
         return cls(
             name=correct_name(item["name"]),
@@ -83,6 +87,7 @@ class ClassMethodSpec:
             is_vararg=item["is_vararg"],
             is_static=item["is_static"],
             is_virtual=item["is_virtual"],
+            is_required=item["is_required"],
             is_property_accessor=item["is_property_accessor"],
             hash=item["hash"],
             hash_compatibility=item["hash_compatibility"],
