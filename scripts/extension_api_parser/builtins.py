@@ -273,7 +273,7 @@ class BuiltinTypeSpec(TypeSpec):
         elif self.original_name == "PackedColorArray":
             return TYPES_DB["Color"]
         else:
-            raise RuntimeError("Unknown packed array type :(")
+            raise RuntimeError(f"Unknown packed array type `{self.original_name}` :(")
 
     def get_constructor_from(self, *args_types: str) -> BuiltinConstructorSpec:
         # `args_types` is expected to contains original names ! (i.e. `String`, `float`)
