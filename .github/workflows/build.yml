@@ -124,9 +124,8 @@ jobs:
           ARGS="--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} -- --headless"
           python tests/run.py 0-gdscript $ARGS
           python tests/run.py 1-gdextension $ARGS
-          python tests/run.py 2-pythonscript-init $ARGS
-          # TODO
-          # python tests/run.py 3-pythonscript-cython-only $ARGS
+          python tests/run.py 2-init-with-python-hook $ARGS
+          python tests/run.py 3-init-with-cython-hook $ARGS
 
       # - name: 'Generate artifact archive'
       #   run: meson compile -C build/ release
@@ -222,9 +221,8 @@ jobs:
           ARGS="--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} --custom-gdextension-api=./gdextension_api -- --headless"
           python tests/run.py 0-gdscript $ARGS
           python tests/run.py 1-gdextension $ARGS
-          python tests/run.py 2-pythonscript-init $ARGS
-          # TODO
-          # python tests/run.py 3-pythonscript-cython-only $ARGS
+          python tests/run.py 2-init-with-python-hook $ARGS
+          python tests/run.py 3-init-with-cython-hook $ARGS
 
       # - name: 'Install Mesa3D OpenGL'
       #   shell: bash

@@ -1,4 +1,8 @@
 Godot Engine .* - https://godotengine.org
  
 Pythonscript .* \(CPython .*\)
+MY initialize 2
+MY initialize 3
 Hello, World !
+MY deinitialize 3
+MY deinitialize 2
