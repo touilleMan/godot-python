@@ -268,6 +268,8 @@ class BuiltinTypeSpec(TypeSpec):
             return TYPES_DB["Vector2"]
         elif self.original_name == "PackedVector3Array":
             return TYPES_DB["Vector3"]
+        elif self.original_name == "PackedVector4Array":
+            return TYPES_DB["Vector4"]
         elif self.original_name == "PackedColorArray":
             return TYPES_DB["Color"]
         else:
