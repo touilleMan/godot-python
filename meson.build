@@ -322,7 +322,9 @@ run_command(
     python,
     '-c',
     '''
-open("@0@/.ignore", "w").write("""
+import sys, pathlib
+target = pathlib.Path(sys.argv[1]) / ".ignore"
+target.write_text("""
 # `.ignore` takes precedence over `.gitignore` in dev tools (vscode, ripgrep etc.)
 # Here we overwrite `.gitignore` rule to allow search in `gdextension_api` & `src`
 # folders.
@@ -343,7 +345,8 @@ python_distrib
 python_prebuild-*
 README.txt
 """)
-'''.format(meson.current_build_dir()),
+''',
+    meson.current_build_dir(),
     check: true,
 )
 
