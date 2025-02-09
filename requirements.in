@@ -1,6 +1,5 @@
 meson~=1.5
-pip-tools~=7.4
-# Colorama is needed only on Windows by pip-tools->click->pip-tools
+# Colorama is needed only on Windows by autopxd2->click->pip-tools
 # see: https://github.com/pallets/click/blob/030f53cf677ee1de534359c535d465eed0ec1d99/setup.py#L6
 colorama~=0.4
 ninja~=1.11
