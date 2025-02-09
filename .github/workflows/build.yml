@@ -78,7 +78,7 @@ jobs:
 
       - name: Download bleeding edge Godot 🏗️
         uses: dsnopek/action-download-artifact@1322f74e2dac9feed2ee76a32d9ae1ca3b4cf4e9
-        if: ${{ env.BLEEDING_EDGE_GODOT }}
+        if: ${{ env.BLEEDING_EDGE_GODOT == true }}
         with:
           repo: godotengine/godot
           branch: master
@@ -93,7 +93,7 @@ jobs:
 
       - name: 'Setup bleeding edge Godot 🏗️'
         id: setup-godot
-        if: ${{ env.BLEEDING_EDGE_GODOT }}
+        if: ${{ env.BLEEDING_EDGE_GODOT == true }}
         run: |
           set -eux
 
@@ -170,7 +170,7 @@ jobs:
 
       - name: Download bleeding edge Godot 🏗️
         uses: dsnopek/action-download-artifact@1322f74e2dac9feed2ee76a32d9ae1ca3b4cf4e9
-        if: ${{ env.BLEEDING_EDGE_GODOT }}
+        if: ${{ env.BLEEDING_EDGE_GODOT == true }}
         with:
           repo: godotengine/godot
           branch: master
@@ -185,7 +185,7 @@ jobs:
 
       - name: 'Setup bleeding edge Godot 🏗️'
         id: setup-godot
-        if: ${{ env.BLEEDING_EDGE_GODOT }}
+        if: ${{ env.BLEEDING_EDGE_GODOT == true }}
         shell: bash
         run: |
           set -eux
