@@ -19,7 +19,7 @@ concurrency:
 # Global Settings
 env:
   PYTHON_VERSION: "3.12"  # Python to run the build, no the one shipped !
-  BLEEDING_EDGE_GODOT: true
+  BLEEDING_EDGE_GODOT: false
 
 
 jobs:
