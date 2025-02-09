@@ -2,6 +2,7 @@
 
 import argparse
 from pathlib import Path
+import re
 from urllib.request import urlopen
 import shutil
 import tarfile
@@ -10,8 +11,20 @@ import gzip
 import zstandard
 
 
-PREBUILDS_BASE_URL = "https://github.com/indygreg/python-build-standalone/releases/download"
+PREBUILDS_BASE_URL = "https://github.com/astral-sh/python-build-standalone/releases/download"
 PLATFORM_TO_PREBUILDS = {
+    "3.13.2": {
+        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.13.2+20250205-x86_64_v3-unknown-linux-gnu-pgo+lto-full.tar.zst",
+        "windows-x86": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.13.2+20250205-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.13.2+20250205-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.13.2+20250205-x86_64-apple-darwin-pgo+lto-full.tar.zst",
+    },
+    "3.12.9": {
+        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.12.9+20250205-x86_64_v3-unknown-linux-gnu-pgo+lto-full.tar.zst",
+        "windows-x86": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.12.9+20250205-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.12.9+20250205-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
+        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.12.9+20250205-x86_64-apple-darwin-pgo+lto-full.tar.zst",
+    },
     "3.12.4": {
         "linux-x86_64": f"{PREBUILDS_BASE_URL}/20240713/cpython-3.12.4+20240713-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
         "windows-x86": f"{PREBUILDS_BASE_URL}/20240713/cpython-3.12.4+20240713-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
@@ -105,7 +118,10 @@ def fetch_prebuild(
 
 def load_config(prebuild_dir: Path) -> dict:
     conf = json.loads((prebuild_dir / "python/PYTHON.json").read_text())
-    assert conf["version"] == "7"
+    assert conf["version"] in (
+        "7",
+        "8",
+    ), f"Unsupported PYTHON.json format version {conf['version']}"
     assert conf["libpython_link_mode"] == "shared"
     return conf
 
@@ -113,7 +129,8 @@ def load_config(prebuild_dir: Path) -> dict:
 def install_linux(conf: dict, build_dir: Path, prebuild_dir: Path, compressed_stdlib: bool) -> None:
     print(f"Create clean distribution {build_dir}...")
 
-    if conf["target_triple"] not in ("x86_64-unknown-linux-gnu", "x86-unknown-linux-gnu"):
+    # See https://gregoryszorc.com/docs/python-build-standalone/main/running.html#obtaining-distributions
+    if not re.match(r"^x86_64(|_v2|_v3|_v4)-unknown-linux-(gnu|musl)$", conf["target_triple"]):
         raise RuntimeError(f"Unexpected target_triple `{conf['target_triple']}`")
     major, minor = conf["python_major_minor_version"].split(".")
 

@@ -204,13 +204,18 @@ if build_machine.system() == 'linux'
     mm = '@0@.@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor)
     bad_links = [
         # (<parent dir>, <symlink name>, <target name>)
-        ['bin', '2to3', '2to3-@0@'.format(mm)],
         ['bin', 'idle3', 'idle@0@'.format(mm)],
         ['bin', 'pydoc3', 'pydoc@0@'.format(mm)],
         ['bin', 'python3', 'python@0@'.format(mm)],
         ['bin', 'python3-config', 'python@0@-config'.format(mm)],
         ['lib', 'libpython@0@.so'.format(mm), 'libpython@0@.so.1.0'.format(mm)],
     ]
+    # 2to3 was removed in Python 3.13
+    if cpython_distrib_version_minor.to_int() < 13
+        bad_links += [
+            ['bin', '2to3', '2to3-@0@'.format(mm)],
+        ]
+    endif
     foreach x: bad_links
         parent_dir = x[0]
         symlink_name = x[1]
