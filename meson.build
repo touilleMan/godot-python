@@ -9,14 +9,18 @@ project(
         # We always install with a `--destdir` parameter given installing this
         # project globally on the system is meaningless.
         #
-        # However the prefix (e.g. `/usr/local` by default on linux) is always appended
-        # to the `--destdir` parameter, hence why we need to overwrite it.
+        # However the prefix (By default: `C:/` on Windows, `/usr/local` everywhere else)
+        # is always appended to the `--destdir` parameter, hence why we need to overwrite it.
         #
-        # Aaaand of course Windows requires special care :'(
-        # see: https://github.com/conan-io/conan/pull/17206
-        'prefix=@0@'.format(
-            host_machine.system() == 'windows' ? 'C:/' : '/'
-        ),
+        # Aaaaand now it's time for the fun part:
+        # - Windows crashes if `prefix=/` (see https://github.com/conan-io/conan/pull/17206)
+        # - We cannot use `host_machine.system()` to configure it conditionally since
+        #   `host_machine` is only available once `project()` has been called...
+        # - ...and `prefix` option can only be configured when `project()` is called >_<'
+        #
+        # So the current solution is to always set `prefix=/` for simplicity on Linux, and
+        # manually set `prefix=C:/` on Windows when running `meson setup`...
+        'prefix=/',
         'c_std=c17',
     ]
 )

@@ -209,7 +209,8 @@ jobs:
           echo "EXTRA_RUN_TESTS_ARGS=--godot-binary=$GODOT_BIN" >> $GITHUB_OUTPUT
 
       - name: 'Setup project'
-        run: python .github/scripts/meson_setup_or_dump_log.py build/ ${{ steps.setup-godot.outputs.EXTRA_MESON_SETUP_ARGS }}
+        # Note the install prefix has to be manually set on Windows due to some Meson limitation...
+        run: python .github/scripts/meson_setup_or_dump_log.py build/ ${{ steps.setup-godot.outputs.EXTRA_MESON_SETUP_ARGS }} -D prefix=C:/
 
       - name: 'Build project'
         run: meson compile -C build/
