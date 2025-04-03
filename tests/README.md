@@ -13,7 +13,7 @@ Tests are divided on multiple stages:
 - `6-expose-python-to-godot`: 🚧 WIP 🚧
 - `7-expose-cython-to-godot`: 🚧 WIP 🚧
 
-Stages 0 & 1 don't involve Godot-Python at all and are only here to ensure the no prior
+Stages 0 & 1 don't involve Godot-Python at all and are only here to ensure that no prior
 issues are present (e.g. bug in new Godot release, weird behavior on exotic platform...).
 
 Stages 2&3 ensure Godot-Python initialize fine, and that we can run Python and Cython
