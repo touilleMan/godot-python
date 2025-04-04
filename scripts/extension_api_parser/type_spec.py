@@ -175,6 +175,14 @@ TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
         py_type="bool",
         variant_type_name="GDEXTENSION_VARIANT_TYPE_BOOL",
     ),
+    "meta:char32": ScalarTypeSpec(
+        size=4,
+        original_name="char32",
+        c_type="char32_t",
+        cy_type="char32_t",
+        py_type="int",
+        variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
+    ),
     # int is always 8bytes long
     "int": ScalarTypeSpec(
         size=8,
