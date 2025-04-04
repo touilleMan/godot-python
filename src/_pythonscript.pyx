@@ -16,6 +16,8 @@ from godot.classes cimport _load_class, _load_singleton, _cleanup_loaded_classes
 include "_pythonscript_editor.pxi"
 include "_pythonscript_extension_class_language.pxi"
 include "_pythonscript_extension_class_script.pxi"
+include "_pythonscript_extension_resource_format_loader.pxi"
+include "_pythonscript_extension_resource_format_saver.pxi"
 # include "_godot_profiling.pxi"
 # include "_godot_script.pxi"
 # include "_godot_instance.pxi"
@@ -49,6 +51,8 @@ def _setup_config_entry(name: str, default_value: object):
 
 
 cdef PythonScriptLanguage _pythons_script_language = None
+cdef PythonResourceFormatLoader _python_resource_format_loader = None
+cdef PythonResourceFormatSaver _python_resource_format_saver = None
 
 
 cdef public GDExtensionObjectPtr _pythonscript_create_instance(
@@ -129,9 +133,13 @@ cdef void _register_pythonscript_classes():
 
     PythonScriptLanguage._PythonScriptLanguage__godot_extension_register_class()
     PythonScript._PythonScript__godot_extension_register_class()
+    PythonResourceFormatLoader._PythonResourceFormatLoader__godot_extension_register_class()
+    PythonResourceFormatSaver._PythonResourceFormatSaver__godot_extension_register_class()
 
 
 cdef void _unregister_pythonscript_classes():
+    PythonResourceFormatSaver._PythonResourceFormatSaver__godot_extension_unregister_class()
+    PythonResourceFormatLoader._PythonResourceFormatLoader__godot_extension_unregister_class()
     PythonScript._PythonScript__godot_extension_unregister_class()
     PythonScriptLanguage._PythonScriptLanguage__godot_extension_unregister_class()
 
@@ -239,7 +247,7 @@ cdef object _deinitialize_callback_hook(int p_level):
 # Late init: instantiate `PythonScriptLanguage`
 cdef void _register_pythonscript_language():
     global _pythons_script_language
-    cdef GDExtensionObjectPtr singleton
+    cdef GDExtensionObjectPtr engine
     cdef GDExtensionMethodBindPtr bind
     cdef GDExtensionConstTypePtr[1] args
     cdef StringName gdname_engine
@@ -297,7 +305,7 @@ cdef void _unregister_pythonscript_language():
     if _pythons_script_language is None:
         return
 
-    # 1) Unregister the languagee
+    # 1) Unregister the language
 
     gdname_engine = StringName("Engine")
     gdname_unregister_script_language = StringName("unregister_script_language")
@@ -342,6 +350,210 @@ cdef void _unregister_pythonscript_language():
     _pythons_script_language = None
 
 
+# Late init: instantiate `PythonResourceFormatLoader`
+cdef void _register_pythonscript_resource_format_loader():
+    global _python_resource_format_loader
+    cdef GDExtensionObjectPtr resource_loader
+    cdef GDExtensionMethodBindPtr bind
+    cdef GDExtensionConstTypePtr[2] args
+    cdef StringName gdname_resource_loader
+    cdef StringName gdname_add_resource_format_loader
+    cdef gd_bool_t param_at_front = False
+
+    if _python_resource_format_loader is not None:
+        return
+
+    print("_register_pythonscript_resource_format_loader", flush=True)
+
+    # Create the instance of `PythonResourceFormatLoader` class...
+
+    _python_resource_format_loader = PythonResourceFormatLoader.__new__(PythonResourceFormatLoader)
+
+    # ... and actually register it into Godot \o/
+
+    gdname_resource_loader = StringName("ResourceLoader")
+    gdname_add_resource_format_loader = StringName("add_resource_format_loader")
+    resource_loader = pythonscript_gdextension.global_get_singleton(&gdname_resource_loader._gd_data)
+    if resource_loader == NULL:
+        print("Failed to register Python into Godot: failed to retreive `ResourceLoader` singleton", flush=True)
+        return
+
+    bind = pythonscript_gdextension.classdb_get_method_bind(
+        &gdname_resource_loader._gd_data,
+        &gdname_add_resource_format_loader._gd_data,
+        2896595483,
+    )
+    if bind == NULL:
+        _python_resource_format_loader = None
+        print("Failed to register Python into Godot: failed to retreive `ResourceLoader::add_resource_format_loader`", flush=True)
+        return
+
+    args = [&_python_resource_format_loader._gd_ptr, &param_at_front]
+    pythonscript_gdextension.object_method_bind_ptrcall(
+        bind,
+        resource_loader,
+        args,
+        NULL,
+    )
+
+
+cdef void _unregister_pythonscript_resource_format_loader():
+    global _python_resource_format_loader
+    cdef StringName gdname_resource_loader
+    cdef StringName gdname_remove_resource_format_loader
+    cdef GDExtensionObjectPtr resource_loader
+    cdef GDExtensionMethodBindPtr bind
+    cdef GDExtensionConstTypePtr[1] args
+
+    if _python_resource_format_loader is None:
+        return
+
+    print("_unregister_pythonscript_resource_format_loader", flush=True)
+
+    # 1) Unregister from Godot
+
+    gdname_resource_loader = StringName("ResourceLoader")
+    gdname_remove_resource_format_loader = StringName("remove_resource_format_loader")
+    resource_loader = pythonscript_gdextension.global_get_singleton(&gdname_resource_loader._gd_data)
+    if resource_loader == NULL:
+        print("Failed to unregister Python from Godot: failed to retreive `ResourceLoader` singleton", flush=True)
+        return
+
+    bind = pythonscript_gdextension.classdb_get_method_bind(
+        &gdname_resource_loader._gd_data,
+        &gdname_remove_resource_format_loader._gd_data,
+        405397102,
+    )
+    if bind == NULL:
+        print("Failed to unregister Python from Godot: failed to retreive `ResourceLoader::remove_resource_format_loader`", flush=True)
+        return
+
+    args = [&_python_resource_format_loader._gd_ptr]
+    pythonscript_gdextension.object_method_bind_ptrcall(
+        bind,
+        resource_loader,
+        args,
+        NULL,
+    )
+
+    # 2) Free the object instance
+
+    pythonscript_gdextension.object_destroy(
+        _python_resource_format_loader._gd_ptr,
+    )
+
+    # At this point `_python_resource_format_loader._gd_ptr` is no longer a valid pointer
+    # however this is fine since we are clearing the reference to it right now (so
+    # nobody is going to use it anymore) and `_gd_ptr` field is simply ignored during
+    # garbage collection.
+
+    # 3) Finally clear reference on the language instance Python bindings
+
+    _python_resource_format_loader = None
+
+
+# Late init: instantiate `PythonResourceFormatSaver`
+cdef void _register_pythonscript_resource_format_saver():
+    global _python_resource_format_saver
+    cdef GDExtensionObjectPtr resource_saver
+    cdef GDExtensionMethodBindPtr bind
+    cdef GDExtensionConstTypePtr[2] args
+    cdef StringName gdname_resource_saver
+    cdef StringName gdname_add_resource_format_saver
+    cdef gd_bool_t param_at_front = False
+
+    if _python_resource_format_saver is not None:
+        return
+
+    print("_register_pythonscript_resource_format_saver", flush=True)
+
+    # Create the instance of `PythonResourceFormatSaver` class...
+
+    _python_resource_format_saver = PythonResourceFormatSaver.__new__(PythonResourceFormatSaver)
+
+    # ... and actually register it into Godot \o/
+
+    gdname_resource_saver = StringName("ResourceSaver")
+    gdname_add_resource_format_saver = StringName("add_resource_format_saver")
+    resource_saver = pythonscript_gdextension.global_get_singleton(&gdname_resource_saver._gd_data)
+    if resource_saver == NULL:
+        print("Failed to register Python into Godot: failed to retreive `ResourceSaver` singleton", flush=True)
+        return
+
+    bind = pythonscript_gdextension.classdb_get_method_bind(
+        &gdname_resource_saver._gd_data,
+        &gdname_add_resource_format_saver._gd_data,
+        362894272,
+    )
+    if bind == NULL:
+        _python_resource_format_saver = None
+        print("Failed to register Python into Godot: failed to retreive `ResourceSaver::add_resource_format_saver`", flush=True)
+        return
+
+    args = [&_python_resource_format_saver._gd_ptr, &param_at_front]
+    pythonscript_gdextension.object_method_bind_ptrcall(
+        bind,
+        resource_saver,
+        args,
+        NULL,
+    )
+
+
+cdef void _unregister_pythonscript_resource_format_saver():
+    global _python_resource_format_saver
+    cdef StringName gdname_resource_saver
+    cdef StringName gdname_remove_resource_format_saver
+    cdef GDExtensionObjectPtr resource_saver
+    cdef GDExtensionMethodBindPtr bind
+    cdef GDExtensionConstTypePtr[1] args
+
+    if _python_resource_format_saver is None:
+        return
+
+    print("_unregister_pythonscript_resource_format_saver", flush=True)
+
+    # 1) Unregister from Godot
+
+    gdname_resource_saver = StringName("ResourceSaver")
+    gdname_remove_resource_format_saver = StringName("remove_resource_format_saver")
+    resource_saver = pythonscript_gdextension.global_get_singleton(&gdname_resource_saver._gd_data)
+    if resource_saver == NULL:
+        print("Failed to unregister Python from Godot: failed to retreive `ResourceSaver` singleton", flush=True)
+        return
+
+    bind = pythonscript_gdextension.classdb_get_method_bind(
+        &gdname_resource_saver._gd_data,
+        &gdname_remove_resource_format_saver._gd_data,
+        3373026878,
+    )
+    if bind == NULL:
+        print("Failed to unregister Python from Godot: failed to retreive `ResourceSaver::remove_resource_format_saver`", flush=True)
+        return
+
+    args = [&_python_resource_format_saver._gd_ptr]
+    pythonscript_gdextension.object_method_bind_ptrcall(
+        bind,
+        resource_saver,
+        args,
+        NULL,
+    )
+
+    # 2) Free the object instance
+
+    pythonscript_gdextension.object_destroy(
+        _python_resource_format_saver._gd_ptr,
+    )
+
+    # At this point `_python_resource_format_saver._gd_ptr` is no longer a valid pointer
+    # however this is fine since we are clearing the reference to it right now (so
+    # nobody is going to use it anymore) and `_gd_ptr` field is simply ignored during
+    # garbage collection.
+
+    # 3) Finally clear reference on the language instance Python bindings
+
+    _python_resource_format_saver = None
+
+
 cdef void _print_banner():
     import sys
 
@@ -364,6 +576,8 @@ cdef public void _pythonscript_initialize(int p_level) noexcept with gil:
     if p_level == GDEXTENSION_INITIALIZATION_SCENE:
         _customize_config()
         _register_pythonscript_language()
+        _register_pythonscript_resource_format_loader()
+        _register_pythonscript_resource_format_saver()
         # Finally proudly print banner ;-)
         _print_banner()
 
@@ -383,6 +597,8 @@ cdef public void _pythonscript_deinitialize(int p_level) noexcept with gil:
         _deinitialize_callback_hook(p_level)
 
     if p_level == GDEXTENSION_INITIALIZATION_SCENE and _pythons_script_language is not None:
+        _unregister_pythonscript_resource_format_saver()
+        _unregister_pythonscript_resource_format_loader()
         _unregister_pythonscript_language()
 
     if p_level == GDEXTENSION_INITIALIZATION_SERVERS:

@@ -165,6 +165,8 @@ preprocessed_pxis = []
 foreach pxi: [
     '_pythonscript_extension_class_language.pxi',
     '_pythonscript_extension_class_script.pxi',
+    '_pythonscript_extension_resource_format_loader.pxi',
+    '_pythonscript_extension_resource_format_saver.pxi',
 ]
     preprocessed_pxis += custom_target(
         output: pxi,
