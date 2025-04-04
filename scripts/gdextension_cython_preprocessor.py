@@ -249,8 +249,16 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                 return_type = handle_pointer_type(match.group("return_type"))
 
                 params = {}
-                if match.group("parameters").strip():
-                    for i, raw_param in enumerate(match.group("parameters").split(",")):
+                raw_params = match.group("parameters").strip()
+                if raw_params:
+                    strip_py_typing = lambda x: x.split(":", 1)[0].strip()
+                    for i, raw_param in enumerate(
+                        y for x in raw_params.split(",") if (y := strip_py_typing(x))
+                    ):
+                        raw_param = raw_param.split(":", 1)[0].strip()
+                        if not raw_param:
+                            continue
+
                         if i == 0 and not is_staticmethod:
                             if raw_param != "self":
                                 raise RuntimeError(
