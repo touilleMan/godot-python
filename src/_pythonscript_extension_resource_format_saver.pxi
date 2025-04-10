@@ -46,15 +46,18 @@ cdef class PythonResourceFormatSaver:
     cdef gd_bool_t _recognize_path(self, gd_object_t resource, gd_string_t path):
         # `resource` is an instance of `Resource`
         spy_log("CALLED PythonResourceFormatSaver::_recognize_path")
+        gd_string_del(&path)
         pass
 
     # godot_extension: method(virtual=True)
     cdef gd_int_t _save(self, gd_object_t resource, gd_string_t path, gd_int_t flags):
         # `resource` is an instance of `Resource`
         spy_log("CALLED PythonResourceFormatSaver::_save")
+        gd_string_del(&path)
         return Error.ERR_UNAVAILABLE
 
     # godot_extension: method(virtual=True)
     cdef gd_int_t _set_uid(self, gd_string_t path, gd_int_t uid):
         spy_log("CALLED PythonResourceFormatSaver::_set_uid")
+        gd_string_del(&path)
         return Error.ERR_UNAVAILABLE
