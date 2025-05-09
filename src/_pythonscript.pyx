@@ -436,18 +436,13 @@ cdef void _unregister_pythonscript_resource_format_loader():
         NULL,
     )
 
-    # 2) Free the object instance
-
-    pythonscript_gdextension.object_destroy(
-        _python_resource_format_loader._gd_ptr,
-    )
-
     # At this point `_python_resource_format_loader._gd_ptr` is no longer a valid pointer
-    # however this is fine since we are clearing the reference to it right now (so
-    # nobody is going to use it anymore) and `_gd_ptr` field is simply ignored during
-    # garbage collection.
+    # (`ResourceLoader::remove_resource_format_loader` has destroyed it), however this is
+    # fine since we are clearing the reference to `_python_resource_format_loader` right
+    # now (so nobody is going to use it anymore) and `_gd_ptr` field is simply ignored
+    # during garbage collection.
 
-    # 3) Finally clear reference on the language instance Python bindings
+    # 2) Finally clear reference on the language instance Python bindings
 
     _python_resource_format_loader = None
 
@@ -538,18 +533,13 @@ cdef void _unregister_pythonscript_resource_format_saver():
         NULL,
     )
 
-    # 2) Free the object instance
-
-    pythonscript_gdextension.object_destroy(
-        _python_resource_format_saver._gd_ptr,
-    )
-
     # At this point `_python_resource_format_saver._gd_ptr` is no longer a valid pointer
-    # however this is fine since we are clearing the reference to it right now (so
-    # nobody is going to use it anymore) and `_gd_ptr` field is simply ignored during
-    # garbage collection.
+    # (`ResourceSaver::remove_resource_format_saver` has destroyed it), however this is
+    # fine since we are clearing the reference to `_python_resource_format_saver` right
+    # now (so nobody is going to use it anymore) and `_gd_ptr` field is simply ignored
+    # during garbage collection.
 
-    # 3) Finally clear reference on the language instance Python bindings
+    # 2) Finally clear reference on the language instance Python bindings
 
     _python_resource_format_saver = None
 

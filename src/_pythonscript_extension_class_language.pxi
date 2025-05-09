@@ -167,7 +167,8 @@ cdef class PythonScriptLanguage:
     # godot_extension: method(virtual=True)
     cdef void _frame(self):
         # TODO
-        spy_log("CALLED PythonScriptLanguage::_frame")
+        # spy_log("CALLED PythonScriptLanguage::_frame")
+        pass
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_array_t _get_built_in_templates(self, gd_string_name_t object):

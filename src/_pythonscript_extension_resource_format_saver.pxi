@@ -32,32 +32,39 @@ cdef class PythonResourceFormatSaver:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_packed_string_array_t _get_recognized_extensions(self, gd_object_t resource):
+        # TODO
         # `resource` is an instance of `Resource`
+
         spy_log("CALLED PythonResourceFormatSaver::_get_recognized_extensions")
-        pass
+        cdef gd_packed_string_array_t extensions = gd_packed_string_array_new()
+        # cdef gd_string_t extension
+
+        # for py_extension in RESOURCE_EXTENSIONS:
+        #     extension = gd_string_from_unchecked_pystr(py_extension)
+        #     gd_packed_string_array_append(&extensions, &extension)
+        #     gd_string_del(&extension)
+
+        return extensions
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _recognize(self, gd_object_t resource):
+        # TODO
+
         # `resource` is an instance of `Resource`
         spy_log("CALLED PythonResourceFormatSaver::_recognize")
-        pass
 
-    # godot_extension: method(virtual=True, const=True)
-    cdef gd_bool_t _recognize_path(self, gd_object_t resource, gd_string_t path):
-        # `resource` is an instance of `Resource`
-        spy_log("CALLED PythonResourceFormatSaver::_recognize_path")
-        gd_string_del(&path)
-        pass
+        return False
+
+    # Don't overload `_recognize_path()` to mimic GDScript
 
     # godot_extension: method(virtual=True)
     cdef gd_int_t _save(self, gd_object_t resource, gd_string_t path, gd_int_t flags):
+        # TODO
+
         # `resource` is an instance of `Resource`
         spy_log("CALLED PythonResourceFormatSaver::_save")
         gd_string_del(&path)
+
         return Error.ERR_UNAVAILABLE
 
-    # godot_extension: method(virtual=True)
-    cdef gd_int_t _set_uid(self, gd_string_t path, gd_int_t uid):
-        spy_log("CALLED PythonResourceFormatSaver::_set_uid")
-        gd_string_del(&path)
-        return Error.ERR_UNAVAILABLE
+    # Don't overload `_set_uid()` to mimic GDScript
