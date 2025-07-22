@@ -52,8 +52,9 @@ cdef class PythonScriptLanguage:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_string_t _auto_indent_code(self, gd_string_t code, gd_int_t from_line, gd_int_t to_line):
-        # TODO
         spy_log("CALLED PythonScriptLanguage::_auto_indent_code")
+        # For now, just return the code as-is since proper Python auto-indentation
+        # would require a full Python parser. This could be enhanced later.
         return code
 
     # godot_extension: method(virtual=True, const=True)
@@ -63,9 +64,8 @@ cdef class PythonScriptLanguage:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _can_make_function(self):
-        # TODO
         spy_log("CALLED PythonScriptLanguage::_can_make_function")
-        return False
+        return True
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_dictionary_t _complete_code(self, gd_string_t code, gd_string_t path, gd_object_t owner):
@@ -79,8 +79,9 @@ cdef class PythonScriptLanguage:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_object_t _create_script(self):
-        # TODO
         spy_log("CALLED PythonScriptLanguage::_create_script")
+        cdef PythonScript script = PythonScript()
+        return script._gd_ptr
 
     # godot_extension: method(virtual=True)
     cdef gd_array_t _debug_get_current_stack_info(self):
@@ -142,27 +143,39 @@ cdef class PythonScriptLanguage:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_string_t _debug_get_stack_level_source(self, gd_int_t level):
-        # TODO
         spy_log("CALLED PythonScriptLanguage::_debug_get_stack_level_source")
+        return gd_string_from_pybytes(b"")
 
     # godot_extension: method(virtual=True)
     cdef gd_string_t _debug_parse_stack_level_expression(self, gd_int_t level, gd_string_t expression, gd_int_t max_subitems, gd_int_t max_depth):
-        # TODO
         spy_log("CALLED PythonScriptLanguage::_debug_parse_stack_level_expression")
         gd_string_del(&expression)
-        gd_string_from_pybytes(b"")
+        return gd_string_from_pybytes(b"")
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_int_t _find_function(self, gd_string_t function, gd_string_t code):
-        # TODO
         spy_log("CALLED PythonScriptLanguage::_find_function")
+        cdef object py_function = gd_string_to_pystr(&function)
+        cdef object py_code = gd_string_to_pystr(&code)
         gd_string_del(&function)
+        gd_string_del(&code)
+
+        # Simple search for function definition
+        try:
+            lines = py_code.split('\n')
+            for i, line in enumerate(lines):
+                if line.strip().startswith(f'def {py_function}('):
+                    return i
+        except:
+            pass
+
         return -1
 
     # godot_extension: method(virtual=True)
     cdef void _finish(self):
-        # TODO
         spy_log("CALLED PythonScriptLanguage::_finish")
+        # Clean up any Python script language resources
+        # This is where we could clean up global Python environment
 
     # godot_extension: method(virtual=True)
     cdef void _frame(self):
@@ -336,8 +349,9 @@ cdef class PythonScriptLanguage:
 
     # godot_extension: method(virtual=True)
     cdef void _init(self):
-        # TODO
         spy_log("CALLED PythonScriptLanguage::_init")
+        # Initialize the Python script language
+        # This is where we could set up any global Python environment needed
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _is_control_flow_keyword(self, gd_string_t keyword):
@@ -377,20 +391,58 @@ cdef class PythonScriptLanguage:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_string_t _make_function(self, gd_string_t class_name, gd_string_t function_name, gd_packed_string_array_t function_args):
-        # TODO
         spy_log("CALLED PythonScriptLanguage::_make_function")
+        cdef object py_class_name = gd_string_to_pystr(&class_name)
+        cdef object py_function_name = gd_string_to_pystr(&function_name)
         gd_string_del(&class_name)
         gd_string_del(&function_name)
+
+        # Convert function arguments
+        cdef object args = []
+        cdef gd_int_t arg_count = gd_packed_string_array_size(&function_args)
+        cdef gd_string_t arg_str
+        cdef gd_int_t i
+        for i in range(arg_count):
+            arg_str = gd_packed_string_array_indexed_getter(&function_args, i)
+            args.append(gd_string_to_pystr(&arg_str))
+            gd_string_del(&arg_str)
         gd_packed_string_array_del(&function_args)
-        return gd_string_from_pybytes(b"")
+
+        # Create function signature
+        cdef object arg_list = ', '.join(['self'] + args) if args else 'self'
+        cdef object function_template = f"\ndef {py_function_name}({arg_list}):\n    pass\n"
+
+        return gd_string_from_unchecked_pystr(function_template)
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_object_t _make_template(self, gd_string_t template, gd_string_t class_name, gd_string_t base_class_name):
-        # TODO
         spy_log("CALLED PythonScriptLanguage::_make_template")
+        cdef object py_template = gd_string_to_pystr(&template)
+        cdef object py_class_name = gd_string_to_pystr(&class_name)
+        cdef object py_base_class_name = gd_string_to_pystr(&base_class_name)
         gd_string_del(&template)
         gd_string_del(&class_name)
         gd_string_del(&base_class_name)
+
+        # Create a basic Python script template
+        cdef object source_template = f'''extends {py_base_class_name}
+# {py_class_name}
+
+class {py_class_name}({py_base_class_name}):
+    def _init(self):
+        pass
+
+    def _ready(self):
+        pass
+'''
+
+        # Create a new PythonScript with the template
+        cdef PythonScript script = PythonScript()
+        cdef gd_string_t gd_source = gd_string_from_unchecked_pystr(source_template)
+        script._set_source_code(gd_source)
+        gd_string_del(&gd_source)
+
+        return script._gd_ptr
 
     # godot_extension: method(virtual=True)
     cdef gd_int_t _open_in_external_editor(self, gd_object_t script, gd_int_t line, gd_int_t column):
