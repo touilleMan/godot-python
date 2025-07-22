@@ -35,11 +35,22 @@ cdef class PythonResourceFormatLoader:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_packed_string_array_t _get_dependencies(self, gd_string_t path, gd_bool_t add_types):
-        # TODO
-        cdef gd_packed_string_array_t dependencies = gd_packed_string_array_new()
-
         spy_log("CALLED PythonResourceFormatLoader::_get_dependencies")
+        cdef gd_packed_string_array_t dependencies = gd_packed_string_array_new()
+        cdef object py_path = gd_string_to_pystr(&path)
         gd_string_del(&path)
+
+        # For Python scripts, we could analyze imports to find dependencies
+        # For now, return empty dependencies as most Python scripts don't have
+        # Godot resource dependencies that need tracking
+        try:
+            with open(py_path, 'r', encoding='utf-8') as f:
+                source = f.read()
+            # TODO: Parse imports and find Godot resource dependencies
+            # This would involve parsing "from godot import" statements and
+            # potentially resource load calls like ResourceLoader.load()
+        except:
+            pass  # File doesn't exist or can't be read
 
         return dependencies
 
@@ -96,12 +107,43 @@ cdef class PythonResourceFormatLoader:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_variant_t _load(self, gd_string_t path, gd_string_t original_path, gd_bool_t use_sub_threads, gd_int_t cache_mode):
-        # TODO
-        cdef gd_variant_t ret = gd_variant_new()
-
         spy_log("CALLED PythonResourceFormatLoader::_load")
+        cdef gd_variant_t ret = gd_variant_new()
+        cdef object py_path = gd_string_to_pystr(&path)
+        cdef object py_original_path = gd_string_to_pystr(&original_path)
         gd_string_del(&path)
         gd_string_del(&original_path)
+
+        # Declare variables
+        cdef PythonScript script
+        cdef gd_string_t gd_source
+        cdef gd_string_t gd_script_path
+        cdef object source_code
+
+        # Create a new PythonScript instance
+        script = PythonScript()
+
+        # Try to load the source code from file
+        try:
+            with open(py_original_path, 'r', encoding='utf-8') as f:
+                source_code = f.read()
+
+            # Set the source code on the script
+            gd_source = gd_string_from_unchecked_pystr(source_code)
+            script._set_source_code(gd_source)
+            gd_string_del(&gd_source)
+
+            # Set the script path
+            gd_script_path = gd_string_from_unchecked_pystr(py_original_path)
+            script._set_path(gd_script_path)
+            gd_string_del(&gd_script_path)
+
+            # Return the script as a variant
+            ret = gd_object_into_variant(script._gd_ptr)
+
+        except Exception as e:
+            # If file loading fails, return the nil variant (already initialized)
+            spy_log(f"Failed to load Python script {py_original_path}: {e}")
 
         return ret
 
