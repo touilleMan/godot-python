@@ -278,12 +278,15 @@ TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
 
 
 def ensure_types_db_consistency():
+    from .builtins import BuiltinTypeSpec
+
     # Now check the assumption we need on transparent builtins (see
     # `TransparentBuiltinTypeSpec` definition).
     # We had to wait until all the builtins has been parsed to do the check
     # given a transparent builtin can be made of other builtins.
     for t in TYPES_DB.values():
         if t.is_transparent_builtin:
+            assert isinstance(t, BuiltinTypeSpec)
             members = t.c_struct_members
             assert members
 

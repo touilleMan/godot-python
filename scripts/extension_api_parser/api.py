@@ -289,6 +289,7 @@ def order_classes(classes: List[ClassTypeSpec]) -> List[ClassTypeSpec]:
                 for klass in classes
                 if klass.inherits is not None and klass.inherits.type_name not in ordered_classes
             )
+            assert bad_class.inherits is not None
             raise RuntimeError(
                 f"Class `{bad_class.original_name}` inherits of unknown class `{bad_class.inherits.type_name}`"
             )
@@ -341,6 +342,28 @@ def parse_extension_api_json(
     classes = order_classes(
         [parse_class(x, object_size=api_json["object_size"]) for x in api_json["classes"]]
     )
+    if filter_classes:
+        # Replace any class that have been filtered out by the root `Object` one
+        object_type_in_use = TypeInUse.parse("Object")
+        for klass in classes:
+            supported = {*filter_classes, "Nil"}
+
+            if klass.inherits is not None and klass.inherits.type_name not in supported:
+                klass.inherits = object_type_in_use
+
+            for method in klass.methods:
+                if method.return_type.type_name not in supported:
+                    method.return_type = object_type_in_use
+                for arg in method.arguments:
+                    if arg.type.type_name not in supported:
+                        arg.type = object_type_in_use
+                    # Note in theory we should also change `arg.default_value.type`,
+                    # however in practice it is only composed of buildtins types
+
+            for prop in klass.properties:
+                if prop.type.type_name not in supported:
+                    prop.type = object_type_in_use
+
     for class_type in classes:
         TYPES_DB_REGISTER_TYPE(class_type.original_name, class_type)
         _register_enums(class_type.enums, parent_id=class_type.original_name)

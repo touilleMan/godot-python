@@ -173,4 +173,4 @@ class ValueInUse:
     @property
     def reusable(self) -> bool:
         # This is for RID, Callable and Signal (e.g. `RID()`)
-        self.type.type_name.endswith("()")
+        return self.type.type_name.endswith("()")
