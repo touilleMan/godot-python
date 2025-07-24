@@ -77,6 +77,10 @@ def install_distrib(build_dir: Path, distrib_subdir: str) -> Path:
         elif "macos" in platform_dir.name.lower():
             python_path = platform_dir / "bin/python3"
             break
+    else:
+        raise RuntimeError(
+            f"Cannot find Python binary in {distrib_workdir / 'addons/pythonscript'}"
+        )
 
     # We also have to install Cython to compile the projects
     if (
@@ -157,7 +161,11 @@ def create_test_workdir(
 
 
 def run_test(
-    test_name: str, test_workdir: Path, godot_binary: Path, extra_args: Sequence[str]
+    test_name: str,
+    test_workdir: Path,
+    godot_binary: Path,
+    extra_args: Sequence[str],
+    gdb: str | None,
 ) -> None:
     print(
         f"{YELLOW}{test_name}: Running test in workdir {test_workdir}{NO_COLOR}",
@@ -169,6 +177,8 @@ def run_test(
         str(test_workdir.resolve()),
         *extra_args,
     ]
+    if gdb is not None:
+        cmd = [gdb, "--args", *cmd]
     print(" ".join(cmd), flush=True)
     res = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
@@ -177,6 +187,7 @@ def run_test(
         try:
             res.wait(timeout=0.1)
             # Subprocess is done, but we still have one more stdin/stderr pump to do
+            assert res.stdout is not None
             buff = res.stdout.read()
 
         except subprocess.TimeoutExpired:
@@ -290,6 +301,13 @@ if __name__ == "__main__":
         type=Path,
         help="Copy GDExtension API folder from there instead of symlink the build one (useful if you have issues on Windows)",
     )
+    parser.add_argument(
+        "--gdb",
+        nargs="?",
+        const="gdb",
+        default=None,
+        help="Use a debugger (GDB by default) to run the tests",
+    )
 
     try:
         options_separator = sys.argv.index("--")
@@ -329,7 +347,8 @@ if __name__ == "__main__":
                 if not args.keep_test_dir:
                     temp_dir.cleanup()
                 else:
-                    temp_dir._finalizer.detach()  # Avoid cleanup when temp_dir is garbage collected
+                    # Avoid cleanup when temp_dir is garbage collected
+                    temp_dir._finalizer.detach()  # type: ignore
 
     # On the other hand we use a temporary directory for the test code (given there
     # is not much data, and Godot may write in this directory during the test) with
@@ -342,4 +361,4 @@ if __name__ == "__main__":
                 test_workdir=test_workdir,
                 custom_gdextension_api=args.custom_gdextension_api,
             )
-            run_test(test_dir.name, test_workdir, godot_binary_path, godot_extra_args)
+            run_test(test_dir.name, test_workdir, godot_binary_path, godot_extra_args, args.gdb)
