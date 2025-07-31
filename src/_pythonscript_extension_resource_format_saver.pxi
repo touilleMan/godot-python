@@ -34,7 +34,7 @@ cdef class PythonResourceFormatSaver:
     cdef gd_packed_string_array_t _get_recognized_extensions(self, gd_object_t resource):
         # `resource` is an instance of `Resource`
 
-        spy_log("CALLED PythonResourceFormatSaver::_get_recognized_extensions")
+        spy_log("CALLED PythonResourceFormatSaver::_get_recognized_extensions(resource=<resource>)")
         cdef gd_packed_string_array_t extensions = gd_packed_string_array_new()
         cdef gd_string_t extension
 
@@ -48,7 +48,8 @@ cdef class PythonResourceFormatSaver:
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _recognize(self, gd_object_t resource):
         # `resource` is an instance of `Resource`
-        spy_log("CALLED PythonResourceFormatSaver::_recognize")
+
+        spy_log("CALLED PythonResourceFormatSaver::_recognize(resource=<resource>)")
 
         # Get the class name of the resource
         cdef gd_string_name_t class_name
@@ -83,11 +84,12 @@ cdef class PythonResourceFormatSaver:
     # godot_extension: method(virtual=True)
     cdef gd_int_t _save(self, gd_object_t resource, gd_string_t path, gd_int_t flags):
         # `resource` is an instance of `Resource`
-        spy_log("CALLED PythonResourceFormatSaver::_save")
 
         # Convert the path to a Python string
         cdef object py_path = gd_string_to_pystr(&path)
         gd_string_del(&path)
+
+        spy_log("CALLED PythonResourceFormatSaver::_save(resource=<resource>, path={py_path!r}, flags={flags})")
 
         # For now, just write a simple placeholder file
         # TODO: Once PythonScript._get_source_code() is properly implemented,
