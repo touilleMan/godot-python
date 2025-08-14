@@ -8,7 +8,7 @@ cdef gd_string_name_t gdname_pythonscriptlanguage
 debug_spy = True
 cdef spy_log(msg: str):
     if debug_spy:
-        print(msg, flush=True)
+        print(f"[DEBUG] {msg}", flush=True)
 
 
 # godot_extension: class(parent="ScriptLanguageExtension")

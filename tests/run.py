@@ -216,7 +216,17 @@ def run_test(
 
     else:
         expected_lines = list(reversed(expected_output.splitlines()))
-        actual_lines = list(reversed([l.decode() for l in total_output.splitlines()]))
+        actual_lines = list(
+            reversed(
+                [
+                    ld
+                    for l in total_output.splitlines()
+                    # Ignore lines starting with `[DEBUG]`, this is useful to add
+                    # temporary prints when debugging.
+                    if not (ld := l.decode()).startswith("[DEBUG]")
+                ]
+            )
+        )
         msg = []
         mismatch = False
         while expected_lines or actual_lines:

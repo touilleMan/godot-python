@@ -363,7 +363,7 @@ cdef void _register_pythonscript_resource_format_loader():
     if _python_resource_format_loader is not None:
         return
 
-    print("_register_pythonscript_resource_format_loader", flush=True)
+    print("[DEBUG] _register_pythonscript_resource_format_loader", flush=True)
 
     # Create the instance of `PythonResourceFormatLoader` class...
 
@@ -408,7 +408,7 @@ cdef void _unregister_pythonscript_resource_format_loader():
     if _python_resource_format_loader is None:
         return
 
-    print("_unregister_pythonscript_resource_format_loader", flush=True)
+    print("[DEBUG] _unregister_pythonscript_resource_format_loader", flush=True)
 
     # 1) Unregister from Godot
 
@@ -460,7 +460,7 @@ cdef void _register_pythonscript_resource_format_saver():
     if _python_resource_format_saver is not None:
         return
 
-    print("_register_pythonscript_resource_format_saver", flush=True)
+    print("[DEBUG] _register_pythonscript_resource_format_saver", flush=True)
 
     # Create the instance of `PythonResourceFormatSaver` class...
 
@@ -505,7 +505,7 @@ cdef void _unregister_pythonscript_resource_format_saver():
     if _python_resource_format_saver is None:
         return
 
-    print("_unregister_pythonscript_resource_format_saver", flush=True)
+    print("[DEBUG] _unregister_pythonscript_resource_format_saver", flush=True)
 
     # 1) Unregister from Godot
 
