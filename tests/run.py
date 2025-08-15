@@ -20,6 +20,7 @@ RED = "\033[0;31m"
 GREEN = "\033[0;32m"
 YELLOW = "\033[0;33m"
 NO_COLOR = "\033[0m"
+ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
 
 def fetch_godot_binary_if_needed(build_dir: Path, godot_version_hint: str) -> Path:
@@ -238,6 +239,10 @@ def run_test(
                 actual_line = actual_lines.pop()
             except IndexError:
                 actual_line = None
+
+            # Remove color codes to simplify diff
+            if actual_line is not None:
+                actual_line = ANSI_ESCAPE.sub("", actual_line)
 
             assert expected_line is not None or actual_line is not None
             if expected_line is not None and actual_line is None:
