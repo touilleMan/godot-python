@@ -1,25 +1,34 @@
 repos:
--   repo: https://github.com/ambv/black
-    rev: 25.1.0
-    hooks:
-    - id: black
-      # Ignore templates and 3rd party stuff
-      exclude: (^src/.*\.tmpl\.|^tests/_lib_vendors|^(tests|examples)/[^/]*/lib)
-      args:
-          - "--line-length=100"
-      language_version: python3
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.2.3
     hooks:
+
     - id: mixed-line-ending
-      exclude: (^tests/_lib_vendors|^(tests|examples)/lib)  # Ignore 3rd party stuff
+
     - id: trailing-whitespace
-      exclude: (expected.output|^tests/_lib_vendors|^(tests|examples)/lib)  # Ignore 3rd party stuff
+      exclude: ^tests/*/expected.output
+
 -   repo: local
     hooks:
+
     - id: git_actions_pin
       name: "Gitub actions pin 3rd party repos"
       entry: python ./misc/pin_github_actions.py check
       language: python
       language_version: python3
       files: ^.github/
+
+    - id: lint
+      name: lint (using `uvx ruff check`)
+      entry: uvx ruff check --fix
+      require_serial: true
+      language: system
+      types_or: [python, pyi]
+
+    - id: format
+      name: format (using `uvx ruff format`)
+      entry: uvx ruff format
+      require_serial: true
+      language: system
+      types_or: [python, pyi]
+      args: [--config=pyproject.toml]
