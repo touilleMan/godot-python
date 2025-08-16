@@ -43,9 +43,7 @@ def _collect_tests(path: Path, filter: re.Pattern | None) -> list[tuple[str, Cal
             if not callable(fn) or not name.startswith("test_"):
                 continue
 
-            parametrized: list[Parametrize] | None = getattr(
-                fn, "_clodo_parametrized", None
-            )
+            parametrized: list[Parametrize] | None = getattr(fn, "_clodo_parametrized", None)
             if parametrized:
                 all_parametrizes: list[Parametrize] = parametrized
                 for all_parametrizes_values_product in itertools.product(
@@ -63,9 +61,7 @@ def _collect_tests(path: Path, filter: re.Pattern | None) -> list[tuple[str, Cal
                         ):
                             if isinstance(parametrize.param, list):
                                 assert len(parametrize.param) == len(parametrize_value)
-                                for param, value in zip(
-                                    parametrize.param, parametrize_value
-                                ):
+                                for param, value in zip(parametrize.param, parametrize_value):
                                     params[param] = value
                             else:
                                 params[parametrize.param] = parametrize_value
@@ -78,7 +74,9 @@ def _collect_tests(path: Path, filter: re.Pattern | None) -> list[tuple[str, Cal
                         )
                     )
 
-                    test_path = f"{Path(module.__file__).relative_to(path)}::{name}[{params_display}]"
+                    test_path = (
+                        f"{Path(module.__file__).relative_to(path)}::{name}[{params_display}]"
+                    )
                     if filter and not filter.match(test_path):
                         continue
                     tests.append(
@@ -102,9 +100,7 @@ def _collect_tests(path: Path, filter: re.Pattern | None) -> list[tuple[str, Cal
     return tests
 
 
-def run_tests(
-    path: Path, filter: re.Pattern | None, stop_on_failure: bool, quiet: bool
-) -> bool:
+def run_tests(path: Path, filter: re.Pattern | None, stop_on_failure: bool, quiet: bool) -> bool:
     tests = _collect_tests(path, filter)
 
     tests_success = 0
@@ -113,6 +109,10 @@ def run_tests(
             print(test_full_name, end="", flush=False)
         try:
             test_fn()
+        except SkipTest:
+            tests_success += 1
+            if not quiet:
+                print(f"{YELLOW} Skipped :/{NO_COLOR}", flush=True)
         except BaseException as exc:
             if quiet:
                 print(test_full_name, end="", flush=False)
@@ -179,3 +179,24 @@ def parametrize[F: Callable, P: Any | tuple[Any, ...]](
         return fn
 
     return partial(_wrapper, cooked_param, values, ids)
+
+
+class SkipTest(BaseException):
+    def __init__(self, reason: str):
+        self.reason = reason
+
+
+def skip(reason: str) -> None:
+    raise SkipTest(reason=reason)
+
+
+def assert_approx_eq(a: float, b: float, max_relative_diff: float = 0.001):
+    diff = abs(a - b)
+    if diff == 0:
+        return
+    base = a if a != 0 else b
+    relative_diff = diff / base
+    if relative_diff > max_relative_diff:
+        raise AssertionError(
+            f"{a} and {b} are too far appart ({relative_diff * 100:.2f}%, max allowed is {max_relative_diff * 100:.2f}%)"
+        )
