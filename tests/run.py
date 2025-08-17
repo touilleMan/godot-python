@@ -221,10 +221,10 @@ def run_test(
             reversed(
                 [
                     ld
-                    for l in total_output.splitlines()
+                    for line in total_output.splitlines()
                     # Ignore lines starting with `[DEBUG]`, this is useful to add
                     # temporary prints when debugging.
-                    if not (ld := l.decode()).startswith("[DEBUG]")
+                    if not (ld := line.decode()).startswith("[DEBUG]")
                 ]
             )
         )
@@ -368,7 +368,7 @@ if __name__ == "__main__":
     # On the other hand we use a temporary directory for the test code (given there
     # is not much data, and Godot may write in this directory during the test) with
     # symlinks on the distrib
-    for test_dir in tests_dirs:
+    for test_dir in sorted(tests_dirs):
         with test_workdir_factory() as test_workdir:
             create_test_workdir(
                 test_dir=test_dir,
