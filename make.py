@@ -110,9 +110,9 @@ class Cmd(Op):
 COMMANDS: dict[tuple[str, ...], Union[Op, tuple[Op, ...]]] = {
     ("init", "i"): (
         Cmd(f"uv run meson setup {BUILD_DIR}"),
-        Cmd(f"uv run meson compile -C {BUILD_DIR}"),
+        Cmd(f"uv run meson compile --verbose -C {BUILD_DIR}"),
     ),
-    ("rebuild", "r"): (Cmd(f"uv run meson compile -C {BUILD_DIR}"),),
+    ("rebuild", "r"): (Cmd(f"uv run meson compile --verbose -C {BUILD_DIR}"),),
     ("tests", "t"): (
         Cmd(f"uv run python tests/run.py --build-dir={BUILD_DIR} {{extra_cmd_args}} -- --headless"),
     ),
