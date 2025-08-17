@@ -51,11 +51,7 @@ IntoGDAny
 #                              Global constants                              #
 ##############################################################################
 
-
-{% for builtin in api.global_constants %}
-{{ builtin.name }}: {{ builtin.py_type }}
-{% endfor %}
-
+{# Nothing here: `extension_api.json` doesn't define global constants yet #}
 
 ##############################################################################
 #                                Global enums                                #
@@ -63,7 +59,7 @@ IntoGDAny
 {% for enum in api.global_enums %}
 
 
-class {{ enum.original_name }}(Enum):
+class {{ enum.py_type }}(Enum):
 {%   for key in enum.values.keys() %}
     {{ key }}: int
 {%   endfor %}
