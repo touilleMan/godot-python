@@ -1,4 +1,3 @@
-from typing import Dict, Iterable, Optional
 from dataclasses import dataclass
 
 
@@ -88,7 +87,7 @@ class EnumTypeSpec(ScalarTypeSpec):
     """
 
     is_bitfield: bool
-    values: Dict[str, int]
+    values: dict[str, int]
 
     def __init__(self, **kwargs):
         self.is_bitfield = kwargs.pop("is_bitfield")
@@ -165,7 +164,7 @@ def TYPES_DB_REGISTER_TYPE(id: str, type_spec: "TypeSpec") -> None:
 
 
 # Will be completed when calling `parse_extension_api_json`
-TYPES_DB: Dict[TypeDBEntry, "TypeSpec"] = {
+TYPES_DB: dict[TypeDBEntry, "TypeSpec"] = {
     "Nil": NilTypeSpec(),
     "bool": ScalarTypeSpec(
         size=1,

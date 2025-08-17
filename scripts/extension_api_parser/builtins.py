@@ -1,4 +1,5 @@
-from typing import Dict, Optional, List, Tuple
+# ruff: noqa: F403,F405
+
 from dataclasses import dataclass
 
 from .utils import *
@@ -51,7 +52,7 @@ class BuiltinMethodArgumentSpec:
     name: str
     original_name: str
     type: TypeInUse
-    default_value: Optional[ValueInUse]
+    default_value: ValueInUse | None
 
     @classmethod
     def parse(cls, item: dict) -> "BuiltinMethodArgumentSpec":
@@ -72,7 +73,7 @@ class BuiltinMethodArgumentSpec:
 @dataclass
 class BuiltinConstructorSpec:
     index: int
-    arguments: List[BuiltinMethodArgumentSpec]
+    arguments: list[BuiltinMethodArgumentSpec]
     base_name: str
 
     @property
@@ -102,7 +103,7 @@ class BuiltinOperatorSpec:
     c_name: str
     original_name: str
     variant_operator_name: str
-    right_type: Optional[TypeInUse]
+    right_type: TypeInUse | None
     return_type: TypeInUse
 
     @classmethod
@@ -132,7 +133,7 @@ class BuiltinOperatorSpec:
 class BuiltinMemberSpec:
     name: str
     original_name: str
-    offset: Optional[int]
+    offset: int | None
     type: TypeInUse
 
     @property
@@ -176,12 +177,12 @@ class BuiltinMethodSpec:
     name: str
     c_name: str
     original_name: str
-    return_type: Optional[TypeInUse]
+    return_type: TypeInUse | None
     is_vararg: bool
     is_const: bool
     is_static: bool
     hash: int
-    arguments: List[BuiltinMethodArgumentSpec]
+    arguments: list[BuiltinMethodArgumentSpec]
 
     @property
     def contains_unsuported_types(self) -> bool:
@@ -232,14 +233,14 @@ class BuiltinTypeSpec(TypeSpec):
     """
 
     c_name_prefix: str
-    indexing_return_type: Optional[TypeInUse]
+    indexing_return_type: TypeInUse | None
     is_keyed: bool
-    constructors: List["BuiltinConstructorSpec"]
-    operators: List["BuiltinOperatorSpec"]
-    methods: List["BuiltinMethodSpec"]
-    members: List["BuiltinMemberSpec"]
-    constants: List["BuiltinConstantSpec"]
-    enums: List[EnumTypeSpec]
+    constructors: list["BuiltinConstructorSpec"]
+    operators: list["BuiltinOperatorSpec"]
+    methods: list["BuiltinMethodSpec"]
+    members: list["BuiltinMemberSpec"]
+    constants: list["BuiltinConstantSpec"]
+    enums: list[EnumTypeSpec]
 
     @property
     def is_builtin(self) -> bool:
@@ -298,7 +299,7 @@ class BuiltinTypeSpec(TypeSpec):
         return next(c.index for c in self.constructors if len(c.arguments) == 0)
 
     @property
-    def c_struct_members(self) -> List["BuiltinMemberSpec"]:
+    def c_struct_members(self) -> list["BuiltinMemberSpec"]:
         return [m for m in self.members if m.offset is not None]
 
 
@@ -453,8 +454,8 @@ def _parse_builtin(spec: dict) -> BuiltinTypeSpec:
         )
 
 
-def parse_builtins_ignore_scalars_and_nil(builtin_classes: List[dict]) -> List[BuiltinTypeSpec]:
-    builtins: List[BuiltinTypeSpec] = []
+def parse_builtins_ignore_scalars_and_nil(builtin_classes: list[dict]) -> list[BuiltinTypeSpec]:
+    builtins: list[BuiltinTypeSpec] = []
     for spec in builtin_classes:
         if spec["name"] in ("Nil", "bool", "int", "float"):
             continue

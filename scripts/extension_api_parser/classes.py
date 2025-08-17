@@ -1,4 +1,5 @@
-from typing import List, Dict, Optional
+# ruff: noqa: F403,F405
+
 from dataclasses import dataclass
 
 from .utils import *
@@ -24,7 +25,7 @@ class ClassMethodArgumentSpec:
     name: str
     original_name: str
     type: TypeInUse
-    default_value: Optional[ValueInUse]
+    default_value: ValueInUse | None
 
     @classmethod
     def parse(cls, item: dict) -> "ClassMethodArgumentSpec":
@@ -59,10 +60,10 @@ class ClassMethodSpec:
     is_required: bool
 
     is_property_accessor: bool
-    hash: Optional[int]
-    hash_compatibility: Optional[int]
+    hash: int | None
+    hash_compatibility: int | None
     return_type: TypeInUse
-    arguments: List[ClassMethodArgumentSpec]
+    arguments: list[ClassMethodArgumentSpec]
 
     @classmethod
     def parse(cls, item: dict) -> "ClassMethodSpec":
@@ -100,7 +101,7 @@ class ClassMethodSpec:
 class ClassSignalSpec:
     original_name: str
     name: str
-    arguments: List[ClassMethodArgumentSpec]
+    arguments: list[ClassMethodArgumentSpec]
 
     @classmethod
     def parse(cls, item: dict) -> "ClassSignalSpec":
@@ -120,8 +121,8 @@ class ClassPropertySpec:
     name: str
     type: TypeInUse
     getter: str
-    setter: Optional[str]
-    index: Optional[int]
+    setter: str | None
+    index: int | None
 
     @classmethod
     def parse(cls, item: dict) -> "ClassPropertySpec":
@@ -152,13 +153,13 @@ class ClassTypeSpec(TypeSpec):
     c_name_prefix: str
     is_refcounted: bool
     is_instantiable: bool
-    inherits: Optional[TypeInUse]
+    inherits: TypeInUse | None
     api_type: str
-    enums: List[EnumTypeSpec]
-    methods: List[ClassMethodSpec]
-    signals: List[ClassSignalSpec]
-    properties: List[ClassPropertySpec]
-    constants: Dict[str, int]
+    enums: list[EnumTypeSpec]
+    methods: list[ClassMethodSpec]
+    signals: list[ClassSignalSpec]
+    properties: list[ClassPropertySpec]
+    constants: dict[str, int]
 
     @property
     def is_object(self) -> bool:

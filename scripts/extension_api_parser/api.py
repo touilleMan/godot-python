@@ -1,9 +1,11 @@
-from typing import List, Dict, Optional, Set, Union
+# ruff: noqa: F403,F405
+
 from collections import OrderedDict
 from dataclasses import dataclass, replace
 from pathlib import Path
 import json
 from enum import Enum
+from typing import Iterable
 
 from .type_spec import *
 from .builtins import *
@@ -28,6 +30,8 @@ class GlobalConstantSpec:
 
 def parse_global_enum(spec: dict) -> EnumTypeSpec:
     assert spec.keys() == {"name", "is_bitfield", "values"}, spec.keys()
+    # Since `Variant` is not defined in `extension_api.json`, it's enums
+    # are defined among the global ones (e.g. `Variant.Type`)...
     cooked_name = "".join(spec["name"].split("."))
     return EnumTypeSpec(
         original_name=spec["name"],
@@ -43,7 +47,7 @@ class UtilityFunctionArgumentSpec:
     name: str
     original_name: str
     type: TypeInUse
-    default_value: Optional[ValueInUse]
+    default_value: ValueInUse | None
 
     @classmethod
     def parse(cls, item: dict) -> "UtilityFunctionArgumentSpec":
@@ -69,7 +73,7 @@ class UtilityFunctionSpec:
     category: str
     is_vararg: bool
     hash: int
-    arguments: List[UtilityFunctionArgumentSpec]
+    arguments: list[UtilityFunctionArgumentSpec]
 
     @classmethod
     def parse(cls, item: dict) -> "UtilityFunctionSpec":
@@ -109,7 +113,7 @@ class SingletonSpec:
 class NativeStructureSpec(TypeSpec):
     original_name: str
     # Format is basically a dump of the C struct content, so don't try to be clever by parsing it
-    fields: Dict[str, TypeInUse]
+    fields: dict[str, TypeInUse]
 
     @property
     def is_native_structure(self) -> bool:
@@ -176,13 +180,13 @@ class ExtensionApi:
     version_build: str  # e.g. "official"
     version_full_name: str  # e.g. "Godot Engine v4.0.alpha13.official"
 
-    classes: List[ClassTypeSpec]
-    builtins: List[BuiltinTypeSpec]
-    global_constants: List[GlobalConstantSpec]
-    global_enums: List[EnumTypeSpec]
-    utility_functions: List[UtilityFunctionSpec]
-    singletons: List[SingletonSpec]
-    native_structures: List[NativeStructureSpec]
+    classes: list[ClassTypeSpec]
+    builtins: list[BuiltinTypeSpec]
+    global_constants: list[GlobalConstantSpec]
+    global_enums: list[EnumTypeSpec]
+    utility_functions: list[UtilityFunctionSpec]
+    singletons: list[SingletonSpec]
+    native_structures: list[NativeStructureSpec]
 
     # Expose scalars, nil and variant
 
@@ -212,7 +216,7 @@ class ExtensionApi:
             t for t in TYPES_DB.values() if isinstance(t, BuiltinTypeSpec) and t.is_packed_array
         ]
 
-    def get_class_meth_hash(self, classname: str, methname: str) -> Optional[int]:
+    def get_class_meth_hash(self, classname: str, methname: str) -> int | None:
         klass = next(c for c in self.classes if c.original_name == classname)
         meth = next(m for m in klass.methods if m.original_name == methname)
         return meth.hash
@@ -270,11 +274,11 @@ def merge_builtins_size_info(api_json: dict, build_config: BuildConfig) -> None:
     api_json["object_size"] = builtin_class_sizes["Object"]
 
 
-def order_classes(classes: List[ClassTypeSpec]) -> List[ClassTypeSpec]:
+def order_classes(classes: list[ClassTypeSpec]) -> list[ClassTypeSpec]:
     # Order classes by inheritance dependency needs
-    ordered_classes: OrderedDict[
-        str, ClassTypeSpec
-    ] = OrderedDict()  # Makes it explicit we need ordering here !
+    ordered_classes: OrderedDict[str, ClassTypeSpec] = (
+        OrderedDict()
+    )  # Makes it explicit we need ordering here !
     ordered_count = 0
 
     while len(classes) != len(ordered_classes):
@@ -299,7 +303,7 @@ def order_classes(classes: List[ClassTypeSpec]) -> List[ClassTypeSpec]:
 
 
 def parse_extension_api_json(
-    path: Path, build_config: BuildConfig, filter_classes: Union[bool, Set[str]]
+    path: Path, build_config: BuildConfig, filter_classes: bool | set[str]
 ) -> ExtensionApi:
     api_json = json.loads(path.read_text(encoding="utf8"))
     assert isinstance(api_json, dict)
@@ -312,13 +316,13 @@ def parse_extension_api_json(
 
     # Unlike int type that is always 8 bytes long, float depends on config
     if build_config in (BuildConfig.DOUBLE_32, BuildConfig.DOUBLE_64):
-        real_type = replace(TYPES_DB[f"meta:float"], original_name="float")
+        real_type = replace(TYPES_DB["meta:float"], original_name="float")
     else:
-        real_type = replace(TYPES_DB[f"meta:double"], original_name="float")
+        real_type = replace(TYPES_DB["meta:double"], original_name="float")
     TYPES_DB_REGISTER_TYPE("float", real_type)
     TYPES_DB_REGISTER_TYPE("meta:real", real_type)
 
-    def _register_enums(enums, parent_id=None):
+    def _register_enums(enums: list[EnumTypeSpec], parent_id: str | None = None):
         for enum_type in enums:
             classifier = "bitfield" if enum_type.is_bitfield else "enum"
             if parent_id:

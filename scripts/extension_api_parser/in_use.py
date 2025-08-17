@@ -1,4 +1,5 @@
-from typing import Optional, Tuple
+# ruff: noqa: F403,F405
+
 from dataclasses import dataclass
 import re
 
@@ -70,7 +71,7 @@ class ValueInUse:
 
     # `None` indicates this should be passed as a NULL pointer in args array
     @property
-    def cy_value(self) -> Optional[str]:
+    def cy_value(self) -> str | None:
         return self.resolve()[1]
 
     @classmethod
@@ -80,7 +81,7 @@ class ValueInUse:
             original_value=value,
         )
 
-    def resolve(self) -> Tuple[str, Optional[str]]:
+    def resolve(self) -> tuple[str, str | None]:
         # Default value field is very messy, so we have to clean it here
         # Non-exhaustive list of default params per type:
         # - String: "" "," " "
