@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 from typing import Iterable
@@ -23,6 +25,8 @@ except IndexError:
 for build_config in build_configs:
     initial_types_db = TYPES_DB.copy()
     print(f"Checking {extension_api_path} with config {build_config.value}")
-    parse_extension_api_json(extension_api_path, build_config, filter_classes=False)
+    parse_extension_api_json(
+        extension_api_path, build_config, filter_builtins=None, filter_classes=False
+    )
     TYPES_DB.clear()
     TYPES_DB.update(initial_types_db)

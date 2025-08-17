@@ -62,7 +62,7 @@ def assert_api_consistency(datacls, api: dict) -> None:
         )
 
 
-def camel_to_snake(name):
+def camel_to_snake(name: str) -> str:
     snake = ""
     for c in name:
         if c in ascii_uppercase and snake and snake[-1] not in ascii_uppercase:

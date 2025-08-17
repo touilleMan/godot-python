@@ -3,3 +3,4 @@ option('gdextension_path', type: 'string', value: '', description: 'Use GDExtens
 option('godot_version', type: 'string', value: '4.4.1', description: 'Version of Godot to generate GDExtension API from')
 option('real_is_double', type: 'boolean', value: false, description: 'Built for Godot with 64bits floating point numbers (i.e. double) in builtins instead of 32bits (i.e. float)')
 option('classes_sample', type: 'boolean', value: false, description: 'Only bind a subset of Godot classes (useful for tests&debug for faster build time)')
+option('builtins_sample', type: 'boolean', value: false, description: 'Only bind a subset of Godot builtins (useful for tests&debug for faster build time)')

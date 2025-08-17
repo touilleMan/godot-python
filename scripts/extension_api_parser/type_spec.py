@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 
@@ -7,7 +9,7 @@ from dataclasses import dataclass
 # - classes
 
 
-@dataclass(frozen=True, repr=False)
+@dataclass(slots=True)
 class TypeSpec:
     size: int
     # Type used within Godot `extension_api.json`
@@ -64,6 +66,7 @@ class TypeSpec:
         return False
 
 
+@dataclass(slots=True)
 class ScalarTypeSpec(TypeSpec):
     """
     Type is a scalar (e.g. int, float) but not nil
@@ -75,11 +78,13 @@ class ScalarTypeSpec(TypeSpec):
 
     def __init__(self, **kwargs):
         assert kwargs.setdefault("is_stack_only", True)
-        super().__init__(
+        TypeSpec.__init__(
+            self,
             **kwargs,
         )
 
 
+@dataclass(slots=True)
 class EnumTypeSpec(ScalarTypeSpec):
     """
     Godot enum (e.g. godot_error, Camera::KeepAspect), note they are always
@@ -92,7 +97,8 @@ class EnumTypeSpec(ScalarTypeSpec):
     def __init__(self, **kwargs):
         self.is_bitfield = kwargs.pop("is_bitfield")
         self.values = kwargs.pop("values")
-        super().__init__(
+        ScalarTypeSpec.__init__(
+            self,
             is_stack_only=True,
             size=4,
             c_type="int",
@@ -101,6 +107,7 @@ class EnumTypeSpec(ScalarTypeSpec):
         )
 
 
+@dataclass(slots=True)
 class NilTypeSpec(TypeSpec):
     """
     `Nil` is a special case, it is only needed for `BuiltinOperatorSpec.right_type`
@@ -112,7 +119,8 @@ class NilTypeSpec(TypeSpec):
     """
 
     def __init__(self):
-        super().__init__(
+        TypeSpec.__init__(
+            self,
             size=0,
             original_name="Nil",
             is_stack_only=True,
@@ -127,12 +135,14 @@ class NilTypeSpec(TypeSpec):
             raise RuntimeError(
                 "Nil type ! Should handle this by hand with a if condition on `<my_type>.is_nil`"
             )
-        return super().__getattribute__(name)
+        return object.__getattribute__(self, name)
 
 
+@dataclass(slots=True)
 class VariantTypeSpec(TypeSpec):
     def __init__(self, size):
-        super().__init__(
+        TypeSpec.__init__(
+            self,
             size=size,
             is_stack_only=False,
             original_name="Variant",
@@ -151,20 +161,20 @@ class VariantTypeSpec(TypeSpec):
             raise RuntimeError(
                 "Variant type ! Should handle this by hand with a if condition on `<my_type>.is_variant`"
             )
-        return super().__getattribute__(name)
+        return object.__getattribute__(self, name)
 
 
 # Type alias
 TypeDBEntry = str
 
 
-def TYPES_DB_REGISTER_TYPE(id: str, type_spec: "TypeSpec") -> None:
+def TYPES_DB_REGISTER_TYPE(id: str, type_spec: TypeSpec) -> None:
     if TYPES_DB.setdefault(id, type_spec) is not type_spec:
         raise RuntimeError(f"type {id} already registered !")
 
 
 # Will be completed when calling `parse_extension_api_json`
-TYPES_DB: dict[TypeDBEntry, "TypeSpec"] = {
+TYPES_DB: dict[TypeDBEntry, TypeSpec] = {
     "Nil": NilTypeSpec(),
     "bool": ScalarTypeSpec(
         size=1,

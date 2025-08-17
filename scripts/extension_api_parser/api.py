@@ -1,5 +1,7 @@
 # ruff: noqa: F403,F405
 
+from __future__ import annotations
+
 from collections import OrderedDict
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -20,10 +22,10 @@ class BuildConfig(Enum):
     DOUBLE_64 = "double_64"
 
 
-@dataclass
+@dataclass(slots=True)
 class GlobalConstantSpec:
     @classmethod
-    def parse(cls, item: dict) -> "GlobalConstantSpec":
+    def parse(cls, item: dict) -> GlobalConstantSpec:
         # Don't known what it is supposed to contain given the list is so far empty in the JSON
         raise NotImplementedError
 
@@ -42,7 +44,7 @@ def parse_global_enum(spec: dict) -> EnumTypeSpec:
     )
 
 
-@dataclass
+@dataclass(slots=True)
 class UtilityFunctionArgumentSpec:
     name: str
     original_name: str
@@ -50,7 +52,7 @@ class UtilityFunctionArgumentSpec:
     default_value: ValueInUse | None
 
     @classmethod
-    def parse(cls, item: dict) -> "UtilityFunctionArgumentSpec":
+    def parse(cls, item: dict) -> UtilityFunctionArgumentSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("default_value", None)
         assert_api_consistency(cls, item)
@@ -65,7 +67,7 @@ class UtilityFunctionArgumentSpec:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class UtilityFunctionSpec:
     original_name: str
     name: str
@@ -76,7 +78,7 @@ class UtilityFunctionSpec:
     arguments: list[UtilityFunctionArgumentSpec]
 
     @classmethod
-    def parse(cls, item: dict) -> "UtilityFunctionSpec":
+    def parse(cls, item: dict) -> UtilityFunctionSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("arguments", [])
         item.setdefault("return_type", "Nil")
@@ -92,14 +94,14 @@ class UtilityFunctionSpec:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class SingletonSpec:
     original_name: str
     name: str
     type: TypeInUse
 
     @classmethod
-    def parse(cls, item: dict) -> "SingletonSpec":
+    def parse(cls, item: dict) -> SingletonSpec:
         item.setdefault("original_name", item["name"])
         assert_api_consistency(cls, item)
         return cls(
@@ -109,7 +111,7 @@ class SingletonSpec:
         )
 
 
-@dataclass(frozen=True, repr=False)
+@dataclass(slots=True)
 class NativeStructureSpec(TypeSpec):
     original_name: str
     # Format is basically a dump of the C struct content, so don't try to be clever by parsing it
@@ -126,10 +128,11 @@ class NativeStructureSpec(TypeSpec):
             )
         elif name == "size":
             return sum(x.size for x in self.fields.values())
-        return super().__getattribute__(name)
+
+        return object.__getattribute__(self, name)
 
     @classmethod
-    def parse(cls, item: dict) -> "NativeStructureSpec":
+    def parse(cls, item: dict) -> NativeStructureSpec:
         assert item.keys() == {"name", "format"}
         name = item["name"]
         # Format field is typically something like `int start = -1;uint8_t count;Rect2 caret;TextServer::Direction direction`
@@ -171,7 +174,7 @@ class NativeStructureSpec(TypeSpec):
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class ExtensionApi:
     version_major: int  # e.g. 4
     version_minor: int  # e.g. 0
@@ -187,6 +190,9 @@ class ExtensionApi:
     utility_functions: list[UtilityFunctionSpec]
     singletons: list[SingletonSpec]
     native_structures: list[NativeStructureSpec]
+
+    builtins_sample: bool  # `True` means we generate a subset of the Godot builtins
+    classes_sample: bool  # `True` means we generate a subset of the Godot classes
 
     # Expose scalars, nil and variant
 
@@ -303,7 +309,10 @@ def order_classes(classes: list[ClassTypeSpec]) -> list[ClassTypeSpec]:
 
 
 def parse_extension_api_json(
-    path: Path, build_config: BuildConfig, filter_classes: bool | set[str]
+    path: Path,
+    build_config: BuildConfig,
+    filter_builtins: set[str] | None,
+    filter_classes: bool | set[str],
 ) -> ExtensionApi:
     api_json = json.loads(path.read_text(encoding="utf8"))
     assert isinstance(api_json, dict)
@@ -379,6 +388,73 @@ def parse_extension_api_json(
     for native_structure_type in native_structures:
         TYPES_DB_REGISTER_TYPE(native_structure_type.original_name, native_structure_type)
 
+    utility_functions = [UtilityFunctionSpec.parse(x) for x in api_json["utility_functions"]]
+
+    singletons = [SingletonSpec.parse(x) for x in api_json["singletons"]]
+
+    if filter_builtins:
+        to_skip = {b.original_name for b in builtins} - filter_builtins
+
+        builtins = [b for b in builtins if b.original_name not in to_skip]
+        for builtin in builtins:
+            builtin.constructors = [
+                c
+                for c in builtin.constructors
+                if all(a.type.type_name not in to_skip for a in c.arguments)
+            ]
+            builtin.operators = [
+                o
+                for o in builtin.operators
+                if o.return_type.type_name not in to_skip
+                and (o.right_type is None or o.right_type.type_name not in to_skip)
+            ]
+            builtin.methods = [
+                m
+                for m in builtin.methods
+                if (m.return_type is None or m.return_type.type_name not in to_skip)
+                and all(a.type.type_name not in to_skip for a in m.arguments)
+            ]
+            builtin.members = [m for m in builtin.members if m.type.type_name not in to_skip]
+            builtin.constants = [c for c in builtin.constants if c.type.type_name not in to_skip]
+
+        for klass in classes:
+            # if klass.original_name == "Object":
+            #     breakpoint()
+            klass.methods = [
+                m
+                for m in klass.methods
+                if (
+                    m.return_type.type_name not in to_skip
+                    and all(a.type.type_name not in to_skip for a in m.arguments)
+                )
+            ]
+            klass.signals = [
+                s
+                for s in klass.signals
+                if all(a.type.type_name not in to_skip for a in s.arguments)
+            ]
+            klass.properties = [p for p in klass.properties if p.type.type_name not in to_skip]
+
+        native_structures = [
+            n
+            for n in native_structures
+            if all(f.type_name not in to_skip for f in n.fields.values())
+        ]
+
+        utility_functions = [
+            u
+            for u in utility_functions
+            if (
+                u.return_type.type_name not in to_skip
+                and all(a.type.type_name not in to_skip for a in u.arguments)
+            )
+        ]
+
+        singletons = [s for s in singletons if s.type.type_name not in to_skip]
+
+        # Don't bother to clean `TYPES_DB`, since anything that uses the types we are
+        # supposed to filter out has been also filtered out at this point!
+
     ensure_types_db_consistency()
 
     api = ExtensionApi(
@@ -392,9 +468,11 @@ def parse_extension_api_json(
         builtins=builtins,
         global_constants=[GlobalConstantSpec.parse(x) for x in api_json["global_constants"]],
         global_enums=global_enums,
-        utility_functions=[UtilityFunctionSpec.parse(x) for x in api_json["utility_functions"]],
-        singletons=[SingletonSpec.parse(x) for x in api_json["singletons"]],
+        utility_functions=utility_functions,
+        singletons=singletons,
         native_structures=native_structures,
+        builtins_sample=filter_builtins is not None,
+        classes_sample=filter_classes is not False,
     )
 
     return api

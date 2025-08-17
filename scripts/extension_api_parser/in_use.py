@@ -1,12 +1,14 @@
 # ruff: noqa: F403,F405
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 import re
 
 from .type_spec import *
 
 
-@dataclass(repr=False)
+@dataclass(slots=True)
 class TypeInUse:
     type_name: TypeDBEntry
 
@@ -35,7 +37,7 @@ class TypeInUse:
             raise RuntimeError(f"Error in TypeSpec accessing: {exc}") from exc
 
     @staticmethod
-    def parse(type_name: str) -> "TypeInUse":
+    def parse(type_name: str) -> TypeInUse:
         if type_name.startswith("const "):
             type_name = type_name[len("const ") :]
         # TODO: Dummy workaround, should support uint8_t* and other stuff instead !
@@ -50,17 +52,20 @@ class TypeInUse:
             return TypeInUse(type_name)
 
 
+@dataclass(slots=True)
 class TypeUnionInUse(TypeInUse):
+    py_type: str
+
     def __init__(self, types):
         # Actual types of classes is only used for type info, for C/Cython
         # code we just need to know we are handling a Godot Object
-        super().__init__("Object")
+        TypeInUse.__init__(self, "Object")
         self.py_type = " | ".join(types.split(","))
 
 
 # ValueInUse is only used to create function argument's default value,
 # hence we should only take care that it is some valid Python code
-@dataclass
+@dataclass(slots=True)
 class ValueInUse:
     type: TypeInUse
     original_value: str
@@ -75,7 +80,7 @@ class ValueInUse:
         return self.resolve()[1]
 
     @classmethod
-    def parse(cls, value_type: TypeInUse, value: str) -> "ValueInUse":
+    def parse(cls, value_type: TypeInUse, value: str) -> ValueInUse:
         return cls(
             type=value_type,
             original_value=value,

@@ -27,7 +27,7 @@ TARGETS: Dict[str, Tuple[bool, Path]] = {
 }
 
 
-# Subset of tlasses to use when generating the project for test&debug purpose,
+# Subset of classes to use when generating the project for test&debug purpose,
 # this makes compilation much faster !
 GODOT_CLASSES_SAMPLE = {
     "Camera2D",
@@ -62,6 +62,15 @@ GODOT_CLASSES_SAMPLE = {
     "Texture2D",
     "World2D",
 }
+GODOT_BUILTINS_SAMPLE = {
+    "String",
+    "StringName",
+    "NodePath",
+    "Vector2",
+    "Array",
+    "Dictionary",
+    "PackedStringArray",
+}
 
 
 def make_jinja_env(import_dir: Path) -> Environment:
@@ -88,6 +97,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--classes-sample",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--builtins-sample",
         action="store_true",
     )
     parser.add_argument(
@@ -120,17 +133,26 @@ if __name__ == "__main__":
         template_name = f"{name}.j2"
         items.append((output, template_name, template_home))
 
+    filter_builtins: set[str] | None
+    if args.builtins_sample:
+        filter_builtins = GODOT_BUILTINS_SAMPLE
+    else:
+        filter_builtins = None  # Keep all builtins
+
     filter_classes: bool | set[str]
     if need_classes:
         if args.classes_sample:
             filter_classes = GODOT_CLASSES_SAMPLE
         else:
-            filter_classes = False  # keep all classes
+            filter_classes = False  # Keep all classes
     else:
         filter_classes = True
 
     api = parse_extension_api_json(
-        path=args.input, build_config=BuildConfig(args.build_config), filter_classes=filter_classes
+        path=args.input,
+        build_config=BuildConfig(args.build_config),
+        filter_builtins=filter_builtins,
+        filter_classes=filter_classes,
     )
 
     for item_output, item_template_name, item_template_home in items:

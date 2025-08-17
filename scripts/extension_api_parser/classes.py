@@ -1,5 +1,7 @@
 # ruff: noqa: F403,F405
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from .utils import *
@@ -20,7 +22,7 @@ def parse_class_enum(spec: dict, class_name: str) -> EnumTypeSpec:
     )
 
 
-@dataclass
+@dataclass(slots=True)
 class ClassMethodArgumentSpec:
     name: str
     original_name: str
@@ -28,7 +30,7 @@ class ClassMethodArgumentSpec:
     default_value: ValueInUse | None
 
     @classmethod
-    def parse(cls, item: dict) -> "ClassMethodArgumentSpec":
+    def parse(cls, item: dict) -> ClassMethodArgumentSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("default_value", None)
         # Meta attribute is used to further specify the type (e.g. type=int meta=uint32)
@@ -49,7 +51,7 @@ class ClassMethodArgumentSpec:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class ClassMethodSpec:
     original_name: str
     name: str
@@ -66,7 +68,7 @@ class ClassMethodSpec:
     arguments: list[ClassMethodArgumentSpec]
 
     @classmethod
-    def parse(cls, item: dict) -> "ClassMethodSpec":
+    def parse(cls, item: dict) -> ClassMethodSpec:
         item.setdefault("original_name", item["name"])
         return_value = item.pop("return_value", {"type": "Nil"})
         return_type_meta = return_value.get("meta")
@@ -97,14 +99,14 @@ class ClassMethodSpec:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class ClassSignalSpec:
     original_name: str
     name: str
     arguments: list[ClassMethodArgumentSpec]
 
     @classmethod
-    def parse(cls, item: dict) -> "ClassSignalSpec":
+    def parse(cls, item: dict) -> ClassSignalSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("arguments", [])
         assert_api_consistency(cls, item)
@@ -115,7 +117,7 @@ class ClassSignalSpec:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class ClassPropertySpec:
     original_name: str
     name: str
@@ -125,7 +127,7 @@ class ClassPropertySpec:
     index: int | None
 
     @classmethod
-    def parse(cls, item: dict) -> "ClassPropertySpec":
+    def parse(cls, item: dict) -> ClassPropertySpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("getter", None)
         assert item["getter"] is not None
@@ -142,6 +144,7 @@ class ClassPropertySpec:
         )
 
 
+@dataclass(slots=True)
 class ClassTypeSpec(TypeSpec):
     """
     Godot object defined in extension_api.json's `classes` entry (e.g. Node2D, Reference)
@@ -176,7 +179,8 @@ class ClassTypeSpec(TypeSpec):
         self.signals = kwargs.pop("signals")
         self.properties = kwargs.pop("properties")
         self.constants = kwargs.pop("constants")
-        super().__init__(
+        TypeSpec.__init__(
+            self,
             c_type="gd_object_t",
             cy_type=kwargs["py_type"],
             variant_type_name="GDEXTENSION_VARIANT_TYPE_OBJECT",

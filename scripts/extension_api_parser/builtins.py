@@ -1,5 +1,7 @@
 # ruff: noqa: F403,F405
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from .utils import *
@@ -7,7 +9,7 @@ from .in_use import *
 from .type_spec import *
 
 
-@dataclass
+@dataclass(slots=True)
 class BuiltinVariantOperatorValue:
     variant_type: str
     gdapi_type: str
@@ -47,7 +49,7 @@ VARIANT_OPERATORS = {
 }
 
 
-@dataclass
+@dataclass(slots=True)
 class BuiltinMethodArgumentSpec:
     name: str
     original_name: str
@@ -55,7 +57,7 @@ class BuiltinMethodArgumentSpec:
     default_value: ValueInUse | None
 
     @classmethod
-    def parse(cls, item: dict) -> "BuiltinMethodArgumentSpec":
+    def parse(cls, item: dict) -> BuiltinMethodArgumentSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("default_value", None)
         assert_api_consistency(cls, item)
@@ -70,7 +72,7 @@ class BuiltinMethodArgumentSpec:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class BuiltinConstructorSpec:
     index: int
     arguments: list[BuiltinMethodArgumentSpec]
@@ -85,7 +87,7 @@ class BuiltinConstructorSpec:
             return self.base_name + "_from_" + "_".join(cooked_args)
 
     @classmethod
-    def parse(cls, item: dict, c_name_prefix: str) -> "BuiltinConstructorSpec":
+    def parse(cls, item: dict, c_name_prefix: str) -> BuiltinConstructorSpec:
         item.setdefault("arguments", [])
         args = [BuiltinMethodArgumentSpec.parse(x) for x in item["arguments"]]
         item["base_name"] = f"{c_name_prefix}_new"
@@ -97,7 +99,7 @@ class BuiltinConstructorSpec:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class BuiltinOperatorSpec:
     name: str
     c_name: str
@@ -107,7 +109,7 @@ class BuiltinOperatorSpec:
     return_type: TypeInUse
 
     @classmethod
-    def parse(cls, item: dict, c_name_prefix: str) -> "BuiltinOperatorSpec":
+    def parse(cls, item: dict, c_name_prefix: str) -> BuiltinOperatorSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("right_type", None)
         item["name"], item["variant_operator_name"] = VARIANT_OPERATORS[item.pop("name")]
@@ -129,7 +131,7 @@ class BuiltinOperatorSpec:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class BuiltinMemberSpec:
     name: str
     original_name: str
@@ -141,7 +143,7 @@ class BuiltinMemberSpec:
         return self.offset is not None
 
     @classmethod
-    def parse(cls, item: dict) -> "BuiltinMemberSpec":
+    def parse(cls, item: dict) -> BuiltinMemberSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("offset", None)
         assert_api_consistency(cls, item)
@@ -153,7 +155,7 @@ class BuiltinMemberSpec:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class BuiltinConstantSpec:
     name: str
     original_name: str
@@ -161,7 +163,7 @@ class BuiltinConstantSpec:
     value: str
 
     @classmethod
-    def parse(cls, item: dict) -> "BuiltinConstantSpec":
+    def parse(cls, item: dict) -> BuiltinConstantSpec:
         item.setdefault("original_name", item["name"])
         assert_api_consistency(cls, item)
         return cls(
@@ -172,7 +174,7 @@ class BuiltinConstantSpec:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class BuiltinMethodSpec:
     name: str
     c_name: str
@@ -195,7 +197,7 @@ class BuiltinMethodSpec:
         )
 
     @classmethod
-    def parse(cls, item: dict, c_name_prefix: str) -> "BuiltinMethodSpec":
+    def parse(cls, item: dict, c_name_prefix: str) -> BuiltinMethodSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("arguments", [])
         item.setdefault("return_type", "Nil")
@@ -226,7 +228,7 @@ def parse_builtin_enum(spec: dict, builtin_cy_type: str, builtin_py_type: str) -
     )
 
 
-@dataclass(frozen=True, repr=False)
+@dataclass(slots=True)
 class BuiltinTypeSpec(TypeSpec):
     """
     Non-scalar, non-nil, non-object, non-variant types
@@ -235,11 +237,11 @@ class BuiltinTypeSpec(TypeSpec):
     c_name_prefix: str
     indexing_return_type: TypeInUse | None
     is_keyed: bool
-    constructors: list["BuiltinConstructorSpec"]
-    operators: list["BuiltinOperatorSpec"]
-    methods: list["BuiltinMethodSpec"]
-    members: list["BuiltinMemberSpec"]
-    constants: list["BuiltinConstantSpec"]
+    constructors: list[BuiltinConstructorSpec]
+    operators: list[BuiltinOperatorSpec]
+    methods: list[BuiltinMethodSpec]
+    members: list[BuiltinMemberSpec]
+    constants: list[BuiltinConstantSpec]
     enums: list[EnumTypeSpec]
 
     @property
@@ -299,11 +301,11 @@ class BuiltinTypeSpec(TypeSpec):
         return next(c.index for c in self.constructors if len(c.arguments) == 0)
 
     @property
-    def c_struct_members(self) -> list["BuiltinMemberSpec"]:
+    def c_struct_members(self) -> list[BuiltinMemberSpec]:
         return [m for m in self.members if m.offset is not None]
 
 
-@dataclass(frozen=True, repr=False)
+@dataclass(slots=True)
 class OpaqueBuiltinTypeSpec(BuiltinTypeSpec):
     """
     Builtin that can only be manipulated by the Godot's API methods (e.g. String, RID)
@@ -320,7 +322,7 @@ class OpaqueBuiltinTypeSpec(BuiltinTypeSpec):
         return True
 
 
-@dataclass(frozen=True, repr=False)
+@dataclass(slots=True)
 class TransparentBuiltinTypeSpec(BuiltinTypeSpec):
     """
     Builtin whose c struct layout is fully known to us (e.g. Vector2, Transform2D)

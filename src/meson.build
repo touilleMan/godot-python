@@ -32,6 +32,9 @@ generate_tmpl_cmd = [
 if get_option('classes_sample')
     generate_tmpl_cmd += '--classes-sample'
 endif
+if get_option('builtins_sample')
+    generate_tmpl_cmd += '--builtins-sample'
+endif
 
 
 ##############################################################################

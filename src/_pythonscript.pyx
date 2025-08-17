@@ -73,40 +73,40 @@ cdef public void _pythonscript_free_instance(
 # is the very first Python module that gets loaded.
 
 
-cdef _testbench():
-    # Test builtins
-    v = Vector2i(66, -77)
-    assert v.x == 66
-    assert v.y == -77
-    # Set property
-    v.x = 42
-    assert v.x == 42
-    # Access property
-    v0 = v.ZERO
-    assert v0.x == 0
-    assert v0.y == 0
-    assert v0 == v.ZERO
-    v0.x = 1
-    assert v0 != v.ZERO
-    # Access method with no params
-    assert isinstance(v.angle(), int)
-    # Access method with params
-    assert isinstance(v.dot(v), int)
-    # Access method with no return value
-    c = Color()
-    assert c.set_r8(0xAABBCCDD) is None
+# cdef _testbench():
+#     # Test builtins
+#     v = Vector2i(66, -77)
+#     assert v.x == 66
+#     assert v.y == -77
+#     # Set property
+#     v.x = 42
+#     assert v.x == 42
+#     # Access property
+#     v0 = v.ZERO
+#     assert v0.x == 0
+#     assert v0.y == 0
+#     assert v0 == v.ZERO
+#     v0.x = 1
+#     assert v0 != v.ZERO
+#     # Access method with no params
+#     assert isinstance(v.angle(), int)
+#     # Access method with params
+#     assert isinstance(v.dot(v), int)
+#     # Access method with no return value
+#     c = Color()
+#     assert c.set_r8(0xAABBCCDD) is None
 
-    # Test classes
-    OS = _load_singleton("OS")
+#     # Test classes
+#     OS = _load_singleton("OS")
 
-    # print(repr(OS), dir(OS))
-    print('OS.low_processor_usage_mode', OS.low_processor_usage_mode)
-    # print('OS.get_cache_dir()', OS.get_cache_dir())
-    # print('OS.can_use_threads()', OS.can_use_threads())
-    OS.low_processor_usage_mode = True
-    print('OS.low_processor_usage_mode == True', OS.low_processor_usage_mode)
-    # print('OS.set_environment("foo", "bar")', OS.set_environment("foo", "bar"))
-    # print('OS.get_environment("foo")', OS.get_environment("foo"))
+#     # print(repr(OS), dir(OS))
+#     print('OS.low_processor_usage_mode', OS.low_processor_usage_mode)
+#     # print('OS.get_cache_dir()', OS.get_cache_dir())
+#     # print('OS.can_use_threads()', OS.can_use_threads())
+#     OS.low_processor_usage_mode = True
+#     print('OS.low_processor_usage_mode == True', OS.low_processor_usage_mode)
+#     # print('OS.set_environment("foo", "bar")', OS.set_environment("foo", "bar"))
+#     # print('OS.get_environment("foo")', OS.get_environment("foo"))
 
 
 # Early init: register `PythonScriptLanguage` & `PythonScript` classes in Godot

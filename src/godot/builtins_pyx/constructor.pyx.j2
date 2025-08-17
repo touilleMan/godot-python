@@ -115,12 +115,14 @@ def __cinit__(self, iterable=None):
         self._gd_data = {{ builtin.c_name_prefix }}_new()
         return
 {%   for packedtype in api.packed_array_types %}
-{%     set constructor = builtin.get_constructor_from(packedtype.original_name) %}
+{%     if not api.builtins_sample or packedtype.original_name == "PackedStringArray" %}
+{%       set constructor = builtin.get_constructor_from(packedtype.original_name) %}
     try:
         self._gd_data = {{ constructor.c_name }}(&(<{{ packedtype.cy_type }}?>iterable)._gd_data)
         return
     except TypeError:
         pass
+{%     endif %}
 {%   endfor %}
     try:
         {% set constructor = builtin.get_constructor_from("Array") %}
