@@ -77,7 +77,7 @@ def _collect_tests(path: Path, filter: re.Pattern | None) -> list[tuple[str, Cal
                     test_path = (
                         f"{Path(module.__file__).relative_to(path)}::{name}[{params_display}]"
                     )
-                    if filter and not filter.match(test_path):
+                    if filter and not filter.search(test_path):
                         continue
                     tests.append(
                         (
@@ -100,21 +100,21 @@ def _collect_tests(path: Path, filter: re.Pattern | None) -> list[tuple[str, Cal
     return tests
 
 
-def run_tests(path: Path, filter: re.Pattern | None, stop_on_failure: bool, quiet: bool) -> bool:
+def run_tests(path: Path, filter: re.Pattern | None, stop_on_failure: bool, verbose: bool) -> bool:
     tests = _collect_tests(path, filter)
 
     tests_success = 0
     for test_full_name, test_fn in tests:
-        if not quiet:
+        if verbose:
             print(test_full_name, end="", flush=False)
         try:
             test_fn()
         except SkipTest:
             tests_success += 1
-            if not quiet:
+            if verbose:
                 print(f"{YELLOW} Skipped :/{NO_COLOR}", flush=True)
         except BaseException as exc:
-            if quiet:
+            if not verbose:
                 print(test_full_name, end="", flush=False)
             print(f"{RED} ✘ ERROR !!!{NO_COLOR}\n", flush=True)
             print_exception(exc)
@@ -122,7 +122,7 @@ def run_tests(path: Path, filter: re.Pattern | None, stop_on_failure: bool, quie
                 return False
         else:
             tests_success += 1
-            if not quiet:
+            if verbose:
                 print(f"{GREEN} ✔{NO_COLOR}", flush=True)
 
     if len(tests) == tests_success:
@@ -131,6 +131,34 @@ def run_tests(path: Path, filter: re.Pattern | None, stop_on_failure: bool, quie
     else:
         print(f"{RED}{tests_success}/{len(tests)} tests passed{NO_COLOR}")
         return False
+
+
+def run_tests_with_argv(path: Path, argv: list[str]) -> bool:
+    verbose = False
+    stop_on_failure = False
+    raw_filters = []
+
+    args = iter(argv)
+    for arg in args:
+        match arg:
+            case "-v":
+                verbose = True
+            case "-x":
+                stop_on_failure = True
+            case "-k":
+                raw_filters.append(rf"({re.escape(next(args))})")
+            case "-h":
+                print("Allowed options: [PATH] [-v] [-x] [-k FILTER]")
+                raise SystemExit(-1)
+            case unknown:
+                if not unknown.startswith("-"):
+                    raw_filters.append(rf"(^{re.escape(unknown)})")
+                    continue
+
+                raise SystemExit(f"Unknown option `{unknown}`")
+
+    filter = re.compile(r"|".join(raw_filters))
+    return run_tests(path=path, filter=filter, stop_on_failure=stop_on_failure, verbose=verbose)
 
 
 @contextmanager
@@ -161,7 +189,9 @@ def xfail[F: Callable](reason: str) -> Callable[[F], F]:
 
 
 def parametrize[F: Callable, P: Any | tuple[Any, ...]](
-    param: str, values: list[P], ids: Callable[[P], str | Any] = repr
+    param: str,
+    values: list[P],
+    ids: Callable[[P], str | Any] = lambda x: x if isinstance(x, str) else repr(x),
 ) -> Callable[[F], F]:
     if "," in param:
         cooked_param = param.split(",")
@@ -200,3 +230,13 @@ def assert_approx_eq(a: float, b: float, max_relative_diff: float = 0.001):
         raise AssertionError(
             f"{a} and {b} are too far appart ({relative_diff * 100:.2f}%, max allowed is {max_relative_diff * 100:.2f}%)"
         )
+
+
+def assert_eq(got: Any, expected: Any):
+    if got != expected:
+        raise AssertionError(f"Expected {expected!r}, got {got!r}")
+
+
+def assert_is(got: Any, expected: Any):
+    if got is expected:
+        raise AssertionError(f"Expected {expected!r}, got {got!r}")

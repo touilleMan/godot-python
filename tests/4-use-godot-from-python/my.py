@@ -1,5 +1,6 @@
 import clodotest
 from pathlib import Path
+import os
 
 
 BASEDIR = Path(__file__).absolute().parent
@@ -10,4 +11,4 @@ def initialize(level: int):
         return
     assert level == 3
 
-    clodotest.run_tests(path=BASEDIR / "tests", filter=None, stop_on_failure=True, quiet=True)
+    clodotest.run_tests_with_argv(BASEDIR / "tests", os.environ.get("CLODOTEST_ARGV", "").split())
