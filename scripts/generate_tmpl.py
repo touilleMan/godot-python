@@ -66,7 +66,7 @@ GODOT_BUILTINS_SAMPLE = {
     "String",
     "StringName",
     "NodePath",
-    "Vector2",
+    "Vector2i",
     "Array",
     "Dictionary",
     "PackedStringArray",

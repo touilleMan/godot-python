@@ -1,18 +1,510 @@
+import enum
 import clodotest
+from clodotest import assert_eq
 import godot
 
 
-@clodotest.xfail(reason="TODO: Godot enum from Python is still WIP")
-def test_global_enum():
-    assert godot.Error.OK == 0
-    assert godot.Error.FAILED == 1
-
-    # Since `Variant` is not defined in `extension_api.json`, it's enums
-    # are defined among the global ones...
-    assert godot.Variant.Type.NIL == 0
-    assert godot.Variant.Operator.OP_MAX == 25
+@clodotest.parametrize("type", ["Nil", "bool", "int", "float"])
+def test_scalars_and_nil_not_exposed(type: str):
+    assert not hasattr(godot, type)
 
 
-def test_global_constant():
-    # Nothing to do: `extension_api.json`'s `global_constants` entry is empty so far...
+@clodotest.parametrize(
+    "kind",
+    [
+        "default",
+        "String",
+        "StringName",
+        "NodePath",
+        "Dictionary",
+        "Array",
+        "PackedArray",
+    ],
+)
+def test_constructor(kind: str):
+    match kind:
+        case "default":
+            v = godot.Vector2i()
+            assert_eq(v.x, 0)
+            assert_eq(v.y, 0)
+
+            v = godot.Vector2i(1, 2)
+            assert_eq(v.x, 1)
+            assert_eq(v.y, 2)
+
+            v = godot.Vector2i(1)
+            assert_eq(v.x, 1)
+            assert_eq(v.y, 0)
+
+            v = godot.Vector2i(y=2)
+            assert_eq(v.x, 0)
+            assert_eq(v.y, 2)
+
+            v = godot.Vector2i(x=1, y=2)
+            assert_eq(v.x, 1)
+            assert_eq(v.y, 2)
+
+            v = godot.Vector2i(godot.Vector2i(1, 2))
+            assert_eq(v.x, 1)
+            assert_eq(v.y, 2)
+
+            for bad_type in (godot.GDString(), "42", b"42"):
+                with clodotest.raises(TypeError):
+                    godot.Vector2i(bad_type)
+
+        case "String":
+            s = godot.GDString()
+            assert_eq(str(s), "")
+
+            s = godot.GDString("foo")
+            assert_eq(str(s), "foo")
+
+            s = godot.GDString(godot.StringName("foo"))
+            assert_eq(str(s), "foo")
+
+            s = godot.GDString(godot.NodePath("/foo"))
+            assert_eq(str(s), "/foo")
+
+            for bad_type in (godot.Vector2i(), 42, b"foo"):
+                with clodotest.raises(TypeError):
+                    godot.GDString(bad_type)
+
+        case "StringName":
+            s = godot.StringName()
+            assert_eq(str(s), "")
+
+            s = godot.StringName("foo")
+            assert_eq(str(s), "foo")
+
+            s = godot.StringName(godot.String("foo"))
+            assert_eq(str(s), "foo")
+
+            for bad_type in (godot.Vector2i(), godot.NodePath("/foo"), 42, b"foo"):
+                with clodotest.raises(TypeError):
+                    godot.StringName(bad_type)
+
+        case "NodePath":
+            s = godot.NodePath()
+            assert_eq(str(s), "")
+
+            s = godot.NodePath("/foo")
+            assert_eq(str(s), "/foo")
+
+            s = godot.NodePath(godot.String("/foo"))
+            assert_eq(str(s), "/foo")
+
+            s = godot.NodePath(godot.NodePath("/foo"))
+            assert_eq(str(s), "/foo")
+
+            for bad_type in (godot.Vector2i(), godot.StringName("/foo"), 42, b"foo"):
+                with clodotest.raises(TypeError):
+                    godot.NodePath(bad_type)
+
+        case "Dictionary":
+            d = godot.GDDictionary()
+            assert_eq(d.is_empty(), True)
+
+            d = godot.GDDictionary({"a": 1, "b": 2})
+            assert_eq(d.is_empty(), False)
+            assert_eq(d, godot.GDDictionary({"a": 1, "b": 2}))
+            assert_eq(d["a"], 2)
+            assert_eq(d["b"], 2)
+
+            d = godot.GDDictionary(godot.GDDic)
+
+            # TODO
+
+            for bad_type in (godot.Vector2i(), godot.GDArray(), 42, b"foo"):
+                with clodotest.raises(TypeError):
+                    godot.Dictionary(bad_type)
+
+        case "Array":
+            a = godot.GDArray()
+            assert_eq(a.is_empty(), True)
+
+            a = godot.GDArray(["a", 2, godot.Vector2i(1, 2)])
+            assert_eq(a.is_empty(), False)
+            assert_eq(a.length(), 3)
+            assert_eq(a[0], godot.GDString("a"))
+            assert_eq(a[1], 2)
+            assert_eq(a[2], godot.Vector2i(1, 2))
+
+            a2 = godot.GDArray(a)
+            assert_eq(a2, a)
+
+            a3 = godot.GDArray(godot.StringPackedArray(["1", "2", "3"]))
+            assert_eq(a3, godot.GDArray(["1", "2", "3"]))
+
+            for bad_type in (godot.Vector2i(), godot.StringName("/foo"), 42, b"foo"):
+                with clodotest.raises(TypeError):
+                    godot.GDArray(bad_type)
+
+        case "PackedArray":
+            a = godot.StringPackedArray()
+            assert_eq(a.is_empty(), True)
+
+            # TODO
+
+            for bad_type in (godot.Vector2i(), godot.StringName("/foo"), 42, b"foo"):
+                with clodotest.raises(TypeError):
+                    godot.StringPackedArray(bad_type)
+
+        case unknown:
+            assert False, unknown
+
+
+def test_custom_constructor(kind: str):
     pass
+
+
+@clodotest.parametrize(
+    "kind",
+    [
+        "no",
+        "keyed",
+        "not_keyed",
+    ],
+)
+def test_indexing(kind: str):
+    match kind:
+        case "no":
+            f = godot.StringName("foo")
+
+            with clodotest.raises(TypeError):
+                f[0]
+
+            with clodotest.raises(TypeError):
+                f[godot.GDString("key")]
+
+        case "keyed":
+            # TODO: store a class instance
+            d = godot.GDDictionary({0: "a", "b": 2, godot.Vector2i(1, 2): godot.Vector2i(3, 4)})
+
+            assert_eq(d[0], godot.GDString("a"))
+            assert_eq(d["b"], 2)
+            assert_eq(d[godot.Vector2i(1, 2)], godot.Vector2i(3, 4))
+
+            with clodotest.raises(KeyError):
+                d[godot.GDString("dummy")]
+            with clodotest.raises(KeyError):
+                d[99]
+
+            with clodotest.raises(TypeError):
+                d[object()]  # object cannot be converted to a Godot type
+
+        case "not_keyed":
+            # TODO: store a class instance
+            a = godot.GDArray((1, "b", godot.Vector2i(1, 2)))
+
+            assert_eq(a[0], 1)
+            assert_eq(a[1], godot.GDString("b"))
+            assert_eq(a[2], godot.Vector2i(1, 2))
+
+            with clodotest.raises(KeyError):
+                a[3]
+
+            with clodotest.raises(TypeError):
+                a[godot.GDString("dummy")]
+            with clodotest.raises(TypeError):
+                a[object()]  # object cannot be converted to a Godot type
+
+
+@clodotest.parametrize(
+    "kind",
+    [
+        # comparison
+        "equal",
+        "not_equal",
+        "less",
+        "less_equal",
+        "greater",
+        "greater_equal",
+        # mathematic
+        "add",
+        "subtract",
+        "multiply",
+        "divide",
+        "negate",
+        "positive",
+        "module",
+        "power",
+        # bitwise
+        "shift_left",
+        "shift_right",
+        "bit_and",
+        "bit_or",
+        "bit_xor",
+        "bit_negate",
+        # logic
+        "and",
+        "or",
+        "xor",
+        "not",
+        # containment
+        "in",
+    ],
+)
+def test_operator(kind: str):
+    match kind:
+        # comparison
+        case "equal":
+            assert_eq(godot.GDString("foo") == godot.GDString("foo"), True)
+            assert_eq(godot.GDString("foo") == godot.GDString("bar"), False)
+        case "not_equal":
+            assert_eq(godot.GDString("foo") != godot.GDString("bar"), True)
+            assert_eq(godot.GDString("foo") != godot.GDString("foo"), False)
+        case "less":
+            assert_eq(godot.Vector2i(0, 0) < godot.Vector2i(1, 1), True)
+            assert_eq(godot.Vector2i(1, 1) < godot.Vector2i(1, 1), False)
+        case "less_equal":
+            assert_eq(godot.Vector2i(1, 1) <= godot.Vector2i(1, 1), True)
+            assert_eq(godot.Vector2i(2, 2) <= godot.Vector2i(1, 1), False)
+        case "greater":
+            assert_eq(godot.Vector2i(1, 1) > godot.Vector2i(0, 0), True)
+            assert_eq(godot.Vector2i(1, 1) > godot.Vector2i(1, 1), False)
+        case "greater_equal":
+            assert_eq(godot.Vector2i(1, 1) >= godot.Vector2i(1, 1), True)
+            assert_eq(godot.Vector2i(1, 1) >= godot.Vector2i(2, 2), False)
+        # mathematic
+        case "add":
+            assert_eq(godot.GDString("foo") + godot.GDString("bar"), godot.GDString("foobar"))
+        case "subtract":
+            assert_eq(godot.Vector2i(4, 3) - godot.Vector2i(1, 2), godot.Vector2i(3, 1))
+        case "multiply":
+            assert_eq(godot.Vector2i(4, 3) - godot.Vector2i(1, 2), godot.Vector2i(3, 1))
+        case "divide":
+            assert_eq(godot.Vector2i(4, 3) / godot.Vector2i(2, 3), godot.Vector2i(2, 1))
+        case "negate":
+            assert_eq(-godot.Vector2i(1, 2), godot.Vector2i(-1, -2))
+        case "positive":
+            assert_eq(+godot.Vector2i(1, 2), godot.Vector2i(1, 2))
+        case "module":
+            assert_eq(godot.Vector2i(2, 3) % 2, godot.Vector2i(0, 1))
+            assert_eq(godot.Vector2i(2, 3) % godot.Vector2i(2, 1), godot.Vector2i(0, 3))
+        case "power":
+            assert_eq(godot.Vector2i(2, 3) % 2, godot.Vector2i(0, 1))
+            "**"
+        # bitwise
+        case "shift_left":
+            # Nothing to do: currently only `int` implements `<<` in Godot, but
+            # it is not exposed to Python since we already have our own `int`!
+            pass
+        case "shift_right":
+            # Nothing to do: currently only `int` implements `>>` in Godot, but
+            # it is not exposed to Python since we already have our own `int`!
+            pass
+        case "bit_and":
+            # Nothing to do: currently only `int` implements `&` in Godot, but
+            # it is not exposed to Python since we already have our own `int`!
+            pass
+        case "bit_or":
+            # Nothing to do: currently only `int` implements `|` in Godot, but
+            # it is not exposed to Python since we already have our own `int`!
+            pass
+        case "bit_xor":
+            # Nothing to do: currently only `int` implements `^` in Godot, but
+            # it is not exposed to Python since we already have our own `int`!
+            pass
+        case "bit_negate":
+            # Nothing to do: currently only `int` implements `~` in Godot, but
+            # it is not exposed to Python since we already have our own `int`!
+            pass
+        # logic
+        case "and":
+            # Nothing to do: currently only `int/float/Nil` implements `and`
+            # in Godot, but they are not exposed to Python since we already have
+            # our own `int/float/None`!
+            pass
+        case "or":
+            # Nothing to do: currently only `int/float/Nil` implements `or`
+            # in Godot, but they are not exposed to Python since we already have
+            # our own `int/float/None`!
+            pass
+        case "xor":
+            # Nothing to do: currently only `int/float/Nil` implements `xor`
+            # in Godot, but they are not exposed to Python since we already have
+            # our own `int/float/None`!
+            pass
+        case "not":
+            assert_eq(not godot.GDString(""), True)
+            assert_eq(not godot.GDString("foo"), False)
+            assert_eq(not godot.Vector2i(0, 0), True)
+            assert_eq(not godot.Vector2i(1, 2), False)
+        # containment
+        case "in":
+            assert_eq(godot.GDString("foo") in godot.GDString("barfoospam"), True)
+            assert_eq("foo" in godot.GDString("barfoospam"), True)
+            assert_eq(godot.GDString("foo") in godot.GDString("bar"), False)
+
+            assert_eq(
+                godot.Vector2i(1, 2) in godot.GDArray(godot.Vector2i(0, 0), godot.Vector2i(1, 2)),
+                True,
+            )
+            assert_eq(
+                godot.Vector2i(1, 2) in godot.GDArray(godot.Vector2i(0, 0), godot.Vector2i(1, 1)),
+                False,
+            )
+
+            assert_eq(
+                godot.Vector2i(1, 2)
+                in godot.Dictionary(godot.Vector2i(0, 0), godot.Vector2i(1, 2)),
+                True,
+            )
+            assert_eq(
+                godot.Vector2i(1, 2)
+                in godot.Dictionary(godot.Vector2i(0, 0), godot.Vector2i(1, 1)),
+                False,
+            )
+
+        case unknown:
+            assert False, unknown
+
+
+@clodotest.parametrize(
+    "kind",
+    [
+        "static_method",
+        "without_parameter_and_with_return_value",
+        "without_return_value",
+        "with_parameter_as_godot_value",
+        "with_parameter_as_python_value",
+        "with_parameter_passed_by_name",
+        "with_parameter_with_default_value",
+        "with_parameter_with_default_value_overwritten",
+        "with_parameter_with_default_value_overwritten_and_passed_by_name",
+        "bad_parameter_type",
+    ],
+)
+def test_method(kind: str):
+    match kind:
+        case "static_method":
+            clodotest.skip(reason="TODO: static method not supported yet!")  # TODO
+            s = godot.GDString("foo.txt")
+            assert_eq(godot.GDString.humanize_size(133790307), godot.GDString("127.5 MiB"))
+
+        case "without_parameter_and_with_return_value":
+            s = godot.GDString("foo.txt")
+
+            # Return scalar
+            assert_eq(s.length(), 7)
+            assert_eq(s.is_empty(), False)
+
+            # Return non-scalar builtin
+            assert_eq(godot.Vector2i(-1, 2).sign(), godot.Vector2i(-1, 1))
+
+            # Return Godot Variant
+            a = godot.GDArray([s])
+            assert_eq(a.front(), s)
+            assert_eq(a.get(99), None)
+
+            # TODO: Return Godot class instance
+
+        case "without_return_value":
+            a = godot.GDArray((1, 2))
+            assert_eq(a.clear(), None)
+
+        case "with_parameter_as_godot_value":
+            s = godot.GDString("foo.txt")
+
+            # Note we don't test scalar & Godot class instance here: those types
+            # are always passed as Python values.
+
+            # Method expecting a non-scalar builtin
+            assert_eq(s.begins_with(godot.GDString("foo")), True)
+            # Method expecting a Godot Variant
+            # TODO: remove `placeholder` param once default param value is supported
+            assert_eq(s.format(godot.Vector2i(), placeholder="{_}"), godot.GDString(""))
+
+        case "with_parameter_as_python_value":
+            s = godot.GDString("foo.txt")
+            a = godot.GDArray()
+
+            # Method expecting a scalar
+            assert_eq(s.left(1), godot.GDString("f"))
+            # Method expecting a non-scalar builtin
+            assert_eq(s.begins_with("foo"), True)
+            # TODO: Method expecting a Godot class instance
+            # Method expecting a Godot Variant
+            assert_eq(s.format("foo"), godot.GDString(""))
+            assert_eq(s.format("foo", placeholder="{_}"), godot.GDString(""))
+            assert_eq(s.format(42), godot.GDString(""))
+            assert_eq(s.format(None), godot.GDString(""))
+
+        case "with_parameter_passed_by_name":
+            assert_eq(s.begins_with(text="foo"), True)
+
+        case "with_parameter_with_default_value":
+            assert_eq(s.count("o"), 2)
+
+        case "with_parameter_with_default_value_overwritten":
+            assert_eq(s.count("o", 2), 1)
+            assert_eq(s.count("o", 2, 2), 0)
+
+        case "with_parameter_with_default_value_overwritten_and_passed_by_name":
+            assert_eq(s.count("o", from_=1), 2)
+            assert_eq(s.count("o", to=2), 1)
+            assert_eq(s.count("o", to=2, from_=2), 0)
+
+        case "bad_parameter_type":
+            # Method expecting a scalar
+            with clodotest.raises(TypeError):
+                s.left(godot.String())  # Non-scalar builtin
+            with clodotest.raises(TypeError):
+                s.left(3.14)  # Wrong scalar type
+            with clodotest.raises(TypeError):
+                s.left(None)  # Wrong scalar type
+            # TODO: test with a Godot class instance
+            with clodotest.raises(TypeError):
+                s.left(object())  # Incompatible Python type
+
+            # Method expecting a non-scalar builtin
+            with clodotest.raises(TypeError):
+                s.begins_with(1)  # Scalar builtin
+            with clodotest.raises(TypeError):
+                s.begins_with(None)  # Scalar builtin
+            with clodotest.raises(TypeError):
+                s.begins_with(object())  # Incompatible Python type
+            # TODO: test with a Godot class instance
+            with clodotest.raises(TypeError):
+                s.begins_with(godot.Vector2i())  # Wrong non-scalar builtin
+
+            # Method expecting a Variant
+            a = godot.GDArray()
+            with clodotest.raises(TypeError):
+                s.format(godot.String())  # Wrong non-scalar builtin
+            with clodotest.raises(TypeError):
+                s.format(3.14)  # Wrong scalar type
+            with clodotest.raises(TypeError):
+                s.format(None)  # Wrong scalar type
+            # TODO: test with a Godot class instance
+            with clodotest.raises(TypeError):
+                s.format(object())  # Incompatible Python type
+
+            # TODO: Method expecting a Godot class instance
+
+
+def test_member():
+    v = godot.Vector2i(2, 3)
+    assert_eq(v.x, 2)
+    assert_eq(v.y, 3)
+
+    v.x = 20
+    assert_eq(v.x, 20)
+    assert_eq(v.y, 3)
+
+    v.y = 30
+    assert_eq(v.x, 20)
+    assert_eq(v.y, 30)
+
+    # TODO: test property unrelated to the builtin internal structure
+    # TODO: test subtype property (e.g. `rec2.position.x`)
+
+
+def test_constant():
+    assert_eq(godot.Vector2i.ZERO, godot.Vector2i(0, 0))
+
+
+def test_enum():
+    assert isinstance(godot.Vector2i.AXIS, enum.Enum)
+    assert_eq(godot.Vector2i.AXIS.X, 0)
+    assert_eq(godot.Vector2i.AXIS.Y, 1)
