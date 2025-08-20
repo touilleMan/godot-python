@@ -2,6 +2,9 @@
 {{ "void" if m.return_type.is_nil else m.return_type.cy_type }} {{ m.name }}(self
 {%- for arg in m.arguments -%}
 , {{ arg.type.cy_type }} {{ arg.name }}
+{%- if arg.default_value -%}
+ = {{ arg.default_value.cy_value or "None" }}
+{%- endif -%}
 {%- endfor -%})
 {%- endmacro %}
 
@@ -11,6 +14,13 @@ cpdef inline {{ render_method_signature(m) }}:
 {%   if m.contains_unsuported_types %}
     raise NotImplementedError  # TODO
 {%   else %}
+{%     for arg in m.arguments %}
+{%       if arg.type.is_variant %}
+    cdef gd_variant_t __arg{{ loop.index0 }}
+    if not gd_variant_steal_from_pyobj({{ arg.name }}, &__arg{{ loop.index0 }}):
+        raise TypeError(f"Type { type({{ arg.name }}) } cannot be converted to Godot Variant")
+{% endif %}
+{% endfor %}
 {%     if m.return_type.is_scalar %}
     cdef {{ m.return_type.cy_type }} ret = gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
 {%     elif m.return_type.is_builtin %}
@@ -30,6 +40,8 @@ cpdef inline {{ render_method_signature(m) }}:
         &{{ arg.name }}._gd_data,
 {%         elif arg.type.is_object %}
         &{{ arg.name }}._gd_ptr,
+{%         elif arg.type.is_variant %}
+        &__arg{{ loop.index0 }},
 {%         else %}
     <crash !!!!>  # {{ arg.type }} Unsupported type, crash the compilation !
 {%         endif %}
@@ -40,7 +52,7 @@ cpdef inline {{ render_method_signature(m) }}:
     return GDObject.cast_from_variant(ret)
 {%       elif m.return_type.is_variant %}
     try:
-        return gdvariant_to_pyobject(&ret)
+        return gd_variant_steal_into_pyobj(&ret)
     finally:
         gd_variant_del(&ret)
 {%       else %}
