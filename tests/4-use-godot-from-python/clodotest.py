@@ -109,10 +109,10 @@ def run_tests(path: Path, filter: re.Pattern | None, stop_on_failure: bool, verb
             print(test_full_name, end="", flush=False)
         try:
             test_fn()
-        except SkipTest:
+        except SkipTest as exc:
             tests_success += 1
             if verbose:
-                print(f"{YELLOW} Skipped :/{NO_COLOR}", flush=True)
+                print(f"{YELLOW} Skipped: {exc.reason}{NO_COLOR}", flush=True)
         except BaseException as exc:
             if not verbose:
                 print(test_full_name, end="", flush=False)
@@ -181,7 +181,8 @@ def xfail[F: Callable](reason: str) -> Callable[[F], F]:
                 fn(**kwargs)
                 assert False, "Expected error, got none !"
             except BaseException:
-                pass  # As expected
+                # As expected
+                raise SkipTest(reason=f"XFAIL ({reason})")
 
         return _wrapper  # type: ignore
 
