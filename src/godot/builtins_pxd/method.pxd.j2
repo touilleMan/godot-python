@@ -12,15 +12,15 @@ cpdef inline {{ render_method_signature(m) }}:
     raise NotImplementedError  # TODO
 {%   else %}
 {%     if m.return_type.is_scalar %}
-    cdef {{ m.return_type.cy_type }} ret = {{ m.c_name }}(
+    cdef {{ m.return_type.cy_type }} ret = gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
 {%     elif m.return_type.is_builtin %}
     # Call to __new__ bypasses __init__ constructor
     cdef {{ m.return_type.cy_type }} ret = {{ m.return_type.cy_type }}.__new__({{ m.return_type.cy_type }})
-    ret._gd_data = {{ m.c_name }}(
+    ret._gd_data = gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
 {%     elif m.return_type.is_object or m.return_type.is_variant %}
-    cdef {{  m.return_type.c_type }} ret = {{ m.c_name }}(
+    cdef {{  m.return_type.c_type }} ret = gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
 {%     else %}
-    {{ m.c_name }}(
+    gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
 {%     endif %}
         &self._gd_data,
 {%       for arg in m.arguments %}

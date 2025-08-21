@@ -80,17 +80,17 @@ class BuiltinConstructorSpec:
 
     @property
     def c_name(self) -> str:
-        cooked_args = [arg.type.c_name_prefix[3:] for arg in self.arguments]
+        cooked_args = [arg.type.snake_name for arg in self.arguments]
         if not cooked_args:
             return self.base_name
         else:
             return self.base_name + "_from_" + "_".join(cooked_args)
 
     @classmethod
-    def parse(cls, item: dict, c_name_prefix: str) -> BuiltinConstructorSpec:
+    def parse(cls, item: dict, snake_name: str) -> BuiltinConstructorSpec:
         item.setdefault("arguments", [])
         args = [BuiltinMethodArgumentSpec.parse(x) for x in item["arguments"]]
-        item["base_name"] = f"{c_name_prefix}_new"
+        item["base_name"] = f"{snake_name}_new"
         assert_api_consistency(cls, item)
         return cls(
             index=item["index"],
@@ -102,24 +102,22 @@ class BuiltinConstructorSpec:
 @dataclass(slots=True)
 class BuiltinOperatorSpec:
     name: str
-    c_name: str
     original_name: str
     variant_operator_name: str
     right_type: TypeInUse | None
     return_type: TypeInUse
 
     @classmethod
-    def parse(cls, item: dict, c_name_prefix: str) -> BuiltinOperatorSpec:
+    def parse(cls, item: dict) -> BuiltinOperatorSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("right_type", None)
         item["name"], item["variant_operator_name"] = VARIANT_OPERATORS[item.pop("name")]
-        item["c_name"] = f"{c_name_prefix}_op_{item['name']}"
         if item["right_type"] is not None:
-            item["name"] = f"{item['name']}_{item['right_type'].lower()}"
+            right_type_snake_name = _builtin_snake_name(item["right_type"])
+            item["name"] = f"{item['name']}_{right_type_snake_name}"
         assert_api_consistency(cls, item)
         return cls(
             name=item["name"],
-            c_name=item["c_name"],
             original_name=item["original_name"],
             variant_operator_name=item["variant_operator_name"],
             # `right_type` is kind of a special case: most of the time `Nil/None` is
@@ -177,7 +175,6 @@ class BuiltinConstantSpec:
 @dataclass(slots=True)
 class BuiltinMethodSpec:
     name: str
-    c_name: str
     original_name: str
     return_type: TypeInUse | None
     is_vararg: bool
@@ -188,6 +185,8 @@ class BuiltinMethodSpec:
 
     @property
     def contains_unsuported_types(self) -> bool:
+        return False
+
         # TODO: support Variant & Object !
         def _unsuported_type(t):
             return t.is_variant or t.is_object
@@ -197,15 +196,13 @@ class BuiltinMethodSpec:
         )
 
     @classmethod
-    def parse(cls, item: dict, c_name_prefix: str) -> BuiltinMethodSpec:
+    def parse(cls, item: dict) -> BuiltinMethodSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("arguments", [])
         item.setdefault("return_type", "Nil")
-        item.setdefault("c_name", f"{c_name_prefix}_{item['original_name']}")
         assert_api_consistency(cls, item)
         return cls(
             name=correct_name(item["name"]),
-            c_name=item["c_name"],
             original_name=item["original_name"],
             return_type=TypeInUse.parse(item["return_type"]),
             is_vararg=item["is_vararg"],
@@ -234,7 +231,7 @@ class BuiltinTypeSpec(TypeSpec):
     Non-scalar, non-nil, non-object, non-variant types
     """
 
-    c_name_prefix: str
+    snake_name: str
     indexing_return_type: TypeInUse | None
     is_keyed: bool
     constructors: list[BuiltinConstructorSpec]
@@ -312,12 +309,6 @@ class OpaqueBuiltinTypeSpec(BuiltinTypeSpec):
     """
 
     @property
-    def c_destructor_name(self) -> str:
-        if self.is_stack_only:
-            raise RuntimeError("Stack only builtin doesn't need to call a destructor !")
-        return f"{self.c_name_prefix}_del"
-
-    @property
     def is_opaque_builtin(self) -> bool:
         return True
 
@@ -335,15 +326,16 @@ class TransparentBuiltinTypeSpec(BuiltinTypeSpec):
     """
 
     @property
-    def c_destructor_name(self) -> str:
-        raise RuntimeError("Transparent builtin doesn't need to call a destructor !")
-
-    @property
     def is_transparent_builtin(self) -> bool:
         return True
 
     def __post_init__(self):
         assert self.is_stack_only
+
+
+def _builtin_snake_name(original_name: str) -> str:
+    # Gotcha with Transform2D&Transform3D
+    return camel_to_snake(original_name.replace("2D", "2d").replace("3D", "3d"))
 
 
 def _parse_builtin(spec: dict) -> BuiltinTypeSpec:
@@ -370,11 +362,9 @@ def _parse_builtin(spec: dict) -> BuiltinTypeSpec:
     }
 
     original_name = spec["name"]
-    # Gotcha with Transform2D&Transform3D
-    snake_name = camel_to_snake(original_name.replace("2D", "2d").replace("3D", "3d"))
+    snake_name = _builtin_snake_name(original_name)
     is_stack_only = not spec["has_destructor"]
-    c_name_prefix = f"gd_{snake_name}"
-    c_type = f"{c_name_prefix}_t"
+    c_type = f"gd_{snake_name}_t"
 
     # Special case for the very commpon types to make them more explicit (e.g. to
     # avoid mixing Python's regular `str` with Godot `String`)
@@ -395,9 +385,9 @@ def _parse_builtin(spec: dict) -> BuiltinTypeSpec:
     py_type = cy_type
 
     variant_type_name = f"GDEXTENSION_VARIANT_TYPE_{snake_name.upper()}"
-    constructors = [BuiltinConstructorSpec.parse(x, c_name_prefix) for x in spec["constructors"]]
-    operators = [BuiltinOperatorSpec.parse(x, c_name_prefix) for x in spec["operators"]]
-    methods = [BuiltinMethodSpec.parse(x, c_name_prefix) for x in spec["methods"]]
+    constructors = [BuiltinConstructorSpec.parse(x, snake_name) for x in spec["constructors"]]
+    operators = [BuiltinOperatorSpec.parse(x) for x in spec["operators"]]
+    methods = [BuiltinMethodSpec.parse(x) for x in spec["methods"]]
     members = [BuiltinMemberSpec.parse(x) for x in spec["members"]]
     constants = [BuiltinConstantSpec.parse(x) for x in spec["constants"]]
     enums = [
@@ -416,7 +406,7 @@ def _parse_builtin(spec: dict) -> BuiltinTypeSpec:
         return TransparentBuiltinTypeSpec(
             size=spec["size"],
             original_name=original_name,
-            c_name_prefix=c_name_prefix,
+            snake_name=snake_name,
             py_type=py_type,
             c_type=c_type,
             cy_type=cy_type,
@@ -437,7 +427,7 @@ def _parse_builtin(spec: dict) -> BuiltinTypeSpec:
         return OpaqueBuiltinTypeSpec(
             size=spec["size"],
             original_name=original_name,
-            c_name_prefix=c_name_prefix,
+            snake_name=snake_name,
             py_type=py_type,
             c_type=c_type,
             cy_type=cy_type,

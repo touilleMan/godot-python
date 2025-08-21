@@ -1,0 +1,552 @@
+#include <godot/gdextension_interface.h>
+
+#ifdef _WIN32
+# define DLL_EXPORT __declspec(dllexport)
+# define DLL_IMPORT __declspec(dllimport)
+#else
+# define DLL_EXPORT
+# define DLL_IMPORT
+#endif
+
+
+// Just like any Godot builtin classes, Godot `StringName`'s size is defined in
+// `extension_api.json` and is platform-dependant (e.g. 4 bytes on float_32, 8 on double_64).
+// So in theory we should retrieve the value from the json file, convert it into a C
+// header file and include it here.
+// However this is cumbersome and we only need this once before the Python interpreter
+// is initialized (after that we can use the Python bindings), so instead we stick with
+// the biggest possible value and accept we will lose a couple of bytes on the stack ;)
+#define GD_STRING_NAME_MAX_SIZE 8
+
+
+DLL_EXPORT GDExtensionInterfaceGetProcAddress pythonscript_gdptr_get_proc_address = NULL;
+DLL_EXPORT GDExtensionClassLibraryPtr pythonscript_gdptr_library = NULL;
+
+
+/*
+* GDExtension interface functions
+*/
+
+
+DLL_EXPORT void (*pythonscript_gdptr_get_godot_version)(GDExtensionGodotVersion *r_godot_version);
+DLL_EXPORT void *(*pythonscript_gdptr_mem_alloc)(size_t p_bytes);
+DLL_EXPORT void *(*pythonscript_gdptr_mem_realloc)(void *p_ptr, size_t p_bytes);
+DLL_EXPORT void (*pythonscript_gdptr_mem_free)(void *p_ptr);
+DLL_EXPORT void (*pythonscript_gdptr_print_error)(const char *p_description, const char *p_function, const char *p_file, int32_t p_line, GDExtensionBool p_editor_notify);
+DLL_EXPORT void (*pythonscript_gdptr_print_error_with_message)(const char *p_description, const char *p_message, const char *p_function, const char *p_file, int32_t p_line, GDExtensionBool p_editor_notify);
+DLL_EXPORT void (*pythonscript_gdptr_print_warning)(const char *p_description, const char *p_function, const char *p_file, int32_t p_line, GDExtensionBool p_editor_notify);
+DLL_EXPORT void (*pythonscript_gdptr_print_warning_with_message)(const char *p_description, const char *p_message, const char *p_function, const char *p_file, int32_t p_line, GDExtensionBool p_editor_notify);
+DLL_EXPORT void (*pythonscript_gdptr_print_script_error)(const char *p_description, const char *p_function, const char *p_file, int32_t p_line, GDExtensionBool p_editor_notify);
+DLL_EXPORT void (*pythonscript_gdptr_print_script_error_with_message)(const char *p_description, const char *p_message, const char *p_function, const char *p_file, int32_t p_line, GDExtensionBool p_editor_notify);
+DLL_EXPORT uint64_t (*pythonscript_gdptr_get_native_struct_size)(GDExtensionConstStringNamePtr p_name);
+DLL_EXPORT void (*pythonscript_gdptr_variant_new_copy)(GDExtensionUninitializedVariantPtr r_dest, GDExtensionConstVariantPtr p_src);
+DLL_EXPORT void (*pythonscript_gdptr_variant_new_nil)(GDExtensionUninitializedVariantPtr r_dest);
+DLL_EXPORT void (*pythonscript_gdptr_variant_destroy)(GDExtensionVariantPtr p_self);
+DLL_EXPORT void (*pythonscript_gdptr_variant_call)(GDExtensionVariantPtr p_self, GDExtensionConstStringNamePtr p_method, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_argument_count, GDExtensionUninitializedVariantPtr r_return, GDExtensionCallError *r_error);
+DLL_EXPORT void (*pythonscript_gdptr_variant_call_static)(GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_method, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_argument_count, GDExtensionUninitializedVariantPtr r_return, GDExtensionCallError *r_error);
+DLL_EXPORT void (*pythonscript_gdptr_variant_evaluate)(GDExtensionVariantOperator p_op, GDExtensionConstVariantPtr p_a, GDExtensionConstVariantPtr p_b, GDExtensionUninitializedVariantPtr r_return, GDExtensionBool *r_valid);
+DLL_EXPORT void (*pythonscript_gdptr_variant_set)(GDExtensionVariantPtr p_self, GDExtensionConstVariantPtr p_key, GDExtensionConstVariantPtr p_value, GDExtensionBool *r_valid);
+DLL_EXPORT void (*pythonscript_gdptr_variant_set_named)(GDExtensionVariantPtr p_self, GDExtensionConstStringNamePtr p_key, GDExtensionConstVariantPtr p_value, GDExtensionBool *r_valid);
+DLL_EXPORT void (*pythonscript_gdptr_variant_set_keyed)(GDExtensionVariantPtr p_self, GDExtensionConstVariantPtr p_key, GDExtensionConstVariantPtr p_value, GDExtensionBool *r_valid);
+DLL_EXPORT void (*pythonscript_gdptr_variant_set_indexed)(GDExtensionVariantPtr p_self, GDExtensionInt p_index, GDExtensionConstVariantPtr p_value, GDExtensionBool *r_valid, GDExtensionBool *r_oob);
+DLL_EXPORT void (*pythonscript_gdptr_variant_get)(GDExtensionConstVariantPtr p_self, GDExtensionConstVariantPtr p_key, GDExtensionUninitializedVariantPtr r_ret, GDExtensionBool *r_valid);
+DLL_EXPORT void (*pythonscript_gdptr_variant_get_named)(GDExtensionConstVariantPtr p_self, GDExtensionConstStringNamePtr p_key, GDExtensionUninitializedVariantPtr r_ret, GDExtensionBool *r_valid);
+DLL_EXPORT void (*pythonscript_gdptr_variant_get_keyed)(GDExtensionConstVariantPtr p_self, GDExtensionConstVariantPtr p_key, GDExtensionUninitializedVariantPtr r_ret, GDExtensionBool *r_valid);
+DLL_EXPORT void (*pythonscript_gdptr_variant_get_indexed)(GDExtensionConstVariantPtr p_self, GDExtensionInt p_index, GDExtensionUninitializedVariantPtr r_ret, GDExtensionBool *r_valid, GDExtensionBool *r_oob);
+DLL_EXPORT GDExtensionBool (*pythonscript_gdptr_variant_iter_init)(GDExtensionConstVariantPtr p_self, GDExtensionUninitializedVariantPtr r_iter, GDExtensionBool *r_valid);
+DLL_EXPORT GDExtensionBool (*pythonscript_gdptr_variant_iter_next)(GDExtensionConstVariantPtr p_self, GDExtensionVariantPtr r_iter, GDExtensionBool *r_valid);
+DLL_EXPORT void (*pythonscript_gdptr_variant_iter_get)(GDExtensionConstVariantPtr p_self, GDExtensionVariantPtr r_iter, GDExtensionUninitializedVariantPtr r_ret, GDExtensionBool *r_valid);
+DLL_EXPORT GDExtensionInt (*pythonscript_gdptr_variant_hash)(GDExtensionConstVariantPtr p_self);
+DLL_EXPORT GDExtensionInt (*pythonscript_gdptr_variant_recursive_hash)(GDExtensionConstVariantPtr p_self, GDExtensionInt p_recursion_count);
+DLL_EXPORT GDExtensionBool (*pythonscript_gdptr_variant_hash_compare)(GDExtensionConstVariantPtr p_self, GDExtensionConstVariantPtr p_other);
+DLL_EXPORT GDExtensionBool (*pythonscript_gdptr_variant_booleanize)(GDExtensionConstVariantPtr p_self);
+DLL_EXPORT void (*pythonscript_gdptr_variant_duplicate)(GDExtensionConstVariantPtr p_self, GDExtensionVariantPtr r_ret, GDExtensionBool p_deep);
+DLL_EXPORT void (*pythonscript_gdptr_variant_stringify)(GDExtensionConstVariantPtr p_self, GDExtensionStringPtr r_ret);
+DLL_EXPORT GDExtensionVariantType (*pythonscript_gdptr_variant_get_type)(GDExtensionConstVariantPtr p_self);
+DLL_EXPORT GDExtensionBool (*pythonscript_gdptr_variant_has_method)(GDExtensionConstVariantPtr p_self, GDExtensionConstStringNamePtr p_method);
+DLL_EXPORT GDExtensionBool (*pythonscript_gdptr_variant_has_member)(GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_member);
+DLL_EXPORT GDExtensionBool (*pythonscript_gdptr_variant_has_key)(GDExtensionConstVariantPtr p_self, GDExtensionConstVariantPtr p_key, GDExtensionBool *r_valid);
+DLL_EXPORT GDObjectInstanceID (*pythonscript_gdptr_variant_get_object_instance_id)(GDExtensionConstVariantPtr p_self);
+DLL_EXPORT void (*pythonscript_gdptr_variant_get_type_name)(GDExtensionVariantType p_type, GDExtensionUninitializedStringPtr r_name);
+DLL_EXPORT GDExtensionBool (*pythonscript_gdptr_variant_can_convert)(GDExtensionVariantType p_from, GDExtensionVariantType p_to);
+DLL_EXPORT GDExtensionBool (*pythonscript_gdptr_variant_can_convert_strict)(GDExtensionVariantType p_from, GDExtensionVariantType p_to);
+DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc (*pythonscript_gdptr_get_variant_from_type_constructor)(GDExtensionVariantType p_type);
+DLL_EXPORT GDExtensionTypeFromVariantConstructorFunc (*pythonscript_gdptr_get_variant_to_type_constructor)(GDExtensionVariantType p_type);
+DLL_EXPORT GDExtensionVariantGetInternalPtrFunc (*pythonscript_gdptr_variant_get_ptr_internal_getter)(GDExtensionVariantType p_type);
+DLL_EXPORT GDExtensionPtrOperatorEvaluator (*pythonscript_gdptr_variant_get_ptr_operator_evaluator)(GDExtensionVariantOperator p_operator, GDExtensionVariantType p_type_a, GDExtensionVariantType p_type_b);
+DLL_EXPORT GDExtensionPtrBuiltInMethod (*pythonscript_gdptr_variant_get_ptr_builtin_method)(GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_method, GDExtensionInt p_hash);
+DLL_EXPORT GDExtensionPtrConstructor (*pythonscript_gdptr_variant_get_ptr_constructor)(GDExtensionVariantType p_type, int32_t p_constructor);
+DLL_EXPORT GDExtensionPtrDestructor (*pythonscript_gdptr_variant_get_ptr_destructor)(GDExtensionVariantType p_type);
+DLL_EXPORT void (*pythonscript_gdptr_variant_construct)(GDExtensionVariantType p_type, GDExtensionUninitializedVariantPtr r_base, const GDExtensionConstVariantPtr *p_args, int32_t p_argument_count, GDExtensionCallError *r_error);
+DLL_EXPORT GDExtensionPtrSetter (*pythonscript_gdptr_variant_get_ptr_setter)(GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_member);
+DLL_EXPORT GDExtensionPtrGetter (*pythonscript_gdptr_variant_get_ptr_getter)(GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_member);
+DLL_EXPORT GDExtensionPtrIndexedSetter (*pythonscript_gdptr_variant_get_ptr_indexed_setter)(GDExtensionVariantType p_type);
+DLL_EXPORT GDExtensionPtrIndexedGetter (*pythonscript_gdptr_variant_get_ptr_indexed_getter)(GDExtensionVariantType p_type);
+DLL_EXPORT GDExtensionPtrKeyedSetter (*pythonscript_gdptr_variant_get_ptr_keyed_setter)(GDExtensionVariantType p_type);
+DLL_EXPORT GDExtensionPtrKeyedGetter (*pythonscript_gdptr_variant_get_ptr_keyed_getter)(GDExtensionVariantType p_type);
+DLL_EXPORT GDExtensionPtrKeyedChecker (*pythonscript_gdptr_variant_get_ptr_keyed_checker)(GDExtensionVariantType p_type);
+DLL_EXPORT void (*pythonscript_gdptr_variant_get_constant_value)(GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_constant, GDExtensionUninitializedVariantPtr r_ret);
+DLL_EXPORT GDExtensionPtrUtilityFunction (*pythonscript_gdptr_variant_get_ptr_utility_function)(GDExtensionConstStringNamePtr p_function, GDExtensionInt p_hash);
+DLL_EXPORT void (*pythonscript_gdptr_string_new_with_latin1_chars)(GDExtensionUninitializedStringPtr r_dest, const char *p_contents);
+DLL_EXPORT void (*pythonscript_gdptr_string_new_with_utf8_chars)(GDExtensionUninitializedStringPtr r_dest, const char *p_contents);
+DLL_EXPORT void (*pythonscript_gdptr_string_new_with_utf16_chars)(GDExtensionUninitializedStringPtr r_dest, const char16_t *p_contents);
+DLL_EXPORT void (*pythonscript_gdptr_string_new_with_utf32_chars)(GDExtensionUninitializedStringPtr r_dest, const char32_t *p_contents);
+DLL_EXPORT void (*pythonscript_gdptr_string_new_with_wide_chars)(GDExtensionUninitializedStringPtr r_dest, const wchar_t *p_contents);
+DLL_EXPORT void (*pythonscript_gdptr_string_new_with_latin1_chars_and_len)(GDExtensionUninitializedStringPtr r_dest, const char *p_contents, GDExtensionInt p_size);
+DLL_EXPORT void (*pythonscript_gdptr_string_new_with_utf8_chars_and_len)(GDExtensionUninitializedStringPtr r_dest, const char *p_contents, GDExtensionInt p_size);
+DLL_EXPORT GDExtensionInt (*pythonscript_gdptr_string_new_with_utf8_chars_and_len2)(GDExtensionUninitializedStringPtr r_dest, const char *p_contents, GDExtensionInt p_size);
+DLL_EXPORT void (*pythonscript_gdptr_string_new_with_utf16_chars_and_len)(GDExtensionUninitializedStringPtr r_dest, const char16_t *p_contents, GDExtensionInt p_char_count);
+DLL_EXPORT GDExtensionInt (*pythonscript_gdptr_string_new_with_utf16_chars_and_len2)(GDExtensionUninitializedStringPtr r_dest, const char16_t *p_contents, GDExtensionInt p_char_count, GDExtensionBool p_default_little_endian);
+DLL_EXPORT void (*pythonscript_gdptr_string_new_with_utf32_chars_and_len)(GDExtensionUninitializedStringPtr r_dest, const char32_t *p_contents, GDExtensionInt p_char_count);
+DLL_EXPORT void (*pythonscript_gdptr_string_new_with_wide_chars_and_len)(GDExtensionUninitializedStringPtr r_dest, const wchar_t *p_contents, GDExtensionInt p_char_count);
+DLL_EXPORT GDExtensionInt (*pythonscript_gdptr_string_to_latin1_chars)(GDExtensionConstStringPtr p_self, char *r_text, GDExtensionInt p_max_write_length);
+DLL_EXPORT GDExtensionInt (*pythonscript_gdptr_string_to_utf8_chars)(GDExtensionConstStringPtr p_self, char *r_text, GDExtensionInt p_max_write_length);
+DLL_EXPORT GDExtensionInt (*pythonscript_gdptr_string_to_utf16_chars)(GDExtensionConstStringPtr p_self, char16_t *r_text, GDExtensionInt p_max_write_length);
+DLL_EXPORT GDExtensionInt (*pythonscript_gdptr_string_to_utf32_chars)(GDExtensionConstStringPtr p_self, char32_t *r_text, GDExtensionInt p_max_write_length);
+DLL_EXPORT GDExtensionInt (*pythonscript_gdptr_string_to_wide_chars)(GDExtensionConstStringPtr p_self, wchar_t *r_text, GDExtensionInt p_max_write_length);
+DLL_EXPORT char32_t *(*pythonscript_gdptr_string_operator_index)(GDExtensionStringPtr p_self, GDExtensionInt p_index);
+DLL_EXPORT const char32_t *(*pythonscript_gdptr_string_operator_index_const)(GDExtensionConstStringPtr p_self, GDExtensionInt p_index);
+DLL_EXPORT void (*pythonscript_gdptr_string_operator_plus_eq_string)(GDExtensionStringPtr p_self, GDExtensionConstStringPtr p_b);
+DLL_EXPORT void (*pythonscript_gdptr_string_operator_plus_eq_char)(GDExtensionStringPtr p_self, char32_t p_b);
+DLL_EXPORT void (*pythonscript_gdptr_string_operator_plus_eq_cstr)(GDExtensionStringPtr p_self, const char *p_b);
+DLL_EXPORT void (*pythonscript_gdptr_string_operator_plus_eq_wcstr)(GDExtensionStringPtr p_self, const wchar_t *p_b);
+DLL_EXPORT void (*pythonscript_gdptr_string_operator_plus_eq_c32str)(GDExtensionStringPtr p_self, const char32_t *p_b);
+DLL_EXPORT GDExtensionInt (*pythonscript_gdptr_string_resize)(GDExtensionStringPtr p_self, GDExtensionInt p_resize);
+DLL_EXPORT void (*pythonscript_gdptr_string_name_new_with_latin1_chars)(GDExtensionUninitializedStringNamePtr r_dest, const char *p_contents, GDExtensionBool p_is_static);
+DLL_EXPORT void (*pythonscript_gdptr_string_name_new_with_utf8_chars)(GDExtensionUninitializedStringNamePtr r_dest, const char *p_contents);
+DLL_EXPORT void (*pythonscript_gdptr_string_name_new_with_utf8_chars_and_len)(GDExtensionUninitializedStringNamePtr r_dest, const char *p_contents, GDExtensionInt p_size);
+DLL_EXPORT GDExtensionInt (*pythonscript_gdptr_xml_parser_open_buffer)(GDExtensionObjectPtr p_instance, const uint8_t *p_buffer, size_t p_size);
+DLL_EXPORT void (*pythonscript_gdptr_file_access_store_buffer)(GDExtensionObjectPtr p_instance, const uint8_t *p_src, uint64_t p_length);
+DLL_EXPORT uint64_t (*pythonscript_gdptr_file_access_get_buffer)(GDExtensionConstObjectPtr p_instance, uint8_t *p_dst, uint64_t p_length);
+DLL_EXPORT uint8_t *(*pythonscript_gdptr_image_ptrw)(GDExtensionObjectPtr p_instance);
+DLL_EXPORT const uint8_t *(*pythonscript_gdptr_image_ptr)(GDExtensionObjectPtr p_instance);
+DLL_EXPORT int64_t (*pythonscript_gdptr_worker_thread_pool_add_native_group_task)(GDExtensionObjectPtr p_instance, void (*p_func)(void *, uint32_t), void *p_userdata, int p_elements, int p_tasks, GDExtensionBool p_high_priority, GDExtensionConstStringPtr p_description);
+DLL_EXPORT int64_t (*pythonscript_gdptr_worker_thread_pool_add_native_task)(GDExtensionObjectPtr p_instance, void (*p_func)(void *), void *p_userdata, GDExtensionBool p_high_priority, GDExtensionConstStringPtr p_description);
+DLL_EXPORT uint8_t *(*pythonscript_gdptr_packed_byte_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT const uint8_t *(*pythonscript_gdptr_packed_byte_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT float *(*pythonscript_gdptr_packed_float32_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT const float *(*pythonscript_gdptr_packed_float32_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT double *(*pythonscript_gdptr_packed_float64_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT const double *(*pythonscript_gdptr_packed_float64_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT int32_t *(*pythonscript_gdptr_packed_int32_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT const int32_t *(*pythonscript_gdptr_packed_int32_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT int64_t *(*pythonscript_gdptr_packed_int64_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT const int64_t *(*pythonscript_gdptr_packed_int64_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT GDExtensionStringPtr (*pythonscript_gdptr_packed_string_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT GDExtensionStringPtr (*pythonscript_gdptr_packed_string_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT GDExtensionTypePtr (*pythonscript_gdptr_packed_vector2_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT GDExtensionTypePtr (*pythonscript_gdptr_packed_vector2_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT GDExtensionTypePtr (*pythonscript_gdptr_packed_vector3_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT GDExtensionTypePtr (*pythonscript_gdptr_packed_vector3_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT GDExtensionTypePtr (*pythonscript_gdptr_packed_vector4_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT GDExtensionTypePtr (*pythonscript_gdptr_packed_vector4_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT GDExtensionTypePtr (*pythonscript_gdptr_packed_color_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT GDExtensionTypePtr (*pythonscript_gdptr_packed_color_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT GDExtensionVariantPtr (*pythonscript_gdptr_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT GDExtensionVariantPtr (*pythonscript_gdptr_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
+DLL_EXPORT void (*pythonscript_gdptr_array_ref)(GDExtensionTypePtr p_self, GDExtensionConstTypePtr p_from);
+DLL_EXPORT void (*pythonscript_gdptr_array_set_typed)(GDExtensionTypePtr p_self, GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstVariantPtr p_script);
+DLL_EXPORT GDExtensionVariantPtr (*pythonscript_gdptr_dictionary_operator_index)(GDExtensionTypePtr p_self, GDExtensionConstVariantPtr p_key);
+DLL_EXPORT GDExtensionVariantPtr (*pythonscript_gdptr_dictionary_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionConstVariantPtr p_key);
+DLL_EXPORT void (*pythonscript_gdptr_dictionary_set_typed)(GDExtensionTypePtr p_self, GDExtensionVariantType p_key_type, GDExtensionConstStringNamePtr p_key_class_name, GDExtensionConstVariantPtr p_key_script, GDExtensionVariantType p_value_type, GDExtensionConstStringNamePtr p_value_class_name, GDExtensionConstVariantPtr p_value_script);
+DLL_EXPORT void (*pythonscript_gdptr_object_method_bind_call)(GDExtensionMethodBindPtr p_method_bind, GDExtensionObjectPtr p_instance, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_arg_count, GDExtensionUninitializedVariantPtr r_ret, GDExtensionCallError *r_error);
+DLL_EXPORT void (*pythonscript_gdptr_object_method_bind_ptrcall)(GDExtensionMethodBindPtr p_method_bind, GDExtensionObjectPtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret);
+DLL_EXPORT void (*pythonscript_gdptr_object_destroy)(GDExtensionObjectPtr p_o);
+DLL_EXPORT GDExtensionObjectPtr (*pythonscript_gdptr_global_get_singleton)(GDExtensionConstStringNamePtr p_name);
+DLL_EXPORT void *(*pythonscript_gdptr_object_get_instance_binding)(GDExtensionObjectPtr p_o, void *p_token, const GDExtensionInstanceBindingCallbacks *p_callbacks);
+DLL_EXPORT void (*pythonscript_gdptr_object_set_instance_binding)(GDExtensionObjectPtr p_o, void *p_token, void *p_binding, const GDExtensionInstanceBindingCallbacks *p_callbacks);
+DLL_EXPORT void (*pythonscript_gdptr_object_free_instance_binding)(GDExtensionObjectPtr p_o, void *p_token);
+DLL_EXPORT void (*pythonscript_gdptr_object_set_instance)(GDExtensionObjectPtr p_o, GDExtensionConstStringNamePtr p_classname, GDExtensionClassInstancePtr p_instance); /* p_classname should be a registered extension class and should extend the p_o object's class. */
+DLL_EXPORT GDExtensionBool (*pythonscript_gdptr_object_get_class_name)(GDExtensionConstObjectPtr p_object, GDExtensionClassLibraryPtr p_library, GDExtensionUninitializedStringNamePtr r_class_name);
+DLL_EXPORT GDExtensionObjectPtr (*pythonscript_gdptr_object_cast_to)(GDExtensionConstObjectPtr p_object, void *p_class_tag);
+DLL_EXPORT GDExtensionObjectPtr (*pythonscript_gdptr_object_get_instance_from_id)(GDObjectInstanceID p_instance_id);
+DLL_EXPORT GDObjectInstanceID (*pythonscript_gdptr_object_get_instance_id)(GDExtensionConstObjectPtr p_object);
+DLL_EXPORT GDExtensionBool (*pythonscript_gdptr_object_has_script_method)(GDExtensionConstObjectPtr p_object, GDExtensionConstStringNamePtr p_method);
+DLL_EXPORT void (*pythonscript_gdptr_object_call_script_method)(GDExtensionObjectPtr p_object, GDExtensionConstStringNamePtr p_method, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_argument_count, GDExtensionUninitializedVariantPtr r_return, GDExtensionCallError *r_error);
+DLL_EXPORT GDExtensionObjectPtr (*pythonscript_gdptr_ref_get_object)(GDExtensionConstRefPtr p_ref);
+DLL_EXPORT void (*pythonscript_gdptr_ref_set_object)(GDExtensionRefPtr p_ref, GDExtensionObjectPtr p_object);
+DLL_EXPORT GDExtensionScriptInstancePtr (*pythonscript_gdptr_script_instance_create)(const GDExtensionScriptInstanceInfo *p_info, GDExtensionScriptInstanceDataPtr p_instance_data);
+DLL_EXPORT GDExtensionScriptInstancePtr (*pythonscript_gdptr_script_instance_create2)(const GDExtensionScriptInstanceInfo2 *p_info, GDExtensionScriptInstanceDataPtr p_instance_data);
+DLL_EXPORT GDExtensionScriptInstancePtr (*pythonscript_gdptr_script_instance_create3)(const GDExtensionScriptInstanceInfo3 *p_info, GDExtensionScriptInstanceDataPtr p_instance_data);
+DLL_EXPORT GDExtensionScriptInstancePtr (*pythonscript_gdptr_placeholder_script_instance_create)(GDExtensionObjectPtr p_language, GDExtensionObjectPtr p_script, GDExtensionObjectPtr p_owner);
+DLL_EXPORT void (*pythonscript_gdptr_placeholder_script_instance_update)(GDExtensionScriptInstancePtr p_placeholder, GDExtensionConstTypePtr p_properties, GDExtensionConstTypePtr p_values);
+DLL_EXPORT GDExtensionScriptInstanceDataPtr (*pythonscript_gdptr_object_get_script_instance)(GDExtensionConstObjectPtr p_object, GDExtensionObjectPtr p_language);
+DLL_EXPORT void (*pythonscript_gdptr_callable_custom_create)(GDExtensionUninitializedTypePtr r_callable, GDExtensionCallableCustomInfo *p_callable_custom_info);
+DLL_EXPORT void (*pythonscript_gdptr_callable_custom_create2)(GDExtensionUninitializedTypePtr r_callable, GDExtensionCallableCustomInfo2 *p_callable_custom_info);
+DLL_EXPORT void *(*pythonscript_gdptr_callable_custom_get_userdata)(GDExtensionConstTypePtr p_callable, void *p_token);
+DLL_EXPORT GDExtensionObjectPtr (*pythonscript_gdptr_classdb_construct_object)(GDExtensionConstStringNamePtr p_classname);
+DLL_EXPORT GDExtensionObjectPtr (*pythonscript_gdptr_classdb_construct_object2)(GDExtensionConstStringNamePtr p_classname);
+DLL_EXPORT GDExtensionMethodBindPtr (*pythonscript_gdptr_classdb_get_method_bind)(GDExtensionConstStringNamePtr p_classname, GDExtensionConstStringNamePtr p_methodname, GDExtensionInt p_hash);
+DLL_EXPORT void *(*pythonscript_gdptr_classdb_get_class_tag)(GDExtensionConstStringNamePtr p_classname);
+DLL_EXPORT void (*pythonscript_gdptr_classdb_register_extension_class)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo *p_extension_funcs);
+DLL_EXPORT void (*pythonscript_gdptr_classdb_register_extension_class2)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo2 *p_extension_funcs);
+DLL_EXPORT void (*pythonscript_gdptr_classdb_register_extension_class3)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo3 *p_extension_funcs);
+DLL_EXPORT void (*pythonscript_gdptr_classdb_register_extension_class4)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo4 *p_extension_funcs);
+DLL_EXPORT void (*pythonscript_gdptr_classdb_register_extension_class_method)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, const GDExtensionClassMethodInfo *p_method_info);
+DLL_EXPORT void (*pythonscript_gdptr_classdb_register_extension_class_virtual_method)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, const GDExtensionClassVirtualMethodInfo *p_method_info);
+DLL_EXPORT void (*pythonscript_gdptr_classdb_register_extension_class_integer_constant)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_enum_name, GDExtensionConstStringNamePtr p_constant_name, GDExtensionInt p_constant_value, GDExtensionBool p_is_bitfield);
+DLL_EXPORT void (*pythonscript_gdptr_classdb_register_extension_class_property)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, const GDExtensionPropertyInfo *p_info, GDExtensionConstStringNamePtr p_setter, GDExtensionConstStringNamePtr p_getter);
+DLL_EXPORT void (*pythonscript_gdptr_classdb_register_extension_class_property_indexed)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, const GDExtensionPropertyInfo *p_info, GDExtensionConstStringNamePtr p_setter, GDExtensionConstStringNamePtr p_getter, GDExtensionInt p_index);
+DLL_EXPORT void (*pythonscript_gdptr_classdb_register_extension_class_property_group)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringPtr p_group_name, GDExtensionConstStringPtr p_prefix);
+DLL_EXPORT void (*pythonscript_gdptr_classdb_register_extension_class_property_subgroup)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringPtr p_subgroup_name, GDExtensionConstStringPtr p_prefix);
+DLL_EXPORT void (*pythonscript_gdptr_classdb_register_extension_class_signal)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_signal_name, const GDExtensionPropertyInfo *p_argument_info, GDExtensionInt p_argument_count);
+DLL_EXPORT void (*pythonscript_gdptr_classdb_unregister_extension_class)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name); /* Unregistering a parent class before a class that inherits it will result in failure. Inheritors must be unregistered first. */
+DLL_EXPORT void (*pythonscript_gdptr_get_library_path)(GDExtensionClassLibraryPtr p_library, GDExtensionUninitializedStringPtr r_path);
+DLL_EXPORT void (*pythonscript_gdptr_editor_add_plugin)(GDExtensionConstStringNamePtr p_class_name);
+DLL_EXPORT void (*pythonscript_gdptr_editor_remove_plugin)(GDExtensionConstStringNamePtr p_class_name);
+DLL_EXPORT void (*pythonscript_gdptr_editor_help_load_xml_from_utf8_chars)(const char *p_data);
+DLL_EXPORT void (*pythonscript_gdptr_editor_help_load_xml_from_utf8_chars_and_len)(const char *p_data, GDExtensionInt p_size);
+
+
+static void init_functions() {
+    pythonscript_gdptr_get_godot_version = (void*)pythonscript_gdptr_get_proc_address("get_godot_version");
+    pythonscript_gdptr_mem_alloc = (void*)pythonscript_gdptr_get_proc_address("mem_alloc");
+    pythonscript_gdptr_mem_realloc = (void*)pythonscript_gdptr_get_proc_address("mem_realloc");
+    pythonscript_gdptr_mem_free = (void*)pythonscript_gdptr_get_proc_address("mem_free");
+    pythonscript_gdptr_print_error = (void*)pythonscript_gdptr_get_proc_address("print_error");
+    pythonscript_gdptr_print_error_with_message = (void*)pythonscript_gdptr_get_proc_address("print_error_with_message");
+    pythonscript_gdptr_print_warning = (void*)pythonscript_gdptr_get_proc_address("print_warning");
+    pythonscript_gdptr_print_warning_with_message = (void*)pythonscript_gdptr_get_proc_address("print_warning_with_message");
+    pythonscript_gdptr_print_script_error = (void*)pythonscript_gdptr_get_proc_address("print_script_error");
+    pythonscript_gdptr_print_script_error_with_message = (void*)pythonscript_gdptr_get_proc_address("print_script_error_with_message");
+    pythonscript_gdptr_get_native_struct_size = (void*)pythonscript_gdptr_get_proc_address("get_native_struct_size");
+    pythonscript_gdptr_variant_new_copy = (void*)pythonscript_gdptr_get_proc_address("variant_new_copy");
+    pythonscript_gdptr_variant_new_nil = (void*)pythonscript_gdptr_get_proc_address("variant_new_nil");
+    pythonscript_gdptr_variant_destroy = (void*)pythonscript_gdptr_get_proc_address("variant_destroy");
+    pythonscript_gdptr_variant_call = (void*)pythonscript_gdptr_get_proc_address("variant_call");
+    pythonscript_gdptr_variant_call_static = (void*)pythonscript_gdptr_get_proc_address("variant_call_static");
+    pythonscript_gdptr_variant_evaluate = (void*)pythonscript_gdptr_get_proc_address("variant_evaluate");
+    pythonscript_gdptr_variant_set = (void*)pythonscript_gdptr_get_proc_address("variant_set");
+    pythonscript_gdptr_variant_set_named = (void*)pythonscript_gdptr_get_proc_address("variant_set_named");
+    pythonscript_gdptr_variant_set_keyed = (void*)pythonscript_gdptr_get_proc_address("variant_set_keyed");
+    pythonscript_gdptr_variant_set_indexed = (void*)pythonscript_gdptr_get_proc_address("variant_set_indexed");
+    pythonscript_gdptr_variant_get = (void*)pythonscript_gdptr_get_proc_address("variant_get");
+    pythonscript_gdptr_variant_get_named = (void*)pythonscript_gdptr_get_proc_address("variant_get_named");
+    pythonscript_gdptr_variant_get_keyed = (void*)pythonscript_gdptr_get_proc_address("variant_get_keyed");
+    pythonscript_gdptr_variant_get_indexed = (void*)pythonscript_gdptr_get_proc_address("variant_get_indexed");
+    pythonscript_gdptr_variant_iter_init = (void*)pythonscript_gdptr_get_proc_address("variant_iter_init");
+    pythonscript_gdptr_variant_iter_next = (void*)pythonscript_gdptr_get_proc_address("variant_iter_next");
+    pythonscript_gdptr_variant_iter_get = (void*)pythonscript_gdptr_get_proc_address("variant_iter_get");
+    pythonscript_gdptr_variant_hash = (void*)pythonscript_gdptr_get_proc_address("variant_hash");
+    pythonscript_gdptr_variant_recursive_hash = (void*)pythonscript_gdptr_get_proc_address("variant_recursive_hash");
+    pythonscript_gdptr_variant_hash_compare = (void*)pythonscript_gdptr_get_proc_address("variant_hash_compare");
+    pythonscript_gdptr_variant_booleanize = (void*)pythonscript_gdptr_get_proc_address("variant_booleanize");
+    pythonscript_gdptr_variant_duplicate = (void*)pythonscript_gdptr_get_proc_address("variant_duplicate");
+    pythonscript_gdptr_variant_stringify = (void*)pythonscript_gdptr_get_proc_address("variant_stringify");
+    pythonscript_gdptr_variant_get_type = (void*)pythonscript_gdptr_get_proc_address("variant_get_type");
+    pythonscript_gdptr_variant_has_method = (void*)pythonscript_gdptr_get_proc_address("variant_has_method");
+    pythonscript_gdptr_variant_has_member = (void*)pythonscript_gdptr_get_proc_address("variant_has_member");
+    pythonscript_gdptr_variant_has_key = (void*)pythonscript_gdptr_get_proc_address("variant_has_key");
+    pythonscript_gdptr_variant_get_object_instance_id = (void*)pythonscript_gdptr_get_proc_address("variant_get_object_instance_id");
+    pythonscript_gdptr_variant_get_type_name = (void*)pythonscript_gdptr_get_proc_address("variant_get_type_name");
+    pythonscript_gdptr_variant_can_convert = (void*)pythonscript_gdptr_get_proc_address("variant_can_convert");
+    pythonscript_gdptr_variant_can_convert_strict = (void*)pythonscript_gdptr_get_proc_address("variant_can_convert_strict");
+    pythonscript_gdptr_get_variant_from_type_constructor = (void*)pythonscript_gdptr_get_proc_address("get_variant_from_type_constructor");
+    pythonscript_gdptr_get_variant_to_type_constructor = (void*)pythonscript_gdptr_get_proc_address("get_variant_to_type_constructor");
+    pythonscript_gdptr_variant_get_ptr_internal_getter = (void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_internal_getter");
+    pythonscript_gdptr_variant_get_ptr_operator_evaluator = (void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_operator_evaluator");
+    pythonscript_gdptr_variant_get_ptr_builtin_method = (void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_builtin_method");
+    pythonscript_gdptr_variant_get_ptr_constructor = (void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_constructor");
+    pythonscript_gdptr_variant_get_ptr_destructor = (void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_destructor");
+    pythonscript_gdptr_variant_construct = (void*)pythonscript_gdptr_get_proc_address("variant_construct");
+    pythonscript_gdptr_variant_get_ptr_setter = (void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_setter");
+    pythonscript_gdptr_variant_get_ptr_getter = (void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_getter");
+    pythonscript_gdptr_variant_get_ptr_indexed_setter = (void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_indexed_setter");
+    pythonscript_gdptr_variant_get_ptr_indexed_getter = (void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_indexed_getter");
+    pythonscript_gdptr_variant_get_ptr_keyed_setter = (void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_keyed_setter");
+    pythonscript_gdptr_variant_get_ptr_keyed_getter = (void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_keyed_getter");
+    pythonscript_gdptr_variant_get_ptr_keyed_checker = (void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_keyed_checker");
+    pythonscript_gdptr_variant_get_constant_value = (void*)pythonscript_gdptr_get_proc_address("variant_get_constant_value");
+    pythonscript_gdptr_variant_get_ptr_utility_function = (void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_utility_function");
+    pythonscript_gdptr_string_new_with_latin1_chars = (void*)pythonscript_gdptr_get_proc_address("string_new_with_latin1_chars");
+    pythonscript_gdptr_string_new_with_utf8_chars = (void*)pythonscript_gdptr_get_proc_address("string_new_with_utf8_chars");
+    pythonscript_gdptr_string_new_with_utf16_chars = (void*)pythonscript_gdptr_get_proc_address("string_new_with_utf16_chars");
+    pythonscript_gdptr_string_new_with_utf32_chars = (void*)pythonscript_gdptr_get_proc_address("string_new_with_utf32_chars");
+    pythonscript_gdptr_string_new_with_wide_chars = (void*)pythonscript_gdptr_get_proc_address("string_new_with_wide_chars");
+    pythonscript_gdptr_string_new_with_latin1_chars_and_len = (void*)pythonscript_gdptr_get_proc_address("string_new_with_latin1_chars_and_len");
+    pythonscript_gdptr_string_new_with_utf8_chars_and_len = (void*)pythonscript_gdptr_get_proc_address("string_new_with_utf8_chars_and_len");
+    pythonscript_gdptr_string_new_with_utf8_chars_and_len2 = (void*)pythonscript_gdptr_get_proc_address("string_new_with_utf8_chars_and_len2");
+    pythonscript_gdptr_string_new_with_utf16_chars_and_len = (void*)pythonscript_gdptr_get_proc_address("string_new_with_utf16_chars_and_len");
+    pythonscript_gdptr_string_new_with_utf16_chars_and_len2 = (void*)pythonscript_gdptr_get_proc_address("string_new_with_utf16_chars_and_len2");
+    pythonscript_gdptr_string_new_with_utf32_chars_and_len = (void*)pythonscript_gdptr_get_proc_address("string_new_with_utf32_chars_and_len");
+    pythonscript_gdptr_string_new_with_wide_chars_and_len = (void*)pythonscript_gdptr_get_proc_address("string_new_with_wide_chars_and_len");
+    pythonscript_gdptr_string_to_latin1_chars = (void*)pythonscript_gdptr_get_proc_address("string_to_latin1_chars");
+    pythonscript_gdptr_string_to_utf8_chars = (void*)pythonscript_gdptr_get_proc_address("string_to_utf8_chars");
+    pythonscript_gdptr_string_to_utf16_chars = (void*)pythonscript_gdptr_get_proc_address("string_to_utf16_chars");
+    pythonscript_gdptr_string_to_utf32_chars = (void*)pythonscript_gdptr_get_proc_address("string_to_utf32_chars");
+    pythonscript_gdptr_string_to_wide_chars = (void*)pythonscript_gdptr_get_proc_address("string_to_wide_chars");
+    pythonscript_gdptr_string_operator_index = (void*)pythonscript_gdptr_get_proc_address("string_operator_index");
+    pythonscript_gdptr_string_operator_index_const = (void*)pythonscript_gdptr_get_proc_address("string_operator_index_const");
+    pythonscript_gdptr_string_operator_plus_eq_string = (void*)pythonscript_gdptr_get_proc_address("string_operator_plus_eq_string");
+    pythonscript_gdptr_string_operator_plus_eq_char = (void*)pythonscript_gdptr_get_proc_address("string_operator_plus_eq_char");
+    pythonscript_gdptr_string_operator_plus_eq_cstr = (void*)pythonscript_gdptr_get_proc_address("string_operator_plus_eq_cstr");
+    pythonscript_gdptr_string_operator_plus_eq_wcstr = (void*)pythonscript_gdptr_get_proc_address("string_operator_plus_eq_wcstr");
+    pythonscript_gdptr_string_operator_plus_eq_c32str = (void*)pythonscript_gdptr_get_proc_address("string_operator_plus_eq_c32str");
+    pythonscript_gdptr_string_resize = (void*)pythonscript_gdptr_get_proc_address("string_resize");
+    pythonscript_gdptr_string_name_new_with_latin1_chars = (void*)pythonscript_gdptr_get_proc_address("string_name_new_with_latin1_chars");
+    pythonscript_gdptr_string_name_new_with_utf8_chars = (void*)pythonscript_gdptr_get_proc_address("string_name_new_with_utf8_chars");
+    pythonscript_gdptr_string_name_new_with_utf8_chars_and_len = (void*)pythonscript_gdptr_get_proc_address("string_name_new_with_utf8_chars_and_len");
+    pythonscript_gdptr_xml_parser_open_buffer = (void*)pythonscript_gdptr_get_proc_address("xml_parser_open_buffer");
+    pythonscript_gdptr_file_access_store_buffer = (void*)pythonscript_gdptr_get_proc_address("file_access_store_buffer");
+    pythonscript_gdptr_file_access_get_buffer = (void*)pythonscript_gdptr_get_proc_address("file_access_get_buffer");
+    pythonscript_gdptr_image_ptrw = (void*)pythonscript_gdptr_get_proc_address("image_ptrw");
+    pythonscript_gdptr_image_ptr = (void*)pythonscript_gdptr_get_proc_address("image_ptr");
+    pythonscript_gdptr_worker_thread_pool_add_native_group_task = (void*)pythonscript_gdptr_get_proc_address("worker_thread_pool_add_native_group_task");
+    pythonscript_gdptr_worker_thread_pool_add_native_task = (void*)pythonscript_gdptr_get_proc_address("worker_thread_pool_add_native_task");
+    pythonscript_gdptr_packed_byte_array_operator_index = (void*)pythonscript_gdptr_get_proc_address("packed_byte_array_operator_index");
+    pythonscript_gdptr_packed_byte_array_operator_index_const = (void*)pythonscript_gdptr_get_proc_address("packed_byte_array_operator_index_const");
+    pythonscript_gdptr_packed_float32_array_operator_index = (void*)pythonscript_gdptr_get_proc_address("packed_float32_array_operator_index");
+    pythonscript_gdptr_packed_float32_array_operator_index_const = (void*)pythonscript_gdptr_get_proc_address("packed_float32_array_operator_index_const");
+    pythonscript_gdptr_packed_float64_array_operator_index = (void*)pythonscript_gdptr_get_proc_address("packed_float64_array_operator_index");
+    pythonscript_gdptr_packed_float64_array_operator_index_const = (void*)pythonscript_gdptr_get_proc_address("packed_float64_array_operator_index_const");
+    pythonscript_gdptr_packed_int32_array_operator_index = (void*)pythonscript_gdptr_get_proc_address("packed_int32_array_operator_index");
+    pythonscript_gdptr_packed_int32_array_operator_index_const = (void*)pythonscript_gdptr_get_proc_address("packed_int32_array_operator_index_const");
+    pythonscript_gdptr_packed_int64_array_operator_index = (void*)pythonscript_gdptr_get_proc_address("packed_int64_array_operator_index");
+    pythonscript_gdptr_packed_int64_array_operator_index_const = (void*)pythonscript_gdptr_get_proc_address("packed_int64_array_operator_index_const");
+    pythonscript_gdptr_packed_string_array_operator_index = (void*)pythonscript_gdptr_get_proc_address("packed_string_array_operator_index");
+    pythonscript_gdptr_packed_string_array_operator_index_const = (void*)pythonscript_gdptr_get_proc_address("packed_string_array_operator_index_const");
+    pythonscript_gdptr_packed_vector2_array_operator_index = (void*)pythonscript_gdptr_get_proc_address("packed_vector2_array_operator_index");
+    pythonscript_gdptr_packed_vector2_array_operator_index_const = (void*)pythonscript_gdptr_get_proc_address("packed_vector2_array_operator_index_const");
+    pythonscript_gdptr_packed_vector3_array_operator_index = (void*)pythonscript_gdptr_get_proc_address("packed_vector3_array_operator_index");
+    pythonscript_gdptr_packed_vector3_array_operator_index_const = (void*)pythonscript_gdptr_get_proc_address("packed_vector3_array_operator_index_const");
+    pythonscript_gdptr_packed_vector4_array_operator_index = (void*)pythonscript_gdptr_get_proc_address("packed_vector4_array_operator_index");
+    pythonscript_gdptr_packed_vector4_array_operator_index_const = (void*)pythonscript_gdptr_get_proc_address("packed_vector4_array_operator_index_const");
+    pythonscript_gdptr_packed_color_array_operator_index = (void*)pythonscript_gdptr_get_proc_address("packed_color_array_operator_index");
+    pythonscript_gdptr_packed_color_array_operator_index_const = (void*)pythonscript_gdptr_get_proc_address("packed_color_array_operator_index_const");
+    pythonscript_gdptr_array_operator_index = (void*)pythonscript_gdptr_get_proc_address("array_operator_index");
+    pythonscript_gdptr_array_operator_index_const = (void*)pythonscript_gdptr_get_proc_address("array_operator_index_const");
+    pythonscript_gdptr_array_ref = (void*)pythonscript_gdptr_get_proc_address("array_ref");
+    pythonscript_gdptr_array_set_typed = (void*)pythonscript_gdptr_get_proc_address("array_set_typed");
+    pythonscript_gdptr_dictionary_operator_index = (void*)pythonscript_gdptr_get_proc_address("dictionary_operator_index");
+    pythonscript_gdptr_dictionary_operator_index_const = (void*)pythonscript_gdptr_get_proc_address("dictionary_operator_index_const");
+    pythonscript_gdptr_dictionary_set_typed = (void*)pythonscript_gdptr_get_proc_address("dictionary_set_typed");
+    pythonscript_gdptr_object_method_bind_call = (void*)pythonscript_gdptr_get_proc_address("object_method_bind_call");
+    pythonscript_gdptr_object_method_bind_ptrcall = (void*)pythonscript_gdptr_get_proc_address("object_method_bind_ptrcall");
+    pythonscript_gdptr_object_destroy = (void*)pythonscript_gdptr_get_proc_address("object_destroy");
+    pythonscript_gdptr_global_get_singleton = (void*)pythonscript_gdptr_get_proc_address("global_get_singleton");
+    pythonscript_gdptr_object_get_instance_binding = (void*)pythonscript_gdptr_get_proc_address("object_get_instance_binding");
+    pythonscript_gdptr_object_set_instance_binding = (void*)pythonscript_gdptr_get_proc_address("object_set_instance_binding");
+    pythonscript_gdptr_object_free_instance_binding = (void*)pythonscript_gdptr_get_proc_address("object_free_instance_binding");
+    pythonscript_gdptr_object_set_instance = (void*)pythonscript_gdptr_get_proc_address("object_set_instance");
+    pythonscript_gdptr_object_get_class_name = (void*)pythonscript_gdptr_get_proc_address("object_get_class_name");
+    pythonscript_gdptr_object_cast_to = (void*)pythonscript_gdptr_get_proc_address("object_cast_to");
+    pythonscript_gdptr_object_get_instance_from_id = (void*)pythonscript_gdptr_get_proc_address("object_get_instance_from_id");
+    pythonscript_gdptr_object_get_instance_id = (void*)pythonscript_gdptr_get_proc_address("object_get_instance_id");
+    pythonscript_gdptr_object_has_script_method = (void*)pythonscript_gdptr_get_proc_address("object_has_script_method");
+    pythonscript_gdptr_object_call_script_method = (void*)pythonscript_gdptr_get_proc_address("object_call_script_method");
+    pythonscript_gdptr_ref_get_object = (void*)pythonscript_gdptr_get_proc_address("ref_get_object");
+    pythonscript_gdptr_ref_set_object = (void*)pythonscript_gdptr_get_proc_address("ref_set_object");
+    pythonscript_gdptr_script_instance_create = (void*)pythonscript_gdptr_get_proc_address("script_instance_create");
+    pythonscript_gdptr_script_instance_create2 = (void*)pythonscript_gdptr_get_proc_address("script_instance_create2");
+    pythonscript_gdptr_script_instance_create3 = (void*)pythonscript_gdptr_get_proc_address("script_instance_create3");
+    pythonscript_gdptr_placeholder_script_instance_create = (void*)pythonscript_gdptr_get_proc_address("placeholder_script_instance_create");
+    pythonscript_gdptr_placeholder_script_instance_update = (void*)pythonscript_gdptr_get_proc_address("placeholder_script_instance_update");
+    pythonscript_gdptr_object_get_script_instance = (void*)pythonscript_gdptr_get_proc_address("object_get_script_instance");
+    pythonscript_gdptr_callable_custom_create = (void*)pythonscript_gdptr_get_proc_address("callable_custom_create");
+    pythonscript_gdptr_callable_custom_create2 = (void*)pythonscript_gdptr_get_proc_address("callable_custom_create2");
+    pythonscript_gdptr_callable_custom_get_userdata = (void*)pythonscript_gdptr_get_proc_address("callable_custom_get_userdata");
+    pythonscript_gdptr_classdb_construct_object = (void*)pythonscript_gdptr_get_proc_address("classdb_construct_object");
+    pythonscript_gdptr_classdb_construct_object2 = (void*)pythonscript_gdptr_get_proc_address("classdb_construct_object2");
+    pythonscript_gdptr_classdb_get_method_bind = (void*)pythonscript_gdptr_get_proc_address("classdb_get_method_bind");
+    pythonscript_gdptr_classdb_get_class_tag = (void*)pythonscript_gdptr_get_proc_address("classdb_get_class_tag");
+    pythonscript_gdptr_classdb_register_extension_class = (void*)pythonscript_gdptr_get_proc_address("classdb_register_extension_class");
+    pythonscript_gdptr_classdb_register_extension_class2 = (void*)pythonscript_gdptr_get_proc_address("classdb_register_extension_class2");
+    pythonscript_gdptr_classdb_register_extension_class3 = (void*)pythonscript_gdptr_get_proc_address("classdb_register_extension_class3");
+    pythonscript_gdptr_classdb_register_extension_class4 = (void*)pythonscript_gdptr_get_proc_address("classdb_register_extension_class4");
+    pythonscript_gdptr_classdb_register_extension_class_method = (void*)pythonscript_gdptr_get_proc_address("classdb_register_extension_class_method");
+    pythonscript_gdptr_classdb_register_extension_class_virtual_method = (void*)pythonscript_gdptr_get_proc_address("classdb_register_extension_class_virtual_method");
+    pythonscript_gdptr_classdb_register_extension_class_integer_constant = (void*)pythonscript_gdptr_get_proc_address("classdb_register_extension_class_integer_constant");
+    pythonscript_gdptr_classdb_register_extension_class_property = (void*)pythonscript_gdptr_get_proc_address("classdb_register_extension_class_property");
+    pythonscript_gdptr_classdb_register_extension_class_property_indexed = (void*)pythonscript_gdptr_get_proc_address("classdb_register_extension_class_property_indexed");
+    pythonscript_gdptr_classdb_register_extension_class_property_group = (void*)pythonscript_gdptr_get_proc_address("classdb_register_extension_class_property_group");
+    pythonscript_gdptr_classdb_register_extension_class_property_subgroup = (void*)pythonscript_gdptr_get_proc_address("classdb_register_extension_class_property_subgroup");
+    pythonscript_gdptr_classdb_register_extension_class_signal = (void*)pythonscript_gdptr_get_proc_address("classdb_register_extension_class_signal");
+    pythonscript_gdptr_classdb_unregister_extension_class = (void*)pythonscript_gdptr_get_proc_address("classdb_unregister_extension_class");
+    pythonscript_gdptr_get_library_path = (void*)pythonscript_gdptr_get_proc_address("get_library_path");
+    pythonscript_gdptr_editor_add_plugin = (void*)pythonscript_gdptr_get_proc_address("editor_add_plugin");
+    pythonscript_gdptr_editor_remove_plugin = (void*)pythonscript_gdptr_get_proc_address("editor_remove_plugin");
+    pythonscript_gdptr_editor_help_load_xml_from_utf8_chars = (void*)pythonscript_gdptr_get_proc_address("editor_help_load_xml_from_utf8_chars");
+    pythonscript_gdptr_editor_help_load_xml_from_utf8_chars_and_len = (void*)pythonscript_gdptr_get_proc_address("editor_help_load_xml_from_utf8_chars_and_len");
+}
+
+
+/*
+ * Builtins methods function pointers
+ */
+
+
+// Variant stuff
+
+
+DLL_EXPORT GDExtensionTypeFromVariantConstructorFunc pythonscript_gdptr_object_from_variant;
+DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc pythonscript_gdptr_object_into_variant;
+DLL_EXPORT GDExtensionTypeFromVariantConstructorFunc pythonscript_gdptr_bool_from_variant;
+DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc pythonscript_gdptr_bool_into_variant;
+DLL_EXPORT GDExtensionTypeFromVariantConstructorFunc pythonscript_gdptr_int_from_variant;
+DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc pythonscript_gdptr_int_into_variant;
+DLL_EXPORT GDExtensionTypeFromVariantConstructorFunc pythonscript_gdptr_float_from_variant;
+DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc pythonscript_gdptr_float_into_variant;
+
+
+static void init_variant_converters() {
+    pythonscript_gdptr_object_from_variant = \
+        pythonscript_gdptr_get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_OBJECT);
+    pythonscript_gdptr_object_into_variant = \
+        pythonscript_gdptr_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_OBJECT);
+
+    pythonscript_gdptr_bool_from_variant = \
+        pythonscript_gdptr_get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_BOOL);
+    pythonscript_gdptr_bool_into_variant = \
+        pythonscript_gdptr_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_BOOL);
+
+    pythonscript_gdptr_int_from_variant = \
+        pythonscript_gdptr_get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_INT);
+    pythonscript_gdptr_int_into_variant = \
+        pythonscript_gdptr_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_INT);
+
+    pythonscript_gdptr_float_from_variant = \
+        pythonscript_gdptr_get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_FLOAT);
+    pythonscript_gdptr_float_into_variant = \
+        pythonscript_gdptr_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_FLOAT);
+}
+
+
+// Builtins destructors
+// (must be declared first given StringName's destructor is used in the other init functions)
+
+
+{% for builtin in api.builtins %}
+{%   if not builtin.is_stack_only %}
+DLL_EXPORT GDExtensionPtrDestructor pythonscript_gdptr_{{ builtin.snake_name }}_destructor;
+{%   endif %}
+{% endfor %}
+
+
+static void init_builtin_destructors() {
+{% for builtin in api.builtins %}
+{%   if not builtin.is_stack_only %}
+    pythonscript_gdptr_{{ builtin.snake_name }}_destructor = \
+        pythonscript_gdptr_variant_get_ptr_destructor({{ builtin.variant_type_name }});
+{%   endif %}
+{% endfor %}
+}
+
+
+{% for builtin in api.builtins %}
+// Builtin {{ builtin.original_name }}
+
+{%   for c in builtin.constructors %}
+DLL_EXPORT GDExtensionPtrConstructor pythonscript_gdptr_{{ builtin.snake_name }}_constructor_{{ c.index }};
+{%   endfor %}
+{%   for m in builtin.methods %}
+DLL_EXPORT GDExtensionPtrBuiltInMethod pythonscript_gdptr_{{ builtin.snake_name }}_meth_{{ m.name }};
+{%   endfor %}
+{%   if builtin.indexing_return_type is not none and builtin.is_keyed %}
+DLL_EXPORT GDExtensionPtrKeyedSetter pythonscript_gdptr_{{ builtin.snake_name }}_keyed_setter;
+DLL_EXPORT GDExtensionPtrKeyedGetter pythonscript_gdptr_{{ builtin.snake_name }}_keyed_getter;
+{%   endif %}
+{%   if builtin.indexing_return_type is not none and not builtin.is_keyed %}
+DLL_EXPORT GDExtensionPtrIndexedSetter pythonscript_gdptr_{{ builtin.snake_name }}_indexed_setter;
+DLL_EXPORT GDExtensionPtrIndexedGetter pythonscript_gdptr_{{ builtin.snake_name }}_indexed_getter;
+{%   endif %}
+{%   for o in builtin.operators %}
+{# TODO: make sure GDEXTENSION_VARIANT_TYPE_NIL also represents variant type #}
+{%     if o.right_type is none or o.right_type.is_variant %}
+DLL_EXPORT GDExtensionPtrOperatorEvaluator pythonscript_gdptr_{{ builtin.snake_name }}_op_{{ o.name }};
+{%     else %}
+DLL_EXPORT GDExtensionPtrOperatorEvaluator pythonscript_gdptr_{{ builtin.snake_name }}_op_{{ o.name }};
+{%     endif %}
+{%   endfor %}
+{%   for m in builtin.members %}
+{%     if not m.is_in_struct %}
+DLL_EXPORT GDExtensionPtrSetter pythonscript_gdptr_{{ builtin.snake_name }}_get_{{ m.name }};
+DLL_EXPORT GDExtensionPtrGetter pythonscript_gdptr_{{ builtin.snake_name }}_set_{{ m.name }};
+{%     endif %}
+{%   endfor %}
+DLL_EXPORT GDExtensionTypeFromVariantConstructorFunc pythonscript_gdptr_{{ builtin.snake_name }}_from_variant;
+DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc pythonscript_gdptr_{{ builtin.snake_name }}_into_variant;
+{% endfor %}
+
+
+static void init_builtin_functions() {
+    char _gdname[GD_STRING_NAME_MAX_SIZE];
+{% for builtin in api.builtins %}
+{%   for c in builtin.constructors %}
+    pythonscript_gdptr_{{ builtin.snake_name }}_constructor_{{ c.index }} = \
+        pythonscript_gdptr_variant_get_ptr_constructor({{ builtin.variant_type_name }}, {{ c.index }});
+{%   endfor %}
+{%   for m in builtin.methods %}
+    pythonscript_gdptr_string_name_new_with_utf8_chars(&_gdname, "{{ m.original_name }}");
+    pythonscript_gdptr_{{ builtin.snake_name }}_meth_{{ m.name }} = \
+        pythonscript_gdptr_variant_get_ptr_builtin_method({{ builtin.variant_type_name }}, &_gdname, {{ m.hash }});
+    pythonscript_gdptr_string_name_destructor(&_gdname);
+{%   endfor %}
+{%   if builtin.indexing_return_type is not none and builtin.is_keyed %}
+    pythonscript_gdptr_{{ builtin.snake_name }}_keyed_setter = \
+        pythonscript_gdptr_variant_get_ptr_keyed_setter({{ builtin.variant_type_name }});
+    pythonscript_gdptr_{{ builtin.snake_name }}_keyed_getter = \
+    pythonscript_gdptr_variant_get_ptr_keyed_getter({{ builtin.variant_type_name }});
+{%   endif %}
+{%   if builtin.indexing_return_type is not none and not builtin.is_keyed %}
+    pythonscript_gdptr_{{ builtin.snake_name }}_indexed_setter = \
+        pythonscript_gdptr_variant_get_ptr_indexed_setter({{ builtin.variant_type_name }});
+    pythonscript_gdptr_{{ builtin.snake_name }}_indexed_getter = \
+        pythonscript_gdptr_variant_get_ptr_indexed_getter({{ builtin.variant_type_name }});
+{%   endif %}
+{%   for o in builtin.operators %}
+{# TODO: make sure GDEXTENSION_VARIANT_TYPE_NIL also represents variant type #}
+{%     if o.right_type is none or o.right_type.is_variant %}
+    pythonscript_gdptr_{{ builtin.snake_name }}_op_{{ o.name }} = \
+        pythonscript_gdptr_variant_get_ptr_operator_evaluator({{ o.variant_operator_name }}, {{ builtin.variant_type_name }}, GDEXTENSION_VARIANT_TYPE_NIL);
+{%     else %}
+    pythonscript_gdptr_{{ builtin.snake_name }}_op_{{ o.name }} = \
+        pythonscript_gdptr_variant_get_ptr_operator_evaluator({{ o.variant_operator_name }}, {{ builtin.variant_type_name }}, {{ o.right_type.variant_type_name }});
+{%     endif %}
+{%   endfor %}
+{%   for m in builtin.members %}
+{%     if not m.is_in_struct %}
+    pythonscript_gdptr_string_name_new_with_utf8_chars(&_gdname, "{{ m.name }}");
+    pythonscript_gdptr_{{ builtin.snake_name }}_get_{{ m.name }} = \
+        pythonscript_gdptr_variant_get_ptr_setter({{ builtin.variant_type_name }}, &_gdname);
+    pythonscript_gdptr_{{ builtin.snake_name }}_set_{{ m.name }} = \
+        pythonscript_gdptr_variant_get_ptr_getter({{ builtin.variant_type_name }}, &_gdname);
+    pythonscript_gdptr_string_name_destructor(&_gdname);
+{%     endif %}
+{%   endfor %}
+    pythonscript_gdptr_{{ builtin.snake_name }}_from_variant = \
+        pythonscript_gdptr_get_variant_to_type_constructor({{ builtin.variant_type_name }});
+    pythonscript_gdptr_{{ builtin.snake_name }}_into_variant = \
+        pythonscript_gdptr_get_variant_from_type_constructor({{ builtin.variant_type_name }});
+{% endfor %}
+}
+
+
+/*
+ * Utility functions function pointers
+ */
+
+
+{% for utility in api.utility_functions %}
+// {{ utility.original_name }}
+DLL_EXPORT GDExtensionPtrUtilityFunction pythonscript_gdptr_utility_{{ utility.original_name }};
+{% endfor %}
+
+static void init_utility_functions() {
+    char _gdname[GD_STRING_NAME_MAX_SIZE];
+{% for utility in api.utility_functions %}
+    // {{ utility.original_name }}
+    pythonscript_gdptr_string_name_new_with_utf8_chars(&_gdname, "{{ utility.original_name }}");
+    pythonscript_gdptr_utility_{{ utility.original_name }} = \
+        pythonscript_gdptr_variant_get_ptr_utility_function(&_gdname, {{ utility.hash }});
+    pythonscript_gdptr_string_name_destructor(&_gdname);
+{% endfor %}
+}
+
+
+void init_pythonscript_gdextension() {
+    init_functions();  // Must be first (to obtain `string_name_new_with_utf8_chars`)
+    init_builtin_destructors();  // Must be second (to obtain `StringName` destructor)
+    init_builtin_functions();
+    init_variant_converters();
+    init_utility_functions();
+}

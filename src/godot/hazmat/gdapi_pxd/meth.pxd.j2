@@ -46,7 +46,7 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
     cdef {{ builtin.return_type.c_type }} __ret
 {%   if not builtin.return_type.is_stack_only %}
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
-    __ret = {{ builtin.return_type.c_name_prefix }}_new()
+    __ret = gd_{{ builtin.return_type.snake_name }}_new()
 {%   else %}
     # C compiler doesn't like passing to a function a pointer on uninitialized
     # data (see `-Wmaybe-uninitialized`).
@@ -54,7 +54,7 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
     memset(&__ret, 0, sizeof(__ret))
 {%   endif %}
 {% endif %}
-    gd_utility_{{ builtin.original_name }}_ptr(
+    gdptr_utility_{{ builtin.original_name }}(
         {# GDExtensionTypePtr ret #}
         {{ "NULL" if builtin.return_type.is_nil else "&__ret" }},
         {# const GDExtensionTypePtr *p_arguments #}
@@ -75,12 +75,12 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
 {# to pass a `gd_variant_t**` as parameter) whose size is passed in the number #}
 {# of parameters fields... Yes this is very confusing stuff, my brain hurts ! #}
 {% if builtin.return_type.is_nil %}
-    gd_utility_{{ builtin.original_name }}_ptr(NULL, <const void **>&args, args_count)
+    gdptr_utility_{{ builtin.original_name }}(NULL, <const void **>&args, args_count)
 {% else %}
     cdef gd_variant_t __ret  # TODO: improve return type !
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
     __ret = gd_variant_new()
-    gd_utility_{{ builtin.original_name }}_ptr(&__ret, <const void **>&args, args_count)
+    gdptr_utility_{{ builtin.original_name }}(&__ret, <const void **>&args, args_count)
     return __ret
 {% endif %}
 {% endmacro %}
@@ -102,15 +102,15 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
 
 
 {% macro render_builtin_from_variant_signature(builtin) %}
-{{ builtin.c_type }} {{ builtin.c_name_prefix }}_from_variant(gd_variant_t *val)
+{{ builtin.c_type }} gd_{{ builtin.snake_name }}_from_variant(gd_variant_t *val)
 {%- endmacro %}
 
 
 {% macro render_builtin_into_variant_signature(builtin) %}
 {%- if builtin.is_scalar %}
-gd_variant_t {{ builtin.c_name_prefix }}_into_variant({{ builtin.c_type }} val)
+gd_variant_t gd_{{ builtin.snake_name }}_into_variant({{ builtin.c_type }} val)
 {%- else %}
-gd_variant_t {{ builtin.c_name_prefix }}_into_variant({{ builtin.c_type }} *val)
+gd_variant_t gd_{{ builtin.snake_name }}_into_variant({{ builtin.c_type }} *val)
 {%- endif %}
 {% endmacro %}
 
@@ -118,12 +118,12 @@ gd_variant_t {{ builtin.c_name_prefix }}_into_variant({{ builtin.c_type }} *val)
 {% macro render_builtin_object_variant_conversions(builtin) %}
 cdef inline GDExtensionObjectPtr gd_object_from_variant(gd_variant_t *val):
     cdef GDExtensionObjectPtr ret
-    gd_object_from_variant_ptr(&ret, val)
+    gdptr_object_from_variant(&ret, val)
     return ret
 
 cdef inline gd_variant_t gd_object_into_variant(GDExtensionObjectPtr val):
     cdef gd_variant_t ret
-    gd_object_into_variant_ptr(&ret, &val)
+    gdptr_object_into_variant(&ret, &val)
     return ret
 {% endmacro %}
 
@@ -134,20 +134,20 @@ cdef inline {{ render_builtin_from_variant_signature(builtin) }}:
     cdef {{ builtin.c_type }} ret
 {% else %}
     # TODO: no longer needed once https://github.com/godotengine/godot/pull/35813 is merged
-    cdef {{ builtin.c_type }} ret = {{ builtin.c_name_prefix }}_new()
+    cdef {{ builtin.c_type }} ret = gd_{{ builtin.snake_name }}_new()
 {% endif %}
-    {{ builtin.c_name_prefix }}_from_variant_ptr(&ret, val)
+    gdptr_{{ builtin.snake_name }}_from_variant(&ret, val)
     return ret
 
 cdef inline {{ render_builtin_into_variant_signature(builtin) }}:
     cdef gd_variant_t ret
-    {{ builtin.c_name_prefix }}_into_variant_ptr(&ret, {{ "&val" if builtin.is_scalar else "val"}})
+    gdptr_{{ builtin.snake_name }}_into_variant(&ret, {{ "&val" if builtin.is_scalar else "val"}})
     return ret
 {% endmacro %}
 
 
 {% macro render_builtin_constructor_signature(builtin, constructor) -%}
-{{ builtin.c_type }} {{ constructor.c_name }}({{ render_args_signature(constructor.arguments) }})
+{{ builtin.c_type }} gd_{{ constructor.c_name }}({{ render_args_signature(constructor.arguments) }})
 {%- endmacro %}
 
 
@@ -159,7 +159,7 @@ cdef inline {{ render_builtin_constructor_signature(builtin, constructor) }}:
         {{- render_args(constructor.arguments) -}}
     ]
 {% endif %}
-    {{ builtin.c_name_prefix }}_constructor_{{ constructor.index }}_ptr(
+    gdptr_{{ builtin.snake_name }}_constructor_{{ constructor.index }}(
         &obj,
         <const void **>{{ "NULL" if (constructor.arguments | length) == 0 else "p_args" }}
     )
@@ -168,13 +168,13 @@ cdef inline {{ render_builtin_constructor_signature(builtin, constructor) }}:
 
 
 {% macro render_builtin_destructor_signature(builtin) -%}
-void {{ builtin.c_destructor_name }}({{ builtin.c_type }}* self)
+void gd_{{ builtin.snake_name }}_del({{ builtin.c_type }}* self)
 {%- endmacro %}
 
 
 {% macro render_builtin_destructor(builtin) %}
 cdef inline {{ render_builtin_destructor_signature(builtin) }}:
-    {{ builtin.c_name_prefix }}_destructor_ptr(self)
+    gdptr_{{ builtin.snake_name }}_destructor(self)
 {% endmacro %}
 
 
@@ -184,7 +184,7 @@ cdef inline {{ render_builtin_destructor_signature(builtin) }}:
 
 
 {% macro render_builtin_method_signature(builtin, meth) -%}
-{{ "void" if meth.return_type.is_nil else meth.return_type.c_type }} {{ meth.c_name }}(
+{{ "void" if meth.return_type.is_nil else meth.return_type.c_type }} gd_{{ builtin.snake_name }}_meth_{{ meth.name }}(
     {{- builtin.c_type }} *self
 {%- if meth.arguments | length %}, {{ render_args_signature(meth.arguments) -}} {% endif -%}
 )
@@ -204,7 +204,7 @@ cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
     cdef {{ meth.return_type.c_type }} __ret
 {%   if not meth.return_type.is_stack_only %}
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
-    __ret = {{ meth.return_type.c_name_prefix }}_new()
+    __ret = gd_{{ meth.return_type.snake_name }}_new()
 {%   else %}
     # C compiler doesn't like passing to a function a pointer on uninitialized
     # data (see `-Wmaybe-uninitialized`).
@@ -212,7 +212,7 @@ cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
     memset(&__ret, 0, sizeof(__ret))
 {%   endif %}
 {% endif %}
-    {{ builtin.c_name_prefix }}_meth_{{ meth.name }}_ptr(
+    gdptr_{{ builtin.snake_name }}_meth_{{ meth.name }}(
         {# GDExtensionTypePtr p_base #}
         self,
         {# const GDExtensionTypePtr *__args #}
@@ -234,28 +234,28 @@ cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
 
 
 {% macro render_builtin_member_getter(builtin, m) %}
-cdef inline {{ m.type.c_type }} {{ builtin.c_name_prefix }}_get_{{ m.name }}({{ builtin.c_type }} *self):
+cdef inline {{ m.type.c_type }} gd_{{ builtin.snake_name }}_get_{{ m.name }}({{ builtin.c_type }} *self):
     cdef {{ m.type.c_type }} __ret
 {% if not m.type.is_stack_only %}1
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
-    __ret = {{ m.type.c_name_prefix }}_new()
+    __ret = gd_{{ m.type.snake_name }}_new()
 {% else %}
     # C compiler doesn't like passing to a function a pointer on uninitialized
     # data (see `-Wmaybe-uninitialized`).
     # Should be optimized out in the end given the called function end up inlined.
     memset(&__ret, 0, sizeof(__ret))
 {% endif %}
-    {{ builtin.c_name_prefix }}_get_{{ m.name }}_ptr(self, &__ret)
+    gdptr_{{ builtin.snake_name }}_get_{{ m.name }}(self, &__ret)
     return __ret
 {% endmacro %}
 
 
 {% macro render_builtin_member_setter(builtin, m) %}
-cdef inline void {{ builtin.c_name_prefix }}_set_{{ m.name }}(
+cdef inline void gd_{{ builtin.snake_name }}_set_{{ m.name }}(
     {{ builtin.c_type }} *self,
     {{ m.type.c_type }} {{ "" if m.type.is_scalar else "*" }}val
 ):
-    {{ builtin.c_name_prefix }}_set_{{ m.name }}_ptr(self, {{ "&val" if m.type.is_scalar else "val" }})
+    gdptr_{{ builtin.snake_name }}_set_{{ m.name }}(self, {{ "&val" if m.type.is_scalar else "val" }})
 {% endmacro %}
 
 
@@ -265,29 +265,29 @@ cdef inline void {{ builtin.c_name_prefix }}_set_{{ m.name }}(
 
 
 {% macro render_builtin_indexed_getter(builtin) %}
-cdef inline {{ builtin.indexing_return_type.c_type }} {{ builtin.c_name_prefix }}_indexed_getter(const {{ builtin.c_type }} *self, GDExtensionInt index):
+cdef inline {{ builtin.indexing_return_type.c_type }} gd_{{ builtin.snake_name }}_indexed_getter(const {{ builtin.c_type }} *self, GDExtensionInt index):
     cdef {{ builtin.indexing_return_type.c_type }} __ret
 {%   if not builtin.indexing_return_type.is_stack_only %}
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
-    __ret = {{ builtin.indexing_return_type.c_name_prefix }}_new()
+    __ret = gd_{{ builtin.indexing_return_type.snake_name }}_new()
 {%   else %}
     # C compiler doesn't like passing to a function a pointer on uninitialized
     # data (see `-Wmaybe-uninitialized`).
     # Should be optimized out in the end given the called function end up inlined.
     memset(&__ret, 0, sizeof(__ret))
 {%   endif %}
-    {{ builtin.c_name_prefix }}_indexed_getter_ptr(self, index, &__ret)
+    gdptr_{{ builtin.snake_name }}_indexed_getter(self, index, &__ret)
     return __ret
 {% endmacro %}
 
 
 {% macro render_builtin_indexed_setter(builtin) %}
-cdef inline void {{ builtin.c_name_prefix }}_indexed_setter(
+cdef inline void gd_{{ builtin.snake_name }}_indexed_setter(
     {{ builtin.c_type }} *self,
     GDExtensionInt index,
     {{ builtin.indexing_return_type.c_type }} {{ "" if builtin.indexing_return_type.is_scalar else "*" }}value
 ):
-    {{ builtin.c_name_prefix }}_indexed_setter_ptr(self, index, {{ "&" if builtin.indexing_return_type.is_scalar else "" }}value)
+    gdptr_{{ builtin.snake_name }}_indexed_setter(self, index, {{ "&" if builtin.indexing_return_type.is_scalar else "" }}value)
 {% endmacro %}
 
 
@@ -297,29 +297,29 @@ cdef inline void {{ builtin.c_name_prefix }}_indexed_setter(
 
 
 {% macro render_builtin_keyed_getter(builtin) %}
-cdef inline {{ builtin.indexing_return_type.c_type }} {{ builtin.c_name_prefix }}_keyed_getter(const {{ builtin.c_type }} *self, const gd_variant_t *key):
+cdef inline {{ builtin.indexing_return_type.c_type }} gd_{{ builtin.snake_name }}_keyed_getter(const {{ builtin.c_type }} *self, const gd_variant_t *key):
     cdef {{ builtin.indexing_return_type.c_type }} __ret
 {%   if not builtin.indexing_return_type.is_stack_only %}
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
-    __ret = {{ builtin.indexing_return_type.c_name_prefix }}_new()
+    __ret = gd_{{ builtin.indexing_return_type.snake_name }}_new()
 {%   else %}
     # C compiler doesn't like passing to a function a pointer on uninitialized
     # data (see `-Wmaybe-uninitialized`).
     # Should be optimized out in the end given the called function end up inlined.
     memset(&__ret, 0, sizeof(__ret))
 {%   endif %}
-    {{ builtin.c_name_prefix }}_keyed_getter_ptr(self, key, &__ret)
+    gdptr_{{ builtin.snake_name }}_keyed_getter(self, key, &__ret)
     return __ret
 {% endmacro %}
 
 
 {% macro render_builtin_keyed_setter(builtin) %}
-cdef inline void {{ builtin.c_name_prefix }}_keyed_setter(
+cdef inline void gd_{{ builtin.snake_name }}_keyed_setter(
     {{ builtin.c_type }} *self,
     const gd_variant_t *key,
     const {{ builtin.indexing_return_type.c_type }} {{ "" if builtin.indexing_return_type.is_scalar else "*" }}value
 ):
-    {{ builtin.c_name_prefix }}_keyed_setter_ptr(self, key, {{ "&" if builtin.indexing_return_type.is_scalar else "" }}value)
+    gdptr_{{ builtin.snake_name }}_keyed_setter(self, key, {{ "&" if builtin.indexing_return_type.is_scalar else "" }}value)
 {% endmacro %}
 
 
@@ -331,19 +331,19 @@ cdef inline void {{ builtin.c_name_prefix }}_keyed_setter(
 {% macro render_builtin_operators(builtin) %}
 {% for o in builtin.operators %}
 {%   if o.right_type is none %}
-cdef inline {{ o.return_type.c_type }} {{ builtin.c_name_prefix }}_op_{{ o.name }}(
+cdef inline {{ o.return_type.c_type }} gd_{{ builtin.snake_name }}_op_{{ o.name }}(
     const {{ builtin.c_type }} *self
 ):
     cdef {{ o.return_type.c_type }} result
-    {{ builtin.c_name_prefix }}_op_{{ o.name }}_ptr(self, NULL, &result)
+    gdptr_{{ builtin.snake_name }}_op_{{ o.name }}(self, NULL, &result)
     return result
 {%   else %}
-cdef inline {{ o.return_type.c_type }} {{ builtin.c_name_prefix }}_op_{{ o.name }}(
+cdef inline {{ o.return_type.c_type }} gd_{{ builtin.snake_name }}_op_{{ o.name }}(
     const {{ builtin.c_type }} *self,
     const {{ o.right_type.c_type }} *other
 ):
     cdef {{ o.return_type.c_type }} result
-    {{ builtin.c_name_prefix }}_op_{{ o.name }}_ptr(self, other, &result)
+    gdptr_{{ builtin.snake_name }}_op_{{ o.name }}(self, other, &result)
     return result
 {%   endif %}
 {% endfor %}

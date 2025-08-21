@@ -48,13 +48,13 @@ cdef extern from "Python.h":
 
 cdef inline gd_string_t gd_string_from_utf8(const char *cstr):
     cdef gd_string_t gdstr
-    pythonscript_gdextension.string_new_with_utf8_chars(&gdstr, cstr)
+    gdptr_string_new_with_utf8_chars(&gdstr, cstr)
     return gdstr
 
 
 cdef inline gd_string_t gd_string_from_utf8_and_len(const char *cstr, ssize_t cstr_size):
     cdef gd_string_t gdstr
-    pythonscript_gdextension.string_new_with_utf8_chars_and_len(&gdstr, cstr, cstr_size)
+    gdptr_string_new_with_utf8_chars_and_len(&gdstr, cstr, cstr_size)
     return gdstr
 
 
@@ -65,14 +65,14 @@ cdef inline gd_string_t gd_string_from_unchecked_pystr(object pystr):
 
 
 cdef inline object gd_string_to_pystr(gd_string_t *gdstr):
-    cdef GDExtensionInt l = pythonscript_gdextension.string_to_utf32_chars(gdstr, NULL, 0)
-    cdef const char32_t *gdbuff = pythonscript_gdextension.string_operator_index_const(gdstr, 0)
+    cdef GDExtensionInt l = gdptr_string_to_utf32_chars(gdstr, NULL, 0)
+    cdef const char32_t *gdbuff = gdptr_string_operator_index_const(gdstr, 0)
     return PyUnicode_DecodeUTF32(<char *>gdbuff, l * cython.sizeof(char32_t), NULL, NULL)
 
 
 cdef inline gd_string_t gd_string_from_pybytes(bytes cstr):
     cdef gd_string_t gdstr
-    pythonscript_gdextension.string_new_with_utf8_chars_and_len(&gdstr, <char*>cstr, len(cstr))
+    gdptr_string_new_with_utf8_chars_and_len(&gdstr, <char*>cstr, len(cstr))
     return gdstr
 
 
@@ -91,13 +91,13 @@ cdef inline gd_string_name_t gd_string_name_from_pybytes(bytes cstr):
 
 cdef inline gd_string_name_t gd_string_name_from_utf8(const char *cstr):
     cdef gd_string_name_t gdstr
-    pythonscript_gdextension.string_name_new_with_utf8_chars(&gdstr, cstr)
+    gdptr_string_name_new_with_utf8_chars(&gdstr, cstr)
     return gdstr
 
 
 cdef inline gd_string_name_t gd_string_name_from_utf8_and_len(const char *cstr, ssize_t cstr_size):
     cdef gd_string_name_t gdstr
-    pythonscript_gdextension.string_name_new_with_utf8_chars_and_len(&gdstr, cstr, cstr_size)
+    gdptr_string_name_new_with_utf8_chars_and_len(&gdstr, cstr, cstr_size)
     return gdstr
 
 
@@ -152,7 +152,7 @@ cdef inline gd_variant_t gd_variant_new():
 
 
 cdef inline void gd_variant_del(gd_variant_t *variant):
-    pythonscript_gdextension.variant_destroy(variant)
+    gdptr_variant_destroy(variant)
 
 
 {{ render_builtin_object_variant_conversions() }}
@@ -185,18 +185,18 @@ cdef inline void gd_variant_del(gd_variant_t *variant):
 cdef extern from *:
     """
 {%     endif %}
-    #define {{ builtin.c_name_prefix.upper() }}_{{ c.name }} {{ c.value }}
+    #define GD_{{ builtin.snake_name.upper() }}_{{ c.name }} {{ c.value }}
 {%     if loop.last %}
     """
 {%     endif %}
 {%   endfor %}
 {%   for c in builtin.constants if c.type.is_scalar %}
-    int {{ builtin.c_name_prefix.upper() }}_{{ c.name }}
+    int GD_{{ builtin.snake_name.upper() }}_{{ c.name }}
 {%   endfor %}
 {%   for c in builtin.constants if not c.type.is_scalar %}
-cdef inline {{ c.type.c_type }} {{ builtin.c_name_prefix }}_make_constant_{{ c.name }}():
+cdef inline {{ c.type.c_type }} gd_{{ builtin.snake_name }}_make_constant_{{ c.name }}():
     # TODO: Initialize as {{ c.value }}
-    return {{ c.type.c_name_prefix }}_new()
+    return gd_{{ c.type.snake_name }}_new()
 {%   endfor %}
 {% endfor %}
 {# Don't expose enums given they are already provided among the constants #}

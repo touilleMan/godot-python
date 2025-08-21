@@ -215,12 +215,30 @@ c_pythonscript = custom_target('_pythonscript.c & _pythonscript.h',
 
 
 ##############################################################################
+#              pythonscript_gdextension_ptrs.c & generation                  #
+##############################################################################
+
+
+c_pythonscript_gdextension_ptrs = custom_target(
+    output: 'pythonscript_gdextension_ptrs.c',
+    input: [
+        generate_tmpl_base_input,
+        files(
+            'pythonscript_gdextension_ptrs.c.j2',
+        ),
+    ],
+    command: generate_tmpl_cmd,
+)
+
+
+##############################################################################
 #                     libythonscript.so compilation                          #
 ##############################################################################
 
 
 # libpythonscript.so
 # ├─ pythonscript.c
+# ├─ pythonscript_gdextension_ptrs.c
 # └─ _pythonscript.c
 # └─ _pythonscript.h
 #    └─ ...
@@ -251,7 +269,7 @@ endif
 
 lib_pythonscript = shared_library(
     'pythonscript',
-    ['pythonscript.c', c_pythonscript],
+    ['pythonscript.c', c_pythonscript_gdextension_ptrs, c_pythonscript],
     c_args: lib__pythonscript_c_args,
     dependencies: [dep_godot, dep_python],
     install_rpath: lib_pythonscript_rpath,  # To find libpython

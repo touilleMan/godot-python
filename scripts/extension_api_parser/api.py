@@ -167,7 +167,6 @@ class NativeStructureSpec(TypeSpec):
             fields=fields,
             py_type="",  # Never accessed dummy value
             cy_type="",  # Never accessed dummy value
-            # c_type=f"gd_{camel_to_snake(name)}_t",
             c_type=name,
             is_stack_only=True,
             variant_type_name="",  # Never accessed dummy value

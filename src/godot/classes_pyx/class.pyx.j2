@@ -12,7 +12,7 @@ cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }})
         raise NotImplementedError("TODO :'(") #}
 
     def free(self):
-        pythonscript_gdextension.object_destroy(self._gd_ptr)
+        gdptr_object_destroy(self._gd_ptr)
         self._gd_ptr = NULL
 
     def __init__(self):

@@ -10,11 +10,12 @@ from extension_api_parser import BuildConfig, parse_extension_api_json
 
 
 BASEDIR = Path(__file__).parent
-GODOT_DIR = BASEDIR / "../src/godot"
+SRC_DIR = BASEDIR / "../src"
+GODOT_DIR = SRC_DIR / "godot"
 HAZMAT_DIR = GODOT_DIR / "hazmat"
 TARGETS: Dict[str, Tuple[bool, Path]] = {
+    "pythonscript_gdextension_ptrs.c": (False, SRC_DIR),
     "gdnative_ptrs.pxd": (False, HAZMAT_DIR),
-    "gdnative_ptrs.pyx": (False, HAZMAT_DIR),
     "gdapi.pxd": (False, HAZMAT_DIR),
     "builtins.pyi": (False, GODOT_DIR),
     "builtins.pxd": (True, GODOT_DIR),

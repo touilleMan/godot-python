@@ -25,15 +25,15 @@
 #endif
 
 #ifdef __linux__
-#include <dlfcn.h>
+#include <dlfcn.h>  // Contains dlopen, RTLD_LAZY & RTLD_GLOBAL
 #endif
 
-// Just like any Godot builtin classes, GDString's size is defined in `extension_api.json`
-// and is platform-dependant (e.g. 4 bytes on float_32, 8 on double_64).
+// Just like any Godot builtin classes, Godot `String`&`StringName`'s size is defined in
+// `extension_api.json` and is platform-dependant (e.g. 4 bytes on float_32, 8 on double_64).
 // So in theory we should retrieve the value from the json file, convert it into a C
 // header file and include it here.
 // However this is cumbersome and we only need this once before the Python interpreter
-// is initialized (after that we can use the Python binding), so instead we stick with
+// is initialized (after that we can use the Python bindings), so instead we stick with
 // the biggest possible value and accept we will lose a couple of bytes on the stack ;)
 #define GD_STRING_MAX_SIZE 8
 #define GD_STRING_NAME_MAX_SIZE 8
@@ -57,13 +57,15 @@ typedef enum {
 static PythonscriptState state = STALLED;
 static PyThreadState *gilstate = NULL;
 
-// Global variables used by Cython modules to access the Godot API
-DLL_EXPORT GDExtensionInterfaceGetProcAddress pythonscript_gdextension_get_proc_address = NULL;
-DLL_EXPORT GDExtensionClassLibraryPtr pythonscript_gdextension_library = NULL;
+// Global variables used by Cython modules to access the Godot API, and
+// defined in `pythonscript_gdptr_ptrs.c`
+void init_pythonscript_gdextension();
+DLL_IMPORT extern GDExtensionInterfaceGetProcAddress pythonscript_gdptr_get_proc_address;
+DLL_IMPORT extern GDExtensionClassLibraryPtr pythonscript_gdptr_library;
 
 #define GD_PRINT_ERROR(msg) { \
     { \
-        GDExtensionInterfacePrintError fn = (GDExtensionInterfacePrintError)(void*)pythonscript_gdextension_get_proc_address("print_error"); \
+        GDExtensionInterfacePrintError fn = (GDExtensionInterfacePrintError)(void*)pythonscript_gdptr_get_proc_address("print_error"); \
         if (fn) { \
             fn(msg, __func__, __FILE__, __LINE__, false); \
         } else { \
@@ -74,7 +76,7 @@ DLL_EXPORT GDExtensionClassLibraryPtr pythonscript_gdextension_library = NULL;
 
 #define GD_PRINT_WARNING(msg) { \
     { \
-        GDExtensionInterfacePrintWarning fn = (GDExtensionInterfacePrintWarning)(void*)pythonscript_gdextension_get_proc_address("print_warning"); \
+        GDExtensionInterfacePrintWarning fn = (GDExtensionInterfacePrintWarning)(void*)pythonscript_gdptr_get_proc_address("print_warning"); \
         if (fn) { \
             fn(msg, __func__, __FILE__, __LINE__, false); \
         } else { \
@@ -92,8 +94,8 @@ static void _initialize_python() {
 
     // Load GDString & GDStringName contructors/destructors (needed above)
 
-    GDExtensionInterfaceVariantGetPtrConstructor variant_get_ptr_constructor = (GDExtensionInterfaceVariantGetPtrConstructor)(void*)pythonscript_gdextension_get_proc_address("variant_get_ptr_constructor");
-    GDExtensionInterfaceVariantGetPtrDestructor variant_get_ptr_destructor = (GDExtensionInterfaceVariantGetPtrDestructor)(void*)pythonscript_gdextension_get_proc_address("variant_get_ptr_destructor");
+    GDExtensionInterfaceVariantGetPtrConstructor variant_get_ptr_constructor = (GDExtensionInterfaceVariantGetPtrConstructor)(void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_constructor");
+    GDExtensionInterfaceVariantGetPtrDestructor variant_get_ptr_destructor = (GDExtensionInterfaceVariantGetPtrDestructor)(void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_destructor");
 
     GDExtensionPtrConstructor gd_string_constructor = variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 0);
     if (gd_string_constructor == NULL) {
@@ -113,7 +115,7 @@ static void _initialize_python() {
         goto error;
     }
 
-    GDExtensionInterfaceStringNameNewWithUtf8Chars gd_string_name_new_with_utf8_chars_with_utf8_chars = (GDExtensionInterfaceStringNameNewWithUtf8Chars)pythonscript_gdextension_get_proc_address("string_name_new_with_utf8_chars");
+    GDExtensionInterfaceStringNameNewWithUtf8Chars gd_string_name_new_with_utf8_chars_with_utf8_chars = (GDExtensionInterfaceStringNameNewWithUtf8Chars)pythonscript_gdptr_get_proc_address("string_name_new_with_utf8_chars");
     if (gd_string_name_new_with_utf8_chars_with_utf8_chars == NULL) {
         GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `string_name_new_with_utf8_chars`)");
         goto error;
@@ -132,7 +134,7 @@ static void _initialize_python() {
         gd_string_name_new_with_utf8_chars_with_utf8_chars(&method_name_as_gd_string_name, "get_base_dir");
         GDExtensionPtrBuiltInMethod gdstring_get_base_dir;
         {
-            GDExtensionInterfaceVariantGetPtrBuiltinMethod fn = (GDExtensionInterfaceVariantGetPtrBuiltinMethod)(void*)pythonscript_gdextension_get_proc_address("variant_get_ptr_builtin_method");
+            GDExtensionInterfaceVariantGetPtrBuiltinMethod fn = (GDExtensionInterfaceVariantGetPtrBuiltinMethod)(void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_builtin_method");
             gdstring_get_base_dir = fn(
                 GDEXTENSION_VARIANT_TYPE_STRING,
                 &method_name_as_gd_string_name,
@@ -148,8 +150,8 @@ static void _initialize_python() {
         // 1) Retrieve library path
         char gd_library_path[GD_STRING_MAX_SIZE];
         {
-            GDExtensionInterfaceGetLibraryPath fn = (GDExtensionInterfaceGetLibraryPath)(void*)pythonscript_gdextension_get_proc_address("get_library_path");
-            fn(pythonscript_gdextension_library, gd_library_path);
+            GDExtensionInterfaceGetLibraryPath fn = (GDExtensionInterfaceGetLibraryPath)(void*)pythonscript_gdptr_get_proc_address("get_library_path");
+            fn(pythonscript_gdptr_library, gd_library_path);
         }
 
         // 2) Retrieve base dir from library path
@@ -161,7 +163,7 @@ static void _initialize_python() {
         // 3) Convert base dir into regular c string
         GDExtensionInt basedir_path_size;
         {
-            GDExtensionInterfaceStringToUtf8Chars fn = (GDExtensionInterfaceStringToUtf8Chars)(void*)pythonscript_gdextension_get_proc_address("string_to_utf8_chars");
+            GDExtensionInterfaceStringToUtf8Chars fn = (GDExtensionInterfaceStringToUtf8Chars)(void*)pythonscript_gdptr_get_proc_address("string_to_utf8_chars");
             basedir_path_size = fn(gd_basedir_path, NULL, 0);
         }
         // Why not using variable length array here ? Glad you asked Timmy !
@@ -171,7 +173,7 @@ static void _initialize_python() {
         // like we're about to do two lines down.
         char *basedir_path;
         {
-            GDExtensionInterfaceMemAlloc fn = (GDExtensionInterfaceMemAlloc)(void*)pythonscript_gdextension_get_proc_address("mem_alloc");
+            GDExtensionInterfaceMemAlloc fn = (GDExtensionInterfaceMemAlloc)(void*)pythonscript_gdptr_get_proc_address("mem_alloc");
             basedir_path = fn(basedir_path_size + 1);
         }
         if (basedir_path == NULL) {
@@ -179,7 +181,7 @@ static void _initialize_python() {
             goto error;
         }
         {
-            GDExtensionInterfaceStringToUtf8Chars fn = (GDExtensionInterfaceStringToUtf8Chars)(void*)pythonscript_gdextension_get_proc_address("string_to_utf8_chars");
+            GDExtensionInterfaceStringToUtf8Chars fn = (GDExtensionInterfaceStringToUtf8Chars)(void*)pythonscript_gdptr_get_proc_address("string_to_utf8_chars");
             fn(gd_basedir_path, basedir_path, basedir_path_size);
         }
         basedir_path[basedir_path_size] = '\0';
@@ -194,7 +196,7 @@ static void _initialize_python() {
                 basedir_path
             );
             {
-                GDExtensionInterfaceMemFree fn = (GDExtensionInterfaceMemFree)(void*)pythonscript_gdextension_get_proc_address("mem_free");
+                GDExtensionInterfaceMemFree fn = (GDExtensionInterfaceMemFree)(void*)pythonscript_gdptr_get_proc_address("mem_free");
                 fn(basedir_path);
             }
             if (PyStatus_Exception(status)) {
@@ -375,10 +377,14 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
         printf("Pythonscript: Invalid init parameters provided by Godot (this should never happen !)\n");
         goto error;
     }
-    // `pythonscript_gdextension_*` must be set as early as possible given it is never
-    // null-pointer checked, especially in the Cython modules
-    pythonscript_gdextension_get_proc_address = p_get_proc_address;
-    pythonscript_gdextension_library = p_library;
+
+    // `pythonscript_gdptr_*` must be set as early as possible given it is never
+    // null-pointer checked, especially in the Cython modules.
+    // Note we start by setting only `get_proc_address`&`library` since it is the
+    // minimum we need to check Godot compatibility, and only after that we proceed
+    // with the rest of the pointers.
+    pythonscript_gdptr_get_proc_address = p_get_proc_address;
+    pythonscript_gdptr_library = p_library;
 
     // Check compatibility between the Godot version that has been used for building
     // (i.e. the bindings has been generated against) and the version currently executed.
@@ -400,6 +406,9 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
         GD_PRINT_ERROR(buff);
         goto error;
     }
+
+    // Initialize the rest of the `pythonscript_gdptr_*` pointers
+    init_pythonscript_gdextension();
 
     // Initialize as early as possible, this way we can have 3rd party plugins written
     // in Python/Cython that can do things at this level

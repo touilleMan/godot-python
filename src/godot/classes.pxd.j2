@@ -11,7 +11,7 @@ cdef class BaseGDObject:
 
 
 cdef inline gdobject_free(BaseGDObject obj):
-    pythonscript_gdextension.object_destroy(obj._gd_ptr)
+    gdptr_object_destroy(obj._gd_ptr)
 
 {% for native_structure in api.native_structures %}
 cdef extern from * nogil:

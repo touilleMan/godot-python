@@ -11,7 +11,7 @@ def {{ c.name }}(self):
     cdef gd_variant_t gdvariant
     # TODO: cache the constant on first fetch ?
     cdef gd_string_name_t gdname = gd_string_name_from_utf8_and_len(b"{{ c.original_name }}", {{ c.original_name | length }})
-    pythonscript_gdextension.variant_get_constant_value({{ builtin.variant_type_name }}, &gdname, &gdvariant)
+    gdptr_variant_get_constant_value({{ builtin.variant_type_name }}, &gdname, &gdvariant)
     gd_string_name_del(&gdname)
     return gd_variant_steal_into_pyobj(&gdvariant)
     # No need to destroy gdvariant given the conversion has stolen ownership on data !
@@ -31,7 +31,7 @@ cdef class {{ builtin.cy_type }}:
     def __dealloc__({{ builtin.cy_type }} self):
         # /!\ if `__cinit__` is skipped, `_gd_data` must be initialized by
         # hand otherwise we will get a segfault here
-        {{ builtin.c_name_prefix }}_del(&self._gd_data)
+        gd_{{ builtin.snake_name }}_del(&self._gd_data)
 {% endif %}
 
     def __repr__(self):
@@ -41,9 +41,9 @@ cdef class {{ builtin.cy_type }}:
         return f"{{ builtin.cy_type}}({self.to_pystr()!r})"
 {%   else %}
         # TODO: I'm still not sure if this call steals self._gd_data or copies it...
-        cdef gd_variant_t gdvar = {{ builtin.c_name_prefix }}_into_variant(&self._gd_data)
+        cdef gd_variant_t gdvar = gd_{{ builtin.snake_name }}_into_variant(&self._gd_data)
         cdef gd_string_t gdstr
-        pythonscript_gdextension.variant_stringify(&gdvar, &gdstr)
+        gdptr_variant_stringify(&gdvar, &gdstr)
         try:
             return gd_string_to_pystr(&gdstr)
         finally:

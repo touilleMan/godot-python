@@ -47,7 +47,7 @@ cdef public void _pythonscript_get_reserved_words(
     ]
     for keyword in keywords:
         string = gd_string_from_utf8_and_len(keyword, len(keyword))
-        gd_packed_string_array_append(&arr, &string)
+        gd_packed_string_array_meth_append(&arr, &string)
         gd_string_del(&string)
 
 
@@ -67,7 +67,7 @@ cdef public void _pythonscript_get_recognized_extensions(
     ]
     for keyword in keywords:
         string = gd_string_from_utf8_and_len(keyword, len(keyword))
-        gd_packed_string_array_append(&arr, &string)
+        gd_packed_string_array_meth_append(&arr, &string)
         gd_string_del(&string)
 
 
@@ -87,7 +87,7 @@ cdef public void _pythonscript_get_string_delimiters(
     ]
     for keyword in keywords:
         string = gd_string_from_utf8_and_len(keyword, len(keyword))
-        gd_packed_string_array_append(&arr, &string)
+        gd_packed_string_array_meth_append(&arr, &string)
         gd_string_del(&string)
 
 
@@ -108,8 +108,8 @@ cdef _register_editor_methods():
     # info.get_argument_metadata_func = NULL
     # info.default_argument_count = 0
     # info.default_arguments = NULL
-    # pythonscript_gdextension.classdb_register_extension_class_method(
-    #     pythonscript_gdextension_library,
+    # gdptr_classdb_register_extension_class_method(
+    #     gdpytr_library,
     #     "PythonScriptLanguageExtension",
     #     &info,
     # )
@@ -127,8 +127,8 @@ cdef _register_editor_methods():
     # info.get_argument_metadata_func = NULL
     # info.default_argument_count = 0
     # info.default_arguments = NULL
-    # pythonscript_gdextension.classdb_register_extension_class_method(
-    #     pythonscript_gdextension_library,
+    # gdptr_classdb_register_extension_class_method(
+    #     gdpytr_library,
     #     "PythonScriptLanguageExtension",
     #     &info,
     # )
@@ -146,8 +146,8 @@ cdef _register_editor_methods():
     # info.get_argument_metadata_func = NULL
     # info.default_argument_count = 0
     # info.default_arguments = NULL
-    # pythonscript_gdextension.classdb_register_extension_class_method(
-    #     pythonscript_gdextension_library,
+    # gdptr_classdb_register_extension_class_method(
+    #     gdpytr_library,
     #     "PythonScriptLanguageExtension",
     #     &info,
     # )

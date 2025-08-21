@@ -17,8 +17,8 @@ cdef class PythonScriptLanguage:
     cdef gd_object_t _gd_ptr
 
     def __cinit__(self):
-        self._gd_ptr = pythonscript_gdextension.classdb_construct_object(&gdname_scriptlanguageextension)
-        pythonscript_gdextension.object_set_instance(self._gd_ptr, &gdname_pythonscriptlanguage, <PyObject*>self)
+        self._gd_ptr = gdptr_classdb_construct_object(&gdname_scriptlanguageextension)
+        gdptr_object_set_instance(self._gd_ptr, &gdname_pythonscriptlanguage, <PyObject*>self)
 
     # godot_extension: register_class_hook()
     @staticmethod
@@ -199,7 +199,7 @@ cdef class PythonScriptLanguage:
 
         for py_extension in (b"#"):
             extension = gd_string_from_pybytes(py_extension)
-            gd_packed_string_array_append(&extensions, &extension)
+            gd_packed_string_array_meth_append(&extensions, &extension)
             gd_string_del(&extension)
 
         return extensions
@@ -212,7 +212,7 @@ cdef class PythonScriptLanguage:
 
         for py_extension in (b"##"):
             extension = gd_string_from_pybytes(py_extension)
-            gd_packed_string_array_append(&extensions, &extension)
+            gd_packed_string_array_meth_append(&extensions, &extension)
             gd_string_del(&extension)
 
         return extensions
@@ -264,7 +264,7 @@ cdef class PythonScriptLanguage:
 
         for py_extension in (b"py", b"pyc", b"pyo", b"pyd", b"pyi", b"pyx", b"pxd", b"pxi"):
             extension = gd_string_from_pybytes(py_extension)
-            gd_packed_string_array_append(&extensions, &extension)
+            gd_packed_string_array_meth_append(&extensions, &extension)
             gd_string_del(&extension)
 
         return extensions
@@ -311,7 +311,7 @@ cdef class PythonScriptLanguage:
             b"yield",
         ):
             word = gd_string_from_pybytes(py_word)
-            gd_packed_string_array_append(&words, &word)
+            gd_packed_string_array_meth_append(&words, &word)
             gd_string_del(&word)
 
         return words
@@ -324,7 +324,7 @@ cdef class PythonScriptLanguage:
 
         for py_extension in (b"' '", b'" "', b'""" """', b"''' '''"):
             extension = gd_string_from_pybytes(py_extension)
-            gd_packed_string_array_append(&extensions, &extension)
+            gd_packed_string_array_meth_append(&extensions, &extension)
             gd_string_del(&extension)
 
         return extensions
@@ -401,7 +401,7 @@ cdef class PythonScriptLanguage:
 
         # Convert function arguments
         cdef object args = []
-        cdef gd_int_t arg_count = gd_packed_string_array_size(&function_args)
+        cdef gd_int_t arg_count = gd_packed_string_array_meth_size(&function_args)
         cdef gd_string_t arg_str
         cdef gd_int_t i
         for i in range(arg_count):

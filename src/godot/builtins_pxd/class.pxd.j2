@@ -15,7 +15,7 @@ cdef class {{ builtin.cy_type }}:
     cdef inline {{ builtin.py_type }} new():
         # Call to __new__ bypasses __init__ constructor
         cdef {{ builtin.cy_type }} ret = {{ builtin.cy_type }}.__new__({{ builtin.cy_type }})
-        ret._gd_data = {{ builtin.get_constructor_from().c_name }}()
+        ret._gd_data = gd_{{ builtin.get_constructor_from().c_name }}()
         return ret
 {% if builtin.original_name == "String" %}
     cdef inline str to_pystr(self):

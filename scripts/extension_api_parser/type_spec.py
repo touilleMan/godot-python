@@ -73,8 +73,8 @@ class ScalarTypeSpec(TypeSpec):
     """
 
     @property
-    def c_name_prefix(self) -> str:
-        return f"gd_{self.py_type}"
+    def snake_name(self) -> str:
+        return self.py_type
 
     def __init__(self, **kwargs):
         assert kwargs.setdefault("is_stack_only", True)
@@ -153,8 +153,8 @@ class VariantTypeSpec(TypeSpec):
         )
 
     @property
-    def c_name_prefix(self):
-        return "gd_variant"
+    def snake_name(self) -> str:
+        return "variant"
 
     def __getattribute__(self, name: str):
         if name == "variant_type_name":

@@ -153,7 +153,7 @@ class ClassTypeSpec(TypeSpec):
     always the size of a pointer.
     """
 
-    c_name_prefix: str
+    # snake_name: str
     is_refcounted: bool
     is_instantiable: bool
     inherits: TypeInUse | None
@@ -169,7 +169,7 @@ class ClassTypeSpec(TypeSpec):
         return True
 
     def __init__(self, **kwargs):
-        self.c_name_prefix = kwargs.pop("c_name_prefix")
+        # self.c_name_prefix = kwargs.pop("c_name_prefix")
         self.is_refcounted = kwargs.pop("is_refcounted")
         self.is_instantiable = kwargs.pop("is_instantiable")
         self.inherits = kwargs.pop("inherits")
@@ -212,7 +212,6 @@ def parse_class(spec: dict, object_size: int) -> ClassTypeSpec:
     }, spec.keys()
 
     original_name = spec["name"]
-    snake_name = camel_to_snake(original_name)
     # Special case for the Object type, this is because `Object` is too
     # broad of a name (it's easy to mix with Python's regular `object`)
     if spec["name"] == "Object":
@@ -221,7 +220,7 @@ def parse_class(spec: dict, object_size: int) -> ClassTypeSpec:
     return ClassTypeSpec(
         size=object_size,
         original_name=original_name,
-        c_name_prefix=f"gd_{snake_name}",
+        # c_name_prefix=f"gdptr_{snake_name}",  # TODO: unclear, renume `c_name_prefix` into `cy_gdptr_prefix` ?
         py_type=spec["name"],
         is_refcounted=spec["is_refcounted"],
         is_instantiable=spec["is_instantiable"],
