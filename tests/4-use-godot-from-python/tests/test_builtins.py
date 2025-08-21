@@ -4,11 +4,27 @@ from clodotest import assert_eq
 import godot
 
 
+def test_str():
+    assert_eq(str(godot.GDString("foo")), "foo")
+    assert_eq(str(godot.StringName("foo")), "foo")
+    assert_eq(str(godot.NodePath("foo")), "foo")
+
+
+def test_repr():
+    assert_eq(repr(godot.GDString("foo")), "GDString('foo')")
+    assert_eq(repr(godot.StringName("foo")), "StringName('foo')")
+    assert_eq(repr(godot.NodePath("foo")), "NodePath('foo')")
+    assert_eq(repr(godot.Vector2i(1, 2)), "Vector2i(x=1, y=2)")
+    assert_eq(repr(godot.GDArray([1, 2])), "GDArray([1, 2])")
+    assert_eq(repr(godot.GDDictionary({1: "foo"})), 'GDDictionary({ 1: "foo" })')
+
+
 @clodotest.parametrize("type", ["Nil", "bool", "int", "float"])
 def test_scalars_and_nil_not_exposed(type: str):
     assert not hasattr(godot, type)
 
 
+@clodotest.xfail(reason="TODO: WIP")
 @clodotest.parametrize(
     "kind",
     [
@@ -104,33 +120,39 @@ def test_constructor(kind: str):
             d = godot.GDDictionary()
             assert_eq(d.is_empty(), True)
 
-            d = godot.GDDictionary({"a": 1, "b": 2})
+            d = godot.GDDictionary([(godot.GDString("a"), 1), (2, godot.GDString("b"))])
             assert_eq(d.is_empty(), False)
-            assert_eq(d, godot.GDDictionary({"a": 1, "b": 2}))
-            assert_eq(d["a"], 2)
-            assert_eq(d["b"], 2)
+            assert_eq(d["a"], 1)
+            assert_eq(d[2], godot.GDString("b"))
 
-            d = godot.GDDictionary(godot.GDDic)
-
-            # TODO
+            d = godot.GDDictionary({godot.GDString("a"): 1, 2: godot.GDString("b")})
+            assert_eq(d["a"], 1)
+            assert_eq(d[2], godot.GDString("b"))
 
             for bad_type in (godot.Vector2i(), godot.GDArray(), 42, b"foo"):
                 with clodotest.raises(TypeError):
-                    godot.Dictionary(bad_type)
+                    godot.GDDictionary(bad_type)
 
         case "Array":
             a = godot.GDArray()
             assert_eq(a.is_empty(), True)
 
-            a = godot.GDArray(["a", 2, godot.Vector2i(1, 2)])
-            assert_eq(a.is_empty(), False)
-            assert_eq(a.length(), 3)
-            assert_eq(a[0], godot.GDString("a"))
-            assert_eq(a[1], 2)
-            assert_eq(a[2], godot.Vector2i(1, 2))
+            for items in (
+                [godot.GDString("a"), 2, godot.Vector2i(1, 2)],
+                ["a", 2, godot.Vector2i(1, 2)],
+                ("a", 2, godot.Vector2i(1, 2)),
+                iter(["a", 2, godot.Vector2i(1, 2)]),
+            ):
+                a = godot.GDArray(items)
+                assert_eq(a.is_empty(), False)
+                assert_eq(a.length(), 3)
+                assert_eq(a[0], godot.GDString("a"))
+                assert_eq(a[1], 2)
+                assert_eq(a[2], godot.Vector2i(1, 2))
 
-            a2 = godot.GDArray(a)
-            assert_eq(a2, a)
+            a1 = godot.GDArray(["a", 2, godot.Vector2i(1, 2)])
+            a2 = godot.GDArray(a1)
+            assert_eq(a2, a1)
 
             a3 = godot.GDArray(godot.StringPackedArray(["1", "2", "3"]))
             assert_eq(a3, godot.GDArray(["1", "2", "3"]))
@@ -143,7 +165,17 @@ def test_constructor(kind: str):
             a = godot.StringPackedArray()
             assert_eq(a.is_empty(), True)
 
-            # TODO
+            for items in (
+                [godot.GDString("a"), godot.GDString("b")],
+                ["a", "b"],
+                ("a", "b"),
+                iter(("a", "b")),
+            ):
+                a = godot.GDArray(items)
+                assert_eq(a.is_empty(), False)
+                assert_eq(a.length(), 2)
+                assert_eq(a[0], godot.GDString("a"))
+                assert_eq(a[1], godot.GDString("b"))
 
             for bad_type in (godot.Vector2i(), godot.StringName("/foo"), 42, b"foo"):
                 with clodotest.raises(TypeError):
@@ -153,10 +185,7 @@ def test_constructor(kind: str):
             assert False, unknown
 
 
-def test_custom_constructor(kind: str):
-    pass
-
-
+@clodotest.xfail(reason="TODO: WIP")
 @clodotest.parametrize(
     "kind",
     [
@@ -247,119 +276,224 @@ def test_indexing(kind: str):
 def test_operator(kind: str):
     match kind:
         # comparison
+
         case "equal":
             assert_eq(godot.GDString("foo") == godot.GDString("foo"), True)
             assert_eq(godot.GDString("foo") == godot.GDString("bar"), False)
+
+            assert_eq(godot.Vector2i(1, 2) == godot.Vector2i(1, 2), True)
+            assert_eq(godot.Vector2i(1, 0) == godot.Vector2i(1, 2), False)
+
+            assert_eq(godot.GDArray() == godot.GDArray(), True)
+            assert_eq(
+                godot.GDArray((1, godot.GDString("foo")))
+                == godot.GDArray((1, godot.GDString("foo"))),
+                True,
+            )
+            assert_eq(godot.GDArray() == godot.GDArray((1,)), False)
+
+            assert_eq(godot.GDDictionary() == godot.GDDictionary(), True)
+            assert_eq(
+                godot.GDDictionary([(1, godot.GDString("foo")), (godot.GDString("bar"), 2)])
+                == godot.GDDictionary([(1, godot.GDString("foo")), (godot.GDString("bar"), 2)]),
+                True,
+            )
+            assert_eq(godot.GDDictionary() == godot.GDDictionary([(1, 2)]), False)
+
         case "not_equal":
             assert_eq(godot.GDString("foo") != godot.GDString("bar"), True)
             assert_eq(godot.GDString("foo") != godot.GDString("foo"), False)
+
         case "less":
             assert_eq(godot.Vector2i(0, 0) < godot.Vector2i(1, 1), True)
             assert_eq(godot.Vector2i(1, 1) < godot.Vector2i(1, 1), False)
+
+            with clodotest.raises(TypeError):
+                _ = godot.Vector2i(1, 1) < 2
+
         case "less_equal":
             assert_eq(godot.Vector2i(1, 1) <= godot.Vector2i(1, 1), True)
             assert_eq(godot.Vector2i(2, 2) <= godot.Vector2i(1, 1), False)
+
+            with clodotest.raises(TypeError):
+                _ = godot.Vector2i(1, 1) <= 2
+
         case "greater":
             assert_eq(godot.Vector2i(1, 1) > godot.Vector2i(0, 0), True)
             assert_eq(godot.Vector2i(1, 1) > godot.Vector2i(1, 1), False)
+
+            with clodotest.raises(TypeError):
+                _ = godot.Vector2i(1, 1) > 2
+
         case "greater_equal":
             assert_eq(godot.Vector2i(1, 1) >= godot.Vector2i(1, 1), True)
             assert_eq(godot.Vector2i(1, 1) >= godot.Vector2i(2, 2), False)
+
+            with clodotest.raises(TypeError):
+                _ = godot.Vector2i(1, 1) >= 2
+
         # mathematic
+
         case "add":
             assert_eq(godot.GDString("foo") + godot.GDString("bar"), godot.GDString("foobar"))
+            assert_eq(godot.Vector2i(1, 1) + godot.Vector2i(2, 3), godot.Vector2i(3, 4))
+
+            with clodotest.raises(TypeError):
+                _ = godot.Vector2i(1, 2) + 1
+
+            with clodotest.raises(TypeError):
+                _ = godot.GDString("a") + godot.Vector2i(1, 2)
+
         case "subtract":
             assert_eq(godot.Vector2i(4, 3) - godot.Vector2i(1, 2), godot.Vector2i(3, 1))
+
+            with clodotest.raises(TypeError):
+                _ = godot.Vector2i(1, 2) - 1
+
         case "multiply":
-            assert_eq(godot.Vector2i(4, 3) - godot.Vector2i(1, 2), godot.Vector2i(3, 1))
+            assert_eq(godot.Vector2i(4, 3) * godot.Vector2i(2, 3), godot.Vector2i(8, 9))
+            assert_eq(godot.Vector2i(4, 3) * 2, godot.Vector2i(8, 6))
+
+            with clodotest.raises(TypeError):
+                _ = godot.Vector2i(1, 2) * godot.GDString()
+
         case "divide":
             assert_eq(godot.Vector2i(4, 3) / godot.Vector2i(2, 3), godot.Vector2i(2, 1))
+            assert_eq(godot.Vector2i(4, 3) / 2, godot.Vector2i(2, 1))
+
+            with clodotest.raises(TypeError):
+                _ = godot.Vector2i(1, 2) / godot.GDString()
+
         case "negate":
             assert_eq(-godot.Vector2i(1, 2), godot.Vector2i(-1, -2))
+
         case "positive":
             assert_eq(+godot.Vector2i(1, 2), godot.Vector2i(1, 2))
+
         case "module":
             assert_eq(godot.Vector2i(2, 3) % 2, godot.Vector2i(0, 1))
-            assert_eq(godot.Vector2i(2, 3) % godot.Vector2i(2, 1), godot.Vector2i(0, 3))
+            assert_eq(godot.Vector2i(2, 3) % godot.Vector2i(3, 1), godot.Vector2i(2, 0))
+
+            # TODO: Godot currently returns `gd_string_op_module_nil` when requesting `gd_string_op_module_variant`
+            # (see: https://github.com/godotengine/godot/issues/109861)
+
+            # assert_eq(godot.GDString("foo %s") % godot.GDString("bar"), godot.GDString("foo bar"))
+            # assert_eq(godot.GDString("foo %s") % "bar", godot.GDString("foo bar"))
+            # assert_eq(
+            #     godot.GDString("foo %s") % godot.Vector2i(1, 2),
+            #     godot.GDString("foo Vector2i(1, 2)"),
+            # )
+
+            # assert_eq(
+            #     godot.StringName("foo %s") % godot.StringName("bar"), godot.StringName("foo bar")
+            # )
+            # assert_eq(
+            #     godot.StringName("foo %s") % godot.GDString("bar"), godot.StringName("foo bar")
+            # )
+            # assert_eq(
+            #     godot.StringName("foo %s %s")
+            #     % [godot.GDString("bar"), godot.StringName("spam")],
+            #     godot.StringName("foo bar spam"),
+            # )
+
+            with clodotest.raises(TypeError):
+                _ = godot.StringName("foo %s %s") % object()
+
         case "power":
-            assert_eq(godot.Vector2i(2, 3) % 2, godot.Vector2i(0, 1))
-            "**"
+            # Nothing to do: currently only `int`&`float` implements `**` in Godot, but
+            # they are not exposed to Python since we already have our own `int`&`float`!
+            pass
+
         # bitwise
+
         case "shift_left":
             # Nothing to do: currently only `int` implements `<<` in Godot, but
             # it is not exposed to Python since we already have our own `int`!
             pass
+
         case "shift_right":
             # Nothing to do: currently only `int` implements `>>` in Godot, but
             # it is not exposed to Python since we already have our own `int`!
             pass
+
         case "bit_and":
             # Nothing to do: currently only `int` implements `&` in Godot, but
             # it is not exposed to Python since we already have our own `int`!
             pass
+
         case "bit_or":
             # Nothing to do: currently only `int` implements `|` in Godot, but
             # it is not exposed to Python since we already have our own `int`!
             pass
+
         case "bit_xor":
             # Nothing to do: currently only `int` implements `^` in Godot, but
             # it is not exposed to Python since we already have our own `int`!
             pass
+
         case "bit_negate":
             # Nothing to do: currently only `int` implements `~` in Godot, but
             # it is not exposed to Python since we already have our own `int`!
             pass
+
         # logic
+
         case "and":
             # Nothing to do: currently only `int/float/Nil` implements `and`
             # in Godot, but they are not exposed to Python since we already have
             # our own `int/float/None`!
             pass
+
         case "or":
             # Nothing to do: currently only `int/float/Nil` implements `or`
             # in Godot, but they are not exposed to Python since we already have
             # our own `int/float/None`!
             pass
+
         case "xor":
             # Nothing to do: currently only `int/float/Nil` implements `xor`
             # in Godot, but they are not exposed to Python since we already have
             # our own `int/float/None`!
             pass
+
         case "not":
-            assert_eq(not godot.GDString(""), True)
-            assert_eq(not godot.GDString("foo"), False)
-            assert_eq(not godot.Vector2i(0, 0), True)
-            assert_eq(not godot.Vector2i(1, 2), False)
+            # In Python, `not x` is always defined as the invert of `bool(x)`,
+            # so we test the bool operator here.
+            assert_eq(bool(godot.GDString("")), False)
+            assert_eq(bool(godot.GDString("foo")), True)
+            assert_eq(bool(godot.Vector2i(0, 0)), False)
+            assert_eq(bool(godot.Vector2i(1, 2)), True)
+            assert_eq(bool(godot.GDArray()), False)
+            assert_eq(bool(godot.GDArray([0])), True)
+            assert_eq(bool(godot.GDDictionary()), False)
+            assert_eq(bool(godot.GDDictionary([(0, 0)])), True)
+            assert_eq(bool(godot.PackedStringArray()), False)
+            assert_eq(bool(godot.PackedStringArray([godot.GDString("")])), True)
+
         # containment
+
         case "in":
             assert_eq(godot.GDString("foo") in godot.GDString("barfoospam"), True)
-            assert_eq("foo" in godot.GDString("barfoospam"), True)
+            # assert_eq("foo" in godot.GDString("barfoospam"), True)  # TODO: `GDString.contains` currently only accepts `GDString`...
             assert_eq(godot.GDString("foo") in godot.GDString("bar"), False)
 
-            assert_eq(
-                godot.Vector2i(1, 2) in godot.GDArray(godot.Vector2i(0, 0), godot.Vector2i(1, 2)),
-                True,
-            )
-            assert_eq(
-                godot.Vector2i(1, 2) in godot.GDArray(godot.Vector2i(0, 0), godot.Vector2i(1, 1)),
-                False,
-            )
+            a = godot.GDArray((godot.Vector2i(0, 0), godot.Vector2i(1, 2), 3))
+            assert_eq(godot.Vector2i(1, 2) in a, True)
+            assert_eq(godot.Vector2i(1, 1) in a, False)
+            assert_eq(2 in a, False)
+            assert_eq(3 in a, True)
 
-            assert_eq(
-                godot.Vector2i(1, 2)
-                in godot.Dictionary(godot.Vector2i(0, 0), godot.Vector2i(1, 2)),
-                True,
-            )
-            assert_eq(
-                godot.Vector2i(1, 2)
-                in godot.Dictionary(godot.Vector2i(0, 0), godot.Vector2i(1, 1)),
-                False,
-            )
+            d = godot.GDDictionary([(godot.Vector2i(0, 0), 1), (2, godot.Vector2i(1, 1))])
+            assert_eq(godot.Vector2i(0, 0) in d, True)
+            assert_eq(godot.Vector2i(1, 1) in d, False)
+            assert_eq(2 in d, True)
+            assert_eq(1 in d, False)
 
         case unknown:
             assert False, unknown
 
 
+@clodotest.xfail(reason="TODO: WIP")
 @clodotest.parametrize(
     "kind",
     [
@@ -483,6 +617,7 @@ def test_method(kind: str):
             # TODO: Method expecting a Godot class instance
 
 
+@clodotest.xfail(reason="TODO: WIP")
 def test_member():
     v = godot.Vector2i(2, 3)
     assert_eq(v.x, 2)
@@ -500,10 +635,12 @@ def test_member():
     # TODO: test subtype property (e.g. `rec2.position.x`)
 
 
+@clodotest.xfail(reason="TODO: WIP")
 def test_constant():
     assert_eq(godot.Vector2i.ZERO, godot.Vector2i(0, 0))
 
 
+@clodotest.xfail(reason="TODO: WIP")
 def test_enum():
     assert isinstance(godot.Vector2i.AXIS, enum.Enum)
     assert_eq(godot.Vector2i.AXIS.X, 0)

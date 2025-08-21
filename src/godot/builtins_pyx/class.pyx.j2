@@ -1,5 +1,6 @@
 {% from 'builtins_pyx/constructor.pyx.j2' import render_constructors with context %}
 {% from 'builtins_pyx/member.pyx.j2' import render_member with context %}
+{% from 'builtins_pyx/operator.pyx.j2' import render_operators with context %}
 
 
 {% macro render_constant(builtin, c) %}
@@ -34,30 +35,9 @@ cdef class {{ builtin.cy_type }}:
         gd_{{ builtin.snake_name }}_del(&self._gd_data)
 {% endif %}
 
-    def __repr__(self):
-{%   if builtin.is_transparent_builtin %}
-        return f"{{ builtin.cy_type }}({% for member in builtin.c_struct_members %}{{ member.name }}={self.{{ member.name }}}{% if not loop.last %}, {% endif %}{% endfor %})"
-{%   elif builtin.original_name == "String" %}
-        return f"{{ builtin.cy_type}}({self.to_pystr()!r})"
-{%   else %}
-        # TODO: I'm still not sure if this call steals self._gd_data or copies it...
-        cdef gd_variant_t gdvar = gd_{{ builtin.snake_name }}_into_variant(&self._gd_data)
-        cdef gd_string_t gdstr
-        gdptr_variant_stringify(&gdvar, &gdstr)
-        try:
-            return gd_string_to_pystr(&gdstr)
-        finally:
-            gd_variant_del(&gdvar)
-            gd_string_del(&gdstr)
-{%   endif %}
-{% if builtin.original_name == "String" %}
-    def __str__(self):
-        return self.to_pystr()
-{% elif builtin.original_name in ("Array", "Dictionary") or builtin.is_packed_array %}
-    def __len__(self):
-        return self.size()
+    # Operators
+    {{ render_operators(builtin) | indent }}
 
-{% endif %}
 {% if builtin.constants %}
     # Constants
 

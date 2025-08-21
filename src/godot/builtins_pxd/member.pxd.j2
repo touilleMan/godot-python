@@ -165,7 +165,7 @@ cdef inline void _setitem(self, GDExtensionInt index, {{ builtin.indexing_return
 {# {% elif builtin.is_packed_array %} #}
 {# {{ render_getsetitem_indexed_packed_array(builtin) }} #}
 {% elif builtin.original_name == "Dictionary" %}
-{{ render_getsetitem_indexed_array(builtin) }}
+{{ render_getsetitem_indexed_dictionary(builtin) }}
 {% else %}
 {{ render_getsetitem_indexed_default(builtin) }}
 {% endif %}

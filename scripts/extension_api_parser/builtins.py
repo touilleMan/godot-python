@@ -301,6 +301,9 @@ class BuiltinTypeSpec(TypeSpec):
     def c_struct_members(self) -> list[BuiltinMemberSpec]:
         return [m for m in self.members if m.offset is not None]
 
+    def get_operators(self, operator_name: str) -> list[BuiltinOperatorSpec]:
+        return [op for op in self.operators if op.original_name == operator_name]
+
 
 @dataclass(slots=True)
 class OpaqueBuiltinTypeSpec(BuiltinTypeSpec):

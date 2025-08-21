@@ -51,10 +51,8 @@ cpdef inline {{ render_method_signature(m) }}:
 {%       if m.return_type.is_object %}
     return GDObject.cast_from_variant(ret)
 {%       elif m.return_type.is_variant %}
-    try:
-        return gd_variant_steal_into_pyobj(&ret)
-    finally:
-        gd_variant_del(&ret)
+    # Note the "steal" means we don't need a final `gd_variant_del(&ret)`
+    return gd_variant_steal_into_pyobj(&ret)
 {%       else %}
     return ret
 {%       endif %}

@@ -101,10 +101,10 @@ def __cinit__(self, mapping=None):
     try:
         if isinstance(mapping, Mapping):
             for k, v in mapping.items():
-                self._setattr(k, v)
+                self._setitem(k, v)
         else:
             for k, v in mapping:
-                self._setattr(k, v)
+                self._setitem(k, v)
     except (TypeError, ValueError) as exc:
         raise TypeError("Expected Dictionary, collections.abc.Mapping or Sequence[Tuple[IntoGDAny, IntoGDAny]]")
 
@@ -134,8 +134,8 @@ def __cinit__(self, iterable=None):
     self._gd_data = gd_{{ builtin.snake_name }}_new()
     if isinstance(iterable, Iterable):
         gd_{{ builtin.snake_name }}_meth_resize(&self._gd_data, len(iterable))
-        for x in iterable:
-            self.append(x)
+        for i, x in enumerate(iterable):
+            self._setitem(i, x)
     else:
         raise TypeError("Expected Array, Packed*Array or collections.abc.Iterable[IntoGDAny]")
 
@@ -158,8 +158,8 @@ def __cinit__(self, iterable=None):
             self._gd_data = gd_{{ builtin.snake_name }}_new()
             if isinstance(iterable, Iterable):
                 gd_{{ builtin.snake_name }}_meth_resize(&self._gd_data, len(iterable))
-                for x in iterable:
-                    self.append(x)
+                for i, x in enumerate(iterable):
+                    self._setitem(i, x)
             else:
                 raise TypeError("Expected Array, {{ builtin.cy_type }} or collections.abc.Iterable[{{ builtin.packed_array_item_type.cy_type }}]")
 

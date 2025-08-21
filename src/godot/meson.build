@@ -92,6 +92,7 @@ pyxbuiltins = custom_target(
             'builtins_pyx/constructor.pyx.j2',
             'builtins_pyx/conversion.pyx.j2',
             'builtins_pyx/member.pyx.j2',
+            'builtins_pyx/operator.pyx.j2',
         ),
     ],
     command: generate_tmpl_cmd,

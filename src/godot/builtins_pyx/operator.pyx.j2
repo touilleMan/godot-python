@@ -1,0 +1,385 @@
+{% macro render_operators(builtin) -%}
+{# Operators are few and full of quirks, so we implement them by hand #}
+
+{% if builtin.original_name in ("String", "StringName", "NodePath") %}
+def __str__(self):
+    return self.to_pystr()
+{% endif %}
+
+def __repr__(self):
+{%   if builtin.is_transparent_builtin %}
+    return f"{{ builtin.cy_type }}({% for member in builtin.c_struct_members %}{{ member.name }}={self.{{ member.name }}}{% if not loop.last %}, {% endif %}{% endfor %})"
+{%   elif builtin.original_name in ("String", "StringName", "NodePath") %}
+    return f"{{ builtin.cy_type}}({self.to_pystr()!r})"
+{%   else %}
+    # TODO: I'm still not sure if this call steals self._gd_data or copies it...
+    cdef gd_variant_t gdvar = gd_{{ builtin.snake_name }}_into_variant(&self._gd_data)
+    cdef gd_string_t gdstr
+    gdptr_variant_stringify(&gdvar, &gdstr)
+    try:
+        return f"{{ builtin.cy_type}}({gd_string_to_pystr(&gdstr)})"
+    finally:
+        gd_variant_del(&gdvar)
+        gd_string_del(&gdstr)
+{%   endif %}
+
+def __eq__(self, {{ builtin.cy_type }} other):
+{% if builtin.is_transparent_builtin %}
+    return (
+{%   for m in  builtin.members %}
+{% if not loop.first%}
+    and
+{% endif %}
+    self._gd_data.{{ m.name }} == other._gd_data.{{ m.name }}
+{%   endfor %}
+    )
+{% else %}
+    return gd_{{ builtin.snake_name }}_op_equal_{{ builtin.snake_name }}(&self._gd_data, &other._gd_data)
+{% endif %}
+
+{% if builtin.original_name in ("Array", "Dictionary") or builtin.is_packed_array %}
+{# Note `__bool__` is not needed if `__len__` is defined #}
+def __len__(self):
+    return self.size()
+{% else %}
+def __bool__(self):
+    return gdptr_variant_booleanize(&self._gd_data)
+{% endif %}
+
+{% if builtin.original_name == "Array" or builtin.is_packed_array %}
+def __iter__(self):
+    for i in range(self.size()):
+        yield self.get(i)
+{% elif builtin.original_name == "Dictionary" %}
+def __iter__(self):
+    # TODO: Using `Dictionary.values()` means we use an intermediary array,
+    #       we should find a better way...
+    yield from self.values()
+{% endif %}
+
+{% if builtin.original_name in ("Array", "Dictionary") %}
+def __contains__(self, object needle):
+    return self.has(needle)
+{% elif builtin.is_packed_array %}
+def __contains__(self, {{ builtin.indexing_return_type.cy_type }} needle):
+    return gd_{{ builtin.indexing_return_type.snake_name }}_op_in_{{ builtin.snake_name }}(&needle._gd_data, &self._gd_data) == 1
+{% elif builtin.original_name in ("String", "StringName") %}
+def __contains__(self, object needle):
+    return self.contains(needle)
+{% endif %}
+
+{% set operators_less = builtin.get_operators("<") %}
+{% if operators_less %}
+def __lt__(self, object other):
+{%   for op in operators_less %}
+{%     if op.right_type.is_scalar %}
+    cdef {{ op.right_type.c_type }} converted_scalar_{{ op.right_type.snake_name }}
+{%     endif %}
+{%   endfor%}
+    cdef void *other_gd_data
+{%   for op in operators_less %}
+    try:
+        # Check `other`'s type before creating `ret` (since one created its
+        # destructor must be run!)
+{%     if op.right_type.is_scalar %}
+        converted_scalar_{{ op.right_type.snake_name }} = <{{ op.right_type.c_type }}?>other
+        other_gd_data = &converted_scalar_{{ op.right_type.snake_name }}
+{%     else %}
+        other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
+{%     endif %}
+        return gd_{{ builtin.snake_name }}_op_less_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data) != 0
+    except TypeError:
+        pass
+{%   endfor %}
+    return NotImplemented
+{% endif %}
+
+{% set operators_less_equal = builtin.get_operators("<=") %}
+{% if operators_less_equal %}
+def __le__(self, object other):
+{%   for op in operators_less_equal %}
+{%     if op.right_type.is_scalar %}
+    cdef {{ op.right_type.c_type }} converted_scalar_{{ op.right_type.snake_name }}
+{%     endif %}
+{%   endfor%}
+    cdef void *other_gd_data
+{%   for op in operators_less_equal %}
+    try:
+        # Check `other`'s type before creating `ret` (since one created its
+        # destructor must be run!)
+{%     if op.right_type.is_scalar %}
+        converted_scalar_{{ op.right_type.snake_name }} = <{{ op.right_type.c_type }}?>other
+        other_gd_data = &converted_scalar_{{ op.right_type.snake_name }}
+{%     else %}
+        other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
+{%     endif %}
+        return gd_{{ builtin.snake_name }}_op_less_equal_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data) != 0
+    except TypeError:
+        pass
+{%   endfor %}
+    return NotImplemented
+{% endif %}
+
+{% set operators_greater = builtin.get_operators(">") %}
+{% if operators_greater %}
+def __gt__(self, object other):
+{%   for op in operators_greater %}
+{%     if op.right_type.is_scalar %}
+    cdef {{ op.right_type.c_type }} converted_scalar_{{ op.right_type.snake_name }}
+{%     endif %}
+{%   endfor%}
+    cdef void *other_gd_data
+{%   for op in operators_greater %}
+    try:
+        # Check `other`'s type before creating `ret` (since one created its
+        # destructor must be run!)
+{%     if op.right_type.is_scalar %}
+        converted_scalar_{{ op.right_type.snake_name }} = <{{ op.right_type.c_type }}?>other
+        other_gd_data = &converted_scalar_{{ op.right_type.snake_name }}
+{%     else %}
+        other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
+{%     endif %}
+        return gd_{{ builtin.snake_name }}_op_greater_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data) != 0
+    except TypeError:
+        pass
+{%   endfor %}
+    return NotImplemented
+{% endif %}
+
+{% set operators_greater_equal = builtin.get_operators(">=") %}
+{% if operators_greater_equal %}
+def __ge__(self, object other):
+{%   for op in operators_greater_equal %}
+{%     if op.right_type.is_scalar %}
+    cdef {{ op.right_type.c_type }} converted_scalar_{{ op.right_type.snake_name }}
+{%     endif %}
+{%   endfor%}
+    cdef void *other_gd_data
+{%   for op in operators_greater_equal %}
+    try:
+        # Check `other`'s type before creating `ret` (since one created its
+        # destructor must be run!)
+{%     if op.right_type.is_scalar %}
+        converted_scalar_{{ op.right_type.snake_name }} = <{{ op.right_type.c_type }}?>other
+        other_gd_data = &converted_scalar_{{ op.right_type.snake_name }}
+{%     else %}
+        other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
+{%     endif %}
+        return gd_{{ builtin.snake_name }}_op_greater_equal_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data) != 0
+    except TypeError:
+        pass
+{%   endfor %}
+    return NotImplemented
+{% endif %}
+
+{% set operators_add = builtin.get_operators("+") %}
+{% if operators_add %}
+def __add__(self, object other):
+{%   for op in operators_add %}
+{%     if op.right_type.is_scalar %}
+    cdef {{ op.right_type.c_type }} converted_scalar_{{ op.right_type.snake_name }}
+{%     endif %}
+{%   endfor%}
+    cdef void *other_gd_data
+    cdef {{ operators_add[0].return_type.cy_type }} ret
+{%   for op in operators_add %}
+    try:
+        # Check `other`'s type before creating `ret` (since one created its
+        # destructor must be run!)
+{%     if op.right_type.is_scalar %}
+        converted_scalar_{{ op.right_type.snake_name }} = <{{ op.right_type.c_type }}?>other
+        other_gd_data = &converted_scalar_{{ op.right_type.snake_name }}
+{%     else %}
+        other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
+{%     endif %}
+        # Call to __new__ bypasses __init__ constructor
+        ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
+        ret._gd_data = gd_{{ builtin.snake_name }}_op_add_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
+        return ret
+    except TypeError:
+        pass
+{%   endfor %}
+    raise TypeError(f"unsupported operand type(s) for +: '{type(self)}' and '{type(other)}'")
+{% endif %}
+
+{% set operators_subtract = builtin.get_operators("-") %}
+{% if operators_subtract %}
+def __sub__(self, object other):
+{%   for op in operators_subtract %}
+{%     if op.right_type.is_scalar %}
+    cdef {{ op.right_type.c_type }} converted_scalar_{{ op.right_type.snake_name }}
+{%     endif %}
+{%   endfor%}
+    cdef void *other_gd_data
+    cdef {{ operators_subtract[0].return_type.cy_type }} ret
+{%   for op in operators_subtract %}
+    try:
+        # Check `other`'s type before creating `ret` (since one created its
+        # destructor must be run!)
+{%     if op.right_type.is_scalar %}
+        converted_scalar_{{ op.right_type.snake_name }} = <{{ op.right_type.c_type }}?>other
+        other_gd_data = &converted_scalar_{{ op.right_type.snake_name }}
+{%     else %}
+        other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
+{%     endif %}
+        # Call to __new__ bypasses __init__ constructor
+        ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
+        ret._gd_data = gd_{{ builtin.snake_name }}_op_subtract_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
+        return ret
+    except TypeError:
+        pass
+{%   endfor %}
+    raise TypeError(f"unsupported operand type(s) for -: '{type(self)}' and '{type(other)}'")
+{% endif %}
+
+{% set operators_multiply = builtin.get_operators("*") %}
+{% if operators_multiply %}
+def __mul__(self, object other):
+{%   for op in operators_multiply %}
+{%     if op.right_type.is_scalar %}
+    cdef {{ op.right_type.c_type }} converted_scalar_{{ op.right_type.snake_name }}
+{%     endif %}
+{%   endfor%}
+    cdef void *other_gd_data
+    cdef {{ operators_multiply[0].return_type.cy_type }} ret
+{%   for op in operators_multiply %}
+    try:
+        # Check `other`'s type before creating `ret` (since one created its
+        # destructor must be run!)
+{%     if op.right_type.is_scalar %}
+        converted_scalar_{{ op.right_type.snake_name }} = <{{ op.right_type.c_type }}?>other
+        other_gd_data = &converted_scalar_{{ op.right_type.snake_name }}
+{%     else %}
+        other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
+{%     endif %}
+        # Call to __new__ bypasses __init__ constructor
+        ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
+        ret._gd_data = gd_{{ builtin.snake_name }}_op_multiply_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
+        return ret
+    except TypeError:
+        pass
+{%   endfor %}
+    raise TypeError(f"unsupported operand type(s) for *: '{type(self)}' and '{type(other)}'")
+{% endif %}
+
+{% set operators_divide = builtin.get_operators("/") %}
+{% if operators_divide %}
+def __truediv__(self, object other):
+{%   for op in operators_divide %}
+{%     if op.right_type.is_scalar %}
+    cdef {{ op.right_type.c_type }} converted_scalar_{{ op.right_type.snake_name }}
+{%     endif %}
+{%   endfor%}
+    cdef void *other_gd_data
+    cdef {{ operators_divide[0].return_type.cy_type }} ret
+{%   for op in operators_divide %}
+    try:
+        # Check `other`'s type before creating `ret` (since one created its
+        # destructor must be run!)
+{%     if op.right_type.is_scalar %}
+        converted_scalar_{{ op.right_type.snake_name }} = <{{ op.right_type.c_type }}?>other
+        other_gd_data = &converted_scalar_{{ op.right_type.snake_name }}
+{%     else %}
+        other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
+{%     endif %}
+        # Call to __new__ bypasses __init__ constructor
+        ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
+        ret._gd_data = gd_{{ builtin.snake_name }}_op_divide_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
+        return ret
+    except TypeError:
+        pass
+{%   endfor %}
+    raise TypeError(f"unsupported operand type(s) for /: '{type(self)}' and '{type(other)}'")
+{% endif %}
+
+{% set operators_module = builtin.get_operators("%") %}
+{% if builtin.original_name in ("String", "StringName") %}
+{# String is a special case since `other` can be of any type... so better just use a variant! #}
+def __mod__(self, object other):
+    # TODO: Godot currently returns `gd_string_op_module_nil` when requesting `gd_string_op_module_variant`
+    # (see: https://github.com/godotengine/godot/issues/109861)
+    cdef gd_variant_t gdany = ensure_is_gdany_and_borrow_ref(other)
+    # Call to __new__ bypasses __init__ constructor
+    cdef GDString ret = GDString.__new__(GDString)
+    ret._gd_data = gd_{{ builtin.snake_name }}_op_module_variant(&self._gd_data, &gdany)
+    return ret
+{% elif operators_module %}
+def __mod__(self, object other):
+{%   for op in operators_module %}
+{%     if op.right_type.is_scalar %}
+    cdef {{ op.right_type.c_type }} converted_scalar_{{ op.right_type.snake_name }}
+{%     endif %}
+{%   endfor%}
+    cdef void *other_gd_data
+    cdef {{ operators_module[0].return_type.cy_type }} ret
+{%   for op in operators_module %}
+    try:
+        # Check `other`'s type before creating `ret` (since one created its
+        # destructor must be run!)
+{%     if op.right_type.is_scalar %}
+        converted_scalar_{{ op.right_type.snake_name }} = <{{ op.right_type.c_type }}?>other
+        other_gd_data = &converted_scalar_{{ op.right_type.snake_name }}
+{%     else %}
+        other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
+{%     endif %}
+        # Call to __new__ bypasses __init__ constructor
+        ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
+        ret._gd_data = gd_{{ builtin.snake_name }}_op_module_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
+        return ret
+    except TypeError:
+        pass
+{%   endfor %}
+    raise TypeError(f"unsupported operand type(s) for %: '{type(self)}' and '{type(other)}'")
+{% endif %}
+
+{% set operators_power = builtin.get_operators("**") %}
+{% if operators_power %}
+def __pow__(self, object other):
+{%   for op in operators_power %}
+{%     if op.right_type.is_scalar %}
+    cdef {{ op.right_type.c_type }} converted_scalar_{{ op.right_type.snake_name }}
+{%     endif %}
+{%   endfor%}
+    cdef void *other_gd_data
+    cdef {{ operators_power[0].return_type.cy_type }} ret
+{%   for op in operators_power %}
+    try:
+        # Check `other`'s type before creating `ret` (since one created its
+        # destructor must be run!)
+{%     if op.right_type.is_scalar %}
+        converted_scalar_{{ op.right_type.snake_name }} = <{{ op.right_type.c_type }}?>other
+        other_gd_data = &converted_scalar_{{ op.right_type.snake_name }}
+{%     else %}
+        other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
+{%     endif %}
+        # Call to __new__ bypasses __init__ constructor
+        ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
+        ret._gd_data = gd_{{ builtin.snake_name }}_op_power_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
+        return ret
+    except TypeError:
+        pass
+{%   endfor %}
+    raise TypeError(f"unsupported operand type(s) for %: '{type(self)}' and '{type(other)}'")
+{% endif %}
+
+{% set operators_negate = builtin.get_operators("unary-") %}
+{% if operators_negate %}
+{% set op = operators_negate[0] %}
+def __neg__(self):
+    # Call to __new__ bypasses __init__ constructor
+    cdef {{ op.return_type.cy_type }} ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
+    ret._gd_data = gd_{{ builtin.snake_name }}_op_negate(&self._gd_data)
+    return ret
+{% endif %}
+
+{% set operators_positive = builtin.get_operators("unary+") %}
+{% if operators_positive %}
+{% set op = operators_negate[0] %}
+def __pos__(self):
+    # Call to __new__ bypasses __init__ constructor
+    cdef {{ op.return_type.cy_type }} ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
+    ret._gd_data = gd_{{ builtin.snake_name }}_op_positive(&self._gd_data)
+    return ret
+{% endif %}
+
+{% endmacro %}

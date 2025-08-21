@@ -1,4 +1,6 @@
 Godot Engine .* - https://godotengine.org
 
 Pythonscript .* \(CPython .*\)
+ERROR: Index p_index = 99 is out of bounds \(p_instance->size\(\) = 1\).
+   at: func_Array_get \(core/variant/variant_call.cpp:.*\)
 [\d]+/[\d]+ tests passed
