@@ -5,7 +5,7 @@ from libc.stdlib cimport malloc, free
 
 from godot.hazmat.gdextension_interface cimport *
 from godot.hazmat.gdapi cimport *
-
+from godot.hazmat cimport gdnative_ptrs
 
 @cython.final
 cdef class ExtensionClassSpec:
@@ -30,8 +30,8 @@ cdef inline list _get_extension_gc_protector():  # No `noexcept` since it is ign
 
 cdef inline void unregister_extension_class(bytes class_name) noexcept:
     cdef gd_string_name_t gd_class_name = gd_string_name_from_utf8_and_len(<char*>class_name, len(class_name))
-    gdptr_classdb_unregister_extension_class(
-        gdptr_library,
+    gdnative_ptrs.gdptr_classdb_unregister_extension_class(
+        gdnative_ptrs.gdptr_library,
         &gd_class_name,
     )
     gd_string_name_del(&gd_class_name)
@@ -100,8 +100,8 @@ cdef inline void register_extension_class_creation(
     cdef gd_string_name_t gdname = gd_string_name_from_utf8_and_len(<char*>class_name, len(class_name))
     cdef gd_string_name_t gdname_parent = gd_string_name_from_utf8_and_len(<char*>parent_class_name, len(parent_class_name))
     # TODO: correct me once https://github.com/godotengine/godot/pull/67121 is merged
-    gdptr_classdb_register_extension_class2(
-        gdptr_library,
+    gdnative_ptrs.gdptr_classdb_register_extension_class2(
+        gdnative_ptrs.gdptr_library,
         &gdname,
         &gdname_parent,
         &info,
@@ -368,8 +368,8 @@ cdef inline void register_extension_class_method(
     # 3) Actually register the method
 
     cdef gd_string_name_t gd_class_name = gd_string_name_from_pybytes(class_name)
-    gdptr_classdb_register_extension_class_method(
-        gdptr_library,
+    gdnative_ptrs.gdptr_classdb_register_extension_class_method(
+        gdnative_ptrs.gdptr_library,
         &gd_class_name,
         &info,
     )

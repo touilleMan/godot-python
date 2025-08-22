@@ -54,7 +54,7 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
     memset(&__ret, 0, sizeof(__ret))
 {%   endif %}
 {% endif %}
-    gdptr_utility_{{ builtin.original_name }}(
+    gdnative_ptrs.gdptr_utility_{{ builtin.original_name }}(
         {# GDExtensionTypePtr ret #}
         {{ "NULL" if builtin.return_type.is_nil else "&__ret" }},
         {# const GDExtensionTypePtr *p_arguments #}
@@ -75,12 +75,12 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
 {# to pass a `gd_variant_t**` as parameter) whose size is passed in the number #}
 {# of parameters fields... Yes this is very confusing stuff, my brain hurts ! #}
 {% if builtin.return_type.is_nil %}
-    gdptr_utility_{{ builtin.original_name }}(NULL, <const void **>&args, args_count)
+    gdnative_ptrs.gdptr_utility_{{ builtin.original_name }}(NULL, <const void **>&args, args_count)
 {% else %}
     cdef gd_variant_t __ret  # TODO: improve return type !
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
     __ret = gd_variant_new()
-    gdptr_utility_{{ builtin.original_name }}(&__ret, <const void **>&args, args_count)
+    gdnative_ptrs.gdptr_utility_{{ builtin.original_name }}(&__ret, <const void **>&args, args_count)
     return __ret
 {% endif %}
 {% endmacro %}
@@ -118,12 +118,12 @@ gd_variant_t gd_{{ builtin.snake_name }}_into_variant({{ builtin.c_type }} *val)
 {% macro render_builtin_object_variant_conversions(builtin) %}
 cdef inline GDExtensionObjectPtr gd_object_from_variant(gd_variant_t *val):
     cdef GDExtensionObjectPtr ret
-    gdptr_object_from_variant(&ret, val)
+    gdnative_ptrs.gdptr_object_from_variant(&ret, val)
     return ret
 
 cdef inline gd_variant_t gd_object_into_variant(GDExtensionObjectPtr val):
     cdef gd_variant_t ret
-    gdptr_object_into_variant(&ret, &val)
+    gdnative_ptrs.gdptr_object_into_variant(&ret, &val)
     return ret
 {% endmacro %}
 
@@ -136,12 +136,12 @@ cdef inline {{ render_builtin_from_variant_signature(builtin) }}:
     # TODO: no longer needed once https://github.com/godotengine/godot/pull/35813 is merged
     cdef {{ builtin.c_type }} ret = gd_{{ builtin.snake_name }}_new()
 {% endif %}
-    gdptr_{{ builtin.snake_name }}_from_variant(&ret, val)
+    gdnative_ptrs.gdptr_{{ builtin.snake_name }}_from_variant(&ret, val)
     return ret
 
 cdef inline {{ render_builtin_into_variant_signature(builtin) }}:
     cdef gd_variant_t ret
-    gdptr_{{ builtin.snake_name }}_into_variant(&ret, {{ "&val" if builtin.is_scalar else "val"}})
+    gdnative_ptrs.gdptr_{{ builtin.snake_name }}_into_variant(&ret, {{ "&val" if builtin.is_scalar else "val"}})
     return ret
 {% endmacro %}
 
@@ -159,7 +159,7 @@ cdef inline {{ render_builtin_constructor_signature(builtin, constructor) }}:
         {{- render_args(constructor.arguments) -}}
     ]
 {% endif %}
-    gdptr_{{ builtin.snake_name }}_constructor_{{ constructor.index }}(
+    gdnative_ptrs.gdptr_{{ builtin.snake_name }}_constructor_{{ constructor.index }}(
         &obj,
         <const void **>{{ "NULL" if (constructor.arguments | length) == 0 else "p_args" }}
     )
@@ -174,7 +174,7 @@ void gd_{{ builtin.snake_name }}_del({{ builtin.c_type }}* self)
 
 {% macro render_builtin_destructor(builtin) %}
 cdef inline {{ render_builtin_destructor_signature(builtin) }}:
-    gdptr_{{ builtin.snake_name }}_destructor(self)
+    gdnative_ptrs.gdptr_{{ builtin.snake_name }}_destructor(self)
 {% endmacro %}
 
 
@@ -212,7 +212,7 @@ cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
     memset(&__ret, 0, sizeof(__ret))
 {%   endif %}
 {% endif %}
-    gdptr_{{ builtin.snake_name }}_meth_{{ meth.name }}(
+    gdnative_ptrs.gdptr_{{ builtin.snake_name }}_meth_{{ meth.name }}(
         {# GDExtensionTypePtr p_base #}
         self,
         {# const GDExtensionTypePtr *__args #}
@@ -245,7 +245,7 @@ cdef inline {{ m.type.c_type }} gd_{{ builtin.snake_name }}_get_{{ m.name }}({{ 
     # Should be optimized out in the end given the called function end up inlined.
     memset(&__ret, 0, sizeof(__ret))
 {% endif %}
-    gdptr_{{ builtin.snake_name }}_get_{{ m.name }}(self, &__ret)
+    gdnative_ptrs.gdptr_{{ builtin.snake_name }}_get_{{ m.name }}(self, &__ret)
     return __ret
 {% endmacro %}
 
@@ -255,7 +255,7 @@ cdef inline void gd_{{ builtin.snake_name }}_set_{{ m.name }}(
     {{ builtin.c_type }} *self,
     {{ m.type.c_type }} {{ "" if m.type.is_scalar else "*" }}val
 ):
-    gdptr_{{ builtin.snake_name }}_set_{{ m.name }}(self, {{ "&val" if m.type.is_scalar else "val" }})
+    gdnative_ptrs.gdptr_{{ builtin.snake_name }}_set_{{ m.name }}(self, {{ "&val" if m.type.is_scalar else "val" }})
 {% endmacro %}
 
 
@@ -276,7 +276,7 @@ cdef inline {{ builtin.indexing_return_type.c_type }} gd_{{ builtin.snake_name }
     # Should be optimized out in the end given the called function end up inlined.
     memset(&__ret, 0, sizeof(__ret))
 {%   endif %}
-    gdptr_{{ builtin.snake_name }}_indexed_getter(self, index, &__ret)
+    gdnative_ptrs.gdptr_{{ builtin.snake_name }}_indexed_getter(self, index, &__ret)
     return __ret
 {% endmacro %}
 
@@ -287,7 +287,7 @@ cdef inline void gd_{{ builtin.snake_name }}_indexed_setter(
     GDExtensionInt index,
     {{ builtin.indexing_return_type.c_type }} {{ "" if builtin.indexing_return_type.is_scalar else "*" }}value
 ):
-    gdptr_{{ builtin.snake_name }}_indexed_setter(self, index, {{ "&" if builtin.indexing_return_type.is_scalar else "" }}value)
+    gdnative_ptrs.gdptr_{{ builtin.snake_name }}_indexed_setter(self, index, {{ "&" if builtin.indexing_return_type.is_scalar else "" }}value)
 {% endmacro %}
 
 
@@ -308,7 +308,7 @@ cdef inline {{ builtin.indexing_return_type.c_type }} gd_{{ builtin.snake_name }
     # Should be optimized out in the end given the called function end up inlined.
     memset(&__ret, 0, sizeof(__ret))
 {%   endif %}
-    gdptr_{{ builtin.snake_name }}_keyed_getter(self, key, &__ret)
+    gdnative_ptrs.gdptr_{{ builtin.snake_name }}_keyed_getter(self, key, &__ret)
     return __ret
 {% endmacro %}
 
@@ -319,7 +319,7 @@ cdef inline void gd_{{ builtin.snake_name }}_keyed_setter(
     const gd_variant_t *key,
     const {{ builtin.indexing_return_type.c_type }} {{ "" if builtin.indexing_return_type.is_scalar else "*" }}value
 ):
-    gdptr_{{ builtin.snake_name }}_keyed_setter(self, key, {{ "&" if builtin.indexing_return_type.is_scalar else "" }}value)
+    gdnative_ptrs.gdptr_{{ builtin.snake_name }}_keyed_setter(self, key, {{ "&" if builtin.indexing_return_type.is_scalar else "" }}value)
 {% endmacro %}
 
 
@@ -335,7 +335,7 @@ cdef inline {{ o.return_type.c_type }} gd_{{ builtin.snake_name }}_op_{{ o.name 
     const {{ builtin.c_type }} *self
 ):
     cdef {{ o.return_type.c_type }} result
-    gdptr_{{ builtin.snake_name }}_op_{{ o.name }}(self, NULL, &result)
+    gdnative_ptrs.gdptr_{{ builtin.snake_name }}_op_{{ o.name }}(self, NULL, &result)
     return result
 {%   else %}
 cdef inline {{ o.return_type.c_type }} gd_{{ builtin.snake_name }}_op_{{ o.name }}(
@@ -343,7 +343,7 @@ cdef inline {{ o.return_type.c_type }} gd_{{ builtin.snake_name }}_op_{{ o.name 
     const {{ o.right_type.c_type }} *other
 ):
     cdef {{ o.return_type.c_type }} result
-    gdptr_{{ builtin.snake_name }}_op_{{ o.name }}(self, other, &result)
+    gdnative_ptrs.gdptr_{{ builtin.snake_name }}_op_{{ o.name }}(self, other, &result)
     return result
 {%   endif %}
 {% endfor %}

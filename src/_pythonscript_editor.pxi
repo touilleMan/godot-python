@@ -108,7 +108,7 @@ cdef _register_editor_methods():
     # info.get_argument_metadata_func = NULL
     # info.default_argument_count = 0
     # info.default_arguments = NULL
-    # gdptr_classdb_register_extension_class_method(
+    # gdnative_ptrs.gdptr_classdb_register_extension_class_method(
     #     gdpytr_library,
     #     "PythonScriptLanguageExtension",
     #     &info,
@@ -127,7 +127,7 @@ cdef _register_editor_methods():
     # info.get_argument_metadata_func = NULL
     # info.default_argument_count = 0
     # info.default_arguments = NULL
-    # gdptr_classdb_register_extension_class_method(
+    # gdnative_ptrs.gdptr_classdb_register_extension_class_method(
     #     gdpytr_library,
     #     "PythonScriptLanguageExtension",
     #     &info,
@@ -146,7 +146,7 @@ cdef _register_editor_methods():
     # info.get_argument_metadata_func = NULL
     # info.default_argument_count = 0
     # info.default_arguments = NULL
-    # gdptr_classdb_register_extension_class_method(
+    # gdnative_ptrs.gdptr_classdb_register_extension_class_method(
     #     gdpytr_library,
     #     "PythonScriptLanguageExtension",
     #     &info,

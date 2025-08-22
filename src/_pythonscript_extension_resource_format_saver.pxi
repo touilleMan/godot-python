@@ -11,8 +11,8 @@ cdef class PythonResourceFormatSaver:
     cdef gd_object_t _gd_ptr
 
     def __cinit__(self):
-        self._gd_ptr = gdptr_classdb_construct_object(&gdname_resourceformatsaver)
-        gdptr_object_set_instance(self._gd_ptr, &gdname_pythonresourceformatsaver, <PyObject*>self)
+        self._gd_ptr = gdnative_ptrs.gdptr_classdb_construct_object(&gdname_resourceformatsaver)
+        gdnative_ptrs.gdptr_object_set_instance(self._gd_ptr, &gdname_pythonresourceformatsaver, <PyObject*>self)
 
     # godot_extension: register_class_hook()
     @staticmethod
@@ -56,9 +56,9 @@ cdef class PythonResourceFormatSaver:
         cdef gd_string_t py_script_name
         cdef gd_string_t script_name
         cdef gd_bool_t is_python_script
-        cdef gd_bool_t result = gdptr_object_get_class_name(
+        cdef gd_bool_t result = gdnative_ptrs.gdptr_object_get_class_name(
             resource,
-            gdptr_library,
+            gdnative_ptrs.gdptr_library,
             &class_name
         )
 

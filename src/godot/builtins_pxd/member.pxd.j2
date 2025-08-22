@@ -70,18 +70,18 @@ cdef inline void _setitem(self, object key, {{ builtin.indexing_return_type.cy_t
 
 {% macro render_getsetitem_indexed_array(builtin) %}
 cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDExtensionInt index):
-    cdef const gd_variant_t *item = <const gd_variant_t *>gdptr_array_operator_index_const(&self._gd_data, index)
+    cdef const gd_variant_t *item = <const gd_variant_t *>gdnative_ptrs.gdptr_array_operator_index_const(&self._gd_data, index)
     if item != NULL:
         return gd_variant_copy_into_pyobj(item)
     else:
         raise IndexError
 
 cdef inline void _setitem(self, GDExtensionInt index, {{ builtin.indexing_return_type.cy_type }} value):
-    cdef gd_variant_t *item = <gd_variant_t *>gdptr_array_operator_index(&self._gd_data, index)
+    cdef gd_variant_t *item = <gd_variant_t *>gdnative_ptrs.gdptr_array_operator_index(&self._gd_data, index)
     cdef gd_variant_t gdvalue
     if item != NULL:
         gdvalue = ensure_is_gdany_and_borrow_ref(value)
-        gdptr_variant_new_copy(item, &gdvalue)
+        gdnative_ptrs.gdptr_variant_new_copy(item, &gdvalue)
     else:
         raise IndexError
 {% endmacro %}
@@ -89,7 +89,7 @@ cdef inline void _setitem(self, GDExtensionInt index, {{ builtin.indexing_return
 
 {% macro render_getsetitem_indexed_packed_array(builtin) %}
 cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDExtensionInt index):
-    cdef {{ builtin.packed_array_item_type.c_type }} *item = <const gd_variant_t *>gdptr_packed_{{ builtin.packed_array_item_type.original_name | lower }}_array_operator_index_const(&self._gd_data, index)
+    cdef {{ builtin.packed_array_item_type.c_type }} *item = <const gd_variant_t *>gdnative_ptrs.gdptr_packed_{{ builtin.packed_array_item_type.original_name | lower }}_array_operator_index_const(&self._gd_data, index)
     if item != NULL:
 {% if builtin.is_scalar %}
         return *item
@@ -100,11 +100,11 @@ cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDExtensio
         raise IndexError
 
 cdef inline void _setitem(self, GDExtensionInt index, {{ builtin.indexing_return_type.cy_type }} value):
-    cdef gd_variant_t *item = <gd_variant_t *>gdptr_packed_{{ builtin.packed_array_item_type.original_name | lower }}_array_operator_index(&self._gd_data, index)
+    cdef gd_variant_t *item = <gd_variant_t *>gdnative_ptrs.gdptr_packed_{{ builtin.packed_array_item_type.original_name | lower }}_array_operator_index(&self._gd_data, index)
     cdef gd_variant_t gdvalue
     if item != NULL:
         gdvalue = ensure_is_gdany_and_borrow_ref(value)
-        gdptr_variant_new_copy(item, &gdvalue)
+        gdnative_ptrs.gdptr_variant_new_copy(item, &gdvalue)
     else:
         raise IndexError
 {% endmacro %}
@@ -113,7 +113,7 @@ cdef inline void _setitem(self, GDExtensionInt index, {{ builtin.indexing_return
 {% macro render_getsetitem_indexed_dictionary(builtin) %}
 cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, key):
     cdef gd_variant_t gdkey = ensure_is_gdany_and_borrow_ref(key)
-    cdef gd_variant_t *item = <const gd_variant_t *>gdptr_dictionary_operator_index_const(&self._gd_data, &gdkey)
+    cdef gd_variant_t *item = <const gd_variant_t *>gdnative_ptrs.gdptr_dictionary_operator_index_const(&self._gd_data, &gdkey)
     if item != NULL:
         return gd_variant_copy_into_pyobj(item)
     else:
@@ -121,11 +121,11 @@ cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, key):
 
 cdef inline void _setitem(self, key, {{ builtin.indexing_return_type.cy_type }} value):
     cdef gd_variant_t gdkey = ensure_is_gdany_and_borrow_ref(key)
-    cdef gd_variant_t *item = <gd_variant_t *>gdptr_dictionary_operator_index(&self._gd_data, &index)
+    cdef gd_variant_t *item = <gd_variant_t *>gdnative_ptrs.gdptr_dictionary_operator_index(&self._gd_data, &index)
     cdef gd_variant_t gdvalue
     if item != NULL:
         gdvalue = ensure_is_gdany_and_borrow_ref(value)
-        gdptr_variant_new_copy(item, &gdvalue)
+        gdnative_ptrs.gdptr_variant_new_copy(item, &gdvalue)
     else:
         raise IndexError
 {% endmacro %}

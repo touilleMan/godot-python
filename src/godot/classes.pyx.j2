@@ -2,11 +2,12 @@
 cimport cython
 
 from .hazmat.gdapi cimport *
+from .hazmat cimport gdnative_ptrs
 from .builtins cimport *
 
 cdef class BaseGDObject:
     def free(self):
-        gdptr_object_destroy(self._gd_ptr)
+        gdnative_ptrs.gdptr_object_destroy(self._gd_ptr)
         self._gd_ptr = NULL
 
     def __init__(self):
@@ -68,7 +69,7 @@ cdef class {{ cls.cy_type }}
 {#         raise NotImplementedError("TODO :'(") #} #}
 {#  #}
 {#     def free(self): #}
-{#         gdptr_object_destroy(self._gd_ptr) #}
+{#         gdnative_ptrs.gdptr_object_destroy(self._gd_ptr) #}
 {#         self._gd_ptr = NULL #}
 {#  #}
 {#     def __init__(self): #}
@@ -100,9 +101,9 @@ cdef object _load_singleton(str name):
         pass
 
     cdef object cls = _load_class(name)
-{# cdef GDExtensionObjectPtr gdobj = gdptr_global_get_singleton(&(<StringName>cls._gd_name)._gd_data) #}
+{# cdef GDExtensionObjectPtr gdobj = gdnative_ptrs.gdptr_global_get_singleton(&(<StringName>cls._gd_name)._gd_data) #}
     cdef gd_string_name_t gdname = gd_string_name_from_unchecked_pystr(name)
-    cdef GDExtensionObjectPtr gdobj = gdptr_global_get_singleton(&gdname)
+    cdef GDExtensionObjectPtr gdobj = gdnative_ptrs.gdptr_global_get_singleton(&gdname)
     gd_string_name_del(&gdname)
     cdef object singleton = cls._from_ptr(<size_t>gdobj)
 
@@ -110,7 +111,7 @@ cdef object _load_singleton(str name):
     return singleton
 {# {% for singleton in api.singletons %}
     cdef {{ singleton.type.py_type }} singleton_{{ singleton.name }} = {{ singleton.type.py_type }}.__new__({{ singleton.type.py_type }})
-    singleton_{{ singleton.name }}._gd_ptr = gdptr_global_get_singleton("{{ singleton.original_name }}")
+    singleton_{{ singleton.name }}._gd_ptr = gdnative_ptrs.gdptr_global_get_singleton("{{ singleton.original_name }}")
     globals()["{{ singleton.name }}"] = singleton_{{ singleton.name }}
 {% endfor %} #}
 
@@ -137,7 +138,7 @@ cdef object _load_class(str name):
 
     # Load our good friend ClassDB
     cdef StringName gdname_classdb = StringName("ClassDB")
-    cdef GDExtensionObjectPtr classdb = gdptr_global_get_singleton(&gdname_classdb._gd_data)
+    cdef GDExtensionObjectPtr classdb = gdnative_ptrs.gdptr_global_get_singleton(&gdname_classdb._gd_data)
 
     if not _object_call(classdb, "class_exists", [gdname]):
         raise RuntimeError(f"Class `{name}` doesn't exist in Godot !")
@@ -197,12 +198,12 @@ cdef object _object_call(GDExtensionObjectPtr obj, str meth, args):
 
     cdef StringName gdname_object = StringName("Object")
     cdef StringName gdname_call = StringName("call")
-    cdef GDExtensionMethodBindPtr Object_call = gdptr_classdb_get_method_bind(&gdname_object._gd_data, &gdname_call._gd_data, {{ api.get_class_meth_hash("Object", "call") }})
+    cdef GDExtensionMethodBindPtr Object_call = gdnative_ptrs.gdptr_classdb_get_method_bind(&gdname_object._gd_data, &gdname_call._gd_data, {{ api.get_class_meth_hash("Object", "call") }})
 
     cdef GDExtensionInt args_with_meth_len = len(args) + 1
     if args_with_meth_len > 9:
         # TODO: handle this
-        gdptr_print_error("more than 8 params is not supported !", "_object_call", "", 0, False)
+        gdnative_ptrs.gdptr_print_error("more than 8 params is not supported !", "_object_call", "", 0, False)
         return None
     cdef gd_variant_t[9] variant_args
     cdef (gd_variant_t*)[9] variant_args_ptrs
@@ -219,7 +220,7 @@ cdef object _object_call(GDExtensionObjectPtr obj, str meth, args):
     for i, arg in enumerate(args, 1):
         variant_args[i] = ensure_is_gdany_and_borrow_ref(arg)
 
-    gdptr_object_method_bind_call(
+    gdnative_ptrs.gdptr_object_method_bind_call(
         Object_call,
         obj,
         # Cast is required given autopxd2 incorrectly removes the const attributes

@@ -67,7 +67,7 @@ cdef GDExtensionVariantType py_to_gd_type(object pytype):
 
 
 cdef object gd_variant_steal_into_pyobj(const gd_variant_t *gdvar):
-    cdef GDExtensionVariantType gdtype = gdptr_variant_get_type(gdvar)
+    cdef GDExtensionVariantType gdtype = gdnative_ptrs.gdptr_variant_get_type(gdvar)
     if gdtype == GDEXTENSION_VARIANT_TYPE_OBJECT:
         raise NotImplementedError  # TODO
         # # TODO: This conversion relies on godot String and lookup into bindings
@@ -103,7 +103,7 @@ cdef inline object _gd_variant_steal_into_pyobj_{{ builtin.cy_type }}(const gd_v
 cdef object gd_variant_copy_into_pyobj(const gd_variant_t *gdvar):
     cdef gd_variant_t copy
     # TODO: must do an ugly cast because autopxd2 ignores const qualifiers in the C headers
-    gdptr_variant_new_copy(&copy, <gd_variant_t *>gdvar)
+    gdnative_ptrs.gdptr_variant_new_copy(&copy, <gd_variant_t *>gdvar)
     return gd_variant_steal_into_pyobj(&copy)
 
 
@@ -115,7 +115,7 @@ cdef object gd_variant_copy_into_pyobj(const gd_variant_t *gdvar):
 # TODO rename given stealing is not possible with GDExtension C++ orientated API
 cdef bint gd_variant_steal_from_pyobj(object pyobj, gd_variant_t *gdvar):
     if pyobj is None:
-        gdptr_variant_new_nil(gdvar)
+        gdnative_ptrs.gdptr_variant_new_nil(gdvar)
     elif isinstance(pyobj, GDObject):
         gdvar[0] = gd_object_into_variant((<GDObject>pyobj)._gd_ptr)
     elif isinstance(pyobj, bool):  # TODO: try/except on the gd_bool_into_variant is enough ?

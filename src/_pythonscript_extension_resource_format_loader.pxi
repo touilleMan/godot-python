@@ -12,8 +12,8 @@ cdef class PythonResourceFormatLoader:
     cdef gd_object_t _gd_ptr
 
     def __cinit__(self):
-        self._gd_ptr = gdptr_classdb_construct_object(&gdname_resourceformatloader)
-        gdptr_object_set_instance(self._gd_ptr, &gdname_pythonresourceformatloader, <PyObject*>self)
+        self._gd_ptr = gdnative_ptrs.gdptr_classdb_construct_object(&gdname_resourceformatloader)
+        gdnative_ptrs.gdptr_object_set_instance(self._gd_ptr, &gdname_pythonresourceformatloader, <PyObject*>self)
 
     # godot_extension: register_class_hook()
     @staticmethod
