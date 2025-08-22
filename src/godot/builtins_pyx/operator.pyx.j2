@@ -15,7 +15,7 @@ def __repr__(self):
     # TODO: I'm still not sure if this call steals self._gd_data or copies it...
     cdef gd_variant_t gdvar = gd_{{ builtin.snake_name }}_into_variant(&self._gd_data)
     cdef gd_string_t gdstr
-    gdnative_ptrs.gdptr_variant_stringify(&gdvar, &gdstr)
+    gdptrs.gdptr_variant_stringify(&gdvar, &gdstr)
     try:
         return f"{{ builtin.cy_type}}({gd_string_to_pystr(&gdstr)})"
     finally:
@@ -43,7 +43,7 @@ def __len__(self):
     return self.size()
 {% else %}
 def __bool__(self):
-    return gdnative_ptrs.gdptr_variant_booleanize(&self._gd_data)
+    return gdptrs.gdptr_variant_booleanize(&self._gd_data)
 {% endif %}
 
 {% if builtin.original_name == "Array" or builtin.is_packed_array %}

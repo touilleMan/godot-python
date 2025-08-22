@@ -20,8 +20,8 @@ custom_target(
 )
 
 custom_target(
-    output: 'gdnative_ptrs.pxd',
-    input: [pxd_godot_hazmat_gdnative_ptrs],
+    output: 'gdptrs.pxd',
+    input: [pxd_godot_hazmat_gdptrs],
     command: copy_command,
     install: true,
     install_dir: join_paths(python_site_packages_install_path, 'godot', 'hazmat'),

@@ -10,7 +10,7 @@ from cpython.ref cimport Py_INCREF, Py_DECREF, PyObject  # Needed for @godot_ext
 from godot.hazmat.gdextension_interface cimport *
 from godot.hazmat.gdapi cimport *
 from godot.hazmat.extension_class cimport *
-from godot.hazmat cimport gdnative_ptrs
+from godot.hazmat cimport gdptrs
 from godot.builtins cimport *
 from godot.classes cimport _load_class, _load_singleton, _cleanup_loaded_classes_and_singletons
 
@@ -266,12 +266,12 @@ cdef void _register_pythonscript_language():
 
     gdname_engine = StringName("Engine")
     gdname_register_script_language = StringName("register_script_language")
-    engine = gdnative_ptrs.gdptr_global_get_singleton(&gdname_engine._gd_data)
+    engine = gdptrs.gdptr_global_get_singleton(&gdname_engine._gd_data)
     if engine == NULL:
         print("Failed to register Python into Godot: failed to retreive `Engine` singleton", flush=True)
         return
 
-    bind = gdnative_ptrs.gdptr_classdb_get_method_bind(
+    bind = gdptrs.gdptr_classdb_get_method_bind(
         &gdname_engine._gd_data,
         &gdname_register_script_language._gd_data,
         1850254898,
@@ -282,7 +282,7 @@ cdef void _register_pythonscript_language():
         return
 
     args = [&_pythons_script_language._gd_ptr]
-    gdnative_ptrs.gdptr_object_method_bind_ptrcall(
+    gdptrs.gdptr_object_method_bind_ptrcall(
         bind,
         engine,
         args,
@@ -310,12 +310,12 @@ cdef void _unregister_pythonscript_language():
 
     gdname_engine = StringName("Engine")
     gdname_unregister_script_language = StringName("unregister_script_language")
-    engine = gdnative_ptrs.gdptr_global_get_singleton(&gdname_engine._gd_data)
+    engine = gdptrs.gdptr_global_get_singleton(&gdname_engine._gd_data)
     if engine == NULL:
         print("Failed to unregister Python from Godot: failed to retreive `Engine` singleton", flush=True)
         return
 
-    bind = gdnative_ptrs.gdptr_classdb_get_method_bind(
+    bind = gdptrs.gdptr_classdb_get_method_bind(
         &gdname_engine._gd_data,
         &gdname_unregister_script_language._gd_data,
         1850254898,
@@ -325,7 +325,7 @@ cdef void _unregister_pythonscript_language():
         return
 
     args = [&_pythons_script_language._gd_ptr]
-    gdnative_ptrs.gdptr_object_method_bind_ptrcall(
+    gdptrs.gdptr_object_method_bind_ptrcall(
         bind,
         engine,
         args,
@@ -337,7 +337,7 @@ cdef void _unregister_pythonscript_language():
 
     # 2) Free the language instance
 
-    gdnative_ptrs.gdptr_object_destroy(
+    gdptrs.gdptr_object_destroy(
         _pythons_script_language._gd_ptr,
     )
 
@@ -374,12 +374,12 @@ cdef void _register_pythonscript_resource_format_loader():
 
     gdname_resource_loader = StringName("ResourceLoader")
     gdname_add_resource_format_loader = StringName("add_resource_format_loader")
-    resource_loader = gdnative_ptrs.gdptr_global_get_singleton(&gdname_resource_loader._gd_data)
+    resource_loader = gdptrs.gdptr_global_get_singleton(&gdname_resource_loader._gd_data)
     if resource_loader == NULL:
         print("Failed to register Python into Godot: failed to retreive `ResourceLoader` singleton", flush=True)
         return
 
-    bind = gdnative_ptrs.gdptr_classdb_get_method_bind(
+    bind = gdptrs.gdptr_classdb_get_method_bind(
         &gdname_resource_loader._gd_data,
         &gdname_add_resource_format_loader._gd_data,
         2896595483,
@@ -390,7 +390,7 @@ cdef void _register_pythonscript_resource_format_loader():
         return
 
     args = [&_python_resource_format_loader._gd_ptr, &param_at_front]
-    gdnative_ptrs.gdptr_object_method_bind_ptrcall(
+    gdptrs.gdptr_object_method_bind_ptrcall(
         bind,
         resource_loader,
         args,
@@ -415,12 +415,12 @@ cdef void _unregister_pythonscript_resource_format_loader():
 
     gdname_resource_loader = StringName("ResourceLoader")
     gdname_remove_resource_format_loader = StringName("remove_resource_format_loader")
-    resource_loader = gdnative_ptrs.gdptr_global_get_singleton(&gdname_resource_loader._gd_data)
+    resource_loader = gdptrs.gdptr_global_get_singleton(&gdname_resource_loader._gd_data)
     if resource_loader == NULL:
         print("Failed to unregister Python from Godot: failed to retreive `ResourceLoader` singleton", flush=True)
         return
 
-    bind = gdnative_ptrs.gdptr_classdb_get_method_bind(
+    bind = gdptrs.gdptr_classdb_get_method_bind(
         &gdname_resource_loader._gd_data,
         &gdname_remove_resource_format_loader._gd_data,
         405397102,
@@ -430,7 +430,7 @@ cdef void _unregister_pythonscript_resource_format_loader():
         return
 
     args = [&_python_resource_format_loader._gd_ptr]
-    gdnative_ptrs.gdptr_object_method_bind_ptrcall(
+    gdptrs.gdptr_object_method_bind_ptrcall(
         bind,
         resource_loader,
         args,
@@ -471,12 +471,12 @@ cdef void _register_pythonscript_resource_format_saver():
 
     gdname_resource_saver = StringName("ResourceSaver")
     gdname_add_resource_format_saver = StringName("add_resource_format_saver")
-    resource_saver = gdnative_ptrs.gdptr_global_get_singleton(&gdname_resource_saver._gd_data)
+    resource_saver = gdptrs.gdptr_global_get_singleton(&gdname_resource_saver._gd_data)
     if resource_saver == NULL:
         print("Failed to register Python into Godot: failed to retreive `ResourceSaver` singleton", flush=True)
         return
 
-    bind = gdnative_ptrs.gdptr_classdb_get_method_bind(
+    bind = gdptrs.gdptr_classdb_get_method_bind(
         &gdname_resource_saver._gd_data,
         &gdname_add_resource_format_saver._gd_data,
         362894272,
@@ -487,7 +487,7 @@ cdef void _register_pythonscript_resource_format_saver():
         return
 
     args = [&_python_resource_format_saver._gd_ptr, &param_at_front]
-    gdnative_ptrs.gdptr_object_method_bind_ptrcall(
+    gdptrs.gdptr_object_method_bind_ptrcall(
         bind,
         resource_saver,
         args,
@@ -512,12 +512,12 @@ cdef void _unregister_pythonscript_resource_format_saver():
 
     gdname_resource_saver = StringName("ResourceSaver")
     gdname_remove_resource_format_saver = StringName("remove_resource_format_saver")
-    resource_saver = gdnative_ptrs.gdptr_global_get_singleton(&gdname_resource_saver._gd_data)
+    resource_saver = gdptrs.gdptr_global_get_singleton(&gdname_resource_saver._gd_data)
     if resource_saver == NULL:
         print("Failed to unregister Python from Godot: failed to retreive `ResourceSaver` singleton", flush=True)
         return
 
-    bind = gdnative_ptrs.gdptr_classdb_get_method_bind(
+    bind = gdptrs.gdptr_classdb_get_method_bind(
         &gdname_resource_saver._gd_data,
         &gdname_remove_resource_format_saver._gd_data,
         3373026878,
@@ -527,7 +527,7 @@ cdef void _unregister_pythonscript_resource_format_saver():
         return
 
     args = [&_python_resource_format_saver._gd_ptr]
-    gdnative_ptrs.gdptr_object_method_bind_ptrcall(
+    gdptrs.gdptr_object_method_bind_ptrcall(
         bind,
         resource_saver,
         args,

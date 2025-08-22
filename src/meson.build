@@ -72,15 +72,15 @@ pxd_godot_hazmat_gdextension = custom_target(
 )
 
 
-# godot/hazmat/gdnative_ptrs.pxd
+# godot/hazmat/gdptrs.pxd
 # └─ extension_api.json
 
-pxd_godot_hazmat_gdnative_ptrs = custom_target(
-    output: 'godot#hazmat#gdnative_ptrs.pxd',
+pxd_godot_hazmat_gdptrs = custom_target(
+    output: 'godot#hazmat#gdptrs.pxd',
     input: [
         generate_tmpl_base_input,
         files(
-            'godot/hazmat/gdnative_ptrs.pxd.j2',
+            'godot/hazmat/gdptrs.pxd.j2',
         ),
     ],
     command: generate_tmpl_cmd,
@@ -144,7 +144,7 @@ pxd_godot_classes = custom_target(
 
 pxds_godot_hazmat = [
     pxd_godot_hazmat_gdextension,
-    pxd_godot_hazmat_gdnative_ptrs,
+    pxd_godot_hazmat_gdptrs,
     pxd_godot_hazmat_gdapi,
     files(
         'godot/hazmat/extension_class.pxd',
