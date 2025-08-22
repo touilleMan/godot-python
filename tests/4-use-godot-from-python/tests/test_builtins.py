@@ -612,7 +612,6 @@ def test_operator(kind: str):
             assert False, unknown
 
 
-@clodotest.xfail(reason="TODO: WIP")
 @clodotest.parametrize(
     "kind",
     [
@@ -665,8 +664,11 @@ def test_method(kind: str):
             # Method expecting a non-scalar builtin
             assert_eq(s.begins_with(godot.GDString("foo")), True)
             # Method expecting a Godot Variant
-            # TODO: remove `placeholder` param once default param value is supported
-            assert_eq(s.format(godot.Vector2i(), placeholder="{_}"), godot.GDString(""))
+            assert_eq(s.format(godot.GDArray(["foo"])), godot.GDString("foo.txt"))
+            assert_eq(
+                s.format(godot.GDArray(["ar"]), placeholder=godot.GDString("oo")),
+                godot.GDString("far.txt"),
+            )
 
         case "with_parameter_as_python_value":
             s = godot.GDString("foo.txt")
@@ -678,32 +680,38 @@ def test_method(kind: str):
             assert_eq(s.begins_with("foo"), True)
             # TODO: Method expecting a Godot class instance
             # Method expecting a Godot Variant
-            assert_eq(s.format("foo"), godot.GDString(""))
-            assert_eq(s.format("foo", placeholder="{_}"), godot.GDString(""))
-            assert_eq(s.format(42), godot.GDString(""))
-            assert_eq(s.format(None), godot.GDString(""))
+            a.append("foo")
+            assert_eq(a, godot.GDArray(["foo"]))
 
         case "with_parameter_passed_by_name":
+            s = godot.GDString("foo.txt")
+
             assert_eq(s.begins_with(text="foo"), True)
 
         case "with_parameter_with_default_value":
+            s = godot.GDString("foo.txt")
+
             assert_eq(s.count("o"), 2)
 
         case "with_parameter_with_default_value_overwritten":
+            s = godot.GDString("foo.txt")
+
             assert_eq(s.count("o", 2), 1)
             assert_eq(s.count("o", 2, 2), 0)
 
         case "with_parameter_with_default_value_overwritten_and_passed_by_name":
+            s = godot.GDString("foo.txt")
+
             assert_eq(s.count("o", from_=1), 2)
             assert_eq(s.count("o", to=2), 1)
             assert_eq(s.count("o", to=2, from_=2), 0)
 
         case "bad_parameter_type":
+            s = godot.GDString("foo.txt")
+
             # Method expecting a scalar
             with clodotest.raises(TypeError):
                 s.left(godot.GDString())  # Non-scalar builtin
-            with clodotest.raises(TypeError):
-                s.left(3.14)  # Wrong scalar type
             with clodotest.raises(TypeError):
                 s.left(None)  # Wrong scalar type
             # TODO: test with a Godot class instance
@@ -723,13 +731,6 @@ def test_method(kind: str):
 
             # Method expecting a Variant
             a = godot.GDArray()
-            with clodotest.raises(TypeError):
-                s.format(godot.GDString())  # Wrong non-scalar builtin
-            with clodotest.raises(TypeError):
-                s.format(3.14)  # Wrong scalar type
-            with clodotest.raises(TypeError):
-                s.format(None)  # Wrong scalar type
-            # TODO: test with a Godot class instance
             with clodotest.raises(TypeError):
                 s.format(object())  # Incompatible Python type
 

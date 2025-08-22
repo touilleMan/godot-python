@@ -25,9 +25,9 @@ def __cinit__(self):
 {# Custom constructors first #}
 {% if builtin.original_name == "String" %}
 
-def __cinit__(self, s=None):
+def __cinit__(self, s=_SENTINEL):
     cdef GDExtensionTypePtr[1] args
-    if s is None:
+    if s is _SENTINEL:
         self._gd_data = gd_{{ builtin.snake_name }}_new()
     elif isinstance(s, str):
         self._gd_data = gd_string_from_unchecked_pystr(s)
@@ -45,10 +45,10 @@ def __cinit__(self, s=None):
 
 {% elif builtin.original_name == "StringName" %}
 
-def __cinit__(self, s=None):
+def __cinit__(self, s=_SENTINEL):
     cdef GDExtensionTypePtr[1] args
     cdef gd_string_t gds
-    if s is None:
+    if s is _SENTINEL:
         self._gd_data = gd_{{ builtin.snake_name }}_new()
     elif isinstance(s, str):
         self._gd_data = gd_string_name_from_unchecked_pystr(s)
@@ -62,10 +62,10 @@ def __cinit__(self, s=None):
 
 {% elif builtin.original_name == "NodePath" %}
 
-def __cinit__(self, s=None):
+def __cinit__(self, s=_SENTINEL):
     cdef GDExtensionTypePtr[1] args
     cdef gd_string_t gds
-    if s is None:
+    if s is _SENTINEL:
         self._gd_data = gd_{{ builtin.snake_name }}_new()
     elif isinstance(s, str):
         gds = gd_string_from_unchecked_pystr(s)
@@ -85,8 +85,8 @@ def __cinit__(self, s=None):
 
 {% elif builtin.original_name == "Dictionary" %}
 
-def __cinit__(self, mapping=None):
-    if mapping is None:
+def __cinit__(self, mapping=_SENTINEL):
+    if mapping is _SENTINEL:
         self._gd_data = gd_{{ builtin.snake_name }}_new()
         return
 
@@ -112,8 +112,8 @@ def __cinit__(self, mapping=None):
 
 {% elif builtin.original_name == "Array" %}
 
-def __cinit__(self, iterable=None):
-    if iterable is None:
+def __cinit__(self, iterable=_SENTINEL):
+    if iterable is _SENTINEL:
         self._gd_data = gd_{{ builtin.snake_name }}_new()
         return
 
@@ -151,8 +151,8 @@ def __cinit__(self, iterable=None):
 
 {% elif builtin.is_packed_array %}
 
-def __cinit__(self, iterable=None):
-    if iterable is None:
+def __cinit__(self, iterable=_SENTINEL):
+    if iterable is _SENTINEL:
         self._gd_data = gd_{{ builtin.snake_name }}_new()
         return
 {%   set constructor = builtin.get_constructor_from(builtin.original_name) %}
