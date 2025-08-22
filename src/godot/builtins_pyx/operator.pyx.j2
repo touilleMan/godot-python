@@ -385,10 +385,10 @@ def __pos__(self):
 {% if builtin.indexing_return_type and not builtin.is_keyed %}
 # TODO: handle out of range error ?
 
-def __getitem__(self, GDExtensionInt index):
+def __getitem__(self, gd_int_t index):
     return self._getitem(index)
 
-def __setitem__(self, GDExtensionInt index, object value):
+def __setitem__(self, gd_int_t index, object value):
     self._setitem(index, value)
 {% elif builtin.indexing_return_type and builtin.is_keyed %}
 # TODO: handle out of range error ?

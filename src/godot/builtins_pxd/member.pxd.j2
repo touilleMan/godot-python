@@ -69,14 +69,14 @@ cdef inline void _setitem(self, object key, {{ builtin.indexing_return_type.cy_t
 
 
 {% macro render_getsetitem_indexed_array(builtin) %}
-cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDExtensionInt index):
+cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, gd_int_t index):
     cdef const gd_variant_t *item = <const gd_variant_t *>gdptrs.gdptr_array_operator_index_const(&self._gd_data, index)
     if item != NULL:
         return gd_variant_copy_into_pyobj(item)
     else:
         raise IndexError
 
-cdef inline void _setitem(self, GDExtensionInt index, {{ builtin.indexing_return_type.cy_type }} value):
+cdef inline void _setitem(self, gd_int_t index, {{ builtin.indexing_return_type.cy_type }} value):
     cdef gd_variant_t *item = <gd_variant_t *>gdptrs.gdptr_array_operator_index(&self._gd_data, index)
     cdef gd_variant_t gdvalue
     if item != NULL:
@@ -88,7 +88,7 @@ cdef inline void _setitem(self, GDExtensionInt index, {{ builtin.indexing_return
 
 
 {% macro render_getsetitem_indexed_packed_array(builtin) %}
-cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDExtensionInt index):
+cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, gd_int_t index):
     cdef {{ builtin.packed_array_item_type.c_type }} *item = <const gd_variant_t *>gdptrs.gdptr_packed_{{ builtin.packed_array_item_type.original_name | lower }}_array_operator_index_const(&self._gd_data, index)
     if item != NULL:
 {% if builtin.is_scalar %}
@@ -99,7 +99,7 @@ cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDExtensio
     else:
         raise IndexError
 
-cdef inline void _setitem(self, GDExtensionInt index, {{ builtin.indexing_return_type.cy_type }} value):
+cdef inline void _setitem(self, gd_int_t index, {{ builtin.indexing_return_type.cy_type }} value):
     cdef gd_variant_t *item = <gd_variant_t *>gdptrs.gdptr_packed_{{ builtin.packed_array_item_type.original_name | lower }}_array_operator_index(&self._gd_data, index)
     cdef gd_variant_t gdvalue
     if item != NULL:
@@ -133,7 +133,7 @@ cdef inline void _setitem(self, key, {{ builtin.indexing_return_type.cy_type }} 
 
 
 {% macro render_getsetitem_indexed_default(builtin) %}
-cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDExtensionInt index):
+cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, gd_int_t index):
 {% if builtin.indexing_return_type.is_scalar %}
     return gd_{{ builtin.snake_name }}_indexed_getter(&self._gd_data, index)
 {% elif builtin.indexing_return_type.is_variant %}
@@ -146,7 +146,7 @@ cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, GDExtensio
     return ret
 {% endif %}
 
-cdef inline void _setitem(self, GDExtensionInt index, {{ builtin.indexing_return_type.cy_type }} value):
+cdef inline void _setitem(self, gd_int_t index, {{ builtin.indexing_return_type.cy_type }} value):
 {% if builtin.indexing_return_type.is_scalar %}
     gd_{{ builtin.snake_name }}_indexed_setter(&self._gd_data, index, value)
 {% elif builtin.indexing_return_type.is_variant %}

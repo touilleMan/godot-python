@@ -11,7 +11,7 @@
 def {{ c.name }}():
     cdef gd_variant_t gdvariant
     cdef gd_string_name_t gdname = gd_string_name_from_utf8_and_len(b"{{ c.original_name }}", {{ c.original_name | length }})
-    gdptrs.gdptr_variant_get_constant_value({{ builtin.variant_type_name }}, &gdname, &gdvariant)
+    gdptrs.gdptr_variant_get_constant_value(gdextension_interface.{{ builtin.variant_type_name }}, &gdname, &gdvariant)
     gd_string_name_del(&gdname)
     return gd_variant_steal_into_pyobj(&gdvariant)
     # No need to destroy gdvariant given the conversion has stolen ownership on data !

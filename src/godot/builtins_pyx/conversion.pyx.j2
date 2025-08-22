@@ -21,44 +21,44 @@ cdef bint gd_variant_supports_py_type(object pytype):
         return False
 
 
-cdef object gd_to_py_type(GDExtensionVariantType gdtype):
-    if gdtype == GDEXTENSION_VARIANT_TYPE_OBJECT:
+cdef object gd_to_py_type(gdextension_interface.GDExtensionVariantType gdtype):
+    if gdtype == gdextension_interface.GDEXTENSION_VARIANT_TYPE_OBJECT:
         return GDObject
 {% for builtin in api.builtins %}
-    elif gdtype == {{ builtin.variant_type_name }}:
+    elif gdtype == gdextension_interface.{{ builtin.variant_type_name }}:
         return {{ builtin.cy_type }}
 {% endfor %}
-    elif gdtype == {{ api.bool_type.variant_type_name }}:
+    elif gdtype == gdextension_interface.{{ api.bool_type.variant_type_name }}:
         return bool
-    elif gdtype == {{ api.int_type.variant_type_name }}:
+    elif gdtype == gdextension_interface.{{ api.int_type.variant_type_name }}:
         return int
-    elif gdtype == {{ api.float_type.variant_type_name }}:
+    elif gdtype == gdextension_interface.{{ api.float_type.variant_type_name }}:
         return float
-    elif gdtype == {{ api.nil_type.variant_type_name }}:
+    elif gdtype == gdextension_interface.{{ api.nil_type.variant_type_name }}:
         return None
     else:
         warn(f"No Python equivalent for Godot type `{gdtype}`")
         return None
 
 
-cdef GDExtensionVariantType py_to_gd_type(object pytype):
+cdef gdextension_interface.GDExtensionVariantType py_to_gd_type(object pytype):
     if issubclass(pytype, GDObject):
-        return GDEXTENSION_VARIANT_TYPE_OBJECT
+        return gdextension_interface.GDEXTENSION_VARIANT_TYPE_OBJECT
 {% for builtin in api.builtins %}
     elif pytype == {{ builtin.cy_type }}:
-        return {{ builtin.variant_type_name }}
+        return gdextension_interface.{{ builtin.variant_type_name }}
 {% endfor %}
     elif pytype == bool:
-        return {{ api.bool_type.variant_type_name }}
+        return gdextension_interface.{{ api.bool_type.variant_type_name }}
     elif pytype == int:
-        return {{ api.int_type.variant_type_name }}
+        return gdextension_interface.{{ api.int_type.variant_type_name }}
     elif pytype == float:
-        return {{ api.float_type.variant_type_name }}
+        return gdextension_interface.{{ api.float_type.variant_type_name }}
     elif pytype == type(None):
-        return {{ api.nil_type.variant_type_name }}
+        return gdextension_interface.{{ api.nil_type.variant_type_name }}
     else:
         warn(f"No Godot equivalent for Python type `{pytype}`")
-        return GDEXTENSION_VARIANT_TYPE_NIL
+        return gdextension_interface.GDEXTENSION_VARIANT_TYPE_NIL
 
 
 #########################################################################
@@ -67,24 +67,24 @@ cdef GDExtensionVariantType py_to_gd_type(object pytype):
 
 
 cdef object gd_variant_steal_into_pyobj(const gd_variant_t *gdvar):
-    cdef GDExtensionVariantType gdtype = gdptrs.gdptr_variant_get_type(gdvar)
-    if gdtype == GDEXTENSION_VARIANT_TYPE_OBJECT:
+    cdef gdextension_interface.GDExtensionVariantType gdtype = gdptrs.gdptr_variant_get_type(gdvar)
+    if gdtype == gdextension_interface.GDEXTENSION_VARIANT_TYPE_OBJECT:
         raise NotImplementedError  # TODO
         # # TODO: This conversion relies on godot String and lookup into bindings
         # # modules, wouldn't it be better to create a `ObjectFromVariant` lazy
         # # class instead ?
         # return Object.cast_from_variant(gdvar)
-    elif gdtype == {{ api.bool_type.variant_type_name }}:
+    elif gdtype == gdextension_interface.{{ api.bool_type.variant_type_name }}:
         return gd_{{ api.bool_type.snake_name }}_from_variant(<gd_variant_t*>gdvar)
-    elif gdtype == {{ api.int_type.variant_type_name }}:
+    elif gdtype == gdextension_interface.{{ api.int_type.variant_type_name }}:
         return gd_{{ api.int_type.snake_name }}_from_variant(<gd_variant_t*>gdvar)
-    elif gdtype == {{ api.float_type.variant_type_name }}:
+    elif gdtype == gdextension_interface.{{ api.float_type.variant_type_name }}:
         return gd_{{ api.float_type.snake_name }}_from_variant(<gd_variant_t*>gdvar)
 {% for builtin in api.builtins %}
-    elif gdtype == {{ builtin.variant_type_name }}:
+    elif gdtype == gdextension_interface.{{ builtin.variant_type_name }}:
         return _gd_variant_steal_into_pyobj_{{ builtin.cy_type }}(gdvar)
 {% endfor %}
-    elif gdtype == GDEXTENSION_VARIANT_TYPE_NIL:
+    elif gdtype == gdextension_interface.GDEXTENSION_VARIANT_TYPE_NIL:
         return None
     else:
         warn(f"Unknown Godot Variant type `{gdtype}` (this should never happen !)")

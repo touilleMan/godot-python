@@ -24,9 +24,9 @@ cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }})
         return f"<{type(self).__name__} wrapper on 0x{<size_t>self._gd_ptr:x}>"
 
     def _set_gd_ptr(self, ptr):
-        # /!\ doing `<GDExtensionObjectPtr>ptr` would return the address of
+        # /!\ doing `<gd_object_t>ptr` would return the address of
         # the PyObject instead of casting it value !
-        self._gd_ptr = <GDExtensionObjectPtr><size_t>ptr
+        self._gd_ptr = <gd_object_t><size_t>ptr
         # Note if the object is a reference, we stole it from the caller given we
         # don't call `Reference.reference` here
 
