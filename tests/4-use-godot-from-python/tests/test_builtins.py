@@ -24,7 +24,6 @@ def test_scalars_and_nil_not_exposed(type: str):
     assert not hasattr(godot, type)
 
 
-@clodotest.xfail(reason="TODO: WIP")
 @clodotest.parametrize(
     "kind",
     [
@@ -60,7 +59,10 @@ def test_constructor(kind: str):
             assert_eq(v.x, 1)
             assert_eq(v.y, 2)
 
-            v = godot.Vector2i(godot.Vector2i(1, 2))
+            # In Godot you would do `var v2 = Vector2(v1)`, but it's more Pythonic
+            # to provide a clone method and do `v2 = v1.clone()` (and it simplifies
+            # constructor implementation !)
+            v = godot.Vector2i(1, 2).clone()
             assert_eq(v.x, 1)
             assert_eq(v.y, 2)
 
@@ -74,6 +76,9 @@ def test_constructor(kind: str):
 
             s = godot.GDString("foo")
             assert_eq(str(s), "foo")
+
+            s2 = s.clone()
+            assert_eq(str(s2), "foo")
 
             s = godot.GDString(godot.StringName("foo"))
             assert_eq(str(s), "foo")
@@ -92,7 +97,10 @@ def test_constructor(kind: str):
             s = godot.StringName("foo")
             assert_eq(str(s), "foo")
 
-            s = godot.StringName(godot.String("foo"))
+            s2 = s.clone()
+            assert_eq(str(s2), "foo")
+
+            s = godot.StringName(godot.GDString("foo"))
             assert_eq(str(s), "foo")
 
             for bad_type in (godot.Vector2i(), godot.NodePath("/foo"), 42, b"foo"):
@@ -106,7 +114,10 @@ def test_constructor(kind: str):
             s = godot.NodePath("/foo")
             assert_eq(str(s), "/foo")
 
-            s = godot.NodePath(godot.String("/foo"))
+            s2 = s.clone()
+            assert_eq(str(s2), "/foo")
+
+            s = godot.NodePath(godot.GDString("/foo"))
             assert_eq(str(s), "/foo")
 
             s = godot.NodePath(godot.NodePath("/foo"))
@@ -125,11 +136,15 @@ def test_constructor(kind: str):
             assert_eq(d["a"], 1)
             assert_eq(d[2], godot.GDString("b"))
 
-            d = godot.GDDictionary({godot.GDString("a"): 1, 2: godot.GDString("b")})
+            d2 = d.clone()
+            assert_eq(d2["a"], 1)
+            assert_eq(d2[2], godot.GDString("b"))
+
+            d = godot.GDDictionary([(godot.GDString("a"), 1), (2, godot.GDString("b"))])
             assert_eq(d["a"], 1)
             assert_eq(d[2], godot.GDString("b"))
 
-            for bad_type in (godot.Vector2i(), godot.GDArray(), 42, b"foo"):
+            for bad_type in (godot.Vector2i(), 42, b"foo"):
                 with clodotest.raises(TypeError):
                     godot.GDDictionary(bad_type)
 
@@ -145,7 +160,7 @@ def test_constructor(kind: str):
             ):
                 a = godot.GDArray(items)
                 assert_eq(a.is_empty(), False)
-                assert_eq(a.length(), 3)
+                assert_eq(a.size(), 3)
                 assert_eq(a[0], godot.GDString("a"))
                 assert_eq(a[1], 2)
                 assert_eq(a[2], godot.Vector2i(1, 2))
@@ -153,16 +168,20 @@ def test_constructor(kind: str):
             a1 = godot.GDArray(["a", 2, godot.Vector2i(1, 2)])
             a2 = godot.GDArray(a1)
             assert_eq(a2, a1)
+            a3 = a1.clone()
+            assert_eq(a3, a1)
 
-            a3 = godot.GDArray(godot.StringPackedArray(["1", "2", "3"]))
+            a3 = godot.GDArray(godot.PackedStringArray(["1", "2", "3"]))
             assert_eq(a3, godot.GDArray(["1", "2", "3"]))
 
-            for bad_type in (godot.Vector2i(), godot.StringName("/foo"), 42, b"foo"):
+            assert_eq(godot.GDArray(b"foo"), godot.GDArray([102, 111, 111]))
+
+            for bad_type in (godot.Vector2i(), godot.StringName("/foo"), 42):
                 with clodotest.raises(TypeError):
                     godot.GDArray(bad_type)
 
         case "PackedArray":
-            a = godot.StringPackedArray()
+            a = godot.PackedStringArray()
             assert_eq(a.is_empty(), True)
 
             for items in (
@@ -173,13 +192,18 @@ def test_constructor(kind: str):
             ):
                 a = godot.GDArray(items)
                 assert_eq(a.is_empty(), False)
-                assert_eq(a.length(), 2)
+                assert_eq(a.size(), 2)
                 assert_eq(a[0], godot.GDString("a"))
                 assert_eq(a[1], godot.GDString("b"))
 
+            a = godot.PackedStringArray(["a", "b"])
+            a2 = a.clone()
+            assert_eq(a2[0], godot.GDString("a"))
+            assert_eq(a2[1], godot.GDString("b"))
+
             for bad_type in (godot.Vector2i(), godot.StringName("/foo"), 42, b"foo"):
                 with clodotest.raises(TypeError):
-                    godot.StringPackedArray(bad_type)
+                    godot.PackedStringArray(bad_type)
 
         case unknown:
             assert False, unknown
@@ -582,7 +606,7 @@ def test_method(kind: str):
         case "bad_parameter_type":
             # Method expecting a scalar
             with clodotest.raises(TypeError):
-                s.left(godot.String())  # Non-scalar builtin
+                s.left(godot.GDString())  # Non-scalar builtin
             with clodotest.raises(TypeError):
                 s.left(3.14)  # Wrong scalar type
             with clodotest.raises(TypeError):
@@ -605,7 +629,7 @@ def test_method(kind: str):
             # Method expecting a Variant
             a = godot.GDArray()
             with clodotest.raises(TypeError):
-                s.format(godot.String())  # Wrong non-scalar builtin
+                s.format(godot.GDString())  # Wrong non-scalar builtin
             with clodotest.raises(TypeError):
                 s.format(3.14)  # Wrong scalar type
             with clodotest.raises(TypeError):
@@ -617,7 +641,6 @@ def test_method(kind: str):
             # TODO: Method expecting a Godot class instance
 
 
-@clodotest.xfail(reason="TODO: WIP")
 def test_member():
     v = godot.Vector2i(2, 3)
     assert_eq(v.x, 2)
@@ -635,9 +658,9 @@ def test_member():
     # TODO: test subtype property (e.g. `rec2.position.x`)
 
 
-@clodotest.xfail(reason="TODO: WIP")
 def test_constant():
-    assert_eq(godot.Vector2i.ZERO, godot.Vector2i(0, 0))
+    # TODO: find a way to expose the constant as a class property ?
+    assert_eq(godot.Vector2i.ZERO(), godot.Vector2i(0, 0))
 
 
 @clodotest.xfail(reason="TODO: WIP")

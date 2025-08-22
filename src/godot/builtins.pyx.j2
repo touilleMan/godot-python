@@ -11,7 +11,7 @@ cdef class {{ builtin.cy_type }}
 from .hazmat.gdextension_interface cimport *
 from .hazmat.gdapi cimport *
 
-from collections.abc import Iterable, Mapping  # Needed by Array&Dictionary constructors
+from collections.abc import Iterable, Mapping, Sized  # Needed by Array&Dictionary constructors
 from warnings import warn
 
 

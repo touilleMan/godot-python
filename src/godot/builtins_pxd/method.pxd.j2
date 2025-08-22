@@ -1,7 +1,11 @@
 {% macro render_method_signature(m) -%}
 {{ "void" if m.return_type.is_nil else m.return_type.cy_type }} {{ m.name }}(self
 {%- for arg in m.arguments -%}
+{%- if arg.type.original_name in ("String", "StringName", "NodePath") -%}
+, object {{ arg.name }}
+{%- else -%}
 , {{ arg.type.cy_type }} {{ arg.name }}
+{%- endif -%}
 {%- if arg.default_value -%}
  = {{ arg.default_value.cy_value or "None" }}
 {%- endif -%}
@@ -18,6 +22,15 @@ cpdef inline {{ render_method_signature(m) }}:
 {%       if arg.type.is_variant %}
     cdef gd_variant_t __arg{{ loop.index0 }}
     __arg{{ loop.index0 }} = ensure_is_gdany_and_borrow_ref({{ arg.name }})
+{%       elif arg.type.original_name == "String" %}
+    cdef GDString __arg{{ loop.index0 }}
+    __arg{{ loop.index0 }} = ensure_is_gdstring({{ arg.name }})
+{%       elif arg.type.original_name == "StringName" %}
+    cdef StringName __arg{{ loop.index0 }}
+    __arg{{ loop.index0 }} = ensure_is_stringname({{ arg.name }})
+{%       elif arg.type.original_name == "NodePath" %}
+    cdef NodePath __arg{{ loop.index0 }}
+    __arg{{ loop.index0 }} = ensure_is_nodepath({{ arg.name }})
 {% endif %}
 {% endfor %}
 {%     if m.return_type.is_scalar %}
@@ -35,6 +48,8 @@ cpdef inline {{ render_method_signature(m) }}:
 {%       for arg in m.arguments %}
 {%         if arg.type.is_scalar %}
         {{ arg.name }},
+{%         elif arg.type.original_name in ("String", "StringName", "NodePath") %}
+        &__arg{{ loop.index0 }}._gd_data,
 {%         elif arg.type.is_builtin %}
         &{{ arg.name }}._gd_data,
 {%         elif arg.type.is_object %}
