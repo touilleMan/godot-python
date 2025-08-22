@@ -52,21 +52,4 @@ cdef class {{ builtin.cy_type }}:
 {% for m in builtin.members %}
     {{ render_member(builtin, m) | indent }}
 {% endfor %}
-{% if builtin.indexing_return_type and not builtin.is_keyed %}
-    # TODO: handle out of range error ?
-
-    def __getitem__(self, GDExtensionInt index):
-        return self._getitem(index)
-
-    def __setitem__(self, GDExtensionInt index, value):
-        self._setitem(index, value)
-{% elif builtin.indexing_return_type and builtin.is_keyed %}
-    # TODO: handle out of range error ?
-
-    def __getitem__(self, index):
-        return self._getitem(index)
-
-    def __setitem__(self, index, value):
-        self._setitem(index, value)
-{% endif %}
 {% endmacro %}

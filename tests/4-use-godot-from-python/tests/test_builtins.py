@@ -209,7 +209,6 @@ def test_constructor(kind: str):
             assert False, unknown
 
 
-@clodotest.xfail(reason="TODO: WIP")
 @clodotest.parametrize(
     "kind",
     [
@@ -223,19 +222,43 @@ def test_indexing(kind: str):
         case "no":
             f = godot.StringName("foo")
 
+            # Get
+
             with clodotest.raises(TypeError):
                 f[0]
 
             with clodotest.raises(TypeError):
                 f[godot.GDString("key")]
 
+            # Set
+
+            with clodotest.raises(TypeError):
+                f[0] = 1
+
+            with clodotest.raises(TypeError):
+                f[godot.GDString("key")] = godot.GDString("key")
+
+            # Del
+
+            with clodotest.raises(TypeError):
+                del f[1]
+
+            with clodotest.raises(TypeError):
+                del f[godot.GDString("key")]
+
         case "keyed":
             # TODO: store a class instance
-            d = godot.GDDictionary({0: "a", "b": 2, godot.Vector2i(1, 2): godot.Vector2i(3, 4)})
+            d = godot.GDDictionary(
+                [(0, "a"), ("b", 2), (godot.Vector2i(1, 2), godot.Vector2i(3, 4))]
+            )
+
+            # Get
 
             assert_eq(d[0], godot.GDString("a"))
             assert_eq(d["b"], 2)
             assert_eq(d[godot.Vector2i(1, 2)], godot.Vector2i(3, 4))
+
+            clodotest.skip(reason="TODO: out of range is not handled yet !")
 
             with clodotest.raises(KeyError):
                 d[godot.GDString("dummy")]
@@ -245,21 +268,93 @@ def test_indexing(kind: str):
             with clodotest.raises(TypeError):
                 d[object()]  # object cannot be converted to a Godot type
 
+            # Set
+
+            d[0] = godot.GDString("xx")
+            d["11"] = "yy"
+            d[godot.Vector2i(1, 2)] = godot.GDString("yy")
+            # TODO: store a class instance
+
+            assert_eq(
+                d,
+                godot.GDDictionary(
+                    [(0, "xx"), ("b", 2), ("11", "yy"), (godot.Vector2i(1, 2), "zz")]
+                ),
+            )
+
+            with clodotest.raises(TypeError):
+                d[object()] = 1  # object cannot be converted to a Godot type
+            with clodotest.raises(TypeError):
+                d[1] = object()  # object cannot be converted to a Godot type
+
+            # Del
+
+            del d[0]
+            del d["11"]
+            del d[godot.Vector2i(1, 2)]
+            # TODO: delete a class instance
+
+            assert_eq(d, godot.GDDictionary([("b", 2)]))
+
+            with clodotest.raises(KeyError):
+                del d[godot.GDString("dummy")]
+            with clodotest.raises(KeyError):
+                del d[99]
+
+            with clodotest.raises(TypeError):
+                del d[object()]  # object cannot be converted to a Godot type
+
         case "not_keyed":
             # TODO: store a class instance
             a = godot.GDArray((1, "b", godot.Vector2i(1, 2)))
+
+            # Get
 
             assert_eq(a[0], 1)
             assert_eq(a[1], godot.GDString("b"))
             assert_eq(a[2], godot.Vector2i(1, 2))
 
-            with clodotest.raises(KeyError):
+            clodotest.skip(reason="TODO: out of range is not handled yet !")
+
+            with clodotest.raises(IndexError):
                 a[3]
 
             with clodotest.raises(TypeError):
                 a[godot.GDString("dummy")]
             with clodotest.raises(TypeError):
                 a[object()]  # object cannot be converted to a Godot type
+
+            # Set
+
+            a[0] = godot.Vector2i(3, 4)
+            a[1] = "xx"
+            assert_eq(a, godot.GDArray((godot.Vector2i(3, 4), "xx", godot.Vector2i(1, 2))))
+
+            with clodotest.raises(IndexError):
+                a[3] = 1
+
+            with clodotest.raises(TypeError):
+                a[godot.GDString("dummy")] = 1
+            with clodotest.raises(TypeError):
+                a[object()] = 1  # object cannot be converted to a Godot type
+            with clodotest.raises(TypeError):
+                a[1] = object()  # object cannot be converted to a Godot type
+
+            # Del
+
+            del a[0]
+            del a[1]
+            assert_eq(a, godot.GDArray([godot.Vector2i(1, 2)]))
+
+            with clodotest.raises(IndexError):
+                del a[3]
+
+            with clodotest.raises(TypeError):
+                a[godot.GDString("dummy")] = 1
+            with clodotest.raises(TypeError):
+                a[object()] = 1  # object cannot be converted to a Godot type
+            with clodotest.raises(TypeError):
+                a[1] = object()  # object cannot be converted to a Godot type
 
 
 @clodotest.parametrize(
