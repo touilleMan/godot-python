@@ -32,8 +32,7 @@ cimport cython
 from libc.stdint cimport *
 from libc.string cimport memset
 
-from .gdextension_interface cimport *
-from . cimport gdptrs
+from . cimport gdptrs, gdextension_interface
 
 
 ##############################################################################
@@ -65,9 +64,9 @@ cdef inline gd_string_t gd_string_from_unchecked_pystr(object pystr):
 
 
 cdef inline object gd_string_to_pystr(gd_string_t *gdstr):
-    cdef GDExtensionInt l = gdptrs.gdptr_string_to_utf32_chars(gdstr, NULL, 0)
-    cdef const char32_t *gdbuff = gdptrs.gdptr_string_operator_index_const(gdstr, 0)
-    return PyUnicode_DecodeUTF32(<char *>gdbuff, l * cython.sizeof(char32_t), NULL, NULL)
+    cdef gdextension_interface.GDExtensionInt l = gdptrs.gdptr_string_to_utf32_chars(gdstr, NULL, 0)
+    cdef const gdextension_interface.char32_t *gdbuff = gdptrs.gdptr_string_operator_index_const(gdstr, 0)
+    return PyUnicode_DecodeUTF32(<char *>gdbuff, l * cython.sizeof(gdextension_interface.char32_t), NULL, NULL)
 
 
 cdef inline gd_string_t gd_string_from_pybytes(bytes cstr):
@@ -114,11 +113,11 @@ cdef inline object gd_string_name_to_pystr(gd_string_name_t *gdstrname):
 
 
 # Renames to stay consistent with other builtins naming convention we use
-ctypedef GDExtensionBool gd_bool_t
+ctypedef gdextension_interface.GDExtensionBool gd_bool_t
 ctypedef {{ api.int_type.c_type }} gd_int_t
 ctypedef {{ api.float_type.c_type }} gd_float_t
 # Note we don't really care this is a pointer as we always treat it as an opaque structure
-ctypedef GDExtensionObjectPtr gd_object_t
+ctypedef gdextension_interface.GDExtensionObjectPtr gd_object_t
 cdef extern from * nogil:
     # Needed to have `gd_object_t` also exposed in .h/.c files
     """

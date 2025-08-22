@@ -38,7 +38,7 @@
 {% macro render_utility_function_ptrcall(builtin) %}
 cdef inline {{ render_utility_function_signature(builtin) }}:
 {% if (builtin.arguments | length) != 0 %}
-    cdef GDExtensionTypePtr[{{ builtin.arguments | length }}] __args = [
+    cdef gdextension_interface.GDExtensionTypePtr[{{ builtin.arguments | length }}] __args = [
         {{- render_args(builtin.arguments) -}}
     ]
 {% endif %}
@@ -55,9 +55,9 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
 {%   endif %}
 {% endif %}
     gdptrs.gdptr_utility_{{ builtin.original_name }}(
-        {# GDExtensionTypePtr ret #}
+        {# gdextension_interface.GDExtensionTypePtr ret #}
         {{ "NULL" if builtin.return_type.is_nil else "&__ret" }},
-        {# const GDExtensionTypePtr *p_arguments #}
+        {# const gdextension_interface.GDExtensionTypePtr *p_arguments #}
         <const void **>{{ "NULL" if (builtin.arguments | length) == 0 else "__args" }},
         {# int p_argument_count #}
         {{ builtin.arguments | length }}
@@ -116,12 +116,12 @@ gd_variant_t gd_{{ builtin.snake_name }}_into_variant({{ builtin.c_type }} *val)
 
 
 {% macro render_builtin_object_variant_conversions(builtin) %}
-cdef inline GDExtensionObjectPtr gd_object_from_variant(gd_variant_t *val):
-    cdef GDExtensionObjectPtr ret
+cdef inline gdextension_interface.GDExtensionObjectPtr gd_object_from_variant(gd_variant_t *val):
+    cdef gdextension_interface.GDExtensionObjectPtr ret
     gdptrs.gdptr_object_from_variant(&ret, val)
     return ret
 
-cdef inline gd_variant_t gd_object_into_variant(GDExtensionObjectPtr val):
+cdef inline gd_variant_t gd_object_into_variant(gdextension_interface.GDExtensionObjectPtr val):
     cdef gd_variant_t ret
     gdptrs.gdptr_object_into_variant(&ret, &val)
     return ret
@@ -155,7 +155,7 @@ cdef inline {{ render_builtin_into_variant_signature(builtin) }}:
 cdef inline {{ render_builtin_constructor_signature(builtin, constructor) }}:
     cdef {{ builtin.c_type }} obj
 {% if (constructor.arguments | length) != 0 %}
-    cdef GDExtensionTypePtr[{{ constructor.arguments | length }}] p_args = [
+    cdef gdextension_interface.GDExtensionTypePtr[{{ constructor.arguments | length }}] p_args = [
         {{- render_args(constructor.arguments) -}}
     ]
 {% endif %}
@@ -194,11 +194,11 @@ cdef inline {{ render_builtin_destructor_signature(builtin) }}:
 {% macro render_builtin_method(builtin, meth) %}
 cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
 {% if meth.arguments | length %}
-    cdef GDExtensionTypePtr[{{ meth.arguments | length }}] __args = [
+    cdef gdextension_interface.GDExtensionTypePtr[{{ meth.arguments | length }}] __args = [
         {{- render_args(meth.arguments) -}}
     ]
 {% else %}
-    cdef GDExtensionTypePtr* __args = NULL
+    cdef gdextension_interface.GDExtensionTypePtr* __args = NULL
 {% endif %}
 {% if not meth.return_type.is_nil %}
     cdef {{ meth.return_type.c_type }} __ret
@@ -213,11 +213,11 @@ cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
 {%   endif %}
 {% endif %}
     gdptrs.gdptr_{{ builtin.snake_name }}_meth_{{ meth.name }}(
-        {# GDExtensionTypePtr p_base #}
+        {# gdextension_interface.GDExtensionTypePtr p_base #}
         self,
-        {# const GDExtensionTypePtr *__args #}
+        {# const gdextension_interface.GDExtensionTypePtr *__args #}
         <const void **>__args,
-        {# GDExtensionTypePtr __ret #}
+        {# gdextension_interface.GDExtensionTypePtr __ret #}
         {{ "NULL" if meth.return_type.is_nil else "&__ret" }},
         {# int p_argument_count #}
         {{ meth.arguments | length }}
@@ -265,7 +265,7 @@ cdef inline void gd_{{ builtin.snake_name }}_set_{{ m.name }}(
 
 
 {% macro render_builtin_indexed_getter(builtin) %}
-cdef inline {{ builtin.indexing_return_type.c_type }} gd_{{ builtin.snake_name }}_indexed_getter(const {{ builtin.c_type }} *self, GDExtensionInt index):
+cdef inline {{ builtin.indexing_return_type.c_type }} gd_{{ builtin.snake_name }}_indexed_getter(const {{ builtin.c_type }} *self, gdextension_interface.GDExtensionInt index):
     cdef {{ builtin.indexing_return_type.c_type }} __ret
 {%   if not builtin.indexing_return_type.is_stack_only %}
     # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
@@ -284,7 +284,7 @@ cdef inline {{ builtin.indexing_return_type.c_type }} gd_{{ builtin.snake_name }
 {% macro render_builtin_indexed_setter(builtin) %}
 cdef inline void gd_{{ builtin.snake_name }}_indexed_setter(
     {{ builtin.c_type }} *self,
-    GDExtensionInt index,
+    gdextension_interface.GDExtensionInt index,
     {{ builtin.indexing_return_type.c_type }} {{ "" if builtin.indexing_return_type.is_scalar else "*" }}value
 ):
     gdptrs.gdptr_{{ builtin.snake_name }}_indexed_setter(self, index, {{ "&" if builtin.indexing_return_type.is_scalar else "" }}value)
