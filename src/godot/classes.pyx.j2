@@ -217,8 +217,7 @@ cdef object _object_call(GDExtensionObjectPtr obj, str meth, args):
     # Into conversion steals the owneship, so no need to delete meth_gdstrname
 
     for i, arg in enumerate(args, 1):
-        if not gd_variant_steal_from_pyobj(arg, &variant_args[i]):
-            raise TypeError(f"Parameter `{arg!r}` cannot be converted into a Godot Variant !")
+        variant_args[i] = ensure_is_gdany_and_borrow_ref(arg)
 
     gdptr_object_method_bind_call(
         Object_call,

@@ -17,8 +17,7 @@ cpdef inline {{ render_method_signature(m) }}:
 {%     for arg in m.arguments %}
 {%       if arg.type.is_variant %}
     cdef gd_variant_t __arg{{ loop.index0 }}
-    if not gd_variant_steal_from_pyobj({{ arg.name }}, &__arg{{ loop.index0 }}):
-        raise TypeError(f"Type { type({{ arg.name }}) } cannot be converted to Godot Variant")
+    __arg{{ loop.index0 }} = ensure_is_gdany_and_borrow_ref({{ arg.name }})
 {% endif %}
 {% endfor %}
 {%     if m.return_type.is_scalar %}

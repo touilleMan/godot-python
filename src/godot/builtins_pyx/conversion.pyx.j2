@@ -131,8 +131,6 @@ cdef bint gd_variant_steal_from_pyobj(object pyobj, gd_variant_t *gdvar):
         gdvar[0] = gd_{{ builtin.snake_name }}_into_variant(&(<{{ builtin.cy_type }}>pyobj)._gd_data)
 {% endfor %}
     else:
-        warn(f"Cannot convert `{type(pyobj)}` to Godot's Variant")
-        gdptr_variant_new_nil(gdvar)
         return False
     return True
 
