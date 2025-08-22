@@ -307,6 +307,7 @@ def test_indexing(kind: str):
         case "not_keyed":
             # TODO: store a class instance
             a = godot.GDArray((1, "b", godot.Vector2i(1, 2)))
+            v = godot.Vector2i(1, 2)
 
             # Get
 
@@ -314,15 +315,19 @@ def test_indexing(kind: str):
             assert_eq(a[1], godot.GDString("b"))
             assert_eq(a[2], godot.Vector2i(1, 2))
 
+            assert_eq(v[0], 1)
+            assert_eq(v[1], 2)
+
             clodotest.skip(reason="TODO: out of range is not handled yet !")
 
-            with clodotest.raises(IndexError):
-                a[3]
+            for x in (a, v):
+                with clodotest.raises(IndexError):
+                    x[3]
 
-            with clodotest.raises(TypeError):
-                a[godot.GDString("dummy")]
-            with clodotest.raises(TypeError):
-                a[object()]  # object cannot be converted to a Godot type
+                with clodotest.raises(TypeError):
+                    x[godot.GDString("dummy")]
+                with clodotest.raises(TypeError):
+                    x[object()]  # object cannot be converted to a Godot type
 
             # Set
 
@@ -330,15 +335,22 @@ def test_indexing(kind: str):
             a[1] = "xx"
             assert_eq(a, godot.GDArray((godot.Vector2i(3, 4), "xx", godot.Vector2i(1, 2))))
 
-            with clodotest.raises(IndexError):
-                a[3] = 1
+            v[1] = 42
+            assert_eq(v, godot.Vector2i(1, 42))
 
             with clodotest.raises(TypeError):
-                a[godot.GDString("dummy")] = 1
-            with clodotest.raises(TypeError):
-                a[object()] = 1  # object cannot be converted to a Godot type
-            with clodotest.raises(TypeError):
-                a[1] = object()  # object cannot be converted to a Godot type
+                v[1] = godot.GDString("dummy")
+
+            for x in (a, v):
+                with clodotest.raises(IndexError):
+                    x[3] = 1
+
+                with clodotest.raises(TypeError):
+                    x[godot.GDString("dummy")] = 1
+                with clodotest.raises(TypeError):
+                    x[object()] = 1  # object cannot be converted to a Godot type
+                with clodotest.raises(TypeError):
+                    x[1] = object()  # object cannot be converted to a Godot type
 
             # Del
 
@@ -346,15 +358,16 @@ def test_indexing(kind: str):
             del a[1]
             assert_eq(a, godot.GDArray([godot.Vector2i(1, 2)]))
 
+            with clodotest.raises(TypeError):
+                del v[1]
+
             with clodotest.raises(IndexError):
                 del a[3]
 
             with clodotest.raises(TypeError):
-                a[godot.GDString("dummy")] = 1
+                del a[godot.GDString("dummy")]
             with clodotest.raises(TypeError):
-                a[object()] = 1  # object cannot be converted to a Godot type
-            with clodotest.raises(TypeError):
-                a[1] = object()  # object cannot be converted to a Godot type
+                del a[object()]  # object cannot be converted to a Godot type
 
 
 @clodotest.parametrize(
@@ -495,25 +508,25 @@ def test_operator(kind: str):
 
             # TODO: Godot currently returns `gd_string_op_module_nil` when requesting `gd_string_op_module_variant`
             # (see: https://github.com/godotengine/godot/issues/109861)
+            clodotest.skip(reason="TODO: % operator for string is WIP")
 
-            # assert_eq(godot.GDString("foo %s") % godot.GDString("bar"), godot.GDString("foo bar"))
-            # assert_eq(godot.GDString("foo %s") % "bar", godot.GDString("foo bar"))
-            # assert_eq(
-            #     godot.GDString("foo %s") % godot.Vector2i(1, 2),
-            #     godot.GDString("foo Vector2i(1, 2)"),
-            # )
+            assert_eq(godot.GDString("foo %s") % godot.GDString("bar"), godot.GDString("foo bar"))
+            assert_eq(godot.GDString("foo %s") % "bar", godot.GDString("foo bar"))
+            assert_eq(
+                godot.GDString("foo %s") % godot.Vector2i(1, 2),
+                godot.GDString("foo Vector2i(1, 2)"),
+            )
 
-            # assert_eq(
-            #     godot.StringName("foo %s") % godot.StringName("bar"), godot.StringName("foo bar")
-            # )
-            # assert_eq(
-            #     godot.StringName("foo %s") % godot.GDString("bar"), godot.StringName("foo bar")
-            # )
-            # assert_eq(
-            #     godot.StringName("foo %s %s")
-            #     % [godot.GDString("bar"), godot.StringName("spam")],
-            #     godot.StringName("foo bar spam"),
-            # )
+            assert_eq(
+                godot.StringName("foo %s") % godot.StringName("bar"), godot.StringName("foo bar")
+            )
+            assert_eq(
+                godot.StringName("foo %s") % godot.GDString("bar"), godot.StringName("foo bar")
+            )
+            assert_eq(
+                godot.StringName("foo %s %s") % [godot.GDString("bar"), godot.StringName("spam")],
+                godot.StringName("foo bar spam"),
+            )
 
             with clodotest.raises(TypeError):
                 _ = godot.StringName("foo %s %s") % object()
