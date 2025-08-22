@@ -1,19 +1,21 @@
 {% macro render_method_signature(m) -%}
-{{ "void" if m.return_type.is_nil else m.return_type.cy_type }} {{ m.name }}(self
+{{ "void" if m.return_type.is_nil else m.return_type.cy_type }} {{ "_" + m.name if m.is_static else m.name }}(
+{%- if not m.is_static -%}self, {% endif -%}
 {%- for arg in m.arguments -%}
 {%- if arg.type.original_name in ("String", "StringName", "NodePath") -%}
-, object {{ arg.name }}
+object {{ arg.name }}
 {%- else -%}
-, {{ arg.type.cy_type }} {{ arg.name }}
+{{ arg.type.cy_type }} {{ arg.name }}
 {%- endif -%}
 {%- if arg.default_value -%}
- = {{ arg.default_value.cy_value or "None" }}
+={{ arg.default_value.cy_value or "None" }}
 {%- endif -%}
+{%- if not loop.last -%}, {% endif -%}
 {%- endfor -%})
 {%- endmacro %}
 
 
-{% macro render_method(builtin, m) %}
+{% macro _render_non_static_method(builtin, m) %}
 cpdef inline {{ render_method_signature(m) }}:
 {%   if m.contains_unsuported_types %}
     raise NotImplementedError  # TODO
@@ -72,4 +74,78 @@ cpdef inline {{ render_method_signature(m) }}:
 {%       endif %}
 {%     endif %}
 {%   endif %}
+{% endmacro %}
+
+
+{# TODO: Cython currently doesn't support cpdef with @staticmethod #}
+{# see: https://github.com/cython/cython/issues/3327 #}
+{% macro _render_static_method(builtin, m) %}
+@staticmethod
+cdef inline {{ render_method_signature(m) }}:
+{%   if m.contains_unsuported_types %}
+    raise NotImplementedError  # TODO
+{%   else %}
+{%     for arg in m.arguments %}
+{%       if arg.type.is_variant %}
+    cdef gd_variant_t __arg{{ loop.index0 }}
+    __arg{{ loop.index0 }} = ensure_is_gdany_and_borrow_ref({{ arg.name }})
+{%       elif arg.type.original_name == "String" %}
+    cdef GDString __arg{{ loop.index0 }}
+    __arg{{ loop.index0 }} = ensure_is_gdstring({{ arg.name }})
+{%       elif arg.type.original_name == "StringName" %}
+    cdef StringName __arg{{ loop.index0 }}
+    __arg{{ loop.index0 }} = ensure_is_stringname({{ arg.name }})
+{%       elif arg.type.original_name == "NodePath" %}
+    cdef NodePath __arg{{ loop.index0 }}
+    __arg{{ loop.index0 }} = ensure_is_nodepath({{ arg.name }})
+{% endif %}
+{% endfor %}
+{%     if m.return_type.is_scalar %}
+    cdef {{ m.return_type.cy_type }} ret = gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
+{%     elif m.return_type.is_builtin %}
+    # Call to __new__ bypasses __init__ constructor
+    cdef {{ m.return_type.cy_type }} ret = {{ m.return_type.cy_type }}.__new__({{ m.return_type.cy_type }})
+    ret._gd_data = gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
+{%     elif m.return_type.is_object or m.return_type.is_variant %}
+    cdef {{  m.return_type.c_type }} ret = gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
+{%     else %}
+    gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
+{%     endif %}
+        NULL,
+{%       for arg in m.arguments %}
+{%         if arg.type.is_scalar %}
+        {{ arg.name }},
+{%         elif arg.type.original_name in ("String", "StringName", "NodePath") %}
+        &__arg{{ loop.index0 }}._gd_data,
+{%         elif arg.type.is_builtin %}
+        &{{ arg.name }}._gd_data,
+{%         elif arg.type.is_object %}
+        &{{ arg.name }}._gd_ptr,
+{%         elif arg.type.is_variant %}
+        &__arg{{ loop.index0 }},
+{%         else %}
+    <crash !!!!>  # {{ arg.type }} Unsupported type, crash the compilation !
+{%         endif %}
+{%       endfor %}
+    )
+{%     if not m.return_type.is_nil %}
+{%       if m.return_type.is_object %}
+    return GDObject.cast_from_variant(ret)
+{%       elif m.return_type.is_variant %}
+    # Note the "steal" means we don't need a final `gd_variant_del(&ret)`
+    return gd_variant_steal_into_pyobj(&ret)
+{%       else %}
+    return ret
+{%       endif %}
+{%     endif %}
+{%   endif %}
+{% endmacro %}
+
+
+{% macro render_method(builtin, m) %}
+{%   if m.is_static %}
+{{ _render_static_method(builtin, m) }}
+{% else %}
+{{ _render_non_static_method(builtin, m) }}
+{% endif %}
 {% endmacro %}

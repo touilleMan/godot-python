@@ -630,7 +630,6 @@ def test_operator(kind: str):
 def test_method(kind: str):
     match kind:
         case "static_method":
-            clodotest.skip(reason="TODO: static method not supported yet!")  # TODO
             s = godot.GDString("foo.txt")
             assert_eq(godot.GDString.humanize_size(133790307), godot.GDString("127.5 MiB"))
 

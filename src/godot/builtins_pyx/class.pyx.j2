@@ -52,4 +52,15 @@ cdef class {{ builtin.cy_type }}:
 {% for m in builtin.members %}
     {{ render_member(builtin, m) | indent }}
 {% endfor %}
+
+{# TODO: Cython currently doesn't support cpdef with @staticmethod #}
+{# see: https://github.com/cython/cython/issues/3327 #}
+{% for m in builtin.methods %}
+{% if m.is_static %}
+    @staticmethod
+    def {{ m.name }}({%- for arg in m.arguments -%}{{ arg.name }}, {%- endfor -%}):
+        return {{ builtin.cy_type }}._{{ m.name }}({%- for arg in m.arguments -%}{{ arg.name }}, {%- endfor -%})
+{% endif %}
+{% endfor %}
+
 {% endmacro %}
