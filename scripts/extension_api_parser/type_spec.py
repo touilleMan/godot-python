@@ -196,8 +196,8 @@ TYPES_DB: dict[TypeDBEntry, TypeSpec] = {
     "int": ScalarTypeSpec(
         size=8,
         original_name="int",
-        c_type="uint64_t",
-        cy_type="uint64_t",
+        c_type="int64_t",
+        cy_type="int64_t",
         py_type="int",
         variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
     ),

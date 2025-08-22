@@ -114,7 +114,7 @@ cdef inline object gd_string_name_to_pystr(gd_string_name_t *gdstrname):
 
 # Renames to stay consistent with other builtins naming convention we use
 ctypedef gdextension_interface.GDExtensionBool gd_bool_t
-ctypedef {{ api.int_type.c_type }} gd_int_t
+ctypedef gdextension_interface.GDExtensionInt gd_int_t
 ctypedef {{ api.float_type.c_type }} gd_float_t
 # Note we don't really care this is a pointer as we always treat it as an opaque structure
 ctypedef gdextension_interface.GDExtensionObjectPtr gd_object_t
