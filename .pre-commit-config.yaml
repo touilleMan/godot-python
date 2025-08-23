@@ -6,7 +6,7 @@ repos:
     - id: mixed-line-ending
 
     - id: trailing-whitespace
-      exclude: ^tests/*/expected.output
+      exclude: ^tests/.*/expected.output
 
 -   repo: local
     hooks:
