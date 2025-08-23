@@ -141,26 +141,56 @@ class NativeStructureSpec(TypeSpec):
             if not raw_field:
                 continue
             raw_field, *_ = raw_field.split("=", 1)  # Ignore default value
-            # Handle function pointer (yeah detection is pretty fragile, but it is good enough for now)
+
+            # Turn function pointer into regular pointer
+            # (yeah detection is pretty fragile, but it is good enough for now)
             if "(*" in raw_field:
                 # TODO: better typping support for function pointer ?
                 raw_field = "void *foo"
+
             field_type, field_name = raw_field.split()
-            # Handle Enum
-            if "::" in field_type:
-                field_type = "int"
-            elif field_type.endswith("_t"):
-                field_type = f"meta:{field_type[:-2]}"
+
+            # Handle regular pointer
             if field_name[0] == "*":
                 field_name = field_name[1:]
                 field_type = field_type + "*"
-                # TODO: better support of void* ?
-                if field_type == "void*":
-                    field_type = "Object*"
                 if field_type != "Object*":
                     raise RuntimeError(f"Unsupported pointer type `{field_type}` in `{name}`")
+                # Why discarding the pointer here ?
+                # In the native structure format, `Object*` means a pointer on a
+                # the C++ `Object` class which is defined in Godot source code.
+                # However in the rest of the bindings, `Object` refers to a pointer
+                # being stored in a Godot Variant (pointer that itself points to the
+                # C++ `Object`).
                 field_type = "Object"
+
+            # Handle Enum
+            elif "::" in field_type:
+                # `int` here means the kind of int that is stored on a Godot Variant
+                # (i.e. an always 8bytes long integer)
+                field_type = "int"
+
+            # Handle `uint64_t` styles types
+            elif field_type.endswith("_t"):
+                field_type = f"meta:{field_type[:-2]}"
+
+            # Handle regular scalar types
+            elif field_type in ("float", "double"):
+                # Since we are parsing a native structure, float/double types
+                # here refere to C types, not Godot (e.g. C "float" means single
+                # precision while Godot "float" is always double precision).
+                field_type = f"c:{field_type}"
+            elif field_type == "int":
+                # C `int` is a special case since its size depends on the
+                # architecture
+                #
+                # Since we are parsing a native structure, float/int types here
+                # refere to C types, not Godot (e.g. C "float" means single
+                # precision while Godot "float" is always double precision).
+                field_type = "c:int"
+
             fields[field_name] = TypeInUse(field_type)
+
         return cls(
             size=0,  # Never accessed dummy value
             original_name=name,

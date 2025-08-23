@@ -85,6 +85,35 @@ class ScalarTypeSpec(TypeSpec):
 
 
 @dataclass(slots=True)
+class RawCScalarTypeSpec(ScalarTypeSpec):
+    """
+    Special case for C types used in the native structures definition.
+
+    Those types have a platform-dependent size and hence must be provided verbatim
+    in Cyton/C code (otherwise the compiler might pick the wrong size for them...).
+    """
+
+    def __init__(self, original_name: str, c_type: str):
+        TypeSpec.__init__(
+            self,
+            is_stack_only=True,
+            variant_type_name="GDEXTENSION_VARIANT_TYPE_NIL",  # Never accessed dummy value
+            size=0,  # Never accessed dummy value
+            py_type="",  # Never accessed dummy value
+            cy_type="",  # Never accessed dummy value
+            original_name=original_name,
+            c_type=c_type,
+        )
+
+    def __getattribute__(self, name: str):
+        if name in ("variant_type_name", "size", "py_type", "cy_type"):
+            raise RuntimeError(
+                "Raw C scalar type ! Only `c_type` should be needed when defining the native structures"
+            )
+        return object.__getattribute__(self, name)
+
+
+@dataclass(slots=True)
 class EnumTypeSpec(ScalarTypeSpec):
     """
     Godot enum (e.g. godot_error, Camera::KeepAspect), note they are always
@@ -184,15 +213,8 @@ TYPES_DB: dict[TypeDBEntry, TypeSpec] = {
         py_type="bool",
         variant_type_name="GDEXTENSION_VARIANT_TYPE_BOOL",
     ),
-    "meta:char32": ScalarTypeSpec(
-        size=4,
-        original_name="char32",
-        c_type="char32_t",
-        cy_type="char32_t",
-        py_type="int",
-        variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
-    ),
-    # int is always 8bytes long
+    # Note `float` will be added at runtime since its size depends of the build config
+    # `int` is always 8bytes long
     "int": ScalarTypeSpec(
         size=8,
         original_name="int",
@@ -201,7 +223,16 @@ TYPES_DB: dict[TypeDBEntry, TypeSpec] = {
         py_type="int",
         variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
     ),
+    # Types marked as `c` are used in the native structures definition and have
+    # a size that depend on the compilation platform.
+    # Note the `c_*_t` type defined as `cy_type` is just a typedef over the actual
+    # type made in `gdapi.pxd`, this is done so that all types can be obtained from
+    # gdapi (as otherwise doing e.g. `gdapi.float` would crash the compilation).
+    "c:int": RawCScalarTypeSpec(original_name="int", c_type="c_int_t"),
+    "c:float": RawCScalarTypeSpec(original_name="float", c_type="c_float_t"),
+    "c:double": RawCScalarTypeSpec(original_name="double", c_type="c_double_t"),
     # Types marked as `meta` are used in the classes method args/return types
+    # Note `meta:real` will be added at runtime since its size depends of the build config
     "meta:int8": ScalarTypeSpec(
         size=1,
         original_name="int8",
@@ -281,6 +312,14 @@ TYPES_DB: dict[TypeDBEntry, TypeSpec] = {
         cy_type="double",
         py_type="float",
         variant_type_name="GDEXTENSION_VARIANT_TYPE_FLOAT",
+    ),
+    "meta:char32": ScalarTypeSpec(
+        size=4,
+        original_name="char32",
+        c_type="char32_t",
+        cy_type="char32_t",
+        py_type="int",
+        variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
     ),
     # The rest of the types will be added during parsing of builtins&classes
 }
