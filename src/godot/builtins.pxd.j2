@@ -18,3 +18,11 @@ from .classes cimport GDObject
 
 {{ render_class(builtin) }}
 {% endfor %}
+{% for spec in api.global_enums %}
+
+
+cpdef enum {{ spec.cy_type }}:
+{%   for key, value in spec.values.items() %}
+    {{ key }} = {{ value }}
+{%   endfor %}
+{% endfor %}
