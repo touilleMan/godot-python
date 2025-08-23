@@ -1,7 +1,27 @@
+import sys
 import enum
 import clodotest
 from clodotest import assert_eq
 import godot
+
+
+@clodotest.parametrize("char", ["e", "é", "€", "蛇", "🐍"])
+def test_unicode(char):
+    # Godot supports UCS2 on Windows and UCS4 on other platforms
+    if len(char.encode("utf8")) > 2 and sys.platform == "win32":
+        # TODO: still the case in Godot 4 ?
+        clodotest.skip("Windows only supports UCS2")
+
+    gdchar = godot.GDString(char)
+    assert str(gdchar) == char
+    assert gdchar.length() == len(char)
+
+    gdchar = godot.StringName(char)
+    assert str(gdchar) == char
+    assert gdchar.length() == len(char)
+
+    gdchar = godot.NodePath(char)
+    assert str(gdchar) == char
 
 
 def test_str():
