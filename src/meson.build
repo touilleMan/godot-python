@@ -87,6 +87,21 @@ pxd_godot_hazmat_gdptrs = custom_target(
 )
 
 
+# godot/hazmat/gdtypes.pxd
+# └─ extension_api.json
+
+pxd_godot_hazmat_gdtypes = custom_target(
+    output: 'godot#hazmat#gdtypes.pxd',
+    input: [
+        generate_tmpl_base_input,
+        files(
+            'godot/hazmat/gdtypes.pxd.j2',
+        ),
+    ],
+    command: generate_tmpl_cmd,
+)
+
+
 # godot/hazmat/gdapi.pxd
 # └─ extension_api.json
 
@@ -96,7 +111,6 @@ pxd_godot_hazmat_gdapi = custom_target(
         generate_tmpl_base_input,
         files(
             'godot/hazmat/gdapi.pxd.j2',
-            'godot/hazmat/gdapi_pxd/struct.pxd.j2',
             'godot/hazmat/gdapi_pxd/meth.pxd.j2',
         ),
     ],
@@ -145,6 +159,7 @@ pxd_godot_classes = custom_target(
 pxds_godot_hazmat = [
     pxd_godot_hazmat_gdextension,
     pxd_godot_hazmat_gdptrs,
+    pxd_godot_hazmat_gdtypes,
     pxd_godot_hazmat_gdapi,
     files(
         'godot/hazmat/extension_class.pxd',

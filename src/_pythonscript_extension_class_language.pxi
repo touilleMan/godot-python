@@ -39,20 +39,20 @@ cdef class PythonScriptLanguage:
     # godot_extension: method(virtual=True)
     cdef void _add_global_constant(self, gd_string_name_t name, gd_variant_t value):
         # TODO
-        spy_log(f"CALLED PythonScriptLanguage::_add_global_constant(name={gd_string_name_to_pystr(&name)!r}, value={value!r})")
+        spy_log(f"CALLED PythonScriptLanguage::_add_global_constant(name={gdapi.gd_string_name_to_pystr(&name)!r}, value={value!r})")
         gd_string_name_del(&name)
         gd_variant_del(&value)
 
     # godot_extension: method(virtual=True)
     cdef void _add_named_global_constant(self, gd_string_name_t name, gd_variant_t value):
         # TODO
-        spy_log(f"CALLED PythonScriptLanguage::_add_named_global_constant(name={gd_string_name_to_pystr(&name)!r}, value={value!r})")
+        spy_log(f"CALLED PythonScriptLanguage::_add_named_global_constant(name={gdapi.gd_string_name_to_pystr(&name)!r}, value={value!r})")
         gd_string_name_del(&name)
         gd_variant_del(&value)
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_string_t _auto_indent_code(self, gd_string_t code, gd_int_t from_line, gd_int_t to_line):
-        spy_log(f"CALLED PythonScriptLanguage::_auto_indent_code(code={gd_string_to_pystr(&code)!r}, from_line={from_line}, to_line={to_line})")
+        spy_log(f"CALLED PythonScriptLanguage::_auto_indent_code(code={gdapi.gd_string_to_pystr(&code)!r}, from_line={from_line}, to_line={to_line})")
         # For now, just return the code as-is since proper Python auto-indentation
         # would require a full Python parser. This could be enhanced later.
         return code
@@ -70,7 +70,7 @@ cdef class PythonScriptLanguage:
     # godot_extension: method(virtual=True, const=True)
     cdef gd_dictionary_t _complete_code(self, gd_string_t code, gd_string_t path, gd_object_t owner):
         # TODO
-        spy_log(f"CALLED PythonScriptLanguage::_complete_code(code={gd_string_to_pystr(&code)!r}, path={gd_string_to_pystr(&path)!r}, owner=<object>)")
+        spy_log(f"CALLED PythonScriptLanguage::_complete_code(code={gdapi.gd_string_to_pystr(&code)!r}, path={gdapi.gd_string_to_pystr(&path)!r}, owner=<object>)")
         cdef gd_dictionary_t ret = gd_dictionary_new()
         gd_string_del(&code)
         gd_string_del(&path)
@@ -148,15 +148,15 @@ cdef class PythonScriptLanguage:
 
     # godot_extension: method(virtual=True)
     cdef gd_string_t _debug_parse_stack_level_expression(self, gd_int_t level, gd_string_t expression, gd_int_t max_subitems, gd_int_t max_depth):
-        spy_log(f"CALLED PythonScriptLanguage::_debug_parse_stack_level_expression(level={level}, expression={gd_string_to_pystr(&expression)!r}, max_subitems={max_subitems}, max_depth={max_depth})")
+        spy_log(f"CALLED PythonScriptLanguage::_debug_parse_stack_level_expression(level={level}, expression={gdapi.gd_string_to_pystr(&expression)!r}, max_subitems={max_subitems}, max_depth={max_depth})")
         gd_string_del(&expression)
         return gd_string_from_pybytes(b"")
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_int_t _find_function(self, gd_string_t function, gd_string_t code):
-        spy_log(f"CALLED PythonScriptLanguage::_find_function(function={gd_string_to_pystr(&function)!r}, code={gd_string_to_pystr(&code)!r})")
-        cdef object py_function = gd_string_to_pystr(&function)
-        cdef object py_code = gd_string_to_pystr(&code)
+        spy_log(f"CALLED PythonScriptLanguage::_find_function(function={gdapi.gd_string_to_pystr(&function)!r}, code={gdapi.gd_string_to_pystr(&code)!r})")
+        cdef object py_function = gdapi.gd_string_to_pystr(&function)
+        cdef object py_code = gdapi.gd_string_to_pystr(&code)
         gd_string_del(&function)
         gd_string_del(&code)
 
@@ -186,7 +186,7 @@ cdef class PythonScriptLanguage:
     # godot_extension: method(virtual=True, const=True)
     cdef gd_array_t _get_built_in_templates(self, gd_string_name_t object):
         # TODO
-        spy_log(f"CALLED PythonScriptLanguage::(object={gd_string_name_to_pystr(&object)!r})")
+        spy_log(f"CALLED PythonScriptLanguage::(object={gdapi.gd_string_name_to_pystr(&object)!r})")
         gd_string_name_del(&object)
         cdef gd_array_t ret = gd_array_new()
         return ret
@@ -225,7 +225,7 @@ cdef class PythonScriptLanguage:
     # godot_extension: method(virtual=True, const=True)
     cdef gd_dictionary_t _get_global_class_name(self, gd_string_t path):
         # TODO
-        spy_log(f"CALLED PythonScriptLanguage::_get_global(path={gd_string_to_pystr(&path)!r})")
+        spy_log(f"CALLED PythonScriptLanguage::_get_global(path={gdapi.gd_string_to_pystr(&path)!r})")
         gd_string_del(&path)
         cdef gd_dictionary_t ret = gd_dictionary_new()
         return ret
@@ -336,9 +336,9 @@ cdef class PythonScriptLanguage:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _handles_global_class_type(self, gd_string_t type):
-        spy_log(f"CALLED PythonScriptLanguage::_handles_global_class_type(type={gd_string_to_pystr(&type)!r})")
+        spy_log(f"CALLED PythonScriptLanguage::_handles_global_class_type(type={gdapi.gd_string_to_pystr(&type)!r})")
         # TODO: would be more efficient to precompute the type into a `gd_string_t`
-        cdef gd_bool_t result = gd_string_to_pystr(&type) == "Python"
+        cdef gd_bool_t result = gdapi.gd_string_to_pystr(&type) == "Python"
         gd_string_del(&type)
         return result
 
@@ -355,11 +355,11 @@ cdef class PythonScriptLanguage:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _is_control_flow_keyword(self, gd_string_t keyword):
-        spy_log(f"CALLED PythonScriptLanguage::_is_control_flow_keyword(keyword={gd_string_to_pystr(&keyword)!r})")
+        spy_log(f"CALLED PythonScriptLanguage::_is_control_flow_keyword(keyword={gdapi.gd_string_to_pystr(&keyword)!r})")
         # TODO: use `string_operator_index_const` here !
         # This method seems to only be called right after `_get_reserved_words`
         # TODO: would be more efficient to precompute the keywords into a `gd_packed_string_array_t`
-        cdef gd_bool_t result = gd_string_to_pystr(&keyword) in (
+        cdef gd_bool_t result = gdapi.gd_string_to_pystr(&keyword) in (
             "break",
             "continue",
             "elif",
@@ -383,7 +383,7 @@ cdef class PythonScriptLanguage:
     # godot_extension: method(virtual=True, const=True)
     cdef gd_dictionary_t _lookup_code(self, gd_string_t code, gd_string_t symbol, gd_string_t path, gd_object_t owner):
         # TODO
-        spy_log(f"CALLED PythonScriptLanguage::_lookup_code(code={gd_string_to_pystr(&code)!r}, symbol={gd_string_to_pystr(&symbol)!r}, path={gd_string_to_pystr(&path)!r}, owner=<object>)")
+        spy_log(f"CALLED PythonScriptLanguage::_lookup_code(code={gdapi.gd_string_to_pystr(&code)!r}, symbol={gdapi.gd_string_to_pystr(&symbol)!r}, path={gdapi.gd_string_to_pystr(&path)!r}, owner=<object>)")
         gd_string_del(&code)
         gd_string_del(&symbol)
         gd_string_del(&path)
@@ -393,9 +393,9 @@ cdef class PythonScriptLanguage:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_string_t _make_function(self, gd_string_t class_name, gd_string_t function_name, gd_packed_string_array_t function_args):
-        spy_log(f"CALLED PythonScriptLanguage::_make_function(class_name={gd_string_to_pystr(&class_name)!r}, function_name={gd_string_to_pystr(&function_name)!r}, function_args={function_args!r})")
-        cdef object py_class_name = gd_string_to_pystr(&class_name)
-        cdef object py_function_name = gd_string_to_pystr(&function_name)
+        spy_log(f"CALLED PythonScriptLanguage::_make_function(class_name={gdapi.gd_string_to_pystr(&class_name)!r}, function_name={gdapi.gd_string_to_pystr(&function_name)!r}, function_args={function_args!r})")
+        cdef object py_class_name = gdapi.gd_string_to_pystr(&class_name)
+        cdef object py_function_name = gdapi.gd_string_to_pystr(&function_name)
         gd_string_del(&class_name)
         gd_string_del(&function_name)
 
@@ -406,7 +406,7 @@ cdef class PythonScriptLanguage:
         cdef gd_int_t i
         for i in range(arg_count):
             arg_str = gd_packed_string_array_indexed_getter(&function_args, i)
-            args.append(gd_string_to_pystr(&arg_str))
+            args.append(gdapi.gd_string_to_pystr(&arg_str))
             gd_string_del(&arg_str)
         gd_packed_string_array_del(&function_args)
 
@@ -418,10 +418,10 @@ cdef class PythonScriptLanguage:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_object_t _make_template(self, gd_string_t template, gd_string_t class_name, gd_string_t base_class_name):
-        spy_log(f"CALLED PythonScriptLanguage::_make_template(template={gd_string_to_pystr(&template)!r}, class_name={gd_string_to_pystr(&class_name)!r}, base_class_name={gd_string_to_pystr(&base_class_name)!r})")
-        cdef object py_template = gd_string_to_pystr(&template)
-        cdef object py_class_name = gd_string_to_pystr(&class_name)
-        cdef object py_base_class_name = gd_string_to_pystr(&base_class_name)
+        spy_log(f"CALLED PythonScriptLanguage::_make_template(template={gdapi.gd_string_to_pystr(&template)!r}, class_name={gdapi.gd_string_to_pystr(&class_name)!r}, base_class_name={gdapi.gd_string_to_pystr(&base_class_name)!r})")
+        cdef object py_template = gdapi.gd_string_to_pystr(&template)
+        cdef object py_class_name = gdapi.gd_string_to_pystr(&class_name)
+        cdef object py_base_class_name = gdapi.gd_string_to_pystr(&base_class_name)
         gd_string_del(&template)
         gd_string_del(&class_name)
         gd_string_del(&base_class_name)
@@ -513,7 +513,7 @@ class {py_class_name}({py_base_class_name}):
     # godot_extension: method(virtual=True)
     cdef void _remove_named_global_constant(self, gd_string_name_t name):
         # TODO
-        spy_log(f"CALLED PythonScriptLanguage::_remove_named_global_constant(name={gd_string_name_to_pystr(&name)!r})")
+        spy_log(f"CALLED PythonScriptLanguage::_remove_named_global_constant(name={gdapi.gd_string_name_to_pystr(&name)!r})")
         gd_string_name_del(&name)
 
     # godot_extension: method(virtual=True, const=True)
@@ -540,7 +540,7 @@ class {py_class_name}({py_base_class_name}):
     # godot_extension: method(virtual=True, const=True)
     cdef gd_dictionary_t _validate(self, gd_string_t script, gd_string_t path, gd_bool_t validate_functions, gd_bool_t validate_errors, gd_bool_t validate_warnings, gd_bool_t validate_safe_lines):
         # TODO
-        spy_log(f"CALLED PythonScriptLanguage::_validate(script={gd_string_to_pystr(&script)!r}, path={gd_string_to_pystr(&path)!r}, validate_functions={validate_functions}, validate_errors={validate_errors}, validate_warnings={validate_warnings}, validate_safe_lines={validate_safe_lines})")
+        spy_log(f"CALLED PythonScriptLanguage::_validate(script={gdapi.gd_string_to_pystr(&script)!r}, path={gdapi.gd_string_to_pystr(&path)!r}, validate_functions={validate_functions}, validate_errors={validate_errors}, validate_warnings={validate_warnings}, validate_safe_lines={validate_safe_lines})")
         cdef gd_dictionary_t ret = gd_dictionary_new()
         gd_string_del(&script)
         gd_string_del(&path)
@@ -549,7 +549,7 @@ class {py_class_name}({py_base_class_name}):
     # godot_extension: method(virtual=True, const=True)
     cdef gd_string_t _validate_path(self, gd_string_t path):
         # TODO
-        spy_log(f"CALLED PythonScriptLanguage::_validate_path(path={gd_string_to_pystr(&path)!r})")
+        spy_log(f"CALLED PythonScriptLanguage::_validate_path(path={gdapi.gd_string_to_pystr(&path)!r})")
         cdef gd_string_t ret = gd_string_from_pybytes(b"")
         gd_string_del(&path)
         return ret

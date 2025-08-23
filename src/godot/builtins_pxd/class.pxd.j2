@@ -7,7 +7,7 @@
 @cython.freelist(8)
 @cython.final
 cdef class {{ builtin.cy_type }}:
-    cdef {{ builtin.c_type }} _gd_data
+    cdef {{builtin.c_type }} _gd_data
 
     {{ render_constructors(builtin) | indent }}
 
@@ -15,19 +15,19 @@ cdef class {{ builtin.cy_type }}:
     cdef inline {{ builtin.py_type }} new():
         # Call to __new__ bypasses __init__ constructor
         cdef {{ builtin.cy_type }} ret = {{ builtin.cy_type }}.__new__({{ builtin.cy_type }})
-        ret._gd_data = gd_{{ builtin.get_constructor_from().c_name }}()
+        ret._gd_data = gdapi.gd_{{ builtin.get_constructor_from().c_name }}()
         return ret
 {% if builtin.original_name == "String" %}
     cdef inline str to_pystr(self):
-        return gd_string_to_pystr(&self._gd_data)
+        return gdapi.gd_string_to_pystr(&self._gd_data)
 {% elif builtin.original_name == "StringName" %}
     cdef inline str to_pystr(self):
-        return gd_string_name_to_pystr(&self._gd_data)
+        return gdapi.gd_string_name_to_pystr(&self._gd_data)
 {% elif builtin.original_name == "NodePath" %}
     cdef inline str to_pystr(self):
-        cdef gd_string_t gdstr = gd_string_new_from_node_path(&self._gd_data)
-        cdef object pystr = gd_string_to_pystr(&gdstr)
-        gd_string_del(&gdstr)
+        cdef gd_string_t gdstr = gdapi.gd_string_new_from_node_path(&self._gd_data)
+        cdef object pystr = gdapi.gd_string_to_pystr(&gdstr)
+        gdapi.gd_string_del(&gdstr)
         return pystr
 {% endif %}
 {% for m in builtin.members %}

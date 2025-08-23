@@ -36,7 +36,7 @@ cdef class PythonResourceFormatLoader:
     # godot_extension: method(virtual=True, const=True)
     cdef gd_packed_string_array_t _get_dependencies(self, gd_string_t path, gd_bool_t add_types):
         cdef gd_packed_string_array_t dependencies = gd_packed_string_array_new()
-        cdef object py_path = gd_string_to_pystr(&path)
+        cdef object py_path = gdapi.gd_string_to_pystr(&path)
         gd_string_del(&path)
 
         spy_log(f"CALLED PythonResourceFormatLoader::_get_dependencies(path={py_path}, add_types={add_types})")
@@ -77,7 +77,7 @@ cdef class PythonResourceFormatLoader:
         cdef gd_string_t candidate
         cdef gd_bool_t ret = False
 
-        spy_log(f"CALLED PythonResourceFormatLoader::_handles_type(type={gd_string_name_to_pystr(&type)!r})")
+        spy_log(f"CALLED PythonResourceFormatLoader::_handles_type(type={gdapi.gd_string_name_to_pystr(&type)!r})")
 
         candidate = gd_string_from_unchecked_pystr(RESOURCE_TYPE_NAME)
         ret = gd_string_name_op_equal_string(&type, &candidate)
@@ -95,7 +95,7 @@ cdef class PythonResourceFormatLoader:
         cdef object py_path
         cdef object py_extension
 
-        py_path = gd_string_to_pystr(&path)
+        py_path = gdapi.gd_string_to_pystr(&path)
         gd_string_del(&path)
 
         spy_log(f"CALLED PythonResourceFormatLoader::_get_resource_type(path={py_path!r})")
@@ -109,8 +109,8 @@ cdef class PythonResourceFormatLoader:
     # godot_extension: method(virtual=True, const=True)
     cdef gd_variant_t _load(self, gd_string_t path, gd_string_t original_path, gd_bool_t use_sub_threads, gd_int_t cache_mode):
         cdef gd_variant_t ret = gd_variant_new()
-        cdef object py_path = gd_string_to_pystr(&path)
-        cdef object py_original_path = gd_string_to_pystr(&original_path)
+        cdef object py_path = gdapi.gd_string_to_pystr(&path)
+        cdef object py_original_path = gdapi.gd_string_to_pystr(&original_path)
         gd_string_del(&path)
         gd_string_del(&original_path)
         spy_log(f"CALLED PythonResourceFormatLoader::_load(path={py_path!r}, original_path={py_original_path!r}, use_sub_threads={use_sub_threads}, cache_mode={cache_mode})")

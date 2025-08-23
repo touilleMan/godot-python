@@ -93,7 +93,7 @@ class RawCScalarTypeSpec(ScalarTypeSpec):
     in Cyton/C code (otherwise the compiler might pick the wrong size for them...).
     """
 
-    def __init__(self, original_name: str, c_type: str):
+    def __init__(self, c_type: str):
         TypeSpec.__init__(
             self,
             is_stack_only=True,
@@ -101,7 +101,7 @@ class RawCScalarTypeSpec(ScalarTypeSpec):
             size=0,  # Never accessed dummy value
             py_type="",  # Never accessed dummy value
             cy_type="",  # Never accessed dummy value
-            original_name=original_name,
+            original_name=c_type,
             c_type=c_type,
         )
 
@@ -224,13 +224,10 @@ TYPES_DB: dict[TypeDBEntry, TypeSpec] = {
         variant_type_name="GDEXTENSION_VARIANT_TYPE_INT",
     ),
     # Types marked as `c` are used in the native structures definition and have
-    # a size that depend on the compilation platform.
-    # Note the `c_*_t` type defined as `cy_type` is just a typedef over the actual
-    # type made in `gdapi.pxd`, this is done so that all types can be obtained from
-    # gdapi (as otherwise doing e.g. `gdapi.float` would crash the compilation).
-    "c:int": RawCScalarTypeSpec(original_name="int", c_type="c_int_t"),
-    "c:float": RawCScalarTypeSpec(original_name="float", c_type="c_float_t"),
-    "c:double": RawCScalarTypeSpec(original_name="double", c_type="c_double_t"),
+    # a size that depends on the compilation platform.
+    "c:int": RawCScalarTypeSpec(c_type="int"),
+    "c:float": RawCScalarTypeSpec(c_type="float"),
+    "c:double": RawCScalarTypeSpec(c_type="double"),
     # Types marked as `meta` are used in the classes method args/return types
     # Note `meta:real` will be added at runtime since its size depends of the build config
     "meta:int8": ScalarTypeSpec(

@@ -16,6 +16,7 @@ HAZMAT_DIR = GODOT_DIR / "hazmat"
 TARGETS: Dict[str, Tuple[bool, Path]] = {
     "pythonscript_gdextension_ptrs.c": (False, SRC_DIR),
     "gdptrs.pxd": (False, HAZMAT_DIR),
+    "gdtypes.pxd": (False, HAZMAT_DIR),
     "gdapi.pxd": (False, HAZMAT_DIR),
     "builtins.pyi": (False, GODOT_DIR),
     "builtins.pxd": (True, GODOT_DIR),

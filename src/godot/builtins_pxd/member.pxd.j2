@@ -15,18 +15,18 @@ void set_{{ m.name }}(self, {{ m.type.cy_type }} val)
 {%   if m.type.is_scalar %}
 {# Scalar type accessed by property (unused in extension_api.json afaik) #}
 cdef inline {{ render_member_getter_signature(m) }}:
-    return gd_{{ builtin.snake_name }}_get_{{ m.name }}(&self._gd_data)
+    return gdapi.gd_{{ builtin.snake_name }}_get_{{ m.name }}(&self._gd_data)
 cdef inline {{ render_member_setter_signature(m) }}:
-    gd_{{ builtin.snake_name }}_set_{{ m.name }}(&self._gd_data, val)
+    gdapi.gd_{{ builtin.snake_name }}_set_{{ m.name }}(&self._gd_data, val)
 {%   else %}
 {# Builtin type in the C structure (i.e. `Rect2i.end`) #}
 cdef inline {{ render_member_getter_signature(m) }}:
     # Call to __new__ bypasses __init__ constructor
     cdef {{ m.type.cy_type }} ret = {{ m.type.cy_type }}.__new__({{ m.type.cy_type }})
-    ret._gd_data = gd_{{ builtin.snake_name }}_get_{{ m.name }}(&self._gd_data)
+    ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_get_{{ m.name }}(&self._gd_data)
     return ret
 cdef inline {{ render_member_setter_signature(m) }}:
-    gd_{{ builtin.snake_name }}_set_{{ m.name }}(&self._gd_data, &val._gd_data)
+    gdapi.gd_{{ builtin.snake_name }}_set_{{ m.name }}(&self._gd_data, &val._gd_data)
 {%   endif %}
 {% endif %}
 {% endmacro %}
@@ -41,14 +41,14 @@ cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, object key
 {% endif %}
     cdef gd_variant_t gdkey = ensure_is_gdany_and_borrow_ref(key)
 {% if builtin.indexing_return_type.is_scalar %}
-    return gd_{{ builtin.snake_name }}_keyed_getter(&self._gd_data, &gdkey)
+    return gdapi.gd_{{ builtin.snake_name }}_keyed_getter(&self._gd_data, &gdkey)
 {% elif builtin.indexing_return_type.is_variant %}
-    gdret = gd_{{ builtin.snake_name }}_keyed_getter(&self._gd_data, &gdkey)
+    gdret = gdapi.gd_{{ builtin.snake_name }}_keyed_getter(&self._gd_data, &gdkey)
     return gd_variant_steal_into_pyobj(&gdret)
     # No need to destroy gdret given the conversion has stolen ownership on data !
 {% else %}
     ret = {{ builtin.indexing_return_type.cy_type }}.__new__({{ builtin.indexing_return_type.cy_type }})
-    ret._gd_data = gd_{{ builtin.snake_name }}_keyed_getter(&self._gd_data, &gdkey)
+    ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_keyed_getter(&self._gd_data, &gdkey)
     return ret
 {% endif %}
 
@@ -58,12 +58,12 @@ cdef inline void _setitem(self, object key, {{ builtin.indexing_return_type.cy_t
     cdef gd_variant_t gdvalue
 {% endif %}
 {% if builtin.indexing_return_type.is_scalar %}
-    gd_{{ builtin.snake_name }}_keyed_setter(&self._gd_data, &gdkey, value)
+    gdapi.gd_{{ builtin.snake_name }}_keyed_setter(&self._gd_data, &gdkey, value)
 {% elif builtin.indexing_return_type.is_variant %}
     gdvalue = ensure_is_gdany_and_borrow_ref(value)
-    gd_{{ builtin.snake_name }}_keyed_setter(&self._gd_data, &gdkey, &gdvalue)
+    gdapi.gd_{{ builtin.snake_name }}_keyed_setter(&self._gd_data, &gdkey, &gdvalue)
 {% else %}
-    gd_{{ builtin.snake_name }}_keyed_setter(&self._gd_data, &gdkey, &value._gd_data)
+    gdapi.gd_{{ builtin.snake_name }}_keyed_setter(&self._gd_data, &gdkey, &value._gd_data)
 {% endif %}
 {% endmacro %}
 
@@ -135,25 +135,25 @@ cdef inline void _setitem(self, key, {{ builtin.indexing_return_type.cy_type }} 
 {% macro render_getsetitem_indexed_default(builtin) %}
 cdef inline {{ builtin.indexing_return_type.cy_type }} _getitem(self, gd_int_t index):
 {% if builtin.indexing_return_type.is_scalar %}
-    return gd_{{ builtin.snake_name }}_indexed_getter(&self._gd_data, index)
+    return gdapi.gd_{{ builtin.snake_name }}_indexed_getter(&self._gd_data, index)
 {% elif builtin.indexing_return_type.is_variant %}
-    cdef gd_variant_t gdret = gd_{{ builtin.snake_name }}_indexed_getter(&self._gd_data, index)
+    cdef gd_variant_t gdret = gdapi.gd_{{ builtin.snake_name }}_indexed_getter(&self._gd_data, index)
     return gd_variant_steal_into_pyobj(&gdret)
     # No need to destroy gdret given the conversion has stolen ownership on data !
 {% else %}
     cdef {{ builtin.indexing_return_type.cy_type }} ret = {{ builtin.indexing_return_type.cy_type }}.__new__({{ builtin.indexing_return_type.cy_type }})
-    ret._gd_data = gd_{{ builtin.snake_name }}_indexed_getter(&self._gd_data, index)
+    ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_indexed_getter(&self._gd_data, index)
     return ret
 {% endif %}
 
 cdef inline void _setitem(self, gd_int_t index, {{ builtin.indexing_return_type.cy_type }} value):
 {% if builtin.indexing_return_type.is_scalar %}
-    gd_{{ builtin.snake_name }}_indexed_setter(&self._gd_data, index, value)
+    gdapi.gd_{{ builtin.snake_name }}_indexed_setter(&self._gd_data, index, value)
 {% elif builtin.indexing_return_type.is_variant %}
     cdef gd_variant_t gdvalue = ensure_is_gdany_and_borrow_ref(value)
-    gd_{{ builtin.snake_name }}_indexed_setter(&self._gd_data, index, &gdvalue)
+    gdapi.gd_{{ builtin.snake_name }}_indexed_setter(&self._gd_data, index, &gdvalue)
 {% else %}
-    gd_{{ builtin.snake_name }}_indexed_setter(&self._gd_data, index, &value._gd_data)
+    gdapi.gd_{{ builtin.snake_name }}_indexed_setter(&self._gd_data, index, &value._gd_data)
 {% endif %}
 {% endmacro %}
 

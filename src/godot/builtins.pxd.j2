@@ -7,8 +7,8 @@ cimport cython
 cdef class {{ builtin.cy_type }}
 {% endfor %}
 
-from .hazmat.gdapi cimport *
-from .hazmat cimport gdptrs, gdextension_interface
+from .hazmat cimport gdapi, gdptrs, gdextension_interface
+from .hazmat.gdtypes cimport *
 from .classes cimport GDObject
 
 

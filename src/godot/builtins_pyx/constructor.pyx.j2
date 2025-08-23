@@ -47,7 +47,7 @@ def __cinit__(self, s=_SENTINEL):
 
 def __cinit__(self, s=_SENTINEL):
     cdef gdextension_interface.GDExtensionTypePtr[1] args
-    cdef gdapi.gd_string_t gds
+    cdef gd_string_t gds
     if s is _SENTINEL:
         self._gd_data = gdapi.gd_{{ builtin.snake_name }}_new()
     elif isinstance(s, str):
@@ -64,7 +64,7 @@ def __cinit__(self, s=_SENTINEL):
 
 def __cinit__(self, s=_SENTINEL):
     cdef gdextension_interface.GDExtensionTypePtr[1] args
-    cdef gdapi.gd_string_t gds
+    cdef gd_string_t gds
     if s is _SENTINEL:
         self._gd_data = gdapi.gd_{{ builtin.snake_name }}_new()
     elif isinstance(s, str):

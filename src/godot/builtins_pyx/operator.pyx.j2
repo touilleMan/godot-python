@@ -13,8 +13,8 @@ def __repr__(self):
     return f"{{ builtin.cy_type}}({self.to_pystr()!r})"
 {%   else %}
     # TODO: I'm still not sure if this call steals self._gd_data or copies it...
-    cdef gdapi.gd_variant_t gdvar = gdapi.gd_{{ builtin.snake_name }}_into_variant(&self._gd_data)
-    cdef gdapi.gd_string_t gdstr
+    cdef gd_variant_t gdvar = gdapi.gd_{{ builtin.snake_name }}_into_variant(&self._gd_data)
+    cdef gd_string_t gdstr
     gdptrs.gdptr_variant_stringify(&gdvar, &gdstr)
     try:
         return f"{{ builtin.cy_type}}({gdapi.gd_string_to_pystr(&gdstr)})"
@@ -298,7 +298,7 @@ def __truediv__(self, object other):
 def __mod__(self, object other):
     # TODO: Godot currently returns `gdapi.gd_string_op_module_nil` when requesting `gdapi.gd_string_op_module_variant`
     # (see: https://github.com/godotengine/godot/issues/109861)
-    cdef gdapi.gd_variant_t gdany = ensure_is_gdany_and_borrow_ref(other)
+    cdef gd_variant_t gdany = ensure_is_gdany_and_borrow_ref(other)
     # Call to __new__ bypasses __init__ constructor
     cdef GDString ret = GDString.__new__(GDString)
     ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_op_module_variant(&self._gd_data, &gdany)
@@ -385,10 +385,10 @@ def __pos__(self):
 {% if builtin.indexing_return_type and not builtin.is_keyed %}
 # TODO: handle out of range error ?
 
-def __getitem__(self, gdapi.gd_int_t index):
+def __getitem__(self, gd_int_t index):
     return self._getitem(index)
 
-def __setitem__(self, gdapi.gd_int_t index, object value):
+def __setitem__(self, gd_int_t index, object value):
     self._setitem(index, value)
 {% elif builtin.indexing_return_type and builtin.is_keyed %}
 # TODO: handle out of range error ?

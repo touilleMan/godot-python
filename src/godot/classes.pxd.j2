@@ -1,13 +1,14 @@
 cimport cython
 
 from .hazmat cimport gdapi
+from .hazmat.gdtypes cimport *
 
 
 cdef class BaseGDObject:
-    cdef gdapi.gd_object_t _gd_ptr
+    cdef gd_object_t _gd_ptr
 
     @staticmethod
-    cdef BaseGDObject from_ptr(gdapi.gd_object_t ptr)
+    cdef BaseGDObject from_ptr(gd_object_t ptr)
 
 
 {% for native_structure in api.native_structures %}
@@ -22,9 +23,9 @@ cdef extern from * nogil:
     struct {{ native_structure.original_name }}:
 {%   for field_name, field_type in native_structure.fields.items() %}
 {%     if field_type.is_native_structure %}
-        gdapi.{{ field_type.c_type }} {{ field_name }}
+        {{ field_type.c_type }} {{ field_name }}
 {%     else %}
-        gdapi.{{ field_type.c_type }} {{ field_name }}
+        {{ field_type.c_type }} {{ field_name }}
 {%     endif %}
 {%   endfor %}
 
@@ -34,7 +35,7 @@ cdef extern from * nogil:
 {% for cls in api.classes %}
 cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }}):
 {%   if cls.inherits is none %}
-    cdef gdapi.gd_object_t _gd_ptr
+    cdef gd_object_t _gd_ptr
 {#
 
     @staticmethod
@@ -45,13 +46,13 @@ cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }})
 #}
 {% endif %}
     @staticmethod
-    cdef {{ cls.cy_type }} from_ptr(gdapi.gd_object_t *_ptr)
+    cdef {{ cls.cy_type }} from_ptr(gd_object_t *_ptr)
 {% endfor %}
 {# {% for klass in api.classes %} #}
 
 {# {# Cannot put this from_ptr as static method given cdef inline requires a final #} #}
 {# {# method (i.e. it cannot be overwritten by child class) #} #}
-{# cdef inline {{ klass.cy_type | lower }}_from_ptr(gdapi.gd_object_t ptr): #}
+{# cdef inline {{ klass.cy_type | lower }}_from_ptr(gd_object_t ptr): #}
 {#     # Call to __new__ bypasses __init__ constructor #}
 {#     cdef {{ klass.cy_type }} wrapper = {{ klass.cy_type }}.__new__({{ klass.cy_type }}) #}
 {#     wrapper._gd_ptr = ptr #}
@@ -64,13 +65,13 @@ cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }})
 {#  #}
 {# cdef class {{ klass.cy_type }}({{ klass.inherits.cy_type if klass.inherits is not none else "" }}): #}
 {# {%   if klass.inherits is none %} #}
-{#     cdef gdapi.gd_object_t _gd_ptr #}
+{#     cdef gd_object_t _gd_ptr #}
 {#  #}
 {#     {# @staticmethod #}
 {#     cdef inline GDObject cast_from_variant(const godot_variant *p_gdvar) #}
 {#  #}
 {#     @staticmethod #}
-{#     cdef inline GDObject cast_from_ptr(gdapi.gd_object_t *ptr): #}
+{#     cdef inline GDObject cast_from_ptr(gd_object_t *ptr): #}
 {#         self._gd_ptr = ptr #} #}
 {# {%   else %} #}
 {#     pass #}
@@ -81,4 +82,4 @@ cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }})
 cdef object _load_class(str name)
 cdef object _load_singleton(str name)
 cdef void _cleanup_loaded_classes_and_singletons()
-cdef object _object_call(gdapi.gd_object_t obj, str meth, args)
+cdef object _object_call(gd_object_t obj, str meth, args)

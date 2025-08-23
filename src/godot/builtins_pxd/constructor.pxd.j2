@@ -8,7 +8,7 @@ cpdef inline {{ builtin.cy_type }} clone(self):
     obj._gd_data = self._gd_data
 {% else %}
 {# Opaque builtin, must retrieve and use the clone constructor function #}
-    obj._gd_data = gd_{{ builtin.get_constructor_from(builtin.original_name).c_name }}(&self._gd_data)
+    obj._gd_data = gdapi.gd_{{ builtin.get_constructor_from(builtin.original_name).c_name }}(&self._gd_data)
 {% endif %}
     return obj
 {%- endmacro %}

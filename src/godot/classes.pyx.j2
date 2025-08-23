@@ -2,7 +2,9 @@
 cimport cython
 
 from .hazmat cimport gdapi, gdptrs, gdextension_interface
+from .hazmat.gdtypes cimport *
 from .builtins cimport *
+
 
 cdef class BaseGDObject:
     def free(self):
@@ -18,7 +20,7 @@ cdef class BaseGDObject:
         return f"<{type(self).__name__} wrapper on 0x{<size_t>self._gd_ptr:x}>"
 
     @staticmethod
-    cdef BaseGDObject from_ptr(gdapi.gd_object_t ptr):
+    cdef BaseGDObject from_ptr(gd_object_t ptr):
         # Call to __new__ bypasses __init__ constructor
         cdef BaseGDObject wrapper = BaseGDObject.__new__(BaseGDObject)
         wrapper._gd_ptr = ptr
@@ -27,9 +29,9 @@ cdef class BaseGDObject:
         return wrapper
 
     def _set_gd_ptr(self, ptr):
-        # /!\ doing `<gdapi.gd_object_t>ptr` would return the address of
+        # /!\ doing `<gd_object_t>ptr` would return the address of
         # the PyObject instead of casting it value !
-        self._gd_ptr = <gdapi.gd_object_t><size_t>ptr
+        self._gd_ptr = <gd_object_t><size_t>ptr
         # Note if the object is a reference, we stole it from the caller given we
         # don't call `Reference.reference` here
 
@@ -100,9 +102,9 @@ cdef object _load_singleton(str name):
         pass
 
     cdef object cls = _load_class(name)
-{# cdef gdapi.gd_object_t gdobj = gdptrs.gdptr_global_get_singleton(&(<StringName>cls._gd_name)._gd_data) #}
-    cdef gdapi.gd_string_name_t gdname = gdapi.gd_string_name_from_unchecked_pystr(name)
-    cdef gdapi.gd_object_t gdobj = gdptrs.gdptr_global_get_singleton(&gdname)
+{# cdef gd_object_t gdobj = gdptrs.gdptr_global_get_singleton(&(<StringName>cls._gd_name)._gd_data) #}
+    cdef gd_string_name_t gdname = gdapi.gd_string_name_from_unchecked_pystr(name)
+    cdef gd_object_t gdobj = gdptrs.gdptr_global_get_singleton(&gdname)
     gdapi.gd_string_name_del(&gdname)
     cdef object singleton = cls._from_ptr(<size_t>gdobj)
 
@@ -137,7 +139,7 @@ cdef object _load_class(str name):
 
     # Load our good friend ClassDB
     cdef StringName gdname_classdb = StringName("ClassDB")
-    cdef gdapi.gd_object_t classdb = gdptrs.gdptr_global_get_singleton(&gdname_classdb._gd_data)
+    cdef gd_object_t classdb = gdptrs.gdptr_global_get_singleton(&gdname_classdb._gd_data)
 
     if not _object_call(classdb, "class_exists", [gdname]):
         raise RuntimeError(f"Class `{name}` doesn't exist in Godot !")
@@ -190,9 +192,9 @@ cdef object _load_class(str name):
     return klass
 
 
-cdef object _object_call(gdapi.gd_object_t obj, str meth, args):
+cdef object _object_call(gd_object_t obj, str meth, args):
     cdef object pyret
-    cdef gdapi.gd_variant_t ret
+    cdef gd_variant_t ret
     cdef gdextension_interface.GDExtensionCallError call_error
 
     cdef StringName gdname_object = StringName("Object")
@@ -204,14 +206,14 @@ cdef object _object_call(gdapi.gd_object_t obj, str meth, args):
         # TODO: handle this
         gdptrs.gdptr_print_error("more than 8 params is not supported !", "_object_call", "", 0, False)
         return None
-    cdef gdapi.gd_variant_t[9] variant_args
-    cdef (gdapi.gd_variant_t*)[9] variant_args_ptrs
+    cdef gd_variant_t[9] variant_args
+    cdef (gd_variant_t*)[9] variant_args_ptrs
     for i in range(args_with_meth_len):
         variant_args_ptrs[i] = &variant_args[i]
 
     # TODO: provide a helper for string name from Python str creation
-    cdef gdapi.gd_string_name_t meth_gdstrname = gdapi.gd_string_name_from_unchecked_pystr(meth)
-    variant_args[0] = gd_string_name_into_variant(&meth_gdstrname)
+    cdef gd_string_name_t meth_gdstrname = gdapi.gd_string_name_from_unchecked_pystr(meth)
+    variant_args[0] = gdapi.gd_string_name_into_variant(&meth_gdstrname)
     gdapi.gd_string_name_del(&meth_gdstrname)
     # TODO: rename !
     # Into conversion steals the owneship, so no need to delete meth_gdstrname

@@ -1,6 +1,3 @@
-from godot.hazmat.gdapi cimport *
-
-
 cdef public void _pythonscript_get_reserved_words(
     void *method_userdata,
     GDExtensionClassInstancePtr p_instance,

@@ -1,0 +1,64 @@
+cimport cython
+# Re-expose uint8_t & friends
+from libc.stdint cimport *
+
+from . cimport gdextension_interface
+
+
+##############################################################################
+#                        Builtins stucts                                     #
+##############################################################################
+
+
+# Renames to stay consistent with other builtins naming convention we use
+ctypedef gdextension_interface.GDExtensionBool gd_bool_t
+ctypedef gdextension_interface.GDExtensionInt gd_int_t
+ctypedef {{ api.float_type.c_type }} gd_float_t
+# Note we don't really care this is a pointer as we always treat it as an opaque structure
+ctypedef gdextension_interface.GDExtensionObjectPtr gd_object_t
+cdef extern from * nogil:
+    # Needed to have `gd_object_t` also exposed in .h/.c files
+    """
+    typedef GDExtensionObjectPtr gd_object_t;
+    """
+
+# Declare builtins structures in `cdef extern` to also provide a C struct definition
+# so that they can be used in exported to C functions (i.e. `cdef api` functions)
+{% for builtin in [api.variant_type] + api.builtins %}
+
+
+cdef extern from * nogil:
+    """
+    typedef struct {{ builtin.c_type }} {
+{%   if builtin.is_transparent_builtin %}
+{%     for member in builtin.c_struct_members %}
+        {{ member.type.c_type }} {{ member.name }};
+{%     endfor %}
+{%   else %}
+        char _gd_opaque[{{ builtin.size }}];
+{%   endif %}
+    } {{ builtin.c_type }};
+    """
+
+    struct {{ builtin.c_type }}:
+{% if builtin.is_transparent_builtin %}
+{%   for member in builtin.c_struct_members %}
+        {{ member.type.c_type }} {{ member.name }}
+{%   endfor %}
+{% else %}
+        char[{{ builtin.size }}] _gd_opaque
+{%   endif %}
+{% endfor %}
+
+
+##############################################################################
+#                              Native structures                             #
+##############################################################################
+{% for spec in api.native_structures %}
+
+
+cdef struct {{ spec.c_type }}:
+{%   for name, type in spec.fields.items() %}
+    {{ type.c_type }} {{ name }}
+{%   endfor %}
+{% endfor %}

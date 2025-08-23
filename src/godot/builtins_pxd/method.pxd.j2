@@ -36,15 +36,15 @@ cpdef inline {{ render_method_signature(m) }}:
 {% endif %}
 {% endfor %}
 {%     if m.return_type.is_scalar %}
-    cdef {{ m.return_type.cy_type }} ret = gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
+    cdef {{m.return_type.c_type }} ret = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
 {%     elif m.return_type.is_builtin %}
     # Call to __new__ bypasses __init__ constructor
     cdef {{ m.return_type.cy_type }} ret = {{ m.return_type.cy_type }}.__new__({{ m.return_type.cy_type }})
-    ret._gd_data = gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
+    ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
 {%     elif m.return_type.is_object or m.return_type.is_variant %}
-    cdef {{  m.return_type.c_type }} ret = gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
+    cdef {{ m.return_type.c_type }} ret = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
 {%     else %}
-    gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
+    gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
 {%     endif %}
         &self._gd_data,
 {%       for arg in m.arguments %}
@@ -67,7 +67,7 @@ cpdef inline {{ render_method_signature(m) }}:
 {%       if m.return_type.is_object %}
     return GDObject.cast_from_variant(ret)
 {%       elif m.return_type.is_variant %}
-    # Note the "steal" means we don't need a final `gd_variant_del(&ret)`
+    # Note the "steal" means we don't need a final `gdapi.gd_variant_del(&ret)`
     return gd_variant_steal_into_pyobj(&ret)
 {%       else %}
     return ret
@@ -101,15 +101,15 @@ cdef inline {{ render_method_signature(m) }}:
 {% endif %}
 {% endfor %}
 {%     if m.return_type.is_scalar %}
-    cdef {{ m.return_type.cy_type }} ret = gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
+    cdef {{ m.return_type.cy_type }} ret = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
 {%     elif m.return_type.is_builtin %}
     # Call to __new__ bypasses __init__ constructor
     cdef {{ m.return_type.cy_type }} ret = {{ m.return_type.cy_type }}.__new__({{ m.return_type.cy_type }})
-    ret._gd_data = gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
+    ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
 {%     elif m.return_type.is_object or m.return_type.is_variant %}
-    cdef {{  m.return_type.c_type }} ret = gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
+    cdef {{  m.return_type.c_type }} ret = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
 {%     else %}
-    gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
+    gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
 {%     endif %}
         NULL,
 {%       for arg in m.arguments %}
@@ -132,7 +132,7 @@ cdef inline {{ render_method_signature(m) }}:
 {%       if m.return_type.is_object %}
     return GDObject.cast_from_variant(ret)
 {%       elif m.return_type.is_variant %}
-    # Note the "steal" means we don't need a final `gd_variant_del(&ret)`
+    # Note the "steal" means we don't need a final `gdapi.gd_variant_del(&ret)`
     return gd_variant_steal_into_pyobj(&ret)
 {%       else %}
     return ret

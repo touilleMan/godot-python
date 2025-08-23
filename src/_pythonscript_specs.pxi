@@ -87,13 +87,13 @@ cdef PackedStringArray _get_comment_delimiters():
     pass
 
 cdef String _get_extension():
-    return gd_string_to_pystr("py")
+    return gdapi.gd_string_to_pystr("py")
 
 cdef PackedStringArray _get_recognized_extensions():
     pass
 
 cdef String _get_name():
-    return gd_string_to_pystr("Python")
+    return gdapi.gd_string_to_pystr("Python")
 
 cdef PackedStringArray _get_reserved_words():
     pass

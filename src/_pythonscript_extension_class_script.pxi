@@ -76,11 +76,11 @@ cdef class PythonScript:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_int_t _get_member_line(self, gd_string_name_t member):
-        spy_log(f"CALLED PythonScript::_get_member_line(member={gd_string_name_to_pystr(&member)!r})")
+        spy_log(f"CALLED PythonScript::_get_member_line(member={gdapi.gd_string_name_to_pystr(&member)!r})")
 
         # Convert string name to string, then to Python string
-        cdef gd_string_t member_str = gd_string_new_from_string_name(&member)
-        cdef object py_member = gd_string_to_pystr(&member_str)
+        cdef gd_string_t member_str = gdapi.gd_string_new_from_string_name(&member)
+        cdef object py_member = gdapi.gd_string_to_pystr(&member_str)
         gd_string_del(&member_str)
         gd_string_name_del(&member)
 
@@ -107,7 +107,7 @@ cdef class PythonScript:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_dictionary_t _get_method_info(self, gd_string_name_t method):
-        spy_log(f"CALLED PythonScript::_get_method_info(method={gd_string_name_to_pystr(&method)!r})")
+        spy_log(f"CALLED PythonScript::_get_method_info(method={gdapi.gd_string_name_to_pystr(&method)!r})")
         # TODO
         cdef gd_dictionary_t ret = gd_dictionary_new()
         gd_string_name_del(&method)
@@ -115,7 +115,7 @@ cdef class PythonScript:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_variant_t _get_property_default_value(self, gd_string_name_t property):
-        spy_log(f"CALLED PythonScript::_get_property_default_value(property={gd_string_name_to_pystr(&property)!r})")
+        spy_log(f"CALLED PythonScript::_get_property_default_value(property={gdapi.gd_string_name_to_pystr(&property)!r})")
         # TODO
         cdef gd_variant_t ret = gd_variant_new()
         gd_string_name_del(&property)
@@ -162,10 +162,10 @@ cdef class PythonScript:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _has_method(self, gd_string_name_t method):
-        spy_log(f"CALLED PythonScript::_has_method(method={gd_string_name_to_pystr(&method)!r})")
+        spy_log(f"CALLED PythonScript::_has_method(method={gdapi.gd_string_name_to_pystr(&method)!r})")
         # Convert string name to string, then to Python string
-        cdef gd_string_t method_str = gd_string_new_from_string_name(&method)
-        cdef object py_method = gd_string_to_pystr(&method_str)
+        cdef gd_string_t method_str = gdapi.gd_string_new_from_string_name(&method)
+        cdef object py_method = gdapi.gd_string_to_pystr(&method_str)
         gd_string_del(&method_str)
         gd_string_name_del(&method)
 
@@ -184,14 +184,14 @@ cdef class PythonScript:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _has_property_default_value(self, gd_string_name_t property):
-        spy_log(f"CALLED PythonScript::_has_property_default_value(property={gd_string_name_to_pystr(&property)!r})")
+        spy_log(f"CALLED PythonScript::_has_property_default_value(property={gdapi.gd_string_name_to_pystr(&property)!r})")
         # TODO
         gd_string_name_del(&property)
         return False
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _has_script_signal(self, gd_string_name_t signal):
-        spy_log(f"CALLED PythonScript::_has_script_signal(signal={gd_string_name_to_pystr(&signal)!r})")
+        spy_log(f"CALLED PythonScript::_has_script_signal(signal={gdapi.gd_string_name_to_pystr(&signal)!r})")
         # TODO
         gd_string_name_del(&signal)
         return False
@@ -282,7 +282,7 @@ cdef class PythonScript:
 
     # godot_extension: method(virtual=True)
     cdef void _set_source_code(self, gd_string_t code):
-        self._source_code = gd_string_to_pystr(&code)
+        self._source_code = gdapi.gd_string_to_pystr(&code)
         spy_log(f"CALLED PythonScript::_set_source_code(code={self._source_code!r})")
         gd_string_del(&code)
 

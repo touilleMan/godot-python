@@ -37,6 +37,15 @@ custom_target(
 )
 
 
+custom_target(
+    output: 'gdtypes.pxd',
+    input: pxd_godot_hazmat_gdtypes,
+    command: copy_command,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot', 'hazmat'),
+)
+
+
 ##############################################################################
 #                                Compilation                                 #
 ##############################################################################
