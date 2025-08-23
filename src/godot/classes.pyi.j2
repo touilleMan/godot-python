@@ -48,7 +48,7 @@ class {{ klass.cy_type }}({{ klass.inherits or "" }}):
     # Enums
 {%     endif %}
     class {{ e.cy_type }}(Enum):
-{%     for ev in e.values.keys() %}
+{%     for ev in e.py_values.keys() %}
         {{ ev }}: int
 {%     endfor %}
 {%   endfor %}

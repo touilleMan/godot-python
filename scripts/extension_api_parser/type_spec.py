@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import string
 
 
 # We devide types into three categories:
@@ -121,11 +122,50 @@ class EnumTypeSpec(ScalarTypeSpec):
     """
 
     is_bitfield: bool
-    values: dict[str, int]
+    original_values: dict[str, int]
+    c_values: dict[str, int]
+    py_values: dict[str, int]
 
     def __init__(self, **kwargs):
         self.is_bitfield = kwargs.pop("is_bitfield")
-        self.values = kwargs.pop("values")
+        self.original_values = kwargs.pop("values")
+        self.c_values = self.original_values
+
+        # Detect the common prefix
+        first_key = next(iter(self.original_values.keys()))  # Any key will do it
+        parts = iter(first_key.split("_"))
+        prefix = ""
+        while True:
+            try:
+                candidate_prefix = f"{next(parts)}_" if not prefix else f"{prefix}{next(parts)}_"
+            except StopIteration:
+                break
+            if all(k.startswith(candidate_prefix) for k in self.original_values):
+                prefix = candidate_prefix
+                continue
+            else:
+                break
+
+        def _strip_prefix(k: str) -> str:
+            if k.startswith(prefix):
+                new = k[len(prefix) :]
+                if kwargs["original_name"] == "Key":
+                    # Special case for `KEY_0`, `KEY_A`, etc.
+                    if new in string.ascii_uppercase or new in string.digits:
+                        new = f"K_{new}"
+                if kwargs["original_name"] == "MethodFlags":
+                    # Special case: all types are `FLAG_xxx` except for `FLAGS_DEFAULT`
+                    needle = "FLAG_"
+                    if new.startswith(needle):
+                        new = new.removeprefix(needle)
+                return new
+            else:
+                return k
+
+        self.py_values = {_strip_prefix(k): v for k, v in self.original_values.items()}
+        # Remove the `MAX` marker since it is not an actual valid value
+        self.py_values.pop("MAX", None)
+
         ScalarTypeSpec.__init__(
             self,
             is_stack_only=True,

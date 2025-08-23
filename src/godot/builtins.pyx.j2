@@ -12,8 +12,8 @@ from .hazmat cimport gdapi, gdptrs, gdextension_interface
 from .hazmat.gdtypes cimport *
 
 from collections.abc import Iterable, Mapping, Sized  # Needed by Array&Dictionary constructors
+from enum import Enum
 from warnings import warn
-
 
 # Unique object used as default parameter in constructors.
 # We cannot simply use `None` since it would otherwise clash with the
@@ -29,4 +29,12 @@ cdef object _SENTINEL = object()
 
 
 {{ render_class(spec) }}
+{% endfor %}
+{% for spec in api.global_enums %}
+
+
+class {{ spec.cy_type }}(Enum):
+{%   for key, value in spec.py_values.items() %}
+    {{ key }} = {{ value }}
+{%   endfor %}
 {% endfor %}

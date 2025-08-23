@@ -189,7 +189,7 @@ cdef inline {{ c.type.c_type }} gd_{{ builtin.snake_name }}_make_constant_{{ c.n
 
 
 cdef enum {{ spec.cy_type }}:
-{%   for key, value in spec.values.items() %}
+{%   for key, value in spec.c_values.items() %}
     {{ key }} = {{ value }}
 {%   endfor %}
 {% endfor %}

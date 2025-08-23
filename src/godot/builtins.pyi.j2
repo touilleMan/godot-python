@@ -60,7 +60,7 @@ IntoGDAny
 
 
 class {{ enum.py_type }}(Enum):
-{%   for key in enum.values.keys() %}
+{%   for key in enum.py_values.keys() %}
     {{ key }}: int
 {%   endfor %}
 {% endfor %}
@@ -89,7 +89,7 @@ def {{ utility.name }}(
 
 
 class {{ e.original_name }}(Enum):
-{%   for key in e.values.keys() %}
+{%   for key in e.py_values.keys() %}
     {{ key }}: int
 {%   endfor %}
 {% endfor %}
