@@ -46,8 +46,8 @@ def generate_injected_code_method(
 ) -> str:
     code = f"""
 @staticmethod
-cdef void __godot_extension_class_{'virtual_' if virtual_flavor else ''}meth_{spec.method_name}(
-    {'void *method_userdata,' if not virtual_flavor else ''}
+cdef void __godot_extension_class_{"virtual_" if virtual_flavor else ""}meth_{spec.method_name}(
+    {"void *method_userdata," if not virtual_flavor else ""}
     GDExtensionClassInstancePtr p_instance,
     const GDExtensionConstTypePtr *p_args,
     GDExtensionTypePtr r_ret,
@@ -79,7 +79,7 @@ def generate_injected_code_register(spec: ClassDef) -> str:
 @staticmethod
 def __godot_extension_unregister_class():
     unregister_extension_class(b"{spec.class_name}")
-    { spec.class_name + "." + spec.unregister_class_hook + "()" if spec.unregister_class_hook is not None else "" }
+    {spec.class_name + "." + spec.unregister_class_hook + "()" if spec.unregister_class_hook is not None else ""}
 
 @staticmethod
 cdef GDExtensionObjectPtr __godot_extension_create_instance(void* p_class_userdata) noexcept with gil:
@@ -93,7 +93,7 @@ cdef void __godot_extension_free_instance(void* p_class_userdata, GDExtensionCla
 
 @staticmethod
 def __godot_extension_register_class():
-    { spec.class_name + "." + spec.register_class_hook + "()" if spec.register_class_hook is not None else "" }
+    {spec.class_name + "." + spec.register_class_hook + "()" if spec.register_class_hook is not None else ""}
     register_extension_class_creation(
         b"{spec.class_name}",
         b"{spec.parent_class_name}",
@@ -119,7 +119,7 @@ register_extension_class_method(
     b"{spec.class_name}",
     b"{method.method_name}",
     &{spec.class_name}.__godot_extension_class_meth_{method.method_name},
-    {'True' if method.is_staticmethod else 'False'},
+    {"True" if method.is_staticmethod else "False"},
     b"{method.return_type}",
     {cooked_params}
 )
@@ -177,8 +177,8 @@ def handle_pointer_type(raw_type: str) -> str:
         return raw_type.strip()
 
 
-def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
-    code_lines = enumerate(code_lines)
+def extract_classes_from_code(raw_code_lines: List[str]) -> List[ClassDef]:
+    code_lines = enumerate(raw_code_lines)
     classes: List[ClassDef] = []
 
     current_class: Optional[ClassDef] = None
@@ -236,7 +236,7 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                         meth_signature += c
                     if open_parenthesises:
                         try:
-                            _, current_line = iter(next(code_lines))
+                            _, current_line = next(code_lines)
                         except StopIteration:
                             raise RuntimeError("unexpected end of file")
 
@@ -251,9 +251,12 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                 params = {}
                 raw_params = match.group("parameters").strip()
                 if raw_params:
-                    strip_py_typing = lambda x: x.split(":", 1)[0].strip()
+
+                    def _strip_py_typing(x: str) -> str:
+                        return x.split(":", 1)[0].strip()
+
                     for i, raw_param in enumerate(
-                        y for x in raw_params.split(",") if (y := strip_py_typing(x))
+                        y for x in raw_params.split(",") if (y := _strip_py_typing(x))
                     ):
                         raw_param = raw_param.split(":", 1)[0].strip()
                         if not raw_param:
@@ -281,56 +284,56 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                     is_virtual=False,
                 )
 
-            def _register_class_hook():
+            def _register_class_hook() -> None:
                 if current_class is None:
                     raise RuntimeError(
-                        f"`# godot_extension: register_class_hook` must be within a `# godot_extension: class(...)` pragma"
+                        "`# godot_extension: register_class_hook` must be within a `# godot_extension: class(...)` pragma"
                     )
 
                 if current_class.register_class_hook is not None:
                     raise RuntimeError(
-                        f"`# godot_extension: register_class_hook` can only be set once per `# godot_extension: class(...)` pragma"
+                        "`# godot_extension: register_class_hook` can only be set once per `# godot_extension: class(...)` pragma"
                     )
 
                 signature = _collect_method_signature()
                 if not signature.is_staticmethod:
                     raise RuntimeError(
-                        f"`# godot_extension: register_class_hook` only allow accepts static method"
+                        "`# godot_extension: register_class_hook` only allow accepts static method"
                     )
                 if signature.parameters or signature.return_type != "void":
                     raise RuntimeError(
-                        f"`# godot_extension: register_class_hook` method must have no parameter and return void"
+                        "`# godot_extension: register_class_hook` method must have no parameter and return void"
                     )
 
                 current_class.register_class_hook = signature.method_name
 
-            def _unregister_class_hook():
+            def _unregister_class_hook() -> None:
                 if current_class is None:
                     raise RuntimeError(
-                        f"`# godot_extension: unregister_class_hook` must be within a `# godot_extension: class(...)` pragma"
+                        "`# godot_extension: unregister_class_hook` must be within a `# godot_extension: class(...)` pragma"
                     )
 
                 if current_class.unregister_class_hook is not None:
                     raise RuntimeError(
-                        f"`# godot_extension: unregister_class_hook` can only be set once per `# godot_extension: class(...)` pragma"
+                        "`# godot_extension: unregister_class_hook` can only be set once per `# godot_extension: class(...)` pragma"
                     )
 
                 signature = _collect_method_signature()
                 if not signature.is_staticmethod:
                     raise RuntimeError(
-                        f"`# godot_extension: unregister_class_hook` only allow accepts static method"
+                        "`# godot_extension: unregister_class_hook` only allow accepts static method"
                     )
                 if signature.parameters or signature.return_type != "void":
                     raise RuntimeError(
-                        f"`# godot_extension: unregister_class_hook` method must have no parameter and return void"
+                        "`# godot_extension: unregister_class_hook` method must have no parameter and return void"
                     )
 
                 current_class.unregister_class_hook = signature.method_name
 
-            def _method(const: bool = False, virtual: bool = False) -> MethodDef:
+            def _method(const: bool = False, virtual: bool = False) -> None:
                 if current_class is None:
                     raise RuntimeError(
-                        f"`# godot_extension: method(...)` must be within a `# godot_extension: class(...)` pragma"
+                        "`# godot_extension: method(...)` must be within a `# godot_extension: class(...)` pragma"
                     )
 
                 if not isinstance(const, bool):
@@ -352,7 +355,7 @@ def extract_classes_from_code(code_lines: List[str]) -> List[ClassDef]:
                 is_virtual: bool = False,
                 is_abstract: bool = False,
                 is_exposed: bool = True,
-            ) -> ClassDef:
+            ) -> None:
                 nonlocal current_class
                 nonlocal classes
 
