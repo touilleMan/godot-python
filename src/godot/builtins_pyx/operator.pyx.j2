@@ -13,14 +13,14 @@ def __repr__(self):
     return f"{{ builtin.cy_type}}({self.to_pystr()!r})"
 {%   else %}
     # TODO: I'm still not sure if this call steals self._gd_data or copies it...
-    cdef gd_variant_t gdvar = gd_{{ builtin.snake_name }}_into_variant(&self._gd_data)
-    cdef gd_string_t gdstr
+    cdef gdapi.gd_variant_t gdvar = gdapi.gd_{{ builtin.snake_name }}_into_variant(&self._gd_data)
+    cdef gdapi.gd_string_t gdstr
     gdptrs.gdptr_variant_stringify(&gdvar, &gdstr)
     try:
-        return f"{{ builtin.cy_type}}({gd_string_to_pystr(&gdstr)})"
+        return f"{{ builtin.cy_type}}({gdapi.gd_string_to_pystr(&gdstr)})"
     finally:
-        gd_variant_del(&gdvar)
-        gd_string_del(&gdstr)
+        gdapi.gd_variant_del(&gdvar)
+        gdapi.gd_string_del(&gdstr)
 {%   endif %}
 
 def __eq__(self, {{ builtin.cy_type }} other):
@@ -34,7 +34,7 @@ def __eq__(self, {{ builtin.cy_type }} other):
 {%   endfor %}
     )
 {% else %}
-    return gd_{{ builtin.snake_name }}_op_equal_{{ builtin.snake_name }}(&self._gd_data, &other._gd_data)
+    return gdapi.gd_{{ builtin.snake_name }}_op_equal_{{ builtin.snake_name }}(&self._gd_data, &other._gd_data)
 {% endif %}
 
 {% if builtin.original_name in ("Array", "Dictionary") or builtin.is_packed_array %}
@@ -62,7 +62,7 @@ def __contains__(self, object needle):
     return self.has(needle)
 {% elif builtin.is_packed_array %}
 def __contains__(self, {{ builtin.indexing_return_type.cy_type }} needle):
-    return gd_{{ builtin.indexing_return_type.snake_name }}_op_in_{{ builtin.snake_name }}(&needle._gd_data, &self._gd_data) == 1
+    return gdapi.gd_{{ builtin.indexing_return_type.snake_name }}_op_in_{{ builtin.snake_name }}(&needle._gd_data, &self._gd_data) == 1
 {% elif builtin.original_name in ("String", "StringName") %}
 def __contains__(self, object needle):
     return self.contains(needle)
@@ -87,7 +87,7 @@ def __lt__(self, object other):
 {%     else %}
         other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
 {%     endif %}
-        return gd_{{ builtin.snake_name }}_op_less_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data) != 0
+        return gdapi.gd_{{ builtin.snake_name }}_op_less_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data) != 0
     except TypeError:
         pass
 {%   endfor %}
@@ -113,7 +113,7 @@ def __le__(self, object other):
 {%     else %}
         other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
 {%     endif %}
-        return gd_{{ builtin.snake_name }}_op_less_equal_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data) != 0
+        return gdapi.gd_{{ builtin.snake_name }}_op_less_equal_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data) != 0
     except TypeError:
         pass
 {%   endfor %}
@@ -139,7 +139,7 @@ def __gt__(self, object other):
 {%     else %}
         other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
 {%     endif %}
-        return gd_{{ builtin.snake_name }}_op_greater_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data) != 0
+        return gdapi.gd_{{ builtin.snake_name }}_op_greater_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data) != 0
     except TypeError:
         pass
 {%   endfor %}
@@ -165,7 +165,7 @@ def __ge__(self, object other):
 {%     else %}
         other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
 {%     endif %}
-        return gd_{{ builtin.snake_name }}_op_greater_equal_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data) != 0
+        return gdapi.gd_{{ builtin.snake_name }}_op_greater_equal_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data) != 0
     except TypeError:
         pass
 {%   endfor %}
@@ -194,7 +194,7 @@ def __add__(self, object other):
 {%     endif %}
         # Call to __new__ bypasses __init__ constructor
         ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
-        ret._gd_data = gd_{{ builtin.snake_name }}_op_add_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
+        ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_op_add_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
         return ret
     except TypeError:
         pass
@@ -224,7 +224,7 @@ def __sub__(self, object other):
 {%     endif %}
         # Call to __new__ bypasses __init__ constructor
         ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
-        ret._gd_data = gd_{{ builtin.snake_name }}_op_subtract_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
+        ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_op_subtract_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
         return ret
     except TypeError:
         pass
@@ -254,7 +254,7 @@ def __mul__(self, object other):
 {%     endif %}
         # Call to __new__ bypasses __init__ constructor
         ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
-        ret._gd_data = gd_{{ builtin.snake_name }}_op_multiply_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
+        ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_op_multiply_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
         return ret
     except TypeError:
         pass
@@ -284,7 +284,7 @@ def __truediv__(self, object other):
 {%     endif %}
         # Call to __new__ bypasses __init__ constructor
         ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
-        ret._gd_data = gd_{{ builtin.snake_name }}_op_divide_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
+        ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_op_divide_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
         return ret
     except TypeError:
         pass
@@ -296,12 +296,12 @@ def __truediv__(self, object other):
 {% if builtin.original_name in ("String", "StringName") %}
 {# String is a special case since `other` can be of any type... so better just use a variant! #}
 def __mod__(self, object other):
-    # TODO: Godot currently returns `gd_string_op_module_nil` when requesting `gd_string_op_module_variant`
+    # TODO: Godot currently returns `gdapi.gd_string_op_module_nil` when requesting `gdapi.gd_string_op_module_variant`
     # (see: https://github.com/godotengine/godot/issues/109861)
-    cdef gd_variant_t gdany = ensure_is_gdany_and_borrow_ref(other)
+    cdef gdapi.gd_variant_t gdany = ensure_is_gdany_and_borrow_ref(other)
     # Call to __new__ bypasses __init__ constructor
     cdef GDString ret = GDString.__new__(GDString)
-    ret._gd_data = gd_{{ builtin.snake_name }}_op_module_variant(&self._gd_data, &gdany)
+    ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_op_module_variant(&self._gd_data, &gdany)
     return ret
 {% elif operators_module %}
 def __mod__(self, object other):
@@ -324,7 +324,7 @@ def __mod__(self, object other):
 {%     endif %}
         # Call to __new__ bypasses __init__ constructor
         ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
-        ret._gd_data = gd_{{ builtin.snake_name }}_op_module_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
+        ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_op_module_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
         return ret
     except TypeError:
         pass
@@ -354,7 +354,7 @@ def __pow__(self, object other):
 {%     endif %}
         # Call to __new__ bypasses __init__ constructor
         ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
-        ret._gd_data = gd_{{ builtin.snake_name }}_op_power_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
+        ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_op_power_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
         return ret
     except TypeError:
         pass
@@ -368,7 +368,7 @@ def __pow__(self, object other):
 def __neg__(self):
     # Call to __new__ bypasses __init__ constructor
     cdef {{ op.return_type.cy_type }} ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
-    ret._gd_data = gd_{{ builtin.snake_name }}_op_negate(&self._gd_data)
+    ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_op_negate(&self._gd_data)
     return ret
 {% endif %}
 
@@ -378,17 +378,17 @@ def __neg__(self):
 def __pos__(self):
     # Call to __new__ bypasses __init__ constructor
     cdef {{ op.return_type.cy_type }} ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
-    ret._gd_data = gd_{{ builtin.snake_name }}_op_positive(&self._gd_data)
+    ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_op_positive(&self._gd_data)
     return ret
 {% endif %}
 
 {% if builtin.indexing_return_type and not builtin.is_keyed %}
 # TODO: handle out of range error ?
 
-def __getitem__(self, gd_int_t index):
+def __getitem__(self, gdapi.gd_int_t index):
     return self._getitem(index)
 
-def __setitem__(self, gd_int_t index, object value):
+def __setitem__(self, gdapi.gd_int_t index, object value):
     self._setitem(index, value)
 {% elif builtin.indexing_return_type and builtin.is_keyed %}
 # TODO: handle out of range error ?

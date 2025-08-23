@@ -14,7 +14,7 @@ def __cinit__(self,
 
 {# Opaque builtin, initialize with default empty constructor #}
 def __cinit__(self):
-    self._gd_data = gd_{{ builtin.snake_name }}_new()
+    self._gd_data = gdapi.gd_{{ builtin.snake_name }}_new()
 
 {% endif %}
 {%- endmacro %}
@@ -28,78 +28,78 @@ def __cinit__(self):
 def __cinit__(self, s=_SENTINEL):
     cdef gdextension_interface.GDExtensionTypePtr[1] args
     if s is _SENTINEL:
-        self._gd_data = gd_{{ builtin.snake_name }}_new()
+        self._gd_data = gdapi.gd_{{ builtin.snake_name }}_new()
     elif isinstance(s, str):
-        self._gd_data = gd_string_from_unchecked_pystr(s)
+        self._gd_data = gdapi.gd_string_from_unchecked_pystr(s)
     else:
         try:
 {%   set constructor = builtin.get_constructor_from("String") %}
-            self._gd_data = gd_{{ constructor.c_name }}(&(<GDString?>s)._gd_data)
+            self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<GDString?>s)._gd_data)
         except TypeError:
             try:
 {%   set constructor = builtin.get_constructor_from("StringName") %}
-                self._gd_data = gd_{{ constructor.c_name }}(&(<StringName?>s)._gd_data)
+                self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<StringName?>s)._gd_data)
             except TypeError:
 {%   set constructor = builtin.get_constructor_from("NodePath") %}
-                self._gd_data = gd_{{ constructor.c_name }}(&(<NodePath?>s)._gd_data)
+                self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<NodePath?>s)._gd_data)
 
 {% elif builtin.original_name == "StringName" %}
 
 def __cinit__(self, s=_SENTINEL):
     cdef gdextension_interface.GDExtensionTypePtr[1] args
-    cdef gd_string_t gds
+    cdef gdapi.gd_string_t gds
     if s is _SENTINEL:
-        self._gd_data = gd_{{ builtin.snake_name }}_new()
+        self._gd_data = gdapi.gd_{{ builtin.snake_name }}_new()
     elif isinstance(s, str):
-        self._gd_data = gd_string_name_from_unchecked_pystr(s)
+        self._gd_data = gdapi.gd_string_name_from_unchecked_pystr(s)
     else:
         try:
 {%   set constructor = builtin.get_constructor_from("String") %}
-            self._gd_data = gd_{{ constructor.c_name }}(&(<GDString?>s)._gd_data)
+            self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<GDString?>s)._gd_data)
         except TypeError:
 {%   set constructor = builtin.get_constructor_from("StringName") %}
-            self._gd_data = gd_{{ constructor.c_name }}(&(<StringName?>s)._gd_data)
+            self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<StringName?>s)._gd_data)
 
 {% elif builtin.original_name == "NodePath" %}
 
 def __cinit__(self, s=_SENTINEL):
     cdef gdextension_interface.GDExtensionTypePtr[1] args
-    cdef gd_string_t gds
+    cdef gdapi.gd_string_t gds
     if s is _SENTINEL:
-        self._gd_data = gd_{{ builtin.snake_name }}_new()
+        self._gd_data = gdapi.gd_{{ builtin.snake_name }}_new()
     elif isinstance(s, str):
-        gds = gd_string_from_unchecked_pystr(s)
+        gds = gdapi.gd_string_from_unchecked_pystr(s)
         try:
 {%   set constructor = builtin.get_constructor_from("String") %}
-            self._gd_data = gd_{{ constructor.c_name }}(&gds)
+            self._gd_data = gdapi.gd_{{ constructor.c_name }}(&gds)
             return
         finally:
-            gd_string_del(&gds)
+            gdapi.gd_string_del(&gds)
     else:
         try:
 {%   set constructor = builtin.get_constructor_from("String") %}
-            self._gd_data = gd_{{ constructor.c_name }}(&(<GDString?>s)._gd_data)
+            self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<GDString?>s)._gd_data)
         except TypeError:
 {%   set constructor = builtin.get_constructor_from("NodePath") %}
-            self._gd_data = gd_{{ constructor.c_name }}(&(<NodePath?>s)._gd_data)
+            self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<NodePath?>s)._gd_data)
 
 {% elif builtin.original_name == "Dictionary" %}
 
 def __cinit__(self, mapping=_SENTINEL):
     if mapping is _SENTINEL:
-        self._gd_data = gd_{{ builtin.snake_name }}_new()
+        self._gd_data = gdapi.gd_{{ builtin.snake_name }}_new()
         return
 
     try:
 {%   set constructor = builtin.get_constructor_from("Dictionary") %}
-        self._gd_data = gd_{{ constructor.c_name }}(&(<GDDictionary?>mapping)._gd_data)
+        self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<GDDictionary?>mapping)._gd_data)
         return
     except TypeError:
         pass
 
     # Last chance, note we must initialize `self._gd_data` even if we are
     # going to raise a `TypeError`, otherwise destructor will segfault
-    self._gd_data = gd_{{ builtin.snake_name }}_new()
+    self._gd_data = gdapi.gd_{{ builtin.snake_name }}_new()
     try:
         if isinstance(mapping, Mapping):
             for k, v in mapping.items():
@@ -114,14 +114,14 @@ def __cinit__(self, mapping=_SENTINEL):
 
 def __cinit__(self, iterable=_SENTINEL):
     if iterable is _SENTINEL:
-        self._gd_data = gd_{{ builtin.snake_name }}_new()
+        self._gd_data = gdapi.gd_{{ builtin.snake_name }}_new()
         return
 
 {%   for packedtype in api.packed_array_types %}
 {%     if not api.builtins_sample or packedtype.original_name == "PackedStringArray" %}
 {%       set constructor = builtin.get_constructor_from(packedtype.original_name) %}
     try:
-        self._gd_data = gd_{{ constructor.c_name }}(&(<{{ packedtype.cy_type }}?>iterable)._gd_data)
+        self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<{{ packedtype.cy_type }}?>iterable)._gd_data)
         return
     except TypeError:
         pass
@@ -130,17 +130,17 @@ def __cinit__(self, iterable=_SENTINEL):
 
     try:
 {%   set constructor = builtin.get_constructor_from("Array") %}
-        self._gd_data = gd_{{ constructor.c_name }}(&(<GDArray?>iterable)._gd_data)
+        self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<GDArray?>iterable)._gd_data)
     except TypeError:
         pass
 
     # Last chance, note we must initialize `self._gd_data` even if we are
     # going to raise a `TypeError`, otherwise destructor will segfault
-    self._gd_data = gd_{{ builtin.snake_name }}_new()
+    self._gd_data = gdapi.gd_{{ builtin.snake_name }}_new()
     if isinstance(iterable, Iterable):
         # Not all iterable have support for `len()` (e.g. `iter([])`)
         if isinstance(iterable, Sized):
-            gd_{{ builtin.snake_name }}_meth_resize(&self._gd_data, len(iterable))
+            gdapi.gd_{{ builtin.snake_name }}_meth_resize(&self._gd_data, len(iterable))
             for i, x in enumerate(iterable):
                 self.set(i, x)
         else:
@@ -153,29 +153,29 @@ def __cinit__(self, iterable=_SENTINEL):
 
 def __cinit__(self, iterable=_SENTINEL):
     if iterable is _SENTINEL:
-        self._gd_data = gd_{{ builtin.snake_name }}_new()
+        self._gd_data = gdapi.gd_{{ builtin.snake_name }}_new()
         return
 {%   set constructor = builtin.get_constructor_from(builtin.original_name) %}
     try:
-        self._gd_data = gd_{{ constructor.c_name }}(&(<{{ builtin.cy_type }}?>iterable)._gd_data)
+        self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<{{ builtin.cy_type }}?>iterable)._gd_data)
         return
     except TypeError:
         pass
 
     try:
 {%   set constructor = builtin.get_constructor_from("Array") %}
-        self._gd_data = gd_{{ constructor.c_name }}(&(<GDArray?>iterable)._gd_data)
+        self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<GDArray?>iterable)._gd_data)
         return
     except TypeError:
         pass
 
     # Last chance, note we must initialize `self._gd_data` even if we are
     # going to raise a `TypeError`, otherwise destructor will segfault
-    self._gd_data = gd_{{ builtin.snake_name }}_new()
+    self._gd_data = gdapi.gd_{{ builtin.snake_name }}_new()
     if isinstance(iterable, Iterable):
         # Not all iterable have support for `len()` (e.g. `iter([])`)
         if isinstance(iterable, Sized):
-            gd_{{ builtin.snake_name }}_meth_resize(&self._gd_data, len(iterable))
+            gdapi.gd_{{ builtin.snake_name }}_meth_resize(&self._gd_data, len(iterable))
             for i, x in enumerate(iterable):
                 self.set(i, x)
         else:
