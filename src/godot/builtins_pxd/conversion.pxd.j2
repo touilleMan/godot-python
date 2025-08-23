@@ -18,7 +18,7 @@ cdef inline gd_variant_t ensure_is_gdany_and_borrow_ref(object pyobj):
     /!\ ensure_is_gdany_and_borrow_ref stole the reference from pyobj !
     Most of the time this is more like sharing: the variant object is only
     use in the body of the function that called `ensure_is_gdany_and_borrow_ref`,
-    then it is discarded without using it destructor (hence pyobj is not
+    then it is discarded without using its destructor (hence pyobj is not
     affected by this steal)
     """
     cdef gd_variant_t ret
