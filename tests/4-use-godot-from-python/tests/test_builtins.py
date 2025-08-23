@@ -771,8 +771,7 @@ def test_constant():
     assert_eq(godot.Vector2i.ZERO(), godot.Vector2i(0, 0))
 
 
-@clodotest.xfail(reason="TODO: WIP")
 def test_enum():
-    assert isinstance(godot.Vector2i.AXIS, enum.Enum)
-    assert_eq(godot.Vector2i.AXIS.X, 0)
-    assert_eq(godot.Vector2i.AXIS.Y, 1)
+    assert issubclass(godot.Vector2i.Axis, enum.Enum)
+    assert_eq(godot.Vector2i.Axis.X.value, 0)
+    assert_eq(godot.Vector2i.Axis.Y.value, 1)

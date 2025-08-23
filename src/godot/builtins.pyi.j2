@@ -85,24 +85,16 @@ def {{ utility.name }}(
 #                                  Builtins                                  #
 ##############################################################################
 {% for builtin in api.builtins %}
-{% for e in builtin.enums %}
-
-
-class {{ e.original_name }}(Enum):
-{%   for key in e.py_values.keys() %}
-    {{ key }}: int
-{%   endfor %}
-{% endfor %}
 
 
 class {{ builtin.cy_type }}:
+    # Constructors
 {%   for c in builtin.constructors %}
 {#  TODO: merged together the constructors ! #}
     def __init__(self{% for a in c.arguments %}, {{ render_arg(a) }}{% endfor %}): ...
 {%   endfor %}
-{%   if builtin.members %}
-
     def clone(self) -> {{ builtin.py_type }}: ...
+{%   if builtin.members %}
 
     # Members
 {%   endif %}
@@ -122,5 +114,15 @@ class {{ builtin.cy_type }}:
 {%   endif %}
 {%   for c in builtin.constants %}
     {{c.name}}: {{c.type.py_type}}
+{%   endfor %}
+{%   if builtin.enums %}
+
+    # Enums
+{%   endif %}
+{%   for e in builtin.enums %}
+    class {{ e.original_name }}(Enum):
+{%     for k, v in e.py_values.items() %}
+        {{ k }}: int
+{%     endfor %}
 {%   endfor %}
 {% endfor %}

@@ -20,6 +20,14 @@ def {{ c.name }}():
 
 
 {% macro render_class(builtin) %}
+{% for e in builtin.enums %}
+class {{ builtin.cy_type }}{{ e.original_name }}(Enum):
+{%   for k, v in e.py_values.items() %}
+    {{ k }} = {{ v }}
+{%   endfor %}
+
+
+{% endfor %}
 @cython.freelist(8)
 @cython.final
 cdef class {{ builtin.cy_type }}:
@@ -51,6 +59,14 @@ cdef class {{ builtin.cy_type }}:
 {% endif %}
 {% for m in builtin.members %}
     {{ render_member(builtin, m) | indent }}
+{% endfor %}
+
+{% if builtin.enums %}
+    # Enums
+
+{% endif %}
+{% for e in builtin.enums %}
+    {{ e.original_name }} = {{ builtin.cy_type }}{{ e.original_name }}
 {% endfor %}
 
 {# TODO: Cython currently doesn't support cpdef with @staticmethod #}
