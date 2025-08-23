@@ -111,6 +111,17 @@ cdef inline object gd_string_name_to_pystr(gd_string_name_t *gdstrname):
 #                        Builtins stucts                                     #
 ##############################################################################
 
+# Convenient typedef so that all types ever needed are all accesible from `gdapi`
+ctypedef float c_float_t;
+ctypedef double c_double_t;
+ctypedef int c_int_t;
+cdef extern from * nogil:
+    # Needed to have `c_*_t` also exposed in .h/.c files
+    """
+    typedef float c_float_t;
+    typedef double c_double_t;
+    typedef int c_int_t;
+    """
 
 # Renames to stay consistent with other builtins naming convention we use
 ctypedef gdextension_interface.GDExtensionBool gd_bool_t
