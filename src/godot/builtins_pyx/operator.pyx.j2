@@ -61,8 +61,14 @@ def __iter__(self):
 def __contains__(self, object needle):
     return self.has(needle)
 {% elif builtin.is_packed_array %}
+{%  if builtin.original_name in ("PackedByteArray", "PackedInt32Array", "PackedInt64Array", "PackedFloat32Array", "PackedFloat64Array") %}
+# TODO: `extension_api.json` doesn't expose `in` operator for those types...
+def __contains__(self, {{ builtin.indexing_return_type.cy_type }} needle):
+    return gdapi.gd_{{ builtin.snake_name }}_meth_has(&self._gd_data, needle) == 1
+{%  else %}
 def __contains__(self, {{ builtin.indexing_return_type.cy_type }} needle):
     return gdapi.gd_{{ builtin.indexing_return_type.snake_name }}_op_in_{{ builtin.snake_name }}(&needle._gd_data, &self._gd_data) == 1
+{%  endif %}
 {% elif builtin.original_name in ("String", "StringName") %}
 def __contains__(self, object needle):
     return self.contains(needle)
