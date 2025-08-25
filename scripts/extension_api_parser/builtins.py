@@ -80,7 +80,9 @@ class BuiltinConstructorSpec:
 
     @property
     def c_name(self) -> str:
-        cooked_args = [arg.type.snake_name for arg in self.arguments]
+        cooked_args = [
+            "object" if arg.type.is_object else arg.type.snake_name for arg in self.arguments
+        ]
         if not cooked_args:
             return self.base_name
         else:
