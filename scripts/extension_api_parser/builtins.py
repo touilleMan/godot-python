@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Generator
 
 from .utils import *
 from .in_use import *
@@ -242,6 +243,18 @@ class BuiltinTypeSpec(TypeSpec):
     members: list[BuiltinMemberSpec]
     constants: list[BuiltinConstantSpec]
     enums: list[EnumTypeSpec]
+
+    @property
+    def all_nested_scalar_members(self) -> Generator[str]:
+        def _recursive_members(parent: BuiltinTypeSpec) -> Generator[str]:
+            for member in parent.members:
+                member_type = member.type.resolve()
+                if isinstance(member_type, BuiltinTypeSpec):
+                    yield from (f"{member.name}.{sn}" for sn in _recursive_members(member_type))
+                else:
+                    yield member.name
+
+        yield from _recursive_members(self)
 
     @property
     def is_builtin(self) -> bool:

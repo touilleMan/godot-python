@@ -26,11 +26,11 @@ def __repr__(self):
 def __eq__(self, {{ builtin.cy_type }} other):
 {% if builtin.is_transparent_builtin %}
     return (
-{%   for m in  builtin.members %}
-{% if not loop.first%}
+{%   for field_path in  builtin.all_nested_scalar_members %}
+{%     if not loop.first%}
     and
-{% endif %}
-    self._gd_data.{{ m.name }} == other._gd_data.{{ m.name }}
+{%     endif %}
+    self._gd_data.{{ field_path }} == other._gd_data.{{ field_path }}
 {%   endfor %}
     )
 {% else %}
