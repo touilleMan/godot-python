@@ -75,7 +75,7 @@ cdef object gd_variant_steal_into_pyobj(const gd_variant_t *gdvar):
         # # class instead ?
         # return Object.cast_from_variant(gdvar)
     elif gdtype == gdextension_interface.{{ api.bool_type.variant_type_name }}:
-        return gdapi.gd_{{ api.bool_type.snake_name }}_from_variant(<gd_variant_t*>gdvar)
+        return gdapi.gd_{{ api.bool_type.snake_name }}_from_variant(<gd_variant_t*>gdvar) == 1
     elif gdtype == gdextension_interface.{{ api.int_type.variant_type_name }}:
         return gdapi.gd_{{ api.int_type.snake_name }}_from_variant(<gd_variant_t*>gdvar)
     elif gdtype == gdextension_interface.{{ api.float_type.variant_type_name }}:
