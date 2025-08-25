@@ -447,8 +447,6 @@ def parse_extension_api_json(
             builtin.constants = [c for c in builtin.constants if c.type.type_name not in to_skip]
 
         for klass in classes:
-            # if klass.original_name == "Object":
-            #     breakpoint()
             klass.methods = [
                 m
                 for m in klass.methods
