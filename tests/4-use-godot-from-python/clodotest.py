@@ -228,7 +228,7 @@ def skip(reason: str) -> None:
     raise SkipTest(reason=reason)
 
 
-def assert_approx_eq(a: float, b: float, max_relative_diff: float = 0.001):
+def assert_approx_eq(a: float, b: float, max_relative_diff: float = 0.001) -> None:
     diff = abs(a - b)
     if diff == 0:
         return
@@ -240,11 +240,21 @@ def assert_approx_eq(a: float, b: float, max_relative_diff: float = 0.001):
         )
 
 
-def assert_eq(got: Any, expected: Any):
+def assert_eq(got: Any, expected: Any) -> None:
     if got != expected:
         raise AssertionError(f"Expected {expected!r}, got {got!r}")
 
 
-def assert_is(got: Any, expected: Any):
+def assert_is(got: Any, expected: Any) -> None:
     if got is expected:
         raise AssertionError(f"Expected {expected!r}, got {got!r}")
+
+
+def assert_isinstance(got: Any, expected_cls: type) -> None:
+    if not isinstance(got, expected_cls):
+        raise AssertionError(f"Expected instance of {expected_cls!r}, got {got!r}")
+
+
+def assert_issubclass(got_cls: type, expected_cls: type) -> None:
+    if not issubclass(got_cls, expected_cls):
+        raise AssertionError(f"Expected subclass of {expected_cls!r}, got {got_cls!r}")
