@@ -136,7 +136,7 @@ def fetch_godot_binary(
                     if buff.write(rep.read(2**20)) == 0:
                         break
                     log(
-                        f"{buff.tell()//2**20}Mo/{length//2**20}Mo",
+                        f"{buff.tell() // 2**20}Mo/{length // 2**20}Mo",
                         flush=True,
                         end="\r",
                     )

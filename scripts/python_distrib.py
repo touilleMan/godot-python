@@ -87,11 +87,11 @@ def fetch_prebuild(
             with open(tmp_archive_path, "bw") as outfd:
                 length = int(rep.headers.get("Content-Length"))
                 # Poor's man progress bar
-                print(f"0Mo/{length//2**20}Mo", flush=True, end="\r")
+                print(f"0Mo/{length // 2**20}Mo", flush=True, end="\r")
                 while True:
                     if outfd.write(rep.read(2**20)) == 0:
                         break
-                    print(f"{outfd.tell()//2**20}Mo/{length//2**20}Mo", flush=True, end="\r")
+                    print(f"{outfd.tell() // 2**20}Mo/{length // 2**20}Mo", flush=True, end="\r")
 
         shutil.move(tmp_archive_path, archive_path)
 
