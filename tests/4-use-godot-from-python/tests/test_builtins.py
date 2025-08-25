@@ -1,7 +1,7 @@
 import sys
 import enum
 import clodotest
-from clodotest import assert_eq
+from clodotest import assert_eq, assert_issubclass
 import godot
 
 
@@ -24,13 +24,13 @@ def test_unicode(char):
     assert str(gdchar) == char
 
 
-def test_str():
+def test_str_conversion():
     assert_eq(str(godot.GDString("foo")), "foo")
     assert_eq(str(godot.StringName("foo")), "foo")
     assert_eq(str(godot.NodePath("foo")), "foo")
 
 
-def test_repr():
+def test_repr_conversion():
     assert_eq(repr(godot.GDString("foo")), "GDString('foo')")
     assert_eq(repr(godot.StringName("foo")), "StringName('foo')")
     assert_eq(repr(godot.NodePath("foo")), "NodePath('foo')")
@@ -792,6 +792,6 @@ def test_constant():
 
 
 def test_enum():
-    assert issubclass(godot.Vector2i.Axis, enum.Enum)
+    assert_issubclass(godot.Vector2i.Axis, enum.Enum)
     assert_eq(godot.Vector2i.Axis.X.value, 0)
     assert_eq(godot.Vector2i.Axis.Y.value, 1)
