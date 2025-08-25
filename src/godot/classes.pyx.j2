@@ -6,6 +6,13 @@ from .hazmat.gdtypes cimport *
 from .builtins cimport *
 
 
+def __getattr__(name: str):
+    try:
+        return _load_class(name)
+    except RuntimeError:
+        raise AttributeError
+
+
 cdef class BaseGDObject:
     def free(self):
         gdptrs.gdptr_object_destroy(self._gd_ptr)
@@ -16,19 +23,17 @@ cdef class BaseGDObject:
             f"Use `new()` method to instantiate non-refcounted Godot object (and don't forget to free it !)"
         )
 
+    @classmethod
+    def new(cls):
+        cdef gd_string_name_t name = gdapi.gd_string_name_from_unchecked_pystr(cls.__name__)
+        cdef BaseGDObject obj = cls.__new__(cls)
+        obj._gd_ptr = gdptrs.gdptr_classdb_construct_object(&name)
+        return obj
+
     def __repr__(self):
         return f"<{type(self).__name__} wrapper on 0x{<size_t>self._gd_ptr:x}>"
 
-    @staticmethod
-    cdef BaseGDObject from_ptr(gd_object_t ptr):
-        # Call to __new__ bypasses __init__ constructor
-        cdef BaseGDObject wrapper = BaseGDObject.__new__(BaseGDObject)
-        wrapper._gd_ptr = ptr
-        # Note if the object is a reference, we stole it from the caller given we
-        # don't call `Reference.reference` here
-        return wrapper
-
-    def _set_gd_ptr(self, ptr):
+    def _set_gd_ptr(self, ptr: int):
         # /!\ doing `<gd_object_t>ptr` would return the address of
         # the PyObject instead of casting it value !
         self._gd_ptr = <gd_object_t><size_t>ptr
@@ -36,8 +41,8 @@ cdef class BaseGDObject:
         # don't call `Reference.reference` here
 
     @classmethod
-    def _from_ptr(cls, ptr):
-        cdef object wrapper = cls.__new__(cls)
+    def _from_ptr(cls, ptr: int):
+        cdef BaseGDObject wrapper = cls.__new__(cls)
         wrapper._set_gd_ptr(ptr)
         return wrapper
 
@@ -45,6 +50,7 @@ cdef class BaseGDObject:
 # Classes
 
 
+{#
 # Forward declarations
 {% for cls in api.classes %}
 cdef class {{ cls.cy_type }}
@@ -54,6 +60,7 @@ cdef class {{ cls.cy_type }}
 
 {{ render_class(cls) }}
 {% endfor %}
+#}
 
 
 # Singletons
@@ -118,15 +125,15 @@ cdef object _load_singleton(str name):
 
 
 cdef inline object _property_getter(object obj, object name):
-    return _object_call((<GDObject>obj)._gd_ptr, "get", [name])
+    return _object_call((<BaseGDObject>obj)._gd_ptr, "get", [name])
 
 
 cdef inline void _property_setter(object obj, object name, object value):
-    _object_call((<GDObject>obj)._gd_ptr, "set", [name, value])
+    _object_call((<BaseGDObject>obj)._gd_ptr, "set", [name, value])
 
 
 cdef inline object _meth_call(object obj, object name, object args):
-    return _object_call((<GDObject>obj)._gd_ptr, "call", [name, *args])
+    return _object_call((<BaseGDObject>obj)._gd_ptr, "call", [name, *args])
 
 
 cdef object _load_class(str name):
@@ -155,6 +162,19 @@ cdef object _load_class(str name):
     attrs = {"_gd_name": gdname}
     ################################ TODO: meth["name"] is GDString, should use str/StringName instead
 
+    if name == "RefCounted":
+        @classmethod
+        def _new(cls):
+            raise RuntimeError(f"RefCounted Godot object must be created with `{ cls.__name__ }()`")
+
+        attrs["new"] = _new
+
+        def _init(self):
+            cdef gd_string_name_t name = gdapi.gd_string_name_from_unchecked_pystr(type(self).__name__)
+            (<BaseGDObject>self)._gd_ptr = gdptrs.gdptr_classdb_construct_object(&name)
+
+        attrs["__init__"] = _init
+
     def _generate_method(spec, py_meth_name):
         gd_meth_name = spec["name"]
         def _meth(self, *args):
@@ -166,6 +186,8 @@ cdef object _load_class(str name):
     for meth in meths:
         meth_name = str(meth["name"])
         attrs[meth_name] = _generate_method(meth, meth_name)
+
+    attrs.pop("free", None)
 
     def _generate_property(spec):
         propname = spec["name"]
@@ -192,7 +214,7 @@ cdef object _load_class(str name):
     return klass
 
 
-cdef object _object_call(gd_object_t obj, str meth, args):
+cdef object _object_call(gd_object_t obj, str meth, list args):
     cdef object pyret
     cdef gd_variant_t ret
     cdef gdextension_interface.GDExtensionCallError call_error

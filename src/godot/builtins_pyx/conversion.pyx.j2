@@ -5,7 +5,7 @@ cdef str _ENSURE_IS_STRINGNAME_ERR_MSG = "Invalid value `{}`, expected str or St
 cdef str _ENSURE_IS_NODEPATH_ERR_MSG = "Invalid value `{}`, expected be str or NodePath"
 
 cdef bint gd_variant_supports_py_type(object pytype):
-    if issubclass(pytype, GDObject):
+    if issubclass(pytype, BaseGDObject):
         return True
     elif (
 {% for builtin in api.builtins %}
@@ -23,7 +23,7 @@ cdef bint gd_variant_supports_py_type(object pytype):
 
 cdef object gd_to_py_type(gdextension_interface.GDExtensionVariantType gdtype):
     if gdtype == gdextension_interface.GDEXTENSION_VARIANT_TYPE_OBJECT:
-        return GDObject
+        return BaseGDObject
 {% for builtin in api.builtins %}
     elif gdtype == gdextension_interface.{{ builtin.variant_type_name }}:
         return {{ builtin.cy_type }}
@@ -42,7 +42,7 @@ cdef object gd_to_py_type(gdextension_interface.GDExtensionVariantType gdtype):
 
 
 cdef gdextension_interface.GDExtensionVariantType py_to_gd_type(object pytype):
-    if issubclass(pytype, GDObject):
+    if issubclass(pytype, BaseGDObject):
         return gdextension_interface.GDEXTENSION_VARIANT_TYPE_OBJECT
 {% for builtin in api.builtins %}
     elif pytype == {{ builtin.cy_type }}:
@@ -69,11 +69,11 @@ cdef gdextension_interface.GDExtensionVariantType py_to_gd_type(object pytype):
 cdef object gd_variant_steal_into_pyobj(const gd_variant_t *gdvar):
     cdef gdextension_interface.GDExtensionVariantType gdtype = gdptrs.gdptr_variant_get_type(gdvar)
     if gdtype == gdextension_interface.GDEXTENSION_VARIANT_TYPE_OBJECT:
-        raise NotImplementedError  # TODO
-        # # TODO: This conversion relies on godot String and lookup into bindings
-        # # modules, wouldn't it be better to create a `ObjectFromVariant` lazy
-        # # class instead ?
-        # return Object.cast_from_variant(gdvar)
+        # TODO: This conversion relies on godot String and lookup into bindings
+        # modules, wouldn't it be better to create a `ObjectFromVariant` lazy
+        # class instead ?
+        return BaseGDObject.cast_from_variant(gdvar)
+    # TODO: Would it be possible to directly dig into the variant for simple types ?
     elif gdtype == gdextension_interface.{{ api.bool_type.variant_type_name }}:
         return gdapi.gd_{{ api.bool_type.snake_name }}_from_variant(<gd_variant_t*>gdvar) == 1
     elif gdtype == gdextension_interface.{{ api.int_type.variant_type_name }}:
@@ -116,8 +116,8 @@ cdef object gd_variant_copy_into_pyobj(const gd_variant_t *gdvar):
 cdef bint gd_variant_steal_from_pyobj(object pyobj, gd_variant_t *gdvar):
     if pyobj is None:
         gdptrs.gdptr_variant_new_nil(gdvar)
-    elif isinstance(pyobj, GDObject):
-        gdvar[0] = gdapi.gd_object_into_variant((<GDObject>pyobj)._gd_ptr)
+    elif isinstance(pyobj, BaseGDObject):
+        gdvar[0] = gdapi.gd_object_into_variant((<BaseGDObject>pyobj)._gd_ptr)
     elif isinstance(pyobj, bool):  # TODO: try/except on the gdapi.gd_bool_into_variant is enough ?
         gdvar[0] = gdapi.gd_bool_into_variant(pyobj)
     elif isinstance(pyobj, int):

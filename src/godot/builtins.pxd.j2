@@ -9,7 +9,7 @@ cdef class {{ builtin.cy_type }}
 
 from .hazmat cimport gdapi, gdptrs, gdextension_interface
 from .hazmat.gdtypes cimport *
-from .classes cimport GDObject
+from .classes cimport BaseGDObject
 
 
 {{ render_all_conversions() }}

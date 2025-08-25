@@ -7,10 +7,26 @@ from .hazmat.gdtypes cimport *
 cdef class BaseGDObject:
     cdef gd_object_t _gd_ptr
 
+    {# @classmethod
+    cdef inline object from_ptr(cls, gd_object_t obj):
+        cdef object ret = cls.__new__()
+        ret._gd_ptr = obj
+        return ret #}
+
     @staticmethod
-    cdef BaseGDObject from_ptr(gd_object_t ptr)
+    cdef inline object cast_from_variant(const gd_variant_t *gdvar):
+        cdef gd_object_t obj = gdapi.gd_object_from_variant(gdvar)
+        cdef object class_name = _object_call(obj, "get_class", [])
+        cdef object klass = _load_class(class_name)
+        return klass._from_ptr(<size_t>obj)
 
+    @staticmethod
+    cdef inline object cast_from_object(gd_object_t obj):
+        cdef object class_name = _object_call(obj, "get_class", [])
+        cdef object klass = _load_class(class_name)
+        return klass._from_ptr(<size_t>obj)
 
+{#
 {% for native_structure in api.native_structures %}
 cdef extern from * nogil:
     """
@@ -36,18 +52,21 @@ cdef extern from * nogil:
 cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }}):
 {%   if cls.inherits is none %}
     cdef gd_object_t _gd_ptr
+#}
 {#
 
     @staticmethod
     cdef inline Object cast_from_variant(const godot_variant_t *p_gdvar)
 
     @staticmethod
-    cdef inline Object cast_from_ptr(godot_object_t *ptr)
+    cdef inline Object cast_from_object(godot_object_t *ptr)
 #}
+{#
 {% endif %}
     @staticmethod
     cdef {{ cls.cy_type }} from_ptr(gd_object_t *_ptr)
 {% endfor %}
+#}
 {# {% for klass in api.classes %} #}
 
 {# {# Cannot put this from_ptr as static method given cdef inline requires a final #} #}
@@ -71,7 +90,7 @@ cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }})
 {#     cdef inline GDObject cast_from_variant(const godot_variant *p_gdvar) #}
 {#  #}
 {#     @staticmethod #}
-{#     cdef inline GDObject cast_from_ptr(gd_object_t *ptr): #}
+{#     cdef inline GDObject cast_from_object(gd_object_t *ptr): #}
 {#         self._gd_ptr = ptr #} #}
 {# {%   else %} #}
 {#     pass #}
@@ -82,4 +101,4 @@ cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }})
 cdef object _load_class(str name)
 cdef object _load_singleton(str name)
 cdef void _cleanup_loaded_classes_and_singletons()
-cdef object _object_call(gd_object_t obj, str meth, args)
+cdef object _object_call(gd_object_t obj, str meth, list args)

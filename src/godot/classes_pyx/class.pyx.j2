@@ -38,6 +38,21 @@ cdef class {{ cls.cy_type }}({{ cls.inherits.cy_type if cls.inherits else "" }})
 
 {#
     @staticmethod
+    cdef inline Object cast_from_variant(const godot_variant_t *gdvar):
+        cdef gd_object_t obj = gdapi.gd_object_from_variant(gdvar)
+        cdef object class_name = _object_call(obj, "get_class", [])
+        cdef object klass = _load_class(class_name)
+        return klass.from_ptr(ptr)
+
+    @staticmethod
+    cdef inline Object cast_from_object(const godot_object_t obj):
+        cdef object class_name = _object_call(obj, "get_class", [])
+        cdef object klass = _load_class(class_name)
+        return klass.from_ptr(ptr)
+#}
+
+{#
+    @staticmethod
     cdef inline Object cast_from_variant(const godot_variant *p_gdvar):
         cdef godot_object *ptr = gdapi10.godot_variant_as_object(p_gdvar)
         # Retreive class

@@ -30,7 +30,7 @@ GDDictionary | Mapping[IntoGDAny, IntoGDAny]
 {% for klass in api.classes %}
 
 
-class {{ klass.cy_type }}({{ klass.inherits or "" }}):
+class {{ klass.cy_type }}{{ "(" + klass.inherits.cy_type + ")" if klass.inherits else "" }}:
 {%   set ns = namespace(contains_something=false) %}
 {%   if klass.is_instantiable %}
 {%     set ns.contains_something = True %}
@@ -47,7 +47,7 @@ class {{ klass.cy_type }}({{ klass.inherits or "" }}):
 
     # Enums
 {%     endif %}
-    class {{ e.cy_type }}(Enum):
+    class {{ e.original_name }}(Enum):
 {%     for ev in e.py_values.keys() %}
         {{ ev }}: int
 {%     endfor %}
