@@ -340,6 +340,7 @@ cdef extern from * nogil:
 ##############################################################################
 
 
+# Godot variant from/into Python object conversions
 cdef extern from * nogil:
     """
     #include <godot/gdextension_interface.h>
@@ -369,6 +370,7 @@ cdef extern from * nogil:
 {% for builtin in api.builtins %}
 
 
+# {{ builtin.original_name }}
 cdef extern from * nogil:
     """
     #include <godot/gdextension_interface.h>
@@ -407,7 +409,6 @@ cdef extern from * nogil:
     DLL_IMPORT extern GDExtensionVariantFromTypeConstructorFunc pythonscript_gdptr_{{ builtin.snake_name }}_into_variant;
     """
 
-# {{ builtin.original_name }}
 {%   for c in builtin.constructors %}
     GDExtensionPtrConstructor gdptr_{{ builtin.snake_name }}_constructor_{{ c.index }} "pythonscript_gdptr_{{ builtin.snake_name }}_constructor_{{ c.index }}"
 {%   endfor %}
@@ -439,6 +440,7 @@ cdef extern from * nogil:
 {% endfor %}
 
 
+# Utility functions
 cdef extern from * nogil:
     """
     #include <godot/gdextension_interface.h>
@@ -453,6 +455,5 @@ cdef extern from * nogil:
     """
 
 {% for utility in api.utility_functions %}
-    # {{ utility.original_name }}
     GDExtensionPtrUtilityFunction gdptr_utility_{{ utility.original_name }} "pythonscript_gdptr_utility_{{ utility.original_name }}"
 {% endfor %}
