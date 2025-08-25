@@ -247,7 +247,12 @@ def __mul__(self, object other):
 {%     endif %}
 {%   endfor%}
     cdef void *other_gd_data
-    cdef {{ operators_multiply[0].return_type.cy_type }} ret
+    # Some operations return multiple different types (e.g. `Vector2i * float -> Vector2`).
+    # Hopefully the compiler should be smart enough to detect only a single `ret_XXX`
+    # is used for any given call.
+{%   for op in operators_multiply %}
+    cdef {{ operators_multiply[0].return_type.cy_type }} ret{{ loop.index0 }}
+{%   endfor %}
 {%   for op in operators_multiply %}
     try:
         # Check `other`'s type before creating `ret` (since one created its
@@ -259,9 +264,9 @@ def __mul__(self, object other):
         other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
 {%     endif %}
         # Call to __new__ bypasses __init__ constructor
-        ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
-        ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_op_multiply_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
-        return ret
+        ret{{ loop.index0 }} = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
+        ret{{ loop.index0 }}._gd_data = gdapi.gd_{{ builtin.snake_name }}_op_multiply_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
+        return ret{{ loop.index0 }}
     except TypeError:
         pass
 {%   endfor %}
@@ -277,7 +282,12 @@ def __truediv__(self, object other):
 {%     endif %}
 {%   endfor%}
     cdef void *other_gd_data
-    cdef {{ operators_divide[0].return_type.cy_type }} ret
+    # Some operations return multiple different types (e.g. `Vector2i * float -> Vector2`).
+    # Hopefully the compiler should be smart enough to detect only a single `ret_XXX`
+    # is used for any given call.
+{%   for op in operators_multiply %}
+    cdef {{ operators_multiply[0].return_type.cy_type }} ret{{ loop.index0 }}
+{%   endfor %}
 {%   for op in operators_divide %}
     try:
         # Check `other`'s type before creating `ret` (since one created its
@@ -289,9 +299,9 @@ def __truediv__(self, object other):
         other_gd_data = &(<{{ op.right_type.cy_type }}?>other)._gd_data
 {%     endif %}
         # Call to __new__ bypasses __init__ constructor
-        ret = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
-        ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_op_divide_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
-        return ret
+        ret{{ loop.index0 }} = {{ op.return_type.cy_type }}.__new__({{ op.return_type.cy_type }})
+        ret{{ loop.index0 }}._gd_data = gdapi.gd_{{ builtin.snake_name }}_op_divide_{{ op.right_type.snake_name }}(&self._gd_data, <{{ op.right_type.c_type }} *>other_gd_data)
+        return ret{{ loop.index0 }}
     except TypeError:
         pass
 {%   endfor %}
