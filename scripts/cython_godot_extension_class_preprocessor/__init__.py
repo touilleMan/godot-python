@@ -23,7 +23,7 @@ options:
 
 The drawback is Cython doesn't provide a public API to plug into it compilation pipeline so
 we have no guarantee this will not break in the future (but this part Cython is very central
-so it's highly inlikely to change).
+so it's highly unlikely to change).
 """
 
 from typing import Optional
@@ -31,7 +31,6 @@ from dataclasses import dataclass
 from Cython.Compiler.ParseTreeTransforms import NormalizeTree
 from Cython.Compiler.Visitor import CythonTransform
 import Cython.Compiler.Pipeline
-from Cython.Compiler.Pipeline import dumptree
 from Cython.Compiler.Errors import error
 from Cython.Compiler.PyrexTypes import CIntType
 from Cython.Compiler import Nodes, ExprNodes
@@ -43,14 +42,12 @@ _pipeline_patched = False
 
 
 def patch_cython_pipeline():
-
     global _pipeline_patched
     assert not _pipeline_patched  # Sanity check to avoid double patching
 
     vanilla_create_pipeline = Cython.Compiler.Pipeline.create_pipeline
 
     def godot_python_patched_create_pipeline(context, mode, exclude_classes=()):
-
         stages = vanilla_create_pipeline(context, mode, exclude_classes)
         index = next(i + 1 for i, x in enumerate(stages) if isinstance(x, NormalizeTree))
         stages.insert(index, GodotExtensionClassAttributes(context))
@@ -183,7 +180,7 @@ class GodotExtensionClassAttributes(CythonTransform):
                         error(arg.key.pos, f"unknown param `{arg.key.value}`")
                         return node
                     if not isinstance(arg.value, ExprNodes.UnicodeNode):
-                        error(arg.value.pos, f"param `parent` must be a unicode literal")
+                        error(arg.value.pos, "param `parent` must be a unicode literal")
                         return node
                     parent_class_name = arg.value.value
 
@@ -302,7 +299,7 @@ def _extract_method_spec(method_node) -> MethodSpec:
             isinstance(arg_node.declarator, Nodes.CNameDeclaratorNode)
             and arg_node.declarator.name == ""
         ):
-            error(arg_node.pos, f"type required")
+            error(arg_node.pos, "type required")
             return
         if isinstance(arg_node.declarator, Nodes.CPtrDeclaratorNode):
             arg_type_name = f"{arg_node.base_type.name}*"
