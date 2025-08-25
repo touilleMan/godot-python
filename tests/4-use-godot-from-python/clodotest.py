@@ -161,14 +161,21 @@ def run_tests_with_argv(path: Path, argv: list[str]) -> bool:
     return run_tests(path=path, filter=filter, stop_on_failure=stop_on_failure, verbose=verbose)
 
 
+@dataclasses.dataclass(slots=True)
+class RaisedException:
+    exc: BaseException | None = None
+
+
 @contextmanager
-def raises(expected_exc_type: type) -> Iterator[None]:
+def raises(expected_exc_type: type) -> Iterator[RaisedException]:
+    caught = RaisedException()
     try:
-        yield
+        yield caught
     except BaseException as exc:
         assert isinstance(exc, expected_exc_type), (
             f"Invalid exception, expected type {expected_exc_type!r}, got `{exc!r}`"
         )
+        caught.exc = exc
     else:
         assert False, "No exception occured !"
 
