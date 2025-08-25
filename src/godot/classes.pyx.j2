@@ -102,7 +102,7 @@ cdef void _cleanup_loaded_classes_and_singletons():
     _loaded_classes.clear()
 
 
-cdef object _load_singleton(str name):
+cpdef object _load_singleton(str name):
     try:
         return _loaded_singletons[name]
     except KeyError:
@@ -113,6 +113,10 @@ cdef object _load_singleton(str name):
     cdef gd_string_name_t gdname = gdapi.gd_string_name_from_unchecked_pystr(name)
     cdef gd_object_t gdobj = gdptrs.gdptr_global_get_singleton(&gdname)
     gdapi.gd_string_name_del(&gdname)
+
+    if gdobj == NULL:
+        raise RuntimeError(f"Singleton `{name}` doesn't exist in Godot !")
+
     cdef object singleton = cls._from_ptr(<size_t>gdobj)
 
     _loaded_singletons[name] = singleton
