@@ -251,7 +251,7 @@ def __mul__(self, object other):
     # Hopefully the compiler should be smart enough to detect only a single `ret_XXX`
     # is used for any given call.
 {%   for op in operators_multiply %}
-    cdef {{ operators_multiply[0].return_type.cy_type }} ret{{ loop.index0 }}
+    cdef {{ op.return_type.cy_type }} ret{{ loop.index0 }}
 {%   endfor %}
 {%   for op in operators_multiply %}
     try:
@@ -285,8 +285,8 @@ def __truediv__(self, object other):
     # Some operations return multiple different types (e.g. `Vector2i * float -> Vector2`).
     # Hopefully the compiler should be smart enough to detect only a single `ret_XXX`
     # is used for any given call.
-{%   for op in operators_multiply %}
-    cdef {{ operators_multiply[0].return_type.cy_type }} ret{{ loop.index0 }}
+{%   for op in operators_divide %}
+    cdef {{ op.return_type.cy_type }} ret{{ loop.index0 }}
 {%   endfor %}
 {%   for op in operators_divide %}
     try:
