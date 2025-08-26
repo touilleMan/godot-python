@@ -23,18 +23,23 @@ def __repr__(self):
         gdapi.gd_string_del(&gdstr)
 {%   endif %}
 
-def __eq__(self, {{ builtin.cy_type }} other):
+def __eq__(self, object other):
+    cdef {{ builtin.c_type }}* other_gd_data
+    try:
+        other_gd_data = &(<{{ builtin.cy_type }}?>other)._gd_data
+    except TypeError:
+        return False
 {% if builtin.is_transparent_builtin %}
     return (
 {%   for field_path in  builtin.all_nested_scalar_members %}
 {%     if not loop.first%}
     and
 {%     endif %}
-    self._gd_data.{{ field_path }} == other._gd_data.{{ field_path }}
+    self._gd_data.{{ field_path }} == other_gd_data.{{ field_path }}
 {%   endfor %}
     )
 {% else %}
-    return gdapi.gd_{{ builtin.snake_name }}_op_equal_{{ builtin.snake_name }}(&self._gd_data, &other._gd_data)
+    return gdapi.gd_{{ builtin.snake_name }}_op_equal_{{ builtin.snake_name }}(&self._gd_data, other_gd_data)
 {% endif %}
 
 {% if builtin.original_name in ("Array", "Dictionary") or builtin.is_packed_array %}

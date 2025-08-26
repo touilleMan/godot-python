@@ -54,6 +54,8 @@ def test_scalars_and_nil_not_exposed(type: str):
         "Dictionary",
         "Array",
         "PackedArray",
+        # TODO: Callable (with conversion from a regular python function ?)
+        # TODO: Signal
     ],
 )
 def test_constructor(kind: str):
@@ -432,9 +434,13 @@ def test_operator(kind: str):
         case "equal":
             assert_eq(godot.GDString("foo") == godot.GDString("foo"), True)
             assert_eq(godot.GDString("foo") == godot.GDString("bar"), False)
+            assert_eq(godot.GDString("foo") == None, False)  # noqa: E711
+            assert_eq(godot.GDString("foo") == 42, False)
 
             assert_eq(godot.Vector2i(1, 2) == godot.Vector2i(1, 2), True)
             assert_eq(godot.Vector2i(1, 0) == godot.Vector2i(1, 2), False)
+            assert_eq(godot.Vector2i(1, 0) == None, False)  # noqa: E711
+            assert_eq(godot.Vector2i(1, 0) == 42, False)
 
             assert_eq(godot.GDArray() == godot.GDArray(), True)
             assert_eq(
@@ -443,6 +449,8 @@ def test_operator(kind: str):
                 True,
             )
             assert_eq(godot.GDArray() == godot.GDArray((1,)), False)
+            assert_eq(godot.GDArray() == None, False)  # noqa: E711
+            assert_eq(godot.GDArray() == 42, False)
 
             assert_eq(godot.GDDictionary() == godot.GDDictionary(), True)
             assert_eq(
@@ -451,6 +459,8 @@ def test_operator(kind: str):
                 True,
             )
             assert_eq(godot.GDDictionary() == godot.GDDictionary([(1, 2)]), False)
+            assert_eq(godot.GDDictionary() == None, False)  # noqa: E711
+            assert_eq(godot.GDDictionary() == 42, False)
 
         case "not_equal":
             assert_eq(godot.GDString("foo") != godot.GDString("bar"), True)
