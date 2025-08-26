@@ -13,6 +13,8 @@ Tests are divided on multiple stages:
 - `5-use-godot-from-cython`: 🚧 WIP 🚧
 - `6-expose-python-to-godot`: 🚧 WIP 🚧
 - `7-expose-cython-to-godot`: 🚧 WIP 🚧
+- `8-cython-communicate-with-3rd-party-extension`: 🚧 WIP 🚧
+- `9-python-communicate-with-3rd-party-extension`: 🚧 WIP 🚧
 
 Stages 0 & 1 don't involve Godot-Python at all and are only here to ensure that no prior
 issues are present (e.g. bug in new Godot release, weird behavior on exotic platform...).
@@ -22,3 +24,6 @@ modules from the CPython interpreter embedded in Godot.
 
 Stages 4&5 ensure that we can call into Godot, while stages 6&7 ensure that we can
 expose Python to Godot.
+
+Stages 8&9 ensure that classes exposed by 3rd-party GDExtension can be accessed from
+Godot-Python, and vice-versa.
