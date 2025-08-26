@@ -173,6 +173,19 @@ cdef object _load_class(str name):
 
         attrs["new"] = _new
 
+        def _del(self):
+            cdef BaseGDObject obj = <BaseGDObject>self
+            if _object_call(obj._gd_ptr, "unreference", []):
+                gdptrs.gdptr_object_destroy(obj._gd_ptr)
+                obj._gd_ptr = NULL
+
+        attrs["__del__"] = _del
+
+        def _free(self):
+            raise RuntimeError("RefCounted Godot object cannot be freed")
+
+        attrs["free"] = _free
+
         def _init(self):
             cdef gd_string_name_t name = gdapi.gd_string_name_from_unchecked_pystr(type(self).__name__)
             (<BaseGDObject>self)._gd_ptr = gdptrs.gdptr_classdb_construct_object(&name)
