@@ -72,6 +72,7 @@ cdef object gd_variant_steal_into_pyobj(const gd_variant_t *gdvar):
         # TODO: This conversion relies on godot String and lookup into bindings
         # modules, wouldn't it be better to create a `ObjectFromVariant` lazy
         # class instead ?
+        # Note this return `None` if the object is NULL
         return BaseGDObject.cast_from_variant(gdvar)
     # TODO: Would it be possible to directly dig into the variant for simple types ?
     elif gdtype == gdextension_interface.{{ api.bool_type.variant_type_name }}:
