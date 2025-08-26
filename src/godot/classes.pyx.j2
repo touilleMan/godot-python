@@ -204,6 +204,7 @@ cdef object _load_class(str name):
         meth_name = str(meth["name"])
         attrs[meth_name] = _generate_method(meth, meth_name)
 
+    # `Object` defines a `free`, but it doesn't work properly...
     attrs.pop("free", None)
 
     def _generate_property(spec):
@@ -224,6 +225,21 @@ cdef object _load_class(str name):
 
     signals = _object_call(classdb, "class_get_signal_list", [gdname])
     # TODO
+
+    constants = _object_call(classdb, "class_get_integer_constant_list", [gdname, True])
+    for constant_name in constants:
+        constant_value = _object_call(classdb, "class_get_integer_constant", [gdname, constant_name])
+        attrs[str(constant_name)] = constant_value
+
+    from enum import Enum
+    enums = _object_call(classdb, "class_get_enum_list", [gdname, True])
+    for enum_name in enums:
+        enum_items_cooked = {}
+        enum_items = _object_call(classdb, "class_get_enum_constants", [gdname, enum_name])
+        for enum_item_name in enum_items:
+            enum_item_value = _object_call(classdb, "class_get_integer_constant", [gdname, enum_item_name])
+            enum_items_cooked[str(enum_item_name)] = enum_item_value
+        attrs[str(enum_name)] = Enum(str(enum_name), enum_items_cooked)
 
     cdef object klass = type(name, bases, attrs)
 

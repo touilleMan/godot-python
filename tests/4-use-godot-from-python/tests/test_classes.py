@@ -1,5 +1,6 @@
+from enum import Enum
 import clodotest
-from clodotest import assert_eq, assert_isinstance
+from clodotest import assert_eq, assert_isinstance, assert_issubclass
 
 import godot
 
@@ -58,3 +59,34 @@ def test_create_non_refcounted_object():
 
     finally:
         node.free()
+
+
+def test_method():
+    clodotest.skip("TODO")
+
+
+def test_property():
+    clodotest.skip("TODO")
+
+
+def test_signal():
+    clodotest.skip("TODO")
+
+
+def test_constant():
+    from godot.classes import Node
+
+    # Defined in the class
+    assert_eq(Node.NOTIFICATION_ENTER_TREE, 10)
+    # Defined in the parent
+    assert_eq(Node.NOTIFICATION_PREDELETE, 1)
+
+
+def test_enum():
+    from godot.classes import Node
+
+    # Defined in the class
+    assert_issubclass(Node.ProcessMode, Enum)
+    assert_eq(Node.ProcessMode.PROCESS_MODE_WHEN_PAUSED.value, 2)
+    # Defined in the parent
+    assert_eq(Node.ConnectFlags.CONNECT_ONE_SHOT.value, 4)
