@@ -119,32 +119,30 @@ cdef class PythonResourceFormatLoader:
         cdef PythonScript script
         cdef gd_string_t gd_source
         cdef gd_string_t gd_script_path
-        cdef object source_code
+        cdef GDString source_code
 
         # Create a new PythonScript instance
         script = PythonScript()
 
         # Try to load the source code from file
-        try:
-            with open(py_original_path, 'r', encoding='utf-8') as f:
-                source_code = f.read()
-
-            # Set the source code on the script
-            gd_source = gd_string_from_unchecked_pystr(source_code)
-            script._set_source_code(gd_source)
-            gd_string_del(&gd_source)
-
-            # Set the script path
-            gd_script_path = gd_string_from_unchecked_pystr(py_original_path)
-            script._set_path(gd_script_path)
-            gd_string_del(&gd_script_path)
-
-            # Return the script as a variant
-            ret = gd_object_into_variant(script._gd_ptr)
-
-        except Exception as e:
+        from godot.classes import FileAccess
+        # TODO: use `path` directly !
+        cdef object file = FileAccess.open(GDString(py_path), FileAccess.ModeFlags.READ.value)
+        if file is None:
+            spy_log(f"Failed to load Python script {py_original_path}: cannot open file {path}")
             # If file loading fails, return the nil variant (already initialized)
-            spy_log(f"Failed to load Python script {py_original_path}: {e}")
+            return ret
+        # TODO: what happen if the text is not UTF8 ?
+        source_code = file.get_as_text()
+
+        # Set the source code on the script
+        script._set_source_code(source_code._gd_data)
+
+        # Set the script path
+        script._set_path(original_path)
+
+        # Return the script as a variant
+        ret = gd_object_into_variant(script._gd_ptr)
 
         return ret
 
