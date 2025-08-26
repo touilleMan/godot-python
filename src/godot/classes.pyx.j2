@@ -33,6 +33,12 @@ cdef class BaseGDObject:
     def __repr__(self):
         return f"<{type(self).__name__} wrapper on 0x{<size_t>self._gd_ptr:x}>"
 
+    def __eq__(self, object other):
+        try:
+            return self._gd_ptr == (<BaseGDObject?>other)._gd_ptr
+        except TypeError:
+            return NotImplemented
+
     def _set_gd_ptr(self, ptr: int):
         # /!\ doing `<gd_object_t>ptr` would return the address of
         # the PyObject instead of casting it value !
@@ -194,8 +200,13 @@ cdef object _load_class(str name):
 
     def _generate_method(spec, py_meth_name):
         gd_meth_name = spec["name"]
-        def _meth(self, *args):
-            return _meth_call(self, gd_meth_name, args)
+        if spec["flags"] & 32:  # METHOD_FLAG_STATIC == 32
+            @staticmethod
+            def _meth(*args):
+                return _object_call(classdb, "class_call_static", [gdname, gd_meth_name, *args])
+        else:
+            def _meth(self, *args):
+                return _meth_call(self, gd_meth_name, args)
         _meth.__name__ = py_meth_name
         return _meth
 

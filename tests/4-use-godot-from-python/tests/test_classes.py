@@ -1,8 +1,32 @@
 from enum import Enum
 import clodotest
-from clodotest import assert_eq, assert_isinstance, assert_issubclass
+from clodotest import assert_eq, assert_ne, assert_isinstance, assert_issubclass
 
 import godot
+
+
+def test_eq_operator():
+    from godot.classes import Node
+
+    node1 = Node.new()
+    node2 = Node.new()
+    try:
+        assert_ne(node1, None)
+        assert_ne(node1, 42)
+
+        node1.name = "node1"
+        node2.name = "node2"
+
+        assert_ne(node1, node2)
+        assert_eq(node1, node1)
+
+        node1.add_child(node2)
+        node2b = node1.get_child(0)
+        assert_eq(node2, node2b)
+
+    finally:
+        node2.free()
+        node1.free()
 
 
 def test_bad_meth_to_create_non_refcounted_object():
@@ -61,11 +85,120 @@ def test_create_non_refcounted_object():
         node.free()
 
 
-def test_method():
-    clodotest.skip("TODO")
+@clodotest.parametrize(
+    "kind",
+    [
+        "normal_with_return_value",
+        "normal_with_param",
+        "normal_with_named_param",
+        "inherited",
+        "const",
+        "virtual",
+        "static",
+        "vararg",
+    ],
+)
+def test_method(kind: str):
+    from godot.classes import Node, JSON
+
+    node = Node.new()
+    try:
+        match kind:
+            case "normal_with_return_value":
+                assert_isinstance(node.get_tree_string(), godot.GDString)
+                assert_eq(node.find_child("dummy"), None)  # Return None or `Node` instance
+                node2 = Node.new()
+                try:
+                    node2.name = "child"
+                    node.add_child(node2)
+                    assert_eq(node.get_child(0), node2)
+                finally:
+                    node2.free()
+
+            case "normal_with_param":
+                assert_isinstance(node.is_ancestor_of(node), bool)
+
+            case "normal_with_named_param":
+                clodotest.skip(reason="TODO: named param not supported yet")
+                assert_isinstance(node.is_ancestor_of(node=node), bool)
+
+            case "inherited":
+                # `get_class` is defined in `Object`
+                assert_isinstance(node.get_class(), godot.GDString)
+
+            case "const":
+                assert_isinstance(node.can_process(), bool)
+
+            case "virtual":
+                clodotest.skip(reason="TODO: find a virtual method overwritten by a subclass ?")
+
+            case "static":
+                assert_isinstance(JSON.stringify(42), godot.GDString)
+
+            case "vararg":
+                assert_isinstance(node.call("is_ancestor_of", node), bool)
+
+            case unknown:
+                assert False, unknown
+
+    finally:
+        node.free()
 
 
-def test_property():
+@clodotest.parametrize(
+    "kind",
+    [
+        "scalar",
+        "enum",
+        "class",
+    ],
+)
+def test_property(kind: str):
+    from godot.classes import Node
+
+    node = Node.new()
+    try:
+        match kind:
+            case "scalar":
+                assert_eq(node.name, godot.StringName(""))
+
+                node.name = godot.StringName("foo")
+                assert_eq(node.name, godot.StringName("foo"))
+
+                node.name = "bar"
+                assert_eq(node.name, godot.StringName("bar"))
+
+            case "enum":
+                clodotest.skip(
+                    reason="TODO: enum currently return `int` instead of `Enum` instance"
+                )
+                assert_eq(
+                    node.physics_interpolation_mode,
+                    node.PhysicsInterpolationMode.PHYSICS_INTERPOLATION_MODE_INHERIT,
+                )
+                node.physics_interpolation_mode = (
+                    node.PhysicsInterpolationMode.PHYSICS_INTERPOLATION_MODE_ON
+                )
+                assert_eq(
+                    node.physics_interpolation_mode,
+                    node.PhysicsInterpolationMode.PHYSICS_INTERPOLATION_MODE_ON,
+                )
+
+            case "class":
+                node2 = Node.new()
+                assert_eq(node2.owner, None)
+                try:
+                    node.add_child(node2)
+                    assert_eq(node2.owner, None)
+                    node2.owner = node
+                    assert_eq(node2.owner, node)
+                finally:
+                    node2.free()
+
+            case unknown:
+                assert False, unknown
+    finally:
+        node.free()
     clodotest.skip("TODO")
 
 

@@ -16,14 +16,20 @@ cdef class BaseGDObject:
     @staticmethod
     cdef inline object cast_from_variant(const gd_variant_t *gdvar):
         cdef gd_object_t obj = gdapi.gd_object_from_variant(gdvar)
+        if obj == NULL:
+            return None
         cdef object class_name = _object_call(obj, "get_class", [])
-        cdef object klass = _load_class(class_name)
+        # TODO: Kind of wasteful to have to convert Godot string here...
+        cdef object klass = _load_class(str(class_name))
         return klass._from_ptr(<size_t>obj)
 
     @staticmethod
     cdef inline object cast_from_object(gd_object_t obj):
+        if obj == NULL:
+            return None
         cdef object class_name = _object_call(obj, "get_class", [])
-        cdef object klass = _load_class(class_name)
+        # TODO: Kind of wasteful to have to convert Godot string here...
+        cdef object klass = _load_class(str(class_name))
         return klass._from_ptr(<size_t>obj)
 
 {#
