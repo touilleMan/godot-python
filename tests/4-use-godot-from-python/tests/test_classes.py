@@ -202,8 +202,22 @@ def test_property(kind: str):
     clodotest.skip("TODO")
 
 
+@clodotest.xfail(reason="TODO: Signal constructor from object + signal name is not implemented")
 def test_signal():
-    clodotest.skip("TODO")
+    from godot.classes import Node
+
+    node = Node.new()
+    node2 = Node.new()
+    try:
+        assert_isinstance(node.ready, godot.Signal)
+        assert_eq(node.ready, node.ready)
+        assert_ne(node.ready, node.replacing_by)
+
+        # TODO: Connect a callable and emit the signal
+
+    finally:
+        node2.free()
+        node.free()
 
 
 def test_constant():

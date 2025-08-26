@@ -219,15 +219,16 @@ cdef object _load_class(str name):
     attrs.pop("free", None)
 
     def _generate_property(spec):
-        propname = spec["name"]
+        prop_name = spec["name"]
+        prop_name_py = str(prop_name)
         @property
         def _property(self):
-            return _property_getter(self, propname)
+            return _property_getter(self, prop_name)
         @_property.setter
         def _property(self, value):
-            _property_setter(self, propname, value)
-        _property.fget.__name__ = str(spec["name"])
-        _property.fset.__name__ = str(spec["name"])
+            _property_setter(self, prop_name, value)
+        _property.fget.__name__ = prop_name_py
+        _property.fset.__name__ = prop_name_py
         return _property
 
     properties = _object_call(classdb, "class_get_property_list", [gdname])
@@ -235,7 +236,13 @@ cdef object _load_class(str name):
         attrs[str(prop["name"])] = _generate_property(prop)
 
     signals = _object_call(classdb, "class_get_signal_list", [gdname])
-    # TODO
+    for signal in signals:
+        signal_name = signal["name"]
+        signal_name_py = str(signal_name)
+        @property
+        def _signal(self):
+            return Signal(self, signal_name)
+        attrs[signal_name_py] = _signal
 
     constants = _object_call(classdb, "class_get_integer_constant_list", [gdname, True])
     for constant_name in constants:

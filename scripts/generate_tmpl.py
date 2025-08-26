@@ -73,6 +73,7 @@ GODOT_BUILTINS_SAMPLE = {
     "Dictionary",
     "PackedStringArray",
     "Callable",
+    "Signal",
 }
 
 
