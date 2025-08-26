@@ -245,6 +245,11 @@ def assert_eq(got: Any, expected: Any) -> None:
         raise AssertionError(f"Expected {expected!r}, got {got!r}")
 
 
+def assert_ne(got: Any, expected_different: Any) -> None:
+    if got == expected_different:
+        raise AssertionError(f"Expected different than {expected_different!r}")
+
+
 def assert_is(got: Any, expected: Any) -> None:
     if got is expected:
         raise AssertionError(f"Expected {expected!r}, got {got!r}")
