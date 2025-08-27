@@ -248,6 +248,8 @@ class BuiltinTypeSpec(TypeSpec):
     def all_nested_scalar_members(self) -> Generator[str]:
         def _recursive_members(parent: BuiltinTypeSpec) -> Generator[str]:
             for member in parent.members:
+                if not member.is_in_struct:
+                    continue
                 member_type = member.type.resolve()
                 if isinstance(member_type, BuiltinTypeSpec):
                     yield from (f"{member.name}.{sn}" for sn in _recursive_members(member_type))
