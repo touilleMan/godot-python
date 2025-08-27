@@ -128,6 +128,7 @@ shared_library(
     'builtins',
     cbuiltins,
     c_args: builtins_c_args,
+    gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: builtins_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
@@ -189,6 +190,7 @@ shared_library(
     'classes',
     cclasses,
     c_args: classes_c_args,
+    gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: classes_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,

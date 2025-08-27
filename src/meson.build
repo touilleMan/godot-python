@@ -286,6 +286,7 @@ lib_pythonscript = shared_library(
     'pythonscript',
     ['pythonscript.c', c_pythonscript_gdextension_ptrs, c_pythonscript],
     c_args: lib__pythonscript_c_args,
+    gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
     dependencies: [dep_godot, dep_python],
     install_rpath: lib_pythonscript_rpath,  # To find libpython
     install: true,

@@ -8,17 +8,22 @@ from .gdextension_interface cimport *
 
 
 cdef extern from * nogil:
-    # Global variables defined in `pythonscript_gdextension_ptrs.c`
-    # Given `libpythonscript.so` is responsible for initializing the Python
-    # interpreter, we are guanteed `pythonscript_gdapi` symbol is always
-    # resolved and set to a non-null value \o/
     """
     #include <godot/gdextension_interface.h>
     #ifdef _WIN32
     # define DLL_IMPORT __declspec(dllimport)
     #else
-    # define DLL_IMPORT
+    # define DLL_IMPORT __attribute__((visibility("default")))
     #endif
+    """
+
+
+cdef extern from * nogil:
+    # Global variables defined in `pythonscript_gdextension_ptrs.c`
+    # Given `libpythonscript.so` is responsible for initializing the Python
+    # interpreter, we are guanteed `pythonscript_gdapi` symbol is always
+    # resolved and set to a non-null value \o/
+    """
     DLL_IMPORT extern GDExtensionInterfaceGetProcAddress pythonscript_gdptr_get_proc_address;
     DLL_IMPORT extern GDExtensionClassLibraryPtr pythonscript_gdptr_library;
     """
@@ -28,12 +33,6 @@ cdef extern from * nogil:
 
 cdef extern from * nogil:
     """
-    #include <godot/gdextension_interface.h>
-    #ifdef _WIN32
-    # define DLL_IMPORT __declspec(dllimport)
-    #else
-    # define DLL_IMPORT
-    #endif
     DLL_IMPORT extern void (*pythonscript_gdptr_get_godot_version)(GDExtensionGodotVersion *r_godot_version);
     DLL_IMPORT extern void *(*pythonscript_gdptr_mem_alloc)(size_t p_bytes);
     DLL_IMPORT extern void *(*pythonscript_gdptr_mem_realloc)(void *p_ptr, size_t p_bytes);
@@ -343,12 +342,6 @@ cdef extern from * nogil:
 # Godot variant from/into Python object conversions
 cdef extern from * nogil:
     """
-    #include <godot/gdextension_interface.h>
-    #ifdef _WIN32
-    # define DLL_IMPORT __declspec(dllimport)
-    #else
-    # define DLL_IMPORT
-    #endif
     DLL_IMPORT extern GDExtensionTypeFromVariantConstructorFunc pythonscript_gdptr_object_from_variant;
     DLL_IMPORT extern GDExtensionVariantFromTypeConstructorFunc pythonscript_gdptr_object_into_variant;
     DLL_IMPORT extern GDExtensionTypeFromVariantConstructorFunc pythonscript_gdptr_bool_from_variant;
@@ -373,12 +366,6 @@ cdef extern from * nogil:
 # {{ builtin.original_name }}
 cdef extern from * nogil:
     """
-    #include <godot/gdextension_interface.h>
-    #ifdef _WIN32
-    # define DLL_IMPORT __declspec(dllimport)
-    #else
-    # define DLL_IMPORT
-    #endif
 {%   for c in builtin.constructors %}
     DLL_IMPORT extern GDExtensionPtrConstructor pythonscript_gdptr_{{ builtin.snake_name }}_constructor_{{ c.index }};
 {%   endfor %}
@@ -443,12 +430,6 @@ cdef extern from * nogil:
 # Utility functions
 cdef extern from * nogil:
     """
-    #include <godot/gdextension_interface.h>
-    #ifdef _WIN32
-    # define DLL_IMPORT __declspec(dllimport)
-    #else
-    # define DLL_IMPORT
-    #endif
 {% for utility in api.utility_functions %}
     DLL_IMPORT extern GDExtensionPtrUtilityFunction pythonscript_gdptr_utility_{{ utility.original_name }};
 {% endfor %}
