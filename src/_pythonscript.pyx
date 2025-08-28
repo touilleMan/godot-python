@@ -12,7 +12,7 @@ from godot.hazmat.gdapi cimport *
 from godot.hazmat.extension_class cimport *
 from godot.hazmat cimport gdptrs
 from godot.builtins cimport *
-from godot.classes cimport _load_class, _load_singleton, _cleanup_loaded_classes_and_singletons
+from godot.classes cimport _load_class, _load_singleton, _cleanup_loaded_classes_and_singletons, BaseGDObject
 
 include "_pythonscript_editor.pxi"
 include "_pythonscript_extension_class_language.pxi"
@@ -147,12 +147,12 @@ cdef void _unregister_pythonscript_classes():
 
 cdef void _customize_config():
     import sys
-    ProjectSettings = _load_singleton("ProjectSettings")
-    OS = _load_singleton("OS")
+    cdef BaseGDObject ProjectSettings = <BaseGDObject>_load_singleton("ProjectSettings")
+    cdef BaseGDObject OS = <BaseGDObject>_load_singleton("OS")
 
     # Provide argv arguments
 
-    args = OS.get_cmdline_args()
+    cdef PackedStringArray args = <PackedStringArray?>OS.get_cmdline_args()
     sys.argv = ["godot"]
     # TODO: iteration on `PackedStringArray` not supported yet !
     for i in range(args.size()):
@@ -178,12 +178,13 @@ cdef void _customize_config():
 cdef object _initialize_callback = None
 cdef object _initialize_callback_hook(int p_level):
     global _initialize_callback
+    cdef GDString config
 
     if _initialize_callback is None:
-        config = _setup_config_entry("python/initialize_callback", "")
-
-        if not isinstance(config, GDString):
-            raise ValueError("Invalid value for config `python/initialize_callback`: expected a string in format `<module>:<function>`")
+        try:
+            config = <GDString?>_setup_config_entry("python/initialize_callback", "")
+        except TypeError as exc:
+            raise ValueError("Invalid value for config `python/initialize_callback`: expected a string in format `<module>:<function>`") from exc
 
         if config.is_empty():
             _initialize_callback = lambda _level: None  # Dummy callback
@@ -213,12 +214,13 @@ cdef object _initialize_callback_hook(int p_level):
 cdef object _deinitialize_callback = None
 cdef object _deinitialize_callback_hook(int p_level):
     global _deinitialize_callback
+    cdef GDString config
 
     if _deinitialize_callback is None:
-        config = _setup_config_entry("python/deinitialize_callback", "")
-
-        if not isinstance(config, GDString):
-            raise ValueError("Invalid value for config `python/deinitialize_callback`: expected a string in format `<module>:<function>`")
+        try:
+            config = <GDString?>_setup_config_entry("python/deinitialize_callback", "")
+        except TypeError as exc:
+            raise ValueError("Invalid value for config `python/deinitialize_callback`: expected a string in format `<module>:<function>`") from exc
 
         if config.is_empty():
             _deinitialize_callback = lambda _level: None  # Dummy callback

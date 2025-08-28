@@ -108,9 +108,9 @@ cdef void _cleanup_loaded_classes_and_singletons():
     _loaded_classes.clear()
 
 
-cpdef object _load_singleton(str name):
+cpdef BaseGDObject _load_singleton(str name):
     try:
-        return _loaded_singletons[name]
+        return <BaseGDObject>_loaded_singletons[name]
     except KeyError:
         pass
 
@@ -123,7 +123,7 @@ cpdef object _load_singleton(str name):
     if gdobj == NULL:
         raise RuntimeError(f"Singleton `{name}` doesn't exist in Godot !")
 
-    cdef object singleton = cls._from_ptr(<size_t>gdobj)
+    cdef BaseGDObject singleton = <BaseGDObject>cls._from_ptr(<size_t>gdobj)
 
     _loaded_singletons[name] = singleton
     return singleton
@@ -134,16 +134,16 @@ cpdef object _load_singleton(str name):
 {% endfor %} #}
 
 
-cdef inline object _property_getter(object obj, object name):
-    return _object_call((<BaseGDObject>obj)._gd_ptr, "get", [name])
+cdef inline object _property_getter(BaseGDObject obj, object name):
+    return _object_call(obj._gd_ptr, "get", [name])
 
 
-cdef inline void _property_setter(object obj, object name, object value):
-    _object_call((<BaseGDObject>obj)._gd_ptr, "set", [name, value])
+cdef inline void _property_setter(BaseGDObject obj, object name, object value):
+    _object_call(obj._gd_ptr, "set", [name, value])
 
 
-cdef inline object _meth_call(object obj, object name, object args):
-    return _object_call((<BaseGDObject>obj)._gd_ptr, "call", [name, *args])
+cdef inline object _meth_call(BaseGDObject obj, object name, object args):
+    return _object_call(obj._gd_ptr, "call", [name, *args])
 
 
 cdef object _load_class(str name):
