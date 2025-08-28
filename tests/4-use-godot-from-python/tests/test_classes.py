@@ -127,7 +127,7 @@ def test_method(kind: str):
                 assert_isinstance(node.get_class(), godot.GDString)
 
             case "const":
-                assert_isinstance(node.can_process(), bool)
+                assert_isinstance(node.get_children(), godot.GDArray)
 
             case "virtual":
                 clodotest.skip(reason="TODO: find a virtual method overwritten by a subclass ?")
