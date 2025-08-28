@@ -1,5 +1,6 @@
 {% from 'builtins_pyx/constructor.pyx.j2' import render_constructors with context %}
 {% from 'builtins_pyx/member.pyx.j2' import render_member with context %}
+{% from 'builtins_pyx/method.pyx.j2' import render_method with context %}
 {% from 'builtins_pyx/operator.pyx.j2' import render_operators with context %}
 
 
@@ -59,6 +60,14 @@ cdef class {{ builtin.cy_type }}:
 {% endif %}
 {% for m in builtin.members %}
     {{ render_member(builtin, m) | indent }}
+{% endfor %}
+
+{% if builtin.methods %}
+    # Methods
+
+{% endif %}
+{% for m in builtin.methods %}
+    {{ render_method(builtin, m) | indent }}
 {% endfor %}
 
 {% if builtin.enums %}

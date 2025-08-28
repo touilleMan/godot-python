@@ -1,7 +1,5 @@
 {% macro render_method_signature(m) -%}
-{# TODO: hack given currently event `GDObject` is lazy binded, so we have to use its parent `BaseGDObject` here... #}
-{%- if m.return_type.is_nil -%}void{%- else -%}{{ "BaseGDObject" if m.return_type.cy_type == "GDObject" else m.return_type.cy_type }}{%- endif %}
- {{ "_" + m.name if m.is_static else m.name }}(
+{{ "_" + m.name if m.is_static else m.name }}(
 {%- if not m.is_static -%}self, {% endif -%}
 {%- for arg in m.arguments -%}
 {%- if arg.type.original_name in ("String", "StringName", "NodePath") -%}
@@ -10,7 +8,7 @@ object {{ arg.name }}
 {{ arg.type.cy_type }} {{ arg.name }}
 {%- endif -%}
 {%- if arg.default_value -%}
-={{ arg.default_value.cy_value or "None" }}
+={{ arg.default_value.py_value or "None" }}
 {%- endif -%}
 {%- if not loop.last -%}, {% endif -%}
 {%- endfor -%})
@@ -24,14 +22,8 @@ those methods to any .pyx that include `builtins.pxd`.
 Worst: this would also make the compiler consider all `gdptr_*` symbols in
 `builtins.so` are used, hence bloating the final shared library of tons of useless
 symbols to resolve at runtime !
-
-So instead we define each method twice:
-- Once here that will become a static inline C function. Hence the compiler
-  will add it to any module importing `builtins.pxd` and discard automatically
-  if it is in fact never used in the module.
-- Once in `builtins.pyx` as a regular Python method.
 #}
-cdef inline {{ render_method_signature(m) }}:
+def {{ render_method_signature(m) }}:
 {%   if m.contains_unsuported_types %}
     raise NotImplementedError  # TODO
 {%   else %}
@@ -92,11 +84,9 @@ cdef inline {{ render_method_signature(m) }}:
 {% endmacro %}
 
 
-{# TODO: Cython currently doesn't support cpdef with @staticmethod #}
-{# see: https://github.com/cython/cython/issues/3327 #}
 {% macro _render_static_method(builtin, m) %}
 @staticmethod
-cdef inline {{ render_method_signature(m) }}:
+def {{ render_method_signature(m) }}:
 {%   if m.contains_unsuported_types %}
     raise NotImplementedError  # TODO
 {%   else %}
