@@ -1,38 +1,19 @@
 from godot.classes cimport ScriptLanguageExtensionProfilingInfo
 
 
-cdef gd_string_name_t gdname_scriptlanguageextension
-cdef gd_string_name_t gdname_pythonscriptlanguage
-
-
 debug_spy = True
 cdef spy_log(msg: str):
     if debug_spy:
         print(f"[DEBUG] {msg}", flush=True)
 
 
+# godot_extension: generate_module_code()
+
+
 # godot_extension: class(parent="ScriptLanguageExtension")
 @cython.final
 cdef class PythonScriptLanguage:
     cdef gd_object_t _gd_ptr
-
-    def __cinit__(self):
-        self._gd_ptr = gdptrs.gdptr_classdb_construct_object(&gdname_scriptlanguageextension)
-        gdptrs.gdptr_object_set_instance(self._gd_ptr, &gdname_pythonscriptlanguage, <PyObject*>self)
-
-    # godot_extension: register_class_hook()
-    @staticmethod
-    cdef inline void _register_class_hook():
-        global gdname_scriptlanguageextension, gdname_pythonscriptlanguage
-        gdname_scriptlanguageextension = gd_string_name_from_unchecked_pystr("ScriptLanguageExtension")
-        gdname_pythonscriptlanguage = gd_string_name_from_unchecked_pystr("PythonScriptLanguage")
-
-    # godot_extension: unregister_class_hook()
-    @staticmethod
-    cdef inline void _unregister_class_hook():
-        global gdname_scriptlanguageextension, gdname_pythonscriptlanguage
-        gd_string_name_del(&gdname_scriptlanguageextension)
-        gd_string_name_del(&gdname_pythonscriptlanguage)
 
     # godot_extension: generate_code()
 

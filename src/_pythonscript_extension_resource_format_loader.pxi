@@ -1,33 +1,17 @@
 from godot.classes cimport ScriptLanguageExtensionProfilingInfo
 
 
-cdef gd_string_name_t gdname_resourceformatloader
-cdef gd_string_name_t gdname_pythonresourceformatloader
 cdef object RESOURCE_TYPE_NAME = "PythonScript"
 cdef object RESOURCE_EXTENSIONS = ("py", "pyc", "pyo", "pyd")
+
+
+# godot_extension: generate_module_code()
+
 
 # godot_extension: class(parent="ResourceFormatLoader")
 @cython.final
 cdef class PythonResourceFormatLoader:
     cdef gd_object_t _gd_ptr
-
-    def __cinit__(self):
-        self._gd_ptr = gdptrs.gdptr_classdb_construct_object(&gdname_resourceformatloader)
-        gdptrs.gdptr_object_set_instance(self._gd_ptr, &gdname_pythonresourceformatloader, <PyObject*>self)
-
-    # godot_extension: register_class_hook()
-    @staticmethod
-    cdef inline void _register_class_hook():
-        global gdname_resourceformatloader, gdname_pythonresourceformatloader
-        gdname_resourceformatloader = gd_string_name_from_unchecked_pystr("ResourceFormatLoader")
-        gdname_pythonresourceformatloader = gd_string_name_from_unchecked_pystr("PythonResourceFormatLoader")
-
-    # godot_extension: unregister_class_hook()
-    @staticmethod
-    cdef inline void _unregister_class_hook():
-        global gdname_resourceformatloader, gdname_pythonresourceformatloader
-        gd_string_name_del(&gdname_resourceformatloader)
-        gd_string_name_del(&gdname_pythonresourceformatloader)
 
     # godot_extension: generate_code()
 
@@ -136,10 +120,6 @@ cdef class PythonResourceFormatLoader:
 
         script = PythonScript()
         script._set_source_code(source_code.into_gd_data())
-        # Since we pass the script instance to Godot as a variant, we must manually
-        # increase refcount for the Python object `script` so that it is not deleted
-        # upon leaving this function.
-        Py_INCREF(script)
         # `into_gd_data()` steal the underlying Godot string, so `source_code`
         # ends up containing nothing and we'd rather destroy it early to avoid
         # confusions.
@@ -147,6 +127,9 @@ cdef class PythonResourceFormatLoader:
 
         # Return the script as a variant
 
+        # Note it's okay to steal `scripts`'s Godot object pointer like this,
+        # since the Godot object itself controls the lifetime of `script` (i.e.
+        # `script` is not going to be destroyed when this function finishes).
         ret = gd_object_into_variant(script._gd_ptr)
         return ret
 
