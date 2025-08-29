@@ -136,6 +136,10 @@ cdef class PythonResourceFormatLoader:
 
         script = PythonScript()
         script._set_source_code(source_code.into_gd_data())
+        # Since we pass the script instance to Godot as a variant, we must manually
+        # increase refcount for the Python object `script` so that it is not deleted
+        # upon leaving this function.
+        Py_INCREF(script)
         # `into_gd_data()` steal the underlying Godot string, so `source_code`
         # ends up containing nothing and we'd rather destroy it early to avoid
         # confusions.
