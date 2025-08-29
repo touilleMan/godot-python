@@ -1,25 +1,3 @@
-{% macro render_default_constructor(builtin) -%}
-{% if builtin.is_transparent_builtin %}
-
-def __cinit__(self,
-{%- for m in builtin.c_struct_members -%}
-{{ m.type.cy_type }} {{ m.name }}{{ "" if m.type.is_scalar else " not None" }}={{ "0" if m.type.is_scalar else "{}()".format(m.type.cy_type) }},
-{%- endfor -%}
-):
-{%   for m in builtin.c_struct_members %}
-    self._gd_data.{{ m.name }} = {{ m.name }}{{ "" if m.type.is_scalar else "._gd_data" }}
-{%   endfor %}
-
-{% else %}
-
-{# Opaque builtin, initialize with default empty constructor #}
-def __cinit__(self):
-    self._gd_data = gdapi.gd_{{ builtin.snake_name }}_new()
-
-{% endif %}
-{%- endmacro %}
-
-
 {% macro render_constructors(builtin) -%}
 
 {# Custom constructors first #}
@@ -186,7 +164,36 @@ def __cinit__(self, iterable=_SENTINEL):
 
 {% else %}
 {# Default constructor #}
-{{ render_default_constructor(builtin) }}
+{%   if builtin.is_transparent_builtin %}
+
+def __cinit__(self,
+{%-    for m in builtin.c_struct_members -%}
+{{ m.type.cy_type }} {{ m.name }}{{ "" if m.type.is_scalar else " not None" }}={{ "0" if m.type.is_scalar else "{}()".format(m.type.cy_type) }},
+{%-    endfor -%}
+):
+{%     for m in builtin.c_struct_members %}
+    self._gd_data.{{ m.name }} = {{ m.name }}{{ "" if m.type.is_scalar else "._gd_data" }}
+{%     endfor %}
+
+{%   else %}
+
+{# Opaque builtin, initialize with default empty constructor #}
+def __cinit__(self):
+    self._gd_data = gdapi.gd_{{ builtin.snake_name }}_new()
+
+{%   endif %}
 {% endif %}
 
+{# Clone constructor #}
+# In Godot you would do `var v2 = {{ builtin.py_type }}(v1)`, but it's more Pythonic
+# to provide a clone method and do `v2 = v1.clone()`
+def clone(self):
+    cdef {{ builtin.cy_type }} obj = {{ builtin.cy_type }}.__new__({{ builtin.cy_type }})
+{% if builtin.is_transparent_builtin %}
+    obj._gd_data = self._gd_data
+{% else %}
+{# Opaque builtin, must retrieve and use the clone constructor function #}
+    obj._gd_data = gdapi.gd_{{ builtin.get_constructor_from(builtin.original_name).c_name }}(&self._gd_data)
+{% endif %}
+    return obj
 {% endmacro %}
