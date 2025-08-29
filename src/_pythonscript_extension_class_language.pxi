@@ -179,7 +179,8 @@ cdef class PythonScriptLanguage:
 
     # godot_extension: method(virtual=True)
     cdef void _frame(self):
-        # TODO
+        # This function is a noop, but must still be provided since Godot calls
+        # it for every frame no matter what
         # spy_log(f"CALLED PythonScriptLanguage::_frame()")
         pass
 
