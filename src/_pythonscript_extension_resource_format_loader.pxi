@@ -115,16 +115,13 @@ cdef class PythonResourceFormatLoader:
         gd_string_del(&original_path)
         spy_log(f"CALLED PythonResourceFormatLoader::_load(path={py_path!r}, original_path={py_original_path!r}, use_sub_threads={use_sub_threads}, cache_mode={cache_mode})")
 
-        # Declare variables
         cdef PythonScript script
         cdef gd_string_t gd_source
         cdef gd_string_t gd_script_path
         cdef GDString source_code
 
-        # Create a new PythonScript instance
-        script = PythonScript()
+        # Load the source code from file
 
-        # Try to load the source code from file
         from godot.classes import FileAccess
         # TODO: use `path` directly !
         cdef object file = FileAccess.open(GDString(py_path), FileAccess.ModeFlags.READ.value)
@@ -135,15 +132,18 @@ cdef class PythonResourceFormatLoader:
         # TODO: what happen if the text is not UTF8 ?
         source_code = file.get_as_text()
 
-        # Set the source code on the script
-        script._set_source_code(source_code._gd_data)
+        # Create a new script instance from the source code
 
-        # Set the script path
-        script._set_path(original_path)
+        script = PythonScript()
+        script._set_source_code(source_code.into_gd_data())
+        # `into_gd_data()` steal the underlying Godot string, so `source_code`
+        # ends up containing nothing and we'd rather destroy it early to avoid
+        # confusions.
+        del source_code
 
         # Return the script as a variant
-        ret = gd_object_into_variant(script._gd_ptr)
 
+        ret = gd_object_into_variant(script._gd_ptr)
         return ret
 
     # Don't overload `_rename_dependencies()` to mimic GDScript
