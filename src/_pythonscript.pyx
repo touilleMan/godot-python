@@ -110,7 +110,7 @@ cdef public void _pythonscript_free_instance(
 #     # print('OS.get_environment("foo")', OS.get_environment("foo"))
 
 
-# Early init: register `PythonScriptLanguage` & `PythonScript` classes in Godot
+# Early init: register `PythonScriptLanguage`/`PythonScript`/`PythonResourceFormat(Saver|Loader)` classes in Godot
 cdef void _register_pythonscript_classes():
     # Here is how we register Python into Godot:
     #
@@ -292,7 +292,7 @@ cdef void _register_pythonscript_language():
     )
     if ret != Error.OK:
         _pythons_script_language = None
-        print("Failed to register Python into Godot: `Engine::register_script_language` returned error {ret}", flush=True)
+        print(f"Failed to register Python into Godot: `Engine::register_script_language` returned error {ret}", flush=True)
         return
 
 
