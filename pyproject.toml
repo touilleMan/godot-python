@@ -4,7 +4,7 @@
 name = "godot-python-dev"
 version = "0.1.0"  # Dummy version, actual one is defined in `meson.build`
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "meson~=1.5",
     # Colorama is needed only on Windows by autopxd2->click->pip-tools
@@ -26,4 +26,4 @@ dev = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py313"

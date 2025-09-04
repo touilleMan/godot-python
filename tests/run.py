@@ -90,9 +90,16 @@ def install_distrib(build_dir: Path, distrib_subdir: str) -> Path:
         ).returncode
         != 0
     ):
-        cmd = [str(python_path), "-m", "ensurepip"]
-        print(" ".join(cmd), flush=True)
-        subprocess.check_call(cmd)
+        if (
+            subprocess.run(
+                [str(python_path), "-m", "pip", "--version"], capture_output=True
+            ).returncode
+            != 0
+        ):
+            cmd = [str(python_path), "-m", "ensurepip"]
+            print(" ".join(cmd), flush=True)
+            subprocess.check_call(cmd)
+
         cmd = [str(python_path), "-m", "pip", "install", "cython"]
         print(" ".join(cmd), flush=True)
         subprocess.check_call(cmd)
@@ -341,7 +348,9 @@ if __name__ == "__main__":
     else:
         tests_dirs = collect_tests()
 
-    build_dir = args.build_dir.resolve()
+    build_dir: Path = args.build_dir.resolve()
+    if not build_dir.exists():
+        raise SystemExit(f"Build dir `{build_dir}` doesn't exist, forgot to run `./make.py init` ?")
 
     godot_binary_path = fetch_godot_binary_if_needed(build_dir, args.godot_binary)
 

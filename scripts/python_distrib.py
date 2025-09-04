@@ -13,53 +13,11 @@ import zstandard
 
 PREBUILDS_BASE_URL = "https://github.com/astral-sh/python-build-standalone/releases/download"
 PLATFORM_TO_PREBUILDS = {
-    "3.13.2": {
-        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.13.2+20250205-x86_64_v3-unknown-linux-gnu-pgo+lto-full.tar.zst",
-        "windows-x86": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.13.2+20250205-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.13.2+20250205-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.13.2+20250205-x86_64-apple-darwin-pgo+lto-full.tar.zst",
-    },
-    "3.12.9": {
-        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.12.9+20250205-x86_64_v3-unknown-linux-gnu-pgo+lto-full.tar.zst",
-        "windows-x86": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.12.9+20250205-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.12.9+20250205-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20250205/cpython-3.12.9+20250205-x86_64-apple-darwin-pgo+lto-full.tar.zst",
-    },
-    "3.12.4": {
-        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20240713/cpython-3.12.4+20240713-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
-        "windows-x86": f"{PREBUILDS_BASE_URL}/20240713/cpython-3.12.4+20240713-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20240713/cpython-3.12.4+20240713-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20240713/cpython-3.12.4+20240713-x86_64-apple-darwin-pgo+lto-full.tar.zst",
-    },
-    "3.12.0": {
-        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.12.0+20231002-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
-        "windows-x86": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.12.0+20231002-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.12.0+20231002-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.12.0+20231002-x86_64-apple-darwin-pgo+lto-full.tar.zst",
-    },
-    "3.11.6": {
-        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.11.6+20231002-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
-        "windows-x86": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.11.6+20231002-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.11.6+20231002-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20231002/cpython-3.11.6+20231002-x86_64-apple-darwin-pgo+lto-full.tar.zst",
-    },
-    "3.11.5": {
-        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20230826/cpython-3.11.5+20230826-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
-        "windows-x86": f"{PREBUILDS_BASE_URL}/20230826/cpython-3.11.5+20230826-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20230826/cpython-3.11.5+20230826-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20230826/cpython-3.11.5+20230826-x86_64-apple-darwin-pgo+lto-full.tar.zst",
-    },
-    "3.11.3": {
-        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20230507/cpython-3.11.3+20230507-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
-        "windows-x86": f"{PREBUILDS_BASE_URL}/20230507/cpython-3.11.3+20230507-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20230507/cpython-3.11.3+20230507-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20230507/cpython-3.11.3+20230507-x86_64-apple-darwin-pgo+lto-full.tar.zst",
-    },
-    "3.11.1": {
-        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20230116/cpython-3.11.1+20230116-x86_64-unknown-linux-gnu-pgo+lto-full.tar.zst",
-        "windows-x86": f"{PREBUILDS_BASE_URL}/20230116/cpython-3.11.1+20230116-i686-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20230116/cpython-3.11.1+20230116-x86_64-pc-windows-msvc-shared-pgo-full.tar.zst",
-        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20230116/cpython-3.11.1+20230116-x86_64-apple-darwin-pgo+lto-full.tar.zst",
+    "3.13.7": {
+        "linux-x86_64": f"{PREBUILDS_BASE_URL}/20250902/cpython-3.13.7+20250902-x86_64_v3-unknown-linux-gnu-pgo+lto-full.tar.zst",
+        "windows-x86": f"{PREBUILDS_BASE_URL}/20250902/cpython-3.13.7+20250902-i686-pc-windows-msvc-install_only.tar.gz",
+        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20250902/cpython-3.13.7+20250902-x86_64-pc-windows-msvc-install_only.tar.gz",
+        "macos-x86_64": f"{PREBUILDS_BASE_URL}/20250902/cpython-3.13.7+20250902-x86_64-apple-darwin-pgo+lto-full.tar.zst",
     },
 }
 
@@ -126,7 +84,15 @@ def load_config(prebuild_dir: Path) -> dict:
     return conf
 
 
-def install_linux(conf: dict, build_dir: Path, prebuild_dir: Path, compressed_stdlib: bool) -> None:
+def install_linux(
+    conf: dict,
+    build_dir: Path,
+    prebuild_dir: Path,
+    compressed_stdlib: bool,
+    without_pyc: bool,
+    without_ensurepip: bool,
+    without_pip: bool,
+) -> None:
     print(f"Create clean distribution {build_dir}...")
 
     # See https://gregoryszorc.com/docs/python-build-standalone/main/running.html#obtaining-distributions
@@ -153,32 +119,51 @@ def install_linux(conf: dict, build_dir: Path, prebuild_dir: Path, compressed_st
     shutil.rmtree(stdlib_path / "test")
 
     # Also remove __pycache__ & .pyc stuff
-    for pycache in stdlib_path.glob("**/__pycache__"):
-        shutil.rmtree(pycache)
+    if without_pyc:
+        for pycache in stdlib_path.glob("**/__pycache__"):
+            shutil.rmtree(pycache)
 
-    # Make sure site-packages is empty to avoid including pip (ensurepip should be used instead)
-    shutil.rmtree(stdlib_path / "site-packages")
+    site_packages_path = stdlib_path / "site-packages"
+
+    if without_ensurepip:
+        shutil.rmtree(stdlib_path / "ensurepip")
+
+    if without_pip:
+        shutil.rmtree(site_packages_path / "pip")
+        shutil.rmtree(next(site_packages_path.glob("pip-*.dist-info")))
 
     # Zip the stdlib to save plenty of space \o/
     if compressed_stdlib:
         tmp_stdlib_path = build_dir / f"lib/tmp_python{major}.{minor}"
         shutil.move(stdlib_path, tmp_stdlib_path)
+
+        # `site-packages` is not stdlib, so it must be excluded from the archive
         stdlib_path.mkdir()
+        shutil.move(tmp_stdlib_path / site_packages_path.name, site_packages_path)
+
         shutil.move(tmp_stdlib_path / "lib-dynload", stdlib_path / "lib-dynload")
         shutil.make_archive(
             base_name=str(build_dir / f"lib/python{major}{minor}"),
-            format="zip",
+            format="zip",  # TODO: use zstd in Python 3.14+
             root_dir=tmp_stdlib_path,
         )
         shutil.rmtree(tmp_stdlib_path)
         # Oddly enough, os.py must be present (even if empty !) otherwise
-        # Python failed to find it home...
+        # Python fails to find its home...
         (stdlib_path / "os.py").touch()
 
-    (stdlib_path / "site-packages").mkdir()
+    assert site_packages_path.exists()
 
 
-def install_macos(conf: dict, build_dir: Path, prebuild_dir: Path, compressed_stdlib: bool) -> None:
+def install_macos(
+    conf: dict,
+    build_dir: Path,
+    prebuild_dir: Path,
+    compressed_stdlib: bool,
+    without_pyc: bool,
+    without_ensurepip: bool,
+    without_pip: bool,
+) -> None:
     print(f"Create clean distribution {build_dir}...")
 
     if conf["target_triple"] not in ("x86_64-apple-darwin",):
@@ -204,33 +189,50 @@ def install_macos(conf: dict, build_dir: Path, prebuild_dir: Path, compressed_st
     shutil.rmtree(stdlib_path / "test")
 
     # Also remove __pycache__ & .pyc stuff
-    for pycache in stdlib_path.glob("**/__pycache__"):
-        shutil.rmtree(pycache)
+    if without_pyc:
+        for pycache in stdlib_path.glob("**/__pycache__"):
+            shutil.rmtree(pycache)
 
-    # Make sure site-packages is empty to avoid including pip (ensurepip should be used instead)
-    shutil.rmtree(stdlib_path / "site-packages")
+    site_packages_path = stdlib_path / "site-packages"
+
+    if without_ensurepip:
+        shutil.rmtree(stdlib_path / "ensurepip")
+
+    if without_pip:
+        shutil.rmtree(site_packages_path / "pip")
+        shutil.rmtree(next(site_packages_path.glob("pip-*.dist-info")))
 
     # Zip the stdlib to save plenty of space \o/
     if compressed_stdlib:
         tmp_stdlib_path = build_dir / f"lib/tmp_python{major}.{minor}"
         shutil.move(stdlib_path, tmp_stdlib_path)
+
+        # `site-packages` is not stdlib, so it must be excluded from the archive
         stdlib_path.mkdir()
+        shutil.move(tmp_stdlib_path / site_packages_path.name, site_packages_path)
+
         shutil.move(tmp_stdlib_path / "lib-dynload", stdlib_path / "lib-dynload")
         shutil.make_archive(
             base_name=str(build_dir / f"lib/python{major}{minor}"),
-            format="zip",
+            format="zip",  # TODO: use zstd in Python 3.14+
             root_dir=tmp_stdlib_path,
         )
         shutil.rmtree(tmp_stdlib_path)
         # Oddly enough, os.py must be present (even if empty !) otherwise
-        # Python failed to find it home...
+        # Python fails to find its home...
         (stdlib_path / "os.py").touch()
 
-    (stdlib_path / "site-packages").mkdir()
+    assert site_packages_path.exists()
 
 
 def install_windows(
-    conf: dict, build_dir: Path, prebuild_dir: Path, compressed_stdlib: bool
+    conf: dict,
+    build_dir: Path,
+    prebuild_dir: Path,
+    compressed_stdlib: bool,
+    without_pyc: bool,
+    without_ensurepip: bool,
+    without_pip: bool,
 ) -> None:
     print(f"Create clean distribution {build_dir}...")
 
@@ -251,30 +253,50 @@ def install_windows(
         pdbfile.unlink()
 
     # Also remove __pycache__ & .pyc stuff
-    for pycache in stdlib_path.glob("**/__pycache__"):
-        shutil.rmtree(pycache)
+    if without_pyc:
+        for pycache in stdlib_path.glob("**/__pycache__"):
+            shutil.rmtree(pycache)
 
-    # Make sure site-packages is empty to avoid including pip (ensurepip should be used instead)
-    shutil.rmtree(stdlib_path / "site-packages")
+    site_packages_path = stdlib_path / "site-packages"
+
+    if without_ensurepip:
+        shutil.rmtree(stdlib_path / "ensurepip")
+
+    if without_pip:
+        shutil.rmtree(site_packages_path / "pip")
+        shutil.rmtree(next(site_packages_path.glob("pip-*.dist-info")))
 
     # Zip the stdlib to save plenty of space \o/
     if compressed_stdlib:
+        tmp_stdlib_path = build_dir / f"lib/tmp_python{major}.{minor}"
+        shutil.move(stdlib_path, tmp_stdlib_path)
+
+        # `site-packages` is not stdlib, so it must be excluded from the archive
+        stdlib_path.mkdir()
+        shutil.move(tmp_stdlib_path / site_packages_path.name, site_packages_path)
+
+        shutil.move(tmp_stdlib_path / "lib-dynload", stdlib_path / "lib-dynload")
         shutil.make_archive(
             base_name=str(build_dir / f"python{major}{minor}"),
-            format="zip",
-            root_dir=stdlib_path,
+            format="zip",  # TODO: use zstd in Python 3.14+
+            root_dir=tmp_stdlib_path,
         )
-        shutil.rmtree(stdlib_path)
-        stdlib_path.mkdir()
+        shutil.rmtree(tmp_stdlib_path)
         # Oddly enough, os.py must be present (even if empty !) otherwise
-        # Python failed to find it home...
+        # Python fails to find its home...
         (stdlib_path / "os.py").touch()
 
-    (stdlib_path / "site-packages").mkdir()
+    assert site_packages_path.exists()
 
 
 def build_distrib(
-    build_dir: Path, prebuild_dir: Path, compressed_stdlib: bool, force: bool
+    build_dir: Path,
+    prebuild_dir: Path,
+    force: bool,
+    compressed_stdlib: bool,
+    without_pyc: bool,
+    without_ensurepip: bool,
+    without_pip: bool,
 ) -> None:
     # Config may have change, so must clean previous prebuild
     if build_dir.exists():
@@ -289,21 +311,30 @@ def build_distrib(
             conf=config,
             build_dir=build_dir,
             prebuild_dir=prebuild_dir,
-            compressed_stdlib=args.compressed_stdlib,
+            compressed_stdlib=compressed_stdlib,
+            without_pyc=without_pyc,
+            without_ensurepip=without_ensurepip,
+            without_pip=without_pip,
         )
     elif config["python_platform_tag"].startswith("win"):
         install_windows(
             conf=config,
             build_dir=build_dir,
             prebuild_dir=prebuild_dir,
-            compressed_stdlib=args.compressed_stdlib,
+            compressed_stdlib=compressed_stdlib,
+            without_pyc=without_pyc,
+            without_ensurepip=without_ensurepip,
+            without_pip=without_pip,
         )
     elif config["python_platform_tag"].startswith("macosx"):
         install_macos(
             conf=config,
             build_dir=build_dir,
             prebuild_dir=prebuild_dir,
-            compressed_stdlib=args.compressed_stdlib,
+            compressed_stdlib=compressed_stdlib,
+            without_pyc=without_pyc,
+            without_ensurepip=without_ensurepip,
+            without_pip=without_pip,
         )
     else:
         raise RuntimeError(f"Unsupported Python platform tag: `{config['python_platform_tag']}`")
@@ -317,6 +348,9 @@ if __name__ == "__main__":
     parser.add_argument("--cpython-version", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--compressed-stdlib", action="store_true")
+    parser.add_argument("--without-pyc", action="store_true")
+    parser.add_argument("--without-ensurepip", action="store_true")
+    parser.add_argument("--without-pip", action="store_true")
 
     args = parser.parse_args()
 
@@ -337,6 +371,9 @@ if __name__ == "__main__":
         build_distrib(
             prebuild_dir=prebuild_dir,
             build_dir=build_dir,
-            compressed_stdlib=args.compressed_stdlib,
             force=args.force,
+            compressed_stdlib=args.compressed_stdlib,
+            without_pyc=args.without_pyc,
+            without_ensurepip=args.without_ensurepip,
+            without_pip=args.without_pip,
         )

@@ -144,6 +144,9 @@ run_command(
     '--cpython-version', get_option('cpython_distrib_version'),
     '--output-dir', meson.current_build_dir(),
     '--compressed-stdlib',
+    '--without-pyc',
+    # '--without-ensurepip',
+    # '--without-pip',
     capture: true,
     check: true,
 )
