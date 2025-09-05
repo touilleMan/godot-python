@@ -1,5 +1,7 @@
 # ⚠️ Here we define a Python project that will be used to build Godot-Python,
 # run the tests etc.
+# Hence those dependencies are not going to be part of the final distribution
+# used by end-users.
 [project]
 name = "godot-python-dev"
 version = "0.1.0"  # Dummy version, actual one is defined in `meson.build`
