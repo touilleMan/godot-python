@@ -262,7 +262,7 @@ def extract_classes_from_code(raw_code_lines: list[str]) -> ModuleDef:
             current_class.inject_code_at_line = i
 
         elif pragma == INJECT_MODULE_CODE_PRAGMA:
-            if current_class is not None:
+            if not line.startswith("#"):  # Detect unexpected indentation
                 raise RuntimeError(
                     f"Line {i + 1}: `# godot_extension: {pragma}` must be at module level (i.e. not within class/function definition)"
                 )
