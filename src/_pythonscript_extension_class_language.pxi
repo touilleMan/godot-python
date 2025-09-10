@@ -531,6 +531,6 @@ class {py_class_name}({py_base_class_name}):
         gd_string_del(&path)
         return ret
 
-    # godot_extension: generate_code()
+    # godot_extension: generate_class_code()
 
 # godot_extension: generate_module_code()

@@ -132,6 +132,7 @@ cdef class PythonResourceFormatLoader:
 
     # Don't overload `_recognize_path()`, so Godot instead relies on `_get_recognized_extensions()` & `_get_resource_type()`
 
-    # godot_extension: generate_code()
+    # godot_extension: generate_class_code()
+
 
 # godot_extension: generate_module_code()

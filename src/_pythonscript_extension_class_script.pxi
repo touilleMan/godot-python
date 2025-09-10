@@ -270,6 +270,6 @@ cdef class PythonScript:
         # For now, just acknowledge the call
         pass
 
-    # godot_extension: generate_code()
+    # godot_extension: generate_class_code()
 
 # godot_extension: generate_module_code()

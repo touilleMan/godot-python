@@ -80,6 +80,6 @@ cdef class PythonResourceFormatSaver:
 
     # Don't overload `_set_uid()` to mimic GDScript
 
-    # godot_extension: generate_code()
+    # godot_extension: generate_class_code()
 
 # godot_extension: generate_module_code()
