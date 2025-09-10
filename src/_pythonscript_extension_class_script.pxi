@@ -1,12 +1,7 @@
-# godot_extension: generate_module_code()
-
-
 # godot_extension: class(parent="ScriptExtension")
 @cython.final
 cdef class PythonScript:
     cdef gd_object_t _gd_ptr
-
-    # godot_extension: generate_code()
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _can_instantiate(self):
@@ -274,3 +269,7 @@ cdef class PythonScript:
         # This could parse decorators like @export in the Python code
         # For now, just acknowledge the call
         pass
+
+    # godot_extension: generate_code()
+
+# godot_extension: generate_module_code()

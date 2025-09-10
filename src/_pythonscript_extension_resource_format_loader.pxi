@@ -5,15 +5,10 @@ cdef object RESOURCE_TYPE_NAME = "PythonScript"
 cdef object RESOURCE_EXTENSIONS = ("py", "pyc", "pyo", "pyd")
 
 
-# godot_extension: generate_module_code()
-
-
 # godot_extension: class(parent="ResourceFormatLoader")
 @cython.final
 cdef class PythonResourceFormatLoader:
     cdef gd_object_t _gd_ptr
-
-    # godot_extension: generate_code()
 
     # Don't overload `_exists()`, so Godot default to checking file existence
 
@@ -136,3 +131,7 @@ cdef class PythonResourceFormatLoader:
     # Don't overload `_rename_dependencies()` to mimic GDScript
 
     # Don't overload `_recognize_path()`, so Godot instead relies on `_get_recognized_extensions()` & `_get_resource_type()`
+
+    # godot_extension: generate_code()
+
+# godot_extension: generate_module_code()

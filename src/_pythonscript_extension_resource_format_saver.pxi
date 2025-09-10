@@ -1,15 +1,10 @@
 from godot.classes cimport ScriptLanguageExtensionProfilingInfo
 
 
-# godot_extension: generate_module_code()
-
-
 # godot_extension: class(parent="ResourceFormatSaver")
 @cython.final
 cdef class PythonResourceFormatSaver:
     cdef gd_object_t _gd_ptr
-
-    # godot_extension: generate_code()
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_packed_string_array_t _get_recognized_extensions(self, gd_object_t resource):
@@ -84,3 +79,7 @@ cdef class PythonResourceFormatSaver:
             return Error.ERR_FILE_CANT_OPEN
 
     # Don't overload `_set_uid()` to mimic GDScript
+
+    # godot_extension: generate_code()
+
+# godot_extension: generate_module_code()

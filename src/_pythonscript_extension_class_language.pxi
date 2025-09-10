@@ -7,15 +7,10 @@ cdef spy_log(msg: str):
         print(f"[DEBUG] {msg}", flush=True)
 
 
-# godot_extension: generate_module_code()
-
-
 # godot_extension: class(parent="ScriptLanguageExtension")
 @cython.final
 cdef class PythonScriptLanguage:
     cdef gd_object_t _gd_ptr
-
-    # godot_extension: generate_code()
 
     # godot_extension: method(virtual=True)
     cdef void _add_global_constant(self, gd_string_name_t name, gd_variant_t value):
@@ -535,3 +530,7 @@ class {py_class_name}({py_base_class_name}):
         cdef gd_string_t ret = gd_string_from_pybytes(b"")
         gd_string_del(&path)
         return ret
+
+    # godot_extension: generate_code()
+
+# godot_extension: generate_module_code()
