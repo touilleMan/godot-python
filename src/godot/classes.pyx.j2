@@ -41,7 +41,7 @@ cdef class BaseGDObject:
 
     def _set_gd_ptr(self, ptr: int):
         # /!\ doing `<gd_object_t>ptr` would return the address of
-        # the PyObject instead of casting it value !
+        # the PyObject instead of casting its value !
         self._gd_ptr = <gd_object_t><size_t>ptr
         # Note if the object is a reference, we stole it from the caller given we
         # don't call `Reference.reference` here
