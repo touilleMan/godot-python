@@ -46,7 +46,7 @@ cdef class PythonScriptLanguage:
     # godot_extension: method(virtual=True, const=True)
     cdef gd_dictionary_t _complete_code(self, gd_string_t code, gd_string_t path, gd_object_t owner):
         # TODO
-        spy_log(f"CALLED PythonScriptLanguage::_complete_code(code={gdapi.gd_string_to_pystr(&code)!r}, path={gdapi.gd_string_to_pystr(&path)!r}, owner=<object>)")
+        spy_log(f"CALLED PythonScriptLanguage::_complete_code(code={gdapi.gd_string_to_pystr(&code)!r}, path={gdapi.gd_string_to_pystr(&path)!r}, owner=<object 0x{<size_t>owner:x}>)")
         cdef gd_dictionary_t ret = gd_dictionary_new()
         gd_string_del(&code)
         gd_string_del(&path)
@@ -360,7 +360,7 @@ cdef class PythonScriptLanguage:
     # godot_extension: method(virtual=True, const=True)
     cdef gd_dictionary_t _lookup_code(self, gd_string_t code, gd_string_t symbol, gd_string_t path, gd_object_t owner):
         # TODO
-        spy_log(f"CALLED PythonScriptLanguage::_lookup_code(code={gdapi.gd_string_to_pystr(&code)!r}, symbol={gdapi.gd_string_to_pystr(&symbol)!r}, path={gdapi.gd_string_to_pystr(&path)!r}, owner=<object>)")
+        spy_log(f"CALLED PythonScriptLanguage::_lookup_code(code={gdapi.gd_string_to_pystr(&code)!r}, symbol={gdapi.gd_string_to_pystr(&symbol)!r}, path={gdapi.gd_string_to_pystr(&path)!r}, owner=<object 0x{<size_t>owner:x}>)")
         gd_string_del(&code)
         gd_string_del(&symbol)
         gd_string_del(&path)
@@ -426,7 +426,7 @@ class {py_class_name}({py_base_class_name}):
     # godot_extension: method(virtual=True)
     cdef gd_int_t _open_in_external_editor(self, gd_object_t script, gd_int_t line, gd_int_t column):
         # TODO
-        spy_log(f"CALLED PythonScriptLanguage::_open_in_external_editor(script=<object>, line={line}, column={column})")
+        spy_log(f"CALLED PythonScriptLanguage::_open_in_external_editor(script=<object 0x{<size_t>script:x}>, line={line}, column={column})")
         # `gd_object_t` doesn't need to be be deleted (is it just a raw pointer)
         return Error.ERR_UNAVAILABLE
 
@@ -484,7 +484,7 @@ class {py_class_name}({py_base_class_name}):
     # godot_extension: method(virtual=True)
     cdef void _reload_tool_script(self, gd_object_t script, gd_bool_t soft_reload):
         # TODO
-        spy_log(f"CALLED PythonScriptLanguage::_reload_tool_script(script=<object>, soft_reload={soft_reload})")
+        spy_log(f"CALLED PythonScriptLanguage::_reload_tool_script(script=<object 0x{<size_t>script:x}>, soft_reload={soft_reload})")
         # `gd_object_t` doesn't need to be be deleted (is it just a raw pointer)
 
     # godot_extension: method(virtual=True)

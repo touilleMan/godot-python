@@ -178,14 +178,14 @@ cdef class PythonScript:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _inherits_script(self, gd_object_t script):
-        spy_log(f"CALLED PythonScript::_inherits_script(script=<object>)")
+        spy_log(f"CALLED PythonScript::_inherits_script(script=<object 0x{<size_t>script:x}>)")
         # TODO
         # `gd_object_t` doesn't need to be be deleted (is it just a raw pointer)
         return False
 
     # godot_extension: method(virtual=True, const=True)
     cdef void* _instance_create(self, gd_object_t for_object):
-        spy_log(f"CALLED PythonScript::_instance_create(for_object=<object>)")
+        spy_log(f"CALLED PythonScript::_instance_create(for_object=<object 0x{<size_t>for_object:x}>)")
         # For now, return NULL as we don't have full instance support yet
         # This would need to create a Python script instance that can
         # execute the script code and handle Godot callbacks
@@ -194,7 +194,7 @@ cdef class PythonScript:
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _instance_has(self, gd_object_t object):
-        spy_log(f"CALLED PythonScript::_instance_has(object=<object>)")
+        spy_log(f"CALLED PythonScript::_instance_has(object=<object 0x{<size_t>object:x}>)")
         # Check if the given object is an instance of this script
         # For now return False as we don't track instances yet
         # `gd_object_t` doesn't need to be be deleted (is it just a raw pointer)
@@ -241,7 +241,7 @@ cdef class PythonScript:
 
     # godot_extension: method(virtual=True, const=True)
     cdef void* _placeholder_instance_create(self, gd_object_t for_object):
-        spy_log(f"CALLED PythonScript::_placeholder_instance_create(for_object=<object>)")
+        spy_log(f"CALLED PythonScript::_placeholder_instance_create(for_object=<object 0x{<size_t>for_object:x}>)")
         # Create a placeholder instance for when the script is not ready
         # `gd_object_t` doesn't need to be be deleted (is it just a raw pointer)
         return NULL
