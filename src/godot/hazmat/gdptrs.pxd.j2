@@ -72,11 +72,13 @@ cdef extern from * nogil:
     DLL_IMPORT extern GDExtensionBool (*pythonscript_gdptr_variant_has_method)(GDExtensionConstVariantPtr p_self, GDExtensionConstStringNamePtr p_method);
     DLL_IMPORT extern GDExtensionBool (*pythonscript_gdptr_variant_has_member)(GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_member);
     DLL_IMPORT extern GDExtensionBool (*pythonscript_gdptr_variant_has_key)(GDExtensionConstVariantPtr p_self, GDExtensionConstVariantPtr p_key, GDExtensionBool *r_valid);
+    DLL_IMPORT extern GDObjectInstanceID (*pythonscript_gdptr_variant_get_object_instance_id)(GDExtensionConstVariantPtr p_self);
     DLL_IMPORT extern void (*pythonscript_gdptr_variant_get_type_name)(GDExtensionVariantType p_type, GDExtensionUninitializedStringPtr r_name);
     DLL_IMPORT extern GDExtensionBool (*pythonscript_gdptr_variant_can_convert)(GDExtensionVariantType p_from, GDExtensionVariantType p_to);
     DLL_IMPORT extern GDExtensionBool (*pythonscript_gdptr_variant_can_convert_strict)(GDExtensionVariantType p_from, GDExtensionVariantType p_to);
     DLL_IMPORT extern GDExtensionVariantFromTypeConstructorFunc (*pythonscript_gdptr_get_variant_from_type_constructor)(GDExtensionVariantType p_type);
     DLL_IMPORT extern GDExtensionTypeFromVariantConstructorFunc (*pythonscript_gdptr_get_variant_to_type_constructor)(GDExtensionVariantType p_type);
+    DLL_IMPORT extern GDExtensionVariantGetInternalPtrFunc (*pythonscript_gdptr_variant_get_ptr_internal_getter)(GDExtensionVariantType p_type);
     DLL_IMPORT extern GDExtensionPtrOperatorEvaluator (*pythonscript_gdptr_variant_get_ptr_operator_evaluator)(GDExtensionVariantOperator p_operator, GDExtensionVariantType p_type_a, GDExtensionVariantType p_type_b);
     DLL_IMPORT extern GDExtensionPtrBuiltInMethod (*pythonscript_gdptr_variant_get_ptr_builtin_method)(GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_method, GDExtensionInt p_hash);
     DLL_IMPORT extern GDExtensionPtrConstructor (*pythonscript_gdptr_variant_get_ptr_constructor)(GDExtensionVariantType p_type, int32_t p_constructor);
@@ -98,7 +100,9 @@ cdef extern from * nogil:
     DLL_IMPORT extern void (*pythonscript_gdptr_string_new_with_wide_chars)(GDExtensionUninitializedStringPtr r_dest, const wchar_t *p_contents);
     DLL_IMPORT extern void (*pythonscript_gdptr_string_new_with_latin1_chars_and_len)(GDExtensionUninitializedStringPtr r_dest, const char *p_contents, GDExtensionInt p_size);
     DLL_IMPORT extern void (*pythonscript_gdptr_string_new_with_utf8_chars_and_len)(GDExtensionUninitializedStringPtr r_dest, const char *p_contents, GDExtensionInt p_size);
+    DLL_IMPORT extern GDExtensionInt (*pythonscript_gdptr_string_new_with_utf8_chars_and_len2)(GDExtensionUninitializedStringPtr r_dest, const char *p_contents, GDExtensionInt p_size);
     DLL_IMPORT extern void (*pythonscript_gdptr_string_new_with_utf16_chars_and_len)(GDExtensionUninitializedStringPtr r_dest, const char16_t *p_contents, GDExtensionInt p_char_count);
+    DLL_IMPORT extern GDExtensionInt (*pythonscript_gdptr_string_new_with_utf16_chars_and_len2)(GDExtensionUninitializedStringPtr r_dest, const char16_t *p_contents, GDExtensionInt p_char_count, GDExtensionBool p_default_little_endian);
     DLL_IMPORT extern void (*pythonscript_gdptr_string_new_with_utf32_chars_and_len)(GDExtensionUninitializedStringPtr r_dest, const char32_t *p_contents, GDExtensionInt p_char_count);
     DLL_IMPORT extern void (*pythonscript_gdptr_string_new_with_wide_chars_and_len)(GDExtensionUninitializedStringPtr r_dest, const wchar_t *p_contents, GDExtensionInt p_char_count);
     DLL_IMPORT extern GDExtensionInt (*pythonscript_gdptr_string_to_latin1_chars)(GDExtensionConstStringPtr p_self, char *r_text, GDExtensionInt p_max_write_length);
@@ -120,12 +124,12 @@ cdef extern from * nogil:
     DLL_IMPORT extern GDExtensionInt (*pythonscript_gdptr_xml_parser_open_buffer)(GDExtensionObjectPtr p_instance, const uint8_t *p_buffer, size_t p_size);
     DLL_IMPORT extern void (*pythonscript_gdptr_file_access_store_buffer)(GDExtensionObjectPtr p_instance, const uint8_t *p_src, uint64_t p_length);
     DLL_IMPORT extern uint64_t (*pythonscript_gdptr_file_access_get_buffer)(GDExtensionConstObjectPtr p_instance, uint8_t *p_dst, uint64_t p_length);
+    DLL_IMPORT extern uint8_t *(*pythonscript_gdptr_image_ptrw)(GDExtensionObjectPtr p_instance);
+    DLL_IMPORT extern const uint8_t *(*pythonscript_gdptr_image_ptr)(GDExtensionObjectPtr p_instance);
     DLL_IMPORT extern int64_t (*pythonscript_gdptr_worker_thread_pool_add_native_group_task)(GDExtensionObjectPtr p_instance, void (*p_func)(void *, uint32_t), void *p_userdata, int p_elements, int p_tasks, GDExtensionBool p_high_priority, GDExtensionConstStringPtr p_description);
     DLL_IMPORT extern int64_t (*pythonscript_gdptr_worker_thread_pool_add_native_task)(GDExtensionObjectPtr p_instance, void (*p_func)(void *), void *p_userdata, GDExtensionBool p_high_priority, GDExtensionConstStringPtr p_description);
     DLL_IMPORT extern uint8_t *(*pythonscript_gdptr_packed_byte_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
     DLL_IMPORT extern const uint8_t *(*pythonscript_gdptr_packed_byte_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
-    DLL_IMPORT extern GDExtensionTypePtr (*pythonscript_gdptr_packed_color_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
-    DLL_IMPORT extern GDExtensionTypePtr (*pythonscript_gdptr_packed_color_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
     DLL_IMPORT extern float *(*pythonscript_gdptr_packed_float32_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
     DLL_IMPORT extern const float *(*pythonscript_gdptr_packed_float32_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
     DLL_IMPORT extern double *(*pythonscript_gdptr_packed_float64_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
@@ -140,12 +144,17 @@ cdef extern from * nogil:
     DLL_IMPORT extern GDExtensionTypePtr (*pythonscript_gdptr_packed_vector2_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
     DLL_IMPORT extern GDExtensionTypePtr (*pythonscript_gdptr_packed_vector3_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
     DLL_IMPORT extern GDExtensionTypePtr (*pythonscript_gdptr_packed_vector3_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
+    DLL_IMPORT extern GDExtensionTypePtr (*pythonscript_gdptr_packed_vector4_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
+    DLL_IMPORT extern GDExtensionTypePtr (*pythonscript_gdptr_packed_vector4_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
+    DLL_IMPORT extern GDExtensionTypePtr (*pythonscript_gdptr_packed_color_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
+    DLL_IMPORT extern GDExtensionTypePtr (*pythonscript_gdptr_packed_color_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
     DLL_IMPORT extern GDExtensionVariantPtr (*pythonscript_gdptr_array_operator_index)(GDExtensionTypePtr p_self, GDExtensionInt p_index);
     DLL_IMPORT extern GDExtensionVariantPtr (*pythonscript_gdptr_array_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionInt p_index);
     DLL_IMPORT extern void (*pythonscript_gdptr_array_ref)(GDExtensionTypePtr p_self, GDExtensionConstTypePtr p_from);
     DLL_IMPORT extern void (*pythonscript_gdptr_array_set_typed)(GDExtensionTypePtr p_self, GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstVariantPtr p_script);
     DLL_IMPORT extern GDExtensionVariantPtr (*pythonscript_gdptr_dictionary_operator_index)(GDExtensionTypePtr p_self, GDExtensionConstVariantPtr p_key);
     DLL_IMPORT extern GDExtensionVariantPtr (*pythonscript_gdptr_dictionary_operator_index_const)(GDExtensionConstTypePtr p_self, GDExtensionConstVariantPtr p_key);
+    DLL_IMPORT extern void (*pythonscript_gdptr_dictionary_set_typed)(GDExtensionTypePtr p_self, GDExtensionVariantType p_key_type, GDExtensionConstStringNamePtr p_key_class_name, GDExtensionConstVariantPtr p_key_script, GDExtensionVariantType p_value_type, GDExtensionConstStringNamePtr p_value_class_name, GDExtensionConstVariantPtr p_value_script);
     DLL_IMPORT extern void (*pythonscript_gdptr_object_method_bind_call)(GDExtensionMethodBindPtr p_method_bind, GDExtensionObjectPtr p_instance, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_arg_count, GDExtensionUninitializedVariantPtr r_ret, GDExtensionCallError *r_error);
     DLL_IMPORT extern void (*pythonscript_gdptr_object_method_bind_ptrcall)(GDExtensionMethodBindPtr p_method_bind, GDExtensionObjectPtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret);
     DLL_IMPORT extern void (*pythonscript_gdptr_object_destroy)(GDExtensionObjectPtr p_o);
@@ -158,21 +167,29 @@ cdef extern from * nogil:
     DLL_IMPORT extern GDExtensionObjectPtr (*pythonscript_gdptr_object_cast_to)(GDExtensionConstObjectPtr p_object, void *p_class_tag);
     DLL_IMPORT extern GDExtensionObjectPtr (*pythonscript_gdptr_object_get_instance_from_id)(GDObjectInstanceID p_instance_id);
     DLL_IMPORT extern GDObjectInstanceID (*pythonscript_gdptr_object_get_instance_id)(GDExtensionConstObjectPtr p_object);
+    DLL_IMPORT extern GDExtensionBool (*pythonscript_gdptr_object_has_script_method)(GDExtensionConstObjectPtr p_object, GDExtensionConstStringNamePtr p_method);
+    DLL_IMPORT extern void (*pythonscript_gdptr_object_call_script_method)(GDExtensionObjectPtr p_object, GDExtensionConstStringNamePtr p_method, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_argument_count, GDExtensionUninitializedVariantPtr r_return, GDExtensionCallError *r_error);
     DLL_IMPORT extern GDExtensionObjectPtr (*pythonscript_gdptr_ref_get_object)(GDExtensionConstRefPtr p_ref);
     DLL_IMPORT extern void (*pythonscript_gdptr_ref_set_object)(GDExtensionRefPtr p_ref, GDExtensionObjectPtr p_object);
     DLL_IMPORT extern GDExtensionScriptInstancePtr (*pythonscript_gdptr_script_instance_create)(const GDExtensionScriptInstanceInfo *p_info, GDExtensionScriptInstanceDataPtr p_instance_data);
     DLL_IMPORT extern GDExtensionScriptInstancePtr (*pythonscript_gdptr_script_instance_create2)(const GDExtensionScriptInstanceInfo2 *p_info, GDExtensionScriptInstanceDataPtr p_instance_data);
+    DLL_IMPORT extern GDExtensionScriptInstancePtr (*pythonscript_gdptr_script_instance_create3)(const GDExtensionScriptInstanceInfo3 *p_info, GDExtensionScriptInstanceDataPtr p_instance_data);
     DLL_IMPORT extern GDExtensionScriptInstancePtr (*pythonscript_gdptr_placeholder_script_instance_create)(GDExtensionObjectPtr p_language, GDExtensionObjectPtr p_script, GDExtensionObjectPtr p_owner);
     DLL_IMPORT extern void (*pythonscript_gdptr_placeholder_script_instance_update)(GDExtensionScriptInstancePtr p_placeholder, GDExtensionConstTypePtr p_properties, GDExtensionConstTypePtr p_values);
     DLL_IMPORT extern GDExtensionScriptInstanceDataPtr (*pythonscript_gdptr_object_get_script_instance)(GDExtensionConstObjectPtr p_object, GDExtensionObjectPtr p_language);
     DLL_IMPORT extern void (*pythonscript_gdptr_callable_custom_create)(GDExtensionUninitializedTypePtr r_callable, GDExtensionCallableCustomInfo *p_callable_custom_info);
+    DLL_IMPORT extern void (*pythonscript_gdptr_callable_custom_create2)(GDExtensionUninitializedTypePtr r_callable, GDExtensionCallableCustomInfo2 *p_callable_custom_info);
     DLL_IMPORT extern void *(*pythonscript_gdptr_callable_custom_get_userdata)(GDExtensionConstTypePtr p_callable, void *p_token);
     DLL_IMPORT extern GDExtensionObjectPtr (*pythonscript_gdptr_classdb_construct_object)(GDExtensionConstStringNamePtr p_classname);
+    DLL_IMPORT extern GDExtensionObjectPtr (*pythonscript_gdptr_classdb_construct_object2)(GDExtensionConstStringNamePtr p_classname);
     DLL_IMPORT extern GDExtensionMethodBindPtr (*pythonscript_gdptr_classdb_get_method_bind)(GDExtensionConstStringNamePtr p_classname, GDExtensionConstStringNamePtr p_methodname, GDExtensionInt p_hash);
     DLL_IMPORT extern void *(*pythonscript_gdptr_classdb_get_class_tag)(GDExtensionConstStringNamePtr p_classname);
     DLL_IMPORT extern void (*pythonscript_gdptr_classdb_register_extension_class)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo *p_extension_funcs);
     DLL_IMPORT extern void (*pythonscript_gdptr_classdb_register_extension_class2)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo2 *p_extension_funcs);
+    DLL_IMPORT extern void (*pythonscript_gdptr_classdb_register_extension_class3)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo3 *p_extension_funcs);
+    DLL_IMPORT extern void (*pythonscript_gdptr_classdb_register_extension_class4)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo4 *p_extension_funcs);
     DLL_IMPORT extern void (*pythonscript_gdptr_classdb_register_extension_class_method)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, const GDExtensionClassMethodInfo *p_method_info);
+    DLL_IMPORT extern void (*pythonscript_gdptr_classdb_register_extension_class_virtual_method)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, const GDExtensionClassVirtualMethodInfo *p_method_info);
     DLL_IMPORT extern void (*pythonscript_gdptr_classdb_register_extension_class_integer_constant)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_enum_name, GDExtensionConstStringNamePtr p_constant_name, GDExtensionInt p_constant_value, GDExtensionBool p_is_bitfield);
     DLL_IMPORT extern void (*pythonscript_gdptr_classdb_register_extension_class_property)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, const GDExtensionPropertyInfo *p_info, GDExtensionConstStringNamePtr p_setter, GDExtensionConstStringNamePtr p_getter);
     DLL_IMPORT extern void (*pythonscript_gdptr_classdb_register_extension_class_property_indexed)(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, const GDExtensionPropertyInfo *p_info, GDExtensionConstStringNamePtr p_setter, GDExtensionConstStringNamePtr p_getter, GDExtensionInt p_index);
@@ -183,6 +200,8 @@ cdef extern from * nogil:
     DLL_IMPORT extern void (*pythonscript_gdptr_get_library_path)(GDExtensionClassLibraryPtr p_library, GDExtensionUninitializedStringPtr r_path);
     DLL_IMPORT extern void (*pythonscript_gdptr_editor_add_plugin)(GDExtensionConstStringNamePtr p_class_name);
     DLL_IMPORT extern void (*pythonscript_gdptr_editor_remove_plugin)(GDExtensionConstStringNamePtr p_class_name);
+    DLL_IMPORT extern void (*pythonscript_gdptr_editor_help_load_xml_from_utf8_chars)(const char *p_data);
+    DLL_IMPORT extern void (*pythonscript_gdptr_editor_help_load_xml_from_utf8_chars_and_len)(const char *p_data, GDExtensionInt p_size);
     """
 
     void (*const gdptr_get_godot_version "pythonscript_gdptr_get_godot_version")(GDExtensionGodotVersion *r_godot_version)
@@ -223,11 +242,13 @@ cdef extern from * nogil:
     GDExtensionBool (*const gdptr_variant_has_method "pythonscript_gdptr_variant_has_method")(GDExtensionConstVariantPtr p_self, GDExtensionConstStringNamePtr p_method)
     GDExtensionBool (*const gdptr_variant_has_member "pythonscript_gdptr_variant_has_member")(GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_member)
     GDExtensionBool (*const gdptr_variant_has_key "pythonscript_gdptr_variant_has_key")(GDExtensionConstVariantPtr p_self, GDExtensionConstVariantPtr p_key, GDExtensionBool *r_valid)
+    GDObjectInstanceID (*const gdptr_variant_get_object_instance_id "pythonscript_gdptr_variant_get_object_instance_id")(GDExtensionConstVariantPtr p_self)
     void (*const gdptr_variant_get_type_name "pythonscript_gdptr_variant_get_type_name")(GDExtensionVariantType p_type, GDExtensionUninitializedStringPtr r_name)
     GDExtensionBool (*const gdptr_variant_can_convert "pythonscript_gdptr_variant_can_convert")(GDExtensionVariantType p_from, GDExtensionVariantType p_to)
     GDExtensionBool (*const gdptr_variant_can_convert_strict "pythonscript_gdptr_variant_can_convert_strict")(GDExtensionVariantType p_from, GDExtensionVariantType p_to)
     GDExtensionVariantFromTypeConstructorFunc (*const gdptr_get_variant_from_type_constructor "pythonscript_gdptr_get_variant_from_type_constructor")(GDExtensionVariantType p_type)
     GDExtensionTypeFromVariantConstructorFunc (*const gdptr_get_variant_to_type_constructor "pythonscript_gdptr_get_variant_to_type_constructor")(GDExtensionVariantType p_type)
+    GDExtensionVariantGetInternalPtrFunc (*const gdptr_variant_get_ptr_internal_getter "pythonscript_gdptr_variant_get_ptr_internal_getter")(GDExtensionVariantType p_type)
     GDExtensionPtrOperatorEvaluator (*const gdptr_variant_get_ptr_operator_evaluator "pythonscript_gdptr_variant_get_ptr_operator_evaluator")(GDExtensionVariantOperator p_operator, GDExtensionVariantType p_type_a, GDExtensionVariantType p_type_b)
     GDExtensionPtrBuiltInMethod (*const gdptr_variant_get_ptr_builtin_method "pythonscript_gdptr_variant_get_ptr_builtin_method")(GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_method, GDExtensionInt p_hash)
     GDExtensionPtrConstructor (*const gdptr_variant_get_ptr_constructor "pythonscript_gdptr_variant_get_ptr_constructor")(GDExtensionVariantType p_type, int32_t p_constructor)
@@ -249,7 +270,9 @@ cdef extern from * nogil:
     void (*const gdptr_string_new_with_wide_chars "pythonscript_gdptr_string_new_with_wide_chars")(GDExtensionUninitializedStringPtr r_dest, const wchar_t *p_contents)
     void (*const gdptr_string_new_with_latin1_chars_and_len "pythonscript_gdptr_string_new_with_latin1_chars_and_len")(GDExtensionUninitializedStringPtr r_dest, const char *p_contents, GDExtensionInt p_size)
     void (*const gdptr_string_new_with_utf8_chars_and_len "pythonscript_gdptr_string_new_with_utf8_chars_and_len")(GDExtensionUninitializedStringPtr r_dest, const char *p_contents, GDExtensionInt p_size)
+    GDExtensionInt (*const gdptr_string_new_with_utf8_chars_and_len2 "pythonscript_gdptr_string_new_with_utf8_chars_and_len2")(GDExtensionUninitializedStringPtr r_dest, const char *p_contents, GDExtensionInt p_size)
     void (*const gdptr_string_new_with_utf16_chars_and_len "pythonscript_gdptr_string_new_with_utf16_chars_and_len")(GDExtensionUninitializedStringPtr r_dest, const char16_t *p_contents, GDExtensionInt p_char_count)
+    GDExtensionInt (*const gdptr_string_new_with_utf16_chars_and_len2 "pythonscript_gdptr_string_new_with_utf16_chars_and_len2")(GDExtensionUninitializedStringPtr r_dest, const char16_t *p_contents, GDExtensionInt p_char_count, GDExtensionBool p_default_little_endian)
     void (*const gdptr_string_new_with_utf32_chars_and_len "pythonscript_gdptr_string_new_with_utf32_chars_and_len")(GDExtensionUninitializedStringPtr r_dest, const char32_t *p_contents, GDExtensionInt p_char_count)
     void (*const gdptr_string_new_with_wide_chars_and_len "pythonscript_gdptr_string_new_with_wide_chars_and_len")(GDExtensionUninitializedStringPtr r_dest, const wchar_t *p_contents, GDExtensionInt p_char_count)
     GDExtensionInt (*const gdptr_string_to_latin1_chars "pythonscript_gdptr_string_to_latin1_chars")(GDExtensionConstStringPtr p_self, char *r_text, GDExtensionInt p_max_write_length)
@@ -271,12 +294,12 @@ cdef extern from * nogil:
     GDExtensionInt (*const gdptr_xml_parser_open_buffer "pythonscript_gdptr_xml_parser_open_buffer")(GDExtensionObjectPtr p_instance, const uint8_t *p_buffer, size_t p_size)
     void (*const gdptr_file_access_store_buffer "pythonscript_gdptr_file_access_store_buffer")(GDExtensionObjectPtr p_instance, const uint8_t *p_src, uint64_t p_length)
     uint64_t (*const gdptr_file_access_get_buffer "pythonscript_gdptr_file_access_get_buffer")(GDExtensionConstObjectPtr p_instance, uint8_t *p_dst, uint64_t p_length)
+    uint8_t *(*const gdptr_image_ptrw "pythonscript_gdptr_image_ptrw")(GDExtensionObjectPtr p_instance)
+    const uint8_t *(*const gdptr_image_ptr "pythonscript_gdptr_image_ptr")(GDExtensionObjectPtr p_instance)
     int64_t (*const gdptr_worker_thread_pool_add_native_group_task "pythonscript_gdptr_worker_thread_pool_add_native_group_task")(GDExtensionObjectPtr p_instance, void (*const p_func)(void *, uint32_t), void *p_userdata, int p_elements, int p_tasks, GDExtensionBool p_high_priority, GDExtensionConstStringPtr p_description)
     int64_t (*const gdptr_worker_thread_pool_add_native_task "pythonscript_gdptr_worker_thread_pool_add_native_task")(GDExtensionObjectPtr p_instance, void (*const p_func)(void *), void *p_userdata, GDExtensionBool p_high_priority, GDExtensionConstStringPtr p_description)
     uint8_t *(*const gdptr_packed_byte_array_operator_index "pythonscript_gdptr_packed_byte_array_operator_index")(GDExtensionTypePtr p_self, GDExtensionInt p_index)
     const uint8_t *(*const gdptr_packed_byte_array_operator_index_const "pythonscript_gdptr_packed_byte_array_operator_index_const")(GDExtensionConstTypePtr p_self, GDExtensionInt p_index)
-    GDExtensionTypePtr (*const gdptr_packed_color_array_operator_index "pythonscript_gdptr_packed_color_array_operator_index")(GDExtensionTypePtr p_self, GDExtensionInt p_index)
-    GDExtensionTypePtr (*const gdptr_packed_color_array_operator_index_const "pythonscript_gdptr_packed_color_array_operator_index_const")(GDExtensionConstTypePtr p_self, GDExtensionInt p_index)
     float *(*const gdptr_packed_float32_array_operator_index "pythonscript_gdptr_packed_float32_array_operator_index")(GDExtensionTypePtr p_self, GDExtensionInt p_index)
     const float *(*const gdptr_packed_float32_array_operator_index_const "pythonscript_gdptr_packed_float32_array_operator_index_const")(GDExtensionConstTypePtr p_self, GDExtensionInt p_index)
     double *(*const gdptr_packed_float64_array_operator_index "pythonscript_gdptr_packed_float64_array_operator_index")(GDExtensionTypePtr p_self, GDExtensionInt p_index)
@@ -291,12 +314,17 @@ cdef extern from * nogil:
     GDExtensionTypePtr (*const gdptr_packed_vector2_array_operator_index_const "pythonscript_gdptr_packed_vector2_array_operator_index_const")(GDExtensionConstTypePtr p_self, GDExtensionInt p_index)
     GDExtensionTypePtr (*const gdptr_packed_vector3_array_operator_index "pythonscript_gdptr_packed_vector3_array_operator_index")(GDExtensionTypePtr p_self, GDExtensionInt p_index)
     GDExtensionTypePtr (*const gdptr_packed_vector3_array_operator_index_const "pythonscript_gdptr_packed_vector3_array_operator_index_const")(GDExtensionConstTypePtr p_self, GDExtensionInt p_index)
+    GDExtensionTypePtr (*const gdptr_packed_vector4_array_operator_index "pythonscript_gdptr_packed_vector4_array_operator_index")(GDExtensionTypePtr p_self, GDExtensionInt p_index)
+    GDExtensionTypePtr (*const gdptr_packed_vector4_array_operator_index_const "pythonscript_gdptr_packed_vector4_array_operator_index_const")(GDExtensionConstTypePtr p_self, GDExtensionInt p_index)
+    GDExtensionTypePtr (*const gdptr_packed_color_array_operator_index "pythonscript_gdptr_packed_color_array_operator_index")(GDExtensionTypePtr p_self, GDExtensionInt p_index)
+    GDExtensionTypePtr (*const gdptr_packed_color_array_operator_index_const "pythonscript_gdptr_packed_color_array_operator_index_const")(GDExtensionConstTypePtr p_self, GDExtensionInt p_index)
     GDExtensionVariantPtr (*const gdptr_array_operator_index "pythonscript_gdptr_array_operator_index")(GDExtensionTypePtr p_self, GDExtensionInt p_index)
     GDExtensionVariantPtr (*const gdptr_array_operator_index_const "pythonscript_gdptr_array_operator_index_const")(GDExtensionConstTypePtr p_self, GDExtensionInt p_index)
     void (*const gdptr_array_ref "pythonscript_gdptr_array_ref")(GDExtensionTypePtr p_self, GDExtensionConstTypePtr p_from)
     void (*const gdptr_array_set_typed "pythonscript_gdptr_array_set_typed")(GDExtensionTypePtr p_self, GDExtensionVariantType p_type, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstVariantPtr p_script)
     GDExtensionVariantPtr (*const gdptr_dictionary_operator_index "pythonscript_gdptr_dictionary_operator_index")(GDExtensionTypePtr p_self, GDExtensionConstVariantPtr p_key)
     GDExtensionVariantPtr (*const gdptr_dictionary_operator_index_const "pythonscript_gdptr_dictionary_operator_index_const")(GDExtensionConstTypePtr p_self, GDExtensionConstVariantPtr p_key)
+    void (*const dictionary_set_typed "pythonscript_gdptr_dictionary_set_typed")(GDExtensionTypePtr p_self, GDExtensionVariantType p_key_type, GDExtensionConstStringNamePtr p_key_class_name, GDExtensionConstVariantPtr p_key_script, GDExtensionVariantType p_value_type, GDExtensionConstStringNamePtr p_value_class_name, GDExtensionConstVariantPtr p_value_script)
     void (*const gdptr_object_method_bind_call "pythonscript_gdptr_object_method_bind_call")(GDExtensionMethodBindPtr p_method_bind, GDExtensionObjectPtr p_instance, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_arg_count, GDExtensionUninitializedVariantPtr r_ret, GDExtensionCallError *r_error)
     void (*const gdptr_object_method_bind_ptrcall "pythonscript_gdptr_object_method_bind_ptrcall")(GDExtensionMethodBindPtr p_method_bind, GDExtensionObjectPtr p_instance, const GDExtensionConstTypePtr *p_args, GDExtensionTypePtr r_ret)
     void (*const gdptr_object_destroy "pythonscript_gdptr_object_destroy")(GDExtensionObjectPtr p_o)
@@ -309,21 +337,29 @@ cdef extern from * nogil:
     GDExtensionObjectPtr (*const gdptr_object_cast_to "pythonscript_gdptr_object_cast_to")(GDExtensionConstObjectPtr p_object, void *p_class_tag)
     GDExtensionObjectPtr (*const gdptr_object_get_instance_from_id "pythonscript_gdptr_object_get_instance_from_id")(GDObjectInstanceID p_instance_id)
     GDObjectInstanceID (*const gdptr_object_get_instance_id "pythonscript_gdptr_object_get_instance_id")(GDExtensionConstObjectPtr p_object)
+    GDExtensionBool (*const gdptr_object_has_script_method "pythonscript_gdptr_object_has_script_method")(GDExtensionConstObjectPtr p_object, GDExtensionConstStringNamePtr p_method)
+    void (*const gdptr_object_call_script_method "pythonscript_gdptr_object_call_script_method")(GDExtensionObjectPtr p_object, GDExtensionConstStringNamePtr p_method, const GDExtensionConstVariantPtr *p_args, GDExtensionInt p_argument_count, GDExtensionUninitializedVariantPtr r_return, GDExtensionCallError *r_error)
     GDExtensionObjectPtr (*const gdptr_ref_get_object "pythonscript_gdptr_ref_get_object")(GDExtensionConstRefPtr p_ref)
     void (*const gdptr_ref_set_object "pythonscript_gdptr_ref_set_object")(GDExtensionRefPtr p_ref, GDExtensionObjectPtr p_object)
     GDExtensionScriptInstancePtr (*const gdptr_script_instance_create "pythonscript_gdptr_script_instance_create")(const GDExtensionScriptInstanceInfo *p_info, GDExtensionScriptInstanceDataPtr p_instance_data)
     GDExtensionScriptInstancePtr (*const gdptr_script_instance_create2 "pythonscript_gdptr_script_instance_create2")(const GDExtensionScriptInstanceInfo2 *p_info, GDExtensionScriptInstanceDataPtr p_instance_data)
+    GDExtensionScriptInstancePtr (*const gdptr_script_instance_create3 "pythonscript_gdptr_script_instance_create3")(const GDExtensionScriptInstanceInfo3 *p_info, GDExtensionScriptInstanceDataPtr p_instance_data)
     GDExtensionScriptInstancePtr (*const gdptr_placeholder_script_instance_create "pythonscript_gdptr_placeholder_script_instance_create")(GDExtensionObjectPtr p_language, GDExtensionObjectPtr p_script, GDExtensionObjectPtr p_owner)
     void (*const gdptr_placeholder_script_instance_update "pythonscript_gdptr_placeholder_script_instance_update")(GDExtensionScriptInstancePtr p_placeholder, GDExtensionConstTypePtr p_properties, GDExtensionConstTypePtr p_values)
     GDExtensionScriptInstanceDataPtr (*const gdptr_object_get_script_instance "pythonscript_gdptr_object_get_script_instance")(GDExtensionConstObjectPtr p_object, GDExtensionObjectPtr p_language)
     void (*const gdptr_callable_custom_create "pythonscript_gdptr_callable_custom_create")(GDExtensionUninitializedTypePtr r_callable, GDExtensionCallableCustomInfo *p_callable_custom_info)
+    void (*const gdptr_callable_custom_create2 "pythonscript_gdptr_callable_custom_create2")(GDExtensionUninitializedTypePtr r_callable, GDExtensionCallableCustomInfo2 *p_callable_custom_info)
     void *(*const gdptr_callable_custom_get_userdata "pythonscript_gdptr_callable_custom_get_userdata")(GDExtensionConstTypePtr p_callable, void *p_token)
     GDExtensionObjectPtr (*const gdptr_classdb_construct_object "pythonscript_gdptr_classdb_construct_object")(GDExtensionConstStringNamePtr p_classname)
+    GDExtensionObjectPtr (*const gdptr_classdb_construct_object2 "pythonscript_gdptr_classdb_construct_object2")(GDExtensionConstStringNamePtr p_classname)
     GDExtensionMethodBindPtr (*const gdptr_classdb_get_method_bind "pythonscript_gdptr_classdb_get_method_bind")(GDExtensionConstStringNamePtr p_classname, GDExtensionConstStringNamePtr p_methodname, GDExtensionInt p_hash)
     void *(*const gdptr_classdb_get_class_tag "pythonscript_gdptr_classdb_get_class_tag")(GDExtensionConstStringNamePtr p_classname)
     void (*const gdptr_classdb_register_extension_class "pythonscript_gdptr_classdb_register_extension_class")(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo *p_extension_funcs)
     void (*const gdptr_classdb_register_extension_class2 "pythonscript_gdptr_classdb_register_extension_class2")(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo2 *p_extension_funcs)
+    void (*const gdptr_classdb_register_extension_class3 "pythonscript_gdptr_classdb_register_extension_class3")(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo3 *p_extension_funcs)
+    void (*const gdptr_classdb_register_extension_class4 "pythonscript_gdptr_classdb_register_extension_class4")(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_parent_class_name, const GDExtensionClassCreationInfo4 *p_extension_funcs)
     void (*const gdptr_classdb_register_extension_class_method "pythonscript_gdptr_classdb_register_extension_class_method")(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, const GDExtensionClassMethodInfo *p_method_info)
+    void (*const gdptr_classdb_register_extension_class_virtual_method "pythonscript_gdptr_classdb_register_extension_class_virtual_method")(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, const GDExtensionClassVirtualMethodInfo *p_method_info)
     void (*const gdptr_classdb_register_extension_class_integer_constant "pythonscript_gdptr_classdb_register_extension_class_integer_constant")(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, GDExtensionConstStringNamePtr p_enum_name, GDExtensionConstStringNamePtr p_constant_name, GDExtensionInt p_constant_value, GDExtensionBool p_is_bitfield)
     void (*const gdptr_classdb_register_extension_class_property "pythonscript_gdptr_classdb_register_extension_class_property")(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, const GDExtensionPropertyInfo *p_info, GDExtensionConstStringNamePtr p_setter, GDExtensionConstStringNamePtr p_getter)
     void (*const gdptr_classdb_register_extension_class_property_indexed "pythonscript_gdptr_classdb_register_extension_class_property_indexed")(GDExtensionClassLibraryPtr p_library, GDExtensionConstStringNamePtr p_class_name, const GDExtensionPropertyInfo *p_info, GDExtensionConstStringNamePtr p_setter, GDExtensionConstStringNamePtr p_getter, GDExtensionInt p_index)
@@ -334,6 +370,8 @@ cdef extern from * nogil:
     void (*const gdptr_get_library_path "pythonscript_gdptr_get_library_path")(GDExtensionClassLibraryPtr p_library, GDExtensionUninitializedStringPtr r_path)
     void (*const gdptr_editor_add_plugin "pythonscript_gdptr_editor_add_plugin")(GDExtensionConstStringNamePtr p_class_name)
     void (*const gdptr_editor_remove_plugin "pythonscript_gdptr_editor_remove_plugin")(GDExtensionConstStringNamePtr p_class_name)
+    void (*const gdptr_editor_help_load_xml_from_utf8_chars "pythonscript_gdptr_editor_help_load_xml_from_utf8_chars")(const char *p_data)
+    void (*const gdptr_editor_help_load_xml_from_utf8_chars_and_len "pythonscript_gdptr_editor_help_load_xml_from_utf8_chars_and_len")(const char *p_data, GDExtensionInt p_size)
 
 
 ##############################################################################
