@@ -111,6 +111,7 @@ def __cinit__(self):
 cdef GDExtensionObjectPtr __godot_extension_create_instance(void* p_class_userdata) noexcept with gil:
     # print("[DEBUG] {spec.class_name}.__godot_extension_create_instance()")
     cdef {spec.class_name} obj = {spec.class_name}()
+    # Note `Py_INCREF(obj)` has already been done during `__cinit__`
     return obj._gd_ptr
 
 @staticmethod
