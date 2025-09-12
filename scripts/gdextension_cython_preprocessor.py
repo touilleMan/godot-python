@@ -123,14 +123,27 @@ cdef void __godot_extension_free_instance(void* p_class_userdata, GDExtensionCla
 @staticmethod
 def __godot_extension_unregister_class():
     # print("[DEBUG] {spec.class_name}.__godot_extension_unregister_class()")
+
+    global __godot_extension_{spec.class_name}_registered
+    if not __godot_extension_{spec.class_name}_registered:
+        print("Not registered !", flush=True)
+        raise RuntimeError("Not registered !")
+
     {spec.class_name + "." + spec.unregister_class_hook + "()" if spec.unregister_class_hook is not None else ""}
     unregister_extension_class(b"{spec.class_name}")
     gd_string_name_del(&__godot_extension_{spec.class_name}_class_name)
     gd_string_name_del(&__godot_extension_{spec.class_name}_parent_class_name)
 
+    __godot_extension_{spec.class_name}_registered = False
+
 @staticmethod
 def __godot_extension_register_class():
     # print("[DEBUG] {spec.class_name}.__godot_extension_register_class()")
+
+    global __godot_extension_{spec.class_name}_registered
+    if __godot_extension_{spec.class_name}_registered:
+        print("Already registered !", flush=True)
+        raise RuntimeError("Already registered !")
 
     global __godot_extension_{spec.class_name}_class_name
     global __godot_extension_{spec.class_name}_parent_class_name
@@ -147,6 +160,8 @@ def __godot_extension_register_class():
         {"True" if spec.is_abstract else "False"},
         {"True" if spec.is_exposed else "False"},
     )
+
+    __godot_extension_{spec.class_name}_registered = True
 """
     for method in spec.methods:
         cooked_params = "["
@@ -218,6 +233,7 @@ def generate_injected_module_code(spec: ModuleDef) -> str:
     for klass in spec.classes:
         code += f"""
 # {klass.class_name}
+cdef bint __godot_extension_{klass.class_name}_registered = False
 cdef gd_string_name_t __godot_extension_{klass.class_name}_class_name
 cdef gd_string_name_t __godot_extension_{klass.class_name}_parent_class_name
 """
