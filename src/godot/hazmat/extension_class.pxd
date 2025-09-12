@@ -3,9 +3,10 @@ from cpython.ref cimport Py_INCREF, Py_DECREF
 from libc.string cimport strcmp
 from libc.stdlib cimport malloc, free
 
-from godot.hazmat.gdextension_interface cimport *
-from godot.hazmat.gdapi cimport *
-from godot.hazmat cimport gdptrs
+from .gdextension_interface cimport *
+from .gdapi cimport *
+from . cimport gdptrs
+
 
 @cython.final
 cdef class ExtensionClassSpec:
