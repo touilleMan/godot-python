@@ -175,61 +175,6 @@ pxds_godot = [
 
 
 ##############################################################################
-#              _pythonscript.c & _pythonscript.h generation                  #
-##############################################################################
-
-
-preprocessed_pxis = []
-foreach pxi: [
-    '_pythonscript_extension_class_language.pxi',
-    '_pythonscript_extension_class_script.pxi',
-    '_pythonscript_extension_resource_format_loader.pxi',
-    '_pythonscript_extension_resource_format_saver.pxi',
-]
-    preprocessed_pxis += custom_target(
-        output: pxi,
-        input: [
-            join_paths(scripts_dir, 'gdextension_cython_preprocessor.py'),
-            pxi,
-        ],
-        command: [python, '@INPUT0@', '@INPUT1@', '--output', '@OUTPUT@'],
-    )
-endforeach
-
-
-# _pythonscript.c
-# _pythonscript.h
-# ├─ _pythonscript.pyx
-# ├─ _pythonscript_editor.pxi
-# ├─ _pythonscript_extension_class_language.pxi
-# ├─ _pythonscript_extension_class_script.pxi
-# ├─ godot/builtins.pxd
-# |  └─ ...
-# ├─ godot/classes.pxd
-# |  └─ ...
-# ├─ godot/hazmat/*.pxd
-#    └─ ...
-
-
-# `_pythonscript.c` & `_pythonscript.h` are needed to compile `libpythonscript.so` (see below)
-
-# `_pythonscript.h` is used to expose the Python callbacks used by `pythonscript.c`,
-# hence this header is private and won't be provided in the release
-c_pythonscript = custom_target('_pythonscript.c & _pythonscript.h',
-    output : ['_pythonscript.c', '_pythonscript.h'],
-    input : [
-        '_pythonscript.pyx',
-        '_pythonscript_editor.pxi',
-        preprocessed_pxis,
-        pxds_godot
-    ],
-    command : cythonize_command,
-)
-# h_pythonscript_api = c_pythonscript[1]  # Header for pythonscript.c
-# c_pythonscript = c_pythonscript[0]
-
-
-##############################################################################
 #              pythonscript_gdextension_ptrs.c & generation                  #
 ##############################################################################
 
@@ -254,13 +199,7 @@ c_pythonscript_gdextension_ptrs = custom_target(
 # libpythonscript.so
 # ├─ pythonscript.c
 # ├─ pythonscript_gdextension_ptrs.c
-# └─ _pythonscript.c
-# └─ _pythonscript.h
-#    └─ ...
-
-
-# Note we cannot bundle `_pythonscript.so` within `libpythonscript.so` due
-# to how Python loads native modules.
+# └─ ...
 
 
 if host_platform.startswith('linux')
@@ -284,7 +223,7 @@ endif
 
 lib_pythonscript = shared_library(
     'pythonscript',
-    ['pythonscript.c', c_pythonscript_gdextension_ptrs, c_pythonscript],
+    ['pythonscript.c', c_pythonscript_gdextension_ptrs],
     c_args: lib__pythonscript_c_args,
     gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
     dependencies: [dep_godot, dep_python],

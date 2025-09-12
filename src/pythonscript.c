@@ -14,7 +14,6 @@
 #include <Python.h>
 
 #include <godot/gdextension_interface.h>
-#include "_pythonscript.h"
 
 #ifdef _WIN32
 # define DLL_EXPORT __declspec(dllexport)
@@ -56,9 +55,13 @@ typedef enum {
 
 static PythonscriptState state = STALLED;
 static PyThreadState *gilstate = NULL;
+// Callbacks originally defined in `godot._lang`, we load them rigth after CPython
+// initialization, then use them in each subsequent Godot (de)initialization step.
+static void (*pythonscript_initialize)(int p_level);
+static void (*pythonscript_deinitialize)(int p_level);
 
-// Global variables used by Cython modules to access the Godot API, and
-// defined in `pythonscript_gdptr_ptrs.c`
+// Global variables used by Cython modules to access the Godot API, and defined
+// in `pythonscript_gdptr_ptrs.c` (which is compiled together with this file).
 void init_pythonscript_gdextension();
 DLL_IMPORT extern GDExtensionInterfaceGetProcAddress pythonscript_gdptr_get_proc_address;
 DLL_IMPORT extern GDExtensionClassLibraryPtr pythonscript_gdptr_library;
@@ -222,7 +225,7 @@ static void _initialize_python() {
         }
     }
 
-    // argv and sys.path are going to be set by `_pythonscript_initialize`
+    // argv and sys.path are going to be set by `pythonscript_initialize`
     // This is much simpler this way given we will have acces to Godot API
     // through the nice Python bindings this way
 
@@ -234,12 +237,6 @@ static void _initialize_python() {
             GD_PRINT_ERROR(status.err_msg);
             goto error;
         }
-    }
-
-    if (PyImport_AppendInittab("_pythonscript", PyInit__pythonscript) == -1) {
-            GD_PRINT_ERROR("Pythonscript: Cannot extend in-built modules table");
-            goto error;
-
     }
 
     // TODO
@@ -290,13 +287,68 @@ static void _initialize_python() {
     PyRun_SimpleString("import sys\nprint('PYTHON_PATH:', sys.path)\n");
 #endif
 
+    // Now get back `pythonscript_(de)initialize` callbacks from `godot._lang` module,
+    // they will be thetn used in each subsequent Godot (de)initialization step.
     {
-        PyObject *pmodule = PyImport_ImportModule("_pythonscript");
-        if (!pmodule) {
-            GD_PRINT_ERROR("Pythonscript: Cannot load Python module `_pythonscript`");
+
+        // Basically we do in C the equivalent of:
+        // ```python
+        // import godot._lang
+        // pythonscript_initialize = godot._lang.pythonscript_initialize_function_ptr
+        // pythonscript_deinitialize = godot._lang.pythonscript_deinitialize_function_ptr
+        // ```
+
+        // 1. Do `import godot._lang`
+
+        PyObject* py_godot_lang_module;
+        {
+            PyObject* py_module_name = PyUnicode_FromString("godot._lang");
+            if (py_module_name == NULL) {
+                PyErr_Print();
+                goto post_init_error;
+            }
+
+            py_godot_lang_module = PyImport_Import(py_module_name);
+            Py_DECREF(py_module_name);
+        }
+
+        if (py_godot_lang_module == NULL) {
+            PyErr_Print();
             goto post_init_error;
         }
-        Py_DecRef(pmodule);
+
+        // 2. Do `pythonscript_initialize = godot._lang.pythonscript_initialize_function_ptr`
+
+        {
+            PyObject* py_pythonscript_initialize_function_ptr = PyObject_GetAttrString(py_godot_lang_module, "pythonscript_initialize_function_ptr");
+            if (py_pythonscript_initialize_function_ptr == NULL) {
+                PyErr_Print();
+                goto post_init_error;
+            }
+            pythonscript_initialize = PyLong_AsVoidPtr(py_pythonscript_initialize_function_ptr);
+            Py_DECREF(py_pythonscript_initialize_function_ptr);
+        }
+
+        // 3. Do `pythonscript_deinitialize = godot._lang.pythonscript_deinitialize_function_ptr`
+
+        {
+            PyObject* py_pythonscript_deinitialize_function_ptr = PyObject_GetAttrString(py_godot_lang_module, "pythonscript_deinitialize_function_ptr");
+            if (py_pythonscript_deinitialize_function_ptr == NULL) {
+                PyErr_Print();
+                goto post_init_error;
+            }
+            pythonscript_deinitialize = PyLong_AsVoidPtr(py_pythonscript_deinitialize_function_ptr);
+            Py_DECREF(py_pythonscript_deinitialize_function_ptr);
+        }
+
+        // 4. `godot._lang` module no longer needed
+
+        Py_DECREF(py_godot_lang_module);
+
+        if (pythonscript_initialize == NULL || pythonscript_deinitialize == NULL) {
+            GD_PRINT_ERROR("Pythonscript: Cannot retrieve `pythonscript_(de)initialize` function pointers");
+            goto post_init_error;
+        }
     }
 
     PyConfig_Clear(&config);
@@ -346,15 +398,15 @@ static void _initialize(void *userdata, GDExtensionInitializationLevel p_level) 
     if (state == ENTRYPOINT_RETURNED && p_level == GDEXTENSION_INITIALIZATION_CORE) {
         _initialize_python();
     }
-    if (state != CRASHED) {
-        _pythonscript_initialize(p_level);
+    if (state != CRASHED && pythonscript_initialize != NULL) {
+        pythonscript_initialize(p_level);
     }
 }
 
 static void _deinitialize(void *userdata, GDExtensionInitializationLevel p_level) {
     (void) userdata;  // acknowledge unreferenced parameter
-    if (state != CRASHED) {
-        _pythonscript_deinitialize(p_level);
+    if (state != CRASHED && pythonscript_deinitialize != NULL) {
+        pythonscript_deinitialize(p_level);
     }
     if (state == PYTHON_INTERPRETER_READY && p_level == GDEXTENSION_INITIALIZATION_CORE) {
         _deinitialize_python();

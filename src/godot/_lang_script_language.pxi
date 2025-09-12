@@ -1,4 +1,4 @@
-from godot.classes cimport ScriptLanguageExtensionProfilingInfo
+from .classes cimport ScriptLanguageExtensionProfilingInfo
 
 
 debug_spy = True

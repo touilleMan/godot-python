@@ -1,6 +1,3 @@
-from godot.classes cimport ScriptLanguageExtensionProfilingInfo
-
-
 # godot_extension: class(parent="ResourceFormatSaver")
 @cython.final
 cdef class PythonResourceFormatSaver:

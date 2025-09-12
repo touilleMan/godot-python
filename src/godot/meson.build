@@ -199,3 +199,76 @@ shared_library(
     install: true,
     install_dir: join_paths(python_site_packages_install_path, 'godot'),
 )
+
+
+# _lang.so
+# └─ _lang.c
+#    ├─ gdextension_interface.pxd
+#    │  └─ ...
+#    ├─ _lang_resource_format_loader.pxi
+#    ├─ _lang_resource_format_saver.pxi
+#    ├─ _lang_script_language.pxi
+#    ├─ _lang_script.pxi
+#    └─ _lang.pyx
+
+preprocessed_lang_pxis = []
+foreach pxi: [
+    '_lang_resource_format_loader.pxi',
+    '_lang_resource_format_saver.pxi',
+    '_lang_script_language.pxi',
+    '_lang_script.pxi',
+]
+    preprocessed_lang_pxis += custom_target(
+        output: pxi,
+        input: [
+            join_paths(scripts_dir, 'gdextension_cython_preprocessor.py'),
+            pxi,
+        ],
+        command: [python, '@INPUT0@', '@INPUT1@', '--output', '@OUTPUT@'],
+    )
+endforeach
+
+
+c_lang = custom_target(
+    output : '_lang.c',
+    input : [
+        files('_lang.pyx'),
+        preprocessed_lang_pxis,
+        pxds_godot
+    ],
+    command : cythonize_command,
+)
+
+
+if host_platform.startswith('linux')
+    _lang_rpath = '$ORIGIN/../../..'
+elif host_platform.startswith('macos')
+    _lang_rpath = '@loader_path/../../..'
+else
+    _lang_rpath = ''
+endif
+
+
+# Cython's cdef inline methods are turned into static inline C functions that
+# produced `defined but not used` errors, hence the `-Wno-unused-function`
+# AutoPxd currently strip const qualifier when generating `gdextension_interface.pxd`,
+# hence -Wno-discarded-qualifiers
+if host_platform.startswith('windows')
+    _lang_c_args = []
+else
+    _lang_c_args = ['-Wno-discarded-qualifiers', '-Wno-incompatible-pointer-types-discards-qualifiers', '-Wno-unused-function']
+endif
+
+
+shared_library(
+    '_lang',
+    c_lang,
+    c_args: _lang_c_args,
+    gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
+    dependencies : [dep_godot, dep_python, dep_pythonscript],
+    install_rpath: _lang_rpath,  # To find libpython
+    name_prefix: python_native_module_name_prefix,
+    name_suffix: python_native_module_name_suffix,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot'),
+)

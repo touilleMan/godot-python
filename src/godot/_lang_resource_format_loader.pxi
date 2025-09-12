@@ -1,6 +1,3 @@
-from godot.classes cimport ScriptLanguageExtensionProfilingInfo
-
-
 cdef object RESOURCE_TYPE_NAME = "PythonScript"
 cdef object RESOURCE_EXTENSIONS = ("py", "pyc", "pyo", "pyd")
 

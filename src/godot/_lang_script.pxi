@@ -46,8 +46,8 @@ cdef class PythonScript:
     cdef gd_object_t _get_language(self):
         spy_log("CALLED PythonScript::_get_language()")
         # Return the PythonScriptLanguage instance
-        assert _pythons_script_language._gd_ptr != NULL
-        return _pythons_script_language._gd_ptr
+        assert _python_script_language._gd_ptr != NULL
+        return _python_script_language._gd_ptr
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_int_t _get_member_line(self, gd_string_name_t member):
