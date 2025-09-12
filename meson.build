@@ -25,12 +25,6 @@ project(
     ]
 )
 
-# TODO: When compiling a .pyx, we need to find a way to remove all the gdptrs_* symbols
-# (declared as extern in `gdptrs.pxd`) that somehow end up in the final shared library
-# even if they are not used!
-# add_global_arguments('-ffunction-sections', '-fdata-sections', language: ['c'])
-# add_project_link_arguments('-Wl,--gc-sections', language: ['c'])
-
 host_platform = '@0@-@1@'.format(host_machine.system(), host_machine.cpu_family())
 if (
     host_platform != 'linux-x86_64'
