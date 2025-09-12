@@ -288,7 +288,7 @@ endif
 
 godot_extension_api_json = join_paths(gdextension_path, 'extension_api.json')
 # Sanity check on extension_api_parser
-message('Checking GDExtension\'s extension_api.json is supported...'.format(get_option('godot_version')))
+message('Checking GDExtension\'s extension_api.json is supported...')
 run_command(
     python,
     '-m',
