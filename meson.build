@@ -272,7 +272,7 @@ if get_option('gdextension_path') != ''
         check: true,
     )
 else
-    # Download Godot and generate it GDextension API
+    # Download Godot and generate its GDextension API
     message('Fetching Godot v@0@ binary and generating GDExtension...'.format(get_option('godot_version')))
     run_command(
         python,
