@@ -288,7 +288,7 @@ static void _initialize_python() {
 #endif
 
     // Now get back `pythonscript_(de)initialize` callbacks from `godot._lang` module,
-    // they will be thetn used in each subsequent Godot (de)initialization step.
+    // they will be then used in each subsequent Godot (de)initialization step.
     {
 
         // Basically we do in C the equivalent of:
