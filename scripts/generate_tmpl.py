@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 import argparse
-from typing import List, Dict, Tuple
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
@@ -13,7 +12,7 @@ BASEDIR = Path(__file__).parent
 SRC_DIR = BASEDIR / "../src"
 GODOT_DIR = SRC_DIR / "godot"
 HAZMAT_DIR = GODOT_DIR / "hazmat"
-TARGETS: Dict[str, Tuple[bool, Path]] = {
+TARGETS: dict[str, tuple[bool, Path]] = {
     "pythonscript_gdextension_ptrs.c": (False, SRC_DIR),
     "gdptrs.pxd": (False, HAZMAT_DIR),
     "gdtypes.pxd": (False, HAZMAT_DIR),
@@ -124,7 +123,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    items: List[Tuple[Path, str, Path]] = []
+    items: list[tuple[Path, str, Path]] = []
     need_classes = False
     for output in args.output:
         # We use # in the name to simulate folder hierarchy in the meson build

@@ -5,7 +5,6 @@ import sys
 import re
 import platform
 import shutil
-from typing import Optional, Tuple
 import subprocess
 import argparse
 from pathlib import Path
@@ -17,7 +16,7 @@ from urllib.request import urlopen
 BASE_RELEASE_URL = "https://github.com/godotengine/godot-builds/releases/download"
 
 
-GodotBinaryVersion = Tuple[str, str, str, str]
+GodotBinaryVersion = tuple[str, str, str, str]
 GodotBinaryPlatform = str
 
 
@@ -58,7 +57,7 @@ def parse_raw_version(raw_version: str) -> GodotBinaryVersion:
 
 def parse_godot_binary_hint(
     godot_binary_hint: str,
-) -> Tuple[GodotBinaryPlatform, Optional[GodotBinaryVersion]]:
+) -> tuple[GodotBinaryPlatform, GodotBinaryVersion | None]:
     """
     `godot_binary_hint` format is:
     - version only, e.g. `4.0.1`
@@ -106,7 +105,7 @@ def parse_godot_binary_hint(
 
 
 def fetch_godot_binary(
-    build_dir: Path, godot_platform: GodotBinaryPlatform, version: Optional[GodotBinaryVersion]
+    build_dir: Path, godot_platform: GodotBinaryPlatform, version: GodotBinaryVersion | None
 ) -> Path:
     if not version:
         version = parse_raw_version(get_default_godot_version_from_meson(build_dir))

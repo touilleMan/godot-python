@@ -26,7 +26,6 @@ we have no guarantee this will not break in the future (but this part Cython is 
 so it's highly unlikely to change).
 """
 
-from typing import Optional
 from dataclasses import dataclass
 from Cython.Compiler.ParseTreeTransforms import NormalizeTree
 from Cython.Compiler.Visitor import CythonTransform
@@ -252,7 +251,7 @@ class GodotExtensionClassAttributes(CythonTransform):
 class MethodSpec:
     name: str
     is_staticmethod: bool
-    return_type: Optional[str]
+    return_type: str | None
     arguments_type: list[str]
     arguments: dict[str, str]
     method_node: Nodes.Node

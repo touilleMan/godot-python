@@ -3,7 +3,6 @@
 import argparse
 from pathlib import Path
 import re
-from typing import List, Dict
 from pycparser import CParser, c_ast
 from autopxd import AutoPxd
 
@@ -12,7 +11,7 @@ from autopxd import AutoPxd
 # around them given they are needed for pycparser, but should endup in the pxd
 # as `from libc.stdint cimport uint8_t` instead of being inside the `cdef extern`
 # describing the whole header stuff.
-STDLIB_INCLUDES: Dict[str, List[str]] = {
+STDLIB_INCLUDES: dict[str, list[str]] = {
     "stdbool.h": ["bool"],
     "stdint.h": [
         "uint8_t",
@@ -47,9 +46,9 @@ class CCCP:
     """
 
     def __init__(
-        self, include_dirs: List[Path], forced_defined_vars: Dict[str, str], debug: bool = False
+        self, include_dirs: list[Path], forced_defined_vars: dict[str, str], debug: bool = False
     ):
-        self.source: List[str] = []
+        self.source: list[str] = []
         self.source_cursor = 0
         self.forced_defined_vars = forced_defined_vars.keys()
         self.defined_vars = {**forced_defined_vars}
@@ -57,7 +56,7 @@ class CCCP:
         self.debug = debug
 
     @staticmethod
-    def source_to_lines(src: str) -> List[str]:
+    def source_to_lines(src: str) -> list[str]:
         # First remove all comments
         src = re.sub(r"(//.*$)", "", src, flags=re.MULTILINE)
         src = re.sub(r"/\*.*?\*/", "", src, flags=re.DOTALL)
