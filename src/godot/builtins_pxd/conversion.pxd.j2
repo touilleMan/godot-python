@@ -2,7 +2,7 @@
 cdef bint gd_variant_supports_py_type(object pytype)
 cdef object gd_to_py_type(gdextension_interface.GDExtensionVariantType gdtype)
 cdef gdextension_interface.GDExtensionVariantType py_to_gd_type(object pytype)
-cdef object gd_variant_steal_into_pyobj(const gd_variant_t *gdvar)
+cdef object gd_variant_steal_into_pyobj(gd_variant_t *gdvar)
 cdef object gd_variant_copy_into_pyobj(const gd_variant_t *gdvar)
 cdef bint gd_variant_steal_from_pyobj(object pyobj, gd_variant_t *gdvar)
 

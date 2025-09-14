@@ -116,19 +116,9 @@ else
 endif
 
 
-# AutoPxd currently strip const qualifier when generating `gdextension_interface.pxd`,
-# hence -Wno-discarded-qualifiers
-if host_platform.startswith('windows')
-    builtins_c_args = []
-else
-    builtins_c_args = ['-Wno-discarded-qualifiers', '-Wno-incompatible-pointer-types-discards-qualifiers']
-endif
-
-
 shared_library(
     'builtins',
     cbuiltins,
-    c_args: builtins_c_args,
     gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: builtins_rpath,  # To find libpython
@@ -176,21 +166,9 @@ else
 endif
 
 
-# Cython's cdef inline methods are turned into static inline C functions that
-# produced `defined but not used` errors, hence the `-Wno-unused-function`
-# AutoPxd currently strip const qualifier when generating `gdextension_interface.pxd`,
-# hence -Wno-discarded-qualifiers
-if host_platform.startswith('windows')
-    classes_c_args = []
-else
-    classes_c_args = ['-Wno-discarded-qualifiers', '-Wno-incompatible-pointer-types-discards-qualifiers', '-Wno-unused-function']
-endif
-
-
 shared_library(
     'classes',
     cclasses,
-    c_args: classes_c_args,
     gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: classes_rpath,  # To find libpython
@@ -249,21 +227,9 @@ else
 endif
 
 
-# Cython's cdef inline methods are turned into static inline C functions that
-# produced `defined but not used` errors, hence the `-Wno-unused-function`
-# AutoPxd currently strip const qualifier when generating `gdextension_interface.pxd`,
-# hence -Wno-discarded-qualifiers
-if host_platform.startswith('windows')
-    _lang_c_args = []
-else
-    _lang_c_args = ['-Wno-discarded-qualifiers', '-Wno-incompatible-pointer-types-discards-qualifiers', '-Wno-unused-function']
-endif
-
-
 shared_library(
     '_lang',
     c_lang,
-    c_args: _lang_c_args,
     gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
     dependencies : [dep_godot, dep_python, dep_pythonscript],
     install_rpath: _lang_rpath,  # To find libpython

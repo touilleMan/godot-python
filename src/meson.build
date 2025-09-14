@@ -210,21 +210,10 @@ else
     lib_pythonscript_rpath = ''
 endif
 
-# Cython's cdef inline methods are turned into static inline C functions that
-# produced `defined but not used` errors, hence the `-Wno-unused-function`
-# AutoPxd currently strip const qualifier when generating `gdextension_interface.pxd`,
-# hence -Wno-discarded-qualifiers
-if host_platform.startswith('windows')
-    lib__pythonscript_c_args = []
-else
-    lib__pythonscript_c_args = ['-Wno-discarded-qualifiers', '-Wno-incompatible-pointer-types-discards-qualifiers', '-Wno-unused-function']
-endif
-
 
 lib_pythonscript = shared_library(
     'pythonscript',
     ['pythonscript.c', c_pythonscript_gdextension_ptrs],
-    c_args: lib__pythonscript_c_args,
     gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
     dependencies: [dep_godot, dep_python],
     install_rpath: lib_pythonscript_rpath,  # To find libpython

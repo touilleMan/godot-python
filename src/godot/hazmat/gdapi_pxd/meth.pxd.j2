@@ -102,24 +102,26 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
 
 
 {% macro render_builtin_from_variant_signature(builtin) %}
-{{ builtin.c_type }} gd_{{ builtin.snake_name }}_from_variant(gd_variant_t *val)
+{{ builtin.c_type }} gd_{{ builtin.snake_name }}_from_variant(const gd_variant_t *val)
 {%- endmacro %}
 
 
 {% macro render_builtin_into_variant_signature(builtin) %}
 {%- if builtin.is_scalar %}
-gd_variant_t gd_{{ builtin.snake_name }}_into_variant({{ builtin.c_type }} val)
+gd_variant_t gd_{{ builtin.snake_name }}_into_variant(const {{ builtin.c_type }} val)
 {%- else %}
-gd_variant_t gd_{{ builtin.snake_name }}_into_variant({{ builtin.c_type }} *val)
+gd_variant_t gd_{{ builtin.snake_name }}_into_variant(const {{ builtin.c_type }} *val)
 {%- endif %}
 {% endmacro %}
 
 
 {% macro render_builtin_object_variant_conversions(builtin) %}
-cdef inline gdextension_interface.GDExtensionObjectPtr gd_object_from_variant(gd_variant_t *val):
+cdef inline gdextension_interface.GDExtensionObjectPtr gd_object_from_variant(const gd_variant_t *val):
     cdef gdextension_interface.GDExtensionObjectPtr ret
-    gdptrs.gdptr_object_from_variant(&ret, val)
+    # TODO: cast to remove const due to `GDExtensionTypeFromVariantConstructorFunc`
+    gdptrs.gdptr_object_from_variant(&ret, <gd_variant_t *>val)
     return ret
+
 
 cdef inline gd_variant_t gd_object_into_variant(gdextension_interface.GDExtensionObjectPtr val):
     cdef gd_variant_t ret
@@ -136,12 +138,15 @@ cdef inline {{ render_builtin_from_variant_signature(builtin) }}:
     # TODO: no longer needed once https://github.com/godotengine/godot/pull/35813 is merged
     cdef {{ builtin.c_type }} ret = gd_{{ builtin.snake_name }}_new()
 {% endif %}
-    gdptrs.gdptr_{{ builtin.snake_name }}_from_variant(&ret, val)
+    # TODO: cast to remove const due to `GDExtensionTypeFromVariantConstructorFunc`
+    gdptrs.gdptr_{{ builtin.snake_name }}_from_variant(&ret, <gd_variant_t *>val)
     return ret
+
 
 cdef inline {{ render_builtin_into_variant_signature(builtin) }}:
     cdef gd_variant_t ret
-    gdptrs.gdptr_{{ builtin.snake_name }}_into_variant(&ret, {{ "&val" if builtin.is_scalar else "val"}})
+    # TODO: cast to remove const due to `GDExtensionVariantFromTypeConstructorFunc`
+    gdptrs.gdptr_{{ builtin.snake_name }}_into_variant(&ret, <{{ builtin.c_type }} *>{{ "&val" if builtin.is_scalar else "val"}})
     return ret
 {% endmacro %}
 

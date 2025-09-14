@@ -15,7 +15,8 @@ cdef class BaseGDObject:
 
     @staticmethod
     cdef inline object cast_from_variant(const gd_variant_t *gdvar):
-        cdef gd_object_t obj = gdapi.gd_object_from_variant(gdvar)
+        # TODO: cast to remove const due to `GDExtensionTypeFromVariantConstructorFunc`
+        cdef gd_object_t obj = gdapi.gd_object_from_variant(<gd_variant_t *>gdvar)
         if obj == NULL:
             return None
         cdef object class_name = _object_call(obj, "get_class", [])
