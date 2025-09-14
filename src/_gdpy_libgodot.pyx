@@ -7,7 +7,17 @@ from godot.classes cimport BaseGDObject
 
 
 # LibGodot API
-cdef extern from "*":
+cdef extern from *:
+    """
+    typedef struct {
+        const char* key;
+        void* val;
+    } LibGodotExtensionParameter;
+
+    GDExtensionObjectPtr libgodot_create_godot_instance(int p_argc, char *p_argv[], GDExtensionInitializationFunction p_init_func, LibGodotExtensionParameter *p_params);
+    void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance);
+    """
+
     ctypedef struct LibGodotExtensionParameter:
         const char* key
         void* val
@@ -34,9 +44,10 @@ def create_godot_instance(argv: list[str]):
     if gd_instance == NULL:
         raise RuntimeError("Failed to create Godot instance")
 
+    cdef BaseGDObject instance
     try:
         from godot.classes import GodotInstance
-        cdef BaseGDObject instance = GodotInstance.__new__(GodotInstance)
+        instance = GodotInstance.__new__(GodotInstance)
         _libgodot_instance = instance
 
         _libgodot_init_lock.release()
@@ -45,7 +56,7 @@ def create_godot_instance(argv: list[str]):
 
     finally:
         with _libgodot_init_lock:
-            libgodot_destroy_godot_instance(instance._gd_instance)
+            libgodot_destroy_godot_instance(instance._gd_ptr)
             _libgodot_instance = None
 
 
@@ -59,13 +70,13 @@ cdef GDExtensionObjectPtr _create_godot_instance(argv: list[str]):
     assert c_argv != NULL
     try:
         for i in range(length):
-            c_argv[i] = <const char*>pybytes_argv
+            c_argv[i] = <char*>pybytes_argv
 
         # `c_argv` is ready, now we can initialize Godot instance !
         return libgodot_create_godot_instance(
             len(argv),
             c_argv,
-            pythonscript_init,
+            _pythonscript_init,
             NULL
         )
 
@@ -80,17 +91,21 @@ cdef GDExtensionObjectPtr _create_godot_instance(argv: list[str]):
 
 # Those symbols are defined in `pythonscript_gdextension_ptrs.c` which is
 # going to be compiled together with this file into a single shared library.
-cdef extern from "*":
+cdef extern from *:
+    """
+    void init_pythonscript_gdextension();
+    """
+
     const GDExtensionInterfaceGetProcAddress pythonscript_gdptr_get_proc_address
     const GDExtensionClassLibraryPtr pythonscript_gdptr_library
     void init_pythonscript_gdextension()
 
 
-cdef public GDExtensionBool pythonscript_init(
-    const GDExtensionInterfaceGetProcAddress p_get_proc_address,
-    const GDExtensionClassLibraryPtr p_library,
+cdef GDExtensionBool _pythonscript_init(
+    GDExtensionInterfaceGetProcAddress p_get_proc_address,
+    GDExtensionClassLibraryPtr p_library,
     GDExtensionInitialization *r_initialization
-):
+) noexcept with gil:
     print('[libgodot] pythonscript_init()', flush=True)
 
     # `pythonscript_gdptr_*` must be set as early as possible given it is never
@@ -107,22 +122,22 @@ cdef public GDExtensionBool pythonscript_init(
     # Initialize as early as possible, this way we can have 3rd party plugins written
     # in Python/Cython that can do things at this level
     r_initialization.minimum_initialization_level  = GDEXTENSION_INITIALIZATION_CORE
-	r_initialization.userdata = NULL
+    r_initialization.userdata = NULL
     r_initialization.initialize = _initialize
     r_initialization.deinitialize = _deinitialize
 
 
-cdef void _initialize(void *userdata, GDExtensionInitializationLevel p_level):
+cdef void _initialize(void *userdata, GDExtensionInitializationLevel p_level) noexcept with gil:
     print(f'[libgodot] _initialize({p_level})', flush=True)
 
     import godot._lang
-    pythonscript_initialize = <void(*)(int)>godot._lang.pythonscript_initialize_function_ptr
+    pythonscript_initialize = <void (*)(int)><size_t>godot._lang.pythonscript_initialize_function_ptr
     pythonscript_initialize(p_level);
 
 
-cdef void _deinitialize(void *userdata, GDExtensionInitializationLevel p_level):
+cdef void _deinitialize(void *userdata, GDExtensionInitializationLevel p_level) noexcept with gil:
     print(f'[libgodot] _deinitialize({p_level})', flush=True)
 
     import godot._lang
-    pythonscript_deinitialize = <void(*)(int)>godot._lang.pythonscript_deinitialize_function_ptr
+    pythonscript_deinitialize = <void (*)(int)><size_t>godot._lang.pythonscript_deinitialize_function_ptr
     pythonscript_deinitialize(p_level);

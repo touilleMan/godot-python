@@ -1,0 +1,52 @@
+[project]
+name = "godot-python"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = [
+    "setuptools>=80.9.0",
+    "cython~=3.1",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+
+# Do not include files listed in MANIFEST.in to wheels.
+include-package-data = false
+
+[[tool.setuptools.ext-modules]]
+name = "_pythonscript"
+sources = [
+    "src/pythonscript_gdextension_ptrs.c",
+    "src/_gdpy_libgodot.pyx",
+]
+include-dirs = ["./src/gdextension_api/"]
+extra-compile-args = ["-O0"]
+
+[[tool.setuptools.ext-modules]]
+name = "godot.builtins"
+sources = ["./src/godot/builtins.pyx"]
+include-dirs = ["./src/gdextension_api/"]
+extra-compile-args = ["-O0"]
+
+[[tool.setuptools.ext-modules]]
+name = "godot.classes"
+sources = ["./src/godot/classes.pyx"]
+include-dirs = ["./src/gdextension_api/"]
+extra-compile-args = ["-O0"]
+
+[[tool.setuptools.ext-modules]]
+name = "godot._lang"
+sources = ["./src/godot/_lang.pyx"]
+include-dirs = ["./src/gdextension_api/"]
+extra-compile-args = ["-O0"]
+
+[[tool.setuptools.ext-modules]]
+name = "godot.hazmat.extension_class"
+sources = ["src/godot/hazmat/extension_class.pyx"]
+include-dirs = ["./src/gdextension_api/"]
+extra-compile-args = ["-O0"]
