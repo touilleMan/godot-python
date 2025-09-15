@@ -7,7 +7,7 @@ import shutil
 
 
 BASE_DIR = Path(__file__).parent
-ROOT_DIR = BASE_DIR / ".."
+ROOT_DIR = BASE_DIR / "../.."
 TARGET_DIR = BASE_DIR / "src"
 
 
@@ -16,7 +16,7 @@ def copy_data(build_dir: Path) -> None:
     output_godot_hazmat_dir = output_godot_dir / "hazmat"
     output_godot_hazmat_dir.mkdir(parents=True, exist_ok=True)
 
-    shutil.copy(ROOT_DIR / "src/_gdpy_libgodot.pyx", TARGET_DIR)
+    shutil.copy(ROOT_DIR / "src/gdpy_libgodot.pyx", TARGET_DIR)
     shutil.copy(build_dir / "src/gdpy_gdextension_ptrs.c", TARGET_DIR)
 
     shutil.copytree(build_dir / "gdextension_api", TARGET_DIR / "gdextension_api")

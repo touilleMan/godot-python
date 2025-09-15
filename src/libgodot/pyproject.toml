@@ -19,10 +19,10 @@ build-backend = "setuptools.build_meta"
 include-package-data = false
 
 [[tool.setuptools.ext-modules]]
-name = "_pythonscript"
+name = "_gdpy"
 sources = [
-    "src/pythonscript_gdextension_ptrs.c",
-    "src/_gdpy_libgodot.pyx",
+    "src/gdpy_gdextension_ptrs.c",
+    "src/gdpy_libgodot.pyx",
 ]
 include-dirs = ["./src/gdextension_api/"]
 extra-compile-args = ["-O0"]
