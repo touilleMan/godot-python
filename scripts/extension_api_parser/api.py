@@ -40,7 +40,7 @@ def parse_global_enum(spec: dict) -> EnumTypeSpec:
         py_type=cooked_name,
         cy_type=cooked_name,
         is_bitfield=spec["is_bitfield"],
-        values={x["name"]: x["value"] for x in spec["values"]},
+        values=spec["values"],
     )
 
 
@@ -76,12 +76,14 @@ class UtilityFunctionSpec:
     is_vararg: bool
     hash: int
     arguments: list[UtilityFunctionArgumentSpec]
+    description: str | None
 
     @classmethod
     def parse(cls, item: dict) -> UtilityFunctionSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("arguments", [])
         item.setdefault("return_type", "Nil")
+        item.setdefault("description", None)
         assert_api_consistency(cls, item)
         return cls(
             name=correct_name(item["name"]),
@@ -91,6 +93,7 @@ class UtilityFunctionSpec:
             is_vararg=item["is_vararg"],
             hash=item["hash"],
             arguments=[UtilityFunctionArgumentSpec.parse(x) for x in item["arguments"]],
+            description=item["description"],
         )
 
 

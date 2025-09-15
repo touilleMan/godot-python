@@ -78,6 +78,7 @@ class BuiltinConstructorSpec:
     index: int
     arguments: list[BuiltinMethodArgumentSpec]
     base_name: str
+    description: str | None
 
     @property
     def c_name(self) -> str:
@@ -92,6 +93,7 @@ class BuiltinConstructorSpec:
     @classmethod
     def parse(cls, item: dict, snake_name: str) -> BuiltinConstructorSpec:
         item.setdefault("arguments", [])
+        item.setdefault("description", None)
         args = [BuiltinMethodArgumentSpec.parse(x) for x in item["arguments"]]
         item["base_name"] = f"{snake_name}_new"
         assert_api_consistency(cls, item)
@@ -99,6 +101,7 @@ class BuiltinConstructorSpec:
             index=item["index"],
             arguments=args,
             base_name=item["base_name"],
+            description=item["description"],
         )
 
 
@@ -109,11 +112,13 @@ class BuiltinOperatorSpec:
     variant_operator_name: str
     right_type: TypeInUse | None
     return_type: TypeInUse
+    description: str | None
 
     @classmethod
     def parse(cls, item: dict) -> BuiltinOperatorSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("right_type", None)
+        item.setdefault("description", None)
         item["name"], item["variant_operator_name"] = VARIANT_OPERATORS[item.pop("name")]
         if item["right_type"] is not None:
             right_type_snake_name = _builtin_snake_name(item["right_type"])
@@ -129,6 +134,7 @@ class BuiltinOperatorSpec:
             # emptiness.
             right_type=None if item["right_type"] is None else TypeInUse.parse(item["right_type"]),
             return_type=TypeInUse.parse(item["return_type"]),
+            description=item["description"],
         )
 
 
@@ -138,6 +144,7 @@ class BuiltinMemberSpec:
     original_name: str
     offset: int | None
     type: TypeInUse
+    description: str | None
 
     @property
     def is_in_struct(self) -> bool:
@@ -147,12 +154,14 @@ class BuiltinMemberSpec:
     def parse(cls, item: dict) -> BuiltinMemberSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("offset", None)
+        item.setdefault("description", None)
         assert_api_consistency(cls, item)
         return cls(
             name=correct_name(item["name"]),
             original_name=item["original_name"],
             offset=item["offset"],
             type=TypeInUse.parse(item["type"]),
+            description=item["description"],
         )
 
 
@@ -162,16 +171,19 @@ class BuiltinConstantSpec:
     original_name: str
     type: TypeInUse
     value: str
+    description: str | None
 
     @classmethod
     def parse(cls, item: dict) -> BuiltinConstantSpec:
         item.setdefault("original_name", item["name"])
+        item.setdefault("description", None)
         assert_api_consistency(cls, item)
         return cls(
             name=correct_name(item["name"]),
             original_name=item["original_name"],
             type=TypeInUse.parse(item["type"]),
             value=item["value"],
+            description=item["description"],
         )
 
 
@@ -185,6 +197,7 @@ class BuiltinMethodSpec:
     is_static: bool
     hash: int
     arguments: list[BuiltinMethodArgumentSpec]
+    description: str | None
 
     @property
     def contains_unsuported_types(self) -> bool:
@@ -203,6 +216,7 @@ class BuiltinMethodSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("arguments", [])
         item.setdefault("return_type", "Nil")
+        item.setdefault("description", None)
         assert_api_consistency(cls, item)
         return cls(
             name=correct_name(item["name"]),
@@ -213,6 +227,7 @@ class BuiltinMethodSpec:
             is_static=item["is_static"],
             hash=item["hash"],
             arguments=[BuiltinMethodArgumentSpec.parse(x) for x in item["arguments"]],
+            description=item["description"],
         )
 
 
@@ -224,7 +239,7 @@ def parse_builtin_enum(spec: dict, builtin_cy_type: str, builtin_py_type: str) -
         py_type=f"{builtin_py_type}.{spec['name']}",
         cy_type=f"{builtin_cy_type}.{spec['name']}",
         is_bitfield=spec["is_bitfield"],
-        values={x["name"]: x["value"] for x in spec["values"]},
+        values=spec["values"],
     )
 
 
@@ -243,6 +258,8 @@ class BuiltinTypeSpec(TypeSpec):
     members: list[BuiltinMemberSpec]
     constants: list[BuiltinConstantSpec]
     enums: list[EnumTypeSpec]
+    description: str | None
+    brief_description: str | None
 
     @property
     def all_nested_scalar_members(self) -> Generator[str]:
@@ -367,6 +384,8 @@ def _parse_builtin(spec: dict) -> BuiltinTypeSpec:
     spec.setdefault("members", [])
     spec.setdefault("constants", [])
     spec.setdefault("enums", [])
+    spec.setdefault("brief_description", None)
+    spec.setdefault("description", None)
     assert spec.keys() == {
         "name",
         "indexing_return_type",
@@ -379,6 +398,8 @@ def _parse_builtin(spec: dict) -> BuiltinTypeSpec:
         "members",
         "constants",
         "enums",
+        "brief_description",
+        "description",
     }
 
     original_name = spec["name"]
@@ -442,6 +463,8 @@ def _parse_builtin(spec: dict) -> BuiltinTypeSpec:
             members=members,
             constants=constants,
             enums=enums,
+            description=spec["description"],
+            brief_description=spec["brief_description"],
         )
     else:
         return OpaqueBuiltinTypeSpec(
@@ -463,6 +486,8 @@ def _parse_builtin(spec: dict) -> BuiltinTypeSpec:
             members=members,
             constants=constants,
             enums=enums,
+            description=spec["description"],
+            brief_description=spec["brief_description"],
         )
 
 

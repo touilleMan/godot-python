@@ -34,7 +34,7 @@ cdef object _SENTINEL = object()
 
 
 class {{ spec.cy_type }}(Enum):
-{%   for key, value in spec.py_values.items() %}
-    {{ key }} = {{ value }}
+{%   for item in spec.items %}
+    {{ item.py_name }} = {{ item.value }}
 {%   endfor %}
 {% endfor %}

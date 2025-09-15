@@ -115,6 +115,14 @@ class RawCScalarTypeSpec(ScalarTypeSpec):
 
 
 @dataclass(slots=True)
+class EnumTypeItem:
+    c_name: str
+    py_name: str
+    value: int
+    description: str
+
+
+@dataclass(slots=True)
 class EnumTypeSpec(ScalarTypeSpec):
     """
     Godot enum (e.g. godot_error, Camera::KeepAspect), note they are always
@@ -122,17 +130,14 @@ class EnumTypeSpec(ScalarTypeSpec):
     """
 
     is_bitfield: bool
-    original_values: dict[str, int]
-    c_values: dict[str, int]
-    py_values: dict[str, int]
+    items: list[EnumTypeItem]
 
     def __init__(self, **kwargs):
         self.is_bitfield = kwargs.pop("is_bitfield")
-        self.original_values = kwargs.pop("values")
-        self.c_values = self.original_values
+        original_values: list[dict] = kwargs.pop("values")
 
         # Detect the common prefix
-        first_key = next(iter(self.original_values.keys()))  # Any key will do it
+        first_key = original_values[0]["name"]  # Any key will do it
         parts = iter(first_key.split("_"))
         prefix = ""
         while True:
@@ -140,31 +145,39 @@ class EnumTypeSpec(ScalarTypeSpec):
                 candidate_prefix = f"{next(parts)}_" if not prefix else f"{prefix}{next(parts)}_"
             except StopIteration:
                 break
-            if all(k.startswith(candidate_prefix) for k in self.original_values):
+            if all(x["name"].startswith(candidate_prefix) for x in original_values):
                 prefix = candidate_prefix
                 continue
             else:
                 break
 
-        def _strip_prefix(k: str) -> str:
-            if k.startswith(prefix):
-                new = k[len(prefix) :]
+        def _strip_prefix(name: str) -> str:
+            if name.startswith(prefix):
+                new_name = name[len(prefix) :]
                 if kwargs["original_name"] == "Key":
                     # Special case for `KEY_0`, `KEY_A`, etc.
-                    if new in string.ascii_uppercase or new in string.digits:
-                        new = f"K_{new}"
+                    if new_name in string.ascii_uppercase or new_name in string.digits:
+                        new_name = f"K_{new_name}"
                 if kwargs["original_name"] == "MethodFlags":
                     # Special case: all types are `FLAG_xxx` except for `FLAGS_DEFAULT`
                     needle = "FLAG_"
-                    if new.startswith(needle):
-                        new = new.removeprefix(needle)
-                return new
+                    if new_name.startswith(needle):
+                        new_name = new_name.removeprefix(needle)
+                return new_name
             else:
-                return k
+                return name
 
-        self.py_values = {_strip_prefix(k): v for k, v in self.original_values.items()}
-        # Remove the `MAX` marker since it is not an actual valid value
-        self.py_values.pop("MAX", None)
+        self.items = [
+            EnumTypeItem(
+                c_name=x["name"],
+                py_name=py_name,
+                value=x["value"],
+                description=x.get("description"),
+            )
+            for x in original_values
+            # Remove the `MAX` marker since it is not an actual valid value
+            if (py_name := _strip_prefix(x["name"])) != "MAX"
+        ]
 
         ScalarTypeSpec.__init__(
             self,

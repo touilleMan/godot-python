@@ -18,7 +18,7 @@ def parse_class_enum(spec: dict, class_name: str) -> EnumTypeSpec:
         py_type=f"{class_name}.{spec['name']}",
         cy_type=f"{class_name}.{spec['name']}",
         is_bitfield=spec["is_bitfield"],
-        values={x["name"]: x["value"] for x in spec["values"]},
+        values=spec["values"],
     )
 
 
@@ -66,6 +66,7 @@ class ClassMethodSpec:
     hash_compatibility: int | None
     return_type: TypeInUse
     arguments: list[ClassMethodArgumentSpec]
+    description: str | None
 
     @classmethod
     def parse(cls, item: dict) -> ClassMethodSpec:
@@ -82,6 +83,7 @@ class ClassMethodSpec:
         item.setdefault("is_property_accessor", False)
         # Added in Godot 4.4 (see https://github.com/godotengine/godot/pull/93311)
         item.setdefault("is_required", False)
+        item.setdefault("description", None)
         assert_api_consistency(cls, item)
         return cls(
             name=correct_name(item["name"]),
@@ -96,6 +98,7 @@ class ClassMethodSpec:
             hash_compatibility=item["hash_compatibility"],
             return_type=item["return_type"],
             arguments=[ClassMethodArgumentSpec.parse(x) for x in item["arguments"]],
+            description=item["description"],
         )
 
 
@@ -104,16 +107,19 @@ class ClassSignalSpec:
     original_name: str
     name: str
     arguments: list[ClassMethodArgumentSpec]
+    description: str | None
 
     @classmethod
     def parse(cls, item: dict) -> ClassSignalSpec:
         item.setdefault("original_name", item["name"])
         item.setdefault("arguments", [])
+        item.setdefault("description", None)
         assert_api_consistency(cls, item)
         return cls(
             name=correct_name(item["name"]),
             original_name=item["original_name"],
             arguments=[ClassMethodArgumentSpec.parse(x) for x in item["arguments"]],
+            description=item["description"],
         )
 
 
@@ -125,6 +131,7 @@ class ClassPropertySpec:
     getter: str
     setter: str | None
     index: int | None
+    description: str | None
 
     @classmethod
     def parse(cls, item: dict) -> ClassPropertySpec:
@@ -133,6 +140,7 @@ class ClassPropertySpec:
         assert item["getter"] is not None
         item.setdefault("setter", None)
         item.setdefault("index", None)
+        item.setdefault("description", None)
         assert_api_consistency(cls, item)
         return cls(
             name=correct_name(item["name"]),
@@ -141,7 +149,15 @@ class ClassPropertySpec:
             getter=item["getter"],
             setter=item["setter"],
             index=item["index"],
+            description=item["description"],
         )
+
+
+@dataclass(slots=True)
+class ClassTypeConstant:
+    name: str
+    value: int
+    description: str | None
 
 
 @dataclass(slots=True)
@@ -162,7 +178,9 @@ class ClassTypeSpec(TypeSpec):
     methods: list[ClassMethodSpec]
     signals: list[ClassSignalSpec]
     properties: list[ClassPropertySpec]
-    constants: dict[str, int]
+    constants: list[ClassTypeConstant]
+    description: str | None
+    brief_description: str | None
 
     @property
     def is_object(self) -> bool:
@@ -178,7 +196,16 @@ class ClassTypeSpec(TypeSpec):
         self.methods = kwargs.pop("methods")
         self.signals = kwargs.pop("signals")
         self.properties = kwargs.pop("properties")
-        self.constants = kwargs.pop("constants")
+        self.constants = [
+            ClassTypeConstant(
+                name=c["name"],
+                value=c["value"],
+                description=c["description"],
+            )
+            for c in kwargs.pop("constants")
+        ]
+        self.description = kwargs.pop("description")
+        self.brief_description = kwargs.pop("brief_description")
         TypeSpec.__init__(
             self,
             c_type="gd_object_t",
@@ -197,6 +224,8 @@ def parse_class(spec: dict, object_size: int) -> ClassTypeSpec:
     spec.setdefault("methods", [])
     spec.setdefault("properties", [])
     spec.setdefault("constants", [])
+    spec.setdefault("description", [])
+    spec.setdefault("brief_description", [])
     spec["inherits"] = spec.get("inherits") or None
     assert spec.keys() == {
         "name",
@@ -209,6 +238,8 @@ def parse_class(spec: dict, object_size: int) -> ClassTypeSpec:
         "signals",
         "properties",
         "constants",
+        "description",
+        "brief_description",
     }, spec.keys()
 
     original_name = spec["name"]
@@ -230,5 +261,7 @@ def parse_class(spec: dict, object_size: int) -> ClassTypeSpec:
         methods=[ClassMethodSpec.parse(x) for x in spec["methods"]],
         signals=[ClassSignalSpec.parse(x) for x in spec["signals"]],
         properties=[ClassPropertySpec.parse(x) for x in spec["properties"]],
-        constants={x["name"]: x["value"] for x in spec["constants"]},
+        constants=spec["constants"],
+        description=spec["description"],
+        brief_description=spec["brief_description"],
     )

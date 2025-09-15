@@ -69,3 +69,16 @@ def camel_to_snake(name: str) -> str:
             snake += "_"
         snake += c
     return snake.lower()
+
+
+def gd_description_to_py_doc(gd: str | None) -> str | None:
+    return (
+        gd.replace("[codeblock]", "```")
+        .replace("[/codeblock]", "```")
+        .replace("[b]", "**")
+        .replace("[/b]", "**")
+        .replace("[i]", "*")
+        .replace("[/i]", "*")
+        .replace("[code]", "`")
+        .replace("[/code]", "`")
+    )

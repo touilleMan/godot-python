@@ -5,7 +5,7 @@ import argparse
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
-from extension_api_parser import BuildConfig, parse_extension_api_json
+from extension_api_parser import BuildConfig, parse_extension_api_json, gd_description_to_py_doc
 
 
 BASEDIR = Path(__file__).parent
@@ -85,6 +85,7 @@ def make_jinja_env(import_dir: Path) -> Environment:
         undefined=StrictUndefined,
     )
     env.filters["merge"] = lambda x, **kwargs: {**x, **kwargs}
+    env.filters["gd_description_to_py_doc"] = gd_description_to_py_doc
     return env
 
 

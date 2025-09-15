@@ -31,6 +31,9 @@ GDDictionary | Mapping[IntoGDAny, IntoGDAny]
 
 
 class {{ klass.cy_type }}{{ "(" + klass.inherits.cy_type + ")" if klass.inherits else "" }}:
+{%   if klass.description %}
+    """{{ klass.description | gd_description_to_py_doc }}"""
+{%   endif %}
 {%   set ns = namespace(contains_something=false) %}
 {%   if klass.is_instantiable %}
 {%     set ns.contains_something = True %}
@@ -48,8 +51,11 @@ class {{ klass.cy_type }}{{ "(" + klass.inherits.cy_type + ")" if klass.inherits
     # Enums
 {%     endif %}
     class {{ e.original_name }}(Enum):
-{%     for ev in e.py_values.keys() %}
-        {{ ev }}: int
+{%     for item in e.items %}
+        {{ item.py_name }}: int
+{%       if item.description %}
+        """{{ item.description | gd_description_to_py_doc }}"""
+{%       endif %}
 {%     endfor %}
 {%   endfor %}
 {%   for m in klass.methods if not m.name.startswith("_") %}
@@ -58,7 +64,11 @@ class {{ klass.cy_type }}{{ "(" + klass.inherits.cy_type + ")" if klass.inherits
 
     # Methods
 {%     endif %}
-    def {{ m.name }}(self{% for a in m.arguments %}, {{ render_arg(a) }}{% endfor %}) -> {{ render_ret(m.return_type) }}: ...
+    def {{ m.name }}(self{% for a in m.arguments %}, {{ render_arg(a) }}{% endfor %}) -> {{ render_ret(m.return_type) }}:
+{%     if m.description %}
+        """{{ m.description | gd_description_to_py_doc }}"""
+{%     endif %}
+        ...
 {%   endfor %}
 {%   for s in klass.signals %}
 {%     if loop.first %}
@@ -66,7 +76,11 @@ class {{ klass.cy_type }}{{ "(" + klass.inherits.cy_type + ")" if klass.inherits
 
     # Signals
 {%     endif %}
-    def {{ s.name }}(self{% for a in s.arguments %}, {{ render_arg(a) }}{% endfor %}) -> None: ...
+    def {{ s.name }}(self{% for a in s.arguments %}, {{ render_arg(a) }}{% endfor %}) -> None:
+{%     if s.description %}
+        """{{ s.description | gd_description_to_py_doc }}"""
+{%     endif %}
+        ...
 {%   endfor %}
 {%   for p in klass.properties %}
 {%     if loop.first %}
@@ -75,6 +89,9 @@ class {{ klass.cy_type }}{{ "(" + klass.inherits.cy_type + ")" if klass.inherits
     # Properties
 {%     endif %}
     {{ p.name }}: {{ p.type.py_type }}
+{%     if p.description %}
+    """{{ p.description | gd_description_to_py_doc }}"""
+{%     endif %}
 {%   endfor %}
 {%   for c in klass.constants %}
 {%     if loop.first %}
@@ -82,7 +99,10 @@ class {{ klass.cy_type }}{{ "(" + klass.inherits.cy_type + ")" if klass.inherits
 
     # Constants
 {%     endif %}
-    {{ c }}: int
+    {{ c.name }}: int
+{%     if c.description %}
+    """{{ c.description | gd_description_to_py_doc }}"""
+{%     endif %}
 {%   endfor %}
 {%   if not ns.contains_something %}
     pass

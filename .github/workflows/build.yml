@@ -105,7 +105,7 @@ jobs:
           $GODOT_BIN --headless --version
 
           mkdir $GDEXTENSION_DIR && pushd $GDEXTENSION_DIR
-          $GODOT_BIN --headless --dump-extension-api
+          $GODOT_BIN --headless --dump-extension-api-with-docs
           mkdir godot && pushd godot
           $GODOT_BIN --headless --dump-gdextension-interface
           popd && popd
@@ -200,7 +200,7 @@ jobs:
           $GODOT_BIN --headless --version
 
           mkdir $GDEXTENSION_DIR && pushd $GDEXTENSION_DIR
-          ../$GODOT_BIN --headless --dump-extension-api
+          ../$GODOT_BIN --headless --dump-extension-api-with-docs
           mkdir godot && pushd godot
           ../../$GODOT_BIN --headless --dump-gdextension-interface
           popd && popd

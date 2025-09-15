@@ -182,7 +182,7 @@ if __name__ == "__main__":
             [
                 str(godot_binary_path.absolute()),
                 "--headless",
-                "--dump-extension-api",
+                "--dump-extension-api-with-docs",
                 "--dump-gdextension-interface",
             ],
             stdout=sys.stderr,

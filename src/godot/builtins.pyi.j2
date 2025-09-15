@@ -60,8 +60,11 @@ IntoGDAny
 
 
 class {{ enum.py_type }}(Enum):
-{%   for key in enum.py_values.keys() %}
-    {{ key }}: int
+{%   for item in enum.items %}
+    {{ item.py_name }}: int
+{%     if item.description %}
+    """{{ item.description | gd_description_to_py_doc }}"""
+{%     endif %}
 {%   endfor %}
 {% endfor %}
 
@@ -77,7 +80,11 @@ def {{ utility.name }}(
     {{ render_arg(arg) }}
 {%-     if not loop.last -%}, {% endif %}
 {%     endfor -%}
-) -> {{ "None" if utility.return_type.is_nil else utility.return_type.py_type }}: ...
+) -> {{ "None" if utility.return_type.is_nil else utility.return_type.py_type }}:
+{%     if utility.description %}
+    """{{ utility.description | gd_description_to_py_doc }}"""
+{%     endif %}
+    ...
 {% endfor %}
 
 
@@ -106,7 +113,12 @@ class {{ builtin.cy_type }}:
     # Methods
 {%   endif %}
 {%   for m in builtin.methods %}
-    def {{m.name}}(self{% for a in m.arguments %}, {{ render_arg(a) }}{% endfor %}) -> {{ "None" if m.return_type.is_nil else m.return_type.py_type }}: ...
+    def {{m.name}}(self{% for a in m.arguments %}, {{ render_arg(a) }}{% endfor %}) -> {{ "None" if m.return_type.is_nil else m.return_type.py_type }}:
+{%     if m.description %}
+        """{{ m.description | gd_description_to_py_doc }}"""
+{%     endif %}
+        ...
+
 {%   endfor %}
 {%   if builtin.constants %}
 
@@ -114,6 +126,9 @@ class {{ builtin.cy_type }}:
 {%   endif %}
 {%   for c in builtin.constants %}
     {{c.name}}: {{c.type.py_type}}
+{%     if c.description %}
+    """{{ c.description | gd_description_to_py_doc }}"""
+{%     endif %}
 {%   endfor %}
 {%   if builtin.enums %}
 
@@ -121,8 +136,11 @@ class {{ builtin.cy_type }}:
 {%   endif %}
 {%   for e in builtin.enums %}
     class {{ e.original_name }}(Enum):
-{%     for k, v in e.py_values.items() %}
-        {{ k }}: int
+{%     for item in e.items %}
+        {{ item.py_name }}: int
+{%       if item.description %}
+        """{{ item.description | gd_description_to_py_doc }}"""
+{%       endif %}
 {%     endfor %}
 {%   endfor %}
 {% endfor %}
