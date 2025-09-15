@@ -11,7 +11,7 @@ subdir('hazmat')
 ##############################################################################
 
 
-foreach src: ['__init__.py', 'singletons.py', 'py.typed']
+foreach src: ['__init__.py', 'classes.pxd', 'singletons.py', 'py.typed']
     install_data(
         src,
         install_dir: join_paths(python_site_packages_install_path, 'godot'),
@@ -50,9 +50,12 @@ custom_target(
 
 
 custom_target(
-    output: 'classes.pxd',
-    input: pxd_godot_classes,
-    command: copy_command,
+    output: '_classes_api.py',
+    input: [
+        generate_tmpl_base_input,
+        files('_classes_api.py.j2'),
+    ],
+    command: generate_tmpl_cmd,
     install: true,
     install_dir: join_paths(python_site_packages_install_path, 'godot'),
 )
@@ -134,25 +137,14 @@ shared_library(
 #    ├─ gdextension_interface.pxd
 #    │  └─ ...
 #    └─ classes.pyx
-#       └─ extension_api.json
-
-pyxclasses = custom_target(
-    output: 'classes.pyx',
-    input: [
-        generate_tmpl_base_input,
-        files(
-            'classes.pyx.j2',
-            'classes_pyx/class.pyx.j2',
-            'classes_pyx/method.pyx.j2',
-        ),
-    ],
-    command: generate_tmpl_cmd,
-)
 
 
 cclasses = custom_target(
     output : 'classes.c',
-    input : [pyxclasses, pxds_godot],
+    input : [
+        files('classes.pyx'),
+        pxds_godot,
+    ],
     command : cythonize_command,
 )
 

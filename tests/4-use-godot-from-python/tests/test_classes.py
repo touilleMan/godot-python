@@ -234,6 +234,7 @@ def test_enum():
 
     # Defined in the class
     assert_issubclass(Node.ProcessMode, Enum)
-    assert_eq(Node.ProcessMode.PROCESS_MODE_WHEN_PAUSED.value, 2)
+    assert_eq(Node.ProcessMode.WHEN_PAUSED.value, 2)
+    assert not hasattr(Node.ProcessMode, "PROCESS_MODE_WHEN_PAUSED")
     # Defined in the parent
-    assert_eq(Node.ConnectFlags.CONNECT_ONE_SHOT.value, 4)
+    assert_eq(Node.ConnectFlags.ONE_SHOT.value, 4)

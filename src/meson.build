@@ -150,20 +150,6 @@ pxd_godot_builtins = custom_target(
 )
 
 
-# godot/classes.pxd
-# └─ extension_api.json
-
-
-pxd_godot_classes = custom_target(
-    output: 'godot#classes.pxd',
-    input: [
-        generate_tmpl_base_input,
-        files('godot/classes.pxd.j2'),
-    ],
-    command: generate_tmpl_cmd,
-)
-
-
 # Groups of pxds to simplify includes in pyx compilation
 
 
@@ -181,7 +167,9 @@ pxds_godot_hazmat = [
 pxds_godot = [
     pxds_godot_hazmat,
     pxd_godot_builtins,
-    pxd_godot_classes,
+    files(
+        'godot/classes.pxd'
+    ),
 ]
 
 

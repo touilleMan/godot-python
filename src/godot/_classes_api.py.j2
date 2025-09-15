@@ -1,0 +1,180 @@
+# Constant definition:
+# [ ...
+#   "_c",
+#   <constant_name as str>,
+#   <constant_value as  int>,
+# ...]
+_tag_constant = "_c"
+
+# Enum definition:
+# [ ...
+#   "_e",
+#   <enum_name as str>,
+#   <enum_items_count as int>,
+#   # First item
+#   <enum_item_name as str>,
+#   <enum_item_value as int>,
+#   # Additional items
+#   ...
+# ...]
+_tag_enum = "_e"
+
+# Property definition:
+# [ ...
+#   "_p",
+#   <property_name as str>,
+#   <property_type as  str>,
+#   <property_getter as str>,
+#   <property_setter as str or None>,
+#   <property_index as int or None>,
+# ...]
+_tag_property = "_p"
+
+# Signal definition:
+# [ ...
+#   "_s",
+#   <signal_name as str>,
+#   <signal_arguments_count as int>,
+#   # First argument
+#   <argument_name as str>,
+#   <argument_type as str>,
+#   <argument_default_value as str or None>,
+#   # Additional argument
+#   ...
+# ...]
+_tag_signal = "_s"
+
+# Method definition:
+# [ ...
+#   "_m",
+#   <method_name as str>,
+#   <method_hash as int>,
+#   <method_flags as int>,
+#   <method_return_type as str>,
+#   <method_arguments_count as int>,
+#   # First argument
+#   <argument_name as str>,
+#   <argument_type as str>,
+#   <argument_default_value as str or None>,
+#   # Additional argument
+#   ...
+# ...]
+_tag_method = "_m"
+_tag_method_flag_is_const = 1 << 1
+_tag_method_flag_is_vararg = 1 << 2
+_tag_method_flag_is_static = 1 << 3
+_tag_method_flag_is_virtual = 1 << 4
+_tag_method_flag_is_required = 1 << 5
+_tag_method_flag_is_property_accessor = 1 << 6
+
+
+{% for c in api.classes %}
+{{ c.original_name }} = [
+    # Parent
+{%   if c.inherits is none %}
+    None,
+{%   else %}
+    "{{ c.inherits.type_name }}",
+{%   endif %}
+
+    # constants
+{%   for constant in c.constants %}
+
+    _tag_constant,
+    "{{ constant.name }}",
+    {{ constant.value }},
+{%   endfor %}
+
+    # enums
+{%   for enum in c.enums %}
+
+    _tag_enum,
+    "{{ enum.original_name }}",
+    {{ enum.items | length }},  # Items count
+{%     for item in enum.items %}
+    "{{ item.py_name }}",
+    {{ item.value }},
+{%     endfor %}
+{%   endfor %}
+
+    # properties
+{%   for prop in c.properties %}
+
+    _tag_property,
+    "{{ prop.name }}",
+    # type
+    "{{ prop.type.type_name }}",
+    # getter
+    "{{ prop.getter }}",
+    # setter
+{%     if prop.setter is none %}
+    None,
+{%     else %}
+    "{{ prop.setter }}",
+{%     endif %}
+    # index
+{%     if prop.index is none %}
+    None,
+{%     else %}
+    {{ prop.index }},
+{%     endif %}
+{%   endfor %}
+
+    # signals
+{%   for signal in c.signals %}
+
+    _tag_signal,
+    "{{ signal.name }}",
+    {{ signal.arguments | length }},  # Arguments count
+{%     for signal_arg in signal.arguments %}
+    "{{ signal_arg.name }}",
+    "{{ signal_arg.type.type_name }}",
+{%       if signal_arg.default_value is none %}
+    None,  # No default value
+{%       else %}
+    {{ signal_arg.default_value.py_value | repr }},  # Default value
+{%       endif %}
+{%     endfor %}
+{%   endfor %}
+
+    # methods
+{%   for method in c.methods %}
+
+    _tag_method,
+    "{{ method.name }}",
+    {{ method.hash }}, # Hash
+    (
+        0
+{%     if method.is_const %}
+        | _tag_method_flag_is_const
+{% endif %}
+{%     if method.is_vararg %}
+        | _tag_method_flag_is_vararg
+{% endif %}
+{%     if method.is_static %}
+        | _tag_method_flag_is_static
+{% endif %}
+{%     if method.is_virtual %}
+        | _tag_method_flag_is_virtual
+{% endif %}
+{%     if method.is_required %}
+        | _tag_method_flag_is_required
+{% endif %}
+{%     if method.is_property_accessor %}
+        | _tag_method_flag_is_property_accessor
+{% endif %}
+    ),
+    "{{ method.return_type.type_name }}",  # Return type
+    {{ method.arguments | length }},  # Arguments count
+{%     for method_arg in method.arguments %}
+    "{{ method_arg.name }}",
+    "{{ method_arg.type.type_name }}",
+{%       if method_arg.default_value is none %}
+    None,  # No default value
+{%       else %}
+    {{ method_arg.default_value.py_value | repr }},  # Default value
+{%       endif %}
+{%     endfor %}
+{%   endfor %}
+]
+{% endfor %}

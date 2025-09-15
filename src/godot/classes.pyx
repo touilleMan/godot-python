@@ -1,9 +1,10 @@
-{%- from 'classes_pyx/class.pyx.j2' import render_class with context -%}
 cimport cython
 
 from .hazmat cimport gdapi, gdptrs, gdextension_interface
 from .hazmat.gdtypes cimport *
 from .builtins cimport *
+
+from enum import Enum
 
 
 def __getattr__(name: str):
@@ -53,52 +54,6 @@ cdef class BaseGDObject:
         return wrapper
 
 
-# Classes
-
-
-{#
-# Forward declarations
-{% for cls in api.classes %}
-cdef class {{ cls.cy_type }}
-{% endfor %}
-{% for cls in api.classes %}
-
-
-{{ render_class(cls) }}
-{% endfor %}
-#}
-
-
-# Singletons
-
-
-{# {% for klass in api.classes %} #}
-{#  #}
-{#  #}
-{# cdef class {{ klass.cy_type }}({{ klass.inherits.cy_type if klass.inherits else "" }}): #}
-{# {%   if klass.inherits is none %} #}
-{#  #}
-{#     {# @staticmethod #}
-{#     cpdef inline {{ klass.cy_type}} new(): #}
-{#         raise NotImplementedError("TODO :'(") #} #}
-{#  #}
-{#     def free(self): #}
-{#         gdptrs.gdptr_object_destroy(self._gd_ptr) #}
-{#         self._gd_ptr = NULL #}
-{#  #}
-{#     def __init__(self): #}
-{#         raise RuntimeError( #}
-{#             f"Use `new()` method to instantiate non-refcounted Godot object (and don't forget to free it !)" #}
-{#         ) #}
-{#  #}
-{#     def __repr__(self): #}
-{#         return f"<{type(self).__name__} wrapper on 0x{<size_t>self._gd_ptr:x}>" #}
-{# {%   else %} #}
-{#     pass #}
-{# {% endif %} #}
-{# {% endfor %} #}
-
-
 cdef object _loaded_singletons = {}
 cdef object _loaded_classes = {}
 
@@ -115,7 +70,6 @@ cpdef BaseGDObject _load_singleton(str name):
         pass
 
     cdef object cls = _load_class(name)
-{# cdef gd_object_t gdobj = gdptrs.gdptr_global_get_singleton(&(<StringName>cls._gd_name)._gd_data) #}
     cdef gd_string_name_t gdname = gdapi.gd_string_name_from_unchecked_pystr(name)
     cdef gd_object_t gdobj = gdptrs.gdptr_global_get_singleton(&gdname)
     gdapi.gd_string_name_del(&gdname)
@@ -127,11 +81,6 @@ cpdef BaseGDObject _load_singleton(str name):
 
     _loaded_singletons[name] = singleton
     return singleton
-{# {% for singleton in api.singletons %}
-    cdef {{ singleton.type.py_type }} singleton_{{ singleton.name }} = {{ singleton.type.py_type }}.__new__({{ singleton.type.py_type }})
-    singleton_{{ singleton.name }}._gd_ptr = gdptrs.gdptr_global_get_singleton("{{ singleton.original_name }}")
-    globals()["{{ singleton.name }}"] = singleton_{{ singleton.name }}
-{% endfor %} #}
 
 
 cdef inline object _property_getter(BaseGDObject obj, object name):
@@ -146,7 +95,190 @@ cdef inline object _meth_call(BaseGDObject obj, object name, object args):
     return _object_call(obj._gd_ptr, "call", [name, *args])
 
 
+#
+# Classes API base class loader
+#
+
 cdef object _load_class(str name):
+    try:
+        return _loaded_classes[name]
+    except KeyError:
+        pass
+
+    from godot import _classes_api
+    try:
+        spec = getattr(_classes_api, name)
+    except AttributeError:
+        raise RuntimeError(f"Class `{name}` doesn't exist in Godot !")
+
+    # TODO: ClassDB won't be needed once method uses ptrcall
+    # Load our good friend ClassDB
+    cdef StringName gdname_classdb = StringName("ClassDB")
+    cdef gd_object_t classdb = gdptrs.gdptr_global_get_singleton(&gdname_classdb._gd_data)
+
+    gd_name = GDString(name)
+    parent = spec[0]
+    items_spec = iter(spec[1:])
+    if parent:
+        parent_cls = _load_class(parent)
+        bases = (parent_cls, )
+    else:
+        bases = (BaseGDObject, )
+
+    attrs = {}
+
+    if name == "RefCounted":
+        @classmethod
+        def _new(cls):
+            raise RuntimeError(f"RefCounted Godot object must be created with `{ cls.__name__ }()`")
+
+        attrs["new"] = _new
+
+        def _del(self):
+            cdef BaseGDObject obj = <BaseGDObject>self
+            if _object_call(obj._gd_ptr, "unreference", []):
+                gdptrs.gdptr_object_destroy(obj._gd_ptr)
+                obj._gd_ptr = NULL
+
+        attrs["__del__"] = _del
+
+        def _free(self):
+            raise RuntimeError("RefCounted Godot object cannot be freed")
+
+        attrs["free"] = _free
+
+        def _init(self):
+            cdef gd_string_name_t name = gdapi.gd_string_name_from_unchecked_pystr(type(self).__name__)
+            (<BaseGDObject>self)._gd_ptr = gdptrs.gdptr_classdb_construct_object(&name)
+
+        attrs["__init__"] = _init
+
+    while True:
+        try:
+            tag = next(items_spec)
+        except StopIteration:
+            break
+
+        if tag == _classes_api._tag_constant:
+            constant_name = next(items_spec)
+            constant_value = next(items_spec)
+            attrs[constant_name] = constant_value
+
+        elif tag == _classes_api._tag_enum:
+            enum_name = next(items_spec)
+            enum_items_count = next(items_spec)
+            enum_items_cooked = {}
+            for _ in range(enum_items_count):
+                enum_item_name = next(items_spec)
+                enum_item_value = next(items_spec)
+                enum_items_cooked[enum_item_name] = enum_item_value
+            attrs[enum_name] = Enum(enum_name, enum_items_cooked)
+
+        elif tag == _classes_api._tag_property:
+            def _gen(
+                prop_name,
+                _prop_type,
+                _prop_getter,
+                _prop_setter,
+                _prop_index,
+            ):
+                gd_prop_name = GDString(prop_name)
+                # TODO: ptrcall on getter/setter
+                @property
+                def _property(self):
+                    return _property_getter(self, gd_prop_name)
+                @_property.setter
+                def _property(self, value):
+                    _property_setter(self, gd_prop_name, value)
+                _property.fget.__name__ = prop_name
+                _property.fset.__name__ = prop_name
+                return _property
+
+            prop_name = next(items_spec)
+            attrs[prop_name] = _gen(
+                prop_name,
+                next(items_spec),
+                next(items_spec),
+                next(items_spec),
+                next(items_spec),
+            )
+
+        elif tag == _classes_api._tag_signal:
+            def _gen(
+                signal_name,
+                signal_arguments_count,
+            ):
+                gd_signal_name = GDString(signal_name)
+                for _ in range(signal_arguments_count):
+                    _arg_name = next(items_spec)
+                    _arg_type = next(items_spec)
+                    _arg_default_value = next(items_spec)
+                # TODO: arguments support !
+                @property
+                def _signal(self):
+                    return Signal(self, gd_signal_name)
+                return _signal
+
+            signal_name = next(items_spec)
+            attrs[signal_name] = _gen(
+                signal_name,
+                next(items_spec),
+            )
+
+        elif tag == _classes_api._tag_method:
+            def _gen(
+                method_name,
+                _method_hash,
+                method_flags,
+                _method_return_type,
+                method_arguments_count,
+            ):
+                gd_method_name = GDString(method_name)
+                for _ in range(method_arguments_count):
+                    _arg_name = next(items_spec)
+                    _arg_type = next(items_spec)
+                    _arg_default_value = next(items_spec)
+                # TODO: ptr call !
+                # TODO: JIT compilation !
+                if method_flags & _classes_api._tag_method_flag_is_static:
+                    @staticmethod
+                    def _meth(*args):
+                        ret = _object_call(classdb, "class_call_static", [gd_name, gd_method_name, *args])
+                        return ret
+                else:
+                    def _meth(self, *args):
+                        ret = _meth_call(self, gd_method_name, args)
+                        return ret
+                _meth.__name__ = method_name
+                return _meth
+
+            method_name = next(items_spec)
+            attrs[method_name] = _gen(
+                method_name,
+                next(items_spec),
+                next(items_spec),
+                next(items_spec),
+                next(items_spec),
+            )
+
+        else:
+            assert False, tag
+
+    # `Object` defines a `free`, but it doesn't work properly (instead we rely on `BaseGDObject.free`)
+    attrs.pop("free", None)
+
+    cdef object klass = type(name, bases, attrs)
+
+    _loaded_classes[name] = klass
+    return klass
+
+
+#
+# ClassDB based class loader
+#
+
+
+cdef object _load_class_from_class_db(str name):
     try:
         return _loaded_classes[name]
     except KeyError:
@@ -272,7 +404,7 @@ cdef object _object_call(gd_object_t obj, str meth, list args):
 
     cdef StringName gdname_object = StringName("Object")
     cdef StringName gdname_call = StringName("call")
-    cdef gdextension_interface.GDExtensionMethodBindPtr Object_call = gdptrs.gdptr_classdb_get_method_bind(&gdname_object._gd_data, &gdname_call._gd_data, {{ api.get_class_meth_hash("Object", "call") }})
+    cdef gdextension_interface.GDExtensionMethodBindPtr Object_call = gdptrs.gdptr_classdb_get_method_bind(&gdname_object._gd_data, &gdname_call._gd_data, 3400424181)
 
     cdef gdextension_interface.GDExtensionInt args_with_meth_len = len(args) + 1
     if args_with_meth_len > 9:

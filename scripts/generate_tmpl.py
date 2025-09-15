@@ -18,11 +18,10 @@ TARGETS: dict[str, tuple[bool, Path]] = {
     "gdtypes.pxd": (False, HAZMAT_DIR),
     "gdapi.pxd": (False, HAZMAT_DIR),
     "builtins.pyi": (False, GODOT_DIR),
-    "builtins.pxd": (True, GODOT_DIR),
-    "builtins.pyx": (True, GODOT_DIR),
+    "builtins.pxd": (False, GODOT_DIR),
+    "builtins.pyx": (False, GODOT_DIR),
     "classes.pyi": (True, GODOT_DIR),
-    "classes.pxd": (True, GODOT_DIR),
-    "classes.pyx": (True, GODOT_DIR),
+    "_classes_api.py": (True, GODOT_DIR),
     "conversion.pyx": (False, GODOT_DIR),
     "conversion.pxd": (False, GODOT_DIR),
 }
@@ -41,6 +40,7 @@ GODOT_CLASSES_SAMPLE = {
     "Font",
     "Image",
     "InputEvent",
+    "JSON",
     "MainLoop",
     "Node",
     "Node2D",
@@ -86,6 +86,7 @@ def make_jinja_env(import_dir: Path) -> Environment:
     )
     env.filters["merge"] = lambda x, **kwargs: {**x, **kwargs}
     env.filters["gd_description_to_py_doc"] = gd_description_to_py_doc
+    env.filters["repr"] = repr
     return env
 
 
