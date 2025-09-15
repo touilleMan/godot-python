@@ -1,5 +1,3 @@
-cimport cython
-
 from .hazmat cimport gdapi, gdptrs, gdextension_interface
 from .hazmat.gdtypes cimport *
 from .builtins cimport *
@@ -94,10 +92,6 @@ cdef inline void _property_setter(BaseGDObject obj, object name, object value):
 cdef inline object _meth_call(BaseGDObject obj, object name, object args):
     return _object_call(obj._gd_ptr, "call", [name, *args])
 
-
-#
-# Classes API base class loader
-#
 
 cdef object _load_class(str name):
     try:
@@ -266,130 +260,6 @@ cdef object _load_class(str name):
 
     # `Object` defines a `free`, but it doesn't work properly (instead we rely on `BaseGDObject.free`)
     attrs.pop("free", None)
-
-    cdef object klass = type(name, bases, attrs)
-
-    _loaded_classes[name] = klass
-    return klass
-
-
-#
-# ClassDB based class loader
-#
-
-
-cdef object _load_class_from_class_db(str name):
-    try:
-        return _loaded_classes[name]
-    except KeyError:
-        pass
-
-    cdef StringName gdname = StringName(name)
-
-    # Load our good friend ClassDB
-    cdef StringName gdname_classdb = StringName("ClassDB")
-    cdef gd_object_t classdb = gdptrs.gdptr_global_get_singleton(&gdname_classdb._gd_data)
-
-    if not _object_call(classdb, "class_exists", [gdname]):
-        raise RuntimeError(f"Class `{name}` doesn't exist in Godot !")
-
-    gdparent = _object_call(classdb, "get_parent_class", [gdname])
-    parent = str(gdparent)
-    if parent:
-        parent_cls = _load_class(parent)
-        bases = (parent_cls, )
-    else:
-        bases = (BaseGDObject, )
-
-    attrs = {"_gd_name": gdname}
-    ################################ TODO: meth["name"] is GDString, should use str/StringName instead
-
-    if name == "RefCounted":
-        @classmethod
-        def _new(cls):
-            raise RuntimeError(f"RefCounted Godot object must be created with `{ cls.__name__ }()`")
-
-        attrs["new"] = _new
-
-        def _del(self):
-            cdef BaseGDObject obj = <BaseGDObject>self
-            if _object_call(obj._gd_ptr, "unreference", []):
-                gdptrs.gdptr_object_destroy(obj._gd_ptr)
-                obj._gd_ptr = NULL
-
-        attrs["__del__"] = _del
-
-        def _free(self):
-            raise RuntimeError("RefCounted Godot object cannot be freed")
-
-        attrs["free"] = _free
-
-        def _init(self):
-            cdef gd_string_name_t name = gdapi.gd_string_name_from_unchecked_pystr(type(self).__name__)
-            (<BaseGDObject>self)._gd_ptr = gdptrs.gdptr_classdb_construct_object(&name)
-
-        attrs["__init__"] = _init
-
-    def _generate_method(spec, py_meth_name):
-        gd_meth_name = spec["name"]
-        if spec["flags"] & 32:  # METHOD_FLAG_STATIC == 32
-            @staticmethod
-            def _meth(*args):
-                return _object_call(classdb, "class_call_static", [gdname, gd_meth_name, *args])
-        else:
-            def _meth(self, *args):
-                return _meth_call(self, gd_meth_name, args)
-        _meth.__name__ = py_meth_name
-        return _meth
-
-    meths = _object_call(classdb, "class_get_method_list", [gdname])
-    for meth in meths:
-        meth_name = str(meth["name"])
-        attrs[meth_name] = _generate_method(meth, meth_name)
-
-    # `Object` defines a `free`, but it doesn't work properly...
-    attrs.pop("free", None)
-
-    def _generate_property(spec):
-        prop_name = spec["name"]
-        prop_name_py = str(prop_name)
-        @property
-        def _property(self):
-            return _property_getter(self, prop_name)
-        @_property.setter
-        def _property(self, value):
-            _property_setter(self, prop_name, value)
-        _property.fget.__name__ = prop_name_py
-        _property.fset.__name__ = prop_name_py
-        return _property
-
-    properties = _object_call(classdb, "class_get_property_list", [gdname])
-    for prop in properties:
-        attrs[str(prop["name"])] = _generate_property(prop)
-
-    signals = _object_call(classdb, "class_get_signal_list", [gdname])
-    for signal in signals:
-        signal_name = signal["name"]
-        signal_name_py = str(signal_name)
-        @property
-        def _signal(self):
-            return Signal(self, signal_name)
-        attrs[signal_name_py] = _signal
-
-    constants = _object_call(classdb, "class_get_integer_constant_list", [gdname, True])
-    for constant_name in constants:
-        constant_value = _object_call(classdb, "class_get_integer_constant", [gdname, constant_name])
-        attrs[str(constant_name)] = constant_value
-
-    from enum import Enum
-    enums = _object_call(classdb, "class_get_enum_list", [gdname, True])
-    for enum_name in enums:
-        enum_items_cooked = {}
-        enum_items = _object_call(classdb, "class_get_enum_constants", [gdname, enum_name])
-        for enum_item_name in enum_items:
-            enum_item_value = _object_call(classdb, "class_get_integer_constant", [gdname, enum_item_name])
-            enum_items_cooked[str(enum_item_name)] = enum_item_value
-        attrs[str(enum_name)] = Enum(str(enum_name), enum_items_cooked)
 
     cdef object klass = type(name, bases, attrs)
 
