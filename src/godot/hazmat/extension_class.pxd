@@ -25,8 +25,8 @@ cdef class ExtensionClassMethodSpec:
 
 
 cdef inline list _get_extension_gc_protector():  # No `noexcept` since it is ignored when returning a PyObject
-    import godot.hazmat
-    return godot.hazmat.__dict__.setdefault("__extension_gc_protector", [])
+    from godot import hazmat
+    return hazmat.__dict__.setdefault("__extension_gc_protector", [])
 
 
 cdef inline void unregister_extension_class(bytes class_name) noexcept:
@@ -249,7 +249,7 @@ cdef inline GDExtensionVariantType _type_name_to_gdnative_variant_type(bytes typ
         return GDEXTENSION_VARIANT_TYPE_PACKED_COLOR_ARRAY
     else:
         # TODO: better error !
-        print(f"Pythonscript extension class registration: Unknown type_name `{type_name}`")
+        print(f"Godot-Python extension class registration: Unknown type_name `{type_name}`")
         return GDEXTENSION_VARIANT_TYPE_NIL
 
 
@@ -295,7 +295,7 @@ cdef inline void _method_call_func(
 ) noexcept with gil:
     cdef ExtensionClassMethodSpec spec = <ExtensionClassMethodSpec>p_method_userdata
     # TODO: finish me !
-    print(f"Pythonscript: `{spec.class_name.decode()}::{spec.method_name.decode()}` method call without ptrcall is not yet supported !!!")
+    print(f"Godot-Python: `{spec.class_name.decode()}::{spec.method_name.decode()}` method call without ptrcall is not yet supported !!!")
     r_error[0].error = GDEXTENSION_CALL_ERROR_INVALID_METHOD
     r_error[0].argument = 0
     r_error[0].expected = 0

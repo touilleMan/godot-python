@@ -68,7 +68,7 @@ def install_distrib(build_dir: Path, distrib_subdir: str) -> Path:
     print(" ".join(cmd), flush=True)
     subprocess.check_call(cmd)
 
-    for platform_dir in (distrib_workdir / "addons/pythonscript").iterdir():
+    for platform_dir in (distrib_workdir / "addons/gdpy").iterdir():
         if "windows" in platform_dir.name.lower():
             python_path = platform_dir / "python.exe"
             break
@@ -79,9 +79,7 @@ def install_distrib(build_dir: Path, distrib_subdir: str) -> Path:
             python_path = platform_dir / "bin/python3"
             break
     else:
-        raise RuntimeError(
-            f"Cannot find Python binary in {distrib_workdir / 'addons/pythonscript'}"
-        )
+        raise RuntimeError(f"Cannot find Python binary in {distrib_workdir / 'addons/gdpy'}")
 
     # We also have to install Cython to compile the projects
     if (
@@ -150,7 +148,7 @@ def create_test_workdir(
     )
     shutil.copytree(test_dir, test_workdir, dirs_exist_ok=True, symlinks=True)
     symlink(distrib_workdir / "addons", test_workdir / "addons")
-    shutil.copy(distrib_workdir / "pythonscript.gdextension", test_workdir)
+    shutil.copy(distrib_workdir / "gdpy.gdextension", test_workdir)
     # GDExtension headers are needed to compile Cython modules
     if custom_gdextension_api:
         shutil.copytree(custom_gdextension_api, test_workdir / "gdextension_api", symlinks=True)

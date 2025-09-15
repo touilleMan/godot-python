@@ -11,7 +11,7 @@ subdir('hazmat')
 ##############################################################################
 
 
-foreach src: ['__init__.py', 'singletons.py', '__init__.pyi', 'py.typed']
+foreach src: ['__init__.py', 'singletons.py', 'py.typed']
     install_data(
         src,
         install_dir: join_paths(python_site_packages_install_path, 'godot'),
@@ -120,7 +120,7 @@ shared_library(
     'builtins',
     cbuiltins,
     gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
-    dependencies : [dep_godot, dep_python, dep_pythonscript],
+    dependencies : [dep_godot, dep_python, dep_gdpy],
     install_rpath: builtins_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
@@ -170,7 +170,7 @@ shared_library(
     'classes',
     cclasses,
     gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
-    dependencies : [dep_godot, dep_python, dep_pythonscript],
+    dependencies : [dep_godot, dep_python, dep_gdpy],
     install_rpath: classes_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
@@ -231,7 +231,7 @@ shared_library(
     '_lang',
     c_lang,
     gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
-    dependencies : [dep_godot, dep_python, dep_pythonscript],
+    dependencies : [dep_godot, dep_python, dep_gdpy],
     install_rpath: _lang_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,

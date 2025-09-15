@@ -17,13 +17,12 @@ def copy_data(build_dir: Path) -> None:
     output_godot_hazmat_dir.mkdir(parents=True, exist_ok=True)
 
     shutil.copy(ROOT_DIR / "src/_gdpy_libgodot.pyx", TARGET_DIR)
-    shutil.copy(build_dir / "src/pythonscript_gdextension_ptrs.c", TARGET_DIR)
+    shutil.copy(build_dir / "src/gdpy_gdextension_ptrs.c", TARGET_DIR)
 
     shutil.copytree(build_dir / "gdextension_api", TARGET_DIR / "gdextension_api")
 
     src_godot_dir = ROOT_DIR / "src/godot"
     shutil.copy(src_godot_dir / "__init__.py", output_godot_dir)
-    shutil.copy(src_godot_dir / "__init__.pyi", output_godot_dir)
     shutil.copy(src_godot_dir / "_lang.pyx", output_godot_dir)
     shutil.copy(src_godot_dir / "_lang_resource_format_loader.pxi", output_godot_dir)
     shutil.copy(src_godot_dir / "_lang_resource_format_saver.pxi", output_godot_dir)

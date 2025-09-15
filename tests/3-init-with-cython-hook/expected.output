@@ -1,6 +1,6 @@
 Godot Engine .* - https://godotengine.org
 
-Pythonscript .* \(CPython .*\)
+Godot-Python .* \(CPython .*\)
 MY initialize 2
 MY initialize 3
 Hello, World !

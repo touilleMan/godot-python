@@ -1,4 +1,4 @@
-cdef object RESOURCE_TYPE_NAME = "PythonScript"
+cdef object RESOURCE_TYPE_NAME = "Python"
 cdef object RESOURCE_EXTENSIONS = ("py", "pyc", "pyo", "pyd")
 
 

@@ -74,7 +74,7 @@ shared_library(
     'extension_class',
     c_extension_class,
     gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
-    dependencies : [dep_godot, dep_python, dep_pythonscript],
+    dependencies : [dep_godot, dep_python, dep_gdpy],
     install_rpath: extension_class_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,

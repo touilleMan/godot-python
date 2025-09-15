@@ -28,11 +28,11 @@ stretch_2d=true
 
 [editor_plugins]
 
-enabled=PackedStringArray("pythonscript_repl")
+enabled=PackedStringArray("gdpy_repl")
 
 [gdnative]
 
-singletons=["res://pythonscript.gdnlib"]
+singletons=["res://gdpy.gdnlib"]
 
 [input]
 

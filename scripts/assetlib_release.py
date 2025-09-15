@@ -13,9 +13,6 @@ from urllib.request import urlopen
 import argparse
 import tarfile
 from datetime import datetime
-import os
-import shutil
-from urllib.request import urlretrieve
 from zipfile import ZipFile
 from concurrent.futures import ThreadPoolExecutor
 
@@ -61,24 +58,20 @@ def pipeline_executor(dirs, release_info, platform_name):
         with urlopen(platform_info["url"]) as f:
             release_archive.write_bytes(f.read())
 
-    if not (dirs["pythonscript"] / platform_name).exists():
+    if not (dirs["gdpy"] / platform_name).exists():
         print(f"{platform_name} - Extracting release")
         if platform_info["name"].endswith(".zip"):
             zipobj = ZipFile(release_archive)
             # Only extract platform-specific stuff
             members = (
-                x
-                for x in zipobj.namelist()
-                if x.startswith(f"addons/pythonscript/{platform_name}/")
+                x for x in zipobj.namelist() if x.startswith(f"addons/gdpy/{platform_name}/")
             )
             zipobj.extractall(path=dirs["dist"], members=members)
 
         elif platform_info["name"].endswith(".tar.bz2"):
             tarobj = tarfile.open(release_archive)
             # Only extract platform-specific stuff
-            members = (
-                x for x in tarobj if x.name.startswith(f"./addons/pythonscript/{platform_name}/")
-            )
+            members = (x for x in tarobj if x.name.startswith(f"./addons/gdpy/{platform_name}/"))
             tarobj.extractall(path=dirs["dist"], members=members)
 
         else:
@@ -96,13 +89,11 @@ def orchestrator(dirs, release_info):
 
     print("Add bonuses...")
 
-    (dirs["pythonscript"] / ".gdignore").touch()
+    (dirs["gdpy"] / ".gdignore").touch()
     license_txt = (MISC_DIR / "release_LICENSE.txt").read_text()
-    for entry in ["dist", "pythonscript"]:
+    for entry in ["dist", "gdpy"]:
         (dirs[entry] / "LICENSE.txt").write_text(license_txt)
-    (dirs["dist"] / "pythonscript.gdnlib").write_text(
-        (MISC_DIR / "release_pythonscript.gdnlib").read_text()
-    )
+    (dirs["dist"] / "gdpy.gdnlib").write_text((MISC_DIR / "release_gdpy.gdnlib").read_text())
     (dirs["dist"] / "README.txt").write_text(
         (MISC_DIR / "release_README.txt")
         .read_text()
@@ -118,21 +109,21 @@ def main():
     release_info = get_release_info(args.version)
     print(f"Release version: {release_info['version']}")
 
-    build_dir = Path(f"pythonscript-assetlib-release-{release_info['version']}").resolve()
-    dist_dir = build_dir / f"pythonscript-{release_info['version']}"
+    build_dir = Path(f"gdpy-assetlib-release-{release_info['version']}").resolve()
+    dist_dir = build_dir / f"gdpy-{release_info['version']}"
     addons_dir = dist_dir / "addons"
-    pythonscript_dir = addons_dir / "pythonscript"
+    gdpy_dir = addons_dir / "gdpy"
 
     build_dir.mkdir(exist_ok=True)
     dist_dir.mkdir(exist_ok=True)
     addons_dir.mkdir(exist_ok=True)
-    pythonscript_dir.mkdir(exist_ok=True)
+    gdpy_dir.mkdir(exist_ok=True)
 
     dirs = {
         "build": build_dir,
         "dist": dist_dir,
         "addons": addons_dir,
-        "pythonscript": pythonscript_dir,
+        "gdpy": gdpy_dir,
     }
     orchestrator(dirs, release_info)
 

@@ -1,16 +1,14 @@
-# TODO: now that the gdptrs are located in `libpythonscript.so`, doing a `import godot`
-# from a python interpreter cause a `ImportError: libpythonscript.so: cannot open shared object file: No such file or directory`
+# TODO: now that the gdptrs are located in `libgdpy.so`, doing a `import godot`
+# from a python interpreter cause a `ImportError: libgdpy.so: cannot open shared object file: No such file or directory`
 # when doing `from godot.builtins import *`. We should change the sanity check accordingly...
 
 # Start with a sanity check to ensure the loading is done from Godot-Python
 # (and not from a regular Python interpreter which would lead to a segfault).
 # The idea is we should have the following loading order:
-# godot binary -> libpythonscript.so -> godot/__init__.py
+# godot binary -> libgdpy.so -> godot/__init__.py
 import sys
 
-if (
-    sys.argv[0] == ""
-):  # `sys.argv` is configured later on by `godot._lang._pythonscript_initialize()`
+if sys.argv[0] != "":  # `sys.argv` is configured later on by `godot._lang._gdpy_initialize()`
     raise ImportError(
         "Cannot initialize godot module given Godot GDExtension API not available.\n"
         "This is most likely because you are running code from a regular Python interpreter"
@@ -19,9 +17,9 @@ if (
     )
 del sys
 
-from godot._version import __version__  # noqa: E402, F401
+from ._version import __version__  # noqa: E402, F401
 
-# from godot.tags import (
+# from .tags import (
 #     MethodRPCMode,
 #     PropertyHint,
 #     PropertyUsageFlag,
@@ -38,9 +36,9 @@ from godot._version import __version__  # noqa: E402, F401
 #     export,
 #     exposed,
 # )
-from godot.builtins import *  # noqa: E402, F403
+from .builtins import *  # noqa: E402, F403
 
-# from godot.classes import _load_singleton, _load_class
+# from .classes import _load_singleton, _load_class
 
 
 # def __getattr__(name):

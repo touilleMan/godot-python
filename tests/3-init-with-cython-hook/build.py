@@ -27,14 +27,14 @@ if SKIP_EXTENSION_BUILD:
 
 
 if platform.system() == "Windows":
-    python_path = PROJECT_DIR / "addons/pythonscript/windows-x86_64/python.exe"
+    python_path = PROJECT_DIR / "addons/gdpy/windows-x86_64/python.exe"
     lib_pattern = "my.*.pyd"
 elif platform.system() == "Darwin":
-    python_path = PROJECT_DIR / "addons/pythonscript/macos-x86_64/bin/python3"
+    python_path = PROJECT_DIR / "addons/gdpy/macos-x86_64/bin/python3"
     lib_pattern = "my.*.dylib"
 else:
     assert platform.system() == "Linux"
-    python_path = PROJECT_DIR / "addons/pythonscript/linux-x86_64/bin/python3"
+    python_path = PROJECT_DIR / "addons/gdpy/linux-x86_64/bin/python3"
     lib_pattern = "my.*.so"
 
 

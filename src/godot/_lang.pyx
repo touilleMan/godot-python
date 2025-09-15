@@ -404,13 +404,13 @@ cdef void _apply_python_config_from_project_settings():
 
     # # Redirect stdout/stderr to have it in the Godot editor console
     # if _setup_project_settings_entry("python/io_streams_capture", True):
-    #     # Note we don't have to remove the stream capture in `pythonscript_finish` given
+    #     # Note we don't have to remove the stream capture in `gdpy_finish` given
     #     # Godot print API is available until after the Python interpreter is teardown
     #     install_io_streams_capture()
 
-    # # Enable verbose output from pythonscript framework
+    # # Enable verbose output from Godot-Python framework
     # if _setup_project_settings_entry("python/verbose", False):
-    #     set_pythonscript_verbose(True)
+    #     set_gdpy_verbose(True)
 
     # Update PYTHONPATH according to configuration
     pythonpath = str(_setup_project_settings_entry("python/path", "res://;res://lib"))
@@ -500,15 +500,15 @@ cdef void _print_banner():
     import sys
 
     if _setup_project_settings_entry("python/print_startup_info", True):
-        from godot._version import __version__ as pythonscript_version
+        from godot._version import __version__ as gdpy_version
         cooked_sys_version = '.'.join(map(str, sys.version_info))
-        print(f"Pythonscript {pythonscript_version} (CPython {cooked_sys_version})", flush=True)
+        print(f"Godot-Python {gdpy_version} (CPython {cooked_sys_version})", flush=True)
 
     if _setup_project_settings_entry("python/verbose", True):
         print(f"PYTHONPATH: {sys.path}", flush=True)
 
 
-cdef void _pythonscript_initialize(int p_level) noexcept with gil:
+cdef void _gdpy_initialize(int p_level) noexcept with gil:
     cdef BaseGDObject OS
     cdef PackedStringArray args
 
@@ -541,7 +541,7 @@ cdef void _pythonscript_initialize(int p_level) noexcept with gil:
         _initialize_callback_hook(p_level)
 
 
-cdef void _pythonscript_deinitialize(int p_level) noexcept with gil:
+cdef void _gdpy_deinitialize(int p_level) noexcept with gil:
     # /!\ When this function is called, the Python interpreter is fully operational
     # and might be running user-created threads doing concurrent stuff.
     # That will continue until `godot_gdnative_terminate` is called (which is
@@ -570,5 +570,5 @@ cdef void _pythonscript_deinitialize(int p_level) noexcept with gil:
 # Given how simple those functions are, we don't want to bother with C header
 # include and linkage considerations. Instead we just expose their function
 # pointers as Python objects that will be fetch using the C Python API.
-pythonscript_initialize_function_ptr = <size_t>_pythonscript_initialize
-pythonscript_deinitialize_function_ptr = <size_t>_pythonscript_deinitialize
+gdpy_initialize_function_ptr = <size_t>_gdpy_initialize
+gdpy_deinitialize_function_ptr = <size_t>_gdpy_deinitialize

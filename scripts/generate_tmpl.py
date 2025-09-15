@@ -13,7 +13,7 @@ SRC_DIR = BASEDIR / "../src"
 GODOT_DIR = SRC_DIR / "godot"
 HAZMAT_DIR = GODOT_DIR / "hazmat"
 TARGETS: dict[str, tuple[bool, Path]] = {
-    "pythonscript_gdextension_ptrs.c": (False, SRC_DIR),
+    "gdpy_gdextension_ptrs.c": (False, SRC_DIR),
     "gdptrs.pxd": (False, HAZMAT_DIR),
     "gdtypes.pxd": (False, HAZMAT_DIR),
     "gdapi.pxd": (False, HAZMAT_DIR),

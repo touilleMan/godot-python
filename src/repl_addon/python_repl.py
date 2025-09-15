@@ -1,12 +1,9 @@
-import sys
 import ctypes
 from code import InteractiveConsole
-from collections import deque
 from threading import Thread, Lock, Event
-from queue import SimpleQueue
 
-from _godot import StdoutStderrCaptureToGodot, StdinCapture
-from godot import exposed, export, ResourceLoader, VBoxContainer
+from godot import StdoutStderrCaptureToGodot, StdinCapture
+from godot import exposed, ResourceLoader, VBoxContainer
 
 from .plugin import BASE_RES
 
@@ -155,7 +152,7 @@ class PythonREPL(VBoxContainer):
         self.stdout_stderr_capture = StdoutStderrCaptureToBufferAndPassthrough()
         self.stdin_capture = StdinCaptureToBuffer()
         # Only overwrite streams if the scene has been created by the
-        # pythonscript_repl plugin. This avoid concurrent streams patching
+        # gdpy_repl plugin. This avoid concurrent streams patching
         # when the scene is opened from the editor (typically when we want
         # to edit the repl GUI)
         # TODO: find a way to differentiate plugin instantiated from other

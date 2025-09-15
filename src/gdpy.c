@@ -1,9 +1,9 @@
 /*
  * This file gets compiled as a shared library that act as the entry point
- * to the pythonscript plugin.
+ * to the Godot-Python plugin.
  * It should be loaded by Godot's GDExtension system (see the
- * `pythonscript.gdextension` file in the example/test projects).
- * As part of the loading, Godot will call the `pythonscript_init` function
+ * `gdpy.gdextension` file in the example/test projects).
+ * As part of the loading, Godot will call the `gdpy_init` function
  * very early, which will in turn register an initialization callback to be
  * called at the right time during Godot init. Once called, this callback
  * will initialize CPython interpreter then register Python as a new language
@@ -45,30 +45,30 @@
 typedef enum {
     STALLED,  // Intitial state
 
-    ENTRYPOINT_CALLED,  // pythonscript_init called
-    ENTRYPOINT_RETURNED,  // pythonscript_init returns
+    ENTRYPOINT_CALLED,  // gdpy_init called
+    ENTRYPOINT_RETURNED,  // gdpy_init returns
 
     PYTHON_INTERPRETER_READY,
 
     CRASHED,  // Something went wrong :'(
-} PythonscriptState;
+} GdpyState;
 
-static PythonscriptState state = STALLED;
+static GdpyState state = STALLED;
 static PyThreadState *gilstate = NULL;
 // Callbacks originally defined in `godot._lang`, we load them rigth after CPython
 // initialization, then use them in each subsequent Godot (de)initialization step.
-static void (*pythonscript_initialize)(int p_level);
-static void (*pythonscript_deinitialize)(int p_level);
+static void (*gdpy_initialize)(int p_level);
+static void (*gdpy_deinitialize)(int p_level);
 
 // Global variables used by Cython modules to access the Godot API, and defined
-// in `pythonscript_gdptr_ptrs.c` (which is compiled together with this file).
-void init_pythonscript_gdextension();
-DLL_IMPORT extern GDExtensionInterfaceGetProcAddress pythonscript_gdptr_get_proc_address;
-DLL_IMPORT extern GDExtensionClassLibraryPtr pythonscript_gdptr_library;
+// in `gdpy_gdptr_ptrs.c` (which is compiled together with this file).
+void init_gdpy_gdextension();
+DLL_IMPORT extern GDExtensionInterfaceGetProcAddress gdpy_gdptr_get_proc_address;
+DLL_IMPORT extern GDExtensionClassLibraryPtr gdpy_gdptr_library;
 
 #define GD_PRINT_ERROR(msg) { \
     { \
-        GDExtensionInterfacePrintError fn = (GDExtensionInterfacePrintError)(void*)pythonscript_gdptr_get_proc_address("print_error"); \
+        GDExtensionInterfacePrintError fn = (GDExtensionInterfacePrintError)(void*)gdpy_gdptr_get_proc_address("print_error"); \
         if (fn) { \
             fn(msg, __func__, __FILE__, __LINE__, false); \
         } else { \
@@ -79,7 +79,7 @@ DLL_IMPORT extern GDExtensionClassLibraryPtr pythonscript_gdptr_library;
 
 #define GD_PRINT_WARNING(msg) { \
     { \
-        GDExtensionInterfacePrintWarning fn = (GDExtensionInterfacePrintWarning)(void*)pythonscript_gdptr_get_proc_address("print_warning"); \
+        GDExtensionInterfacePrintWarning fn = (GDExtensionInterfacePrintWarning)(void*)gdpy_gdptr_get_proc_address("print_warning"); \
         if (fn) { \
             fn(msg, __func__, __FILE__, __LINE__, false); \
         } else { \
@@ -91,36 +91,36 @@ DLL_IMPORT extern GDExtensionClassLibraryPtr pythonscript_gdptr_library;
 // Initialize Python interpreter & godot
 static void _initialize_python() {
     if (state != ENTRYPOINT_RETURNED) {
-        printf("Pythonscript: Invalid internal state (this should never happen !)\n");
+        printf("Godot-Python: Invalid internal state (this should never happen !)\n");
         goto error;
     }
 
     // Load GDString & GDStringName contructors/destructors (needed above)
 
-    GDExtensionInterfaceVariantGetPtrConstructor variant_get_ptr_constructor = (GDExtensionInterfaceVariantGetPtrConstructor)(void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_constructor");
-    GDExtensionInterfaceVariantGetPtrDestructor variant_get_ptr_destructor = (GDExtensionInterfaceVariantGetPtrDestructor)(void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_destructor");
+    GDExtensionInterfaceVariantGetPtrConstructor variant_get_ptr_constructor = (GDExtensionInterfaceVariantGetPtrConstructor)(void*)gdpy_gdptr_get_proc_address("variant_get_ptr_constructor");
+    GDExtensionInterfaceVariantGetPtrDestructor variant_get_ptr_destructor = (GDExtensionInterfaceVariantGetPtrDestructor)(void*)gdpy_gdptr_get_proc_address("variant_get_ptr_destructor");
 
     GDExtensionPtrConstructor gd_string_constructor = variant_get_ptr_constructor(GDEXTENSION_VARIANT_TYPE_STRING, 0);
     if (gd_string_constructor == NULL) {
-        GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `String` constructor)");
+        GD_PRINT_ERROR("Godot-Python: Initialization error (cannot retrieve `String` constructor)");
         goto error;
     }
 
     GDExtensionPtrDestructor gd_string_destructor = variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING);
     if (gd_string_destructor == NULL) {
-        GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `String` destructor)");
+        GD_PRINT_ERROR("Godot-Python: Initialization error (cannot retrieve `String` destructor)");
         goto error;
     }
 
     GDExtensionPtrDestructor gd_string_name_destructor = variant_get_ptr_destructor(GDEXTENSION_VARIANT_TYPE_STRING_NAME);
     if (gd_string_name_destructor == NULL) {
-        GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `StringName` destructor)");
+        GD_PRINT_ERROR("Godot-Python: Initialization error (cannot retrieve `StringName` destructor)");
         goto error;
     }
 
-    GDExtensionInterfaceStringNameNewWithUtf8Chars gd_string_name_new_with_utf8_chars_with_utf8_chars = (GDExtensionInterfaceStringNameNewWithUtf8Chars)pythonscript_gdptr_get_proc_address("string_name_new_with_utf8_chars");
+    GDExtensionInterfaceStringNameNewWithUtf8Chars gd_string_name_new_with_utf8_chars_with_utf8_chars = (GDExtensionInterfaceStringNameNewWithUtf8Chars)gdpy_gdptr_get_proc_address("string_name_new_with_utf8_chars");
     if (gd_string_name_new_with_utf8_chars_with_utf8_chars == NULL) {
-        GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `string_name_new_with_utf8_chars`)");
+        GD_PRINT_ERROR("Godot-Python: Initialization error (cannot retrieve `string_name_new_with_utf8_chars`)");
         goto error;
     }
 
@@ -137,7 +137,7 @@ static void _initialize_python() {
         gd_string_name_new_with_utf8_chars_with_utf8_chars(&method_name_as_gd_string_name, "get_base_dir");
         GDExtensionPtrBuiltInMethod gdstring_get_base_dir;
         {
-            GDExtensionInterfaceVariantGetPtrBuiltinMethod fn = (GDExtensionInterfaceVariantGetPtrBuiltinMethod)(void*)pythonscript_gdptr_get_proc_address("variant_get_ptr_builtin_method");
+            GDExtensionInterfaceVariantGetPtrBuiltinMethod fn = (GDExtensionInterfaceVariantGetPtrBuiltinMethod)(void*)gdpy_gdptr_get_proc_address("variant_get_ptr_builtin_method");
             gdstring_get_base_dir = fn(
                 GDEXTENSION_VARIANT_TYPE_STRING,
                 &method_name_as_gd_string_name,
@@ -146,15 +146,15 @@ static void _initialize_python() {
         }
         gd_string_name_destructor(&method_name_as_gd_string_name);
         if (gdstring_get_base_dir == NULL) {
-            GD_PRINT_ERROR("Pythonscript: Initialization error (cannot retrieve `String.get_base_dir` method)");
+            GD_PRINT_ERROR("Godot-Python: Initialization error (cannot retrieve `String.get_base_dir` method)");
             goto error;
         }
 
         // 1) Retrieve library path
         char gd_library_path[GD_STRING_MAX_SIZE];
         {
-            GDExtensionInterfaceGetLibraryPath fn = (GDExtensionInterfaceGetLibraryPath)(void*)pythonscript_gdptr_get_proc_address("get_library_path");
-            fn(pythonscript_gdptr_library, gd_library_path);
+            GDExtensionInterfaceGetLibraryPath fn = (GDExtensionInterfaceGetLibraryPath)(void*)gdpy_gdptr_get_proc_address("get_library_path");
+            fn(gdpy_gdptr_library, gd_library_path);
         }
 
         // 2) Retrieve base dir from library path
@@ -166,7 +166,7 @@ static void _initialize_python() {
         // 3) Convert base dir into regular c string
         GDExtensionInt basedir_path_size;
         {
-            GDExtensionInterfaceStringToUtf8Chars fn = (GDExtensionInterfaceStringToUtf8Chars)(void*)pythonscript_gdptr_get_proc_address("string_to_utf8_chars");
+            GDExtensionInterfaceStringToUtf8Chars fn = (GDExtensionInterfaceStringToUtf8Chars)(void*)gdpy_gdptr_get_proc_address("string_to_utf8_chars");
             basedir_path_size = fn(gd_basedir_path, NULL, 0);
         }
         // Why not using variable length array here ? Glad you asked Timmy !
@@ -176,15 +176,15 @@ static void _initialize_python() {
         // like we're about to do two lines down.
         char *basedir_path;
         {
-            GDExtensionInterfaceMemAlloc fn = (GDExtensionInterfaceMemAlloc)(void*)pythonscript_gdptr_get_proc_address("mem_alloc");
+            GDExtensionInterfaceMemAlloc fn = (GDExtensionInterfaceMemAlloc)(void*)gdpy_gdptr_get_proc_address("mem_alloc");
             basedir_path = fn(basedir_path_size + 1);
         }
         if (basedir_path == NULL) {
-            GD_PRINT_ERROR("Pythonscript: Initialization error (memory allocation failed)");
+            GD_PRINT_ERROR("Godot-Python: Initialization error (memory allocation failed)");
             goto error;
         }
         {
-            GDExtensionInterfaceStringToUtf8Chars fn = (GDExtensionInterfaceStringToUtf8Chars)(void*)pythonscript_gdptr_get_proc_address("string_to_utf8_chars");
+            GDExtensionInterfaceStringToUtf8Chars fn = (GDExtensionInterfaceStringToUtf8Chars)(void*)gdpy_gdptr_get_proc_address("string_to_utf8_chars");
             fn(gd_basedir_path, basedir_path, basedir_path_size);
         }
         basedir_path[basedir_path_size] = '\0';
@@ -199,11 +199,11 @@ static void _initialize_python() {
                 basedir_path
             );
             {
-                GDExtensionInterfaceMemFree fn = (GDExtensionInterfaceMemFree)(void*)pythonscript_gdptr_get_proc_address("mem_free");
+                GDExtensionInterfaceMemFree fn = (GDExtensionInterfaceMemFree)(void*)gdpy_gdptr_get_proc_address("mem_free");
                 fn(basedir_path);
             }
             if (PyStatus_Exception(status)) {
-                GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
+                GD_PRINT_ERROR("Godot-Python: Cannot initialize Python interpreter");
                 GD_PRINT_ERROR(status.err_msg);
                 goto error;
             }
@@ -219,13 +219,13 @@ static void _initialize_python() {
             "godot"
         );
         if (PyStatus_Exception(status)) {
-            GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
+            GD_PRINT_ERROR("Godot-Python: Cannot initialize Python interpreter");
             GD_PRINT_ERROR(status.err_msg);
             goto error;
         }
     }
 
-    // argv and sys.path are going to be set by `pythonscript_initialize`
+    // argv and sys.path are going to be set by `gdpy_initialize`
     // This is much simpler this way given we will have acces to Godot API
     // through the nice Python bindings this way
 
@@ -233,7 +233,7 @@ static void _initialize_python() {
     {
         PyStatus status = PyConfig_Read(&config);
         if (PyStatus_Exception(status)) {
-            GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
+            GD_PRINT_ERROR("Godot-Python: Cannot initialize Python interpreter");
             GD_PRINT_ERROR(status.err_msg);
             goto error;
         }
@@ -244,7 +244,7 @@ static void _initialize_python() {
     // status = PyWideStringList_Append(&config.module_search_paths,
     //                                  L"/path/to/more/modules");
     // if (PyStatus_Exception(status)) {
-    //     GD_PRINT_ERROR("Pythonscript: Cannot update sys.path");
+    //     GD_PRINT_ERROR("Godot-Python: Cannot update sys.path");
     //     goto error;
     // }
 
@@ -260,7 +260,7 @@ static void _initialize_python() {
     #ifdef __linux__
     void*const libpython_handle = dlopen("libpython3.so", RTLD_LAZY | RTLD_GLOBAL);
     if (!libpython_handle) {
-        GD_PRINT_ERROR("Pythonscript: Cannot dlopen libpython3.so");
+        GD_PRINT_ERROR("Godot-Python: Cannot dlopen libpython3.so");
         goto error;
     }
     #endif
@@ -268,7 +268,7 @@ static void _initialize_python() {
     {
         PyStatus status = Py_InitializeFromConfig(&config);
         if (PyStatus_Exception(status)) {
-            GD_PRINT_ERROR("Pythonscript: Cannot initialize Python interpreter");
+            GD_PRINT_ERROR("Godot-Python: Cannot initialize Python interpreter");
             GD_PRINT_ERROR(status.err_msg);
             goto error;
         }
@@ -283,19 +283,19 @@ static void _initialize_python() {
 //     wcsncpy(new_path + 2, path, new_path_len - 2);
 //     Py_SetPath(new_path);
 #if 0
-    // Useful for debugging if `import__pythonscript` returns an error
+    // Useful for debugging if `import__gdpy` returns an error
     PyRun_SimpleString("import sys\nprint('PYTHON_PATH:', sys.path)\n");
 #endif
 
-    // Now get back `pythonscript_(de)initialize` callbacks from `godot._lang` module,
+    // Now get back `gdpy_(de)initialize` callbacks from `godot._lang` module,
     // they will be then used in each subsequent Godot (de)initialization step.
     {
 
         // Basically we do in C the equivalent of:
         // ```python
         // import godot._lang
-        // pythonscript_initialize = godot._lang.pythonscript_initialize_function_ptr
-        // pythonscript_deinitialize = godot._lang.pythonscript_deinitialize_function_ptr
+        // gdpy_initialize = godot._lang.gdpy_initialize_function_ptr
+        // gdpy_deinitialize = godot._lang.gdpy_deinitialize_function_ptr
         // ```
 
         // 1. Do `import godot._lang`
@@ -317,36 +317,36 @@ static void _initialize_python() {
             goto post_init_error;
         }
 
-        // 2. Do `pythonscript_initialize = godot._lang.pythonscript_initialize_function_ptr`
+        // 2. Do `gdpy_initialize = godot._lang.gdpy_initialize_function_ptr`
 
         {
-            PyObject* py_pythonscript_initialize_function_ptr = PyObject_GetAttrString(py_godot_lang_module, "pythonscript_initialize_function_ptr");
-            if (py_pythonscript_initialize_function_ptr == NULL) {
+            PyObject* py_gdpy_initialize_function_ptr = PyObject_GetAttrString(py_godot_lang_module, "gdpy_initialize_function_ptr");
+            if (py_gdpy_initialize_function_ptr == NULL) {
                 PyErr_Print();
                 goto post_init_error;
             }
-            pythonscript_initialize = PyLong_AsVoidPtr(py_pythonscript_initialize_function_ptr);
-            Py_DECREF(py_pythonscript_initialize_function_ptr);
+            gdpy_initialize = PyLong_AsVoidPtr(py_gdpy_initialize_function_ptr);
+            Py_DECREF(py_gdpy_initialize_function_ptr);
         }
 
-        // 3. Do `pythonscript_deinitialize = godot._lang.pythonscript_deinitialize_function_ptr`
+        // 3. Do `gdpy_deinitialize = godot._lang.gdpy_deinitialize_function_ptr`
 
         {
-            PyObject* py_pythonscript_deinitialize_function_ptr = PyObject_GetAttrString(py_godot_lang_module, "pythonscript_deinitialize_function_ptr");
-            if (py_pythonscript_deinitialize_function_ptr == NULL) {
+            PyObject* py_gdpy_deinitialize_function_ptr = PyObject_GetAttrString(py_godot_lang_module, "gdpy_deinitialize_function_ptr");
+            if (py_gdpy_deinitialize_function_ptr == NULL) {
                 PyErr_Print();
                 goto post_init_error;
             }
-            pythonscript_deinitialize = PyLong_AsVoidPtr(py_pythonscript_deinitialize_function_ptr);
-            Py_DECREF(py_pythonscript_deinitialize_function_ptr);
+            gdpy_deinitialize = PyLong_AsVoidPtr(py_gdpy_deinitialize_function_ptr);
+            Py_DECREF(py_gdpy_deinitialize_function_ptr);
         }
 
         // 4. `godot._lang` module no longer needed
 
         Py_DECREF(py_godot_lang_module);
 
-        if (pythonscript_initialize == NULL || pythonscript_deinitialize == NULL) {
-            GD_PRINT_ERROR("Pythonscript: Cannot retrieve `pythonscript_(de)initialize` function pointers");
+        if (gdpy_initialize == NULL || gdpy_deinitialize == NULL) {
+            GD_PRINT_ERROR("Godot-Python: Cannot retrieve `gdpy_(de)initialize` function pointers");
             goto post_init_error;
         }
     }
@@ -364,7 +364,7 @@ post_init_error:
     {
         int ret = Py_FinalizeEx();
         if (ret != 0) {
-            GD_PRINT_ERROR("Pythonscript: Cannot finalize Python interpreter");
+            GD_PRINT_ERROR("Godot-Python: Cannot finalize Python interpreter");
         }
     }
 
@@ -374,7 +374,7 @@ error:
 
 static void _deinitialize_python() {
     if (state != PYTHON_INTERPRETER_READY) {
-        printf("Pythonscript: Invalid internal state (this should never happen !)\n");
+        printf("Godot-Python: Invalid internal state (this should never happen !)\n");
         goto error;
     }
 
@@ -383,7 +383,7 @@ static void _deinitialize_python() {
 
     int ret = Py_FinalizeEx();
     if (ret != 0) {
-        GD_PRINT_ERROR("Pythonscript: Cannot finalize Python interpreter");
+        GD_PRINT_ERROR("Godot-Python: Cannot finalize Python interpreter");
     }
 
     state = STALLED;
@@ -398,15 +398,15 @@ static void _initialize(void *userdata, GDExtensionInitializationLevel p_level) 
     if (state == ENTRYPOINT_RETURNED && p_level == GDEXTENSION_INITIALIZATION_CORE) {
         _initialize_python();
     }
-    if (state != CRASHED && pythonscript_initialize != NULL) {
-        pythonscript_initialize(p_level);
+    if (state != CRASHED && gdpy_initialize != NULL) {
+        gdpy_initialize(p_level);
     }
 }
 
 static void _deinitialize(void *userdata, GDExtensionInitializationLevel p_level) {
     (void) userdata;  // acknowledge unreferenced parameter
-    if (state != CRASHED && pythonscript_deinitialize != NULL) {
-        pythonscript_deinitialize(p_level);
+    if (state != CRASHED && gdpy_deinitialize != NULL) {
+        gdpy_deinitialize(p_level);
     }
     if (state == PYTHON_INTERPRETER_READY && p_level == GDEXTENSION_INITIALIZATION_CORE) {
         _deinitialize_python();
@@ -414,29 +414,29 @@ static void _deinitialize(void *userdata, GDExtensionInitializationLevel p_level
 }
 
 // Entry point called by Godot
-DLL_EXPORT GDExtensionBool pythonscript_init(
+DLL_EXPORT GDExtensionBool gdpy_init(
     const GDExtensionInterfaceGetProcAddress p_get_proc_address,
     const GDExtensionClassLibraryPtr p_library,
     GDExtensionInitialization *r_initialization
 ) {
     if (state != STALLED) {
-        printf("Pythonscript: Invalid internal state (this should never happen !)\n");
+        printf("Godot-Python: Invalid internal state (this should never happen !)\n");
         goto error;
     }
     state = ENTRYPOINT_CALLED;
 
     if (p_get_proc_address == NULL || p_library == NULL || r_initialization == NULL) {
-        printf("Pythonscript: Invalid init parameters provided by Godot (this should never happen !)\n");
+        printf("Godot-Python: Invalid init parameters provided by Godot (this should never happen !)\n");
         goto error;
     }
 
-    // `pythonscript_gdptr_*` must be set as early as possible given it is never
+    // `gdpy_gdptr_*` must be set as early as possible given it is never
     // null-pointer checked, especially in the Cython modules.
     // Note we start by setting only `get_proc_address`&`library` since it is the
     // minimum we need to check Godot compatibility, and only after that we proceed
     // with the rest of the pointers.
-    pythonscript_gdptr_get_proc_address = p_get_proc_address;
-    pythonscript_gdptr_library = p_library;
+    gdpy_gdptr_get_proc_address = p_get_proc_address;
+    gdpy_gdptr_library = p_library;
 
     // Check compatibility between the Godot version that has been used for building
     // (i.e. the bindings has been generated against) and the version currently executed.
@@ -450,7 +450,7 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
         snprintf(
             buff,
             sizeof(buff),
-            "Pythonscript: Incompatible Godot version (expected ~%d.%d, got %s)\n",
+            "Godot-Python: Incompatible Godot version (expected ~%d.%d, got %s)\n",
             GODOT_VERSION_MAJOR,
             GODOT_VERSION_MINOR,
             godot_version.string
@@ -459,8 +459,8 @@ DLL_EXPORT GDExtensionBool pythonscript_init(
         goto error;
     }
 
-    // Initialize the rest of the `pythonscript_gdptr_*` pointers
-    init_pythonscript_gdextension();
+    // Initialize the rest of the `gdpy_gdptr_*` pointers
+    init_gdpy_gdextension();
 
     // Initialize as early as possible, this way we can have 3rd party plugins written
     // in Python/Cython that can do things at this level

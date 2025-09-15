@@ -76,7 +76,7 @@ cdef GDExtensionObjectPtr _create_godot_instance(argv: list[str]):
         return libgodot_create_godot_instance(
             len(argv),
             c_argv,
-            _pythonscript_init,
+            _gdpy_init,
             NULL
         )
 
@@ -89,35 +89,35 @@ cdef GDExtensionObjectPtr _create_godot_instance(argv: list[str]):
 #
 
 
-# Those symbols are defined in `pythonscript_gdextension_ptrs.c` which is
+# Those symbols are defined in `gdpy_gdextension_ptrs.c` which is
 # going to be compiled together with this file into a single shared library.
 cdef extern from *:
     """
-    void init_pythonscript_gdextension();
+    void init_gdpy_gdextension();
     """
 
-    const GDExtensionInterfaceGetProcAddress pythonscript_gdptr_get_proc_address
-    const GDExtensionClassLibraryPtr pythonscript_gdptr_library
-    void init_pythonscript_gdextension()
+    const GDExtensionInterfaceGetProcAddress gdpy_gdptr_get_proc_address
+    const GDExtensionClassLibraryPtr gdpy_gdptr_library
+    void init_gdpy_gdextension()
 
 
-cdef GDExtensionBool _pythonscript_init(
+cdef GDExtensionBool _gdpy_init(
     GDExtensionInterfaceGetProcAddress p_get_proc_address,
     GDExtensionClassLibraryPtr p_library,
     GDExtensionInitialization *r_initialization
 ) noexcept with gil:
-    print('[libgodot] pythonscript_init()', flush=True)
+    print('[libgodot] gdpy_init()', flush=True)
 
-    # `pythonscript_gdptr_*` must be set as early as possible given it is never
+    # `gdpy_gdptr_*` must be set as early as possible given it is never
     # null-pointer checked, especially in the Cython modules.
     # Note we start by setting only `get_proc_address`&`library` since it is the
     # minimum we need to check Godot compatibility, and only after that we proceed
     # with the rest of the pointers.
-    pythonscript_gdptr_get_proc_address = p_get_proc_address
-    pythonscript_gdptr_library = p_library
+    gdpy_gdptr_get_proc_address = p_get_proc_address
+    gdpy_gdptr_library = p_library
 
-    # Initialize the rest of the `pythonscript_gdptr_*` pointers
-    init_pythonscript_gdextension()
+    # Initialize the rest of the `gdpy_gdptr_*` pointers
+    init_gdpy_gdextension()
 
     # Initialize as early as possible, this way we can have 3rd party plugins written
     # in Python/Cython that can do things at this level
@@ -131,13 +131,13 @@ cdef void _initialize(void *userdata, GDExtensionInitializationLevel p_level) no
     print(f'[libgodot] _initialize({p_level})', flush=True)
 
     import godot._lang
-    pythonscript_initialize = <void (*)(int)><size_t>godot._lang.pythonscript_initialize_function_ptr
-    pythonscript_initialize(p_level);
+    gdpy_initialize = <void (*)(int)><size_t>godot._lang.gdpy_initialize_function_ptr
+    gdpy_initialize(p_level);
 
 
 cdef void _deinitialize(void *userdata, GDExtensionInitializationLevel p_level) noexcept with gil:
     print(f'[libgodot] _deinitialize({p_level})', flush=True)
 
     import godot._lang
-    pythonscript_deinitialize = <void (*)(int)><size_t>godot._lang.pythonscript_deinitialize_function_ptr
-    pythonscript_deinitialize(p_level);
+    gdpy_deinitialize = <void (*)(int)><size_t>godot._lang.gdpy_deinitialize_function_ptr
+    gdpy_deinitialize(p_level);

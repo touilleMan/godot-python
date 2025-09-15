@@ -163,9 +163,9 @@ if host_platform.startswith('linux')
         ),
         include_directories: [join_paths(python_prebuild_name, 'python/install/include/python@0@.@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor))],
     )
-    # e.g. addons/pythonscript/linux-x86_64/lib/python3.9/site-packages
+    # e.g. addons/gdpy/linux-x86_64/lib/python3.9/site-packages
     python_site_packages_install_path = join_paths(
-        'addons/pythonscript',
+        'addons/gdpy',
         host_platform,
         'lib/python@0@.@1@/site-packages'.format(cpython_distrib_version_major, cpython_distrib_version_minor)
     )
@@ -178,9 +178,9 @@ elif host_platform.startswith('macos')
         ),
         include_directories: [join_paths(python_prebuild_name, 'python/install/include/python@0@.@1@'.format(cpython_distrib_version_major, cpython_distrib_version_minor))],
     )
-    # e.g. addons/pythonscript/linux-x86_64/lib/python3.9/site-packages
+    # e.g. addons/gdpy/linux-x86_64/lib/python3.9/site-packages
     python_site_packages_install_path = join_paths(
-        'addons/pythonscript',
+        'addons/gdpy',
         host_platform,
         'lib/python@0@.@1@/site-packages'.format(cpython_distrib_version_major, cpython_distrib_version_minor)
     )
@@ -195,9 +195,9 @@ elif host_platform.startswith('windows')
         ),
         include_directories: [join_paths(python_prebuild_name, 'python/install/include')],
     )
-    # e.g. addons/pythonscript/windows-x86_64/Lib/site-packages
+    # e.g. addons/gdpy/windows-x86_64/Lib/site-packages
     python_site_packages_install_path = join_paths(
-        'addons/pythonscript',
+        'addons/gdpy',
         host_platform,
         'Lib/site-packages'
     )
@@ -208,7 +208,7 @@ endif
 
 install_subdir(
     python_distrib_path,
-    install_dir: join_paths('addons/pythonscript', host_platform),
+    install_dir: join_paths('addons/gdpy', host_platform),
     strip_directory: true,
 )
 if build_machine.system() == 'linux'
@@ -248,7 +248,7 @@ if build_machine.system() == 'linux'
         )
         install_symlink(
             symlink_name,
-            install_dir: join_paths('addons/pythonscript', host_platform, parent_dir),
+            install_dir: join_paths('addons/gdpy', host_platform, parent_dir),
             pointing_to: target_name,
         )
     endforeach
@@ -376,7 +376,7 @@ README.txt
 
 install_data(
     'LICENSE.txt',
-    install_dir: 'addons/pythonscript',
+    install_dir: 'addons/gdpy',
 )
 
 
@@ -390,7 +390,7 @@ custom_target(
     ],
     output: ['.gdignore'],
     install: true,
-    install_dir: 'addons/pythonscript',
+    install_dir: 'addons/gdpy',
 )
 
 
@@ -415,9 +415,9 @@ open("@OUTPUT0@", mode="w", encoding="utf8").write(out)
 
 
 install_data(
-    'misc/release_pythonscript.gdextension',
+    'misc/release_gdpy.gdextension',
     install_dir: '.',
-    rename: 'pythonscript.gdextension',
+    rename: 'gdpy.gdextension',
 )
 
 

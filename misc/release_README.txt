@@ -36,14 +36,14 @@ Pip must be installed first with `ensurepip`:
 
 On Windows:
 ```
-$ <pythonscript_dir>/windows-64/python.exe -m ensurepip  # Only need to do that once
-$ <pythonscript_dir>/windows-64/python.exe -m pip install whatever
+$ <godot_python_dir>/windows-64/python.exe -m ensurepip  # Only need to do that once
+$ <godot_python_dir>/windows-64/python.exe -m pip install whatever
 ```
 
 On Linux/macOS:
 ```
-$ <pythonscript_dir>/x11-64/bin/python3 -m ensurepip  # Only need to do that once
-$ <pythonscript_dir>/x11-64/bin/python3 -m pip install whatever
+$ <godot_python_dir>/x11-64/bin/python3 -m ensurepip  # Only need to do that once
+$ <godot_python_dir>/x11-64/bin/python3 -m pip install whatever
 ```
 
 Note you must use `python -m pip` to invoke pip (using the command `pip`

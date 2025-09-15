@@ -1,4 +1,15 @@
 ##############################################################################
+#                           Small fries to install                           #
+##############################################################################
+
+
+install_subdir(
+    'godot',
+    install_dir: join_paths(python_site_packages_install_path),
+)
+
+
+##############################################################################
 #                       Code generation base config                          #
 ##############################################################################
 
@@ -175,16 +186,16 @@ pxds_godot = [
 
 
 ##############################################################################
-#              pythonscript_gdextension_ptrs.c & generation                  #
+#              gdpy_gdextension_ptrs.c & generation                  #
 ##############################################################################
 
 
-c_pythonscript_gdextension_ptrs = custom_target(
-    output: 'pythonscript_gdextension_ptrs.c',
+c_gdpy_gdextension_ptrs = custom_target(
+    output: 'gdpy_gdextension_ptrs.c',
     input: [
         generate_tmpl_base_input,
         files(
-            'pythonscript_gdextension_ptrs.c.j2',
+            'gdpy_gdextension_ptrs.c.j2',
         ),
     ],
     command: generate_tmpl_cmd,
@@ -196,39 +207,39 @@ c_pythonscript_gdextension_ptrs = custom_target(
 ##############################################################################
 
 
-# libpythonscript.so
-# ├─ pythonscript.c
-# ├─ pythonscript_gdextension_ptrs.c
+# libgdpy.so
+# ├─ gdpy.c
+# ├─ gdpy_gdextension_ptrs.c
 # └─ ...
 
 
 if host_platform.startswith('linux')
-    lib_pythonscript_rpath = '$ORIGIN/lib'
+    lib_gdpy_rpath = '$ORIGIN/lib'
 elif host_platform.startswith('macos')
-    lib_pythonscript_rpath = '@loader_path/lib'
+    lib_gdpy_rpath = '@loader_path/lib'
 else
-    lib_pythonscript_rpath = ''
+    lib_gdpy_rpath = ''
 endif
 
 
-lib_pythonscript = shared_library(
-    'pythonscript',
-    ['pythonscript.c', c_pythonscript_gdextension_ptrs],
+lib_gdpy = shared_library(
+    'gdpy',
+    ['gdpy.c', c_gdpy_gdextension_ptrs],
     gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
     dependencies: [dep_godot, dep_python],
-    install_rpath: lib_pythonscript_rpath,  # To find libpython
+    install_rpath: lib_gdpy_rpath,  # To find libpython
     install: true,
-    install_dir: 'addons/pythonscript/' + host_platform,
+    install_dir: 'addons/gdpy/' + host_platform,
 )
 
 
-# This dependency is used by all Cython modules to retreive the `pythonscript_gdapi`
+# This dependency is used by all Cython modules to retreive the `gdpy_gdapi`
 # global variable that is declared as extern in `godot.hazmat.gdapi`
 # Note we don't need to configure a rpath for Cython modules, this is because
-# `libpythonscript.so` is responsible for initialiazing the Python interpreter
+# `libgdpy.so` is responsible for initialiazing the Python interpreter
 # and hence we are guaranteed it is already loaded when Cython modules kick in
-dep_pythonscript = declare_dependency(
-    link_with: lib_pythonscript,
+dep_gdpy = declare_dependency(
+    link_with: lib_gdpy,
 )
 
 
