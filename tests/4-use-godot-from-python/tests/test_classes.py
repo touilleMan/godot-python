@@ -199,7 +199,6 @@ def test_property(kind: str):
                 assert False, unknown
     finally:
         node.free()
-    clodotest.skip("TODO")
 
 
 @clodotest.xfail(reason="TODO: Signal constructor from object + signal name is not implemented")
