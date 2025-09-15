@@ -1,1 +1,5 @@
+# Code added by running `./copy_data.py`
 /src
+# Build artificats
+/build
+/dist
