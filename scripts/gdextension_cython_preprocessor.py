@@ -130,7 +130,7 @@ def __godot_extension_unregister_class():
         raise RuntimeError("Not registered !")
 
     {spec.class_name + "." + spec.unregister_class_hook + "()" if spec.unregister_class_hook is not None else ""}
-    unregister_extension_class(b"{spec.class_name}")
+    __godot_extension_unregister_extension_class(b"{spec.class_name}")
     gd_string_name_del(&__godot_extension_{spec.class_name}_class_name)
     gd_string_name_del(&__godot_extension_{spec.class_name}_parent_class_name)
 
@@ -150,7 +150,7 @@ def __godot_extension_register_class():
     __godot_extension_{spec.class_name}_class_name = gd_string_name_from_unchecked_pystr("{spec.class_name}")
     __godot_extension_{spec.class_name}_parent_class_name = gd_string_name_from_unchecked_pystr("{spec.parent_class_name}")
 
-    register_extension_class_creation(
+    __godot_extension_register_extension_class_creation(
         b"{spec.class_name}",
         b"{spec.parent_class_name}",
         &{spec.class_name}.__godot_extension_create_instance,
@@ -173,7 +173,7 @@ def __godot_extension_register_class():
 
         code += textwrap.indent(
             f"""
-register_extension_class_method(
+__godot_extension_register_extension_class_method(
     b"{spec.class_name}",
     b"{method.method_name}",
     &{spec.class_name}.__godot_extension_class_meth_{method.method_name},
@@ -228,7 +228,13 @@ def generate_injected_class_code(spec: ClassDef) -> str:
 
 
 def generate_injected_module_code(spec: ModuleDef) -> str:
-    code = ""
+    code = """
+from godot.hazmat.extension_class cimport (
+    register_extension_class_creation as __godot_extension_register_extension_class_creation,
+    register_extension_class_method as __godot_extension_register_extension_class_method,
+    unregister_extension_class as __godot_extension_unregister_extension_class,
+)
+"""
 
     for klass in spec.classes:
         code += f"""

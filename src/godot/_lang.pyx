@@ -3,7 +3,6 @@ from cpython.ref cimport Py_INCREF, Py_DECREF, PyObject  # Needed for @godot_ext
 
 from .hazmat.gdextension_interface cimport *
 from .hazmat.gdapi cimport *
-from .hazmat.extension_class cimport *
 from .hazmat cimport gdptrs
 from .builtins cimport *
 from .classes cimport _load_class, _load_singleton, _cleanup_loaded_classes_and_singletons, BaseGDObject
