@@ -1,6 +1,13 @@
+# An instance of `PythonScript` is not a script instance !
+# It is an object representing a given script (hence
+# `PythonScript._instance_create` that is called to actually
+# create an instance of this script)
+
+
 # godot_extension: class(parent="ScriptExtension")
 @cython.final
 cdef class PythonScript:
+    # Godot "sees" us through this object
     cdef gd_object_t _gd_ptr
 
     # godot_extension: method(virtual=True, const=True)
