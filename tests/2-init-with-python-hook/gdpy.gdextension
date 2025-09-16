@@ -1,7 +1,11 @@
 [configuration]
 
 entry_symbol = "gdpy_init"
-compatibility_minimum = "4.1"
+compatibility_minimum = "4.4"
+
+[icons]
+
+PythonScript = "res://addons/gdpy/python_logo.svg"
 
 [libraries]
 
