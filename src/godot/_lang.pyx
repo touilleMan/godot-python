@@ -11,10 +11,12 @@ from .classes cimport _load_class, _load_singleton, _cleanup_loaded_classes_and_
 # Extensions definition
 #
 
-include "_lang_script_language.pxi"
-include "_lang_script.pxi"
 include "_lang_resource_format_loader.pxi"
 include "_lang_resource_format_saver.pxi"
+include "_lang_script_language.pxi"
+include "_lang_script.pxi"
+include "_lang_script_instance.pxi"
+include "_lang_tags.pxi"
 
 
 #

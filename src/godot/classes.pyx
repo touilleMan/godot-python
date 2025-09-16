@@ -45,6 +45,9 @@ cdef class BaseGDObject:
         # Note if the object is a reference, we stole it from the caller given we
         # don't call `Reference.reference` here
 
+    def _get_gd_ptr(self):
+        return <size_t>self._gd_ptr
+
     @classmethod
     def _from_ptr(cls, ptr: int):
         cdef BaseGDObject wrapper = cls.__new__(cls)

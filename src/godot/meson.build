@@ -179,6 +179,8 @@ shared_library(
 #    ├─ _lang_resource_format_saver.pxi
 #    ├─ _lang_script_language.pxi
 #    ├─ _lang_script.pxi
+#    ├─ _lang_script_instance.pxi
+#    ├─ _lang_tags.pxi
 #    └─ _lang.pyx
 
 preprocessed_lang_pxis = []
@@ -187,6 +189,7 @@ foreach pxi: [
     '_lang_resource_format_saver.pxi',
     '_lang_script_language.pxi',
     '_lang_script.pxi',
+    # Note `_lang_tags.pxi` & `_lang_script_instance.pxi` don't need preprocessing since they contain no class extension
 ]
     preprocessed_lang_pxis += custom_target(
         output: pxi,
@@ -202,7 +205,11 @@ endforeach
 c_lang = custom_target(
     output : '_lang.c',
     input : [
-        files('_lang.pyx'),
+        files(
+            '_lang.pyx',
+            '_lang_script_instance.pxi',
+            '_lang_tags.pxi',
+        ),
         preprocessed_lang_pxis,
         pxds_godot
     ],

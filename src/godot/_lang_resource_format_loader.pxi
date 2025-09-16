@@ -1,3 +1,7 @@
+import importlib
+import traceback
+
+
 cdef object RESOURCE_TYPE_NAME = "Python"
 cdef object RESOURCE_EXTENSIONS = ("py", "pyc", "pyo", "pyd")
 
@@ -85,37 +89,81 @@ cdef class PythonResourceFormatLoader:
     # godot_extension: method(virtual=True, const=True)
     cdef gd_variant_t _load(self, gd_string_t path, gd_string_t original_path, gd_bool_t use_sub_threads, gd_int_t cache_mode):
         cdef gd_variant_t ret = gd_variant_new()
-        cdef object py_path = gdapi.gd_string_to_pystr(&path)
-        cdef object py_original_path = gdapi.gd_string_to_pystr(&original_path)
+        cdef str py_path = gdapi.gd_string_to_pystr(&path)
+        cdef str py_original_path = gdapi.gd_string_to_pystr(&original_path)
         gd_string_del(&path)
         gd_string_del(&original_path)
         spy_log(f"CALLED PythonResourceFormatLoader::_load(path={py_path!r}, original_path={py_original_path!r}, use_sub_threads={use_sub_threads}, cache_mode={cache_mode})")
 
+        # 1) Check path and convert it to Python format (e.g. `res://foo/bar.py` -> `foo.bar`)
+
+        if not (
+            py_path.startswith("res://") and
+            (
+                py_path.endswith(".py") or
+                py_path.endswith(".pyc") or
+                py_path.endswith(".pyo") or
+                py_path.endswith(".pyd")
+            )
+        ):
+            print(
+                f"Bad python script path `{py_path}`, must starts by `res://` and ends with `.py/pyc/pyo/pyd`", flush=True
+            )
+            return gdapi.gd_int_into_variant(Error.ERR_FILE_BAD_PATH)
+
+        # TODO: possible bug if res:// is not part of PYTHONPATH
+        # Remove `res://`, `.py` and replace / by .
+        modname = py_path[len("res://"):].rsplit(".", 1)[0].replace("/", ".")
+
+        try:
+            importlib.import_module(modname)  # Force lazy loading of the module
+            klass = _get_exposed_class(modname)  # `_get_exposed_class` defined in `_lang_tags.pxi`
+            print('=========> new Godot-Python class', klass)
+
+        except BaseException:
+            # If we are here it could be because the file doesn't exists
+            # or (more possibly) the file content is not valid python (or
+            # doesn't provide an exposed class)
+            print(
+                f"Got exception loading `{py_path}` (aka `{modname}`): {traceback.format_exc()}", flush=True
+            )
+            return gdapi.gd_int_into_variant(Error.ERR_PARSE_ERROR)
+
+        if klass is None:
+            print(
+                f"Cannot load `{py_path}` (aka `{modname}`) because it doesn't expose any class to Godot", flush=True
+            )
+            return gdapi.gd_int_into_variant(Error.ERR_PARSE_ERROR)
+
+
+
         cdef PythonScript script
-        cdef gd_string_t gd_source
-        cdef gd_string_t gd_script_path
-        cdef GDString source_code
+        # cdef gd_string_t gd_source
+        # cdef gd_string_t gd_script_path
+        # cdef GDString source_code
 
-        # Load the source code from file
+        # # Load the source code from file
 
-        from godot.classes import FileAccess
-        # TODO: use `path` directly !
-        cdef object file = FileAccess.open(GDString(py_path), FileAccess.ModeFlags.READ.value)
-        if file is None:
-            spy_log(f"Failed to load Python script {py_original_path}: cannot open file {path}")
-            # If file loading fails, return the nil variant (already initialized)
-            return ret
-        # TODO: what happen if the text is not UTF8 ?
-        source_code = file.get_as_text()
+        # from godot.classes import FileAccess
+        # # TODO: use `path` directly !
+        # cdef object file = FileAccess.open(GDString(py_path), FileAccess.ModeFlags.READ.value)
+        # if file is None:
+        #     spy_log(f"Failed to load Python script {py_original_path}: cannot open file {path}")
+        #     # If file loading fails, return the nil variant (already initialized)
+        #     return ret
+        # # TODO: what happen if the text is not UTF8 ?
+        # source_code = file.get_as_text()
 
         # Create a new script instance from the source code
 
-        script = PythonScript()
-        script._set_source_code(source_code.into_gd_data())
-        # `into_gd_data()` steal the underlying Godot string, so `source_code`
-        # ends up containing nothing and we'd rather destroy it early to avoid
-        # confusions.
-        del source_code
+        script = PythonScript()  # `__cinit__()` initializes `script._gd_ptr`
+        script._py_cls = klass
+        script._script_instance_info = generate_instance_info()
+        # script._set_source_code(source_code.into_gd_data())
+        # # `into_gd_data()` steal the underlying Godot string, so `source_code`
+        # # ends up containing nothing and we'd rather destroy it early to avoid
+        # # confusions.
+        # del source_code
 
         # Return the script as a variant
 

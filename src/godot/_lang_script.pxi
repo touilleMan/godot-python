@@ -4,16 +4,23 @@
 # create an instance of this script)
 
 
+from godot.hazmat cimport gdptrs
+
+
 # godot_extension: class(parent="ScriptExtension")
 @cython.final
 cdef class PythonScript:
     # Godot "sees" us through this object
     cdef gd_object_t _gd_ptr
+    # The Python class that *is* the script
+    cdef object _py_cls
+    cdef GDExtensionScriptInstanceInfo3 _script_instance_info
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _can_instantiate(self):
         spy_log("CALLED PythonScript::_can_instantiate()")
-        return self._is_valid()
+        return True
+        # return self._is_valid()
 
     # godot_extension: method(virtual=True)
     cdef gd_bool_t _editor_can_reload_from_file(self):
@@ -193,11 +200,18 @@ cdef class PythonScript:
     # godot_extension: method(virtual=True, const=True)
     cdef void* _instance_create(self, gd_object_t for_object):
         spy_log(f"CALLED PythonScript::_instance_create(for_object=<object 0x{<size_t>for_object:x}>)")
-        # For now, return NULL as we don't have full instance support yet
-        # This would need to create a Python script instance that can
-        # execute the script code and handle Godot callbacks
-        # `gd_object_t` doesn't need to be be deleted (is it just a raw pointer)
-        return NULL
+
+        # Call to __new__ bypasses __init__ constructor
+        cdef BaseGDObject py_instance = self._py_cls.__new__(self._py_cls)
+        py_instance._gd_ptr = for_object
+        # TODO: call `__init__` ? or a init hook ?
+        Py_INCREF(py_instance)
+        cdef GDExtensionScriptInstancePtr script_instance = gdptrs.gdptr_script_instance_create3(
+            &self._script_instance_info,
+            <void*>py_instance,
+        )
+        spy_log(f"CALLED PythonScript::_instance_create(for_object=<object 0x{<size_t>for_object:x}>) -> <object 0x{<size_t>script_instance:x}>")
+        return script_instance
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _instance_has(self, gd_object_t object):
@@ -216,29 +230,23 @@ cdef class PythonScript:
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _is_tool(self):
         spy_log("CALLED PythonScript::_is_tool()")
-        # Check if the script contains @tool decorator or similar
-        if not self._source_code:
+        if self._py_cls is not None:
+            return self._py_cls._tool
+        else:
             return False
-        try:
-            lines = self._source_code.split('\n')
-            for line in lines:
-                if line.strip().startswith('@tool') or '# tool' in line.lower():
-                    return True
-        except:
-            pass
-        return False
 
     # godot_extension: method(virtual=True, const=True)
     cdef gd_bool_t _is_valid(self):
         spy_log("CALLED PythonScript::_is_valid()")
-        # A script is valid if it has source code and can be compiled
-        if not self._source_code:
-            return False
-        try:
-            compile(self._source_code, '<string>', 'exec')
-            return True
-        except:
-            return False
+        return True
+        # # A script is valid if it has source code and can be compiled
+        # if not self._source_code:
+        #     return False
+        # try:
+        #     compile(self._source_code, '<string>', 'exec')
+        #     return True
+        # except:
+        #     return False
 
     # godot_extension: method(virtual=True)
     cdef void _placeholder_erased(self, void* placeholder):
