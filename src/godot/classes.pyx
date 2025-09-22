@@ -113,7 +113,7 @@ cdef object _load_class(str name):
     cdef StringName gdname_classdb = StringName("ClassDB")
     cdef gd_object_t classdb = gdptrs.gdptr_global_get_singleton(&gdname_classdb._gd_data)
 
-    gd_name = GDString(name)
+    gd_name = StringName(name)
     parent = spec[0]
     items_spec = iter(spec[1:])
     if parent:
@@ -179,7 +179,7 @@ cdef object _load_class(str name):
                 _prop_setter,
                 _prop_index,
             ):
-                gd_prop_name = GDString(prop_name)
+                gd_prop_name = StringName(prop_name)
                 # TODO: ptrcall on getter/setter
                 @property
                 def _property(self):
@@ -205,7 +205,7 @@ cdef object _load_class(str name):
                 signal_name,
                 signal_arguments_count,
             ):
-                gd_signal_name = GDString(signal_name)
+                gd_signal_name = StringName(signal_name)
                 for _ in range(signal_arguments_count):
                     _arg_name = next(items_spec)
                     _arg_type = next(items_spec)
@@ -230,7 +230,7 @@ cdef object _load_class(str name):
                 _method_return_type,
                 method_arguments_count,
             ):
-                gd_method_name = GDString(method_name)
+                gd_method_name = StringName(method_name)
                 for _ in range(method_arguments_count):
                     _arg_name = next(items_spec)
                     _arg_type = next(items_spec)
@@ -280,21 +280,20 @@ cdef object _object_call(gd_object_t obj, str meth, list args):
     cdef gdextension_interface.GDExtensionMethodBindPtr Object_call = gdptrs.gdptr_classdb_get_method_bind(&gdname_object._gd_data, &gdname_call._gd_data, 3400424181)
 
     cdef gdextension_interface.GDExtensionInt args_with_meth_len = len(args) + 1
-    if args_with_meth_len > 9:
+    # Currently the worst method takes 14 arguments, so this hack should be enough...
+    if args_with_meth_len > 15:
         # TODO: handle this
-        gdptrs.gdptr_print_error("more than 8 params is not supported !", "_object_call", "", 0, False)
+        gdptrs.gdptr_print_error("Calling with more than 14 parameters is not supported (wtf are you calling ? :/)", "_object_call", "", 0, False)
         return None
-    cdef gd_variant_t[9] variant_args
-    cdef (gd_variant_t*)[9] variant_args_ptrs
+    cdef gd_variant_t[15] variant_args
+    cdef (gd_variant_t*)[15] variant_args_ptrs
     for i in range(args_with_meth_len):
         variant_args_ptrs[i] = &variant_args[i]
 
     # TODO: provide a helper for string name from Python str creation
     cdef gd_string_name_t meth_gdstrname = gdapi.gd_string_name_from_unchecked_pystr(meth)
     variant_args[0] = gdapi.gd_string_name_into_variant(&meth_gdstrname)
-    gdapi.gd_string_name_del(&meth_gdstrname)
-    # TODO: rename !
-    # Into conversion steals the owneship, so no need to delete meth_gdstrname
+    # Note `gd_string_name_into_variant(&meth_gdstrname)` already calls `meth_gdstrname`'s destructor
 
     for i, arg in enumerate(args, 1):
         variant_args[i] = ensure_is_gdany_and_borrow_ref(arg)
@@ -309,11 +308,10 @@ cdef object _object_call(gd_object_t obj, str meth, list args):
         &ret,
         &call_error,
     )
-    for i in range(args_with_meth_len):
-        gdapi.gd_variant_del(&variant_args[i])
-    # gdapi.gd_variant_del(&variant_args[0])  # Only param we created without stealing ownership
+    # In Godot the callee is responsible to destroy the provided parameters.
+    # Hence we don't have to call `gd_variant_del()` on `variant_args`.
     if call_error.error == gdextension_interface.GDEXTENSION_CALL_OK:
-        # No need to destroy ret given the conversion has stolen ownership on data !
+        # Note `gd_variant_steal_into_pyobj(&ret)` already calls `ret`'s destructor
         return gd_variant_steal_into_pyobj(&ret)
 
     # TODO: improve ret error raised exception type ?

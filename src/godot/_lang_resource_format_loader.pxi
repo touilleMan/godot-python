@@ -160,7 +160,7 @@ cdef class PythonResourceFormatLoader:
         script._py_cls = klass
         script._script_instance_info = generate_instance_info()
         # script._set_source_code(source_code.into_gd_data())
-        # # `into_gd_data()` steal the underlying Godot string, so `source_code`
+        # # `into_gd_data()` steals the underlying Godot string, so `source_code`
         # # ends up containing nothing and we'd rather destroy it early to avoid
         # # confusions.
         # del source_code
