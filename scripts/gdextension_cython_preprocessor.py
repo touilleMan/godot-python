@@ -60,6 +60,7 @@ cdef void __godot_extension_class_{"virtual_" if virtual_flavor else ""}meth_{sp
     const GDExtensionConstTypePtr *p_args,
     GDExtensionTypePtr r_ret,
 ) noexcept with gil:
+    # TODO: pre-generate method names as `StringName` to avoid conversion here
 """
     if class_spec.class_name != "PythonScriptLanguage" or spec.method_name != "_frame":
         code += f"""
@@ -189,6 +190,7 @@ __godot_extension_register_extension_class_method(
     code += """
 @staticmethod
 cdef GDExtensionClassCallVirtual __godot_extension_get_virtual(void *p_class_userdata, GDExtensionConstStringNamePtr p_name) noexcept with gil:
+    # TODO: We should handle inheritance here by looking into parent class until we reach a Godot class
     cdef gd_string_t gd_candidate_name
 """
     code += f"""
