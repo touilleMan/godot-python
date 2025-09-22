@@ -4,7 +4,7 @@ cdef class PythonResourceFormatSaver:
     cdef gd_object_t _gd_ptr
 
     # godot_extension: method(virtual=True, const=True)
-    cdef gd_packed_string_array_t _get_recognized_extensions(self, gd_object_t resource):
+    cdef inline gd_packed_string_array_t _get_recognized_extensions(self, gd_object_t resource):
         # `resource` is an instance of `Resource`
 
         spy_log("CALLED PythonResourceFormatSaver::_get_recognized_extensions(resource=<resource>)")
@@ -19,7 +19,7 @@ cdef class PythonResourceFormatSaver:
         return extensions
 
     # godot_extension: method(virtual=True, const=True)
-    cdef gd_bool_t _recognize(self, gd_object_t resource):
+    cdef inline gd_bool_t _recognize(self, gd_object_t resource):
         # `resource` is an instance of `Resource`
 
         spy_log("CALLED PythonResourceFormatSaver::_recognize(resource=<resource>)")
@@ -55,7 +55,7 @@ cdef class PythonResourceFormatSaver:
     # Don't overload `_recognize_path()` to mimic GDScript
 
     # godot_extension: method(virtual=True)
-    cdef gd_int_t _save(self, gd_object_t resource, gd_string_t path, gd_int_t flags):
+    cdef inline gd_int_t _save(self, gd_object_t resource, gd_string_t path, gd_int_t flags):
         # `resource` is an instance of `Resource`
 
         # Convert the path to a Python string

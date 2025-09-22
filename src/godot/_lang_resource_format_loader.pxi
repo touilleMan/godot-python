@@ -14,7 +14,7 @@ cdef class PythonResourceFormatLoader:
     # Don't overload `_exists()`, so Godot default to checking file existence
 
     # godot_extension: method(virtual=True, const=True)
-    cdef gd_packed_string_array_t _get_dependencies(self, gd_string_t path, gd_bool_t add_types):
+    cdef inline gd_packed_string_array_t _get_dependencies(self, gd_string_t path, gd_bool_t add_types):
         cdef gd_packed_string_array_t dependencies = gd_packed_string_array_new()
         cdef object py_path = gdapi.gd_string_to_pystr(&path)
         gd_string_del(&path)
@@ -36,7 +36,7 @@ cdef class PythonResourceFormatLoader:
         return dependencies
 
     # godot_extension: method(virtual=True, const=True)
-    cdef gd_packed_string_array_t _get_recognized_extensions(self):
+    cdef inline gd_packed_string_array_t _get_recognized_extensions(self):
         spy_log("CALLED PythonResourceFormatLoader::_get_recognized_extensions()")
         cdef gd_packed_string_array_t extensions = gd_packed_string_array_new()
         cdef gd_string_t extension
@@ -53,7 +53,7 @@ cdef class PythonResourceFormatLoader:
     # Don't overload `_get_resource_uid()` to mimic GDScript
 
     # godot_extension: method(virtual=True, const=True)
-    cdef gd_bool_t _handles_type(self, gd_string_name_t type):
+    cdef inline gd_bool_t _handles_type(self, gd_string_name_t type):
         cdef gd_string_t candidate
         cdef gd_bool_t ret = False
 
@@ -71,7 +71,7 @@ cdef class PythonResourceFormatLoader:
         return ret
 
     # godot_extension: method(virtual=True, const=True)
-    cdef gd_string_t _get_resource_type(self, gd_string_t path):
+    cdef inline gd_string_t _get_resource_type(self, gd_string_t path):
         cdef object py_path
         cdef object py_extension
 
@@ -87,7 +87,7 @@ cdef class PythonResourceFormatLoader:
             return gd_string_from_unchecked_pystr("")  # Empty string for unknown types
 
     # godot_extension: method(virtual=True, const=True)
-    cdef gd_variant_t _load(self, gd_string_t path, gd_string_t original_path, gd_bool_t use_sub_threads, gd_int_t cache_mode):
+    cdef inline gd_variant_t _load(self, gd_string_t path, gd_string_t original_path, gd_bool_t use_sub_threads, gd_int_t cache_mode):
         cdef gd_variant_t ret = gd_variant_new()
         cdef str py_path = gdapi.gd_string_to_pystr(&path)
         cdef str py_original_path = gdapi.gd_string_to_pystr(&original_path)
