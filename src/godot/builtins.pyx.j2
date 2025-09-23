@@ -2,6 +2,7 @@
 {%- from 'builtins_pyx/conversion.pyx.j2' import render_all_conversions with context -%}
 cimport cython
 from libc.math cimport INFINITY as inf  # Needed by some constants
+from libc.string cimport memset  # Needed to create zeroized builtins used in `__bool__`
 
 # Forward declarations
 {% for builtin in api.builtins %}

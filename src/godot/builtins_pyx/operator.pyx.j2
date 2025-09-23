@@ -46,9 +46,18 @@ def __eq__(self, object other):
 {# Note `__bool__` is not needed if `__len__` is defined #}
 def __len__(self):
     return self.size()
+{% elif builtin.is_transparent_builtin %}
+def __bool__(self):
+    return (
+{%   for member in builtin.all_nested_scalar_members %}
+        {% if not loop.first %}or {% endif %}self.{{ member }} != 0
+{%   endfor %}
+    )
 {% else %}
 def __bool__(self):
-    return gdptrs.gdptr_variant_booleanize(&self._gd_data)
+    cdef {{ builtin.c_type }} zero
+    memset(&zero, 0, cython.sizeof({{ builtin.c_type }}))
+    return not gdapi.gd_{{ builtin.snake_name }}_op_equal_{{ builtin.snake_name }}(&self._gd_data, &zero)
 {% endif %}
 
 {% if builtin.original_name == "Array" or builtin.is_packed_array %}
