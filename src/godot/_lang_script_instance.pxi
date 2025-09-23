@@ -161,7 +161,6 @@ cdef void _script_instance_call_func(
 
     try:
         method_fn = self.__class__.__dict__[str(method)]
-        print(f"============> meth {method_fn!r}", flush=True)
     except KeyError as exc:
         r_error.error = GDExtensionCallErrorType.GDEXTENSION_CALL_ERROR_INVALID_METHOD
         print(f"[DEBUG] CALLED DONE _script_instance_call_func(...) -> ERROR {exc!r}", flush=True)

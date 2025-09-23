@@ -113,7 +113,6 @@ cdef class PythonResourceFormatLoader:
         try:
             importlib.import_module(modname)  # Force lazy loading of the module
             klass = _get_exposed_class(modname)  # `_get_exposed_class` defined in `_lang_tags.pxi`
-            print('=========> new Godot-Python class', klass)
 
         except BaseException:
             # If we are here it could be because the file doesn't exists
