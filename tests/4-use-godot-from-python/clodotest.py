@@ -242,7 +242,7 @@ def assert_approx_eq(a: float, b: float, max_relative_diff: float = 0.001) -> No
 
 def assert_eq(got: Any, expected: Any) -> None:
     if got != expected:
-        raise AssertionError(f"Expected {expected!r}, got {got!r}")
+        raise AssertionError(f"Got {got!r}, but expected {expected!r}")
 
 
 def assert_ne(got: Any, expected_different: Any) -> None:
@@ -252,14 +252,14 @@ def assert_ne(got: Any, expected_different: Any) -> None:
 
 def assert_is(got: Any, expected: Any) -> None:
     if got is expected:
-        raise AssertionError(f"Expected {expected!r}, got {got!r}")
+        raise AssertionError(f"Got {got!r}, but expected {expected!r}")
 
 
 def assert_isinstance(got: Any, expected_cls: type) -> None:
     if not isinstance(got, expected_cls):
-        raise AssertionError(f"Expected instance of {expected_cls!r}, got {got!r}")
+        raise AssertionError(f"Got {got!r}, but expected instance of {expected_cls!r}")
 
 
 def assert_issubclass(got_cls: type, expected_cls: type) -> None:
     if not issubclass(got_cls, expected_cls):
-        raise AssertionError(f"Expected subclass of {expected_cls!r}, got {got_cls!r}")
+        raise AssertionError(f"Got {got_cls!r}, but expected subclass of {expected_cls!r}")
