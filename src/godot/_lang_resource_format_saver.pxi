@@ -60,7 +60,6 @@ cdef class PythonResourceFormatSaver:
 
         # Convert the path to a Python string
         cdef object py_path = gdapi.gd_string_to_pystr(&path)
-        gd_string_del(&path)
 
         spy_log("CALLED PythonResourceFormatSaver::_save(resource=<resource>, path={py_path!r}, flags={flags})")
 

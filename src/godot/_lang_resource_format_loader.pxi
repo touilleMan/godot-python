@@ -17,7 +17,6 @@ cdef class PythonResourceFormatLoader:
     cdef inline gd_packed_string_array_t _get_dependencies(self, gd_string_t path, gd_bool_t add_types):
         cdef gd_packed_string_array_t dependencies = gd_packed_string_array_new()
         cdef object py_path = gdapi.gd_string_to_pystr(&path)
-        gd_string_del(&path)
 
         spy_log(f"CALLED PythonResourceFormatLoader::_get_dependencies(path={py_path}, add_types={add_types})")
 
@@ -67,7 +66,6 @@ cdef class PythonResourceFormatLoader:
             ret = gd_string_name_op_equal_string(&type, &candidate)
             gd_string_del(&candidate)
 
-        gd_string_name_del(&type)
         return ret
 
     # godot_extension: method(virtual=True, const=True)
@@ -76,7 +74,6 @@ cdef class PythonResourceFormatLoader:
         cdef object py_extension
 
         py_path = gdapi.gd_string_to_pystr(&path)
-        gd_string_del(&path)
 
         spy_log(f"CALLED PythonResourceFormatLoader::_get_resource_type(path={py_path!r})")
 
@@ -91,8 +88,6 @@ cdef class PythonResourceFormatLoader:
         cdef gd_variant_t ret = gd_variant_new()
         cdef str py_path = gdapi.gd_string_to_pystr(&path)
         cdef str py_original_path = gdapi.gd_string_to_pystr(&original_path)
-        gd_string_del(&path)
-        gd_string_del(&original_path)
         spy_log(f"CALLED PythonResourceFormatLoader::_load(path={py_path!r}, original_path={py_original_path!r}, use_sub_threads={use_sub_threads}, cache_mode={cache_mode})")
 
         # 1) Check path and convert it to Python format (e.g. `res://foo/bar.py` -> `foo.bar`)

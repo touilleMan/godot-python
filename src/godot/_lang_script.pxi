@@ -68,10 +68,7 @@ cdef class PythonScript:
         spy_log(f"CALLED PythonScript::_get_member_line(member={gdapi.gd_string_name_to_pystr(&member)!r})")
 
         # Convert string name to string, then to Python string
-        cdef gd_string_t member_str = gdapi.gd_string_new_from_string_name(&member)
-        cdef object py_member = gdapi.gd_string_to_pystr(&member_str)
-        gd_string_del(&member_str)
-        gd_string_name_del(&member)
+        cdef object py_member = gdapi.gd_string_name_to_pystr(&member)
 
         # Find the line where the member is defined
         if not self._source_code:
@@ -99,7 +96,6 @@ cdef class PythonScript:
         spy_log(f"CALLED PythonScript::_get_method_info(method={gdapi.gd_string_name_to_pystr(&method)!r})")
         # TODO
         cdef gd_dictionary_t ret = gd_dictionary_new()
-        gd_string_name_del(&method)
         return ret
 
     # godot_extension: method(virtual=True, const=True)
@@ -107,7 +103,6 @@ cdef class PythonScript:
         spy_log(f"CALLED PythonScript::_get_property_default_value(property={gdapi.gd_string_name_to_pystr(&property)!r})")
         # TODO
         cdef gd_variant_t ret = gd_variant_new()
-        gd_string_name_del(&property)
         return ret
 
     # godot_extension: method(virtual=True, const=True)
@@ -153,10 +148,7 @@ cdef class PythonScript:
     cdef inline gd_bool_t _has_method(self, gd_string_name_t method):
         spy_log(f"CALLED PythonScript::_has_method(method={gdapi.gd_string_name_to_pystr(&method)!r})")
         # Convert string name to string, then to Python string
-        cdef gd_string_t method_str = gdapi.gd_string_new_from_string_name(&method)
-        cdef object py_method = gdapi.gd_string_to_pystr(&method_str)
-        gd_string_del(&method_str)
-        gd_string_name_del(&method)
+        cdef object py_method = gdapi.gd_string_name_to_pystr(&method)
 
         # Check if method exists in the Python source code
         if not self._source_code:
@@ -175,14 +167,12 @@ cdef class PythonScript:
     cdef inline gd_bool_t _has_property_default_value(self, gd_string_name_t property):
         spy_log(f"CALLED PythonScript::_has_property_default_value(property={gdapi.gd_string_name_to_pystr(&property)!r})")
         # TODO
-        gd_string_name_del(&property)
         return False
 
     # godot_extension: method(virtual=True, const=True)
     cdef inline gd_bool_t _has_script_signal(self, gd_string_name_t signal):
         spy_log(f"CALLED PythonScript::_has_script_signal(signal={gdapi.gd_string_name_to_pystr(&signal)!r})")
         # TODO
-        gd_string_name_del(&signal)
         return False
 
     # godot_extension: method(virtual=True, const=True)
@@ -194,7 +184,6 @@ cdef class PythonScript:
     cdef inline gd_bool_t _inherits_script(self, gd_object_t script):
         spy_log(f"CALLED PythonScript::_inherits_script(script=<object 0x{<size_t>script:x}>)")
         # TODO
-        # `gd_object_t` doesn't need to be be deleted (is it just a raw pointer)
         return False
 
     # godot_extension: method(virtual=True, const=True)
@@ -218,7 +207,6 @@ cdef class PythonScript:
         spy_log(f"CALLED PythonScript::_instance_has(object=<object 0x{<size_t>object:x}>)")
         # Check if the given object is an instance of this script
         # For now return False as we don't track instances yet
-        # `gd_object_t` doesn't need to be be deleted (is it just a raw pointer)
         return False
 
     # godot_extension: method(virtual=True, const=True)
@@ -258,7 +246,6 @@ cdef class PythonScript:
     cdef inline void* _placeholder_instance_create(self, gd_object_t for_object):
         spy_log(f"CALLED PythonScript::_placeholder_instance_create(for_object=<object 0x{<size_t>for_object:x}>)")
         # Create a placeholder instance for when the script is not ready
-        # `gd_object_t` doesn't need to be be deleted (is it just a raw pointer)
         return NULL
 
     # godot_extension: method(virtual=True)
@@ -274,7 +261,6 @@ cdef class PythonScript:
     cdef inline void _set_source_code(self, gd_string_t code):
         self._source_code = gdapi.gd_string_to_pystr(&code)
         spy_log(f"CALLED PythonScript::_set_source_code(code={self._source_code!r})")
-        gd_string_del(&code)
 
     # godot_extension: method(virtual=True)
     cdef inline void _update_exports(self):

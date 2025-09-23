@@ -16,15 +16,11 @@ cdef class PythonScriptLanguage:
     cdef inline void _add_global_constant(self, gd_string_name_t name, gd_variant_t value):
         # TODO
         spy_log(f"CALLED PythonScriptLanguage::_add_global_constant(name={gdapi.gd_string_name_to_pystr(&name)!r}, value={value!r})")
-        gd_string_name_del(&name)
-        gd_variant_del(&value)
 
     # godot_extension: method(virtual=True)
     cdef inline void _add_named_global_constant(self, gd_string_name_t name, gd_variant_t value):
         # TODO
         spy_log(f"CALLED PythonScriptLanguage::_add_named_global_constant(name={gdapi.gd_string_name_to_pystr(&name)!r}, value={value!r})")
-        gd_string_name_del(&name)
-        gd_variant_del(&value)
 
     # godot_extension: method(virtual=True, const=True)
     cdef inline gd_string_t _auto_indent_code(self, gd_string_t code, gd_int_t from_line, gd_int_t to_line):
@@ -48,9 +44,6 @@ cdef class PythonScriptLanguage:
         # TODO
         spy_log(f"CALLED PythonScriptLanguage::_complete_code(code={gdapi.gd_string_to_pystr(&code)!r}, path={gdapi.gd_string_to_pystr(&path)!r}, owner=<object 0x{<size_t>owner:x}>)")
         cdef gd_dictionary_t ret = gd_dictionary_new()
-        gd_string_del(&code)
-        gd_string_del(&path)
-        # `gd_object_t` doesn't need to be be deleted (is it just a raw pointer)
         return ret
 
     # godot_extension: method(virtual=True, const=True)
@@ -133,8 +126,6 @@ cdef class PythonScriptLanguage:
         spy_log(f"CALLED PythonScriptLanguage::_find_function(function={gdapi.gd_string_to_pystr(&function)!r}, code={gdapi.gd_string_to_pystr(&code)!r})")
         cdef object py_function = gdapi.gd_string_to_pystr(&function)
         cdef object py_code = gdapi.gd_string_to_pystr(&code)
-        gd_string_del(&function)
-        gd_string_del(&code)
 
         # Simple search for function definition
         try:
@@ -164,7 +155,6 @@ cdef class PythonScriptLanguage:
     cdef inline gd_array_t _get_built_in_templates(self, gd_string_name_t object):
         # TODO
         spy_log(f"CALLED PythonScriptLanguage::(object={gdapi.gd_string_name_to_pystr(&object)!r})")
-        gd_string_name_del(&object)
         cdef gd_array_t ret = gd_array_new()
         return ret
 
@@ -203,7 +193,6 @@ cdef class PythonScriptLanguage:
     cdef inline gd_dictionary_t _get_global_class_name(self, gd_string_t path):
         # TODO
         spy_log(f"CALLED PythonScriptLanguage::_get_global(path={gdapi.gd_string_to_pystr(&path)!r})")
-        gd_string_del(&path)
         cdef gd_dictionary_t ret = gd_dictionary_new()
         return ret
 
@@ -316,7 +305,6 @@ cdef class PythonScriptLanguage:
         spy_log(f"CALLED PythonScriptLanguage::_handles_global_class_type(type={gdapi.gd_string_to_pystr(&type)!r})")
         # TODO: would be more efficient to precompute the type into a `gd_string_t`
         cdef gd_bool_t result = gdapi.gd_string_to_pystr(&type) == "Python"
-        gd_string_del(&type)
         return result
 
     # godot_extension: method(virtual=True, const=True)
@@ -349,7 +337,6 @@ cdef class PythonScriptLanguage:
             "when",
             "while",
         )
-        gd_string_del(&keyword)
         return result
 
     # godot_extension: method(virtual=True)
@@ -361,10 +348,6 @@ cdef class PythonScriptLanguage:
     cdef inline gd_dictionary_t _lookup_code(self, gd_string_t code, gd_string_t symbol, gd_string_t path, gd_object_t owner):
         # TODO
         spy_log(f"CALLED PythonScriptLanguage::_lookup_code(code={gdapi.gd_string_to_pystr(&code)!r}, symbol={gdapi.gd_string_to_pystr(&symbol)!r}, path={gdapi.gd_string_to_pystr(&path)!r}, owner=<object 0x{<size_t>owner:x}>)")
-        gd_string_del(&code)
-        gd_string_del(&symbol)
-        gd_string_del(&path)
-        # `gd_object_t` doesn't need to be be deleted (is it just a raw pointer)
         cdef gd_dictionary_t ret = gd_dictionary_new()
         return ret
 
@@ -373,8 +356,6 @@ cdef class PythonScriptLanguage:
         spy_log(f"CALLED PythonScriptLanguage::_make_function(class_name={gdapi.gd_string_to_pystr(&class_name)!r}, function_name={gdapi.gd_string_to_pystr(&function_name)!r}, function_args={function_args!r})")
         cdef object py_class_name = gdapi.gd_string_to_pystr(&class_name)
         cdef object py_function_name = gdapi.gd_string_to_pystr(&function_name)
-        gd_string_del(&class_name)
-        gd_string_del(&function_name)
 
         # Convert function arguments
         cdef object args = []
@@ -385,7 +366,6 @@ cdef class PythonScriptLanguage:
             arg_str = gd_packed_string_array_indexed_getter(&function_args, i)
             args.append(gdapi.gd_string_to_pystr(&arg_str))
             gd_string_del(&arg_str)
-        gd_packed_string_array_del(&function_args)
 
         # Create function signature
         cdef object arg_list = ', '.join(['self'] + args) if args else 'self'
@@ -399,9 +379,6 @@ cdef class PythonScriptLanguage:
         cdef object py_template = gdapi.gd_string_to_pystr(&template)
         cdef object py_class_name = gdapi.gd_string_to_pystr(&class_name)
         cdef object py_base_class_name = gdapi.gd_string_to_pystr(&base_class_name)
-        gd_string_del(&template)
-        gd_string_del(&class_name)
-        gd_string_del(&base_class_name)
 
         # Create a basic Python script template
         cdef object source_template = f'''extends {py_base_class_name}
@@ -427,7 +404,6 @@ class {py_class_name}({py_base_class_name}):
     cdef inline gd_int_t _open_in_external_editor(self, gd_object_t script, gd_int_t line, gd_int_t column):
         # TODO
         spy_log(f"CALLED PythonScriptLanguage::_open_in_external_editor(script=<object 0x{<size_t>script:x}>, line={line}, column={column})")
-        # `gd_object_t` doesn't need to be be deleted (is it just a raw pointer)
         return Error.ERR_UNAVAILABLE
 
     # godot_extension: method(virtual=True)
@@ -479,19 +455,16 @@ class {py_class_name}({py_base_class_name}):
     cdef inline void _reload_scripts(self, gd_array_t scripts, gd_bool_t soft_reload):
         # TODO
         spy_log(f"CALLED PythonScriptLanguage::_reload_scripts(scripts={scripts!r}, soft_reload={soft_reload})")
-        gd_array_del(&scripts)
 
     # godot_extension: method(virtual=True)
     cdef inline void _reload_tool_script(self, gd_object_t script, gd_bool_t soft_reload):
         # TODO
         spy_log(f"CALLED PythonScriptLanguage::_reload_tool_script(script=<object 0x{<size_t>script:x}>, soft_reload={soft_reload})")
-        # `gd_object_t` doesn't need to be be deleted (is it just a raw pointer)
 
     # godot_extension: method(virtual=True)
     cdef inline void _remove_named_global_constant(self, gd_string_name_t name):
         # TODO
         spy_log(f"CALLED PythonScriptLanguage::_remove_named_global_constant(name={gdapi.gd_string_name_to_pystr(&name)!r})")
-        gd_string_name_del(&name)
 
     # godot_extension: method(virtual=True, const=True)
     cdef inline gd_bool_t _supports_builtin_mode(self):
@@ -519,8 +492,6 @@ class {py_class_name}({py_base_class_name}):
         # TODO
         spy_log(f"CALLED PythonScriptLanguage::_validate(script={gdapi.gd_string_to_pystr(&script)!r}, path={gdapi.gd_string_to_pystr(&path)!r}, validate_functions={validate_functions}, validate_errors={validate_errors}, validate_warnings={validate_warnings}, validate_safe_lines={validate_safe_lines})")
         cdef gd_dictionary_t ret = gd_dictionary_new()
-        gd_string_del(&script)
-        gd_string_del(&path)
         return ret
 
     # godot_extension: method(virtual=True, const=True)
@@ -528,7 +499,6 @@ class {py_class_name}({py_base_class_name}):
         # TODO
         spy_log(f"CALLED PythonScriptLanguage::_validate_path(path={gdapi.gd_string_to_pystr(&path)!r})")
         cdef gd_string_t ret = gd_string_from_pybytes(b"")
-        gd_string_del(&path)
         return ret
 
     # godot_extension: generate_class_code()
