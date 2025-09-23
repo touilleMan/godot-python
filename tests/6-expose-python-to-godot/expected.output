@@ -1,7 +1,5 @@
 Godot Engine .* - https://godotengine.org
 
 Godot-Python .* \(CPython .*\)
-MY initialize 2
-MY initialize 3
-MY deinitialize 3
-MY deinitialize 2
+Python: _ready entered
+Python: _ready done
