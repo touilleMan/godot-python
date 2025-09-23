@@ -151,7 +151,7 @@ cdef void _script_instance_call_func(
     GDExtensionVariantPtr r_return,
     GDExtensionCallError* r_error,
 ) noexcept with gil:
-    cdef StringName method = StringName.from_gd_data((<gd_string_name_t*>p_method)[0])
+    cdef object method = gdapi.gd_string_name_to_pystr(<gd_string_name_t*>p_method)
     cdef list args = [gd_variant_steal_into_pyobj((<gd_variant_t**>p_args)[i]) for i in range(p_argument_count)]
     print(f"[DEBUG] CALLED _script_instance_call_func(self=<object 0x{<size_t>p_self:x}>, method={method!r}, args={args!r})", flush=True)
     cdef object meth
