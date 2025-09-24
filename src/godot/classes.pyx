@@ -2,7 +2,7 @@ from .hazmat cimport gdapi, gdptrs, gdextension_interface
 from .hazmat.gdtypes cimport *
 from .builtins cimport *
 
-from enum import Enum
+from enum import IntEnum
 
 
 def __getattr__(name: str):
@@ -169,7 +169,7 @@ cdef object _load_class(str name):
                 enum_item_name = next(items_spec)
                 enum_item_value = next(items_spec)
                 enum_items_cooked[enum_item_name] = enum_item_value
-            attrs[enum_name] = Enum(enum_name, enum_items_cooked)
+            attrs[enum_name] = IntEnum(enum_name, enum_items_cooked)
 
         elif tag == _classes_api._tag_property:
             def _gen(

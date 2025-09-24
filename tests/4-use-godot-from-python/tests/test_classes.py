@@ -169,19 +169,14 @@ def test_property(kind: str):
                 assert_eq(node.name, godot.StringName("bar"))
 
             case "enum":
-                clodotest.skip(
-                    reason="TODO: enum currently return `int` instead of `Enum` instance"
-                )
                 assert_eq(
                     node.physics_interpolation_mode,
-                    node.PhysicsInterpolationMode.PHYSICS_INTERPOLATION_MODE_INHERIT,
+                    node.PhysicsInterpolationMode.INHERIT,
                 )
-                node.physics_interpolation_mode = (
-                    node.PhysicsInterpolationMode.PHYSICS_INTERPOLATION_MODE_ON
-                )
+                node.physics_interpolation_mode = node.PhysicsInterpolationMode.ON
                 assert_eq(
                     node.physics_interpolation_mode,
-                    node.PhysicsInterpolationMode.PHYSICS_INTERPOLATION_MODE_ON,
+                    node.PhysicsInterpolationMode.ON,
                 )
 
             case "class":
