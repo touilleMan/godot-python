@@ -172,6 +172,7 @@ def run_test(
     godot_binary: Path,
     extra_args: Sequence[str],
     gdb: str | None,
+    test_argv: str | None,
 ) -> None:
     print(
         f"{YELLOW}{test_name}: Running test in workdir {test_workdir}{NO_COLOR}",
@@ -186,7 +187,12 @@ def run_test(
     if gdb is not None:
         cmd = [gdb, "--args", *cmd]
     print(" ".join(cmd), flush=True)
-    res = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    res = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        env={**os.environ, "TEST_ARGV": test_argv or ""},
+    )
 
     total_output = b""
     while True:
@@ -221,6 +227,10 @@ def run_test(
                 )
 
     else:
+        # Extra arguments most likely modify the test output so we cannot check it
+        if test_argv is not None:
+            return
+
         expected_lines = list(reversed(expected_output.splitlines()))
         actual_lines = list(
             reversed(
@@ -328,7 +338,10 @@ if __name__ == "__main__":
         default=None,
         help="Use a debugger (GDB by default) to run the tests",
     )
-
+    parser.add_argument(
+        "--test-argv",
+        help="Extra arguments passed to the test (using `TEST_ARGV` environ variable)",
+    )
     try:
         options_separator = sys.argv.index("--")
     except ValueError:
@@ -383,4 +396,11 @@ if __name__ == "__main__":
                 test_workdir=test_workdir,
                 custom_gdextension_api=args.custom_gdextension_api,
             )
-            run_test(test_dir.name, test_workdir, godot_binary_path, godot_extra_args, args.gdb)
+            run_test(
+                test_dir.name,
+                test_workdir,
+                godot_binary_path,
+                godot_extra_args,
+                args.gdb,
+                args.test_argv,
+            )

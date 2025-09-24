@@ -78,43 +78,61 @@ class Echo(Op):
 class Cmd(Op):
     def __init__(
         self,
-        cmd: str,
+        cmd: list[str],
         extra_env: dict[str, str] = {},
     ) -> None:
         self.cmd = cmd
         self.extra_env = extra_env
 
-    def cmd_with_extra_cmd_args(self, extra_cmd_args: Iterable[str]) -> str:
-        cooked_extra_cmds_args = " ".join(extra_cmd_args) if extra_cmd_args else ""
-        if "{extra_cmd_args}" in self.cmd:
-            return self.cmd.format(extra_cmd_args=cooked_extra_cmds_args)
-        else:
-            return f"{self.cmd} {cooked_extra_cmds_args}"
+    def cmd_with_extra_cmd_args(self, extra_cmd_args: Iterable[str]) -> list[str]:
+        try:
+            pos = self.cmd.index(EXTRA_CMD_ARGS_SENTINEL)
+        except ValueError:
+            return [*self.cmd]
+
+        return [
+            *self.cmd[:pos],
+            *extra_cmd_args,
+            *self.cmd[pos + 1 :],
+        ]
 
     def display(self, extra_cmd_args: Iterable[str]) -> str:
         display_extra_env = " ".join(
             [f"{GREY}{k}={v}{NO_COLOR}" for k, v in self.extra_env.items()]
         )
         cmd = self.cmd_with_extra_cmd_args(extra_cmd_args)
-        return f"{display_extra_env} {CYAN}{cmd}{NO_COLOR}"
+        display_cmd = " ".join(x if " " not in x else f"'{x}'" for x in cmd)
+        return f"{display_extra_env} {CYAN}{display_cmd}{NO_COLOR}"
 
     def run(self, cwd: Path, extra_cmd_args: Iterable[str]) -> None:
-        args = self.cmd_with_extra_cmd_args(extra_cmd_args).split()
         subprocess.check_call(
-            args,
+            self.cmd_with_extra_cmd_args(extra_cmd_args),
             env={**os.environ, **self.extra_env},
             cwd=cwd,
         )
 
 
+EXTRA_CMD_ARGS_SENTINEL = "<extra_cmd_args>"
 COMMANDS: dict[tuple[str, ...], Union[Op, tuple[Op, ...]]] = {
     ("init", "i"): (
-        Cmd(f"uv run meson setup {BUILD_DIR}"),
-        Cmd(f"uv run meson compile --verbose -C {BUILD_DIR}"),
+        Cmd(["uv", "run", "meson", "setup", BUILD_DIR]),
+        Cmd(["uv", "run", "meson", "compile", "--verbose", "-C", BUILD_DIR]),
     ),
-    ("rebuild", "r"): (Cmd(f"uv run meson compile --verbose -C {BUILD_DIR}"),),
+    ("rebuild", "r"): Cmd(["uv", "run", "meson", "compile", "--verbose", "-C", BUILD_DIR]),
     ("tests", "t"): (
-        Cmd(f"uv run python tests/run.py --build-dir={BUILD_DIR} {{extra_cmd_args}} -- --headless"),
+        Cmd(
+            [
+                "uv",
+                "run",
+                "python",
+                "tests/run.py",
+                "--build-dir",
+                BUILD_DIR,
+                EXTRA_CMD_ARGS_SENTINEL,
+                "--",
+                "--headless",
+            ]
+        ),
     ),
 }
 

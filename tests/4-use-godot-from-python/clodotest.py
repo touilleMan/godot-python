@@ -5,6 +5,7 @@ import itertools
 from contextlib import contextmanager
 import pkgutil
 import re
+import sys
 from pathlib import Path
 import dataclasses
 
@@ -148,14 +149,15 @@ def run_tests_with_argv(path: Path, argv: list[str]) -> bool:
             case "-k":
                 raw_filters.append(rf"({re.escape(next(args))})")
             case "-h":
-                print("Allowed options: [PATH] [-v] [-x] [-k FILTER]")
-                raise SystemExit(-1)
+                print("Allowed options: [PATH] [-v] [-x] [-k FILTER]", file=sys.stderr, flush=True)
+                return False
             case unknown:
                 if not unknown.startswith("-"):
                     raw_filters.append(rf"(^{re.escape(unknown)})")
                     continue
 
-                raise SystemExit(f"Unknown option `{unknown}`")
+                print(f"Unknown option `{unknown}`", file=sys.stderr, flush=True)
+                return False
 
     filter = re.compile(r"|".join(raw_filters))
     return run_tests(path=path, filter=filter, stop_on_failure=stop_on_failure, verbose=verbose)

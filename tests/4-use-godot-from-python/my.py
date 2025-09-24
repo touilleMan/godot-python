@@ -11,4 +11,5 @@ def initialize(level: int):
         return
     assert level == 3
 
-    clodotest.run_tests_with_argv(BASEDIR / "tests", os.environ.get("CLODOTEST_ARGV", "").split())
+    clodotest.run_tests_with_argv(BASEDIR / "tests", os.environ.get("TEST_ARGV", "").split())
+    # TODO: find a way to quit Godot with non-zero status code when the tests fail
