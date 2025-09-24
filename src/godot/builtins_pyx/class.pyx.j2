@@ -22,7 +22,7 @@ def {{ c.name }}():
 
 {% macro render_class(builtin) %}
 {% for e in builtin.enums %}
-class {{ builtin.cy_type }}{{ e.original_name }}(Enum):
+class {{ builtin.cy_type }}{{ e.original_name }}(IntEnum):
 {%   for item in e.items %}
     {{ item.py_name }} = {{ item.value }}
 {%   endfor %}

@@ -13,7 +13,7 @@ from .hazmat cimport gdapi, gdptrs, gdextension_interface
 from .hazmat.gdtypes cimport *
 
 from collections.abc import Iterable, Mapping, Sized  # Needed by Array&Dictionary constructors
-from enum import Enum
+from enum import IntEnum
 from warnings import warn
 
 # Unique object used as default parameter in constructors.
@@ -34,7 +34,7 @@ cdef object _SENTINEL = object()
 {% for spec in api.global_enums %}
 
 
-class {{ spec.cy_type }}(Enum):
+class {{ spec.cy_type }}(IntEnum):
 {%   for item in spec.items %}
     {{ item.py_name }} = {{ item.value }}
 {%   endfor %}

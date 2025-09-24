@@ -802,6 +802,12 @@ def test_constant():
 
 
 def test_enum():
-    assert_issubclass(godot.Vector2i.Axis, enum.Enum)
-    assert_eq(godot.Vector2i.Axis.X.value, 0)
-    assert_eq(godot.Vector2i.Axis.Y.value, 1)
+    # Global enum
+    assert_issubclass(godot.Error, enum.IntEnum)
+    assert_eq(godot.Error.OK, 0)
+    assert_eq(godot.Error.FAILED, 1)
+
+    # Builtin enum
+    assert_issubclass(godot.Vector2i.Axis, enum.IntEnum)
+    assert_eq(godot.Vector2i.Axis.X, 0)
+    assert_eq(godot.Vector2i.Axis.Y, 1)
