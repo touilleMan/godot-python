@@ -32,32 +32,43 @@ def __eq__(self, object other):
 {% if builtin.is_transparent_builtin %}
     return (
 {%   for field_path in  builtin.all_nested_scalar_members %}
-{%     if not loop.first%}
-    and
-{%     endif %}
-    self._gd_data.{{ field_path }} == other_gd_data.{{ field_path }}
+        {%if not loop.first%}and {% endif %}self._gd_data.{{ field_path }} == other_gd_data.{{ field_path }}
 {%   endfor %}
     )
 {% else %}
     return gdapi.gd_{{ builtin.snake_name }}_op_equal_{{ builtin.snake_name }}(&self._gd_data, other_gd_data)
 {% endif %}
 
-{% if builtin.original_name in ("Array", "Dictionary") or builtin.is_packed_array %}
+{% if builtin.original_name in ("Dictionary", "Array") or builtin.is_packed_array %}
 {# Note `__bool__` is not needed if `__len__` is defined #}
 def __len__(self):
-    return self.size()
+    cdef int64_t size = gdapi.gd_{{ builtin.snake_name }}_meth_size(&self._gd_data)
+    return size
+{% elif builtin.original_name in ("String", "StringName") %}
+{# Note `__bool__` is not needed if `__len__` is defined #}
+def __len__(self):
+    cdef int64_t length = gdapi.gd_{{ builtin.snake_name }}_meth_length(&self._gd_data)
+    return length
 {% elif builtin.is_transparent_builtin %}
 def __bool__(self):
     return (
-{%   for member in builtin.all_nested_scalar_members %}
-        {% if not loop.first %}or {% endif %}self.{{ member }} != 0
+{%   for field_path in builtin.all_nested_scalar_members %}
+        {% if not loop.first %}or {% endif %}self._gd_data.{{ field_path }} != 0
 {%   endfor %}
     )
-{% else %}
+{% elif builtin.original_name == "NodePath" %}
+def __bool__(self):
+    cdef int64_t is_empty = gdapi.gd_{{ builtin.snake_name }}_meth_is_empty(&self._gd_data)
+    return not is_empty
+{% elif builtin.original_name == "RID" %}
 def __bool__(self):
     cdef {{ builtin.c_type }} zero
     memset(&zero, 0, cython.sizeof({{ builtin.c_type }}))
     return not gdapi.gd_{{ builtin.snake_name }}_op_equal_{{ builtin.snake_name }}(&self._gd_data, &zero)
+{% else %}
+def __bool__(self):
+    cdef uint8_t is_null = gdapi.gd_{{ builtin.snake_name }}_meth_is_null(&self._gd_data)
+    return not is_null
 {% endif %}
 
 {% if builtin.original_name == "Array" or builtin.is_packed_array %}

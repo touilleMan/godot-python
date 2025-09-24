@@ -811,3 +811,286 @@ def test_enum():
     assert_issubclass(godot.Vector2i.Axis, enum.IntEnum)
     assert_eq(godot.Vector2i.Axis.X, 0)
     assert_eq(godot.Vector2i.Axis.Y, 1)
+
+
+@clodotest.parametrize(
+    "kind",
+    [
+        "STRING",
+        "VECTOR2",
+        "VECTOR2I",
+        "RECT2",
+        "RECT2I",
+        "TRANSFORM2D",
+        "VECTOR3",
+        "VECTOR3I",
+        "VECTOR4",
+        "VECTOR4I",
+        "PLANE",
+        "AABB",
+        "QUATERNION",
+        "BASIS",
+        "TRANSFORM3D",
+        "PROJECTION",
+        "COLOR",
+        "RID",
+        "CALLABLE",
+        "SIGNAL",
+        "STRING_NAME",
+        "NODE_PATH",
+        "DICTIONARY",
+        "ARRAY",
+        "PACKED_BYTE_ARRAY",
+    ],
+)
+def test_len_and_bool(kind: str):
+    match kind:
+        case "STRING":
+            assert_eq(bool(godot.GDString("foo")), True)
+            assert_eq(bool(godot.GDString()), False)
+            assert_eq(len(godot.GDString()), 0)
+            assert_eq(len(godot.GDString("foo")), 3)
+
+        case "VECTOR2":
+            assert_eq(bool(godot.Vector2(1, 0)), True)
+            assert_eq(bool(godot.Vector2(0, 1)), True)
+            assert_eq(bool(godot.Vector2()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Vector2())
+
+        case "VECTOR2I":
+            assert_eq(bool(godot.Vector2i(1, 0)), True)
+            assert_eq(bool(godot.Vector2i(0, 1)), True)
+            assert_eq(bool(godot.Vector2i()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Vector2i())
+
+        case "RECT2":
+            assert_eq(bool(godot.Rect2(godot.Vector2(1, 1), godot.Vector2())), True)
+            assert_eq(bool(godot.Rect2(godot.Vector2(), godot.Vector2(1, 1))), True)
+            assert_eq(bool(godot.Rect2()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Rect2())
+
+        case "RECT2I":
+            assert_eq(bool(godot.Rect2i(godot.Vector2i(1, 1), godot.Vector2i())), True)
+            assert_eq(bool(godot.Rect2i(godot.Vector2i(), godot.Vector2i(1, 1))), True)
+            assert_eq(bool(godot.Rect2i()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Rect2i())
+
+        case "TRANSFORM2D":
+            assert_eq(
+                bool(godot.Transform2D(godot.Vector2(1, 1), godot.Vector2(), godot.Vector2())), True
+            )
+            assert_eq(
+                bool(godot.Transform2D(godot.Vector2(), godot.Vector2(1, 1), godot.Vector2())), True
+            )
+            assert_eq(
+                bool(godot.Transform2D(godot.Vector2(), godot.Vector2(), godot.Vector2(1, 1))), True
+            )
+            assert_eq(bool(godot.Transform2D()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Transform2D())
+
+        case "VECTOR3":
+            assert_eq(bool(godot.Vector3(1, 0, 0)), True)
+            assert_eq(bool(godot.Vector3(0, 1, 0)), True)
+            assert_eq(bool(godot.Vector3(0, 0, 1)), True)
+            assert_eq(bool(godot.Vector3()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Vector3())
+
+        case "VECTOR3I":
+            assert_eq(bool(godot.Vector3i(1, 0, 0)), True)
+            assert_eq(bool(godot.Vector3i(0, 1, 0)), True)
+            assert_eq(bool(godot.Vector3i(0, 0, 1)), True)
+            assert_eq(bool(godot.Vector3i()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Vector3i())
+
+        case "VECTOR4":
+            assert_eq(bool(godot.Vector4(1, 0, 0, 0)), True)
+            assert_eq(bool(godot.Vector4(0, 1, 0, 0)), True)
+            assert_eq(bool(godot.Vector4(0, 0, 1, 0)), True)
+            assert_eq(bool(godot.Vector4(0, 0, 0, 1)), True)
+            assert_eq(bool(godot.Vector4()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Vector4())
+
+        case "VECTOR4I":
+            assert_eq(bool(godot.Vector4i(1, 0, 0, 0)), True)
+            assert_eq(bool(godot.Vector4i(0, 1, 0, 0)), True)
+            assert_eq(bool(godot.Vector4i(0, 0, 1, 0)), True)
+            assert_eq(bool(godot.Vector4i(0, 0, 0, 1)), True)
+            assert_eq(bool(godot.Vector4i()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Vector4i())
+
+        case "PLANE":
+            assert_eq(bool(godot.Plane(1)), True)
+            assert_eq(bool(godot.Plane(0, godot.Vector3(1, 1, 1))), True)
+            assert_eq(bool(godot.Plane()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Plane())
+
+        case "AABB":
+            assert_eq(bool(godot.AABB(godot.Vector3(1, 1, 1), godot.Vector3())), True)
+            assert_eq(bool(godot.AABB(godot.Vector3(), godot.Vector3(1, 1, 1))), True)
+            assert_eq(bool(godot.AABB()), False)
+            with clodotest.raises(TypeError):
+                len(godot.AABB())
+
+        case "QUATERNION":
+            assert_eq(bool(godot.Quaternion(1, 0, 0, 0)), True)
+            assert_eq(bool(godot.Quaternion(0, 1, 0, 0)), True)
+            assert_eq(bool(godot.Quaternion(0, 0, 1, 0)), True)
+            assert_eq(bool(godot.Quaternion(0, 0, 0, 1)), True)
+            assert_eq(bool(godot.Quaternion()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Quaternion())
+
+        case "BASIS":
+            assert_eq(
+                bool(godot.Basis(godot.Vector3(1, 1, 1), godot.Vector3(), godot.Vector3())), True
+            )
+            assert_eq(
+                bool(godot.Basis(godot.Vector3(), godot.Vector3(1, 1, 1), godot.Vector3())), True
+            )
+            assert_eq(
+                bool(godot.Basis(godot.Vector3(), godot.Vector3(), godot.Vector3(1, 1, 1))), True
+            )
+            assert_eq(bool(godot.Basis()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Basis())
+
+        case "TRANSFORM3D":
+            assert_eq(
+                bool(
+                    godot.Transform3D(
+                        godot.Basis(godot.Vector3(1, 1, 1), godot.Vector3(), godot.Vector3()),
+                        godot.Vector3(),
+                    )
+                ),
+                True,
+            )
+            assert_eq(
+                bool(
+                    godot.Transform3D(
+                        godot.Basis(),
+                        godot.Vector3(1, 1, 1),
+                    )
+                ),
+                True,
+            )
+            assert_eq(bool(godot.Transform3D()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Transform3D())
+
+        case "PROJECTION":
+            assert_eq(
+                bool(
+                    godot.Projection(
+                        godot.Vector4(1, 1, 1), godot.Vector4(), godot.Vector4(), godot.Vector4()
+                    )
+                ),
+                True,
+            )
+            assert_eq(
+                bool(
+                    godot.Projection(
+                        godot.Vector4(), godot.Vector4(1, 1, 1), godot.Vector4(), godot.Vector4()
+                    )
+                ),
+                True,
+            )
+            assert_eq(
+                bool(
+                    godot.Projection(
+                        godot.Vector4(), godot.Vector4(), godot.Vector4(1, 1, 1), godot.Vector4()
+                    )
+                ),
+                True,
+            )
+            assert_eq(
+                bool(
+                    godot.Projection(
+                        godot.Vector4(), godot.Vector4(), godot.Vector4(), godot.Vector4(1, 1, 1)
+                    )
+                ),
+                True,
+            )
+            assert_eq(bool(godot.Projection()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Projection())
+
+        case "COLOR":
+            assert_eq(bool(godot.Color(1, 0, 0, 0)), True)
+            assert_eq(bool(godot.Color(0, 1, 0, 0)), True)
+            assert_eq(bool(godot.Color(0, 0, 1, 0)), True)
+            assert_eq(bool(godot.Color(0, 0, 0, 1)), True)
+            assert_eq(bool(godot.Projection()), False)
+            with clodotest.raises(TypeError):
+                len(godot.Color())
+
+        case "RID":
+            assert_eq(bool(godot.RID()), False)
+            # TODO: is there a way to build a RID with a non-zero id ?
+            with clodotest.raises(TypeError):
+                len(godot.RID())
+
+        case "CALLABLE":
+            assert_eq(bool(godot.GDCallable()), False)
+            from godot.singletons import OS
+
+            c = godot.GDCallable._create(OS, "get_cmdline_args")
+            assert_eq(bool(c), True)
+            with clodotest.raises(TypeError):
+                len(godot.GDCallable())
+
+        case "SIGNAL":
+            assert_eq(bool(godot.Signal()), False)
+            from godot.singletons import OS, Input
+
+            assert_eq(bool(Input.joy_connection_changed), False)
+            c = godot.GDCallable._create(OS, "get_cmdline_args")
+            clodotest.skip(reason="TODO: `Signal.connect` returns a `ERR_UNCONFIGURED`")
+            assert_eq(Input.joy_connection_changed.connect(c), godot.Error.OK)
+            assert_eq(bool(Input.joy_connection_changed), True)
+            with clodotest.raises(TypeError):
+                len(godot.Signal())
+
+        case "STRING_NAME":
+            assert_eq(bool(godot.StringName("foo")), True)
+            assert_eq(bool(godot.StringName()), False)
+            assert_eq(len(godot.StringName("foo")), 3)
+            assert_eq(len(godot.StringName()), 0)
+
+        case "NODE_PATH":
+            assert_eq(bool(godot.NodePath("foo")), True)
+            assert_eq(bool(godot.NodePath()), False)
+            with clodotest.raises(TypeError):
+                len(godot.NodePath())
+
+        case "DICTIONARY":
+            assert_eq(
+                bool(godot.GDDictionary([(1, godot.GDString("foo")), (godot.GDString("bar"), 2)])),
+                True,
+            )
+            assert_eq(bool(godot.GDDictionary()), False)
+            assert_eq(
+                len(godot.GDDictionary([(1, godot.GDString("foo")), (godot.GDString("bar"), 2)])), 2
+            )
+            assert_eq(len(godot.GDDictionary()), 0)
+
+        case "ARRAY":
+            assert_eq(bool(godot.GDArray((1, godot.GDString("foo")))), True)
+            assert_eq(bool(godot.GDArray()), False)
+            assert_eq(len(godot.GDArray((1, godot.GDString("foo")))), 2)
+            assert_eq(len(godot.GDArray()), 0)
+
+        case "PACKED_BYTE_ARRAY":
+            assert_eq(bool(godot.PackedStringArray([godot.GDString("foo")])), True)
+            assert_eq(bool(godot.PackedStringArray()), False)
+            assert_eq(len(godot.PackedStringArray([godot.GDString("foo")])), 1)
+            assert_eq(len(godot.PackedStringArray()), 0)
