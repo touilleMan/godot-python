@@ -37,8 +37,12 @@ from ._version import __version__  # noqa: E402, F401
 #     exposed,
 # )
 from .builtins import *  # noqa: E402, F403
+from . import utils  # noqa: E402, F401
 
 from ._lang import exposed  # noqa: E402, F401
+
+# import typing
+# type Export[x] = typing.Annotated[x, _export_tag]
 
 # from .classes import _load_singleton, _load_class
 

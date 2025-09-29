@@ -70,25 +70,6 @@ class {{ enum.py_type }}(Enum):
 
 
 ##############################################################################
-#                              Utility functions                             #
-##############################################################################
-
-
-{% for utility in api.utility_functions %}
-def {{ utility.name }}(
-{%-     for arg in utility.arguments -%}
-    {{ render_arg(arg) }}
-{%-     if not loop.last -%}, {% endif %}
-{%     endfor -%}
-) -> {{ "None" if utility.return_type.is_nil else utility.return_type.py_type }}:
-{%     if utility.description %}
-    """{{ utility.description | gd_description_to_py_doc }}"""
-{%     endif %}
-    ...
-{% endfor %}
-
-
-##############################################################################
 #                                  Builtins                                  #
 ##############################################################################
 {% for builtin in api.builtins %}

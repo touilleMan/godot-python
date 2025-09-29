@@ -103,8 +103,8 @@ def {{ render_method_signature(m) }}:
 {%       elif arg.type.original_name == "NodePath" %}
     cdef NodePath __arg{{ loop.index0 }}
     __arg{{ loop.index0 }} = ensure_is_nodepath({{ arg.name }})
-{% endif %}
-{% endfor %}
+{%       endif %}
+{%     endfor %}
 {%     if m.return_type.is_scalar %}
     cdef {{ m.return_type.cy_type }} ret = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
 {%     elif m.return_type.is_builtin %}

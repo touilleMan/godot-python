@@ -1,0 +1,143 @@
+{%- macro render_utility_function_vararg(utility) %}
+def {{ utility.name }}(*args):
+{# 1) Param cooking #}
+    cdef gd_variant_t **gd_args_ptrs
+    cdef gd_variant_t[8] gd_args_stack
+    cdef (gd_variant_t *)[8] gd_args_ptrs_stack
+    cdef gd_variant_t *gd_args_heap
+    cdef gd_variant_t **gd_args_ptrs_heap
+    cdef bint stack_args_passing = len(args) <= 8
+    if stack_args_passing:
+        for i, arg in enumerate(args):
+            gd_args_stack[i] = ensure_is_gdany_and_borrow_ref(arg)
+            gd_args_ptrs_stack[i] = &gd_args_stack[i]
+        gd_args_ptrs = <gd_variant_t **>&gd_args_ptrs_stack
+    else:
+        gd_args_heap = <gd_variant_t*>malloc(sizeof(gd_variant_t) * len(args))
+        gd_args_ptrs_heap = <gd_variant_t**>malloc(sizeof(gd_variant_t*) * len(args))
+        for i, arg in enumerate(args):
+            gd_args_heap[i] = ensure_is_gdany_and_borrow_ref(arg)
+            gd_args_ptrs_heap[i] = &gd_args_heap[i]
+        gd_args_ptrs = gd_args_ptrs_heap
+{# 2) Actual function call with return value initialization #}
+{% if utility.return_type.is_scalar %}
+    cdef {{ utility.return_type.cy_type }} __ret = gdapi.gd_utility_{{ utility.name }}(
+{% elif utility.return_type.is_builtin %}
+    # Call to __new__ bypasses __init__ constructor
+    cdef {{ utility.return_type.cy_type }} __ret = {{ utility.return_type.cy_type }}.__new__({{ utility.return_type.cy_type }})
+    __ret._gd_data = gdapi.gd_utility_{{ utility.name }}(
+{% elif utility.return_type.is_object or utility.return_type.is_variant %}
+    cdef {{  utility.return_type.c_type }} __cret = gdapi.gd_utility_{{ utility.name }}(
+{% else %}
+    gdapi.gd_utility_{{ utility.name }}(
+{% endif %}
+{# 3) Parameter provided to the function call #}
+        gd_args_ptrs, len(args)
+    )
+    # Note we don't need to destroy the variants since they have only borrowed their data from the PyObjects
+    if not stack_args_passing:
+        free(gd_args_heap)
+        free(gd_args_ptrs_heap)
+{# 4) Optional return value conversion #}
+{% if not utility.return_type.is_nil %}
+{%   if utility.return_type.is_object %}
+    return BaseGDObject.cast_from_object(__cret)
+{%   elif utility.return_type.is_variant %}
+    # Note the "steal" means we don't need a final `gdapi.gd_variant_del(&__cret)`
+    return gd_variant_steal_into_pyobj(&__cret)
+{% else %}
+    return __ret
+{%   endif %}
+{% endif %}
+
+{% endmacro -%}
+
+
+{%- macro render_utility_function_regular(utility) %}
+def {{ utility.name }}(
+{%- for arg in utility.arguments -%}
+{%- if arg.type.original_name in ("String", "StringName", "NodePath") -%}
+object {{ arg.name }}
+{%- elif arg.type.is_object -%}
+BaseGDObject {{ arg.name }}
+{%- else -%}
+{{ arg.type.cy_type }} {{ arg.name }}
+{%- endif -%}
+{%- if arg.default_value -%}
+={{ arg.default_value.py_value or "None" }}
+{%- endif -%}
+{%- if not loop.last -%}, {% endif -%}
+{%- endfor -%}
+):
+{# 1) Param cooking #}
+{% for arg in utility.arguments %}
+{%   if arg.type.is_variant %}
+    cdef gd_variant_t __arg_{{ arg.name }}
+    __arg_{{ arg.name }} = ensure_is_gdany_and_borrow_ref({{ arg.name }})
+{%   elif arg.type.original_name == "String" %}
+    cdef GDString __arg_{{ arg.name }}
+    __arg_{{ arg.name }} = ensure_is_gdstring({{ arg.name }})
+{%   elif arg.type.original_name == "StringName" %}
+    cdef StringName __arg_{{ arg.name }}
+    __arg_{{ arg.name }} = ensure_is_stringname({{ arg.name }})
+{%   elif arg.type.original_name == "NodePath" %}
+    cdef NodePath __arg_{{ arg.name }}
+    __arg_{{ arg.name }} = ensure_is_nodepath({{ arg.name }})
+{%   endif %}
+{% endfor %}
+{# 2) Actual function call with return value initialization #}
+{% if utility.return_type.is_scalar %}
+    cdef {{ utility.return_type.cy_type }} __ret = gdapi.gd_utility_{{ utility.name }}(
+{% elif utility.return_type.is_builtin %}
+    # Call to __new__ bypasses __init__ constructor
+    cdef {{ utility.return_type.cy_type }} __ret = {{ utility.return_type.cy_type }}.__new__({{ utility.return_type.cy_type }})
+    __ret._gd_data = gdapi.gd_utility_{{ utility.name }}(
+{% elif utility.return_type.is_object or utility.return_type.is_variant %}
+    cdef {{  utility.return_type.c_type }} __cret = gdapi.gd_utility_{{ utility.name }}(
+{% else %}
+    gdapi.gd_utility_{{ utility.name }}(
+{% endif %}
+{# 3) Parameter provided to the function call #}
+{%   for arg in utility.arguments %}
+{%     if arg.type.is_scalar %}
+        {{ arg.name }},
+{%     elif arg.type.original_name in ("String", "StringName", "NodePath") %}
+        &__arg_{{ arg.name }}._gd_data,
+{%     elif arg.type.is_builtin %}
+        &{{ arg.name }}._gd_data,
+{%     elif arg.type.is_object %}
+        &{{ arg.name }}._gd_ptr,
+{%     elif arg.type.is_variant %}
+        &__arg_{{ arg.name }},
+{%     else %}
+        <crash !!!!>  # {{ arg.type }} Unsupported type, crash the compilation !
+{%     endif %}
+{%   endfor %}
+    )
+{# 4) Optional return value conversion #}
+{% if not utility.return_type.is_nil %}
+{%   if utility.return_type.is_object %}
+    return BaseGDObject.cast_from_object(__cret)
+{%   elif utility.return_type.is_variant %}
+    # Note the "steal" means we don't need a final `gdapi.gd_variant_del(&__cret)`
+    return gd_variant_steal_into_pyobj(&__cret)
+{% else %}
+    return __ret
+{%   endif %}
+{% endif %}
+{% endmacro -%}
+
+
+from libc.stdlib cimport malloc, free
+from godot.hazmat cimport gdapi
+from godot.hazmat.gdtypes cimport *
+from godot.builtins cimport *
+{% for utility in api.utility_functions %}
+
+
+{% if utility.is_vararg %}
+{{ render_utility_function_vararg(utility) }}
+{% else %}
+{{ render_utility_function_regular(utility) }}
+{% endif %}
+{% endfor %}

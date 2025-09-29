@@ -50,6 +50,17 @@ custom_target(
 
 
 custom_target(
+    output: 'utils.pyi',
+    input: [
+        generate_tmpl_base_input,
+        files('utils.pyi.j2'),
+    ],
+    command: generate_tmpl_cmd,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot'),
+)
+
+custom_target(
     output: '_classes_api.py',
     input: [
         generate_tmpl_base_input,
@@ -84,6 +95,7 @@ custom_target(
 #    │  └─ ...
 #    └─ builtins.pyx
 #       └─ extension_api.json
+
 
 pyxbuiltins = custom_target(
     output: 'builtins.pyx',
@@ -164,6 +176,54 @@ shared_library(
     gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
     dependencies : [dep_godot, dep_python, dep_gdpy],
     install_rpath: classes_rpath,  # To find libpython
+    name_prefix: python_native_module_name_prefix,
+    name_suffix: python_native_module_name_suffix,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot'),
+)
+
+
+# utils.so
+# └─ utils.c
+#    ├─ gdextension_interface.pxd
+#    │  └─ ...
+#    └─ utils.pyx
+
+
+pyxutils = custom_target(
+    output: 'utils.pyx',
+    input: [
+        generate_tmpl_base_input,
+        files(
+            'utils.pyx.j2',
+        ),
+    ],
+    command: generate_tmpl_cmd,
+)
+
+
+cutils = custom_target(
+    output : 'utils.c',
+    input : [pyxutils, pxds_godot],
+    command : cythonize_command,
+)
+
+
+if host_platform.startswith('linux')
+    utils_rpath = '$ORIGIN/../../..'
+elif host_platform.startswith('macos')
+    utils_rpath = '@loader_path/../../..'
+else
+    utils_rpath = ''
+endif
+
+
+shared_library(
+    'utils',
+    cutils,
+    gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
+    dependencies : [dep_godot, dep_python, dep_gdpy],
+    install_rpath: utils_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
     install: true,

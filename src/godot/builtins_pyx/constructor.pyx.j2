@@ -18,8 +18,11 @@ def __cinit__(self, s=_SENTINEL):
 {%   set constructor = builtin.get_constructor_from("StringName") %}
                 self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<StringName?>s)._gd_data)
             except TypeError:
+                try:
 {%   set constructor = builtin.get_constructor_from("NodePath") %}
-                self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<NodePath?>s)._gd_data)
+                    self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<NodePath?>s)._gd_data)
+                except TypeError:
+                    raise TypeError(f"Invalid value `{s}`, expected str/String/StringName/NodePath")
 
 {% elif builtin.original_name == "StringName" %}
 
@@ -35,8 +38,11 @@ def __cinit__(self, s=_SENTINEL):
 {%   set constructor = builtin.get_constructor_from("String") %}
             self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<GDString?>s)._gd_data)
         except TypeError:
+            try:
 {%   set constructor = builtin.get_constructor_from("StringName") %}
-            self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<StringName?>s)._gd_data)
+                self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<StringName?>s)._gd_data)
+            except TypeError:
+                raise TypeError(f"Invalid value `{s}`, expected str/String/StringName")
 
 {% elif builtin.original_name == "NodePath" %}
 
@@ -59,7 +65,10 @@ def __cinit__(self, s=_SENTINEL):
             self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<GDString?>s)._gd_data)
         except TypeError:
 {%   set constructor = builtin.get_constructor_from("NodePath") %}
-            self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<NodePath?>s)._gd_data)
+            try:
+                self._gd_data = gdapi.gd_{{ constructor.c_name }}(&(<NodePath?>s)._gd_data)
+            except TypeError:
+                raise TypeError(f"Invalid value `{s}`, expected str/String/NodePath")
 
 {% elif builtin.original_name == "Dictionary" %}
 
@@ -86,7 +95,7 @@ def __cinit__(self, mapping=_SENTINEL):
             for k, v in mapping:
                 self._setitem(k, v)
     except (TypeError, ValueError) as exc:
-        raise TypeError("Expected Dictionary, collections.abc.Mapping or Sequence[Tuple[IntoGDAny, IntoGDAny]]")
+        raise TypeError(f"Invalid value `{mapping}`, expected Dictionary/collections.abc.Mapping/Sequence[Tuple[IntoGDAny, IntoGDAny]]")
 
 {% elif builtin.original_name == "Array" %}
 
@@ -125,7 +134,7 @@ def __cinit__(self, iterable=_SENTINEL):
             for x in iterable:
                 self.append(x)
     else:
-        raise TypeError("Expected Array, Packed*Array or collections.abc.Iterable[IntoGDAny]")
+        raise TypeError(f"Invalid value `{iterable}`, expected Array/Packed*Array/collections.abc.Iterable[IntoGDAny]")
 
 {% elif builtin.is_packed_array %}
 
@@ -160,7 +169,7 @@ def __cinit__(self, iterable=_SENTINEL):
             for x in iterable:
                 self.append(x)
     else:
-        raise TypeError("Expected Array, {{ builtin.cy_type }} or collections.abc.Iterable[{{ builtin.packed_array_item_type.cy_type }}]")
+        raise TypeError(f"Invalid value `{iterable}`, expected Array/{{ builtin.cy_type }}/collections.abc.Iterable[{{ builtin.packed_array_item_type.cy_type }}]")
 
 {% else %}
 {# Default constructor #}

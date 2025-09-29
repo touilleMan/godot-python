@@ -10,9 +10,9 @@ Tests are divided on multiple stages:
   configured as initialization hook.
 - `4-use-godot-from-python`: Same as stage 2, but the Python module run extensive tests
   using Godot API (e.g. builtins operations, Godot classes creation, etc.).
-- `5-use-godot-from-cython`: 🚧 WIP 🚧
-- `6-expose-python-to-godot`: 🚧 WIP 🚧
-- `7-expose-cython-to-godot`: 🚧 WIP 🚧
+- `5-use-godot-from-cython`: Same as stage 4, but with Cython. 🚧 WIP 🚧
+- `6-expose-python-to-godot`: Godot project having some Python code as script.
+- `7-expose-cython-to-godot`: Same as stage 5, but with Cython code as script. 🚧 WIP 🚧
 - `8-cython-communicate-with-3rd-party-extension`: 🚧 WIP 🚧
 - `9-python-communicate-with-3rd-party-extension`: 🚧 WIP 🚧
 

@@ -1,0 +1,47 @@
+{%- macro render_arg(arg) -%}
+{{ "{}: ".format(arg.name) }}
+{%- if arg.type.original_name == "String" %}
+{{ arg.type.py_type }} | str
+{%- elif arg.type.original_name == "StringName" %}
+{{ arg.type.py_type }} | str
+{%- elif arg.type.original_name == "NodePath" %}
+{{ arg.type.py_type }} | str
+{%- elif arg.type.original_name == "List" %}
+{{ arg.type.py_type }} | Sequence[IntoGDAny]
+{%- elif arg.type.original_name == "Dictionary" %}
+{{ arg.type.py_type }} | Mapping[IntoGDAny, IntoGDAny]
+{%- elif arg.type.original_name == "Variant" %}
+IntoGDAny
+{%- else %}
+{{ arg.type.py_type }}
+{%- endif %}
+{%- if arg.default_value is not none %}
+ = {{ arg.default_value.py_value }}
+{%- endif %}
+{%- endmacro -%}
+
+
+from godot.builtins import *
+
+
+##############################################################################
+#                              Utility functions                             #
+##############################################################################
+{% for utility in api.utility_functions %}
+
+
+def {{ utility.name }}(
+{%- if utility.is_vararg -%}
+*args: IntoGDAny
+{%- else -%}
+{%-     for arg in utility.arguments -%}
+    {{ render_arg(arg) }}
+{%-     if not loop.last -%}, {% endif %}
+{%     endfor -%}
+{%- endif -%}
+) -> {{ "None" if utility.return_type.is_nil else utility.return_type.py_type }}:
+{%     if utility.description %}
+    """{{ utility.description | gd_description_to_py_doc }}"""
+{%     endif %}
+    ...
+{% endfor %}
