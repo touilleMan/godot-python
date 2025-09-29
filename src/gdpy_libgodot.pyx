@@ -1,4 +1,4 @@
-from libc.stdlib cimport malloc, free
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from threading import Lock
 from contextlib import contextmanager
 
@@ -66,7 +66,7 @@ cdef GDExtensionObjectPtr _create_godot_instance(argv: list[str]):
         a.encode("utf8") for a in argv
     ]
     cdef int length = len(argv)
-    cdef char **c_argv = <char **>malloc(length * sizeof(char*))
+    cdef char **c_argv = <char **>PyMem_Malloc(length * sizeof(char*))
     assert c_argv != NULL
     try:
         for i in range(length):
@@ -81,7 +81,7 @@ cdef GDExtensionObjectPtr _create_godot_instance(argv: list[str]):
         )
 
     finally:
-        free(c_argv)
+        PyMem_Free(c_argv)
 
 
 #

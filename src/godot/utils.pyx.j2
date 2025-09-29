@@ -13,8 +13,8 @@ def {{ utility.name }}(*args):
             gd_args_ptrs_stack[i] = &gd_args_stack[i]
         gd_args_ptrs = <gd_variant_t **>&gd_args_ptrs_stack
     else:
-        gd_args_heap = <gd_variant_t*>malloc(sizeof(gd_variant_t) * len(args))
-        gd_args_ptrs_heap = <gd_variant_t**>malloc(sizeof(gd_variant_t*) * len(args))
+        gd_args_heap = <gd_variant_t*>PyMem_Malloc(sizeof(gd_variant_t) * len(args))
+        gd_args_ptrs_heap = <gd_variant_t**>PyMem_Malloc(sizeof(gd_variant_t*) * len(args))
         for i, arg in enumerate(args):
             gd_args_heap[i] = ensure_is_gdany_and_borrow_ref(arg)
             gd_args_ptrs_heap[i] = &gd_args_heap[i]
@@ -36,8 +36,8 @@ def {{ utility.name }}(*args):
     )
     # Note we don't need to destroy the variants since they have only borrowed their data from the PyObjects
     if not stack_args_passing:
-        free(gd_args_heap)
-        free(gd_args_ptrs_heap)
+        PyMem_Free(gd_args_heap)
+        PyMem_Free(gd_args_ptrs_heap)
 {# 4) Optional return value conversion #}
 {% if not utility.return_type.is_nil %}
 {%   if utility.return_type.is_object %}
@@ -128,7 +128,7 @@ BaseGDObject {{ arg.name }}
 {% endmacro -%}
 
 
-from libc.stdlib cimport malloc, free
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from godot.hazmat cimport gdapi
 from godot.hazmat.gdtypes cimport *
 from godot.builtins cimport *

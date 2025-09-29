@@ -1,7 +1,7 @@
 cimport cython
 from cpython.ref cimport Py_INCREF, Py_DECREF
 from libc.string cimport strcmp
-from libc.stdlib cimport malloc, free
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
 
 from .gdextension_interface cimport *
 from .gdapi cimport *
@@ -127,32 +127,32 @@ cdef inline void _extension_class_method_get_argument_info(void* p_method_userda
 
     if p_argument == -1:
         r_info.type = _type_name_to_gdnative_variant_type(spec.return_type)
-        r_info.name = malloc(sizeof(gd_string_name_t))
+        r_info.name = PyMem_Malloc(sizeof(gd_string_name_t))
         (<gd_string_name_t*>r_info.name)[0] = gd_string_name_from_pybytes(b"")
     else:
         arg_name, type_name = spec.arguments_type[p_argument]
         r_info.type = _type_name_to_gdnative_variant_type(type_name)
-        r_info.name = malloc(sizeof(gd_string_name_t))
+        r_info.name = PyMem_Malloc(sizeof(gd_string_name_t))
         (<gd_string_name_t*>r_info.name)[0] = gd_string_name_from_pybytes(arg_name)
 
-    r_info.class_name = malloc(sizeof(gd_string_name_t))
+    r_info.class_name = PyMem_Malloc(sizeof(gd_string_name_t))
     (<gd_string_name_t*>r_info.class_name)[0] = gd_string_name_from_pybytes(spec.class_name)
 
     # TODO: finish that !
     r_info.hint = PROPERTY_HINT_NONE
-    r_info.hint_string = malloc(sizeof(gd_string_t))
+    r_info.hint_string = PyMem_Malloc(sizeof(gd_string_t))
     (<gd_string_t*>r_info.hint_string)[0] = gd_string_from_pybytes(b"")
     r_info.usage = PROPERTY_USAGE_DEFAULT
 
 
 cdef inline void _extension_class_method_empty_argument_info(GDExtensionPropertyInfo* r_info) noexcept with gil:
     r_info.type = GDEXTENSION_VARIANT_TYPE_NIL
-    r_info.name = malloc(sizeof(gd_string_name_t))
+    r_info.name = PyMem_Malloc(sizeof(gd_string_name_t))
     (<gd_string_name_t*>r_info.name)[0] = gd_string_name_from_pybytes(b"")
-    r_info.class_name = malloc(sizeof(gd_string_name_t))
+    r_info.class_name = PyMem_Malloc(sizeof(gd_string_name_t))
     (<gd_string_name_t*>r_info.class_name)[0] = gd_string_name_from_pybytes(b"")
     r_info.hint = PROPERTY_HINT_NONE
-    r_info.hint_string = malloc(sizeof(gd_string_t))
+    r_info.hint_string = PyMem_Malloc(sizeof(gd_string_t))
     (<gd_string_t*>r_info.hint_string)[0] = gd_string_from_pybytes(b"")
     r_info.usage = PROPERTY_USAGE_DEFAULT
 
@@ -337,7 +337,7 @@ cdef inline void register_extension_class_method(
     else:
         info.method_flags = GDEXTENSION_METHOD_FLAG_NORMAL
 
-    info.return_value_info = <GDExtensionPropertyInfo*>malloc(sizeof(GDExtensionPropertyInfo))
+    info.return_value_info = <GDExtensionPropertyInfo*>PyMem_Malloc(sizeof(GDExtensionPropertyInfo))
     if return_type == b"void":
         info.has_return_value = False  # gd_bool_t
         info.return_value_metadata = GDEXTENSION_METHOD_ARGUMENT_METADATA_NONE  # Dummy default
@@ -351,8 +351,8 @@ cdef inline void register_extension_class_method(
     info.argument_count = <uint32_t>len(arguments_type)  # uint32_t
 
     if info.argument_count > 0:
-        info.arguments_info = <GDExtensionPropertyInfo*>malloc(sizeof(GDExtensionPropertyInfo) * info.argument_count)
-        info.arguments_metadata = <GDExtensionClassMethodArgumentMetadata*>malloc(sizeof(GDExtensionClassMethodArgumentMetadata) * info.argument_count)
+        info.arguments_info = <GDExtensionPropertyInfo*>PyMem_Malloc(sizeof(GDExtensionPropertyInfo) * info.argument_count)
+        info.arguments_metadata = <GDExtensionClassMethodArgumentMetadata*>PyMem_Malloc(sizeof(GDExtensionClassMethodArgumentMetadata) * info.argument_count)
     else:
         info.arguments_info = NULL  # GDExtensionPropertyInfo *
         info.arguments_metadata = NULL  # GDExtensionClassMethodArgumentMetadata *
@@ -381,31 +381,31 @@ cdef inline void register_extension_class_method(
     gd_string_name_del(&gd_method_name)
 
     gd_string_name_del(<gd_string_name_t*>info.return_value_info.name)
-    free(info.return_value_info.name)
+    PyMem_Free(info.return_value_info.name)
 
     gd_string_name_del(<gd_string_name_t*>info.return_value_info.class_name)
-    free(info.return_value_info.class_name)
+    PyMem_Free(info.return_value_info.class_name)
 
     gd_string_del(<gd_string_t*>info.return_value_info.hint_string)
-    free(info.return_value_info.hint_string)
+    PyMem_Free(info.return_value_info.hint_string)
 
-    free(info.return_value_info)
+    PyMem_Free(info.return_value_info)
 
     for i, _ in enumerate(arguments_type):
         gd_string_name_del(<gd_string_name_t*>info.arguments_info[i].name)
-        free(info.arguments_info[i].name)
+        PyMem_Free(info.arguments_info[i].name)
 
         gd_string_name_del(<gd_string_name_t*>info.arguments_info[i].class_name)
-        free(info.arguments_info[i].class_name)
+        PyMem_Free(info.arguments_info[i].class_name)
 
         gd_string_del(<gd_string_t*>info.arguments_info[i].hint_string)
-        free(info.arguments_info[i].hint_string)
+        PyMem_Free(info.arguments_info[i].hint_string)
 
     if info.arguments_info != NULL:
-        free(info.arguments_info)
+        PyMem_Free(info.arguments_info)
 
     if info.arguments_metadata != NULL:
-        free(info.arguments_metadata)
+        PyMem_Free(info.arguments_metadata)
 
     # TODO: free `info.default_arguments`
 
