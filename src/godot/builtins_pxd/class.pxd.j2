@@ -4,7 +4,6 @@
 
 
 {% macro render_class(builtin) %}
-@cython.freelist(8)
 @cython.final
 cdef class {{ builtin.cy_type }}:
     cdef {{builtin.c_type }} _gd_data

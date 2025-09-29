@@ -29,7 +29,6 @@ class {{ builtin.cy_type }}{{ e.original_name }}(IntEnum):
 
 
 {% endfor %}
-@cython.freelist(8)
 @cython.final
 cdef class {{ builtin.cy_type }}:
     # Constructors
