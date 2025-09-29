@@ -76,6 +76,8 @@ class {{ enum.py_type }}(Enum):
 
 
 class {{ builtin.cy_type }}:
+    """{{ builtin.description | gd_description_to_py_doc }}"""
+
     # Constructors
 {%   for c in builtin.constructors %}
 {#  TODO: merged together the constructors ! #}
