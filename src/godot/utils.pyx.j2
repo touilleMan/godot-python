@@ -21,15 +21,15 @@ def {{ utility.name }}(*args):
         gd_args_ptrs = gd_args_ptrs_heap
 {# 2) Actual function call with return value initialization #}
 {% if utility.return_type.is_scalar %}
-    cdef {{ utility.return_type.cy_type }} __ret = gdapi.gd_utility_{{ utility.name }}(
+    cdef {{ utility.return_type.cy_type }} __ret = gdapi.gd_utils_{{ utility.name }}(
 {% elif utility.return_type.is_builtin %}
     # Call to __new__ bypasses __init__ constructor
     cdef {{ utility.return_type.cy_type }} __ret = {{ utility.return_type.cy_type }}.__new__({{ utility.return_type.cy_type }})
-    __ret._gd_data = gdapi.gd_utility_{{ utility.name }}(
+    __ret._gd_data = gdapi.gd_utils_{{ utility.name }}(
 {% elif utility.return_type.is_object or utility.return_type.is_variant %}
-    cdef {{  utility.return_type.c_type }} __cret = gdapi.gd_utility_{{ utility.name }}(
+    cdef {{  utility.return_type.c_type }} __cret = gdapi.gd_utils_{{ utility.name }}(
 {% else %}
-    gdapi.gd_utility_{{ utility.name }}(
+    gdapi.gd_utils_{{ utility.name }}(
 {% endif %}
 {# 3) Parameter provided to the function call #}
         gd_args_ptrs, len(args)
@@ -87,15 +87,15 @@ BaseGDObject {{ arg.name }}
 {% endfor %}
 {# 2) Actual function call with return value initialization #}
 {% if utility.return_type.is_scalar %}
-    cdef {{ utility.return_type.cy_type }} __ret = gdapi.gd_utility_{{ utility.name }}(
+    cdef {{ utility.return_type.cy_type }} __ret = gdapi.gd_utils_{{ utility.name }}(
 {% elif utility.return_type.is_builtin %}
     # Call to __new__ bypasses __init__ constructor
     cdef {{ utility.return_type.cy_type }} __ret = {{ utility.return_type.cy_type }}.__new__({{ utility.return_type.cy_type }})
-    __ret._gd_data = gdapi.gd_utility_{{ utility.name }}(
+    __ret._gd_data = gdapi.gd_utils_{{ utility.name }}(
 {% elif utility.return_type.is_object or utility.return_type.is_variant %}
-    cdef {{  utility.return_type.c_type }} __cret = gdapi.gd_utility_{{ utility.name }}(
+    cdef {{  utility.return_type.c_type }} __cret = gdapi.gd_utils_{{ utility.name }}(
 {% else %}
-    gdapi.gd_utility_{{ utility.name }}(
+    gdapi.gd_utils_{{ utility.name }}(
 {% endif %}
 {# 3) Parameter provided to the function call #}
 {%   for arg in utility.arguments %}

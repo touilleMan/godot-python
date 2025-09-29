@@ -26,9 +26,9 @@
 
 {% macro render_utility_function_signature(builtin) -%}
 {% if builtin.is_vararg %}
-{{ "void" if builtin.return_type.is_nil else builtin.return_type.c_type }} gd_utility_{{ builtin.original_name }}(gd_variant_t **args, int args_count)
+{{ "void" if builtin.return_type.is_nil else builtin.return_type.c_type }} gd_utils_{{ builtin.original_name }}(gd_variant_t **args, int args_count)
 {%- else %}
-{{ "void" if builtin.return_type.is_nil else builtin.return_type.c_type }} gd_utility_{{ builtin.original_name }}(
+{{ "void" if builtin.return_type.is_nil else builtin.return_type.c_type }} gd_utils_{{ builtin.original_name }}(
     {{- render_args_signature(builtin.arguments) -}}
 )
 {%- endif %}
@@ -55,7 +55,7 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
     memset(&__ret, 0, sizeof(__ret))
 {%   endif %}
 {% endif %}
-    gdptrs.gdptr_utility_{{ builtin.original_name }}(
+    gdptrs.gdptr_utils_{{ builtin.original_name }}(
 {#      gdextension_interface.GDExtensionTypePtr ret #}
         {{ "NULL" if builtin.return_type.is_nil else "&__ret" }},
 {#      const gdextension_interface.GDExtensionTypePtr *p_arguments #}
@@ -72,7 +72,7 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
 {% macro render_utility_function_vararg(builtin) %}
 cdef inline {{ render_utility_function_signature(builtin) }}:
 {% if builtin.return_type.is_nil %}
-    gdptrs.gdptr_utility_{{ builtin.original_name }}(NULL, <const void **>args, args_count)
+    gdptrs.gdptr_utils_{{ builtin.original_name }}(NULL, <const void **>args, args_count)
 {% else %}
 {%   if not builtin.return_type.is_nil %}
     cdef {{ builtin.return_type.c_type }} __ret
@@ -87,7 +87,7 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
     memset(&__ret, 0, sizeof(__ret))
 {%     endif %}
 {%   endif %}
-    gdptrs.gdptr_utility_{{ builtin.original_name }}(&__ret, <const void **>args, args_count)
+    gdptrs.gdptr_utils_{{ builtin.original_name }}(&__ret, <const void **>args, args_count)
     return __ret
 {% endif %}
 {% endmacro %}

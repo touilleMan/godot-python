@@ -471,10 +471,10 @@ cdef extern from * nogil:
 cdef extern from * nogil:
     """
 {% for utility in api.utility_functions %}
-    DLL_IMPORT extern GDExtensionPtrUtilityFunction gdpy_gdptr_utility_{{ utility.original_name }};
+    DLL_IMPORT extern GDExtensionPtrUtilityFunction gdpy_gdptr_utils_{{ utility.original_name }};
 {% endfor %}
     """
 
 {% for utility in api.utility_functions %}
-    const GDExtensionPtrUtilityFunction gdptr_utility_{{ utility.original_name }} "gdpy_gdptr_utility_{{ utility.original_name }}"
+    const GDExtensionPtrUtilityFunction gdptr_utils_{{ utility.original_name }} "gdpy_gdptr_utils_{{ utility.original_name }}"
 {% endfor %}

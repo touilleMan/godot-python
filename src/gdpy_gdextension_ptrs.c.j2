@@ -528,7 +528,7 @@ static void init_builtin_functions() {
 
 {% for utility in api.utility_functions %}
 // {{ utility.original_name }}
-DLL_EXPORT GDExtensionPtrUtilityFunction gdpy_gdptr_utility_{{ utility.original_name }};
+DLL_EXPORT GDExtensionPtrUtilityFunction gdpy_gdptr_utils_{{ utility.original_name }};
 {% endfor %}
 
 static void init_utility_functions() {
@@ -536,7 +536,7 @@ static void init_utility_functions() {
 {% for utility in api.utility_functions %}
     // {{ utility.original_name }}
     gdpy_gdptr_string_name_new_with_utf8_chars(&_gdname, "{{ utility.original_name }}");
-    gdpy_gdptr_utility_{{ utility.original_name }} = \
+    gdpy_gdptr_utils_{{ utility.original_name }} = \
         gdpy_gdptr_variant_get_ptr_utility_function(&_gdname, {{ utility.hash }});
     gdpy_gdptr_string_name_destructor(&_gdname);
 {% endfor %}
