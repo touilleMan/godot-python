@@ -190,12 +190,47 @@ cdef inline {{ render_builtin_destructor_signature(builtin) }}:
 {% macro render_builtin_method_signature(builtin, meth) -%}
 {{ "void" if meth.return_type.is_nil else meth.return_type.c_type }} gd_{{ builtin.snake_name }}_meth_{{ meth.name }}(
     {{- builtin.c_type }} *self
-{%- if meth.arguments | length %}, {{ render_args_signature(meth.arguments) -}} {% endif -%}
+{%- if meth.is_vararg -%}
+, gd_variant_t **args, int args_count
+{%- else -%}
+{%-   if meth.arguments | length %}, {{ render_args_signature(meth.arguments) -}} {% endif -%}
+{%- endif -%}
 )
 {%- endmacro %}
 
 
-{% macro render_builtin_method(builtin, meth) %}
+{% macro render_builtin_method_vararg(builtin, meth) %}
+cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
+    cdef gdextension_interface.GDExtensionTypePtr* __args = <gdextension_interface.GDExtensionTypePtr*>args
+{% if not meth.return_type.is_nil %}
+    cdef {{ meth.return_type.c_type }} __ret
+{%   if not meth.return_type.is_stack_only %}
+    # ptrcall makes us jump right into C++ code (i.e. Godot internals) that expects constructor to be called on each parameter
+    __ret = gd_{{ meth.return_type.snake_name }}_new()
+{%   else %}
+    # C compiler doesn't like passing to a function a pointer on uninitialized
+    # data (see `-Wmaybe-uninitialized`).
+    # Should be optimized out in the end given the called function end up inlined.
+    memset(&__ret, 0, sizeof(__ret))
+{%   endif %}
+{% endif %}
+    gdptrs.gdptr_{{ builtin.snake_name }}_meth_{{ meth.name }}(
+        {# gdextension_interface.GDExtensionTypePtr p_base #}
+        self,
+        {# const gdextension_interface.GDExtensionTypePtr *__args #}
+        <const void **>__args,
+        {# gdextension_interface.GDExtensionTypePtr __ret #}
+        {{ "NULL" if meth.return_type.is_nil else "&__ret" }},
+        {# int p_argument_count #}
+        args_count
+    )
+{% if not meth.return_type.is_nil %}
+    return __ret
+{% endif %}
+{% endmacro %}
+
+
+{% macro render_builtin_method_standard(builtin, meth) %}
 cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
 {% if meth.arguments | length %}
     cdef gdextension_interface.GDExtensionTypePtr[{{ meth.arguments | length }}] __args = [
@@ -228,6 +263,15 @@ cdef inline {{ render_builtin_method_signature(builtin, meth) }}:
     )
 {% if not meth.return_type.is_nil %}
     return __ret
+{% endif %}
+{% endmacro %}
+
+
+{% macro render_builtin_method(builtin, meth) %}
+{% if meth.is_vararg %}
+{{ render_builtin_method_vararg(builtin, meth) }}
+{% else %}
+{{ render_builtin_method_standard(builtin, meth) }}
 {% endif %}
 {% endmacro %}
 
