@@ -1,6 +1,7 @@
 {%- from 'builtins_pyx/class.pyx.j2' import render_class with context -%}
 {%- from 'builtins_pyx/conversion.pyx.j2' import render_all_conversions with context -%}
 cimport cython
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libc.math cimport INFINITY as inf  # Needed by some constants
 from libc.string cimport memset  # Needed to create zeroized builtins used in `__bool__`
 

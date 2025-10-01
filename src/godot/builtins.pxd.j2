@@ -1,6 +1,7 @@
 {% from 'builtins_pxd/class.pxd.j2' import render_class with context %}
 {% from 'builtins_pxd/conversion.pxd.j2' import render_all_conversions with context %}
 cimport cython
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
 
 # Forward declarations
 {% for builtin in api.builtins %}

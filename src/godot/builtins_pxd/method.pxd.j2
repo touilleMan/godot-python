@@ -1,166 +1,174 @@
-{% macro render_method_signature(m) -%}
-{# TODO: hack given currently event `GDObject` is lazy binded, so we have to use its parent `BaseGDObject` here... #}
-{%- if m.return_type.is_nil -%}void{%- else -%}{{ "BaseGDObject" if m.return_type.cy_type == "GDObject" else m.return_type.cy_type }}{%- endif %}
- {{ "_" + m.name if m.is_static else m.name }}(
-{%- if not m.is_static -%}self, {% endif -%}
-{%- for arg in m.arguments -%}
-{%- if arg.type.original_name in ("String", "StringName", "NodePath") -%}
-object {{ arg.name }}
-{%- else -%}
-{{ arg.type.cy_type }} {{ arg.name }}
-{%- endif -%}
-{%- if arg.default_value -%}
-={{ arg.default_value.cy_value or "None" }}
-{%- endif -%}
-{%- if not loop.last -%}, {% endif -%}
-{%- endfor -%})
-{%- endmacro %}
-
-
-{% macro _render_non_static_method(builtin, m) %}
 {#
 Note we don't use `cpdef` here since Cython would then add the Python flavour of
 those methods to any .pyx that include `builtins.pxd`.
 Worst: this would also make the compiler consider all `gdptr_*` symbols in
 `builtins.so` are used, hence bloating the final shared library of tons of useless
 symbols to resolve at runtime !
-
-So instead we define each method twice:
-- Once here that will become a static inline C function. Hence the compiler
-  will add it to any module importing `builtins.pxd` and discard automatically
-  if it is in fact never used in the module.
-- Once in `builtins.pyx` as a regular Python method.
 #}
-cdef inline {{ render_method_signature(m) }}:
-{%   if m.contains_unsuported_types %}
-    raise NotImplementedError  # TODO
-{%   else %}
-{%     for arg in m.arguments %}
-{%       if arg.type.is_variant %}
-    cdef gd_variant_t __arg{{ loop.index0 }}
-    __arg{{ loop.index0 }} = ensure_is_gdany_and_borrow_ref({{ arg.name }})
-{%       elif arg.type.original_name == "String" %}
-    cdef GDString __arg{{ loop.index0 }}
-    __arg{{ loop.index0 }} = ensure_is_gdstring({{ arg.name }})
-{%       elif arg.type.original_name == "StringName" %}
-    cdef StringName __arg{{ loop.index0 }}
-    __arg{{ loop.index0 }} = ensure_is_stringname({{ arg.name }})
-{%       elif arg.type.original_name == "NodePath" %}
-    cdef NodePath __arg{{ loop.index0 }}
-    __arg{{ loop.index0 }} = ensure_is_nodepath({{ arg.name }})
+
+
+{% macro render_method_signature(m) -%}
+{# TODO: hack given currently event `GDObject` is lazy binded, so we have to use its parent `BaseGDObject` here... #}
+{%- if m.return_type.is_nil -%}void{%- else -%}{{ "BaseGDObject" if m.return_type.cy_type == "GDObject" else m.return_type.cy_type }}{%- endif %}
+ {{ m.name }}(
+{%- if not m.is_static -%}self, {% endif -%}
+{%- if m.is_vararg -%}
+{# cdef function doesn't support `*args` so we have to explicitly pass an iterable here instead #}
+object args
+{%- else -%}
+{%-   for arg in m.arguments -%}
+{%-     if arg.type.original_name in ("String", "StringName", "NodePath") -%}
+object {{ arg.name }}
+{%-     else -%}
+{{ arg.type.cy_type }} {{ arg.name }}
+{%-     endif -%}
+{%-     if arg.default_value -%}
+={{ arg.default_value.cy_value or "None" }}
+{%-     endif -%}
+{%-     if not loop.last -%}, {% endif -%}
+{%-   endfor -%}
+{%- endif -%}
+)
+{%- endmacro %}
+
+
+{% macro _render_method_vararg(builtin, m) %}
+{% if m.is_static %}
+@staticmethod
 {% endif %}
-{% endfor %}
-{%     if m.return_type.is_scalar %}
+cdef inline {{ render_method_signature(m) }}:
+{# 1) Param cooking #}
+    cdef gd_variant_t **gd_args_ptrs
+    cdef gd_variant_t[8] gd_args_stack
+    cdef (gd_variant_t *)[8] gd_args_ptrs_stack
+    cdef gd_variant_t *gd_args_heap
+    cdef gd_variant_t **gd_args_ptrs_heap
+    cdef bint stack_args_passing = len(args) <= 8
+    if stack_args_passing:
+        for i, arg in enumerate(args):
+            gd_args_stack[i] = ensure_is_gdany_and_borrow_ref(arg)
+            gd_args_ptrs_stack[i] = &gd_args_stack[i]
+        gd_args_ptrs = <gd_variant_t **>&gd_args_ptrs_stack
+    else:
+        gd_args_heap = <gd_variant_t*>PyMem_Malloc(sizeof(gd_variant_t) * len(args))
+        gd_args_ptrs_heap = <gd_variant_t**>PyMem_Malloc(sizeof(gd_variant_t*) * len(args))
+        for i, arg in enumerate(args):
+            gd_args_heap[i] = ensure_is_gdany_and_borrow_ref(arg)
+            gd_args_ptrs_heap[i] = &gd_args_heap[i]
+        gd_args_ptrs = gd_args_ptrs_heap
+{# 2) Actual function call with return value initialization #}
+{% if m.return_type.is_scalar %}
     cdef {{m.return_type.c_type }} ret = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
-{%     elif m.return_type.is_builtin %}
+{% elif m.return_type.is_builtin %}
     # Call to __new__ bypasses __init__ constructor
     cdef {{ m.return_type.cy_type }} ret = {{ m.return_type.cy_type }}.__new__({{ m.return_type.cy_type }})
     ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
-{%     elif m.return_type.is_object or m.return_type.is_variant %}
+{% elif m.return_type.is_object or m.return_type.is_variant %}
     cdef {{ m.return_type.c_type }} ret = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
-{%     else %}
+{% else %}
     gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
-{%     endif %}
+{% endif %}
+{% if m.is_static %}
+        NULL,
+{% else %}
         &self._gd_data,
-{%       for arg in m.arguments %}
-{%         if arg.type.is_scalar %}
-        {{ arg.name }},
-{%         elif arg.type.original_name in ("String", "StringName", "NodePath") %}
-        &__arg{{ loop.index0 }}._gd_data,
-{%         elif arg.type.is_builtin %}
-        &{{ arg.name }}._gd_data,
-{%         elif arg.type.is_object %}
-        &{{ arg.name }}._gd_ptr,
-{%         elif arg.type.is_variant %}
-        &__arg{{ loop.index0 }},
-{%         else %}
-    <crash !!!!>  # {{ arg.type }} Unsupported type, crash the compilation !
-{%         endif %}
-{%       endfor %}
+{% endif %}
+{# 3) Parameter provided to the function call #}
+        gd_args_ptrs,
+        len(args),
     )
-{%     if not m.return_type.is_nil %}
-{%       if m.return_type.is_object %}
+    # Note we don't need to destroy the variants since they have only borrowed their data from the PyObjects
+    if not stack_args_passing:
+        PyMem_Free(gd_args_heap)
+        PyMem_Free(gd_args_ptrs_heap)
+{# 4) Optional return value conversion #}
+{% if not m.return_type.is_nil %}
+{%   if m.return_type.is_object %}
     return BaseGDObject.cast_from_object(ret)
-{%       elif m.return_type.is_variant %}
-    # Note `gd_variant_steal_into_pyobj(&ret)` calls `ret`'s destructor
+{%   elif m.return_type.is_variant %}
+    # Note the "steal" means we don't need a final `gdapi.gd_variant_del(&ret)`
     return gd_variant_steal_into_pyobj(&ret)
-{%       else %}
+{%   else %}
     return ret
-{%       endif %}
-{%     endif %}
 {%   endif %}
+{% endif %}
 {% endmacro %}
 
 
-{# TODO: Cython currently doesn't support cpdef with @staticmethod #}
-{# see: https://github.com/cython/cython/issues/3327 #}
-{% macro _render_static_method(builtin, m) %}
+{% macro _render_method_standard(builtin, m) %}
+{% if m.is_static %}
 @staticmethod
-cdef inline {{ render_method_signature(m) }}:
-{%   if m.contains_unsuported_types %}
-    raise NotImplementedError  # TODO
-{%   else %}
-{%     for arg in m.arguments %}
-{%       if arg.type.is_variant %}
-    cdef gd_variant_t __arg{{ loop.index0 }}
-    __arg{{ loop.index0 }} = ensure_is_gdany_and_borrow_ref({{ arg.name }})
-{%       elif arg.type.original_name == "String" %}
-    cdef GDString __arg{{ loop.index0 }}
-    __arg{{ loop.index0 }} = ensure_is_gdstring({{ arg.name }})
-{%       elif arg.type.original_name == "StringName" %}
-    cdef StringName __arg{{ loop.index0 }}
-    __arg{{ loop.index0 }} = ensure_is_stringname({{ arg.name }})
-{%       elif arg.type.original_name == "NodePath" %}
-    cdef NodePath __arg{{ loop.index0 }}
-    __arg{{ loop.index0 }} = ensure_is_nodepath({{ arg.name }})
 {% endif %}
+cdef inline {{ render_method_signature(m) }}:
+{# 1) Param cooking #}
+{% for arg in m.arguments %}
+{%   if arg.type.is_variant %}
+{# Note the `__` prefix in those variables to avoid clashing with the arguments #}
+    cdef gd_variant_t __arg_{{ arg.name }}
+    __arg_{{ arg.name }} = ensure_is_gdany_and_borrow_ref({{ arg.name }})
+{%   elif arg.type.original_name == "String" %}
+    cdef GDString __arg_{{ arg.name }}
+    __arg_{{ arg.name }} = ensure_is_gdstring({{ arg.name }})
+{%   elif arg.type.original_name == "StringName" %}
+    cdef StringName __arg_{{ arg.name }}
+    __arg_{{ arg.name }} = ensure_is_stringname({{ arg.name }})
+{%   elif arg.type.original_name == "NodePath" %}
+    cdef NodePath __arg_{{ arg.name }}
+    __arg_{{ arg.name }} = ensure_is_nodepath({{ arg.name }})
+{%   endif %}
 {% endfor %}
-{%     if m.return_type.is_scalar %}
-    cdef {{ m.return_type.cy_type }} ret = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
-{%     elif m.return_type.is_builtin %}
+{# 2) Actual function call with return value initialization #}
+{% if m.return_type.is_scalar %}
+    cdef {{m.return_type.c_type }} ret = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
+{% elif m.return_type.is_builtin %}
     # Call to __new__ bypasses __init__ constructor
     cdef {{ m.return_type.cy_type }} ret = {{ m.return_type.cy_type }}.__new__({{ m.return_type.cy_type }})
     ret._gd_data = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
-{%     elif m.return_type.is_object or m.return_type.is_variant %}
-    cdef {{  m.return_type.c_type }} ret = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
-{%     else %}
+{% elif m.return_type.is_object or m.return_type.is_variant %}
+    cdef {{ m.return_type.c_type }} ret = gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
+{% else %}
     gdapi.gd_{{ builtin.snake_name }}_meth_{{ m.name }}(
-{%     endif %}
+{% endif %}
+{% if m.is_static %}
         NULL,
-{%       for arg in m.arguments %}
-{%         if arg.type.is_scalar %}
+{% else %}
+        &self._gd_data,
+{% endif %}
+{# 3) Parameter provided to the function call #}
+{% for arg in m.arguments %}
+{%   if arg.type.is_scalar %}
         {{ arg.name }},
-{%         elif arg.type.original_name in ("String", "StringName", "NodePath") %}
-        &__arg{{ loop.index0 }}._gd_data,
-{%         elif arg.type.is_builtin %}
+{%   elif arg.type.original_name in ("String", "StringName", "NodePath") %}
+        &__arg_{{ arg.name }}._gd_data,
+{%   elif arg.type.is_builtin %}
         &{{ arg.name }}._gd_data,
-{%         elif arg.type.is_object %}
+{%   elif arg.type.is_object %}
         &{{ arg.name }}._gd_ptr,
-{%         elif arg.type.is_variant %}
-        &__arg{{ loop.index0 }},
-{%         else %}
+{%   elif arg.type.is_variant %}
+        &__arg_{{ arg.name }},
+{%   else %}
     <crash !!!!>  # {{ arg.type }} Unsupported type, crash the compilation !
-{%         endif %}
-{%       endfor %}
-    )
-{%     if not m.return_type.is_nil %}
-{%       if m.return_type.is_object %}
-    return BaseGDObject.cast_from_object(ret)
-{%       elif m.return_type.is_variant %}
-    # Note `gd_variant_steal_into_pyobj(&ret)` calls `ret`'s destructor
-    return gd_variant_steal_into_pyobj(&ret)
-{%       else %}
-    return ret
-{%       endif %}
-{%     endif %}
 {%   endif %}
+{% endfor %}
+    )
+{# 4) Optional return value conversion #}
+{% if not m.return_type.is_nil %}
+{%   if m.return_type.is_object %}
+    return BaseGDObject.cast_from_object(ret)
+{%   elif m.return_type.is_variant %}
+    # Note the "steal" means we don't need a final `gdapi.gd_variant_del(&ret)`
+    return gd_variant_steal_into_pyobj(&ret)
+{%   else %}
+    return ret
+{%   endif %}
+{% endif %}
 {% endmacro %}
 
 
 {% macro render_method(builtin, m) %}
-{%   if m.is_static %}
-{{ _render_static_method(builtin, m) }}
+{% if m.is_vararg %}
+{{ _render_method_vararg(builtin, m) }}
 {% else %}
-{{ _render_non_static_method(builtin, m) }}
+{{ _render_method_standard(builtin, m) }}
 {% endif %}
 {% endmacro %}

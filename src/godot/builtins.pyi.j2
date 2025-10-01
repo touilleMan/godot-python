@@ -96,7 +96,11 @@ class {{ builtin.cy_type }}:
     # Methods
 {%   endif %}
 {%   for m in builtin.methods %}
+{%     if m.is_vararg %}
+    def {{m.name}}(self, *args: IntoGDAny) -> {{ "None" if m.return_type.is_nil else m.return_type.py_type }}:
+{%     else %}
     def {{m.name}}(self{% for a in m.arguments %}, {{ render_arg(a) }}{% endfor %}) -> {{ "None" if m.return_type.is_nil else m.return_type.py_type }}:
+{%     endif %}
 {%     if m.description %}
         """{{ m.description | gd_description_to_py_doc }}"""
 {%     endif %}
