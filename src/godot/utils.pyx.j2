@@ -32,7 +32,8 @@ def {{ utility.name }}(*args):
     gdapi.gd_utils_{{ utility.name }}(
 {% endif %}
 {# 3) Parameter provided to the function call #}
-        gd_args_ptrs, len(args)
+        gd_args_ptrs,
+        len(args),
     )
     # Note we don't need to destroy the variants since they have only borrowed their data from the PyObjects
     if not stack_args_passing:
