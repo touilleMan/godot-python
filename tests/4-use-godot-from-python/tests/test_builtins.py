@@ -1,7 +1,7 @@
 import sys
 import enum
 import clodotest
-from clodotest import assert_eq, assert_issubclass
+from clodotest import assert_eq, assert_issubclass, assert_isinstance
 import godot
 
 
@@ -667,6 +667,9 @@ def test_operator(kind: str):
         "with_parameter_with_default_value",
         "with_parameter_with_default_value_overwritten",
         "with_parameter_with_default_value_overwritten_and_passed_by_name",
+        "with_varargs_with_no_args",
+        "with_varargs_with_default_value",
+        "with_varargs_with_default_value_overwritten",
         "bad_parameter_type",
     ],
 )
@@ -674,6 +677,7 @@ def test_method(kind: str):
     match kind:
         case "static_method":
             s = godot.GDString("foo.txt")
+
             assert_eq(godot.GDString.humanize_size(133790307), godot.GDString("127.5 MiB"))
 
         case "without_parameter_and_with_return_value":
@@ -748,6 +752,27 @@ def test_method(kind: str):
             assert_eq(s.count("o", to=2), 1)
             assert_eq(s.count("o", to=2, from_=2), 0)
 
+        case "with_varargs_with_no_args":
+            from godot.singletons import OS
+
+            # Signature: `PackedStringArray get_cmdline_args()`
+            c = godot.GDCallable.create(OS, "get_cmdline_args")
+            assert_isinstance(c.call(), godot.PackedStringArray)
+
+        case "with_varargs_with_default_value":
+            from godot.singletons import ClassDB
+
+            # Signature: `PackedStringArray class_get_enum_list(class: StringName, no_inheritance: bool = false)`
+            c = godot.GDCallable.create(ClassDB, "class_get_enum_list")
+            assert_isinstance(c.call("Node2D"), godot.PackedStringArray)
+
+        case "with_varargs_with_default_value_overwritten":
+            from godot.singletons import ClassDB
+
+            # Signature: `PackedStringArray class_get_enum_list(class: StringName, no_inheritance: bool = false)`
+            c = godot.GDCallable.create(ClassDB, "class_get_enum_list")
+            assert_isinstance(c.call("Node2D", True), godot.PackedStringArray)
+
         case "bad_parameter_type":
             s = godot.GDString("foo.txt")
 
@@ -777,6 +802,15 @@ def test_method(kind: str):
                 s.format(object())  # Incompatible Python type
 
             # TODO: Method expecting a Godot class instance
+
+            # TODO: Vararg call is currently implemented using ptrcall, which
+            #       doesn't return us the call result (we should instead use
+            #       variant call, then raise an exception if call result != OK)
+            # # Vararg with the wrong number of parameters
+            # from godot.singletons import ClassDB
+            # c = godot.GDCallable.create(ClassDB, "can_instantiate")
+            # with clodotest.raises(TypeError):
+            #     c.call()
 
 
 def test_member():
@@ -1043,7 +1077,7 @@ def test_len_and_bool(kind: str):
             assert_eq(bool(godot.GDCallable()), False)
             from godot.singletons import OS
 
-            c = godot.GDCallable._create(OS, "get_cmdline_args")
+            c = godot.GDCallable.create(OS, "get_cmdline_args")
             assert_eq(bool(c), True)
             with clodotest.raises(TypeError):
                 len(godot.GDCallable())
@@ -1053,7 +1087,7 @@ def test_len_and_bool(kind: str):
             from godot.singletons import OS, Input
 
             assert_eq(bool(Input.joy_connection_changed), False)
-            c = godot.GDCallable._create(OS, "get_cmdline_args")
+            c = godot.GDCallable.create(OS, "get_cmdline_args")
             clodotest.skip(reason="TODO: `Signal.connect` returns a `ERR_UNCONFIGURED`")
             assert_eq(Input.joy_connection_changed.connect(c), godot.Error.OK)
             assert_eq(bool(Input.joy_connection_changed), True)
