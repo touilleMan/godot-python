@@ -1,5 +1,5 @@
 {% macro render_method_signature(m) -%}
-{{ "_" + m.name if m.is_static else m.name }}(
+{{ m.name }}(
 {%- if not m.is_static -%}self, {% endif -%}
 {%- for arg in m.arguments -%}
 {%- if arg.type.original_name in ("String", "StringName", "NodePath") -%}
