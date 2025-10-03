@@ -50,9 +50,9 @@ cdef inline void _extension_class_to_string(GDExtensionClassInstancePtr p_instan
 cdef inline void register_extension_class_creation(
     bytes class_name,
     bytes parent_class_name,
-    GDExtensionClassCreateInstance create_instance_func,
+    GDExtensionClassCreateInstance2 create_instance_func,
     GDExtensionClassFreeInstance free_instance_func,
-    GDExtensionClassGetVirtual get_virtual_func,
+    GDExtensionClassGetVirtual2 get_virtual_func,
     bint is_virtual,
     bint is_abstract,
     bint is_exposed,
@@ -65,14 +65,18 @@ cdef inline void register_extension_class_creation(
     cdef list specs_list = _get_extension_gc_protector()
     specs_list.append(spec)
 
-    cdef GDExtensionClassCreationInfo2 info
+    cdef GDExtensionClassCreationInfo4 info
     info.is_virtual = is_virtual
     info.is_abstract = is_abstract
     info.is_exposed = is_exposed
+    # info.is_runtime = is_runtime  # GDExtensionBool
+    info.is_runtime = False
+    # info.icon_path = icon_path  # GDExtensionConstStringPtr
+    info.icon_path = NULL
     info.set_func = NULL  # GDExtensionClassSet
     info.get_func = NULL  # GDExtensionClassGet
     info.get_property_list_func = NULL  # GDExtensionClassGetPropertyList
-    info.free_property_list_func = NULL  # GDExtensionClassFreePropertyList
+    info.free_property_list_func = NULL  # GDExtensionClassFreePropertyList2
     info.property_can_revert_func = NULL  # GDExtensionClassPropertyCanRevert
     info.property_get_revert_func = NULL  # GDExtensionClassPropertyGetRevert
     info.validate_property_func = NULL  # GDExtensionClassValidateProperty
@@ -91,17 +95,16 @@ cdef inline void register_extension_class_creation(
     # Returning `NULL` from this function signals to Godot that the virtual function is not overridden.
     # Data returned from this function should be managed by the extension and must be valid until the extension is deinitialized.
     # You should supply either `get_virtual_func`, or `get_virtual_call_data_func` with `call_virtual_with_data_func`.
-    info.get_virtual_call_data_func = NULL  # GDExtensionClassGetVirtualCallData
+    info.get_virtual_call_data_func = NULL  # GDExtensionClassGetVirtualCallData2
     # Used to call virtual functions when `get_virtual_call_data_func` is not null.
     info.call_virtual_with_data_func = NULL  # GDExtensionClassCallVirtualWithData
-    info.get_rid_func = NULL  # GDExtensionClassGetRID
     # Don't increment refcount given we rely on gc protector
     info.class_userdata = <void*>spec  # void*
 
     cdef gd_string_name_t gdname = gd_string_name_from_utf8_and_len(<char*>class_name, len(class_name))
     cdef gd_string_name_t gdname_parent = gd_string_name_from_utf8_and_len(<char*>parent_class_name, len(parent_class_name))
     # TODO: correct me once https://github.com/godotengine/godot/pull/67121 is merged
-    gdptrs.gdptr_classdb_register_extension_class2(
+    gdptrs.gdptr_classdb_register_extension_class4(
         gdptrs.gdptr_library,
         &gdname,
         &gdname_parent,

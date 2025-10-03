@@ -109,7 +109,8 @@ def __cinit__(self):
     {spec.class_name + "." + spec.cinit_instance_hook + "()" if spec.cinit_instance_hook is not None else ""}
 
 @staticmethod
-cdef GDExtensionObjectPtr __godot_extension_create_instance(void* p_class_userdata) noexcept with gil:
+cdef GDExtensionObjectPtr __godot_extension_create_instance(void* p_class_userdata, GDExtensionBool p_notify_postinitialize) noexcept with gil:
+    # TODO: use `p_notify_postinitialize` ?
     # print("[DEBUG] {spec.class_name}.__godot_extension_create_instance()")
     cdef {spec.class_name} obj = {spec.class_name}()
     # Note `Py_INCREF(obj)` has already been done during `__cinit__`
@@ -189,8 +190,9 @@ __godot_extension_register_extension_class_method(
     # TODO: cache virtual methods name to avoid pystr to gd_string_name_t conversions
     code += """
 @staticmethod
-cdef GDExtensionClassCallVirtual __godot_extension_get_virtual(void *p_class_userdata, GDExtensionConstStringNamePtr p_name) noexcept with gil:
+cdef GDExtensionClassCallVirtual __godot_extension_get_virtual(void *p_class_userdata, GDExtensionConstStringNamePtr p_name, uint32_t p_hash) noexcept with gil:
     # TODO: We should handle inheritance here by looking into parent class until we reach a Godot class
+    # TODO: use `p_hash` ?
     cdef gd_string_t gd_candidate_name
 """
     code += f"""
