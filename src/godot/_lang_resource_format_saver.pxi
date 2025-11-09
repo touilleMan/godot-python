@@ -1,3 +1,4 @@
+from libc.stdint cimport intptr_t
 # godot_extension: class(parent="ResourceFormatSaver")
 @cython.final
 cdef class PythonResourceFormatSaver:
@@ -59,17 +60,15 @@ cdef class PythonResourceFormatSaver:
         # `resource` is an instance of `Resource`
 
         # Convert the path to a Python string
-        cdef object py_path = gdapi.gd_string_to_pystr(&path)
+        cdef object py_path = gdapi.gd_string_to_pystr(&path).replace("res://", "")
 
-        spy_log("CALLED PythonResourceFormatSaver::_save(resource=<resource>, path={py_path!r}, flags={flags})")
+        spy_log(f"CALLED PythonResourceFormatSaver::_save(resource=<resource>, path={py_path!r}, flags={flags})")
 
-        # For now, just write a simple placeholder file
-        # TODO: Once PythonScript._get_source_code() is properly implemented,
-        # we can call it directly here to get the actual source code
-
+        script = _load_class("ScriptExtension")._from_ptr(<uintptr_t>resource)
+        source_code = script.get_source_code()
         try:
             with open(py_path, 'w', encoding='utf-8') as f:
-                f.write("# Python script saved from Godot\n")
+                f.write(str(source_code))
             return Error.OK
         except:
             return Error.ERR_FILE_CANT_OPEN
