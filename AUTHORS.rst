@@ -23,3 +23,4 @@ Contributors
 * Gary Oberbrunner `@garyo <https://github.com/garyo>`_
 * Paolo Barresi `@paolobb4 <https://github.com/paolobb4>`_
 * Colin Kinloch `@ColinKinloch <https://github.com/ColinKinloch>`_
+* Niklas Zimmer `@niklas2902 <https://github.com/niklas2902>`_
