@@ -2,7 +2,7 @@ import importlib
 import traceback
 
 
-cdef object RESOURCE_TYPE_NAME = "Python"
+cdef GDString RESOURCE_TYPE_NAME = GDString("Node")
 cdef object RESOURCE_EXTENSIONS = ("py", "pyc", "pyo", "pyd")
 
 
@@ -53,23 +53,34 @@ cdef class PythonResourceFormatLoader:
 
     # godot_extension: method(virtual=True, const=True)
     cdef inline gd_bool_t _handles_type(self, gd_string_name_t type):
+        """
+        Typically `type` here is of two types: `Script` and `Node`.
+        This would look like this in a .tscn file:
+
+            [ext_resource type="Script" path="res://script.gd" id="aaa111"]  # Load a `Script`
+            [ext_resource type="Node" path="res://node.py" id="bbb222"]  # Load a `Node`
+
+            [node name="Node" type="Node"]  # Create a regular Godot node instance
+            script = ExtResource( "aaa111" )  # Connect the Godot script
+
+            [node name="Node" ExtResource( "bbb222" )]  # Create a Python node instance
+
+        TODO: explain why we only use Node and not Script here
+        """
+        global RESOURCE_TYPE_NAME
         cdef gd_string_t candidate
         cdef gd_bool_t ret = False
 
         spy_log(f"CALLED PythonResourceFormatLoader::_handles_type(type={gdapi.gd_string_name_to_pystr(&type)!r})")
 
-        candidate = gd_string_from_unchecked_pystr(RESOURCE_TYPE_NAME)
-        ret = gd_string_name_op_equal_string(&type, &candidate)
-        gd_string_del(&candidate)
-        if not ret:
-            candidate = gd_string_from_pybytes(b"Script")
-            ret = gd_string_name_op_equal_string(&type, &candidate)
-            gd_string_del(&candidate)
-
-        return ret
+        return gd_string_name_op_equal_string(
+            &type,
+            &RESOURCE_TYPE_NAME._gd_data,
+        )
 
     # godot_extension: method(virtual=True, const=True)
     cdef inline gd_string_t _get_resource_type(self, gd_string_t path):
+        global RESOURCE_TYPE_NAME
         cdef object py_path
         cdef object py_extension
 
@@ -79,7 +90,7 @@ cdef class PythonResourceFormatLoader:
 
         py_extension = py_path.rsplit(".", 1)[-1].lower()
         if py_extension in RESOURCE_EXTENSIONS:
-            return gd_string_from_unchecked_pystr(RESOURCE_TYPE_NAME)
+            return gd_string_new_from_string(&RESOURCE_TYPE_NAME._gd_data)
         else:
             return gd_string_from_unchecked_pystr("")  # Empty string for unknown types
 

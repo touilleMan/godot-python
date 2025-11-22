@@ -387,8 +387,8 @@ cdef object _setup_project_settings_entry(name: str, default_value: object):
     # see https://docs.godotengine.org/en/stable/classes/class_projectsettings.html#class-projectsettings-method-set-setting
     assert default_value is not None
 
-    ProjectSettings = _load_singleton("ProjectSettings")
-    gdname = GDString(name)
+    cdef BaseGDObject ProjectSettings = <BaseGDObject>_load_singleton("ProjectSettings")
+    cdef GDString gdname = GDString(name)
 
     if not ProjectSettings.has_setting(gdname):
         ProjectSettings.set_setting(gdname, default_value)
@@ -414,7 +414,7 @@ cdef void _apply_python_config_from_project_settings():
     #     set_gdpy_verbose(True)
 
     # Update PYTHONPATH according to configuration
-    pythonpath = str(_setup_project_settings_entry("python/path", "res://;res://lib"))
+    cdef object pythonpath = str(_setup_project_settings_entry("python/path", "res://;res://lib"))
     for p in pythonpath.split(";"):
         p = ProjectSettings.globalize_path(GDString(p))
         sys.path.insert(0, str(p))
