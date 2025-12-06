@@ -15,8 +15,8 @@ PREBUILDS_BASE_URL = "https://github.com/astral-sh/python-build-standalone/relea
 PLATFORM_TO_PREBUILDS = {
     "3.13.7": {
         "linux-x86_64": f"{PREBUILDS_BASE_URL}/20250902/cpython-3.13.7+20250902-x86_64_v3-unknown-linux-gnu-pgo+lto-full.tar.zst",
-        "windows-x86": f"{PREBUILDS_BASE_URL}/20250902/cpython-3.13.7+20250902-i686-pc-windows-msvc-install_only.tar.gz",
-        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20250902/cpython-3.13.7+20250902-x86_64-pc-windows-msvc-install_only.tar.gz",
+        "windows-x86": f"{PREBUILDS_BASE_URL}/20250902/cpython-3.13.7+20250902-i686-pc-windows-msvc-pgo-full.tar.zst",
+        "windows-x86_64": f"{PREBUILDS_BASE_URL}/20250902/cpython-3.13.7+20250902-x86_64-pc-windows-msvc-pgo-full.tar.zst",
         "macos-x86_64": f"{PREBUILDS_BASE_URL}/20250902/cpython-3.13.7+20250902-x86_64-apple-darwin-pgo+lto-full.tar.zst",
     },
 }
