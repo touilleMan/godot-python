@@ -8,7 +8,6 @@ MOTION_SPEED = 150
 
 @exposed
 class Paddle(Area2D):
-
     left = export(bool, default=False)
     action_prefix = export(str, default="")
     can_move = export(bool, default=False)
