@@ -96,7 +96,8 @@ def install_linux(
     # See https://gregoryszorc.com/docs/python-build-standalone/main/running.html#obtaining-distributions
     if not re.match(r"^x86_64(|_v2|_v3|_v4)-unknown-linux-(gnu|musl)$", conf["target_triple"]):
         raise RuntimeError(f"Unexpected target_triple `{conf['target_triple']}`")
-    major, minor = conf["python_major_minor_version"].split(".")
+    major, minor = map(int, conf["python_major_minor_version"].split("."))
+    assert major == 3
 
     shutil.copytree(prebuild_dir / "python/install", build_dir, symlinks=True)
     shutil.copytree(prebuild_dir / "python/licenses", build_dir / "licenses", symlinks=True)
@@ -132,6 +133,9 @@ def install_linux(
 
     # Zip the stdlib to save plenty of space \o/
     if compressed_stdlib:
+        # TODO: support Zstandard with Python >= 3.15
+        archive_format = "zip"
+
         tmp_stdlib_path = build_dir / f"lib/tmp_python{major}.{minor}"
         shutil.move(stdlib_path, tmp_stdlib_path)
 
@@ -142,7 +146,7 @@ def install_linux(
         shutil.move(tmp_stdlib_path / "lib-dynload", stdlib_path / "lib-dynload")
         shutil.make_archive(
             base_name=str(build_dir / f"lib/python{major}{minor}"),
-            format="zip",  # TODO: use zstd in Python 3.14+
+            format=archive_format,
             root_dir=tmp_stdlib_path,
         )
         shutil.rmtree(tmp_stdlib_path)
@@ -166,7 +170,8 @@ def install_macos(
 
     if conf["target_triple"] not in ("x86_64-apple-darwin",):
         raise RuntimeError(f"Unexpected target_triple `{conf['target_triple']}`")
-    major, minor = conf["python_major_minor_version"].split(".")
+    major, minor = map(int, conf["python_major_minor_version"].split("."))
+    assert major == 3
 
     shutil.copytree(prebuild_dir / "python/install", build_dir, symlinks=True)
     shutil.copytree(prebuild_dir / "python/licenses", build_dir / "licenses", symlinks=True)
@@ -202,6 +207,9 @@ def install_macos(
 
     # Zip the stdlib to save plenty of space \o/
     if compressed_stdlib:
+        # TODO: support Zstandard with Python >= 3.15
+        archive_format = "zip"
+
         tmp_stdlib_path = build_dir / f"lib/tmp_python{major}.{minor}"
         shutil.move(stdlib_path, tmp_stdlib_path)
 
@@ -212,7 +220,7 @@ def install_macos(
         shutil.move(tmp_stdlib_path / "lib-dynload", stdlib_path / "lib-dynload")
         shutil.make_archive(
             base_name=str(build_dir / f"lib/python{major}{minor}"),
-            format="zip",  # TODO: use zstd in Python 3.14+
+            format=archive_format,
             root_dir=tmp_stdlib_path,
         )
         shutil.rmtree(tmp_stdlib_path)
@@ -236,7 +244,8 @@ def install_windows(
 
     if conf["target_triple"] not in ("x86_64-pc-windows-msvc", "i686-pc-windows-msvc"):
         raise RuntimeError(f"Unexpected target_triple `{conf['target_triple']}`")
-    major, minor = conf["python_major_minor_version"].split(".")
+    major, minor = map(int, conf["python_major_minor_version"].split("."))
+    assert major == 3
 
     shutil.copytree(prebuild_dir / "python/install", build_dir, symlinks=True)
     shutil.copytree(prebuild_dir / "python/licenses", build_dir / "licenses", symlinks=True)
@@ -266,17 +275,19 @@ def install_windows(
 
     # Zip the stdlib to save plenty of space \o/
     if compressed_stdlib:
-        tmp_stdlib_path = build_dir / f"lib/tmp_python{major}.{minor}"
+        # TODO: support Zstandard with Python >= 3.15
+        archive_format = "zip"
+
+        tmp_stdlib_path = build_dir / "tmp_Lib"
         shutil.move(stdlib_path, tmp_stdlib_path)
 
         # `site-packages` is not stdlib, so it must be excluded from the archive
         stdlib_path.mkdir()
         shutil.move(tmp_stdlib_path / site_packages_path.name, site_packages_path)
 
-        shutil.move(tmp_stdlib_path / "lib-dynload", stdlib_path / "lib-dynload")
         shutil.make_archive(
             base_name=str(build_dir / f"python{major}{minor}"),
-            format="zip",  # TODO: use zstd in Python 3.14+
+            format=archive_format,
             root_dir=tmp_stdlib_path,
         )
         shutil.rmtree(tmp_stdlib_path)
