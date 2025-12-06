@@ -103,17 +103,18 @@ jobs:
       - name: Build project
         run: uv run meson compile -C build/
 
-      # - name: Run tests
-      #   run: |
-      #     set -eux
-      #     ARGS="--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} -- --headless"
-      #     python tests/run.py 0-gdscript $ARGS
-      #     python tests/run.py 1-gdextension $ARGS
-      #     python tests/run.py 2-init-with-python-hook $ARGS
-      #     python tests/run.py 3-init-with-cython-hook $ARGS
+      - name: Run tests
+        run: |
+          set -eux
+          ARGS="--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} -- --headless"
+          uv run python tests/run.py 0-gdscript $ARGS
+          uv run python tests/run.py 1-gdextension $ARGS
+          uv run python tests/run.py 2-init-with-python-hook $ARGS
+          uv run python tests/run.py 3-init-with-cython-hook $ARGS
+          uv run python tests/run.py 4-use-godot-from-python $ARGS
 
       # - name: Generate artifact archive
-      #   run: meson compile -C build/ release
+      #   run: uv run meson compile -C build/ release
 
       # - name: Export release artifact
       #   uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
@@ -192,15 +193,16 @@ jobs:
       - name: Build project
         run: uv run meson compile -C build/
 
-      # - name: Run tests
-      #   shell: bash
-      #   run: |
-      #     set -eux
-      #     ARGS="--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} --custom-gdextension-api=./gdextension_api -- --headless"
-      #     python tests/run.py 0-gdscript $ARGS
-      #     python tests/run.py 1-gdextension $ARGS
-      #     python tests/run.py 2-init-with-python-hook $ARGS
-      #     python tests/run.py 3-init-with-cython-hook $ARGS
+      - name: Run tests
+        shell: bash
+        run: |
+          set -eux
+          ARGS="--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} -- --headless"
+          uv run python tests/run.py 0-gdscript $ARGS
+          uv run python tests/run.py 1-gdextension $ARGS
+          uv run python tests/run.py 2-init-with-python-hook $ARGS
+          uv run python tests/run.py 3-init-with-cython-hook $ARGS
+          uv run python tests/run.py 4-use-godot-from-python $ARGS
 
       # - name: Install Mesa3D OpenGL
       #   shell: bash
@@ -220,11 +222,8 @@ jobs:
       #     ls -lh opengl32.dll  # Sanity check
       #     popd
 
-      # - name: Run tests
-      #   run: python tests/run.py --build-dir build/ --godot-binary ${{ GODOT_BINARY_VERSION }}
-
       # - name: Generate artifact archive
-      #   run: meson compile -C build/ release
+      #   run: uv run meson compile -C build/ release
 
       # - name: Export release artifact
       #   uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
