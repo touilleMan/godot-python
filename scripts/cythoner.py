@@ -107,6 +107,6 @@ sys.argv = [
 # patch_cython_pipeline()
 
 # Starts Cython CLI
-from Cython.Compiler.Main import setuptools_main
+from Cython.Compiler.Main import setuptools_main  # noqa: E402
 
 sys.exit(setuptools_main())

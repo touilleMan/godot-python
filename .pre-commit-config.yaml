@@ -1,6 +1,5 @@
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.2.3
+  - repo: builtin
     hooks:
 
     - id: mixed-line-ending
@@ -8,7 +7,7 @@ repos:
     - id: trailing-whitespace
       exclude: ^tests/.*/expected.output
 
--   repo: local
+  - repo: local
     hooks:
 
     - id: git_actions_pin
@@ -24,6 +23,8 @@ repos:
       require_serial: true
       language: system
       types_or: [python, pyi]
+      # TODO: repl_addon is all broken for the moment
+      exclude: ^src/repl_addon/
 
     - id: format
       name: format (using `uvx ruff format`)

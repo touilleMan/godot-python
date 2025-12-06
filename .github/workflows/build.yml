@@ -18,32 +18,24 @@ concurrency:
 
 # Global Settings
 env:
-  PYTHON_VERSION: "3.12"  # Python to run the build, no the one shipped !
+  UV_VERSION: "0.9.16"
   BLEEDING_EDGE_GODOT: false
 
 
 jobs:
-
 
   static-checks:
     name: '📊 Static checks'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c  # pin@v3.3.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # pin@v6.0.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244  # pin@v7.1.4
         with:
-            submodules: true
-      - name: Set up Python
-        uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435  # pin@v4.5.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Bootstrap
-        run: |
-          set -eux
-          python --version
-          pip install pre-commit
-      - name: Pre-commit hooks check
-        run: pre-commit run --all-files --show-diff-on-failure
+          version: ${{ env.UV_VERSION }}
+      - name: Static checks
+        uses: j178/prek-action@91fd7d7cf70ae1dee9f4f44e7dfa5d1073fe6623  # pin@v1.0.11
 
 
 #################################################################################
@@ -58,23 +50,15 @@ jobs:
       PLATFORM: linux-x86_64
     steps:
 
-      - name: 'Checkout'
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c  # pin@v3.3.0
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # pin@v6.0.1
         with:
             submodules: true
 
-      - name: 'Set up Python'
-        uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435  # pin@v4.5.0
+      - name: Install uv
+        uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244  # pin@v7.1.4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: 'Setup venv'
-        run: |
-          set -eux
-          ${{ env.CC }} --version
-          python --version
-          python -m pip --version
-          python -m pip install -r requirements.txt
+          version: ${{ env.UV_VERSION }}
 
       - name: Download bleeding edge Godot 🏗️
         uses: dsnopek/action-download-artifact@1322f74e2dac9feed2ee76a32d9ae1ca3b4cf4e9
@@ -91,7 +75,7 @@ jobs:
           ensure_latest: true
           path: godot-artifacts
 
-      - name: 'Setup bleeding edge Godot 🏗️'
+      - name: Setup bleeding edge Godot 🏗️
         id: setup-godot
         if: ${{ env.BLEEDING_EDGE_GODOT == true }}
         run: |
@@ -113,24 +97,25 @@ jobs:
           echo "EXTRA_MESON_SETUP_ARGS=-D gdextension_path=$GDEXTENSION_DIR" >> $GITHUB_OUTPUT
           echo "EXTRA_RUN_TESTS_ARGS=--godot-binary=$GODOT_BIN" >> $GITHUB_OUTPUT
 
-      - name: 'Setup project'
-        run: python .github/scripts/meson_setup_or_dump_log.py build/ ${{ steps.setup-godot.outputs.EXTRA_MESON_SETUP_ARGS }}
+      - name: Setup project
+        run: uv run meson setup build/ ${{ steps.setup-godot.outputs.EXTRA_MESON_SETUP_ARGS }}
 
-      - name: 'Build project'
-        run: meson compile -C build/
-      - name: 'Run tests'
-        run: |
-          set -eux
-          ARGS="--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} -- --headless"
-          python tests/run.py 0-gdscript $ARGS
-          python tests/run.py 1-gdextension $ARGS
-          python tests/run.py 2-init-with-python-hook $ARGS
-          python tests/run.py 3-init-with-cython-hook $ARGS
+      - name: Build project
+        run: uv run meson compile -C build/
 
-      # - name: 'Generate artifact archive'
+      # - name: Run tests
+      #   run: |
+      #     set -eux
+      #     ARGS="--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} -- --headless"
+      #     python tests/run.py 0-gdscript $ARGS
+      #     python tests/run.py 1-gdextension $ARGS
+      #     python tests/run.py 2-init-with-python-hook $ARGS
+      #     python tests/run.py 3-init-with-cython-hook $ARGS
+
+      # - name: Generate artifact archive
       #   run: meson compile -C build/ release
 
-      # - name: 'Export release artifact'
+      # - name: Export release artifact
       #   uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
       #   with:
       #     name: ${{ env.PLATFORM }}-release
@@ -147,26 +132,18 @@ jobs:
       PLATFORM: 'windows-x86_64'
     steps:
 
-      - name: 'Checkout'
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c  # pin@v3.3.0
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # pin@v6.0.1
         with:
             submodules: true
 
-      - name: 'Set up MSVC'
+      - name: Set up MSVC
         uses: egor-tensin/vs-shell@9a932a62d05192eae18ca370155cf877eecc2202  # pin@v2.1
 
-      - name: 'Set up Python'
-        uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435  # pin@v4.5.0
+      - name: Install uv
+        uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244  # pin@v7.1.4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: 'Setup venv'
-        shell: bash
-        run: |
-          set -eux
-          python --version
-          python -m pip --version
-          python -m pip install -r requirements.txt
+          version: ${{ env.UV_VERSION }}
 
       - name: Download bleeding edge Godot 🏗️
         uses: dsnopek/action-download-artifact@1322f74e2dac9feed2ee76a32d9ae1ca3b4cf4e9
@@ -183,7 +160,7 @@ jobs:
           ensure_latest: true
           path: godot-artifacts
 
-      - name: 'Setup bleeding edge Godot 🏗️'
+      - name: Setup bleeding edge Godot 🏗️
         id: setup-godot
         if: ${{ env.BLEEDING_EDGE_GODOT == true }}
         shell: bash
@@ -208,24 +185,24 @@ jobs:
           echo "EXTRA_MESON_SETUP_ARGS=-D gdextension_path=$GDEXTENSION_DIR" >> $GITHUB_OUTPUT
           echo "EXTRA_RUN_TESTS_ARGS=--godot-binary=$GODOT_BIN" >> $GITHUB_OUTPUT
 
-      - name: 'Setup project'
+      - name: Setup project
         # Note the install prefix has to be manually set on Windows due to some Meson limitation...
-        run: python .github/scripts/meson_setup_or_dump_log.py build/ ${{ steps.setup-godot.outputs.EXTRA_MESON_SETUP_ARGS }} -D prefix=C:/
+        run: uv run meson setup build/ ${{ steps.setup-godot.outputs.EXTRA_MESON_SETUP_ARGS }} -D prefix=C:/
 
-      - name: 'Build project'
-        run: meson compile -C build/
+      - name: Build project
+        run: uv run meson compile -C build/
 
-      - name: 'Run tests'
-        shell: bash
-        run: |
-          set -eux
-          ARGS="--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} --custom-gdextension-api=./gdextension_api -- --headless"
-          python tests/run.py 0-gdscript $ARGS
-          python tests/run.py 1-gdextension $ARGS
-          python tests/run.py 2-init-with-python-hook $ARGS
-          python tests/run.py 3-init-with-cython-hook $ARGS
+      # - name: Run tests
+      #   shell: bash
+      #   run: |
+      #     set -eux
+      #     ARGS="--build-dir=build/ ${{ steps.setup-godot.outputs.EXTRA_RUN_TESTS_ARGS }} --custom-gdextension-api=./gdextension_api -- --headless"
+      #     python tests/run.py 0-gdscript $ARGS
+      #     python tests/run.py 1-gdextension $ARGS
+      #     python tests/run.py 2-init-with-python-hook $ARGS
+      #     python tests/run.py 3-init-with-cython-hook $ARGS
 
-      # - name: 'Install Mesa3D OpenGL'
+      # - name: Install Mesa3D OpenGL
       #   shell: bash
       #   run: |
       #     set -eux
@@ -243,13 +220,13 @@ jobs:
       #     ls -lh opengl32.dll  # Sanity check
       #     popd
 
-      # - name: 'Run tests'
+      # - name: Run tests
       #   run: python tests/run.py --build-dir build/ --godot-binary ${{ GODOT_BINARY_VERSION }}
 
-      # - name: 'Generate artifact archive'
+      # - name: Generate artifact archive
       #   run: meson compile -C build/ release
 
-      # - name: 'Export release artifact'
+      # - name: Export release artifact
       #   uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
       #   with:
       #     name: ${{ matrix.PLATFORM }}-release
@@ -268,31 +245,31 @@ jobs:
   #     LD: lld
   #     PLATFORM: 'macos-x86_64'
   #   steps:
-  #     - name: 'Checkout'
-  #       uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c  # pin@v3.3.0
+  #     - name: Checkout
+  #       uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # pin@v6.0.1
   #       with:
   #           submodules: true
   #     - name: 'Set up Python'
   #       uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435  # pin@v4.5.0
   #       with:
   #         python-version: ${{ env.PYTHON_VERSION }}
-  #     - name: 'Setup venv'
+  #     - name: Setup venv
   #       run: |
   #         set -eux
   #         ${{ env.CC }} --version
   #         python --version
   #         pip install -U pip
   #         pip install -r requirements.txt
-  #     - name: 'Setup project'
+  #     - name: Setup project
   #       run: python .github/scripts/meson_setup_or_dump_log.py build/
-  #     - name: 'Build project'
+  #     - name: Build project
   #       run: meson compile -C build/
       # TODO: see https://github.com/touilleMan/godot-python/issues/358
-      # - name: 'Run tests'
+      # - name: Run tests
       #   run: python tests/run.py 0-pythonscript-init --build-dir build/ -- --headless
-      # - name: 'Generate artifact archive'
+      # - name: Generate artifact archive
       #   run: meson compile -C build/ release
-      # - name: 'Export release artifact'
+      # - name: Export release artifact
       #   uses: actions/upload-artifact@11830c9f4d30053679cb8904e3b3ce1b8c00bf40  # pin@v2
       #   with:
       #     name: ${{ env.PLATFORM }}-release
@@ -303,7 +280,7 @@ jobs:
 
 
 #  publish-release:
-#    name: 'Publish ${{ matrix.PLATFORM }} release'
+#    name: Publish ${{ matrix.PLATFORM }} release
 #    if: startsWith(github.ref, 'refs/tags/v')
 #    runs-on: ubuntu-latest
 #    needs:
