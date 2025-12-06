@@ -7,8 +7,7 @@ from urllib.request import urlopen
 import shutil
 import tarfile
 import json
-import gzip
-import zstandard
+from compression import zstd, gzip
 
 
 PREBUILDS_BASE_URL = "https://github.com/astral-sh/python-build-standalone/releases/download"
@@ -69,9 +68,8 @@ def fetch_prebuild(
         else:
             assert archive_path.suffix == ".zst"
             with open(archive_path, mode="rb") as fh:
-                dctx = zstandard.ZstdDecompressor()
-                with dctx.stream_reader(fh) as reader:
-                    _tar_extract(reader)
+                reader = zstd.ZstdFile(fh)
+                _tar_extract(reader)
 
 
 def load_config(prebuild_dir: Path) -> dict:
