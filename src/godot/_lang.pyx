@@ -458,7 +458,7 @@ cdef object _initialize_callback_hook(int p_level):
     try:
         _initialize_callback(p_level)
     except Exception as exc:
-        raise ValueError(f"Invalid value for config `python/initialize_callback`: callback `{module}:{function}` call has failed") from exc
+        raise ValueError(f"Invalid value for config `python/initialize_callback`: callback `{_initialize_callback}` call has failed") from exc
 
 
 cdef object _deinitialize_callback = None
@@ -494,7 +494,7 @@ cdef object _deinitialize_callback_hook(int p_level):
     try:
         _deinitialize_callback(p_level)
     except Exception as exc:
-        raise ValueError(f"Invalid value for config `python/deinitialize_callback`: callback `{module}:{function}` call has failed") from exc
+        raise ValueError(f"Invalid value for config `python/deinitialize_callback`: callback `{_deinitialize_callback}` call has failed") from exc
 
 
 cdef void _print_banner():
