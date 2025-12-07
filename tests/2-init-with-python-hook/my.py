@@ -1,5 +1,9 @@
+from godot.builtins import GDString, GDArray
+
+
 def initialize(level: int):
-    print("MY initialize", level, flush=True)
+    gdstr = GDString("MY initialize {0}")
+    print(gdstr.format(GDArray([level])), flush=True)
 
 
 def deinitialize(level: int):
