@@ -217,8 +217,32 @@ lib_gdpy = shared_library(
     dependencies: [dep_godot, dep_python],
     install_rpath: lib_gdpy_rpath,  # To find libpython
     install: true,
-    install_dir: 'addons/gdpy/' + host_platform,
+    install_dir: join_paths('addons/gdpy/', host_platform),
 )
+
+
+# On Windows, manually install the import library (.lib) alongside the DLL
+# because Meson doesn't do this automatically with custom install_dir.
+# This .lib file is needed for linking 3rd party Cython module that do a `cimport godot`.
+if host_platform.startswith('windows')
+    meson.add_install_script(
+        python,
+        [
+            '-c',
+            '''
+import os, sys, shutil, pathlib
+src = pathlib.Path(sys.argv[1])
+destdir = pathlib.Path(os.environ["MESON_INSTALL_DESTDIR_PREFIX"])
+host_platform = sys.argv[2]
+dst = destdir / f"addons/gdpy/{host_platform}/{src.name}"
+print(f"cp {src} {dst}")
+shutil.copyfile(src, dst)
+''',
+            lib_gdpy.full_path().replace('.dll', '.lib'),
+            host_platform,
+        ]
+    )
+endif
 
 
 # This dependency is used by all Cython modules to retreive the `gdpy_gdapi`

@@ -34,24 +34,21 @@ match platform.machine().lower():
 match platform.system():
     case "Windows":
         embedded_platform_path = PROJECT_DIR / f"addons/gdpy/windows-{cpu}"
-        embedded_libgdpy_path = embedded_platform_path / "libgdpy.lib"
+        embedded_libgdpy_path = embedded_platform_path / "gdpy.lib"
         embedded_python_path = embedded_platform_path / "python.exe"
         embedded_site_packages_path = embedded_platform_path / "Lib/site-packages/"
-        # lib_pattern = "my.*.pyd"
 
     case "Linux":
         embedded_platform_path = PROJECT_DIR / f"addons/gdpy/linux-{cpu}"
         embedded_libgdpy_path = embedded_platform_path / "libgdpy.so"
         embedded_python_path = embedded_platform_path / "bin/python3"
         embedded_site_packages_path = next(embedded_platform_path.glob("lib/python*/site-packages"))
-        # lib_pattern = "my.*.so"
 
     case "iOS":
         embedded_platform_path = PROJECT_DIR / f"addons/gdpy/macos-{cpu}"
         embedded_libgdpy_path = embedded_platform_path / "libgdpy.dylib"
         embedded_python_path = embedded_platform_path / "bin/python3"
         embedded_site_packages_path = next(embedded_platform_path.glob("lib/python*/site-packages"))
-        # lib_pattern = "my.*.dylib"
 
     case unknown:
         raise SystemExit(f"Unknown platform `{unknown}`")
