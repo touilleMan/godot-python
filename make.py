@@ -115,7 +115,7 @@ class Cmd(Op):
 EXTRA_CMD_ARGS_SENTINEL = "<extra_cmd_args>"
 COMMANDS: dict[tuple[str, ...], Union[Op, tuple[Op, ...]]] = {
     ("init", "i"): (
-        Cmd(["uv", "run", "meson", "setup", BUILD_DIR]),
+        Cmd(["uv", "run", "meson", "setup", BUILD_DIR, EXTRA_CMD_ARGS_SENTINEL]),
         Cmd(["uv", "run", "meson", "compile", "--verbose", "-C", BUILD_DIR]),
     ),
     ("rebuild", "r"): Cmd(["uv", "run", "meson", "compile", "--verbose", "-C", BUILD_DIR]),
