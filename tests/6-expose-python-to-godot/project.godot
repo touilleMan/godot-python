@@ -21,3 +21,4 @@ main_scene="res://main.tscn"
 
 io_streams_capture=false
 verbose=false
+initialize_callback="node:initialize"

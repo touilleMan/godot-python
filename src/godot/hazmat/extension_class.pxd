@@ -1,6 +1,4 @@
 cimport cython
-from cpython.ref cimport Py_INCREF, Py_DECREF
-from libc.string cimport strcmp
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 
 from .gdextension_interface cimport *
@@ -56,6 +54,8 @@ cdef inline void register_extension_class_creation(
     bint is_virtual,
     bint is_abstract,
     bint is_exposed,
+    # bint is_runtime,
+    # GDExtensionConstStringPtr icon_path,
 ) noexcept:
     cdef ExtensionClassSpec spec = ExtensionClassSpec()
     spec.class_name = class_name
@@ -69,10 +69,10 @@ cdef inline void register_extension_class_creation(
     info.is_virtual = is_virtual
     info.is_abstract = is_abstract
     info.is_exposed = is_exposed
-    # info.is_runtime = is_runtime  # GDExtensionBool
+    # info.is_runtime = is_runtime
     info.is_runtime = False
-    # info.icon_path = icon_path  # GDExtensionConstStringPtr
-    info.icon_path = NULL
+    # info.icon_path = icon_path
+    info.icon_path = NULL  # GDExtensionConstStringPtr
     info.set_func = NULL  # GDExtensionClassSet
     info.get_func = NULL  # GDExtensionClassGet
     info.get_property_list_func = NULL  # GDExtensionClassGetPropertyList

@@ -77,7 +77,14 @@ _tag_method_flag_is_property_accessor = 1 << 6
     "{{ c.inherits.type_name }}",
 {%   endif %}
 
-    # constants
+    # Is refcounted ?
+{%   if c.is_refcounted %}
+    True,
+{%   else %}
+    False,
+{%   endif %}
+
+    # Constants
 {%   for constant in c.constants %}
 
     _tag_constant,
@@ -85,7 +92,7 @@ _tag_method_flag_is_property_accessor = 1 << 6
     {{ constant.value }},
 {%   endfor %}
 
-    # enums
+    # Enums
 {%   for enum in c.enums %}
 
     _tag_enum,
@@ -97,7 +104,7 @@ _tag_method_flag_is_property_accessor = 1 << 6
 {%     endfor %}
 {%   endfor %}
 
-    # properties
+    # Properties
 {%   for prop in c.properties %}
 
     _tag_property,
@@ -120,7 +127,7 @@ _tag_method_flag_is_property_accessor = 1 << 6
 {%     endif %}
 {%   endfor %}
 
-    # signals
+    # Signals
 {%   for signal in c.signals %}
 
     _tag_signal,
@@ -137,7 +144,7 @@ _tag_method_flag_is_property_accessor = 1 << 6
 {%     endfor %}
 {%   endfor %}
 
-    # methods
+    # Methods
 {%   for method in c.methods %}
 
     _tag_method,

@@ -513,8 +513,8 @@ cdef void _gdpy_initialize(int p_level) noexcept with gil:
     cdef BaseGDObject OS
     cdef PackedStringArray args
 
-    if p_level == GDEXTENSION_INITIALIZATION_SERVERS:
-        _early_register_classes()
+    # if p_level == GDEXTENSION_INITIALIZATION_SERVERS:
+    #     _early_register_classes()
 
     # Language registration must be done at `GDEXTENSION_INITIALIZATION_SERVERS` level which
     # is too early to have have everything we need for (e.g. `ClassDB` & `OS` singletons).
@@ -533,7 +533,7 @@ cdef void _gdpy_initialize(int p_level) noexcept with gil:
 
         _apply_python_config_from_project_settings()
 
-        _late_plug_language()
+        # _late_plug_language()
 
         # Finally proudly print banner ;-)
         _print_banner()
@@ -551,14 +551,14 @@ cdef void _gdpy_deinitialize(int p_level) noexcept with gil:
     if p_level >= GDEXTENSION_INITIALIZATION_SCENE:
         _deinitialize_callback_hook(p_level)
 
-    if p_level == GDEXTENSION_INITIALIZATION_SCENE:
-        _late_unplug_language()
+    # if p_level == GDEXTENSION_INITIALIZATION_SCENE:
+    #     _late_unplug_language()
 
     if p_level == GDEXTENSION_INITIALIZATION_SERVERS:
 
         # Unregister Python classes from Godot's classDB
 
-        _early_unregister_classes()
+        # _early_unregister_classes()
 
         _cleanup_loaded_classes_and_singletons()
 

@@ -1,5 +1,5 @@
 Godot Engine .* - https://godotengine.org
 
 Godot-Python .* \(CPython .*\)
-Python: _ready entered
-Python: _ready done
+MyPythonNode: _ready entered
+MyPythonNode: _ready done
