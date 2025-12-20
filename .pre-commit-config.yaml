@@ -18,8 +18,8 @@ repos:
       files: ^.github/
 
     - id: lint
-      name: lint (using `uvx ruff check`)
-      entry: uvx ruff check --fix
+      name: lint (using `uv run ruff check`)
+      entry: uv run ruff check --fix
       require_serial: true
       language: system
       types_or: [python, pyi]
@@ -27,8 +27,8 @@ repos:
       exclude: ^src/repl_addon/
 
     - id: format
-      name: format (using `uvx ruff format`)
-      entry: uvx ruff format
+      name: format (using `uv run ruff format`)
+      entry: uv run ruff format
       require_serial: true
       language: system
       types_or: [python, pyi]
