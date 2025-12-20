@@ -46,7 +46,7 @@ def test_bad_meth_to_create_refcounted_object():
     with clodotest.raises(RuntimeError) as raised:
         Image.new()
 
-    assert_eq(str(raised.exc), "RefCounted Godot object must be created with `Image()`")
+    assert_eq(str(raised.exc), "RefCounted Godot object, must be created with `Image()`")
 
 
 def test_create_refcounted_object():

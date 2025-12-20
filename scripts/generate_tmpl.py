@@ -41,6 +41,7 @@ GODOT_CLASSES_SAMPLE = {
     "Environment",
     "Font",
     "Image",
+    "Input",
     "InputEvent",
     "JSON",
     "MainLoop",
@@ -64,6 +65,7 @@ GODOT_CLASSES_SAMPLE = {
     "Texture",
     "Texture2D",
     "World2D",
+    "WeakRef",
 }
 GODOT_BUILTINS_SAMPLE = {
     "String",
