@@ -109,29 +109,39 @@ cdef inline {{ render_utility_function_signature(builtin) }}:
 
 
 {% macro render_builtin_from_variant_signature(builtin) %}
+{%- if builtin.is_stack_only %}
 {{ builtin.c_type }} gd_{{ builtin.snake_name }}_from_variant(const gd_variant_t *val)
-{%- endmacro %}
-
-
-{% macro render_builtin_into_variant_signature(builtin) %}
-{%- if builtin.is_scalar %}
-gd_variant_t gd_{{ builtin.snake_name }}_into_variant(const {{ builtin.c_type }} val)
 {%- else %}
-gd_variant_t gd_{{ builtin.snake_name }}_into_variant(const {{ builtin.c_type }} *val)
+{{ builtin.c_type }} gd_{{ builtin.snake_name }}_copy_from_variant(const gd_variant_t *val)
+{%- endif %}
+{% endmacro %}
+
+
+{% macro render_builtin_to_variant_signature(builtin) %}
+{%- if builtin.is_scalar %}
+gd_variant_t gd_{{ builtin.snake_name }}_to_variant(const {{ builtin.c_type }} val)
+{%- elif builtin.is_stack_only %}
+gd_variant_t gd_{{ builtin.snake_name }}_to_variant(const {{ builtin.c_type }} *val)
+{%- else %}
+gd_variant_t gd_{{ builtin.snake_name }}_copy_into_variant(const {{ builtin.c_type }} *val)
 {%- endif %}
 {% endmacro %}
 
 
 {% macro render_builtin_object_variant_conversions(builtin) %}
-cdef inline gdextension_interface.GDExtensionObjectPtr gd_object_from_variant(const gd_variant_t *val):
+# Variant to Object conversion steal the reference, this is because internally Godot's
+# `Variant::operation Object*()` method just return the pointer on the object...
+cdef inline gdextension_interface.GDExtensionObjectPtr gd_object_steal_from_variant(const gd_variant_t *val):
     cdef gdextension_interface.GDExtensionObjectPtr ret
-    gdptrs.gdptr_object_from_variant(&ret, <gd_variant_t *>val)
+    gdptrs.gdptr_object_steal_from_variant(&ret, <gd_variant_t *>val)
     return ret
 
 
-cdef inline gd_variant_t gd_object_into_variant(gdextension_interface.GDExtensionObjectPtr val):
+# ...on the other hand, Godot's `Variant::Variant(Object*)` constructor checks if the
+# object is refcounted and increase the refcount if so.
+cdef inline gd_variant_t gd_object_copy_into_variant(gdextension_interface.GDExtensionObjectPtr val):
     cdef gd_variant_t ret
-    gdptrs.gdptr_object_into_variant(&ret, &val)
+    gdptrs.gdptr_object_copy_into_variant(&ret, &val)
     return ret
 {% endmacro %}
 
@@ -139,13 +149,21 @@ cdef inline gd_variant_t gd_object_into_variant(gdextension_interface.GDExtensio
 {% macro render_builtin_variant_conversions(builtin) %}
 cdef inline {{ render_builtin_from_variant_signature(builtin) }}:
     cdef {{ builtin.c_type }} ret
+{%   if builtin.is_stack_only %}
     gdptrs.gdptr_{{ builtin.snake_name }}_from_variant(&ret, <gd_variant_t *>val)
+{%   else %}
+    gdptrs.gdptr_{{ builtin.snake_name }}_copy_from_variant(&ret, <gd_variant_t *>val)
+{%   endif %}
     return ret
 
 
-cdef inline {{ render_builtin_into_variant_signature(builtin) }}:
+cdef inline {{ render_builtin_to_variant_signature(builtin) }}:
     cdef gd_variant_t ret
-    gdptrs.gdptr_{{ builtin.snake_name }}_into_variant(&ret, <{{ builtin.c_type }} *>{{ "&val" if builtin.is_scalar else "val"}})
+{%   if builtin.is_stack_only %}
+    gdptrs.gdptr_{{ builtin.snake_name }}_to_variant(&ret, <{{ builtin.c_type }} *>{{ "&val" if builtin.is_scalar else "val"}})
+{%   else %}
+    gdptrs.gdptr_{{ builtin.snake_name }}_copy_into_variant(&ret, <{{ builtin.c_type }} *>{{ "&val" if builtin.is_scalar else "val"}})
+{%   endif %}
     return ret
 {% endmacro %}
 

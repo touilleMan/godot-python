@@ -382,24 +382,28 @@ cdef extern from * nogil:
 # Godot variant from/into Python object conversions
 cdef extern from * nogil:
     """
-    DLL_IMPORT extern GDExtensionTypeFromVariantConstructorFunc gdpy_gdptr_object_from_variant;
-    DLL_IMPORT extern GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_object_into_variant;
+    DLL_IMPORT extern GDExtensionTypeFromVariantConstructorFunc gdpy_gdptr_object_steal_from_variant;
+    DLL_IMPORT extern GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_object_copy_into_variant;
     DLL_IMPORT extern GDExtensionTypeFromVariantConstructorFunc gdpy_gdptr_bool_from_variant;
-    DLL_IMPORT extern GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_bool_into_variant;
+    DLL_IMPORT extern GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_bool_to_variant;
     DLL_IMPORT extern GDExtensionTypeFromVariantConstructorFunc gdpy_gdptr_int_from_variant;
-    DLL_IMPORT extern GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_int_into_variant;
+    DLL_IMPORT extern GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_int_to_variant;
     DLL_IMPORT extern GDExtensionTypeFromVariantConstructorFunc gdpy_gdptr_float_from_variant;
-    DLL_IMPORT extern GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_float_into_variant;
+    DLL_IMPORT extern GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_float_to_variant;
     """
 
-    const GDExtensionTypeFromVariantConstructorFunc gdptr_object_from_variant "gdpy_gdptr_object_from_variant"
-    const GDExtensionVariantFromTypeConstructorFunc gdptr_object_into_variant "gdpy_gdptr_object_into_variant"
+    # Variant to Object conversion steal the reference, this is because internally Godot's
+    # `Variant::operation Object*()` method just return the pointer on the object...
+    const GDExtensionTypeFromVariantConstructorFunc gdptr_object_steal_from_variant "gdpy_gdptr_object_steal_from_variant"
+    # ...on the other hand, Godot's `Variant::Variant(Object*)` constructor checks if the
+    # object is refcounted and increase the refcount if so.
+    const GDExtensionVariantFromTypeConstructorFunc gdptr_object_copy_into_variant "gdpy_gdptr_object_copy_into_variant"
     const GDExtensionTypeFromVariantConstructorFunc gdptr_bool_from_variant "gdpy_gdptr_bool_from_variant"
-    const GDExtensionVariantFromTypeConstructorFunc gdptr_bool_into_variant "gdpy_gdptr_bool_into_variant"
+    const GDExtensionVariantFromTypeConstructorFunc gdptr_bool_to_variant "gdpy_gdptr_bool_to_variant"
     const GDExtensionTypeFromVariantConstructorFunc gdptr_int_from_variant "gdpy_gdptr_int_from_variant"
-    const GDExtensionVariantFromTypeConstructorFunc gdptr_int_into_variant "gdpy_gdptr_int_into_variant"
+    const GDExtensionVariantFromTypeConstructorFunc gdptr_int_to_variant "gdpy_gdptr_int_to_variant"
     const GDExtensionTypeFromVariantConstructorFunc gdptr_float_from_variant "gdpy_gdptr_float_from_variant"
-    const GDExtensionVariantFromTypeConstructorFunc gdptr_float_into_variant "gdpy_gdptr_float_into_variant"
+    const GDExtensionVariantFromTypeConstructorFunc gdptr_float_to_variant "gdpy_gdptr_float_to_variant"
 {% for builtin in api.builtins %}
 
 
@@ -432,8 +436,13 @@ cdef extern from * nogil:
     DLL_IMPORT extern GDExtensionPtrGetter gdpy_gdptr_{{ builtin.snake_name }}_set_{{ m.name }};
 {%     endif %}
 {%   endfor %}
+{%   if builtin.is_stack_only %}
     DLL_IMPORT extern GDExtensionTypeFromVariantConstructorFunc gdpy_gdptr_{{ builtin.snake_name }}_from_variant;
-    DLL_IMPORT extern GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_{{ builtin.snake_name }}_into_variant;
+    DLL_IMPORT extern GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_{{ builtin.snake_name }}_to_variant;
+{%   else %}
+    DLL_IMPORT extern GDExtensionTypeFromVariantConstructorFunc gdpy_gdptr_{{ builtin.snake_name }}_copy_from_variant;
+    DLL_IMPORT extern GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_{{ builtin.snake_name }}_copy_into_variant;
+{%   endif %}
     """
 
 {%   for c in builtin.constructors %}
@@ -462,8 +471,13 @@ cdef extern from * nogil:
     const GDExtensionPtrGetter gdptr_{{ builtin.snake_name }}_set_{{ m.name }} "gdpy_gdptr_{{ builtin.snake_name }}_set_{{ m.name }}"
 {%     endif %}
 {%   endfor %}
+{%   if builtin.is_stack_only %}
     const GDExtensionTypeFromVariantConstructorFunc gdptr_{{ builtin.snake_name }}_from_variant "gdpy_gdptr_{{ builtin.snake_name }}_from_variant"
-    const GDExtensionVariantFromTypeConstructorFunc gdptr_{{ builtin.snake_name }}_into_variant "gdpy_gdptr_{{ builtin.snake_name }}_into_variant"
+    const GDExtensionVariantFromTypeConstructorFunc gdptr_{{ builtin.snake_name }}_to_variant "gdpy_gdptr_{{ builtin.snake_name }}_to_variant"
+{%   else %}
+    const GDExtensionTypeFromVariantConstructorFunc gdptr_{{ builtin.snake_name }}_copy_from_variant "gdpy_gdptr_{{ builtin.snake_name }}_copy_from_variant"
+    const GDExtensionVariantFromTypeConstructorFunc gdptr_{{ builtin.snake_name }}_copy_into_variant "gdpy_gdptr_{{ builtin.snake_name }}_copy_into_variant"
+{%   endif %}
 {% endfor %}
 
 

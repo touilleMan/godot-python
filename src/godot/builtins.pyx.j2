@@ -10,6 +10,28 @@ from libc.string cimport memset  # Needed to create zeroized builtins used in `_
 cdef class {{ builtin.cy_type }}
 {% endfor %}
 
+from typing import Sequence, Mapping
+# GDAny represent any type that can be send to / retreive from Godot
+# (i.e. it is all the types than can be converted to a Godot Variant)
+GDAny = (
+    None |
+    BaseGDObject |  # TODO: Should use `GDObject` here
+    bool |
+    int |
+    float |
+{% for builtin in api.builtins %}
+    {{ builtin.py_type }}{{ "" if loop.last else " |" }}
+{% endfor %}
+)
+# For convenience, we allow using Python types where Godot ones are needed.
+# This allows for instance to do `my_node.do("foo")` instead of the infamous
+# `my_node.do(GDString("foo"))`.
+# Of course keep in mind this involves types conversion and is slower than only working
+# with Godot types (for instance to speed up the previous example, `GDString("foo")`
+# should be instantiated once and reused between `my_node.do(...)` calls)
+IntoGDAny = GDAny | str | Mapping["IntoGDAny", "IntoGDAny"] | Sequence["IntoGDAny"]
+
+
 from .hazmat cimport gdapi, gdptrs, gdextension_interface
 from .hazmat.gdtypes cimport *
 

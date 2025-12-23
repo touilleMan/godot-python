@@ -84,7 +84,7 @@ cdef inline {{ render_method_signature(m) }}:
 {# 4) Optional return value conversion #}
 {% if not m.return_type.is_nil %}
 {%   if m.return_type.is_object %}
-    return BaseGDObject.cast_from_object(ret)
+    return BaseGDObject.steal_cast_from_object(ret)
 {%   elif m.return_type.is_variant %}
     # Note the "steal" means we don't need a final `gdapi.gd_variant_del(&ret)`
     return gd_variant_steal_into_pyobj(&ret)
@@ -154,7 +154,7 @@ cdef inline {{ render_method_signature(m) }}:
 {# 4) Optional return value conversion #}
 {% if not m.return_type.is_nil %}
 {%   if m.return_type.is_object %}
-    return BaseGDObject.cast_from_object(ret)
+    return BaseGDObject.steal_cast_from_object(ret)
 {%   elif m.return_type.is_variant %}
     # Note the "steal" means we don't need a final `gdapi.gd_variant_del(&ret)`
     return gd_variant_steal_into_pyobj(&ret)

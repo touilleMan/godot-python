@@ -115,7 +115,7 @@ cdef class PythonResourceFormatLoader:
             print(
                 f"Bad python script path `{py_path}`, must starts by `res://` and ends with `.py/pyc/pyo/pyd`", flush=True
             )
-            return gdapi.gd_int_into_variant(Error.ERR_FILE_BAD_PATH)
+            return gdapi.gd_int_to_variant(Error.ERR_FILE_BAD_PATH)
 
         # TODO: possible bug if res:// is not part of PYTHONPATH
         # Remove `res://`, `.py` and replace / by .
@@ -132,13 +132,13 @@ cdef class PythonResourceFormatLoader:
             print(
                 f"Got exception loading `{py_path}` (aka `{modname}`): {traceback.format_exc()}", flush=True
             )
-            return gdapi.gd_int_into_variant(Error.ERR_PARSE_ERROR)
+            return gdapi.gd_int_to_variant(Error.ERR_PARSE_ERROR)
 
         if klass is None:
             print(
                 f"Cannot load `{py_path}` (aka `{modname}`) because it doesn't expose any class to Godot", flush=True
             )
-            return gdapi.gd_int_into_variant(Error.ERR_PARSE_ERROR)
+            return gdapi.gd_int_to_variant(Error.ERR_PARSE_ERROR)
 
 
 
@@ -175,7 +175,7 @@ cdef class PythonResourceFormatLoader:
         # Note it's okay to steal `scripts`'s Godot object pointer like this,
         # since the Godot object itself controls the lifetime of `script` (i.e.
         # `script` is not going to be destroyed when this function finishes).
-        ret = gd_object_into_variant(script._gd_ptr)
+        ret = gd_object_copy_into_variant(script._gd_ptr)
         return ret
 
     # Don't overload `_rename_dependencies()` to mimic GDScript

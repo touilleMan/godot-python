@@ -1,5 +1,9 @@
 Godot Engine .* - https://godotengine.org
 
 Godot-Python .* \(CPython .*\)
-MyPythonNode: _ready entered
-MyPythonNode: _ready done
+MyPythonNode: _ready
+MyPythonNode: hello\(42\)
+MyPythonNode: hello_static_method\(World\)
+MyPythonNode: hello_class_method\(GDArray\(\[42, "World"\]\), MyPythonNode\(foo=.*\)\)
+GDScript: simple_signal received
+GDScript: data_signal received with count=99, message=test message

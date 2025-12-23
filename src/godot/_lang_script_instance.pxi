@@ -172,7 +172,7 @@ cdef void _script_instance_call_func(
         print(f"[DEBUG] CALLED DONE _script_instance_call_func(...) -> ERROR {exc!r}", flush=True)
         return
 
-    if not gd_variant_steal_from_pyobj(ret, <gd_variant_t*>r_return):
+    if not gd_variant_copy_from_pyobj(ret, <gd_variant_t*>r_return):
         print(f"Returned value {ret!r} cannot be converted to Godot Variant")
     print(f"[DEBUG] CALLED DONE _script_instance_call_func(...) -> {ret!r}", flush=True)
 

@@ -42,7 +42,7 @@ def {{ utility.name }}(*args):
 {# 4) Optional return value conversion #}
 {% if not utility.return_type.is_nil %}
 {%   if utility.return_type.is_object %}
-    return BaseGDObject.cast_from_object(cret)
+    return BaseGDObject.steal_cast_from_object(cret)
 {%   elif utility.return_type.is_variant %}
     # Note the "steal" means we don't need a final `gdapi.gd_variant_del(&cret)`
     return gd_variant_steal_into_pyobj(&cret)
@@ -119,7 +119,7 @@ BaseGDObject {{ arg.name }}
 {# 4) Optional return value conversion #}
 {% if not utility.return_type.is_nil %}
 {%   if utility.return_type.is_object %}
-    return BaseGDObject.cast_from_object(__cret)
+    return BaseGDObject.steal_cast_from_object(__cret)
 {%   elif utility.return_type.is_variant %}
     # Note the "steal" means we don't need a final `gdapi.gd_variant_del(&__cret)`
     return gd_variant_steal_into_pyobj(&__cret)

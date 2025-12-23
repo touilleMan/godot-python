@@ -4,11 +4,11 @@ from enum import Enum
 from .classes import GDObject
 
 
-# GDany represent any type that can be send to / retreive from Godot
+# GDAny represent any type that can be send to / retreive from Godot
 # (i.e. it is all the types than can be converted to a Godot Variant)
-GDAny = (
+type GDAny = (
     None |
-    GDObject |
+    BaseGDObject |  # TODO: Should use `GDObject` here
     bool |
     int |
     float |
@@ -22,7 +22,7 @@ GDAny = (
 # Of course keep in mind this involves types conversion and is slower than only working
 # with Godot types (for instance to speed up the previous example, `GDString("foo")`
 # should be instantiated once and reused between `my_node.do(...)` calls)
-IntoGDAny = GDAny | str | Mapping[IntoGDAny, IntoGDAny] | Sequence[IntoGDAny]
+type IntoGDAny = GDAny | str | Mapping[IntoGDAny, IntoGDAny] | Sequence[IntoGDAny]
 
 {%- macro render_arg(arg) -%}
 {{ "{}: ".format(arg.name) }}

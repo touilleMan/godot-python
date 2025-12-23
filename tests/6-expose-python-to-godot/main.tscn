@@ -1,3 +1,10 @@
 [gd_scene load_steps=2 format=3 uid="uid://2mikyvxkygni"]
 
-[node name="MyPythonNode" type="MyPythonNode"]
+[ext_resource type="Script" uid="uid://jvo52rsrmj88" path="res://third_party.gd" id="1_ig7tw"]
+
+[node name="Node2D" type="Node2D"]
+
+[node name="MyPythonNode" type="MyPythonNode" parent="."]
+
+[node name="Node" type="Node" parent="."]
+script = ExtResource("1_ig7tw")

@@ -4,7 +4,7 @@ cdef object gd_to_py_type(gdextension_interface.GDExtensionVariantType gdtype)
 cdef gdextension_interface.GDExtensionVariantType py_to_gd_type(object pytype)
 cdef object gd_variant_steal_into_pyobj(gd_variant_t *gdvar)
 cdef object gd_variant_copy_into_pyobj(const gd_variant_t *gdvar)
-cdef bint gd_variant_steal_from_pyobj(object pyobj, gd_variant_t *gdvar)
+cdef bint gd_variant_copy_from_pyobj(object pyobj, gd_variant_t *gdvar)
 
 
 cdef str _ENSURE_IS_GDANY_ERR_MSG
@@ -22,7 +22,7 @@ cdef inline gd_variant_t ensure_is_gdany_and_borrow_ref(object pyobj):
     affected by this steal)
     """
     cdef gd_variant_t ret
-    if not gd_variant_steal_from_pyobj(pyobj, &ret):
+    if not gd_variant_copy_from_pyobj(pyobj, &ret):
         raise TypeError(_ENSURE_IS_GDANY_ERR_MSG.format(repr(pyobj)))
     return ret
 

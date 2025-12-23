@@ -54,8 +54,8 @@ def test_scalars_and_nil_not_exposed(type: str):
         "Dictionary",
         "Array",
         "PackedArray",
-        # TODO: Callable (with conversion from a regular python function ?)
-        # TODO: Signal
+        "Callable",
+        "Signal",
     ],
 )
 def test_constructor(kind: str):
@@ -226,6 +226,22 @@ def test_constructor(kind: str):
             for bad_type in (godot.Vector2i(), godot.StringName("/foo"), 42, b"foo"):
                 with clodotest.raises(TypeError):
                     godot.PackedStringArray(bad_type)
+
+        case "Callable":
+            from godot.singletons import OS
+
+            c = godot.GDCallable(OS, "get_cmdline_args")
+            assert_eq(bool(c), True)
+
+        case "Signal":
+            from godot.singletons import Input
+
+            s1 = Input.joy_connection_changed
+            s2 = godot.Signal(Input, "joy_connection_changed")
+
+            assert s1 == s2
+
+            # s2.connect()
 
         case unknown:
             assert False, unknown
@@ -1074,25 +1090,25 @@ def test_len_and_bool(kind: str):
                 len(godot.RID())
 
         case "CALLABLE":
-            assert_eq(bool(godot.GDCallable()), False)
             from godot.singletons import OS
 
-            c = godot.GDCallable.create(OS, "get_cmdline_args")
+            assert_eq(bool(godot.GDCallable.empty()), False)
+            c = godot.GDCallable(OS, "get_cmdline_args")
             assert_eq(bool(c), True)
             with clodotest.raises(TypeError):
-                len(godot.GDCallable())
+                len(godot.GDCallable.empty())
 
         case "SIGNAL":
-            assert_eq(bool(godot.Signal()), False)
             from godot.singletons import OS, Input
 
-            assert_eq(bool(Input.joy_connection_changed), False)
+            assert_eq(bool(godot.Signal.empty()), False)
+            assert_eq(bool(Input.joy_connection_changed), True)
             c = godot.GDCallable.create(OS, "get_cmdline_args")
             clodotest.skip(reason="TODO: `Signal.connect` returns a `ERR_UNCONFIGURED`")
             assert_eq(Input.joy_connection_changed.connect(c), godot.Error.OK)
             assert_eq(bool(Input.joy_connection_changed), True)
             with clodotest.raises(TypeError):
-                len(godot.Signal())
+                len(godot.Signal.empty())
 
         case "STRING_NAME":
             assert_eq(bool(godot.StringName("foo")), True)

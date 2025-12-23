@@ -8,8 +8,8 @@ import godot
 def test_eq_operator():
     from godot.classes import Node
 
-    node1 = Node.new()
-    node2 = Node.new()
+    node1 = Node()
+    node2 = Node()
     try:
         assert_ne(node1, None)
         assert_ne(node1, 42)
@@ -29,26 +29,7 @@ def test_eq_operator():
         node1.free()
 
 
-def test_bad_meth_to_create_non_refcounted_object():
-    from godot.classes import Node2D
-
-    with clodotest.raises(RuntimeError) as raised:
-        Node2D()
-    assert_eq(
-        str(raised.exc),
-        "Use `new()` method to instantiate non-refcounted Godot object (and don't forget to free it !)",
-    )
-
-
-def test_bad_meth_to_create_refcounted_object():
-    from godot.classes import Image
-
-    with clodotest.raises(RuntimeError) as raised:
-        Image.new()
-
-    assert_eq(str(raised.exc), "RefCounted Godot object, must be created with `Image()`")
-
-
+# TODO: This test leak with Godot output `Leaked instance: Image:9223372043146232017 - Resource path:`
 def test_create_refcounted_object():
     from godot.classes import Image, Resource, Object
 
@@ -68,7 +49,7 @@ def test_create_refcounted_object():
 def test_create_non_refcounted_object():
     from godot.classes import Node2D, Node, Object
 
-    node = Node2D.new()
+    node = Node2D()
     try:
         assert_isinstance(node, Node2D)
         assert_isinstance(node, Node)
@@ -101,13 +82,13 @@ def test_create_non_refcounted_object():
 def test_method(kind: str):
     from godot.classes import Node, JSON
 
-    node = Node.new()
+    node = Node()
     try:
         match kind:
             case "normal_with_return_value":
                 assert_isinstance(node.get_tree_string(), godot.GDString)
                 assert_eq(node.find_child("dummy"), None)  # Return None or `Node` instance
-                node2 = Node.new()
+                node2 = Node()
                 try:
                     node2.name = "child"
                     node.add_child(node2)
@@ -156,7 +137,7 @@ def test_method(kind: str):
 def test_property(kind: str):
     from godot.classes import Node
 
-    node = Node.new()
+    node = Node()
     try:
         match kind:
             case "scalar":
@@ -180,7 +161,7 @@ def test_property(kind: str):
                 )
 
             case "class":
-                node2 = Node.new()
+                node2 = Node()
                 assert_eq(node2.owner, None)
                 try:
                     node.add_child(node2)
@@ -200,8 +181,8 @@ def test_property(kind: str):
 def test_signal():
     from godot.classes import Node
 
-    node = Node.new()
-    node2 = Node.new()
+    node = Node()
+    node2 = Node()
     try:
         assert_isinstance(node.ready, godot.Signal)
         assert_eq(node.ready, node.ready)

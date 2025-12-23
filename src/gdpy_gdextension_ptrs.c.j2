@@ -378,35 +378,39 @@ static void init_functions() {
 // Variant stuff
 
 
-DLL_EXPORT GDExtensionTypeFromVariantConstructorFunc gdpy_gdptr_object_from_variant;
-DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_object_into_variant;
+// Variant to Object conversion steal the reference, this is because internally Godot's
+// `Variant::operation Object*()` method just return the pointer on the object...
+DLL_EXPORT GDExtensionTypeFromVariantConstructorFunc gdpy_gdptr_object_steal_from_variant;
+// ...on the other hand, Godot's `Variant::Variant(Object*)` constructor checks if the
+// object is refcounted and increase the refcount if so.
+DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_object_copy_into_variant;
 DLL_EXPORT GDExtensionTypeFromVariantConstructorFunc gdpy_gdptr_bool_from_variant;
-DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_bool_into_variant;
+DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_bool_to_variant;
 DLL_EXPORT GDExtensionTypeFromVariantConstructorFunc gdpy_gdptr_int_from_variant;
-DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_int_into_variant;
+DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_int_to_variant;
 DLL_EXPORT GDExtensionTypeFromVariantConstructorFunc gdpy_gdptr_float_from_variant;
-DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_float_into_variant;
+DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_float_to_variant;
 
 
 static void init_variant_converters() {
-    gdpy_gdptr_object_from_variant = \
+    gdpy_gdptr_object_steal_from_variant = \
         gdpy_gdptr_get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_OBJECT);
-    gdpy_gdptr_object_into_variant = \
+    gdpy_gdptr_object_copy_into_variant = \
         gdpy_gdptr_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_OBJECT);
 
     gdpy_gdptr_bool_from_variant = \
         gdpy_gdptr_get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_BOOL);
-    gdpy_gdptr_bool_into_variant = \
+    gdpy_gdptr_bool_to_variant = \
         gdpy_gdptr_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_BOOL);
 
     gdpy_gdptr_int_from_variant = \
         gdpy_gdptr_get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_INT);
-    gdpy_gdptr_int_into_variant = \
+    gdpy_gdptr_int_to_variant = \
         gdpy_gdptr_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_INT);
 
     gdpy_gdptr_float_from_variant = \
         gdpy_gdptr_get_variant_to_type_constructor(GDEXTENSION_VARIANT_TYPE_FLOAT);
-    gdpy_gdptr_float_into_variant = \
+    gdpy_gdptr_float_to_variant = \
         gdpy_gdptr_get_variant_from_type_constructor(GDEXTENSION_VARIANT_TYPE_FLOAT);
 }
 
@@ -463,8 +467,13 @@ DLL_EXPORT GDExtensionPtrSetter gdpy_gdptr_{{ builtin.snake_name }}_get_{{ m.nam
 DLL_EXPORT GDExtensionPtrGetter gdpy_gdptr_{{ builtin.snake_name }}_set_{{ m.name }};
 {%     endif %}
 {%   endfor %}
+{%   if builtin.is_stack_only %}
 DLL_EXPORT GDExtensionTypeFromVariantConstructorFunc gdpy_gdptr_{{ builtin.snake_name }}_from_variant;
-DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_{{ builtin.snake_name }}_into_variant;
+DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_{{ builtin.snake_name }}_to_variant;
+{%   else %}
+DLL_EXPORT GDExtensionTypeFromVariantConstructorFunc gdpy_gdptr_{{ builtin.snake_name }}_copy_from_variant;
+DLL_EXPORT GDExtensionVariantFromTypeConstructorFunc gdpy_gdptr_{{ builtin.snake_name }}_copy_into_variant;
+{%   endif %}
 {% endfor %}
 
 
@@ -513,10 +522,17 @@ static void init_builtin_functions() {
     gdpy_gdptr_string_name_destructor(&_gdname);
 {%     endif %}
 {%   endfor %}
+{%   if builtin.is_stack_only %}
     gdpy_gdptr_{{ builtin.snake_name }}_from_variant = \
         gdpy_gdptr_get_variant_to_type_constructor({{ builtin.variant_type_name }});
-    gdpy_gdptr_{{ builtin.snake_name }}_into_variant = \
+    gdpy_gdptr_{{ builtin.snake_name }}_to_variant = \
         gdpy_gdptr_get_variant_from_type_constructor({{ builtin.variant_type_name }});
+{%   else %}
+    gdpy_gdptr_{{ builtin.snake_name }}_copy_from_variant = \
+        gdpy_gdptr_get_variant_to_type_constructor({{ builtin.variant_type_name }});
+    gdpy_gdptr_{{ builtin.snake_name }}_copy_into_variant = \
+        gdpy_gdptr_get_variant_from_type_constructor({{ builtin.variant_type_name }});
+{%   endif %}
 {% endfor %}
 }
 
