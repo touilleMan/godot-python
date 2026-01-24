@@ -13,7 +13,7 @@ dependencies = [
     # see: https://github.com/pallets/click/blob/030f53cf677ee1de534359c535d465eed0ec1d99/setup.py#L6
     "colorama~=0.4",
     "ninja~=1.11",
-    "cython~=3.1",
+    "cython~=3.2",
     "jinja2~=3.1",
     "autopxd2~=2.5",
     # Setuptools is used in `tests/3-init-with-cython-hook/` to build a native module from Cython
