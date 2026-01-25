@@ -1,3 +1,5 @@
+# TODO: remove this stuff, this is no longer in use
+
 # /!\ Those containers are strictly private /!\
 # They contain class objects that are referenced from Godot without refcounting,
 # so droping an item from there will likely cause a segfault !
