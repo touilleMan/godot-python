@@ -167,9 +167,6 @@ pxds_godot_hazmat = [
 pxds_godot = [
     pxds_godot_hazmat,
     pxd_godot_builtins,
-    files(
-        'godot/classes.pxd'
-    ),
 ]
 
 

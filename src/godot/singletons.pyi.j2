@@ -1,0 +1,5 @@
+from . import classes
+
+{% for singleton in api.singletons %}
+{{ singleton.name }}: classes.{{ singleton.type.type_name }}
+{% endfor %}

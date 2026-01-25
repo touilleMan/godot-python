@@ -1,7 +1,4 @@
-from cpython.ref cimport Py_INCREF, Py_DECREF, PyObject
-from .hazmat cimport gdapi, gdptrs, gdextension_interface
-from .hazmat.gdtypes cimport *
-from .builtins cimport *
+# This file is included by `builtins.pxd.j2`
 
 from enum import IntEnum
 import inspect
@@ -9,16 +6,13 @@ from types import UnionType
 import dataclasses
 
 
-#####################################################################
-#                Godot classes exposed to Python                    #
-#####################################################################
+##############################################################################
+#                                BaseGDObject                                #
+##############################################################################
 
 
-def __getattr__(name: str):
-    try:
-        return _load_class(name)
-    except RuntimeError:
-        raise AttributeError
+# BaseGDObject is the parent class of all Godot classes
+# Note it is defined here instead of in `classes.pyx` to avoid recursive import
 
 
 cdef class BaseGDObject:
@@ -91,6 +85,11 @@ cdef class BaseGDObject:
         return wrapper
 
 
+#####################################################################
+#                Godot classes exposed to Python                    #
+#####################################################################
+
+
 cdef object _loaded_singletons = {}
 cdef object _loaded_classes = {}
 
@@ -106,14 +105,13 @@ cpdef BaseGDObject _load_singleton(str name):
     except KeyError:
         pass
 
-    cdef object cls = _load_class(name)
-    cdef gd_string_name_t gdname = gdapi.gd_string_name_from_unchecked_pystr(name)
-    cdef gd_object_t gdobj = gdptrs.gdptr_global_get_singleton(&gdname)
-    gdapi.gd_string_name_del(&gdname)
+    cdef StringName gd_name = StringName(name)
+    cdef gd_object_t gdobj = gdptrs.gdptr_global_get_singleton(&gd_name._gd_data)
 
     if gdobj == NULL:
         raise RuntimeError(f"Singleton `{name}` doesn't exist in Godot !")
 
+    cdef object cls = _load_class(gd_name)
     cdef BaseGDObject singleton = <BaseGDObject>cls._steal_from_ptr(<size_t>gdobj)
 
     _loaded_singletons[name] = singleton
@@ -132,29 +130,24 @@ cdef inline object _meth_call(BaseGDObject obj, object name, object args):
     return _object_call(obj._gd_ptr, StringName("call"), [name, *args])
 
 
-cdef object _load_class(str name):
-    try:
-        return _loaded_classes[name]
-    except KeyError:
-        pass
-
-    from godot import _classes_api
-    try:
-        spec = getattr(_classes_api, name)
-    except AttributeError:
-        raise RuntimeError(f"Class `{name}` doesn't exist in Godot !")
-
+cdef inline object _build_class_from_spec(str name, StringName gd_name):
     # TODO: ClassDB won't be needed once method uses ptrcall
     # Load our good friend ClassDB
     cdef StringName gdname_classdb = StringName("ClassDB")
     cdef gd_object_t classdb = gdptrs.gdptr_global_get_singleton(&gdname_classdb._gd_data)
 
-    cdef StringName gd_name = StringName(name)
+    from godot import _classes_api
+    cdef list spec
+    try:
+        spec = getattr(_classes_api, name)
+    except AttributeError:
+        raise RuntimeError(f"Class `{name}` doesn't exist in Godot !")
+
     parent = spec[0]
     is_refcounted = spec[1]
     items_spec = iter(spec[2:])
     if parent:
-        parent_cls = _load_class(parent)
+        parent_cls = _load_class(StringName(parent))
         bases = (parent_cls, )
     else:
         bases = (BaseGDObject, )
@@ -163,20 +156,23 @@ cdef object _load_class(str name):
 
     if not is_refcounted and name == "RefCounted":
 
+        def _gen():
+            cdef StringName gdstr_unreference = StringName("unreference")
+
             def _del(self):
                 print(f'[DEBUG] {type(self).__name__}.__del__()', flush=True)
                 cdef BaseGDObject obj = <BaseGDObject>self
-                if _object_call(obj._gd_ptr, StringName("unreference"), []):
+                if _object_call(obj._gd_ptr, gdstr_unreference, []):
                     gdptrs.gdptr_object_destroy(obj._gd_ptr)
                     obj._gd_ptr = NULL
-
-            attrs["__del__"] = _del
 
             def _free(self):
                 print(f'[DEBUG] {type(self).__name__}.free()', flush=True)
                 raise RuntimeError("RefCounted Godot object, cannot be freed")
 
-            attrs["free"] = _free
+            return _del, _free
+
+        attrs["__del__"], attrs["free"] = _gen()
 
     while True:
         try:
@@ -293,9 +289,18 @@ cdef object _load_class(str name):
     # `Object` defines a `free`, but it doesn't work properly (instead we rely on `BaseGDObject.free`)
     attrs.pop("free", None)
 
-    cdef object klass = type(name, bases, attrs)
+    return type(name, bases, attrs)
 
-    _loaded_classes[name] = klass
+
+cpdef object _load_class(StringName gd_name):
+    try:
+        return _loaded_classes[gd_name]
+    except KeyError:
+        pass
+
+    cdef object klass = _build_class_from_spec(str(gd_name), gd_name)
+
+    _loaded_classes[gd_name] = klass
     return klass
 
 

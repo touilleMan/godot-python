@@ -21,6 +21,7 @@ TARGETS: dict[str, tuple[bool, Path]] = {
     "builtins.pxd": (False, GODOT_DIR),
     "builtins.pyx": (False, GODOT_DIR),
     "classes.pyi": (True, GODOT_DIR),
+    "singletons.pyi": (True, GODOT_DIR),
     "_classes_api.py": (True, GODOT_DIR),
     "utils.pyx": (False, GODOT_DIR),
     "utils.pyi": (False, GODOT_DIR),

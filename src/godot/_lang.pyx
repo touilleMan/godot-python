@@ -5,7 +5,6 @@ from .hazmat.gdextension_interface cimport *
 from .hazmat.gdapi cimport *
 from .hazmat cimport gdptrs
 from .builtins cimport *
-from .classes cimport _load_class, _load_singleton, _cleanup_loaded_classes_and_singletons, BaseGDObject
 
 #
 # Extensions definition

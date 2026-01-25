@@ -86,6 +86,13 @@ class {{ builtin.cy_type }}:
     def clone(self) -> {{ builtin.py_type }}: ...
 {%   if builtin.members %}
 
+    # Operators
+{# TODO: include other operators! #}
+{# Note `Color` has a `hash` method, but it excluded since it is not an immutable type #}
+{% if builtin.original_name in ("String", "StringName", "NodePath", "Callable") %}
+    def __hash__(self): ...
+{% endif %}
+
     # Members
 {%   endif %}
 {%   for m in builtin.members %}

@@ -1,4 +1,4 @@
-from .classes cimport ScriptLanguageExtensionProfilingInfo
+from .hazmat.gdtypes cimport ScriptLanguageExtensionProfilingInfo
 
 
 debug_spy = True

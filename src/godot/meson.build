@@ -11,7 +11,7 @@ subdir('hazmat')
 ##############################################################################
 
 
-foreach src: ['__init__.py', 'classes.pxd', 'singletons.py', 'py.typed']
+foreach src: ['__init__.py', 'classes.py', 'singletons.py', 'py.typed']
     install_data(
         src,
         install_dir: join_paths(python_site_packages_install_path, 'godot'),
@@ -84,6 +84,18 @@ custom_target(
 )
 
 
+custom_target(
+    output: 'singletons.pyi',
+    input: [
+        generate_tmpl_base_input,
+        files('singletons.pyi.j2'),
+    ],
+    command: generate_tmpl_cmd,
+    install: true,
+    install_dir: join_paths(python_site_packages_install_path, 'godot'),
+)
+
+
 ##############################################################################
 #                                Compilation                                 #
 ##############################################################################
@@ -117,7 +129,13 @@ pyxbuiltins = custom_target(
 
 cbuiltins = custom_target(
     output : 'builtins.c',
-    input : [pyxbuiltins, pxds_godot],
+    input : [
+        pyxbuiltins,
+        files(
+            'builtins_classes.pxi',
+        ),
+        pxds_godot
+    ],
     command : cythonize_command,
 )
 
@@ -137,45 +155,6 @@ shared_library(
     gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
     dependencies : [dep_godot, dep_python, dep_gdpy],
     install_rpath: builtins_rpath,  # To find libpython
-    name_prefix: python_native_module_name_prefix,
-    name_suffix: python_native_module_name_suffix,
-    install: true,
-    install_dir: join_paths(python_site_packages_install_path, 'godot'),
-)
-
-
-# classes.so
-# └─ classes.c
-#    ├─ gdextension_interface.pxd
-#    │  └─ ...
-#    └─ classes.pyx
-
-
-cclasses = custom_target(
-    output : 'classes.c',
-    input : [
-        files('classes.pyx'),
-        pxds_godot,
-    ],
-    command : cythonize_command,
-)
-
-
-if host_platform.startswith('linux')
-    classes_rpath = '$ORIGIN/../../..'
-elif host_platform.startswith('macos')
-    classes_rpath = '@loader_path/../../..'
-else
-    classes_rpath = ''
-endif
-
-
-shared_library(
-    'classes',
-    cclasses,
-    gnu_symbol_visibility: 'hidden',  # Used by both clang & gcc (see https://gcc.gnu.org/wiki/Visibility)
-    dependencies : [dep_godot, dep_python, dep_gdpy],
-    install_rpath: classes_rpath,  # To find libpython
     name_prefix: python_native_module_name_prefix,
     name_suffix: python_native_module_name_suffix,
     install: true,

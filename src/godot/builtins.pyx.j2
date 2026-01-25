@@ -1,11 +1,13 @@
 {%- from 'builtins_pyx/class.pyx.j2' import render_class with context -%}
 {%- from 'builtins_pyx/conversion.pyx.j2' import render_all_conversions with context -%}
 cimport cython
+from cpython.ref cimport Py_INCREF, Py_DECREF, PyObject
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libc.math cimport INFINITY as inf  # Needed by some constants
 from libc.string cimport memset  # Needed to create zeroized builtins used in `__bool__`
 
 # Forward declarations
+cdef class BaseGDObject
 {% for builtin in api.builtins %}
 cdef class {{ builtin.cy_type }}
 {% endfor %}
@@ -48,12 +50,30 @@ from warnings import warn
 cdef object _SENTINEL = object()
 
 
+##############################################################################
+#             Godot class dynamic generation & instance operations           #
+##############################################################################
+
+
+include "builtins_classes.pxi"
+
+
 {{ render_all_conversions() }}
+
+
+##############################################################################
+#                             Builtins wrappers                              #
+##############################################################################
 {% for spec in api.builtins %}
 
 
 {{ render_class(spec) }}
 {% endfor %}
+
+
+##############################################################################
+#                               Global enums                                 #
+##############################################################################
 {% for spec in api.global_enums %}
 
 

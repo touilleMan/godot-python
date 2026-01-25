@@ -30,6 +30,15 @@ def __repr__(self):
         gdapi.gd_string_del(&gdstr)
 {%   endif %}
 
+{# Note `Color` has a `hash` method, but it excluded since it is not an immutable type #}
+{% if builtin.original_name in ("String", "StringName", "NodePath", "Callable") %}
+def __hash__(self):
+    cdef int64_t ret = gdapi.gd_{{ builtin.snake_name }}_meth_hash(
+        &self._gd_data,
+    )
+    return ret
+{% endif %}
+
 def __eq__(self, object other):
     cdef {{ builtin.c_type }}* other_gd_data
     try:
