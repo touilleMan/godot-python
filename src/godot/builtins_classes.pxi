@@ -154,26 +154,6 @@ cdef inline object _build_class_from_spec(str name, StringName gd_name):
 
     attrs = {"_gdpy_godot_class_name": gd_name}
 
-    if not is_refcounted and name == "RefCounted":
-
-        def _gen():
-            cdef StringName gdstr_unreference = StringName("unreference")
-
-            def _del(self):
-                print(f'[DEBUG] {type(self).__name__}.__del__()', flush=True)
-                cdef BaseGDObject obj = <BaseGDObject>self
-                if _object_call(obj._gd_ptr, gdstr_unreference, []):
-                    gdptrs.gdptr_object_destroy(obj._gd_ptr)
-                    obj._gd_ptr = NULL
-
-            def _free(self):
-                print(f'[DEBUG] {type(self).__name__}.free()', flush=True)
-                raise RuntimeError("RefCounted Godot object, cannot be freed")
-
-            return _del, _free
-
-        attrs["__del__"], attrs["free"] = _gen()
-
     while True:
         try:
             tag = next(items_spec)
@@ -286,8 +266,29 @@ cdef inline object _build_class_from_spec(str name, StringName gd_name):
         else:
             assert False, tag
 
-    # `Object` defines a `free`, but it doesn't work properly (instead we rely on `BaseGDObject.free`)
-    attrs.pop("free", None)
+    if name == "Object":
+        # `Object` defines a `free`, but it doesn't work properly (instead we rely on `BaseGDObject.free`)
+        attrs.pop("free", None)
+
+    elif name == "RefCounted":
+
+        def _gen():
+            cdef StringName gdstr_unreference = StringName("unreference")
+
+            def _del(self):
+                print(f'[DEBUG] {type(self).__name__}.__del__()', flush=True)
+                cdef BaseGDObject obj = <BaseGDObject>self
+                if _object_call(obj._gd_ptr, gdstr_unreference, []):
+                    gdptrs.gdptr_object_destroy(obj._gd_ptr)
+                    obj._gd_ptr = NULL
+
+            def _free(self):
+                print(f'[DEBUG] {type(self).__name__}.free()', flush=True)
+                raise RuntimeError("RefCounted Godot object, cannot be freed")
+
+            return _del, _free
+
+        attrs["__del__"], attrs["free"] = _gen()
 
     return type(name, bases, attrs)
 

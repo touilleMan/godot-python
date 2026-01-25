@@ -29,11 +29,8 @@ def test_call(kind: str):
             assert_eq(utils.cos(0), 1)
         case "none_in_object_out":
             obj = utils.weakref(None)
-            try:
-                assert_isinstance(obj, WeakRef)
-                assert_eq(obj.get_ref(), None)
-            finally:
-                obj.free()
+            assert_isinstance(obj, WeakRef)
+            assert_eq(obj.get_ref(), None)
         case "none_out":
             assert_eq(utils.seed(42), None)
         case "variant_in_builtin_out":
