@@ -33,6 +33,8 @@ TARGETS: dict[str, tuple[bool, Path]] = {
 # Subset of classes to use when generating the project for test&debug purpose,
 # this makes compilation much faster !
 GODOT_CLASSES_SAMPLE = {
+    "Area2D",
+    "CollisionObject2D",
     "Camera2D",
     "CameraAttributes",
     "CanvasItem",
