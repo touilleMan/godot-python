@@ -64,7 +64,7 @@ cdef class PythonResourceFormatSaver:
 
         spy_log(f"CALLED PythonResourceFormatSaver::_save(resource=<resource>, path={py_path!r}, flags={flags})")
 
-        script = _load_class("ScriptExtension")._from_ptr(<uintptr_t>resource)
+        script = _load_class(StringName("ScriptExtension"))._from_ptr(<uintptr_t>resource)
         source_code = script.get_source_code()
         try:
             with open(py_path, 'w', encoding='utf-8') as f:
