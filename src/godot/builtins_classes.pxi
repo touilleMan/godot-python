@@ -384,6 +384,8 @@ cdef gdextension_interface.GDExtensionObjectPtr _extension_class_create_instance
 
     cdef type cls = <type>p_class_userdata
     cdef BaseGDObject obj = cls()
+    # TODO: Check the pointer is not NULL, as this might be the case if the parent class `__init__` hasn't been called...
+    # TODO: Should we use `__cinit__` to make sure the end-user cannot prevent the init from being called ?
     return <void*>obj._gd_ptr
 
 
@@ -407,22 +409,496 @@ cdef void _extension_class_to_string(
     r_is_valid[0] = True
 
 
+cdef object _find_virtual_method_definition(object cls, str meth_name):
+    """
+    Look for a virtual method definition in the Godot class hierarchy.
+    Returns a tuple of (return_type, [(arg_name, arg_type), ...]) or None if not found.
+    """
+    from godot import _classes_api
+
+    # Walk up the class hierarchy looking for Godot classes
+    cdef object current_cls = cls
+    cdef object godot_class_name
+    cdef str class_name_str
+    cdef list spec
+    cdef object result
+
+    while current_cls is not None and issubclass(current_cls, BaseGDObject):
+        # Get the Godot class name for this class
+        godot_class_name = getattr(current_cls, '_gdpy_godot_class_name', None)
+        if godot_class_name is None:
+            # Move to parent class
+            current_cls = _get_godot_parent_class(current_cls)
+            continue
+
+        # Get the class spec from _classes_api
+        class_name_str = str(godot_class_name) if not isinstance(godot_class_name, str) else godot_class_name
+        try:
+            spec = getattr(_classes_api, class_name_str)
+        except AttributeError:
+            # Move to parent class
+            current_cls = _get_godot_parent_class(current_cls)
+            continue
+
+        # Parse the spec looking for the virtual method
+        result = _parse_spec_for_virtual_method(spec, meth_name, _classes_api)
+        if result is not None:
+            return result
+
+        # Move to parent class
+        current_cls = _get_godot_parent_class(current_cls)
+
+    return None
+
+
+cdef object _get_godot_parent_class(object cls):
+    """Get the first parent class that is a BaseGDObject subclass."""
+    for base in cls.__bases__:
+        if base is not BaseGDObject and issubclass(base, BaseGDObject):
+            return base
+    return None
+
+
+cdef object _parse_spec_for_virtual_method(list spec, str meth_name, object _classes_api):
+    """Parse a class spec and return method definition if found."""
+    items_spec = iter(spec[2:])  # Skip parent and is_refcounted
+
+    while True:
+        try:
+            tag = next(items_spec)
+        except StopIteration:
+            break
+
+        if tag == _classes_api._tag_constant:
+            next(items_spec)  # constant_name
+            next(items_spec)  # constant_value
+
+        elif tag == _classes_api._tag_enum:
+            next(items_spec)  # enum_name
+            enum_items_count = next(items_spec)
+            for _ in range(enum_items_count):
+                next(items_spec)  # enum_item_name
+                next(items_spec)  # enum_item_value
+
+        elif tag == _classes_api._tag_property:
+            next(items_spec)  # prop_name
+            next(items_spec)  # prop_type
+            next(items_spec)  # prop_getter
+            next(items_spec)  # prop_setter
+            next(items_spec)  # prop_index
+
+        elif tag == _classes_api._tag_signal:
+            next(items_spec)  # signal_name
+            signal_arguments_count = next(items_spec)
+            for _ in range(signal_arguments_count):
+                next(items_spec)  # arg_name
+                next(items_spec)  # arg_type
+                next(items_spec)  # arg_default_value
+
+        elif tag == _classes_api._tag_method:
+            method_name = next(items_spec)
+            method_hash = next(items_spec)
+            method_flags = next(items_spec)
+            method_return_type = next(items_spec)
+            method_arguments_count = next(items_spec)
+
+            # Read arguments
+            args = []
+            for _ in range(method_arguments_count):
+                arg_name = next(items_spec)
+                arg_type = next(items_spec)
+                arg_default_value = next(items_spec)
+                args.append((arg_name, arg_type))
+
+            # Check if this is the virtual method we're looking for
+            if method_name == meth_name and (method_flags & _classes_api._tag_method_flag_is_virtual):
+                return (method_return_type, args)
+
+    return None
+
+
+cdef object _convert_ptr_arg_to_python(const void* ptr, str type_str):
+    """Convert a raw Godot pointer argument to a Python object based on type string."""
+    # Handle Nil
+    if type_str == "Nil":
+        return None
+
+    # Handle primitive types
+    if type_str == "bool":
+        return (<gdextension_interface.GDExtensionBool*>ptr)[0] != 0
+    if type_str == "int":
+        return (<int64_t*>ptr)[0]
+    if type_str == "c:int":
+        return (<int*>ptr)[0]
+    if type_str == "c:float":
+        return (<float*>ptr)[0]
+    if type_str == "c:double":
+        return (<double*>ptr)[0]
+
+    # Handle meta types
+    if type_str == "meta:int8":
+        return (<int8_t*>ptr)[0]
+    if type_str == "meta:int16":
+        return (<int16_t*>ptr)[0]
+    if type_str == "meta:int32":
+        return (<int32_t*>ptr)[0]
+    if type_str == "meta:int64":
+        return (<int64_t*>ptr)[0]
+    if type_str == "meta:uint8":
+        return (<uint8_t*>ptr)[0]
+    if type_str == "meta:uint16":
+        return (<uint16_t*>ptr)[0]
+    if type_str == "meta:uint32":
+        return (<uint32_t*>ptr)[0]
+    if type_str == "meta:uint64":
+        return (<uint64_t*>ptr)[0]
+    if type_str == "meta:float":
+        return (<float*>ptr)[0]
+    if type_str == "meta:double":
+        return (<double*>ptr)[0]
+    if type_str == "meta:char32":
+        return (<int32_t*>ptr)[0]
+
+    # Handle Godot builtins
+    if type_str == "String":
+        ret = GDString.__new__(GDString)
+        (<GDString>ret)._gd_data = gdapi.gd_string_new_from_string(<gd_string_t*>ptr)
+        return ret
+    if type_str == "StringName":
+        ret = StringName.__new__(StringName)
+        (<StringName>ret)._gd_data = gdapi.gd_string_name_new_from_string_name(<gd_string_name_t*>ptr)
+        return ret
+    if type_str == "Vector2":
+        ret = Vector2.__new__(Vector2)
+        (<Vector2>ret)._gd_data = (<gd_vector2_t*>ptr)[0]
+        return ret
+    if type_str == "Vector2i":
+        ret = Vector2i.__new__(Vector2i)
+        (<Vector2i>ret)._gd_data = (<gd_vector2i_t*>ptr)[0]
+        return ret
+    if type_str == "Vector3":
+        ret = Vector3.__new__(Vector3)
+        (<Vector3>ret)._gd_data = (<gd_vector3_t*>ptr)[0]
+        return ret
+    if type_str == "Vector3i":
+        ret = Vector3i.__new__(Vector3i)
+        (<Vector3i>ret)._gd_data = (<gd_vector3i_t*>ptr)[0]
+        return ret
+    if type_str == "Vector4":
+        ret = Vector4.__new__(Vector4)
+        (<Vector4>ret)._gd_data = (<gd_vector4_t*>ptr)[0]
+        return ret
+    if type_str == "Vector4i":
+        ret = Vector4i.__new__(Vector4i)
+        (<Vector4i>ret)._gd_data = (<gd_vector4i_t*>ptr)[0]
+        return ret
+    if type_str == "Rect2":
+        ret = Rect2.__new__(Rect2)
+        (<Rect2>ret)._gd_data = (<gd_rect2_t*>ptr)[0]
+        return ret
+    if type_str == "Rect2i":
+        ret = Rect2i.__new__(Rect2i)
+        (<Rect2i>ret)._gd_data = (<gd_rect2i_t*>ptr)[0]
+        return ret
+    if type_str == "Transform2D":
+        ret = Transform2D.__new__(Transform2D)
+        (<Transform2D>ret)._gd_data = (<gd_transform2d_t*>ptr)[0]
+        return ret
+    if type_str == "Transform3D":
+        ret = Transform3D.__new__(Transform3D)
+        (<Transform3D>ret)._gd_data = (<gd_transform3d_t*>ptr)[0]
+        return ret
+    if type_str == "Plane":
+        ret = Plane.__new__(Plane)
+        (<Plane>ret)._gd_data = (<gd_plane_t*>ptr)[0]
+        return ret
+    if type_str == "Quaternion":
+        ret = Quaternion.__new__(Quaternion)
+        (<Quaternion>ret)._gd_data = (<gd_quaternion_t*>ptr)[0]
+        return ret
+    if type_str == "AABB":
+        ret = AABB.__new__(AABB)
+        (<AABB>ret)._gd_data = (<gd_aabb_t*>ptr)[0]
+        return ret
+    if type_str == "Basis":
+        ret = Basis.__new__(Basis)
+        (<Basis>ret)._gd_data = (<gd_basis_t*>ptr)[0]
+        return ret
+    if type_str == "Projection":
+        ret = Projection.__new__(Projection)
+        (<Projection>ret)._gd_data = (<gd_projection_t*>ptr)[0]
+        return ret
+    if type_str == "Color":
+        ret = Color.__new__(Color)
+        (<Color>ret)._gd_data = (<gd_color_t*>ptr)[0]
+        return ret
+    if type_str == "NodePath":
+        ret = NodePath.__new__(NodePath)
+        (<NodePath>ret)._gd_data = gdapi.gd_node_path_new_from_node_path(<gd_node_path_t*>ptr)
+        return ret
+    if type_str == "RID":
+        ret = RID.__new__(RID)
+        (<RID>ret)._gd_data = (<gd_rid_t*>ptr)[0]
+        return ret
+    if type_str == "Callable":
+        ret = GDCallable.__new__(GDCallable)
+        (<GDCallable>ret)._gd_data = gdapi.gd_callable_new_from_callable(<gd_callable_t*>ptr)
+        return ret
+    if type_str == "Signal":
+        ret = Signal.__new__(Signal)
+        (<Signal>ret)._gd_data = gdapi.gd_signal_new_from_signal(<gd_signal_t*>ptr)
+        return ret
+    if type_str == "Dictionary":
+        ret = GDDictionary.__new__(GDDictionary)
+        (<GDDictionary>ret)._gd_data = gdapi.gd_dictionary_new_from_dictionary(<gd_dictionary_t*>ptr)
+        return ret
+    if type_str == "Array":
+        ret = GDArray.__new__(GDArray)
+        (<GDArray>ret)._gd_data = gdapi.gd_array_new_from_array(<gd_array_t*>ptr)
+        return ret
+    if type_str == "PackedByteArray":
+        ret = PackedByteArray.__new__(PackedByteArray)
+        (<PackedByteArray>ret)._gd_data = gdapi.gd_packed_byte_array_new_from_packed_byte_array(<gd_packed_byte_array_t*>ptr)
+        return ret
+    if type_str == "PackedInt32Array":
+        ret = PackedInt32Array.__new__(PackedInt32Array)
+        (<PackedInt32Array>ret)._gd_data = gdapi.gd_packed_int32_array_new_from_packed_int32_array(<gd_packed_int32_array_t*>ptr)
+        return ret
+    if type_str == "PackedInt64Array":
+        ret = PackedInt64Array.__new__(PackedInt64Array)
+        (<PackedInt64Array>ret)._gd_data = gdapi.gd_packed_int64_array_new_from_packed_int64_array(<gd_packed_int64_array_t*>ptr)
+        return ret
+    if type_str == "PackedFloat32Array":
+        ret = PackedFloat32Array.__new__(PackedFloat32Array)
+        (<PackedFloat32Array>ret)._gd_data = gdapi.gd_packed_float32_array_new_from_packed_float32_array(<gd_packed_float32_array_t*>ptr)
+        return ret
+    if type_str == "PackedFloat64Array":
+        ret = PackedFloat64Array.__new__(PackedFloat64Array)
+        (<PackedFloat64Array>ret)._gd_data = gdapi.gd_packed_float64_array_new_from_packed_float64_array(<gd_packed_float64_array_t*>ptr)
+        return ret
+    if type_str == "PackedStringArray":
+        ret = PackedStringArray.__new__(PackedStringArray)
+        (<PackedStringArray>ret)._gd_data = gdapi.gd_packed_string_array_new_from_packed_string_array(<gd_packed_string_array_t*>ptr)
+        return ret
+    if type_str == "PackedVector2Array":
+        ret = PackedVector2Array.__new__(PackedVector2Array)
+        (<PackedVector2Array>ret)._gd_data = gdapi.gd_packed_vector2_array_new_from_packed_vector2_array(<gd_packed_vector2_array_t*>ptr)
+        return ret
+    if type_str == "PackedVector3Array":
+        ret = PackedVector3Array.__new__(PackedVector3Array)
+        (<PackedVector3Array>ret)._gd_data = gdapi.gd_packed_vector3_array_new_from_packed_vector3_array(<gd_packed_vector3_array_t*>ptr)
+        return ret
+    if type_str == "PackedColorArray":
+        ret = PackedColorArray.__new__(PackedColorArray)
+        (<PackedColorArray>ret)._gd_data = gdapi.gd_packed_color_array_new_from_packed_color_array(<gd_packed_color_array_t*>ptr)
+        return ret
+    if type_str == "PackedVector4Array":
+        ret = PackedVector4Array.__new__(PackedVector4Array)
+        (<PackedVector4Array>ret)._gd_data = gdapi.gd_packed_vector4_array_new_from_packed_vector4_array(<gd_packed_vector4_array_t*>ptr)
+        return ret
+
+    # Handle Object types (any Godot class) - passed as pointer to pointer
+    return BaseGDObject.steal_cast_from_object((<gd_object_t*>ptr)[0])
+
+
+cdef void _convert_python_to_ptr_ret(object pyobj, str type_str, void* r_ret):
+    """Convert a Python return value to a raw Godot pointer based on type string."""
+    # Handle Nil - nothing to write
+    if type_str == "Nil":
+        return
+
+    # Handle primitive types
+    if type_str == "bool":
+        (<gdextension_interface.GDExtensionBool*>r_ret)[0] = 1 if pyobj else 0
+        return
+    if type_str == "int":
+        (<int64_t*>r_ret)[0] = <int64_t>pyobj
+        return
+    if type_str == "c:int":
+        (<int*>r_ret)[0] = <int>pyobj
+        return
+    if type_str == "c:float":
+        (<float*>r_ret)[0] = <float>pyobj
+        return
+    if type_str == "c:double":
+        (<double*>r_ret)[0] = <double>pyobj
+        return
+
+    # Handle meta types
+    if type_str == "meta:int8":
+        (<int8_t*>r_ret)[0] = <int8_t>pyobj
+        return
+    if type_str == "meta:int16":
+        (<int16_t*>r_ret)[0] = <int16_t>pyobj
+        return
+    if type_str == "meta:int32":
+        (<int32_t*>r_ret)[0] = <int32_t>pyobj
+        return
+    if type_str == "meta:int64":
+        (<int64_t*>r_ret)[0] = <int64_t>pyobj
+        return
+    if type_str == "meta:uint8":
+        (<uint8_t*>r_ret)[0] = <uint8_t>pyobj
+        return
+    if type_str == "meta:uint16":
+        (<uint16_t*>r_ret)[0] = <uint16_t>pyobj
+        return
+    if type_str == "meta:uint32":
+        (<uint32_t*>r_ret)[0] = <uint32_t>pyobj
+        return
+    if type_str == "meta:uint64":
+        (<uint64_t*>r_ret)[0] = <uint64_t>pyobj
+        return
+    if type_str == "meta:float":
+        (<float*>r_ret)[0] = <float>pyobj
+        return
+    if type_str == "meta:double":
+        (<double*>r_ret)[0] = <double>pyobj
+        return
+    if type_str == "meta:char32":
+        (<int32_t*>r_ret)[0] = <int32_t>pyobj
+        return
+
+    # Handle Godot builtins
+    if type_str == "String":
+        (<gd_string_t*>r_ret)[0] = gdapi.gd_string_new_from_string(&(<GDString>pyobj)._gd_data)
+        return
+    if type_str == "StringName":
+        (<gd_string_name_t*>r_ret)[0] = gdapi.gd_string_name_new_from_string_name(&(<StringName>pyobj)._gd_data)
+        return
+    if type_str == "Vector2":
+        (<gd_vector2_t*>r_ret)[0] = (<Vector2>pyobj)._gd_data
+        return
+    if type_str == "Vector2i":
+        (<gd_vector2i_t*>r_ret)[0] = (<Vector2i>pyobj)._gd_data
+        return
+    if type_str == "Vector3":
+        (<gd_vector3_t*>r_ret)[0] = (<Vector3>pyobj)._gd_data
+        return
+    if type_str == "Vector3i":
+        (<gd_vector3i_t*>r_ret)[0] = (<Vector3i>pyobj)._gd_data
+        return
+    if type_str == "Vector4":
+        (<gd_vector4_t*>r_ret)[0] = (<Vector4>pyobj)._gd_data
+        return
+    if type_str == "Vector4i":
+        (<gd_vector4i_t*>r_ret)[0] = (<Vector4i>pyobj)._gd_data
+        return
+    if type_str == "Rect2":
+        (<gd_rect2_t*>r_ret)[0] = (<Rect2>pyobj)._gd_data
+        return
+    if type_str == "Rect2i":
+        (<gd_rect2i_t*>r_ret)[0] = (<Rect2i>pyobj)._gd_data
+        return
+    if type_str == "Transform2D":
+        (<gd_transform2d_t*>r_ret)[0] = (<Transform2D>pyobj)._gd_data
+        return
+    if type_str == "Transform3D":
+        (<gd_transform3d_t*>r_ret)[0] = (<Transform3D>pyobj)._gd_data
+        return
+    if type_str == "Plane":
+        (<gd_plane_t*>r_ret)[0] = (<Plane>pyobj)._gd_data
+        return
+    if type_str == "Quaternion":
+        (<gd_quaternion_t*>r_ret)[0] = (<Quaternion>pyobj)._gd_data
+        return
+    if type_str == "AABB":
+        (<gd_aabb_t*>r_ret)[0] = (<AABB>pyobj)._gd_data
+        return
+    if type_str == "Basis":
+        (<gd_basis_t*>r_ret)[0] = (<Basis>pyobj)._gd_data
+        return
+    if type_str == "Projection":
+        (<gd_projection_t*>r_ret)[0] = (<Projection>pyobj)._gd_data
+        return
+    if type_str == "Color":
+        (<gd_color_t*>r_ret)[0] = (<Color>pyobj)._gd_data
+        return
+    if type_str == "NodePath":
+        (<gd_node_path_t*>r_ret)[0] = gdapi.gd_node_path_new_from_node_path(&(<NodePath>pyobj)._gd_data)
+        return
+    if type_str == "RID":
+        (<gd_rid_t*>r_ret)[0] = (<RID>pyobj)._gd_data
+        return
+    if type_str == "Callable":
+        (<gd_callable_t*>r_ret)[0] = gdapi.gd_callable_new_from_callable(&(<GDCallable>pyobj)._gd_data)
+        return
+    if type_str == "Signal":
+        (<gd_signal_t*>r_ret)[0] = gdapi.gd_signal_new_from_signal(&(<Signal>pyobj)._gd_data)
+        return
+    if type_str == "Dictionary":
+        (<gd_dictionary_t*>r_ret)[0] = gdapi.gd_dictionary_new_from_dictionary(&(<GDDictionary>pyobj)._gd_data)
+        return
+    if type_str == "Array":
+        (<gd_array_t*>r_ret)[0] = gdapi.gd_array_new_from_array(&(<GDArray>pyobj)._gd_data)
+        return
+    if type_str == "PackedByteArray":
+        (<gd_packed_byte_array_t*>r_ret)[0] = gdapi.gd_packed_byte_array_new_from_packed_byte_array(&(<PackedByteArray>pyobj)._gd_data)
+        return
+    if type_str == "PackedInt32Array":
+        (<gd_packed_int32_array_t*>r_ret)[0] = gdapi.gd_packed_int32_array_new_from_packed_int32_array(&(<PackedInt32Array>pyobj)._gd_data)
+        return
+    if type_str == "PackedInt64Array":
+        (<gd_packed_int64_array_t*>r_ret)[0] = gdapi.gd_packed_int64_array_new_from_packed_int64_array(&(<PackedInt64Array>pyobj)._gd_data)
+        return
+    if type_str == "PackedFloat32Array":
+        (<gd_packed_float32_array_t*>r_ret)[0] = gdapi.gd_packed_float32_array_new_from_packed_float32_array(&(<PackedFloat32Array>pyobj)._gd_data)
+        return
+    if type_str == "PackedFloat64Array":
+        (<gd_packed_float64_array_t*>r_ret)[0] = gdapi.gd_packed_float64_array_new_from_packed_float64_array(&(<PackedFloat64Array>pyobj)._gd_data)
+        return
+    if type_str == "PackedStringArray":
+        (<gd_packed_string_array_t*>r_ret)[0] = gdapi.gd_packed_string_array_new_from_packed_string_array(&(<PackedStringArray>pyobj)._gd_data)
+        return
+    if type_str == "PackedVector2Array":
+        (<gd_packed_vector2_array_t*>r_ret)[0] = gdapi.gd_packed_vector2_array_new_from_packed_vector2_array(&(<PackedVector2Array>pyobj)._gd_data)
+        return
+    if type_str == "PackedVector3Array":
+        (<gd_packed_vector3_array_t*>r_ret)[0] = gdapi.gd_packed_vector3_array_new_from_packed_vector3_array(&(<PackedVector3Array>pyobj)._gd_data)
+        return
+    if type_str == "PackedColorArray":
+        (<gd_packed_color_array_t*>r_ret)[0] = gdapi.gd_packed_color_array_new_from_packed_color_array(&(<PackedColorArray>pyobj)._gd_data)
+        return
+    if type_str == "PackedVector4Array":
+        (<gd_packed_vector4_array_t*>r_ret)[0] = gdapi.gd_packed_vector4_array_new_from_packed_vector4_array(&(<PackedVector4Array>pyobj)._gd_data)
+        return
+
+    # Handle Object types - return pointer to the object
+    if isinstance(pyobj, BaseGDObject):
+        (<gd_object_t*>r_ret)[0] = (<BaseGDObject>pyobj)._gd_ptr
+        return
+
+    raise ValueError(f"Cannot convert Python object {pyobj!r} to Godot type {type_str}")
+
+
 cdef void *_extension_class_get_virtual_with_data(
     void* p_class_userdata,
     gdextension_interface.GDExtensionConstStringNamePtr p_name,
     uint32_t p_hash  # TODO: use p_hash ?
 ) noexcept with gil:
     cdef object cls = <object>p_class_userdata
-    cdef object meth_name = gdapi.gd_string_name_to_pystr(<gd_string_name_t*>p_name)
+    cdef str meth_name = gdapi.gd_string_name_to_pystr(<gd_string_name_t*>p_name)
+
     # Don't use `getattr` here since it would also look into the parent class
     cdef object meth = cls.__dict__.get(meth_name, None)
+
     print(f"[DEBUG] _extension_class_get_virtual_with_data({cls!r}, {meth_name!r}) -> {meth!r}", flush=True)
-    if meth is not None:
-        meth.__gdpy_meth_params_count = len(inspect.signature(meth).parameters)
-        # TODO: Use metadata to know in advance the conversion needed for each param
-        return <void*>meth
-    else:
+
+    if meth is None:
         return NULL
+
+    # Find the virtual method definition in the Godot class hierarchy
+    cdef object meth_def = _find_virtual_method_definition(cls, meth_name)
+    if meth_def is None:
+        print(f"[WARNING] Virtual method {meth_name} not found in Godot class hierarchy for {cls}", flush=True)
+        return NULL
+
+    # Build a tuple of (method, method_definition) and return it
+    # The tuple needs to be kept alive, so we INCREF it
+    cdef tuple userdata = (meth, meth_def)
+    Py_INCREF(userdata)
+
+    return <void*>userdata
 
 
 cdef void _extension_class_call_virtual_with_data(
@@ -433,24 +909,31 @@ cdef void _extension_class_call_virtual_with_data(
     gdextension_interface.GDExtensionTypePtr r_ret
 ) noexcept with gil:
     cdef BaseGDObject obj = <BaseGDObject>p_instance
-    cdef object meth_name = gdapi.gd_string_name_to_pystr(<gd_string_name_t*>p_name)
-    cdef object meth = <object>p_virtual_call_userdata
-    print(f"[DEBUG] _extension_class_call_virtual_with_data({obj!r}, {meth_name!r})", flush=True)
-    # TODO: doesn't support arguments...
-    cdef object ret = meth(obj)
-    if r_ret != NULL:
-        if not gd_variant_copy_from_pyobj(ret, <gd_variant_t*>r_ret):
-            raise ValueError(f"Method {meth} has returned a value that cannot be converted into a Godot type: `{ret}`")
+    cdef str meth_name = gdapi.gd_string_name_to_pystr(<gd_string_name_t*>p_name)
 
-    # r_ret[0] = NULL
-    # cdef list py_args = [
-    #     gd_variant_steal_into_pyobj(<gd_variant_t*>(p_args[i])) for a in p_args
-    #     for i in range(meth.__gdpy_meth_params_count)
-    # ]
-    # cdef object ret = meth(*py_args)
-    # if not gd_variant_copy_from_pyobj(ret, <gd_variant_t*>r_ret):
-    #     r_ret[0] = NULL
-    #     raise ValueError(f"Method {meth} has returned a value that cannot be converted into a Godot type: `{ret}`")
+    # Retrieve the tuple of (method, method_definition)
+    cdef tuple userdata = <tuple>p_virtual_call_userdata
+    cdef object meth = userdata[0]
+    cdef tuple meth_def = userdata[1]
+    cdef str return_type = meth_def[0]
+    cdef list args_def = meth_def[1]
+
+    print(f"[DEBUG] _extension_class_call_virtual_with_data({obj!r}, {meth_name!r}, return={return_type}, args={args_def})", flush=True)
+
+    # Convert the arguments from raw pointers to Python objects
+    cdef list py_args = []
+    cdef int i
+    cdef str arg_type
+    for i in range(len(args_def)):
+        arg_type = args_def[i][1]
+        py_args.append(_convert_ptr_arg_to_python(p_args[i], arg_type))
+
+    # Call the Python method
+    cdef object ret = meth(obj, *py_args)
+
+    # Convert the return value back to Godot
+    if r_ret != NULL and return_type != "Nil":
+        _convert_python_to_ptr_ret(ret, return_type, r_ret)
 
 
 # typedef const GDExtensionPropertyInfo *(*GDExtensionClassGetPropertyList)(GDExtensionClassInstancePtr p_instance, uint32_t *r_count);
