@@ -4,7 +4,7 @@ from godot import gddataclass, Vector2, classes, GDString, StringName, utils
 from godot.singletons import Input
 
 
-@gddataclass
+@gddataclass(init=False)
 class Paddle(classes.Area2D):
     MOVE_SPEED: ClassVar[float] = 100.0
 

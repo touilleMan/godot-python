@@ -60,6 +60,7 @@ from . import utils  # noqa: E402, F401
 #     return item
 
 
+# TODO: dataclass style is broken, we should instead use regular class with `__init__`
 @dataclass_transform()
 def gddataclass(
     cls=None,
@@ -71,7 +72,9 @@ def gddataclass(
     icon_path: str | None = None,
     **kwargs,
 ):
-    assert kwargs.get("init", True), "Cannot disable `init=True` param"
+    assert not kwargs.get("init", True), (
+        "Cannot enable `init=True` param (cause issue with inheritance)"
+    )
 
     def _gddataclass(cls):
         cls.__gdpy_is_virtual = virtual

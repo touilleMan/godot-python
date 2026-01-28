@@ -1,42 +1,17 @@
-# from godot import exposed, GDString, Export, GDAny, Signal
 from enum import IntEnum
-from godot import GDAny, GDArray, GDString, Vector2
-from godot.classes import Node, signal
+from dataclasses import field
+from typing import ClassVar
 
-from dataclasses import dataclass, field
-from typing import ClassVar, dataclass_transform
-
-
-@dataclass_transform()
-def gddataclass(
-    cls=None,
-    /,
-    virtual: bool = False,
-    abstract: bool = False,
-    exposed: bool = True,
-    runtime: bool = True,
-    icon_path: str | None = None,
-    **kwargs,
-):
-    assert kwargs.get("init", True), "Cannot disable `init=True` param"
-
-    def _gddataclass(cls):
-        cls.__gdpy_is_virtual = virtual
-        cls.__gdpy_is_abstract = abstract
-        cls.__gdpy_is_exposed = exposed  # Show the class in the editor's class picker?
-        cls.__gdpy_is_runtime = runtime  # Inverse of the `@tool` marker
-        cls.__gdpy_icon_path = icon_path
-        return dataclass(**kwargs)(cls)
-
-    if cls is not None:
-        # Called without parenthesis
-        return _gddataclass(cls)
-    else:
-        return _gddataclass
+from godot import GDAny, GDArray, GDString, Vector2, signal, classes, gddataclass
 
 
-@gddataclass
-class MyPythonNode(Node):
+@gddataclass(init=False)
+class MyPythonNode(classes.Node):
+    def __init__(self):
+        super().__init__()
+        self.foo = 1
+        self._read_write_prop = Vector2()
+
     CONST: ClassVar[int] = 11
 
     class ENUM(IntEnum):
@@ -77,18 +52,3 @@ class MyPythonNode(Node):
     def hello_class_method(cls, a: GDArray, b: GDAny) -> GDString:
         print(f"MyPythonNode: hello_class_method({a}, {b})", flush=True)
         return GDString("World")
-
-
-def initialize(level: int):
-    if level != 2:  # GDEXTENSION_INITIALIZATION_SCENE
-        return
-
-    from godot.classes import register_python_extension_class
-
-    # MyPythonNode.__gdpy_is_virtual = False
-    # MyPythonNode.__gdpy_is_abstract = False
-    # MyPythonNode.__gdpy_is_exposed = True  # Don't show the class in the editor's class picker
-    # MyPythonNode.__gdpy_is_runtime = True  # Inverse of the `@tool` marker
-    # MyPythonNode.__gdpy_icon_path = None
-    # MyPythonNode._ready.__gdpy_register = True
-    register_python_extension_class(MyPythonNode)
