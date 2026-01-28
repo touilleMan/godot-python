@@ -384,15 +384,27 @@ def parse_extension_api_json(
     if filter_classes:
         api_json["classes"] = [k for k in api_json["classes"] if k["name"] in filter_classes]
 
+    global_enums = [parse_global_enum(x) for x in api_json["global_enums"]]
+    _register_enums(global_enums)
+
+    native_structures = [NativeStructureSpec.parse(x) for x in api_json["native_structures"]]
+    for native_structure_type in native_structures:
+        TYPES_DB_REGISTER_TYPE(native_structure_type.original_name, native_structure_type)
+
     classes = order_classes(
         [parse_class(x, object_size=api_json["object_size"]) for x in api_json["classes"]]
     )
     if filter_classes:
         # Replace any class that have been filtered out by the root `Object` one
         object_type_in_use = TypeInUse.parse("Object")
+        # Collect all types that should not be replaced: filtered classes, Nil, builtins, and scalars
+        # Note it's vitally import that it this point all types exposed in `extension_api.json`
+        # (builtins, enums, native structures) has been parsed (excluding the classes since
+        # they are being parsed here!). Otherwise `TYPE_DB` won't be complete and some
+        # unknown types we be replaced by `Object` leading to a segfault when trying to
+        # convert it between godot variant and python object.
+        supported = {*filter_classes, *TYPES_DB.keys()}
         for klass in classes:
-            supported = {*filter_classes, "Nil"}
-
             if klass.inherits is not None and klass.inherits.type_name not in supported:
                 klass.inherits = object_type_in_use
 
@@ -412,13 +424,6 @@ def parse_extension_api_json(
     for class_type in classes:
         TYPES_DB_REGISTER_TYPE(class_type.original_name, class_type)
         _register_enums(class_type.enums, parent_id=class_type.original_name)
-
-    global_enums = [parse_global_enum(x) for x in api_json["global_enums"]]
-    _register_enums(global_enums)
-
-    native_structures = [NativeStructureSpec.parse(x) for x in api_json["native_structures"]]
-    for native_structure_type in native_structures:
-        TYPES_DB_REGISTER_TYPE(native_structure_type.original_name, native_structure_type)
 
     utility_functions = [UtilityFunctionSpec.parse(x) for x in api_json["utility_functions"]]
 
