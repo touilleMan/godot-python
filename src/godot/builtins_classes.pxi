@@ -954,7 +954,16 @@ cdef void _register_python_extension_class_method(gd_string_name_t *gd_class_nam
         info.call_func = _extension_class_method_call  # GDExtensionClassMethodCall
         info.method_flags = gdextension_interface.GDEXTENSION_METHOD_FLAG_NORMAL  # Bitfield of `GDExtensionClassMethodFlags`
         parameters_offset = 1  # Ignore self argument
-        info.argument_count = len(signature.parameters) - 1  # Ignore self argument
+        if len(signature.parameters) != 0:
+            info.argument_count = len(signature.parameters) - 1  # Ignore self argument
+        else:
+            # The method is not supposed to lack the `self` argument, however this
+            # might be the case if has been poorly written!
+            # In such case we want to avoid ending up with `argument_count == 2**32-1`
+            # (which unsurprizingly leads to a segfault) , and instead let the user
+            # discovers his mistake by himself whenever he will actually call the
+            # method (as it is the Python way ^^).
+            info.argument_count = 0
 
     # TODO: GDExtensionClassMethodPtrCall ptrcall_func;
 
