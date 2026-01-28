@@ -1,5 +1,4 @@
 from typing import ClassVar
-from dataclasses import field
 
 from godot import gddataclass, Vector2, classes
 
@@ -8,9 +7,9 @@ from godot import gddataclass, Vector2, classes
 class Ball(classes.Area2D):
     DEFAULT_SPEED: ClassVar[float] = 100.0
 
-    _speed: float = DEFAULT_SPEED
-    direction: Vector2 = Vector2.LEFT
-    _initial_pos: Vector2 = field(default_factory=lambda: Vector2(0, 0))
+    _speed: float
+    direction: Vector2
+    _initial_pos: Vector2
 
     def __init__(self):
         super().__init__()
@@ -26,6 +25,6 @@ class Ball(classes.Area2D):
         self.position += self.direction * (self._speed * delta)
 
     def reset(self) -> None:
-        self.direction = Vector2.LEFT
+        self.direction = Vector2.LEFT()
         self.position = self._initial_pos
         self._speed = self.DEFAULT_SPEED
