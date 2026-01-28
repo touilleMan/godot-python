@@ -15,7 +15,7 @@ class Ball(classes.Area2D):
     def __init__(self):
         super().__init__()
         self._speed = self.DEFAULT_SPEED
-        self.direction = Vector2.LEFT
+        self.direction = Vector2.LEFT()
         self._initial_pos = Vector2()
 
     def _ready(self):
@@ -23,7 +23,7 @@ class Ball(classes.Area2D):
 
     def _process(self, delta: float) -> None:
         self._speed += delta * 2
-        self.position += self._speed * delta * self.direction
+        self.position += self.direction * (self._speed * delta)
 
     def reset(self) -> None:
         self.direction = Vector2.LEFT

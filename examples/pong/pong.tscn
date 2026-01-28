@@ -1,8 +1,7 @@
-[gd_scene load_steps=12 format=3 uid="uid://1edquvuh4xlu"]
+[gd_scene load_steps=11 format=3 uid="uid://1edquvuh4xlu"]
 
 [ext_resource type="Script" uid="uid://bbiup6xhh6s17" path="res://logic/paddle.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://ybn78qkuq21d" path="res://paddle.png" id="2"]
-[ext_resource type="Script" uid="uid://c2ofwebuaqwtq" path="res://logic/ball.gd" id="4"]
 [ext_resource type="Texture2D" uid="uid://bcir5xteju0j5" path="res://ball.png" id="5"]
 [ext_resource type="Texture2D" uid="uid://7rr8ipvil66w" path="res://separator.png" id="6"]
 [ext_resource type="Script" uid="uid://d0ctwatj03r3b" path="res://logic/wall.gd" id="7"]
@@ -49,9 +48,8 @@ texture = ExtResource("2")
 [node name="Collision" type="CollisionShape2D" parent="Right"]
 shape = SubResource("1")
 
-[node name="Ball" type="Area2D" parent="."]
+[node name="Ball" type="Ball" parent="."]
 position = Vector2(320.5, 191.124)
-script = ExtResource("4")
 
 [node name="Sprite2D" type="Sprite2D" parent="Ball"]
 texture = ExtResource("5")

@@ -13,6 +13,13 @@ class Paddle(classes.Area2D):
     _down: GDString
     _screen_size_y: float
 
+    def __init__(self):
+        super().__init__()
+        self._ball_dir = 1
+        self._up = GDString()
+        self._down = GDString()
+        self._screen_size_y = 0
+
     def _ready(self) -> None:
         self._screen_size_y = self.get_viewport_rect().size.y
         n = self.name.to_lower()
@@ -25,9 +32,9 @@ class Paddle(classes.Area2D):
 
     def _process(self, delta: float) -> None:
         # Move up and down based on input.
-        self.input = Input.get_action_strength(self._down) - Input.get_action_strength(self._up)
+        input_dir = Input.get_action_strength(self._down) - Input.get_action_strength(self._up)
         self.position.y = utils.clamp(
-            self.position.y + input * self.MOVE_SPEED * delta, 16, self._screen_size_y - 16
+            self.position.y + input_dir * self.MOVE_SPEED * delta, 16, self._screen_size_y - 16
         )
 
     def _on_area_entered(self, area: classes.Area2D) -> None:
