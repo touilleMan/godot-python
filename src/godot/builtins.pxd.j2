@@ -24,6 +24,21 @@ cdef void _cleanup_loaded_classes_and_singletons()
 cdef object _object_call(gd_object_t obj, StringName meth, list args)
 
 
+cdef inline object _get_python_instance_from_godot_object(gd_object_t obj):
+    """
+    Try to retrieve a Python object associated with the given Godot object pointer.
+    Returns None if no Python object is associated (i.e. this is a pure Godot object).
+    """
+    cdef void* binding = gdptrs.gdptr_object_get_instance_binding(
+        obj,
+        gdptrs.gdptr_library,
+        NULL  # Pass NULL to avoid creating a binding if one doesn't exist
+    )
+    if binding != NULL:
+        return <object>binding
+    return None
+
+
 cdef class BaseGDObject:
     cdef gd_object_t _gd_ptr
 
@@ -49,6 +64,12 @@ cdef class BaseGDObject:
         """
         if obj == NULL:
             return None
+        # First, check if this Godot object has an associated Python instance
+        # (i.e. it's a Python extension class instance created by us)
+        cdef object py_instance = _get_python_instance_from_godot_object(obj)
+        if py_instance is not None:
+            return py_instance
+        # Otherwise, wrap the Godot object in a Python class wrapper
         # TODO: currently `Object.get_class` returns a `String` instead of a `StringName`
         #       which is kind of wasteful...
         #       see https://github.com/godotengine/godot-proposals/issues/14067

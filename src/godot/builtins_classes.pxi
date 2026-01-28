@@ -7,6 +7,54 @@ import dataclasses
 
 
 ##############################################################################
+#                          Instance Binding Callbacks                        #
+##############################################################################
+
+
+# These callbacks are used with object_get/set_instance_binding to associate
+# Python objects with Godot objects. This allows us to retrieve the original
+# Python object when a Godot object pointer is returned to us.
+
+cdef void* _instance_binding_create_callback(
+    void* p_token,
+    void* p_instance
+) noexcept nogil:
+    # This callback is called when object_get_instance_binding is called on an
+    # object that doesn't have a binding yet. We return NULL to indicate no
+    # binding should be created automatically (we only set bindings explicitly
+    # for Python extension class instances).
+    return NULL
+
+
+cdef void _instance_binding_free_callback(
+    void* p_token,
+    void* p_instance,
+    void* p_binding
+) noexcept with gil:
+    # This callback is called when the Godot object is destroyed.
+    # We don't need to do anything here since the Python object's ref is
+    # managed by the extension class callbacks (_extension_class_free_instance).
+    pass
+
+
+cdef gdextension_interface.GDExtensionBool _instance_binding_reference_callback(
+    void* p_token,
+    void* p_binding,
+    gdextension_interface.GDExtensionBool p_reference
+) noexcept nogil:
+    # This callback is called when a RefCounted object's reference count changes.
+    # Return True to indicate we don't prevent the reference count from being decremented.
+    return True
+
+
+# Global instance binding callbacks structure
+cdef gdextension_interface.GDExtensionInstanceBindingCallbacks _instance_binding_callbacks
+_instance_binding_callbacks.create_callback = _instance_binding_create_callback
+_instance_binding_callbacks.free_callback = _instance_binding_free_callback
+_instance_binding_callbacks.reference_callback = _instance_binding_reference_callback
+
+
+##############################################################################
 #                                BaseGDObject                                #
 ##############################################################################
 
@@ -33,6 +81,14 @@ cdef class BaseGDObject:
                 obj._gd_ptr,
                 &(<StringName>_gdpy_custom_class_name)._gd_data,
                 <PyObject*>obj,
+            )
+            # Also set the instance binding so we can retrieve the Python object
+            # from the Godot object pointer later (e.g. when Godot returns it to us)
+            gdptrs.gdptr_object_set_instance_binding(
+                obj._gd_ptr,
+                gdptrs.gdptr_library,
+                <PyObject*>obj,
+                &_instance_binding_callbacks,
             )
             # Since we have registered this Python object into a Godot class instance, we must
             # make sure the Python object won't be destroyed before the Godot class instance.
