@@ -299,7 +299,7 @@ def run_test(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("tests", nargs="*", help="Filter the tests to run")
+    parser.add_argument("tests", nargs="*", help="Filter the tests to run with their IDs")
     parser.add_argument(
         "--build-dir",
         type=Path,
@@ -351,7 +351,9 @@ if __name__ == "__main__":
     godot_extra_args = sys.argv[options_separator + 1 :]
 
     if args.tests:
-        tests_dirs = [x for x in collect_tests() if any((x.name.startswith(t) for t in args.tests))]
+        tests_dirs = [
+            x for x in collect_tests() if any((x.name.startswith(f"{t}-") for t in args.tests))
+        ]
         if not tests_dirs:
             raise SystemExit(
                 f"No test selected, available tests: {[x.name for x in collect_tests()]}"
