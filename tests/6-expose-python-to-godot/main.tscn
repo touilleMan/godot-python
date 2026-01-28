@@ -8,3 +8,5 @@
 
 [node name="Node" type="Node" parent="."]
 script = ExtResource("1_ig7tw")
+
+[connection signal="tree_entered" from="MyPythonNode" to="MyPythonNode" method="_on_tree_entered"]

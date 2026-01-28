@@ -2,7 +2,7 @@ from enum import IntEnum
 from dataclasses import field
 from typing import ClassVar
 
-from godot import GDAny, GDArray, GDString, Vector2, signal, classes, gddataclass
+from godot import GDAny, GDArray, GDString, Vector2, signal, classes, gddataclass, GDCallable
 
 
 @gddataclass(init=False)
@@ -38,6 +38,13 @@ class MyPythonNode(classes.Node):
 
     def _ready(self):
         print("MyPythonNode: _ready", flush=True)
+        self.tree_exiting.connect(GDCallable.create(self, "_on_tree_exiting"))
+
+    def _on_tree_entered(self):
+        print("MyPythonNode: _on_tree_entered", flush=True)
+
+    def _on_tree_exiting(self):
+        print("MyPythonNode: _on_tree_exiting", flush=True)
 
     def hello(self, a: int) -> GDString:
         print(f"MyPythonNode: hello({a!r})", flush=True)
