@@ -40,15 +40,15 @@ class MyPythonNode(classes.Node):
         print("MyPythonNode: _ready", flush=True)
 
     def hello(self, a: int) -> GDString:
-        print(f"MyPythonNode: hello({a})", flush=True)
+        print(f"MyPythonNode: hello({a!r})", flush=True)
         return GDString("World")
 
     @staticmethod
     def hello_static_method(a: GDString) -> int:
-        print(f"MyPythonNode: hello_static_method({a})", flush=True)
+        print(f"MyPythonNode: hello_static_method({a!r})", flush=True)
         return 42
 
     @classmethod
     def hello_class_method(cls, a: GDArray, b: GDAny) -> GDString:
-        print(f"MyPythonNode: hello_class_method({a}, {b})", flush=True)
+        print(f"MyPythonNode: hello_class_method({a!r}, {b!r})", flush=True)
         return GDString("World")

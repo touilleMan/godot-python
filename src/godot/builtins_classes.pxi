@@ -1102,7 +1102,7 @@ cdef gdextension_interface.GDExtensionBool _extension_class_set(
 
     print(f"[DEBUG] _extension_class_set({obj!r}, {name!r})", flush=True)
 
-    cdef object value = gd_variant_steal_into_pyobj(<gd_variant_t*>p_value)
+    cdef object value = gd_variant_copy_into_pyobj(<gd_variant_t*>p_value)
     setattr(obj, name, value)
     return True
 
@@ -1426,7 +1426,7 @@ cdef void _extension_class_method_call(
     #       - Determine what value should be passed to argument/excepted fields?
     cdef list args = []
     for i in range(p_argument_count):
-        args.append(gd_variant_steal_into_pyobj(<gd_variant_t*>p_args[i]))
+        args.append(gd_variant_copy_into_pyobj(<gd_variant_t*>p_args[i]))
 
     print(f"[DEBUG] _extension_class_method_call({method!r}, {obj!r}, *{args!r})", flush=True)
 
@@ -1455,7 +1455,7 @@ cdef void _extension_class_static_method_call(
     #       - Determine what value should be passed to argument/excepted fields?
     cdef list args = []
     for i in range(p_argument_count):
-        args.append(gd_variant_steal_into_pyobj(<gd_variant_t*>p_args[i]))
+        args.append(gd_variant_copy_into_pyobj(<gd_variant_t*>p_args[i]))
 
     print(f"[DEBUG] _extension_class_static_method_call({method!r}, *{args!r})", flush=True)
 

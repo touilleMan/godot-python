@@ -3,7 +3,7 @@ Godot Engine .* - https://godotengine.org
 Godot-Python .* \(CPython .*\)
 MyPythonNode: _ready
 MyPythonNode: hello\(42\)
-MyPythonNode: hello_static_method\(World\)
-MyPythonNode: hello_class_method\(GDArray\(\[42, "World"\]\), MyPythonNode\(foo=.*\)\)
+MyPythonNode: hello_static_method\(GDString\('World'\)\)
+MyPythonNode: hello_class_method\(GDArray\(\[42, "World"\]\), MyPythonNode\(foo=1, _read_write_prop=Vector2\(x=0.0, y=0.0\)\)\)
 GDScript: simple_signal received
 GDScript: data_signal received with count=99, message=test message
