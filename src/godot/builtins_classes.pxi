@@ -70,7 +70,7 @@ cdef class BaseGDObject:
     _gdpy_custom_class_name = None
 
     def __init__(self):
-        print(f"[DEBUG] {type(self).__name__}.__init__()", flush=True)
+        # print(f"[DEBUG] {type(self).__name__}.__init__()", flush=True)
         cdef BaseGDObject obj = <BaseGDObject>self
         obj._gd_ptr = gdptrs.gdptr_classdb_construct_object(
             &(<StringName>type(obj)._gdpy_godot_class_name)._gd_data
@@ -938,7 +938,7 @@ cdef void *_extension_class_get_virtual_with_data(
     # Don't use `getattr` here since it would also look into the parent class
     cdef object meth = cls.__dict__.get(meth_name, None)
 
-    print(f"[DEBUG] _extension_class_get_virtual_with_data({cls!r}, {meth_name!r}) -> {meth!r}", flush=True)
+    # print(f"[DEBUG] _extension_class_get_virtual_with_data({cls!r}, {meth_name!r}) -> {meth!r}", flush=True)
 
     if meth is None:
         return NULL
@@ -974,7 +974,7 @@ cdef void _extension_class_call_virtual_with_data(
     cdef str return_type = meth_def[0]
     cdef list args_def = meth_def[1]
 
-    print(f"[DEBUG] _extension_class_call_virtual_with_data({obj!r}, {meth_name!r}, return={return_type}, args={args_def})", flush=True)
+    # print(f"[DEBUG] _extension_class_call_virtual_with_data({obj!r}, {meth_name!r}, return={return_type}, args={args_def})", flush=True)
 
     # Convert the arguments from raw pointers to Python objects
     cdef list py_args = []
@@ -998,7 +998,7 @@ cdef const gdextension_interface.GDExtensionPropertyInfo * _extension_class_get_
     uint32_t *r_count
 ) noexcept with gil:
     cdef BaseGDObject obj = <BaseGDObject>p_instance
-    print(f"[DEBUG] _extension_class_get_property_list_func({obj!r})", flush=True)
+    # print(f"[DEBUG] _extension_class_get_property_list_func({obj!r})", flush=True)
 
     # Get the property fields list from the class
     cdef object cls = type(obj)
@@ -1037,7 +1037,7 @@ cdef void _extension_class_free_property_list_func(
     uint32_t p_count
 ) noexcept with gil:
     cdef BaseGDObject obj = <BaseGDObject>p_instance
-    print(f"[DEBUG] _extension_class_free_property_list_func({obj!r})", flush=True)
+    # print(f"[DEBUG] _extension_class_free_property_list_func({obj!r})", flush=True)
     for i in range(p_count):
         PyMem_Free(p_list[i].name)
         PyMem_Free(p_list[i].class_name)
@@ -1066,7 +1066,7 @@ cdef gdextension_interface.GDExtensionBool _extension_class_get(
     if not is_property:
         return False
 
-    print(f"[DEBUG] _extension_class_get({obj!r}, {name!r})", flush=True)
+    # print(f"[DEBUG] _extension_class_get({obj!r}, {name!r})", flush=True)
     cdef object ret
     try:
         ret = getattr(obj, name)
@@ -1100,7 +1100,7 @@ cdef gdextension_interface.GDExtensionBool _extension_class_set(
     if not is_property:
         return False
 
-    print(f"[DEBUG] _extension_class_set({obj!r}, {name!r})", flush=True)
+    # print(f"[DEBUG] _extension_class_set({obj!r}, {name!r})", flush=True)
 
     cdef object value = gd_variant_copy_into_pyobj(<gd_variant_t*>p_value)
     setattr(obj, name, value)
@@ -1113,17 +1113,17 @@ cdef void _extension_class_notification2(
     gdextension_interface.GDExtensionBool p_reversed
 ) noexcept with gil:
     cdef BaseGDObject obj = <BaseGDObject>p_instance
-    print(f"[DEBUG] _extension_class_notification2({obj!r}, {int(p_what)}, {bool(p_reversed)})", flush=True)
+    # print(f"[DEBUG] _extension_class_notification2({obj!r}, {int(p_what)}, {bool(p_reversed)})", flush=True)
     cdef object callback
     try:
         # Note `Object._notification`, like all Object's virtual methods, is mentioned
         # in the Godot documentation but has no actual existance.
         callback = getattr(obj, "_notification")
     except AttributeError:
-        print(f"[DEBUG] _extension_class_notification2({obj!r}) -> nocall", flush=True)
+        # print(f"[DEBUG] _extension_class_notification2({obj!r}) -> nocall", flush=True)
         return
 
-    print(f"[DEBUG] _extension_class_notification2({obj!r}) -> call {callback!r}({int(p_what)}, {bool(p_reversed)})", flush=True)
+    # print(f"[DEBUG] _extension_class_notification2({obj!r}) -> call {callback!r}({int(p_what)}, {bool(p_reversed)})", flush=True)
     callback(int(p_what), bool(p_reversed))
 
 
@@ -1428,7 +1428,7 @@ cdef void _extension_class_method_call(
     for i in range(p_argument_count):
         args.append(gd_variant_copy_into_pyobj(<gd_variant_t*>p_args[i]))
 
-    print(f"[DEBUG] _extension_class_method_call({method!r}, {obj!r}, *{args!r})", flush=True)
+    # print(f"[DEBUG] _extension_class_method_call({method!r}, {obj!r}, *{args!r})", flush=True)
 
     try:
         gd_variant_copy_from_pyobj(method(obj, *args), <gd_variant_t*>r_return)
@@ -1457,7 +1457,7 @@ cdef void _extension_class_static_method_call(
     for i in range(p_argument_count):
         args.append(gd_variant_copy_into_pyobj(<gd_variant_t*>p_args[i]))
 
-    print(f"[DEBUG] _extension_class_static_method_call({method!r}, *{args!r})", flush=True)
+    # print(f"[DEBUG] _extension_class_static_method_call({method!r}, *{args!r})", flush=True)
 
     try:
         gd_variant_copy_from_pyobj(method(*args), <gd_variant_t*>r_return)
@@ -1473,7 +1473,7 @@ cdef void _extension_class_static_method_call(
 
 
 cdef void _register_python_extension_class_method(gd_string_name_t *gd_class_name, str method_name, object method, bint is_static):
-    print(f"[DEBUG] _register_python_extension_class_method({method!r}, static={is_static!r})", flush=True)
+    # print(f"[DEBUG] _register_python_extension_class_method({method!r}, static={is_static!r})", flush=True)
     cdef object signature = inspect.signature(method)
     cdef gd_string_name_t gd_method_name = gdapi.gd_string_name_from_unchecked_pystr(method_name)
     cdef gdextension_interface.GDExtensionPropertyInfo return_value
