@@ -24,15 +24,27 @@ func _process(delta: float):
 	assert(node.hello_class_method([42, "World"], node) == "World")
 
 	# Attributes
-	assert(node.foo == 1)
-	node.foo = 42
-	assert(node.foo == 42)
+	assert(node.attribute_scalar == 1)
+	node.attribute_scalar = 42
+	assert(node.attribute_scalar == 42)
+	# assert(node.attribute_composed == 1)
+	# node.attribute_composed = 42
+	# assert(node.attribute_composed == 42)
 
 	# Python @property
 	assert(node.read_only_prop == "RO")
-	# assert(node.read_write_prop == Vector2(0, 0))
-	# node.read_write_prop = Vector2(1, 2)
-	# assert(node.read_write_prop == Vector2(1, 2))
+	# Must use a thread to try to modify the read only prop since we expect it
+	# to fail and crash the running function!
+	var attempt_modify_read_only_prop = func ():
+		node.read_only_prop = "RW"
+	var t = Thread.new()
+	t.start(attempt_modify_read_only_prop)
+	t.wait_to_finish()
+	assert(node.read_only_prop == "RO")
+	node.read_write_prop = Vector2i(1, 2)
+	assert(node.read_write_prop == Vector2i(1, 2))
+	node.read_write_prop.x = 3
+	assert(node.read_write_prop == Vector2i(3, 2))
 
 	# Integer constant
 

@@ -1,16 +1,16 @@
 from enum import IntEnum
-from dataclasses import field
 from typing import ClassVar
 
-from godot import GDAny, GDArray, GDString, Vector2, signal, classes, gddataclass, GDCallable
+from godot import GDAny, GDArray, GDString, Vector2i, signal, classes, gddataclass, GDCallable
 
 
 @gddataclass(init=False)
 class MyPythonNode(classes.Node):
     def __init__(self):
         super().__init__()
-        self.foo = 1
-        self._read_write_prop = Vector2()
+        self.attribute_scalar = 1
+        # self.attribute_composed = Rect2i()
+        self._read_write_prop = Vector2i()
 
     CONST: ClassVar[int] = 11
 
@@ -18,19 +18,20 @@ class MyPythonNode(classes.Node):
         A = 1
         B = 2
 
-    foo: int = 1
-    _read_write_prop: Vector2 = field(default_factory=lambda: Vector2(0, 0))
+    attribute_scalar: int
+    # attribute_composed: Rect2i
+    _read_write_prop: Vector2i
 
     @property
     def read_only_prop(self) -> GDString:
         return GDString("RO")
 
     @property
-    def read_write_prop(self) -> Vector2:
+    def read_write_prop(self) -> Vector2i:
         return self._read_write_prop
 
     @read_write_prop.setter
-    def read_write_prop(self, val: Vector2) -> None:
+    def read_write_prop(self, val: Vector2i) -> None:
         self._read_write_prop = val
 
     simple_signal = signal()
