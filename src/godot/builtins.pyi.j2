@@ -1,5 +1,6 @@
 from collections.abc import Mapping, Sequence
 from enum import Enum
+from typing import overload
 
 from .classes import GDObject
 
@@ -81,6 +82,9 @@ class {{ builtin.cy_type }}:
     # Constructors
 {%   for c in builtin.constructors %}
 {#  TODO: merged together the constructors ! #}
+{%     if builtin.constructors | length > 1 %}
+    @overload
+{%     endif %}
     def __init__(self{% for a in c.arguments %}, {{ render_arg(a) }}{% endfor %}): ...
 {%   endfor %}
     def clone(self) -> {{ builtin.py_type }}: ...
