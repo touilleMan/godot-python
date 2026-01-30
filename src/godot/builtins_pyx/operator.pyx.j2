@@ -8,7 +8,15 @@ def __str__(self):
 
 def __repr__(self):
 {%   if builtin.is_transparent_builtin %}
-    return f"{{ builtin.cy_type }}({% for member in builtin.c_struct_members %}{{ member.name }}={self.{{ member.name }}}{% if not loop.last %}, {% endif %}{% endfor %})"
+    return f"{{ builtin.cy_type }}(
+{%-   for subm in builtin.c_struct_members -%}
+{%-     if subm.type.is_scalar -%}
+    {{ subm.name }}={ self.{{ subm.name }} }
+{%-     else -%}
+    {{ subm.name }}={ {{ subm.type.cy_type }}.from_gd_data(self._gd_data.{{ subm.name }}) }
+{%-     endif -%}
+{%- if not loop.last %}, {% endif -%}
+{%-   endfor %})"
 {%   elif builtin.original_name in ("String", "StringName", "NodePath") %}
     return f"{{ builtin.cy_type}}({self.to_pystr()!r})"
 {%   else %}
@@ -48,7 +56,7 @@ def __eq__(self, object other):
 {% if builtin.is_transparent_builtin %}
     return (
 {%   for field_path in  builtin.all_nested_scalar_members %}
-        {%if not loop.first%}and {% endif %}self._gd_data.{{ field_path }} == other_gd_data.{{ field_path }}
+        {% if not loop.first %}and {% endif %}self._gd_data.{{ field_path }} == other_gd_data.{{ field_path }}
 {%   endfor %}
     )
 {% else %}

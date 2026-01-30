@@ -27,9 +27,10 @@ func _process(delta: float):
 	assert(node.attribute_scalar == 1)
 	node.attribute_scalar = 42
 	assert(node.attribute_scalar == 42)
-	# assert(node.attribute_composed == 1)
-	# node.attribute_composed = 42
-	# assert(node.attribute_composed == 42)
+	assert(node.attribute_composed.position == Vector2i(0, 0))
+	node.attribute_composed.position = Vector2i(1, 2)
+	node.attribute_composed.position.x += 2
+	assert(node.attribute_composed.position == Vector2i(3, 2))
 
 	# Python @property
 	assert(node.read_only_prop == "RO")

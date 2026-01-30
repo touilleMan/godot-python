@@ -5,7 +5,7 @@ MyPythonNode: _on_tree_entered
 MyPythonNode: _ready
 MyPythonNode: hello\(42\)
 MyPythonNode: hello_static_method\(GDString\('World'\)\)
-MyPythonNode: hello_class_method\(GDArray\(\[42, "World"\]\), MyPythonNode\(attribute_scalar=1, _read_write_prop=Vector2i\(x=0, y=0\)\)\)
+MyPythonNode: hello_class_method\(GDArray\(\[42, "World"\]\), MyPythonNode\(attribute_scalar=1, attribute_composed=Rect2i\(position=Vector2i\(x=0, y=0\), size=Vector2i\(x=0, y=0\)\), _read_write_prop=Vector2i\(x=0, y=0\)\)\)
 SCRIPT ERROR: Cannot set value into property "read_only_prop" \(on base "MyPythonNode"\) because it is read-only\.
           at: <anonymous lambda> \(res://third_party\.gd:[\d]+\)
 GDScript: simple_signal received

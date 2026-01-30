@@ -1,7 +1,17 @@
 from enum import IntEnum
 from typing import ClassVar
 
-from godot import GDAny, GDArray, GDString, Vector2i, signal, classes, gddataclass, GDCallable
+from godot import (
+    GDAny,
+    GDArray,
+    GDString,
+    Vector2i,
+    Rect2i,
+    signal,
+    classes,
+    gddataclass,
+    GDCallable,
+)
 
 
 @gddataclass(init=False)
@@ -9,7 +19,7 @@ class MyPythonNode(classes.Node):
     def __init__(self):
         super().__init__()
         self.attribute_scalar = 1
-        # self.attribute_composed = Rect2i()
+        self.attribute_composed = Rect2i()
         self._read_write_prop = Vector2i()
 
     CONST: ClassVar[int] = 11
@@ -19,7 +29,7 @@ class MyPythonNode(classes.Node):
         B = 2
 
     attribute_scalar: int
-    # attribute_composed: Rect2i
+    attribute_composed: Rect2i
     _read_write_prop: Vector2i
 
     @property
