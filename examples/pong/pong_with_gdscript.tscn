@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://1edquvuh4xlu"]
+[gd_scene load_steps=12 format=3 uid="uid://c3wpsyfvf1s5o"]
 
 [ext_resource type="Script" uid="uid://bbiup6xhh6s17" path="res://logic/paddle.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://ybn78qkuq21d" path="res://paddle.png" id="2"]
