@@ -30,6 +30,10 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/stretch/scale_mode="integer"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gdpy_editor_plugin/plugin.cfg")
+
 [input]
 
 left_move_down={

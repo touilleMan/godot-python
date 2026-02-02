@@ -258,3 +258,4 @@ dep_gdpy = declare_dependency(
 
 
 subdir('godot')
+subdir('gdpy_editor_plugin')
