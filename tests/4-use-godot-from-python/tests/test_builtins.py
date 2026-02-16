@@ -531,6 +531,7 @@ def test_operator(kind: str):
         case "multiply":
             assert_eq(godot.Vector2i(4, 3) * godot.Vector2i(2, 3), godot.Vector2i(8, 9))
             assert_eq(godot.Vector2i(4, 3) * 2, godot.Vector2i(8, 6))
+            assert_eq(godot.Vector2(-1.0, 1.0) * 0.15, godot.Vector2(-0.15, 0.15))
 
             with clodotest.raises(TypeError):
                 _ = godot.Vector2i(1, 2) * godot.GDString()
