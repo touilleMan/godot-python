@@ -22,7 +22,7 @@ class Ball(classes.Area2D):
 
     def _process(self, delta: float) -> None:
         self._speed += delta * 2
-        self.position += self.direction * (self._speed * delta)
+        self.position = self.position + self.direction * (self._speed * delta)
 
     def reset(self) -> None:
         self.direction = Vector2.LEFT()

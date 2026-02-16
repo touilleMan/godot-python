@@ -36,9 +36,11 @@ class Paddle(classes.Area2D):
     def _process(self, delta: float) -> None:
         # Move up and down based on input.
         input_dir = Input.get_action_strength(self._down) - Input.get_action_strength(self._up)
-        self.position.y = utils.clamp(
-            self.position.y + input_dir * self.MOVE_SPEED * delta, 16, self._screen_size_y - 16
+        position = self.position
+        position.y = utils.clamp(
+            position.y + input_dir * self.MOVE_SPEED * delta, 16, self._screen_size_y - 16
         )
+        self.position = position
 
     def _on_area_entered(self, area: classes.Area2D) -> None:
         if area.name == BALL_NAME:
