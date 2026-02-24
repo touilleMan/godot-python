@@ -13,7 +13,6 @@ __pycache__
 .DS_Store
 
 # Godot import stuff
-**/.godot/imported/
 **/.godot/editor/
 **/.godot/shader_cache/
 **/.godot/uid_cache.bin
