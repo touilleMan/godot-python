@@ -1,0 +1,113 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://logic/benchmark_manager.gd" id="1"]
+
+[node name="Benchmark" type="Node"]
+script = ExtResource("1")
+
+[node name="NodeContainer" type="Node" parent="."]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Panel" type="PanelContainer" parent="UI"]
+offset_right = 960.0
+offset_bottom = 600.0
+
+[node name="Margin" type="MarginContainer" parent="UI/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="UI/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="UI/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Godot-Python Benchmark"
+theme_override_font_sizes/font_size = 22
+
+[node name="FPSLabel" type="Label" parent="UI/Panel/Margin/VBox"]
+layout_mode = 2
+text = "FPS: --"
+
+[node name="StatusLabel" type="Label" parent="UI/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Ready. Select a benchmark to run."
+
+[node name="HSep1" type="HSeparator" parent="UI/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="NodeCountRow" type="HBoxContainer" parent="UI/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NodeCountLabel" type="Label" parent="UI/Panel/Margin/VBox/NodeCountRow"]
+layout_mode = 2
+text = "Instances:"
+size_flags_vertical = 4
+
+[node name="LessBtn" type="Button" parent="UI/Panel/Margin/VBox/NodeCountRow"]
+layout_mode = 2
+text = "÷10"
+
+[node name="CountLabel" type="Label" parent="UI/Panel/Margin/VBox/NodeCountRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(64, 0)
+text = "100"
+horizontal_alignment = 1
+size_flags_vertical = 4
+
+[node name="MoreBtn" type="Button" parent="UI/Panel/Margin/VBox/NodeCountRow"]
+layout_mode = 2
+text = "×10"
+
+[node name="NodeCountInfo" type="Label" parent="UI/Panel/Margin/VBox/NodeCountRow"]
+layout_mode = 2
+text = " nodes per test  (warmup: 0.5s, measure: 3s)"
+size_flags_vertical = 4
+modulate = Color(0.7, 0.7, 0.7, 1)
+
+[node name="Buttons" type="HBoxContainer" parent="UI/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BuiltinsBtn" type="Button" parent="UI/Panel/Margin/VBox/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Builtins"
+tooltip_text = "Vector2/StringName/GDString construction, arithmetic and builtin methods — measures Python↔Godot type-wrapping overhead"
+
+[node name="ClassesBtn" type="Button" parent="UI/Panel/Margin/VBox/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Godot Classes"
+tooltip_text = "Calls on Time/OS/Engine singletons and Node tree traversal — measures Python→Godot class dispatch overhead"
+
+[node name="ExposedBtn" type="Button" parent="UI/Panel/Margin/VBox/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Exposed Python"
+tooltip_text = "GDScript vs Python calling tick() on a Python-registered class — measures GDScript→Python vs Python→Python dispatch overhead"
+
+[node name="AllBtn" type="Button" parent="UI/Panel/Margin/VBox/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Run All"
+tooltip_text = "Runs all benchmarks sequentially"
+
+[node name="HSep2" type="HSeparator" parent="UI/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="ResultsTitle" type="Label" parent="UI/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Results:"
+
+[node name="Results" type="RichTextLabel" parent="UI/Panel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+scroll_active = true

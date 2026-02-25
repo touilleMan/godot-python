@@ -1,0 +1,38 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Godot-Python Benchmark"
+config/description="Benchmarks comparing Python vs GDScript performance for Godot-Python."
+run/main_scene="res://benchmark.tscn"
+config/features=PackedStringArray("4.4")
+
+[display]
+
+window/size/viewport_width=960
+window/size/viewport_height=600
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gdpy_editor_plugin/plugin.cfg")
+
+[python]
+
+io_streams_capture=false
+verbose=false
+initialize_callback="main:initialize"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
