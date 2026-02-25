@@ -68,14 +68,15 @@ position = Vector2(650, 200)
 [node name="Collision" type="CollisionShape2D" parent="RightWall"]
 shape = SubResource("3")
 
-[node name="Ceiling" type="Wall" parent="."]
+[node name="Ceiling" type="CeilingFloor" parent="."]
 position = Vector2(320, -10)
 
 [node name="Collision" type="CollisionShape2D" parent="Ceiling"]
 shape = SubResource("4")
 
-[node name="Floor" type="Wall" parent="."]
+[node name="Floor" type="CeilingFloor" parent="."]
 position = Vector2(320, 410)
+_bounce_direction = -1
 
 [node name="Collision" type="CollisionShape2D" parent="Floor"]
 shape = SubResource("4")

@@ -6,9 +6,10 @@ BALL_NAME = StringName("Ball")
 
 @gddataclass(init=False)
 class CeilingFloor(classes.Area2D):
-    _bounce_direction: float = 1
+    _bounce_direction: float
 
     def __init__(self):
+        super().__init__()
         self._bounce_direction = 1
 
     def _on_area_entered(self, area: classes.Area2D) -> None:
